@@ -17,8 +17,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { useAccessibility, type AccessibilityPrefs } from "@/lib/accessibility";
-import { useSpeech } from "@/lib/speech";
+import { useAccessibility, type AccessibilityPrefs } from "@/contexts/AccessibilityContext";
+import { useSpeech } from "@/contexts/SpeechContext";
 
 type ToggleKey = {
   [K in keyof AccessibilityPrefs]: AccessibilityPrefs[K] extends boolean ? K : never;

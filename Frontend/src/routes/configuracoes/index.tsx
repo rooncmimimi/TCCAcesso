@@ -9,10 +9,10 @@ import {
   ShieldCheck,
   UserCog,
 } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/layouts/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 
-export const Route = createFileRoute("/configuracoes")({
+export const Route = createFileRoute("/configuracoes/")({
   head: () => ({
     meta: [
       { title: "Configurações — ACESSO" },

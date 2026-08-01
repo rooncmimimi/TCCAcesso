@@ -10,8 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useSpeech } from "@/lib/speech";
-import { useAccessibility } from "@/lib/accessibility";
+import { useSpeech } from "@/contexts/SpeechContext";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 
 const PERGUNTA =
   "Olá! Bem-vindo ao ACESSO. Deseja utilizar o sistema de leitura por voz como padrão durante toda a sua navegação? Escolha sim ou não.";

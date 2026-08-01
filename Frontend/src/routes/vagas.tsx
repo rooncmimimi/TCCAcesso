@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, MapPin, Search } from "lucide-react";
 import { useState } from "react";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/layouts/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

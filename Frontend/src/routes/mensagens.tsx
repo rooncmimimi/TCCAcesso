@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/layouts/AppShell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { conversas } from "@/lib/mock-data";
-import { initials } from "@/lib/session";
+import { initials } from "@/contexts/SessionContext";
 
 export const Route = createFileRoute("/mensagens")({
   head: () => ({

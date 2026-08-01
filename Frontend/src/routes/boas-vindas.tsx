@@ -5,8 +5,8 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPanel";
-import { useAccessibility } from "@/lib/accessibility";
-import { useSession } from "@/lib/session";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useSession } from "@/contexts/SessionContext";
 
 export const Route = createFileRoute("/boas-vindas")({
   head: () => ({

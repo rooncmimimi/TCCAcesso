@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { initials, useSession } from "@/lib/session";
+import { initials, useSession } from "@/contexts/SessionContext";
 import { cn } from "@/lib/utils";
 
 const nav = [

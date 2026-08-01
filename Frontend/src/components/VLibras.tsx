@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAccessibility } from "@/lib/accessibility";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 
 declare global {
   interface Window {

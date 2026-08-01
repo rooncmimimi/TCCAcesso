@@ -8,14 +8,14 @@ import {
   ThumbsUp,
   Video,
 } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/layouts/AppShell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { noticias, posts as postsIniciais, vagas } from "@/lib/mock-data";
-import { initials, useSession } from "@/lib/session";
+import { initials, useSession } from "@/contexts/SessionContext";
 
 export const Route = createFileRoute("/feed")({
   head: () => ({

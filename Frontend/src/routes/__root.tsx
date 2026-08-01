@@ -5,15 +5,11 @@ import {
   createRootRouteWithContext,
   useRouter,
   HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
 
-import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AccessibilityProvider } from "@/lib/accessibility";
-import { SpeechProvider, useAutoSpeech } from "@/lib/speech";
-import { SessionProvider } from "@/lib/session";
+import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
+import { SpeechProvider, useAutoSpeech } from "@/contexts/SpeechContext";
+import { SessionProvider } from "@/contexts/SessionContext";
 import { VLibras } from "@/components/VLibras";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -42,9 +38,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
@@ -80,15 +73,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "ACESSO — Inclusão profissional para PCD e 50+" },
       {
         name: "description",
         content:
           "Rede profissional acessível que conecta pessoas com deficiência e profissionais 50+ a empresas com vagas realmente inclusivas.",
       },
-      { name: "author", content: "ACESSO" },
       { property: "og:title", content: "ACESSO — Inclusão profissional para PCD e 50+" },
       {
         property: "og:description",
@@ -97,46 +87,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.cdnfonts.com/css/opendyslexic",
-      },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-    ],
   }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
 
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="pt-BR">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
 function AppFrame() {
   useAutoSpeech();
+
   return (
     <>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <HeadContent />
+      {/* As rotas filhas são renderizadas aqui. */}
       <Outlet />
       <VLibras />
       <Toaster />

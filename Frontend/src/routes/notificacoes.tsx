@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bell, Briefcase, Users } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/layouts/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { notificacoes } from "@/lib/mock-data";
 

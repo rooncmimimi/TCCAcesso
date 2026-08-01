@@ -9,6 +9,12 @@ import env from "./env.js";
  * - Todas as queries são parametrizadas pelo Sequelize (prepared statements),
  *   o que protege contra SQL Injection (OWASP A03).
  */
+
+console.log("HOST:", env.db.host);
+console.log("USER:", env.db.user);
+console.log("DATABASE:", env.db.name);
+console.log("PASSWORD:", env.db.password);
+
 const sequelize = new Sequelize(
     env.db.name,
     env.db.user,

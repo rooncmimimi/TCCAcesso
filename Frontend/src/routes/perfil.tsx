@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Accessibility, Ear, Eye, PersonStanding, Pencil } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/layouts/AppShell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { initials, useSession } from "@/lib/session";
+import { initials, useSession } from "@/contexts/SessionContext";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({

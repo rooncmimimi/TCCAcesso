@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAccessibility, VOICE_CHOICE_KEY } from "./accessibility";
+import { useAccessibility, VOICE_CHOICE_KEY } from "@/contexts/AccessibilityContext";
 
 type VoiceChoice = "accepted" | "declined" | null;
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSession } from "@/lib/session";
+import { useSession } from "@/contexts/SessionContext";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/cadastro")({

@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RotateCcw, Save, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/layouts/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPanel";
-import { useAccessibility } from "@/lib/accessibility";
-import { useSpeech } from "@/lib/speech";
-import { useSession } from "@/lib/session";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useSpeech } from "@/contexts/SpeechContext";
+import { useSession } from "@/contexts/SessionContext";
 
 export const Route = createFileRoute("/configuracoes/acessibilidade")({
   head: () => ({

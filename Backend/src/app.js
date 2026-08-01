@@ -55,6 +55,15 @@ app.use(
     })
 );
 
+/* ---------- Health Check Render ---------- */
+app.get("/healthz", (req, res) => {
+    res.status(200).json({
+        status: "ok",
+        service: "ACESSO API",
+        environment: env.nodeEnv
+    });
+});
+
 /* ---------- API ---------- */
 app.use("/api", apiLimiter, routes);
 

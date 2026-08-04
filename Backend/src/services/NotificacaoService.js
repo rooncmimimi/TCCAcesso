@@ -6,7 +6,27 @@ import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
  * Notificações — sempre escopadas ao usuário autenticado.
  */
 class NotificacaoService {
+    /**
+     * Cria uma notificação interna.
+     * Falhas aqui nunca devem derrubar a ação principal do usuário.
+     */
+    async criar({ usuarioId, tipo, titulo, descricao = null }) {
+        try {
+            return await Notificacao.create({
+                usuarioId,
+                tipo,
+                titulo,
+                descricao
+            });
+
+        } catch (erro) {
+            console.error("Falha ao criar notificação:", erro.message);
+            return null;
+        }
+    }
+
     async listar(solicitante, query) {
+
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const where = { usuarioId: solicitante.id };

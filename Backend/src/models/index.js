@@ -28,6 +28,19 @@ import Notificacao from "./Notificacao.js";
 import Conversa from "./Conversa.js";
 import Mensagem from "./Mensagem.js";
 
+import CandidatoExperiencia from "./CandidatoExperiencia.js";
+import CandidatoFormacao from "./CandidatoFormacao.js";
+import CandidatoCertificado from "./CandidatoCertificado.js";
+import CandidatoHabilidade from "./CandidatoHabilidade.js";
+import PostagemAnexo from "./PostagemAnexo.js";
+import Compartilhamento from "./Compartilhamento.js";
+import PreferenciaAcessibilidade from "./PreferenciaAcessibilidade.js";
+import CodigoRecuperacaoSenha from "./CodigoRecuperacaoSenha.js";
+import RefreshToken from "./RefreshToken.js";
+import ChatbotConversa from "./ChatbotConversa.js";
+import ChatbotMensagem from "./ChatbotMensagem.js";
+
+
 /* ======================================================
    PERFIS DO USUÁRIO (1:1)
 ====================================================== */
@@ -179,6 +192,130 @@ Mensagem.belongsTo(Conversa, { foreignKey: "conversaId", as: "conversa" });
 Usuario.hasMany(Mensagem, { foreignKey: "remetenteId", as: "mensagens" });
 Mensagem.belongsTo(Usuario, { foreignKey: "remetenteId", as: "remetente" });
 
+/* ======================================================
+   PERFIL DETALHADO DO CANDIDATO
+====================================================== */
+
+Candidato.hasMany(CandidatoExperiencia, {
+    foreignKey: "candidatoId",
+    as: "experiencias"
+});
+CandidatoExperiencia.belongsTo(Candidato, {
+    foreignKey: "candidatoId",
+    as: "candidato"
+});
+
+Candidato.hasMany(CandidatoFormacao, {
+    foreignKey: "candidatoId",
+    as: "formacoes"
+});
+CandidatoFormacao.belongsTo(Candidato, {
+    foreignKey: "candidatoId",
+    as: "candidato"
+});
+
+Candidato.hasMany(CandidatoCertificado, {
+    foreignKey: "candidatoId",
+    as: "certificados"
+});
+CandidatoCertificado.belongsTo(Candidato, {
+    foreignKey: "candidatoId",
+    as: "candidato"
+});
+
+Candidato.hasMany(CandidatoHabilidade, {
+    foreignKey: "candidatoId",
+    as: "habilidades"
+});
+CandidatoHabilidade.belongsTo(Candidato, {
+    foreignKey: "candidatoId",
+    as: "candidato"
+});
+
+/* ======================================================
+   ANEXOS, RESPOSTAS E COMPARTILHAMENTOS DO FEED
+====================================================== */
+
+Postagem.hasMany(PostagemAnexo, { foreignKey: "postagemId", as: "anexos" });
+PostagemAnexo.belongsTo(Postagem, {
+    foreignKey: "postagemId",
+    as: "postagem"
+});
+
+Comentario.hasMany(Comentario, {
+    foreignKey: "comentarioPaiId",
+    as: "respostas"
+});
+Comentario.belongsTo(Comentario, {
+    foreignKey: "comentarioPaiId",
+    as: "comentarioPai"
+});
+
+Postagem.hasMany(Compartilhamento, {
+    foreignKey: "postagemId",
+    as: "compartilhamentos"
+});
+Compartilhamento.belongsTo(Postagem, {
+    foreignKey: "postagemId",
+    as: "postagem"
+});
+
+Usuario.hasMany(Compartilhamento, {
+    foreignKey: "usuarioId",
+    as: "compartilhamentos"
+});
+Compartilhamento.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+
+/* ======================================================
+   ACESSIBILIDADE, SESSÕES E RECUPERAÇÃO DE SENHA
+====================================================== */
+
+Usuario.hasOne(PreferenciaAcessibilidade, {
+    foreignKey: "usuarioId",
+    as: "preferenciasAcessibilidade"
+});
+PreferenciaAcessibilidade.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+
+Usuario.hasMany(CodigoRecuperacaoSenha, {
+    foreignKey: "usuarioId",
+    as: "codigosRecuperacao"
+});
+CodigoRecuperacaoSenha.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+
+Usuario.hasMany(RefreshToken, { foreignKey: "usuarioId", as: "refreshTokens" });
+RefreshToken.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+/* ======================================================
+   ASSISTENTE VIRTUAL
+====================================================== */
+
+Usuario.hasMany(ChatbotConversa, {
+    foreignKey: "usuarioId",
+    as: "chatbotConversas"
+});
+ChatbotConversa.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+
+ChatbotConversa.hasMany(ChatbotMensagem, {
+    foreignKey: "conversaId",
+    as: "mensagens"
+});
+ChatbotMensagem.belongsTo(ChatbotConversa, {
+    foreignKey: "conversaId",
+    as: "conversa"
+});
+
 export {
     sequelize,
     Usuario,
@@ -196,5 +333,17 @@ export {
     Curtida,
     Notificacao,
     Conversa,
-    Mensagem
+    Mensagem,
+    CandidatoExperiencia,
+    CandidatoFormacao,
+    CandidatoCertificado,
+    CandidatoHabilidade,
+    PostagemAnexo,
+    Compartilhamento,
+    PreferenciaAcessibilidade,
+    CodigoRecuperacaoSenha,
+    RefreshToken,
+    ChatbotConversa,
+    ChatbotMensagem
 };
+

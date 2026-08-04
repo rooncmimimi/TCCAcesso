@@ -9,6 +9,11 @@ import {
     validarLogin,
     validarTrocaSenha
 } from "../validators/authValidator.js";
+import {
+    validarRefresh,
+    validarEsqueciSenha,
+    validarRedefinirSenha
+} from "../validators/sessaoValidator.js";
 
 const router = Router();
 
@@ -34,6 +39,29 @@ router.post(
     validarLogin,
     validationMiddleware,
     AuthController.login
+);
+
+router.post(
+    "/refresh",
+    validarRefresh,
+    validationMiddleware,
+    AuthController.refresh
+);
+
+router.post(
+    "/senha/esqueci",
+    authLimiter,
+    validarEsqueciSenha,
+    validationMiddleware,
+    AuthController.esqueciSenha
+);
+
+router.post(
+    "/senha/redefinir",
+    authLimiter,
+    validarRedefinirSenha,
+    validationMiddleware,
+    AuthController.redefinirSenha
 );
 
 router.get("/me", authMiddleware, AuthController.me);

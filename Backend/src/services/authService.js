@@ -2,6 +2,7 @@ import sequelize from "../config/database.js";
 import { Usuario, Candidato, Empresa, Administrador } from "../models/index.js";
 import { hashPassword, comparePassword } from "../utils/bcrypt.js";
 import { generateToken } from "../utils/jwt.js";
+import RefreshTokenService from "./RefreshTokenService.js";
 import ApiError from "../utils/ApiError.js";
 
 /**
@@ -10,7 +11,8 @@ import ApiError from "../utils/ApiError.js";
  * Observações de segurança:
  * - o hash da senha nunca sai do Service (scope padrão do model já o exclui);
  * - mensagens de login são genéricas para não permitir enumeração de contas;
- * - o tipo de usuário NUNCA vem do corpo da requisição.
+ * - o tipo de usuário NUNCA vem do corpo da requisição;
+ * - a sessão combina um access token JWT curto com refresh token rotativo.
  */
 class AuthService {
     normalizarEmail(email) {
@@ -34,20 +36,26 @@ class AuthService {
         });
     }
 
-    montarSessao(usuario) {
+    async montarSessao(usuario, contexto = {}) {
         const dados = usuario.toJSON();
         delete dados.senhaHash;
 
+        const { refreshToken } = await RefreshTokenService.emitir(
+            usuario.id,
+            contexto
+        );
+
         return {
             usuario: dados,
-            token: this.gerarToken(usuario)
+            token: this.gerarToken(usuario),
+            refreshToken
         };
     }
 
     /* ==========================================================
        CADASTRO DE CANDIDATO
     ========================================================== */
-    async registerCandidate(data) {
+    async registerCandidate(data, contexto = {}) {
         const { nome, email, senha, telefone, cpf } = data;
 
         if (await this.buscarPorEmail(email)) {
@@ -82,7 +90,7 @@ class AuthService {
 
             await transaction.commit();
 
-            return this.montarSessao(usuario);
+            return this.montarSessao(usuario, contexto);
         } catch (erro) {
             await transaction.rollback();
             throw erro;
@@ -92,7 +100,7 @@ class AuthService {
     /* ==========================================================
        CADASTRO DE EMPRESA
     ========================================================== */
-    async registerCompany(data) {
+    async registerCompany(data, contexto = {}) {
         const { nome, email, senha, telefone, cnpj, razaoSocial, nomeFantasia } =
             data;
 
@@ -130,7 +138,7 @@ class AuthService {
 
             await transaction.commit();
 
-            return this.montarSessao(usuario);
+            return this.montarSessao(usuario, contexto);
         } catch (erro) {
             await transaction.rollback();
             throw erro;
@@ -140,7 +148,7 @@ class AuthService {
     /* ==========================================================
        LOGIN
     ========================================================== */
-    async login(email, senha) {
+    async login(email, senha, contexto = {}) {
         const usuario = await this.buscarPorEmail(email, { comSenha: true });
 
         // Executa a comparação mesmo sem usuário para reduzir timing attacks.
@@ -158,10 +166,39 @@ class AuthService {
             throw ApiError.forbidden("Usuário desativado.");
         }
 
+        if (usuario.bloqueado) {
+            throw ApiError.forbidden(
+                usuario.motivoBloqueio
+                    ? `Conta bloqueada: ${usuario.motivoBloqueio}`
+                    : "Conta bloqueada pela moderação."
+            );
+        }
+
         usuario.ultimoLogin = new Date();
         await usuario.save();
 
-        return this.montarSessao(usuario);
+        return this.montarSessao(usuario, contexto);
+    }
+
+    /* ==========================================================
+       RENOVAÇÃO DE SESSÃO
+    ========================================================== */
+    async refresh(refreshToken, contexto = {}) {
+        const { usuario, refreshToken: novoToken } =
+            await RefreshTokenService.rotacionar(refreshToken, contexto);
+
+        const dados = usuario.toJSON();
+        delete dados.senhaHash;
+
+        return {
+            usuario: dados,
+            token: this.gerarToken(usuario),
+            refreshToken: novoToken
+        };
+    }
+
+    async logout(refreshToken) {
+        return RefreshTokenService.revogar(refreshToken);
     }
 
     /* ==========================================================
@@ -201,6 +238,9 @@ class AuthService {
 
         usuario.senhaHash = await hashPassword(novaSenha);
         await usuario.save();
+
+        // Encerra as demais sessões após troca de senha.
+        await RefreshTokenService.revogarTodos(usuarioId);
 
         return { mensagem: "Senha alterada com sucesso." };
     }

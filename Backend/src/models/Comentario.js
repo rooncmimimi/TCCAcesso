@@ -29,6 +29,23 @@ const Comentario = sequelize.define(
             type: DataTypes.TEXT,
             allowNull: false
         }
+,
+
+        comentarioPaiId: {
+            field: "comentario_pai_id",
+            type: DataTypes.UUID
+        },
+
+        editadoEm: {
+            field: "editado_em",
+            type: DataTypes.DATE
+        },
+
+        ativo: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true
+        }
     },
     {
         tableName: "comentarios",

@@ -46,6 +46,27 @@ const Usuario = sequelize.define(
             type: DataTypes.TEXT
         },
 
+        capaPerfil: {
+            field: "capa_perfil",
+            type: DataTypes.TEXT
+        },
+
+        bloqueado: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
+        },
+
+        bloqueadoEm: {
+            field: "bloqueado_em",
+            type: DataTypes.DATE
+        },
+
+        motivoBloqueio: {
+            field: "motivo_bloqueio",
+            type: DataTypes.TEXT
+        },
+
         tipoUsuario: {
             field: "tipo_usuario",
             type: DataTypes.ENUM("candidato", "empresa", "administrador"),

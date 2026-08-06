@@ -94,6 +94,20 @@ const Vaga = sequelize.define(
             field: "data_encerramento",
             type: DataTypes.DATEONLY
         }
+,
+
+        recursosAcessibilidade: {
+            field: "recursos_acessibilidade",
+            type: DataTypes.ARRAY(DataTypes.TEXT),
+            allowNull: true,
+            defaultValue: []
+        },
+
+        oculta: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
+        }
     },
     {
         tableName: "vagas",

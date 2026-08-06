@@ -1,18 +1,22 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Briefcase,
   ChevronDown,
   HelpCircle,
   Home,
+  LayoutDashboard,
   LogOut,
   MessageSquare,
   Settings,
+  ShieldCheck,
   User,
   Accessibility,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +28,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { initials, useSession } from "@/contexts/SessionContext";
 import { cn } from "@/lib/utils";
+import notificacoesService from "@/services/notificacoes.service";
+import { urlArquivo } from "@/services/uploads.service";
+import { ouvirEvento } from "@/services/socket";
 
 const nav = [
   { to: "/feed", label: "Início", icon: Home },
@@ -33,8 +40,34 @@ const nav = [
 ] as const;
 
 export function AppHeader() {
-  const { user, signOut } = useSession();
+  const { user, autenticado, signOut } = useSession();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [naoLidas, setNaoLidas] = useState(0);
+
+  useEffect(() => {
+    if (!autenticado) {
+      setNaoLidas(0);
+      return;
+    }
+
+    let ativo = true;
+    notificacoesService
+      .contarNaoLidas()
+      .then((total) => {
+        if (ativo) setNaoLidas(total);
+      })
+      .catch(() => undefined);
+
+    const pararDeOuvir = ouvirEvento("notificacao:nova", () => {
+      setNaoLidas((atual) => atual + 1);
+    });
+
+    return () => {
+      ativo = false;
+      pararDeOuvir();
+    };
+  }, [autenticado]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -48,21 +81,35 @@ export function AppHeader() {
           <ul className="flex items-center gap-1 sm:gap-2">
             {nav.map((item) => {
               const active = pathname.startsWith(item.to);
+              const mostrarContador = item.to === "/notificacoes" && naoLidas > 0;
               return (
                 <li key={item.to}>
                   <Link
                     to={item.to}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex min-h-11 min-w-11 flex-col items-center justify-center rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors sm:px-4 sm:text-xs",
+                      "relative flex min-h-11 min-w-11 flex-col items-center justify-center rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors sm:px-4 sm:text-xs",
                       active
                         ? "bg-primary-soft text-primary"
                         : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                     )}
                   >
-                    <item.icon className="size-5" aria-hidden="true" />
+                    <span className="relative">
+                      <item.icon className="size-5" aria-hidden="true" />
+                      {mostrarContador && (
+                        <Badge
+                          aria-hidden="true"
+                          className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-none"
+                        >
+                          {naoLidas > 9 ? "9+" : naoLidas}
+                        </Badge>
+                      )}
+                    </span>
                     <span className="mt-0.5 hidden sm:inline">{item.label}</span>
-                    <span className="sr-only sm:hidden">{item.label}</span>
+                    <span className="sr-only sm:hidden">
+                      {item.label}
+                      {mostrarContador ? ` — ${naoLidas} não lidas` : ""}
+                    </span>
                   </Link>
                 </li>
               );
@@ -78,6 +125,7 @@ export function AppHeader() {
               aria-label="Abrir menu do perfil"
             >
               <Avatar className="size-8">
+                <AvatarImage src={urlArquivo(user?.fotoPerfil)} alt="" />
                 <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
                   {initials(user?.nome ?? "Visitante")}
                 </AvatarFallback>
@@ -101,6 +149,20 @@ export function AppHeader() {
                 <User aria-hidden="true" /> Ver perfil
               </Link>
             </DropdownMenuItem>
+            {(user?.tipo === "candidato" || user?.tipo === "empresa") && (
+              <DropdownMenuItem asChild>
+                <a href="/dashboard">
+                  <LayoutDashboard aria-hidden="true" /> Painel de indicadores
+                </a>
+              </DropdownMenuItem>
+            )}
+            {user?.tipo === "administrador" && (
+              <DropdownMenuItem asChild>
+                <a href="/admin">
+                  <ShieldCheck aria-hidden="true" /> Painel administrativo
+                </a>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <Link to="/configuracoes/acessibilidade">
                 <Accessibility aria-hidden="true" /> Configurações de acessibilidade
@@ -117,10 +179,13 @@ export function AppHeader() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/" onClick={() => signOut()}>
-                <LogOut aria-hidden="true" /> Sair
-              </Link>
+            <DropdownMenuItem
+              onSelect={(evento) => {
+                evento.preventDefault();
+                void signOut().then(() => navigate({ to: "/" }));
+              }}
+            >
+              <LogOut aria-hidden="true" /> Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

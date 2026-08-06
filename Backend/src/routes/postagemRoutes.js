@@ -4,7 +4,7 @@ import ComentarioController from "../controllers/ComentarioController.js";
 import CurtidaController from "../controllers/CurtidaController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js";
+import { uploadAnexos } from "../middlewares/uploadMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarCriacaoPostagem,
@@ -27,7 +27,7 @@ router.get(
 
 router.post(
     "/",
-    upload.single("imagem"),
+    uploadAnexos.array("arquivos", 4),
     validarCriacaoPostagem,
     validationMiddleware,
     PostagemController.store

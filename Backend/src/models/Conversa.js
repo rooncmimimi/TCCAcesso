@@ -29,6 +29,17 @@ const Conversa = sequelize.define(
             field: "ultima_mensagem",
             type: DataTypes.DATE
         }
+,
+
+        ultimaMensagemEm: {
+            field: "ultima_mensagem_em",
+            type: DataTypes.DATE
+        },
+
+        ultimaMensagemPrevia: {
+            field: "ultima_mensagem_previa",
+            type: DataTypes.STRING(180)
+        }
     },
     {
         tableName: "conversas",

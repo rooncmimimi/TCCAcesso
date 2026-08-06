@@ -12,26 +12,31 @@ const Postagem = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-
         usuarioId: {
             field: "usuario_id",
             type: DataTypes.UUID,
             allowNull: false
         },
-
         conteudo: {
             type: DataTypes.TEXT,
             allowNull: false
         },
-
         imagem: {
             type: DataTypes.TEXT
         },
-
         ativo: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: true
+        },
+        publica: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true
+        },
+        editadoEm: {
+            field: "editado_em",
+            type: DataTypes.DATE
         }
     },
     {

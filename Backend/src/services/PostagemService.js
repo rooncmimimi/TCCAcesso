@@ -1,13 +1,33 @@
+import { Op } from "sequelize";
+
 import sequelize from "../config/database.js";
-import { Postagem, Usuario, Comentario, Curtida } from "../models/index.js";
+import {
+    Postagem,
+    Usuario,
+    Comentario,
+    Curtida,
+    PostagemAnexo,
+    Compartilhamento,
+    UsuarioSeguido
+} from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono } from "../utils/authorization.js";
+import NotificacaoService from "./NotificacaoService.js";
+import { emitirFeed } from "../realtime/socket.js";
+import { urlPublica, tipoDoArquivo } from "../middlewares/uploadMiddleware.js";
 
 const INCLUDE_AUTOR = {
     model: Usuario,
     as: "usuario",
     attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
+};
+
+const INCLUDE_ANEXOS = {
+    model: PostagemAnexo,
+    as: "anexos",
+    separate: true,
+    order: [["ordem", "ASC"]]
 };
 
 class PostagemService {
@@ -21,10 +41,78 @@ class PostagemService {
         return postagem;
     }
 
+    /**
+     * Contadores reais (curtidas, comentários, compartilhamentos) e o
+     * estado do usuário autenticado para cada postagem.
+     */
+    async decorar(postagens, solicitante) {
+        const lista = Array.isArray(postagens) ? postagens : [postagens];
+
+        if (lista.length === 0) {
+            return [];
+        }
+
+        const ids = lista.map((item) => item.id);
+
+        const [curtidas, comentarios, compartilhamentos] = await Promise.all([
+            Curtida.findAll({
+                where: { postagemId: { [Op.in]: ids } },
+                attributes: ["postagemId", "usuarioId"]
+            }),
+            Comentario.count({
+                where: { postagemId: { [Op.in]: ids }, ativo: true },
+                group: ["postagem_id"]
+            }),
+            Compartilhamento.count({
+                where: { postagemId: { [Op.in]: ids } },
+                group: ["postagem_id"]
+            })
+        ]);
+
+        const mapaContagem = (linhas) => {
+            const mapa = new Map();
+
+            (linhas || []).forEach((linha) => {
+                mapa.set(
+                    linha.postagem_id || linha.postagemId,
+                    Number(linha.count)
+                );
+            });
+
+            return mapa;
+        };
+
+        const totalComentarios = mapaContagem(comentarios);
+        const totalCompartilhamentos = mapaContagem(compartilhamentos);
+
+        return lista.map((postagem) => {
+            const dados = postagem.toJSON ? postagem.toJSON() : postagem;
+
+            const curtidasDaPostagem = curtidas.filter(
+                (curtida) => String(curtida.postagemId) === String(dados.id)
+            );
+
+            return {
+                ...dados,
+                totalCurtidas: curtidasDaPostagem.length,
+                curtidoPorMim: solicitante
+                    ? curtidasDaPostagem.some(
+                          (curtida) =>
+                              String(curtida.usuarioId) ===
+                              String(solicitante.id)
+                      )
+                    : false,
+                totalComentarios: totalComentarios.get(dados.id) || 0,
+                totalCompartilhamentos:
+                    totalCompartilhamentos.get(dados.id) || 0
+            };
+        });
+    }
+
     /* ==========================================================
-       FEED (autenticado)
+       FEED (autenticado) — prioriza quem o usuário segue
     ========================================================== */
-    async findAll(query) {
+    async findAll(query, solicitante) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const where = { ativo: true };
@@ -33,86 +121,157 @@ class PostagemService {
             where.usuarioId = query.usuarioId;
         }
 
+        if (query.escopo === "seguindo" && solicitante) {
+            const vinculos = await UsuarioSeguido.findAll({
+                where: { seguidorId: solicitante.id },
+                attributes: ["seguidoId"]
+            });
+
+            where.usuarioId = {
+                [Op.in]: [
+                    ...vinculos.map((item) => item.seguidoId),
+                    solicitante.id
+                ]
+            };
+        }
+
+        if (query.q) {
+            where.conteudo = {
+                [Op.iLike]: `%${String(query.q).slice(0, 120)}%`
+            };
+        }
+
         const { rows, count } = await Postagem.findAndCountAll({
             where,
-            include: [
-                INCLUDE_AUTOR,
-                { model: Curtida, as: "curtidas", attributes: ["usuarioId"] }
-            ],
+            include: [INCLUDE_AUTOR, INCLUDE_ANEXOS],
             limit: limite,
             offset,
             distinct: true,
             order: [["created_at", "DESC"]]
         });
 
-        return montarResposta("postagens", rows, count, pagina, limite);
+        const postagens = await this.decorar(rows, solicitante);
+
+        return montarResposta("postagens", postagens, count, pagina, limite);
     }
 
     /* ==========================================================
-       DETALHE COM COMENTÁRIOS
+       DETALHE COM COMENTÁRIOS EM ÁRVORE
     ========================================================== */
-    async findById(id) {
+    async findById(id, solicitante = null) {
         const postagem = await Postagem.findOne({
             where: { id, ativo: true },
             include: [
                 INCLUDE_AUTOR,
+                INCLUDE_ANEXOS,
                 {
                     model: Comentario,
                     as: "comentarios",
-                    include: [INCLUDE_AUTOR],
-                    separate: true,
-                    order: [["created_at", "ASC"]]
-                },
-                { model: Curtida, as: "curtidas", attributes: ["usuarioId"] }
-            ]
+                    where: { ativo: true, comentarioPaiId: null },
+                    required: false,
+                    include: [
+                        INCLUDE_AUTOR,
+                        {
+                            model: Comentario,
+                            as: "respostas",
+                            required: false,
+                            where: { ativo: true },
+                            include: [INCLUDE_AUTOR]
+                        }
+                    ]
+                }
+            ],
+            order: [[{ model: Comentario, as: "comentarios" }, "created_at", "ASC"]]
         });
 
         if (!postagem) {
             throw ApiError.notFound("Postagem não encontrada.");
         }
 
-        return postagem;
+        const [decorada] = await this.decorar(postagem, solicitante);
+
+        return decorada;
     }
 
     /* ==========================================================
-       CRIAR
+       CRIAR (texto + até 4 anexos)
     ========================================================== */
-    async create(data, solicitante) {
-        const postagem = await Postagem.create({
-            usuarioId: solicitante.id,
-            conteudo: data.conteudo,
-            imagem: data.imagem || null
-        });
+    async create(data, solicitante, arquivos = []) {
+        const conteudo = String(data.conteudo || "").trim();
 
-        return this.findById(postagem.id);
+        if (!conteudo && arquivos.length === 0) {
+            throw ApiError.badRequest(
+                "Escreva algo ou anexe um arquivo para publicar."
+            );
+        }
+
+        const transaction = await sequelize.transaction();
+
+        try {
+            const primeiraImagem = arquivos.find(
+                (arquivo) => tipoDoArquivo(arquivo) === "imagem"
+            );
+
+            const postagem = await Postagem.create(
+                {
+                    usuarioId: solicitante.id,
+                    conteudo,
+                    imagem: primeiraImagem ? urlPublica(primeiraImagem) : null,
+                    publica: data.publica === undefined ? true : Boolean(data.publica)
+                },
+                { transaction }
+            );
+
+            if (arquivos.length > 0) {
+                await PostagemAnexo.bulkCreate(
+                    arquivos.map((arquivo, indice) => ({
+                        postagemId: postagem.id,
+                        tipo: tipoDoArquivo(arquivo),
+                        url: urlPublica(arquivo),
+                        nomeOriginal: arquivo.originalname?.slice(0, 255),
+                        mimeType: arquivo.mimetype,
+                        tamanhoBytes: arquivo.size,
+                        ordem: indice
+                    })),
+                    { transaction }
+                );
+            }
+
+            await transaction.commit();
+
+            const criada = await this.findById(postagem.id, solicitante);
+
+            emitirFeed("feed:postagem", { postagem: criada });
+
+            return criada;
+        } catch (erro) {
+            await transaction.rollback();
+            throw erro;
+        }
     }
 
     /* ==========================================================
        ATUALIZAR (autor ou admin)
     ========================================================== */
     async update(id, data, solicitante) {
-        const transaction = await sequelize.transaction();
+        const postagem = await this.buscarAtiva(id);
 
-        try {
-            const postagem = await this.buscarAtiva(id, transaction);
+        garantirDono(solicitante, postagem.usuarioId);
 
-            garantirDono(solicitante, postagem.usuarioId);
+        await postagem.update({
+            conteudo: data.conteudo ?? postagem.conteudo,
+            publica:
+                data.publica === undefined
+                    ? postagem.publica
+                    : Boolean(data.publica),
+            editadoEm: new Date()
+        });
 
-            await postagem.update(
-                {
-                    conteudo: data.conteudo ?? postagem.conteudo,
-                    imagem: data.imagem ?? postagem.imagem
-                },
-                { transaction }
-            );
+        const atualizada = await this.findById(id, solicitante);
 
-            await transaction.commit();
+        emitirFeed("feed:postagem", { postagem: atualizada, atualizada: true });
 
-            return this.findById(id);
-        } catch (erro) {
-            await transaction.rollback();
-            throw erro;
-        }
+        return atualizada;
     }
 
     /* ==========================================================
@@ -126,6 +285,8 @@ class PostagemService {
         postagem.ativo = false;
         await postagem.save();
 
+        emitirFeed("feed:postagem", { id, removida: true });
+
         return { mensagem: "Postagem removida com sucesso." };
     }
 
@@ -133,7 +294,7 @@ class PostagemService {
        CURTIR / DESCURTIR (toggle idempotente)
     ========================================================== */
     async alternarCurtida(id, solicitante) {
-        await this.buscarAtiva(id);
+        const postagem = await this.buscarAtiva(id);
 
         const existente = await Curtida.findOne({
             where: { postagemId: id, usuarioId: solicitante.id }
@@ -146,9 +307,23 @@ class PostagemService {
                 postagemId: id,
                 usuarioId: solicitante.id
             });
+
+            if (String(postagem.usuarioId) !== String(solicitante.id)) {
+                await NotificacaoService.criar({
+                    usuarioId: postagem.usuarioId,
+                    tipo: "Feed",
+                    titulo: "Nova curtida na sua publicação",
+                    descricao: `${solicitante.nome} curtiu sua publicação.`
+                });
+            }
         }
 
         const total = await Curtida.count({ where: { postagemId: id } });
+
+        emitirFeed("feed:curtida", {
+            postagemId: id,
+            totalCurtidas: total
+        });
 
         return { curtido: !existente, totalCurtidas: total };
     }
@@ -156,28 +331,70 @@ class PostagemService {
     /* ==========================================================
        COMENTÁRIOS
     ========================================================== */
-    async comentar(id, comentario, solicitante) {
-        await this.buscarAtiva(id);
+    async comentar(id, comentario, solicitante, comentarioPaiId = null) {
+        const postagem = await this.buscarAtiva(id);
+
+        if (comentarioPaiId) {
+            const pai = await Comentario.findByPk(comentarioPaiId);
+
+            if (!pai || !pai.ativo || String(pai.postagemId) !== String(id)) {
+                throw ApiError.notFound("Comentário respondido não encontrado.");
+            }
+        }
 
         const criado = await Comentario.create({
             postagemId: id,
             usuarioId: solicitante.id,
-            comentario
+            comentario,
+            comentarioPaiId
         });
 
-        return Comentario.findByPk(criado.id, { include: [INCLUDE_AUTOR] });
+        if (String(postagem.usuarioId) !== String(solicitante.id)) {
+            await NotificacaoService.criar({
+                usuarioId: postagem.usuarioId,
+                tipo: "Feed",
+                titulo: "Novo comentário na sua publicação",
+                descricao: `${solicitante.nome} comentou: ${String(comentario).slice(0, 120)}`
+            });
+        }
+
+        const total = await Comentario.count({
+            where: { postagemId: id, ativo: true }
+        });
+
+        const completo = await Comentario.findByPk(criado.id, {
+            include: [INCLUDE_AUTOR]
+        });
+
+        emitirFeed("feed:comentario", {
+            postagemId: id,
+            comentario: completo,
+            totalComentarios: total
+        });
+
+        return completo;
     }
 
     async removerComentario(comentarioId, solicitante) {
         const comentario = await Comentario.findByPk(comentarioId);
 
-        if (!comentario) {
+        if (!comentario || !comentario.ativo) {
             throw ApiError.notFound("Comentário não encontrado.");
         }
 
         garantirDono(solicitante, comentario.usuarioId);
 
-        await comentario.destroy();
+        comentario.ativo = false;
+        await comentario.save();
+
+        emitirFeed("feed:comentario", {
+            postagemId: comentario.postagemId,
+            comentarioId,
+            removido: true,
+            totalComentarios: await Comentario.count({
+                where: { postagemId: comentario.postagemId, ativo: true }
+            })
+        });
 
         return { mensagem: "Comentário removido com sucesso." };
     }

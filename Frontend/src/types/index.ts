@@ -7,8 +7,74 @@ export interface Usuario {
   email: string;
   tipo: TipoUsuario;
   ativo: boolean;
-  fotoUrl?: string | null;
+  fotoPerfil?: string | null;
+  telefone?: string | null;
   criadoEm?: string;
+}
+
+export interface Candidato {
+  id: string;
+  usuarioId: string;
+  usuario?: Usuario;
+  tituloProfissional?: string | null;
+  resumo?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  curriculo?: string | null;
+  deficiencias?: { id: string; nome: string; observacoes?: string | null }[];
+  experiencias?: Experiencia[];
+  formacoes?: Formacao[];
+  certificados?: Certificado[];
+  habilidades?: Habilidade[];
+}
+
+export interface Experiencia {
+  id: string;
+  cargo: string;
+  empresaNome: string;
+  dataInicio?: string;
+  dataFim?: string | null;
+  descricao?: string | null;
+}
+
+export interface Formacao {
+  id: string;
+  instituicao: string;
+  curso: string;
+  nivel?: string | null;
+  dataInicio?: string;
+  dataFim?: string | null;
+}
+
+export interface Certificado {
+  id: string;
+  nome: string;
+  instituicao?: string | null;
+  arquivo?: string | null;
+  dataEmissao?: string | null;
+}
+
+export interface Habilidade {
+  id: string;
+  nome: string;
+  nivel?: string | null;
+}
+
+export interface Empresa {
+  id: string;
+  usuarioId?: string;
+  razaoSocial: string;
+  nomeFantasia?: string | null;
+  cnpj?: string;
+  setor?: string | null;
+  descricao?: string | null;
+  logo?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  aprovada?: boolean;
+  seguindo?: boolean;
+  totalVagas?: number;
+  totalSeguidores?: number;
 }
 
 export interface CredenciaisLogin {
@@ -17,35 +83,239 @@ export interface CredenciaisLogin {
 }
 
 export interface RespostaLogin {
-  token: string;
   usuario: Usuario;
+  accessToken: string;
+  refreshToken: string;
 }
 
-export type ModalidadeVaga = "presencial" | "hibrido" | "remoto";
+export type ModalidadeVaga = "Presencial" | "Hibrido" | "Remoto";
+export type ContratoVaga = "CLT" | "PJ" | "Estagio" | "JovemAprendiz" | "Temporario";
+export type StatusVaga = "Aberta" | "Pausada" | "Encerrada";
 
 export interface Vaga {
   id: string;
   titulo: string;
   descricao: string;
+  requisitos?: string | null;
+  beneficios?: string | null;
   cidade?: string | null;
   estado?: string | null;
   modalidade: ModalidadeVaga;
-  salario?: number | null;
-  exclusivaPcd: boolean;
-  ativa: boolean;
+  contrato?: ContratoVaga;
+  salario?: number | string | null;
+  exclusivaPcd?: boolean;
+  status: StatusVaga;
   criadoEm?: string;
+  empresaId?: string;
   empresa?: {
     id: string;
-    nomeFantasia: string;
-    logoUrl?: string | null;
+    nomeFantasia?: string | null;
+    razaoSocial?: string;
+    logo?: string | null;
   };
 }
 
-export type StatusCandidatura = "pendente" | "em_analise" | "aprovada" | "reprovada";
+export type StatusCandidatura = "Pendente" | "EmAnalise" | "Aprovada" | "Reprovada" | "Cancelada";
 
 export interface Candidatura {
   id: string;
   status: StatusCandidatura;
+  mensagem?: string | null;
   criadoEm: string;
   vaga?: Vaga;
+  candidato?: Candidato;
 }
+
+export interface Postagem {
+  id: string;
+  conteudo: string;
+  imagem?: string | null;
+  criadoEm: string;
+  atualizadoEm?: string;
+  autor?: Usuario;
+  usuarioId?: string;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalCompartilhamentos?: number;
+  curtidoPeloUsuario?: boolean;
+}
+
+export interface Comentario {
+  id: string;
+  comentario: string;
+  criadoEm: string;
+  autor?: Usuario;
+  postagemId?: string;
+  respostas?: Comentario[];
+}
+
+export interface Conversa {
+  id: string;
+  participantes?: Usuario[];
+  outroParticipante?: Usuario;
+  ultimaMensagem?: Mensagem | null;
+  naoLidas?: number;
+  atualizadoEm?: string;
+}
+
+export interface Mensagem {
+  id: string;
+  conteudo: string;
+  remetenteId: string;
+  conversaId: string;
+  lida?: boolean;
+  criadoEm: string;
+}
+
+export type TipoNotificacao = string;
+
+export interface Notificacao {
+  id: string;
+  titulo: string;
+  mensagem?: string;
+  tipo: TipoNotificacao;
+  lida: boolean;
+  criadoEm: string;
+}
+
+export interface RespostaPaginada<T> {
+  dados: T[];
+  total: number;
+  pagina?: number;
+  page?: number;
+  limite?: number;
+  limit?: number;
+  totalPaginas?: number;
+}
+
+/* ==========================================================
+   Arquivos e anexos
+   ========================================================== */
+export type TipoArquivo = "imagem" | "documento";
+
+export interface Arquivo {
+  id: string;
+  url: string;
+  tipo: TipoArquivo;
+  categoria: string;
+  nomeOriginal?: string | null;
+  mimeType?: string;
+  tamanhoBytes?: number;
+}
+
+export interface AnexoPostagem {
+  id: string;
+  url: string;
+  tipo: TipoArquivo;
+  nomeOriginal?: string | null;
+  ordem?: number;
+}
+
+/* ==========================================================
+   Feed
+   ========================================================== */
+export interface PostagemCompleta extends Postagem {
+  anexos?: AnexoPostagem[];
+  curtidoPorMim?: boolean;
+  compartilhadaPorMim?: boolean;
+  usuario?: Usuario;
+  editadoEm?: string | null;
+  publica?: boolean;
+}
+
+export interface ComentarioCompleto extends Comentario {
+  usuario?: Usuario;
+  comentarioPaiId?: string | null;
+  respostas?: ComentarioCompleto[];
+  totalRespostas?: number;
+}
+
+/* ==========================================================
+   Seguidores
+   ========================================================== */
+export interface ResumoSeguidores {
+  seguidores: number;
+  seguindo: number;
+  seguindoEsteUsuario?: boolean;
+}
+
+export interface SugestaoPerfil {
+  id: string;
+  nome: string;
+  tipo?: TipoUsuario;
+  fotoPerfil?: string | null;
+  titulo?: string | null;
+}
+
+/* ==========================================================
+   Dashboards e administração
+   ========================================================== */
+export interface MetricasCandidato {
+  candidaturas?: number;
+  candidaturasPorStatus?: Record<string, number>;
+  vagasFavoritas?: number;
+  postagens?: number;
+  seguidores?: number;
+  visualizacoesPerfil?: number;
+  [chave: string]: unknown;
+}
+
+export interface MetricasEmpresa {
+  vagas?: number;
+  vagasAbertas?: number;
+  candidaturas?: number;
+  candidaturasPorStatus?: Record<string, number>;
+  seguidores?: number;
+  [chave: string]: unknown;
+}
+
+export interface MetricasAdmin {
+  usuarios?: number;
+  candidatos?: number;
+  empresas?: number;
+  vagas?: number;
+  postagens?: number;
+  candidaturas?: number;
+  empresasPendentes?: number;
+  [chave: string]: unknown;
+}
+
+/* ==========================================================
+   Preferências de acessibilidade (persistidas na conta)
+   ========================================================== */
+export interface PreferenciasAcessibilidade {
+  tamanhoFonte?: number;
+  altoContraste?: boolean;
+  reduzirMovimento?: boolean;
+  leituraAutomatica?: boolean;
+  libras?: boolean;
+  tema?: string | null;
+  [chave: string]: unknown;
+}
+
+/* ==========================================================
+   Página inicial pública
+   ========================================================== */
+export interface HomePublica {
+  estatisticas?: {
+    usuarios?: number;
+    vagas?: number;
+    empresas?: number;
+    candidaturas?: number;
+    [chave: string]: unknown;
+  };
+  vagasDestaque?: Vaga[];
+  empresasParceiras?: Empresa[];
+  [chave: string]: unknown;
+}
+
+/* ==========================================================
+   Chatbot
+   ========================================================== */
+export interface ChatbotMensagem {
+  id: string;
+  conteudo: string;
+  origem: "usuario" | "bot";
+  criadoEm: string;
+}
+

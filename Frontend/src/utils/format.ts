@@ -61,3 +61,16 @@ export function iniciaisDoNome(nome: string): string {
     .map((parte) => parte.charAt(0).toUpperCase())
     .join("");
 }
+
+/** Formata um tamanho de arquivo em bytes de forma legível (ex.: "1,2 MB"). */
+export function formatarTamanhoArquivo(bytes?: number | null): string {
+  if (!bytes || bytes <= 0) return "";
+  const unidades = ["B", "KB", "MB", "GB"];
+  let valor = bytes;
+  let indice = 0;
+  while (valor >= 1024 && indice < unidades.length - 1) {
+    valor /= 1024;
+    indice += 1;
+  }
+  return `${valor.toFixed(valor >= 10 || indice === 0 ? 0 : 1)} ${unidades[indice]}`;
+}

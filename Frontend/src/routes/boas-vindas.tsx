@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPanel";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSession } from "@/contexts/SessionContext";
+import acessibilidadeService from "@/services/acessibilidade.service";
+import { extrairMensagemErro } from "@/services/api";
 
 export const Route = createFileRoute("/boas-vindas")({
   head: () => ({
@@ -25,8 +27,8 @@ export const Route = createFileRoute("/boas-vindas")({
 });
 
 function BoasVindas() {
-  const { save } = useAccessibility();
-  const { user, update } = useSession();
+  const { draft, save } = useAccessibility();
+  const { user, update, autenticado } = useSession();
   const navigate = useNavigate();
 
   return (
@@ -55,8 +57,22 @@ function BoasVindas() {
         <div className="sticky bottom-0 mt-8 flex flex-wrap gap-3 border-t border-border bg-secondary py-4">
           <Button
             className="min-h-12 text-base"
-            onClick={() => {
+            onClick={async () => {
               save();
+              if (autenticado) {
+                try {
+                  await acessibilidadeService.salvar({
+                    tamanhoFonte: draft.fontScale,
+                    altoContraste: draft.highContrast,
+                    reduzirMovimento: draft.reduceMotion,
+                    leituraAutomatica: draft.screenReader,
+                    libras: draft.vlibras,
+                    tema: draft.darkMode ? "escuro" : "claro",
+                  });
+                } catch (erro) {
+                  toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. As preferências ficaram salvas neste dispositivo."));
+                }
+              }
               update({ onboarded: true });
               toast.success("Preferências salvas na sua conta.");
               navigate({ to: "/feed" });

@@ -10,6 +10,10 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import {
+    emitirParaConversa,
+    emitirParaUsuario
+} from "../realtime/socket.js";
 
 const INCLUDE_PARTICIPANTES = [
     {
@@ -210,6 +214,21 @@ class ConversaService {
 
             await transaction.commit();
 
+            /* Tempo real: só depois de persistir. */
+            const payload = {
+                conversaId: id,
+                mensagem: mensagem.toJSON()
+            };
+
+            emitirParaConversa(id, "mensagem:nova", payload);
+            emitirParaUsuario(destinatarioId, "mensagem:nova", payload);
+            emitirParaUsuario(destinatarioId, "conversa:atualizada", {
+                conversaId: id
+            });
+            emitirParaUsuario(solicitante.id, "conversa:atualizada", {
+                conversaId: id
+            });
+
             return mensagem;
         } catch (erro) {
             await transaction.rollback();
@@ -235,6 +254,11 @@ class ConversaService {
                 }
             }
         );
+
+        emitirParaConversa(id, "mensagem:lida", {
+            conversaId: id,
+            usuarioId: solicitante.id
+        });
 
         return { mensagem: "Mensagens marcadas como lidas." };
     }

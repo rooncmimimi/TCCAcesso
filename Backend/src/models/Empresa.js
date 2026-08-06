@@ -83,6 +83,38 @@ const Empresa = sequelize.define(
             allowNull: false,
             defaultValue: false
         }
+,
+
+        statusAprovacao: {
+            field: "status_aprovacao",
+            type: DataTypes.ENUM("pendente", "aprovada", "reprovada"),
+            allowNull: false,
+            defaultValue: "pendente"
+        },
+
+        capa: {
+            type: DataTypes.TEXT
+        },
+
+        culturaInclusiva: {
+            field: "cultura_inclusiva",
+            type: DataTypes.TEXT
+        },
+
+        motivoReprovacao: {
+            field: "motivo_reprovacao",
+            type: DataTypes.TEXT
+        },
+
+        avaliadoEm: {
+            field: "avaliado_em",
+            type: DataTypes.DATE
+        },
+
+        avaliadoPor: {
+            field: "avaliado_por",
+            type: DataTypes.UUID
+        }
     },
     {
         tableName: "empresas",

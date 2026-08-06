@@ -39,6 +39,8 @@ import CodigoRecuperacaoSenha from "./CodigoRecuperacaoSenha.js";
 import RefreshToken from "./RefreshToken.js";
 import ChatbotConversa from "./ChatbotConversa.js";
 import ChatbotMensagem from "./ChatbotMensagem.js";
+import UsuarioSeguido from "./UsuarioSeguido.js";
+import Arquivo from "./Arquivo.js";
 
 
 /* ======================================================
@@ -316,8 +318,44 @@ ChatbotMensagem.belongsTo(ChatbotConversa, {
     as: "conversa"
 });
 
+/* ======================================================
+   REDE DE SEGUIDORES ENTRE USUÁRIOS (migration 0014)
+====================================================== */
+
+Usuario.belongsToMany(Usuario, {
+    through: UsuarioSeguido,
+    as: "seguindoUsuarios",
+    foreignKey: "seguidorId",
+    otherKey: "seguidoId"
+});
+
+Usuario.belongsToMany(Usuario, {
+    through: UsuarioSeguido,
+    as: "seguidoresUsuarios",
+    foreignKey: "seguidoId",
+    otherKey: "seguidorId"
+});
+
+UsuarioSeguido.belongsTo(Usuario, {
+    foreignKey: "seguidorId",
+    as: "seguidor"
+});
+UsuarioSeguido.belongsTo(Usuario, {
+    foreignKey: "seguidoId",
+    as: "seguido"
+});
+
+/* ======================================================
+   ARQUIVOS ENVIADOS (migration 0014)
+====================================================== */
+
+Usuario.hasMany(Arquivo, { foreignKey: "usuarioId", as: "arquivos" });
+Arquivo.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
 export {
     sequelize,
+    UsuarioSeguido,
+    Arquivo,
     Usuario,
     Candidato,
     Empresa,

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RotateCcw, Save, Undo2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, RotateCcw, Save, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/layouts/AppShell";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,8 @@ import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPane
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSpeech } from "@/contexts/SpeechContext";
 import { useSession } from "@/contexts/SessionContext";
+import acessibilidadeService from "@/services/acessibilidade.service";
+import { extrairMensagemErro } from "@/services/api";
 
 export const Route = createFileRoute("/configuracoes/acessibilidade")({
   head: () => ({
@@ -26,9 +29,32 @@ export const Route = createFileRoute("/configuracoes/acessibilidade")({
 });
 
 function ConfigAcessibilidade() {
-  const { save, discard, reset, dirty } = useAccessibility();
+  const { draft, set, save, discard, reset, dirty } = useAccessibility();
   const { clearChoice } = useSpeech();
-  const { user } = useSession();
+  const { user, autenticado } = useSession();
+  const [salvando, setSalvando] = useState(false);
+  const [restaurando, setRestaurando] = useState(false);
+
+  useEffect(() => {
+    if (!autenticado) return;
+    let ativo = true;
+    acessibilidadeService
+      .obter()
+      .then((prefs) => {
+        if (!ativo) return;
+        if (typeof prefs.tamanhoFonte === "number") set("fontScale", prefs.tamanhoFonte);
+        if (typeof prefs.altoContraste === "boolean") set("highContrast", prefs.altoContraste);
+        if (typeof prefs.reduzirMovimento === "boolean") set("reduceMotion", prefs.reduzirMovimento);
+        if (typeof prefs.leituraAutomatica === "boolean") set("screenReader", prefs.leituraAutomatica);
+        if (typeof prefs.libras === "boolean") set("vlibras", prefs.libras);
+        if (typeof prefs.tema === "string") set("darkMode", prefs.tema === "escuro");
+      })
+      .catch(() => undefined);
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autenticado]);
 
   return (
     <AppShell>
@@ -50,12 +76,33 @@ function ConfigAcessibilidade() {
       <div className="sticky bottom-0 mt-6 flex flex-wrap gap-3 border-t border-border bg-background py-4">
         <Button
           className="min-h-12 text-base"
-          onClick={() => {
+          disabled={salvando}
+          onClick={async () => {
             save();
-            toast.success("Preferências de acessibilidade salvas.");
+            if (autenticado) {
+              setSalvando(true);
+              try {
+                await acessibilidadeService.salvar({
+                  tamanhoFonte: draft.fontScale,
+                  altoContraste: draft.highContrast,
+                  reduzirMovimento: draft.reduceMotion,
+                  leituraAutomatica: draft.screenReader,
+                  libras: draft.vlibras,
+                  tema: draft.darkMode ? "escuro" : "claro",
+                });
+                toast.success("Preferências de acessibilidade salvas na sua conta.");
+              } catch (erro) {
+                toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. Ficou salvo neste dispositivo."));
+              } finally {
+                setSalvando(false);
+              }
+            } else {
+              toast.success("Preferências de acessibilidade salvas neste dispositivo.");
+            }
           }}
         >
-          <Save aria-hidden="true" /> Salvar preferências
+          {salvando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Save aria-hidden="true" />}
+          Salvar preferências
         </Button>
         <Button
           variant="outline"
@@ -68,13 +115,25 @@ function ConfigAcessibilidade() {
         <Button
           variant="ghost"
           className="min-h-12 text-base"
-          onClick={() => {
+          disabled={restaurando}
+          onClick={async () => {
             reset();
             clearChoice();
+            if (autenticado) {
+              setRestaurando(true);
+              try {
+                await acessibilidadeService.restaurar();
+              } catch (erro) {
+                toast.error(extrairMensagemErro(erro, "Não foi possível redefinir na sua conta."));
+              } finally {
+                setRestaurando(false);
+              }
+            }
             toast.info("Preferências redefinidas. A pergunta sobre voz será feita novamente.");
           }}
         >
-          <RotateCcw aria-hidden="true" /> Redefinir tudo
+          {restaurando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RotateCcw aria-hidden="true" />}
+          Redefinir tudo
         </Button>
       </div>
     </AppShell>

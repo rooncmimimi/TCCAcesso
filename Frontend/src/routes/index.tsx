@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   Accessibility,
   ArrowRight,
   Building2,
-  CheckCircle2,
   Ear,
   Eye,
   Headphones,
@@ -16,8 +16,12 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { VoiceConsentDialog } from "@/components/accessibility/VoiceConsentDialog";
-import { empresasParceiras, vagas } from "@/lib/mock-data";
+import { EstatisticasFaixa } from "@/components/home/EstatisticasFaixa";
+import { VagaDestaqueCard } from "@/components/home/VagaDestaqueCard";
+import { EmpresaParceiraCard } from "@/components/home/EmpresaParceiraCard";
+import { publicoService } from "@/services/publico.service";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,6 +66,15 @@ const recursos = [
 ];
 
 function Home() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["publico", "home"],
+    queryFn: () => publicoService.home(),
+    staleTime: 60_000,
+  });
+
+  const vagasDestaque = data?.vagasDestaque ?? [];
+  const empresasParceiras = data?.empresasParceiras ?? [];
+
   return (
     <div className="min-h-dvh bg-background">
       <VoiceConsentDialog />
@@ -78,6 +91,9 @@ function Home() {
             <Logo />
           </Link>
           <div className="flex shrink-0 items-center gap-2">
+            <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
+              <Link to="/sobre-nos">Sobre nós</Link>
+            </Button>
             <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
               <Link to="/ajuda">Ajuda</Link>
             </Button>
@@ -119,23 +135,16 @@ function Home() {
                 </Link>
               </Button>
             </div>
-            <dl className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-6">
-              {[
-                ["+2.400", "vagas inclusivas"],
-                ["+180", "empresas verificadas"],
-                ["100%", "telas acessíveis"],
-              ].map(([valor, label]) => (
-                <div key={label}>
-                  <dt className="sr-only">{label}</dt>
-                  <dd>
-                    <span className="block font-display text-2xl font-extrabold text-primary">
-                      {valor}
-                    </span>
-                    <span className="text-sm text-muted-foreground">{label}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
+
+            {isLoading ? (
+              <div className="mt-10 grid grid-cols-2 gap-4 border-t border-border pt-6 sm:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : (
+              <EstatisticasFaixa estatisticas={data?.estatisticas} />
+            )}
           </div>
 
           <Card className="overflow-hidden border-border shadow-card">
@@ -218,60 +227,46 @@ function Home() {
             </Button>
           </div>
 
-          <ul className="mt-8 grid gap-4 md:grid-cols-2">
-            {vagas.slice(0, 4).map((v) => (
-              <li key={v.id}>
-                <Card className="h-full border-border shadow-none transition-shadow hover:shadow-card">
-                  <CardContent className="p-5">
-                    <h3 className="text-lg font-bold">{v.titulo}</h3>
-                    <p className="mt-1 text-sm font-medium text-muted-foreground">
-                      {v.empresa} · {v.modalidade} · {v.local}
-                    </p>
-                    <ul className="mt-4 flex flex-wrap gap-2">
-                      {v.recursos.map((r) => (
-                        <li key={r}>
-                          <Badge variant="secondary" className="gap-1 font-medium">
-                            <CheckCircle2 className="size-3" aria-hidden="true" /> {r}
-                          </Badge>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Empresas parceiras */}
-        <section aria-labelledby="parceiras" className="border-t border-border bg-card">
-          <div className="mx-auto max-w-6xl px-4 py-14">
-            <h2 id="parceiras" className="text-3xl font-extrabold">
-              Empresas parceiras
-            </h2>
-            <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {empresasParceiras.map((e) => (
-                <li
-                  key={e.nome}
-                  className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl border border-border p-4"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary-soft font-display font-extrabold text-primary"
-                  >
-                    {e.nome[0]}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-bold">{e.nome}</span>
-                    <span className="block text-sm text-muted-foreground">
-                      {e.setor} · {e.vagas} vagas
-                    </span>
-                  </span>
+          {isLoading ? (
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : isError ? (
+            <p className="mt-8 text-muted-foreground">
+              Não foi possível carregar as vagas em destaque agora.
+            </p>
+          ) : vagasDestaque.length === 0 ? (
+            <p className="mt-8 text-muted-foreground">Em breve novas vagas em destaque por aqui.</p>
+          ) : (
+            <ul className="mt-8 grid gap-4 md:grid-cols-2">
+              {vagasDestaque.slice(0, 4).map((v) => (
+                <li key={v.id}>
+                  <VagaDestaqueCard vaga={v} />
                 </li>
               ))}
             </ul>
-          </div>
+          )}
         </section>
+
+        {/* Empresas parceiras */}
+        {!isLoading && empresasParceiras.length > 0 && (
+          <section aria-labelledby="parceiras" className="border-t border-border bg-card">
+            <div className="mx-auto max-w-6xl px-4 py-14">
+              <h2 id="parceiras" className="text-3xl font-extrabold">
+                Empresas parceiras
+              </h2>
+              <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {empresasParceiras.map((e) => (
+                  <li key={e.id}>
+                    <EmpresaParceiraCard empresa={e} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
 
         {/* CTA final */}
         <section className="mx-auto max-w-6xl px-4 py-16">
@@ -297,9 +292,17 @@ function Home() {
       <footer className="border-t border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <Logo />
-          <p className="text-sm text-muted-foreground">
-            ACESSO · Plataforma de inclusão profissional · WCAG 2.2
-          </p>
+          <nav aria-label="Rodapé" className="flex flex-wrap items-center gap-4 text-sm font-medium">
+            <Link to="/sobre-nos" className="hover:underline">
+              Sobre nós
+            </Link>
+            <Link to="/ajuda" className="hover:underline">
+              Ajuda
+            </Link>
+          </nav>
+        </div>
+        <div className="mx-auto max-w-6xl px-4 pb-8 text-sm text-muted-foreground">
+          ACESSO · Plataforma de inclusão profissional · WCAG 2.2
         </div>
       </footer>
     </div>

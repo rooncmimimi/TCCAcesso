@@ -1,0 +1,16 @@
+export * from "./api";
+export { default as api } from "./api";
+export * from "./http";
+export { default as authService } from "./auth.service";
+export { default as vagasService } from "./vagas.service";
+export { default as postagensService } from "./postagens.service";
+export { default as uploadsService, urlArquivo } from "./uploads.service";
+export { default as perfilService } from "./perfil.service";
+export { default as empresasService, seguidoresService } from "./empresas.service";
+export { default as mensagensService } from "./mensagens.service";
+export { default as notificacoesService } from "./notificacoes.service";
+export { default as dashboardService, candidaturasService } from "./dashboard.service";
+export { default as adminService } from "./admin.service";
+export { default as publicoService, buscaService } from "./publico.service";
+export { default as acessibilidadeService, chatbotService } from "./acessibilidade.service";
+export * from "./socket";

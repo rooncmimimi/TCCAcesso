@@ -90,6 +90,27 @@ const Candidato = sequelize.define(
             field: "pretensao_salarial",
             type: DataTypes.DECIMAL(10, 2)
         }
+,
+
+        tituloProfissional: {
+            field: "titulo_profissional",
+            type: DataTypes.STRING(150)
+        },
+
+        necessidadesAcessibilidade: {
+            field: "necessidades_acessibilidade",
+            type: DataTypes.TEXT
+        },
+
+        curriculoNome: {
+            field: "curriculo_nome",
+            type: DataTypes.STRING(255)
+        },
+
+        curriculoAtualizadoEm: {
+            field: "curriculo_atualizado_em",
+            type: DataTypes.DATE
+        }
     },
     {
         tableName: "candidatos",

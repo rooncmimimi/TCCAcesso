@@ -8,64 +8,120 @@ import {
   type ReactNode,
 } from "react";
 
+import authService from "@/services/auth.service";
+import { aoExpirarSessao, clearTokens, getAccessToken } from "@/services/api";
+import { conectarSocket, desconectarSocket } from "@/services/socket";
+import type { CredenciaisLogin, TipoUsuario, Usuario } from "@/types";
+
 /**
- * Sessão local (mock) — o backend Express do ACESSO ainda não está conectado
- * ao frontend. Substituir por chamadas a `${VITE_API_URL}/auth` mantendo esta
- * mesma interface.
+ * Sessão real da aplicação: autenticação JWT contra o backend Express.
+ * Os tokens ficam em `localStorage` (ver `services/api.ts`, que também
+ * renova automaticamente o access token expirado).
  */
-export type SessionUser = {
-  nome: string;
-  email: string;
-  tipo: "candidato" | "empresa";
-  titulo: string;
-  cidade: string;
-  onboarded: boolean;
+export type SessionUser = Usuario & {
+  tipo: TipoUsuario;
+  titulo?: string | null;
+  cidade?: string | null;
+  onboarded?: boolean;
 };
 
 type Ctx = {
   user: SessionUser | null;
   hydrated: boolean;
-  signIn: (user: SessionUser) => void;
-  signOut: () => void;
+  carregando: boolean;
+  autenticado: boolean;
+  login: (credenciais: CredenciaisLogin) => Promise<SessionUser>;
+  registrarCandidato: (payload: Record<string, unknown>) => Promise<SessionUser>;
+  registrarEmpresa: (payload: Record<string, unknown>) => Promise<SessionUser>;
+  signOut: () => Promise<void>;
   update: (patch: Partial<SessionUser>) => void;
+  recarregar: () => Promise<void>;
 };
 
-const KEY = "acesso:session";
 const SessionContext = createContext<Ctx | null>(null);
+
+function normalizar(usuario: Usuario | (Usuario & Record<string, unknown>)): SessionUser {
+  const bruto = usuario as Usuario & Record<string, unknown>;
+  return {
+    ...bruto,
+    tipo: (bruto.tipo ?? (bruto.tipoUsuario as TipoUsuario) ?? "candidato") as TipoUsuario,
+    titulo: (bruto.titulo as string | null) ?? null,
+    cidade: (bruto.cidade as string | null) ?? null,
+    onboarded: Boolean(bruto.onboarded ?? true),
+  };
+}
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [carregando, setCarregando] = useState(false);
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(KEY);
-      if (raw) setUser(JSON.parse(raw) as SessionUser);
-    } catch {
-      /* noop */
+  const carregarPerfil = useCallback(async () => {
+    if (!getAccessToken()) {
+      setUser(null);
+      return;
     }
-    setHydrated(true);
+    try {
+      setCarregando(true);
+      const usuario = await authService.perfilAtual();
+      setUser(normalizar(usuario));
+      conectarSocket();
+    } catch {
+      clearTokens();
+      setUser(null);
+    } finally {
+      setCarregando(false);
+    }
   }, []);
 
-  const persist = useCallback((next: SessionUser | null) => {
-    setUser(next);
-    try {
-      if (next) window.localStorage.setItem(KEY, JSON.stringify(next));
-      else window.localStorage.removeItem(KEY);
-    } catch {
-      /* noop */
-    }
+  useEffect(() => {
+    void carregarPerfil().finally(() => setHydrated(true));
+  }, [carregarPerfil]);
+
+  useEffect(() => {
+    return aoExpirarSessao(() => {
+      desconectarSocket();
+      setUser(null);
+    });
+  }, []);
+
+  const aposAutenticar = useCallback((usuario: Usuario) => {
+    const normalizado = normalizar(usuario);
+    setUser(normalizado);
+    conectarSocket();
+    return normalizado;
   }, []);
 
   const value = useMemo<Ctx>(
     () => ({
       user,
       hydrated,
-      signIn: (u) => persist(u),
-      signOut: () => persist(null),
-      update: (patch) => persist(user ? { ...user, ...patch } : null),
+      carregando,
+      autenticado: Boolean(user),
+      login: async (credenciais) => {
+        const resposta = await authService.login(credenciais);
+        return aposAutenticar(resposta.usuario);
+      },
+      registrarCandidato: async (payload) => {
+        const resposta = await authService.registrarCandidato(payload);
+        return aposAutenticar(resposta.usuario);
+      },
+      registrarEmpresa: async (payload) => {
+        const resposta = await authService.registrarEmpresa(payload);
+        return aposAutenticar(resposta.usuario);
+      },
+      signOut: async () => {
+        try {
+          await authService.logout();
+        } finally {
+          desconectarSocket();
+          setUser(null);
+        }
+      },
+      update: (patch) => setUser((atual) => (atual ? { ...atual, ...patch } : atual)),
+      recarregar: carregarPerfil,
     }),
-    [user, hydrated, persist],
+    [user, hydrated, carregando, aposAutenticar, carregarPerfil],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

@@ -6,7 +6,7 @@ import env from "../config/env.js";
 import ApiError from "../utils/ApiError.js";
 
 /**
- * Upload de imagens.
+ * Uploads da plataforma.
  *
  * Proteções aplicadas (OWASP A04/A08):
  * - nome de arquivo gerado no servidor (evita path traversal via originalname);
@@ -15,10 +15,17 @@ import ApiError from "../utils/ApiError.js";
  * - diretório de destino criado fora da árvore de código-fonte.
  */
 
-const EXTENSOES_PERMITIDAS = {
+export const MIME_IMAGENS = {
     "image/png": ".png",
     "image/jpeg": ".jpg",
     "image/webp": ".webp"
+};
+
+export const MIME_DOCUMENTOS = {
+    "application/pdf": ".pdf",
+    "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        ".docx"
 };
 
 const destino = path.resolve(process.cwd(), env.security.uploadDir);
@@ -27,43 +34,74 @@ if (!fs.existsSync(destino)) {
     fs.mkdirSync(destino, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        cb(null, destino);
-    },
+const criarUpload = (allowlist, { files = 1, mensagem } = {}) => {
+    const storage = multer.diskStorage({
+        destination(req, file, cb) {
+            cb(null, destino);
+        },
 
-    filename(req, file, cb) {
-        const extensao = EXTENSOES_PERMITIDAS[file.mimetype];
+        filename(req, file, cb) {
+            const extensao = allowlist[file.mimetype];
 
-        if (!extensao) {
-            return cb(ApiError.badRequest("Formato de arquivo inválido."));
+            if (!extensao) {
+                return cb(ApiError.badRequest(mensagem));
+            }
+
+            return cb(null, `${Date.now()}-${crypto.randomUUID()}${extensao}`);
         }
+    });
 
-        const nome = `${Date.now()}-${crypto.randomUUID()}${extensao}`;
+    return multer({
+        storage,
 
-        return cb(null, nome);
-    }
+        limits: {
+            fileSize: env.security.maxUploadBytes,
+            files
+        },
+
+        fileFilter(req, file, cb) {
+            if (!allowlist[file.mimetype]) {
+                return cb(ApiError.badRequest(mensagem));
+            }
+
+            return cb(null, true);
+        }
+    });
+};
+
+/** Imagens de perfil, capa e postagens. */
+export const uploadImagem = criarUpload(MIME_IMAGENS, {
+    files: 1,
+    mensagem: "Formato inválido. Envie uma imagem PNG, JPEG ou WEBP."
 });
 
-const upload = multer({
-    storage,
-
-    limits: {
-        fileSize: env.security.maxUploadBytes,
-        files: 1
-    },
-
-    fileFilter(req, file, cb) {
-        if (!EXTENSOES_PERMITIDAS[file.mimetype]) {
-            return cb(
-                ApiError.badRequest(
-                    "Formato inválido. Envie uma imagem PNG, JPEG ou WEBP."
-                )
-            );
-        }
-
-        return cb(null, true);
-    }
+/** Currículos e certificados (PDF/DOC/DOCX). */
+export const uploadDocumento = criarUpload(MIME_DOCUMENTOS, {
+    files: 1,
+    mensagem: "Formato inválido. Envie um arquivo PDF, DOC ou DOCX."
 });
 
-export default upload;
+/** Anexos de postagem: até 4 arquivos, imagens ou documentos. */
+export const uploadAnexos = criarUpload(
+    { ...MIME_IMAGENS, ...MIME_DOCUMENTOS },
+    {
+        files: 4,
+        mensagem:
+            "Formato inválido. Envie imagens (PNG, JPEG, WEBP) ou documentos (PDF, DOC, DOCX)."
+    }
+);
+
+/** URL pública servida por `/uploads` no app.js. */
+export const urlPublica = (arquivo) => {
+    if (!arquivo) {
+        return null;
+    }
+
+    return `/uploads/${arquivo.filename}`;
+};
+
+export const tipoDoArquivo = (arquivo) => {
+    return MIME_IMAGENS[arquivo.mimetype] ? "imagem" : "documento";
+};
+
+export default uploadImagem;

@@ -4,34 +4,56 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
-/** Chave usada para persistir o token JWT no navegador. */
-export const TOKEN_STORAGE_KEY = "acesso:token";
+/** Chaves usadas para persistir os tokens JWT no navegador. */
+export const ACCESS_TOKEN_KEY = "acesso:accessToken";
+export const REFRESH_TOKEN_KEY = "acesso:refreshToken";
 
-const baseURL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
 
 export const api: AxiosInstance = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
-  timeout: 15_000,
-  headers: { "Content-Type": "application/json" },
+  timeout: 20_000,
 });
 
-export function getStoredToken(): string | null {
+export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export function setStoredToken(token: string | null): void {
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function setTokens(accessToken: string | null, refreshToken?: string | null): void {
   if (typeof window === "undefined") return;
-  if (token) {
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  } else {
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  if (accessToken) window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  else window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+
+  if (refreshToken !== undefined) {
+    if (refreshToken) window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    else window.localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 }
 
+export function clearTokens(): void {
+  setTokens(null, null);
+}
+
+/** Notifica interessados (ex.: SessionContext) quando a sessão expira de vez. */
+type SessaoExpiradaListener = () => void;
+const listeners = new Set<SessaoExpiradaListener>();
+export function aoExpirarSessao(fn: SessaoExpiradaListener) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+function dispararSessaoExpirada() {
+  listeners.forEach((fn) => fn());
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = getStoredToken();
+  const token = getAccessToken();
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);
   }
@@ -40,16 +62,59 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 /** Extrai a mensagem de erro padronizada pela API do backend. */
 export function extrairMensagemErro(erro: unknown, padrao = "Não foi possível concluir a ação."): string {
-  const axiosErro = erro as AxiosError<{ mensagem?: string; message?: string }>;
-  return axiosErro?.response?.data?.mensagem ?? axiosErro?.response?.data?.message ?? padrao;
+  const axiosErro = erro as AxiosError<{ mensagem?: string; message?: string; erros?: { msg?: string }[] }>;
+  const dados = axiosErro?.response?.data;
+  return (
+    dados?.mensagem ??
+    dados?.message ??
+    dados?.erros?.[0]?.msg ??
+    padrao
+  );
+}
+
+let refrescando: Promise<string | null> | null = null;
+
+async function tentarRenovarToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  if (!refrescando) {
+    refrescando = axios
+      .post<{ accessToken: string; refreshToken: string }>(
+        `${API_BASE_URL}/auth/refresh`,
+        { refreshToken },
+      )
+      .then(({ data }) => {
+        setTokens(data.accessToken, data.refreshToken);
+        return data.accessToken;
+      })
+      .catch(() => {
+        clearTokens();
+        return null;
+      })
+      .finally(() => {
+        refrescando = null;
+      });
+  }
+  return refrescando;
 }
 
 api.interceptors.response.use(
   (response) => response,
-  (erro: AxiosError) => {
-    // Sessão expirada ou inválida: limpa o token para forçar novo login.
-    if (erro.response?.status === 401) {
-      setStoredToken(null);
+  async (erro: AxiosError) => {
+    const original = erro.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const isAuthRoute = original?.url?.includes("/auth/login") || original?.url?.includes("/auth/refresh");
+
+    if (erro.response?.status === 401 && original && !original._retry && !isAuthRoute) {
+      original._retry = true;
+      const novoToken = await tentarRenovarToken();
+      if (novoToken) {
+        original.headers = original.headers ?? {};
+        (original.headers as Record<string, string>).Authorization = `Bearer ${novoToken}`;
+        return api(original);
+      }
+      clearTokens();
+      dispararSessaoExpirada();
     }
     return Promise.reject(erro);
   },

@@ -35,6 +35,12 @@ const Mensagem = sequelize.define(
             allowNull: false,
             defaultValue: false
         }
+,
+
+        lidaEm: {
+            field: "lida_em",
+            type: DataTypes.DATE
+        }
     },
     {
         tableName: "mensagens",

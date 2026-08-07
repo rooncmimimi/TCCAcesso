@@ -46,14 +46,6 @@ const Candidato = sequelize.define(
             type: DataTypes.STRING(120)
         },
 
-        experiencia: {
-            type: DataTypes.TEXT
-        },
-
-        habilidades: {
-            type: DataTypes.TEXT
-        },
-
         curriculo: {
             type: DataTypes.TEXT
         },

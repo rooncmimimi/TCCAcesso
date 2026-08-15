@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { empresasService } from "@/services/empresas.service";
+import { NovaVagaDialog } from "@/components/dashboard/NovaVagaDialog";
 import type { Vaga } from "@/types";
 
 /** Lista as vagas publicadas pela empresa, permitindo selecionar uma para ver candidaturas. */
@@ -24,8 +25,9 @@ export function MinhasVagas({
 
   return (
     <Card className="shadow-none">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle className="text-lg">Minhas vagas</CardTitle>
+        <NovaVagaDialog />
       </CardHeader>
       <CardContent>
         {isLoading ? (

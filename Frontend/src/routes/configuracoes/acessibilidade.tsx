@@ -9,7 +9,7 @@ import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPane
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSpeech } from "@/contexts/SpeechContext";
 import { useSession } from "@/contexts/SessionContext";
-import acessibilidadeService from "@/services/acessibilidade.service";
+import acessibilidadeService, { prefsDaApi, prefsParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 
 export const Route = createFileRoute("/configuracoes/acessibilidade")({
@@ -42,14 +42,14 @@ function ConfigAcessibilidade() {
       .obter()
       .then((prefs) => {
         if (!ativo) return;
-        if (typeof prefs.tamanhoFonte === "number") set("fontScale", prefs.tamanhoFonte);
-        if (typeof prefs.altoContraste === "boolean") set("highContrast", prefs.altoContraste);
-        if (typeof prefs.reduzirMovimento === "boolean") set("reduceMotion", prefs.reduzirMovimento);
-        if (typeof prefs.leituraAutomatica === "boolean") set("screenReader", prefs.leituraAutomatica);
-        if (typeof prefs.libras === "boolean") set("vlibras", prefs.libras);
-        if (typeof prefs.tema === "string") set("darkMode", prefs.tema === "escuro");
+        const parcial = prefsDaApi(prefs);
+        (Object.keys(parcial) as (keyof typeof parcial)[]).forEach((chave) => {
+          const valor = parcial[chave];
+          if (valor !== undefined) set(chave, valor as never);
+        });
       })
       .catch(() => undefined);
+
     return () => {
       ativo = false;
     };
@@ -82,14 +82,8 @@ function ConfigAcessibilidade() {
             if (autenticado) {
               setSalvando(true);
               try {
-                await acessibilidadeService.salvar({
-                  tamanhoFonte: draft.fontScale,
-                  altoContraste: draft.highContrast,
-                  reduzirMovimento: draft.reduceMotion,
-                  leituraAutomatica: draft.screenReader,
-                  libras: draft.vlibras,
-                  tema: draft.darkMode ? "escuro" : "claro",
-                });
+                await acessibilidadeService.salvar(prefsParaApi(draft));
+
                 toast.success("Preferências de acessibilidade salvas na sua conta.");
               } catch (erro) {
                 toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. Ficou salvo neste dispositivo."));

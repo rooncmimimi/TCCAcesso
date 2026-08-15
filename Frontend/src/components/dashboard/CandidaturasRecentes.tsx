@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { candidaturasService } from "@/services/dashboard.service";
 import type { Candidatura } from "@/types";
 
@@ -77,7 +77,7 @@ export function CandidaturasRecentes() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <StatusBadge status={candidatura.status} />
-                    {candidatura.status !== "Cancelada" && candidatura.status !== "Reprovada" ? (
+                    {candidatura.status !== "Cancelada" && candidatura.status !== "Rejeitada" ? (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

@@ -21,14 +21,16 @@ export function formatarSalario(valor?: number | null): string {
 }
 
 /** Formata uma data ISO no padrão brasileiro por extenso. */
-export function formatarData(data: string | Date): string {
+export function formatarData(data?: string | Date | null): string {
+  if (!data) return "";
   const referencia = typeof data === "string" ? new Date(data) : data;
   if (Number.isNaN(referencia.getTime())) return "";
   return formatadorData.format(referencia);
 }
 
 /** Retorna uma descrição relativa acessível, como "há 3 dias". */
-export function formatarTempoRelativo(data: string | Date): string {
+export function formatarTempoRelativo(data?: string | Date | null): string {
+  if (!data) return "";
   const referencia = typeof data === "string" ? new Date(data) : data;
   if (Number.isNaN(referencia.getTime())) return "";
 

@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { initials } from "@/contexts/SessionContext";
 import postagensService from "@/services/postagens.service";
 import { urlArquivo } from "@/services/uploads.service";
+import { formatarData } from "@/utils/format";
 
 /** Publicações de um usuário específico, usadas no perfil público. */
 export function PostagensUsuario({ usuarioId }: { usuarioId: string }) {
@@ -46,7 +47,7 @@ export function PostagensUsuario({ usuarioId }: { usuarioId: string }) {
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{post.usuario?.nome ?? post.autor?.nome}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(post.criadoEm).toLocaleDateString("pt-BR")}
+                    {formatarData(post.criadoEm ?? post.created_at)}
                   </p>
                 </div>
               </header>

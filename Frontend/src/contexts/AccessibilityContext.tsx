@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -58,7 +59,7 @@ type Ctx = {
   /** Atualiza em tempo real (pré-visualização imediata, sem salvar). */
   set: <K extends keyof AccessibilityPrefs>(key: K, value: AccessibilityPrefs[K]) => void;
   /** Confirma as preferências (localStorage + conta, quando autenticado). */
-  save: () => void;
+  save: (next?: AccessibilityPrefs) => void;
   /** Descarta a pré-visualização e volta ao último estado salvo. */
   discard: () => void;
   reset: () => void;
@@ -93,6 +94,9 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [saved, setSaved] = useState<AccessibilityPrefs>(DEFAULT_PREFS);
   const [draft, setDraft] = useState<AccessibilityPrefs>(DEFAULT_PREFS);
   const [hydrated, setHydrated] = useState(false);
+  const draftRef = useRef<AccessibilityPrefs>(DEFAULT_PREFS);
+
+  draftRef.current = draft;
 
   useEffect(() => {
     const stored = readStored() ?? DEFAULT_PREFS;
@@ -111,14 +115,18 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     setDraft((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const save = useCallback(() => {
-    setSaved(draft);
+  // `next` permite salvar um valor recém-definido sem esperar o próximo render.
+  const save = useCallback<Ctx["save"]>((next) => {
+    const valor = next ?? draftRef.current;
+    draftRef.current = valor;
+    setDraft(valor);
+    setSaved(valor);
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(valor));
     } catch {
       /* ignora quota/privacidade */
     }
-  }, [draft]);
+  }, []);
 
   const discard = useCallback(() => setDraft(saved), [saved]);
 

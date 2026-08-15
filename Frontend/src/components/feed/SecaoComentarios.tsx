@@ -50,7 +50,7 @@ function LinhaComentario({
             <p className="text-sm leading-relaxed">{comentario.comentario}</p>
           </div>
           <div className="mt-1 flex items-center gap-3 px-1 text-xs text-muted-foreground">
-            <span>{formatarTempoRelativo(comentario.criadoEm)}</span>
+            <span>{formatarTempoRelativo(comentario.criadoEm ?? comentario.created_at)}</span>
             {aoResponder && (
               <button
                 type="button"

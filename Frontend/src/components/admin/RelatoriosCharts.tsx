@@ -1,79 +1,88 @@
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Pie, PieChart, XAxis, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { MetricasAdmin } from "@/types";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import type { CandidaturaPorStatus } from "@/services/admin.service";
 
-const CORES = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2"];
+const CORES = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+];
 
-/** Gráficos de relatórios administrativos com resumo textual alternativo (WCAG 1.1.1). */
-export function RelatoriosCharts({ metricas }: { metricas: MetricasAdmin }) {
-  const geral = [
-    { nome: "Usuários", total: metricas.usuarios ?? 0 },
-    { nome: "Candidatos", total: metricas.candidatos ?? 0 },
-    { nome: "Empresas", total: metricas.empresas ?? 0 },
-    { nome: "Vagas", total: metricas.vagas ?? 0 },
-    { nome: "Publicações", total: metricas.postagens ?? 0 },
-    { nome: "Candidaturas", total: metricas.candidaturas ?? 0 },
-  ];
+const configVisaoGeral = {
+  total: { label: "Total", color: "hsl(var(--chart-1))" },
+} satisfies ChartConfig;
 
-  const resumoTextual = geral.map((item) => `${item.nome}: ${item.total}`).join(", ");
+const configCandidaturas = {
+  total: { label: "Candidaturas", color: "hsl(var(--chart-2))" },
+} satisfies ChartConfig;
+
+type RelatoriosChartsProps = {
+  visaoGeral: { categoria: string; total: number }[];
+  candidaturasPorStatus: CandidaturaPorStatus[];
+};
+
+export function RelatoriosCharts({ visaoGeral, candidaturasPorStatus }: RelatoriosChartsProps) {
+  const dadosCandidaturas = candidaturasPorStatus.map((item) => ({
+    status: item.status,
+    total: Number(item.total),
+  }));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       <Card className="shadow-none">
         <CardHeader>
-          <CardTitle className="text-lg">Visão geral da plataforma</CardTitle>
+          <CardTitle className="text-base">Visão geral da plataforma</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-72 w-full" role="img" aria-label={`Gráfico de barras com totais gerais. ${resumoTextual}.`}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={geral}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="nome" tick={{ fontSize: 12 }} interval={0} angle={-20} textAnchor="end" height={60} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="total" fill="#2563eb" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Resumo em texto: {resumoTextual}. Há {metricas.empresasPendentes ?? 0} empresas aguardando aprovação.
-          </p>
+          <ChartContainer config={configVisaoGeral} className="max-h-72 w-full">
+            <BarChart data={visaoGeral}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="categoria"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                interval={0}
+                angle={-15}
+                textAnchor="end"
+                height={50}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+            </BarChart>
+          </ChartContainer>
         </CardContent>
       </Card>
 
       <Card className="shadow-none">
         <CardHeader>
-          <CardTitle className="text-lg">Distribuição de usuários</CardTitle>
+          <CardTitle className="text-base">Candidaturas por status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div
-            className="h-72 w-full"
-            role="img"
-            aria-label={`Gráfico de pizza. Candidatos: ${metricas.candidatos ?? 0}. Empresas: ${metricas.empresas ?? 0}.`}
-          >
-            <ResponsiveContainer width="100%" height="100%">
+          {dadosCandidaturas.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Ainda não há candidaturas registradas.
+            </p>
+          ) : (
+            <ChartContainer config={configCandidaturas} className="max-h-72 w-full">
               <PieChart>
-                <Pie
-                  data={[
-                    { nome: "Candidatos", valor: metricas.candidatos ?? 0 },
-                    { nome: "Empresas", valor: metricas.empresas ?? 0 },
-                  ]}
-                  dataKey="valor"
-                  nameKey="nome"
-                  outerRadius={90}
-                  label
-                >
-                  {[0, 1].map((i) => (
-                    <Cell key={i} fill={CORES[i % CORES.length]} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Pie data={dadosCandidaturas} dataKey="total" nameKey="status" innerRadius={50}>
+                  {dadosCandidaturas.map((entry, index) => (
+                    <Cell key={entry.status} fill={CORES[index % CORES.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
               </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Resumo em texto: {metricas.candidatos ?? 0} candidatos e {metricas.empresas ?? 0} empresas cadastradas.
-          </p>
+            </ChartContainer>
+          )}
         </CardContent>
       </Card>
     </div>

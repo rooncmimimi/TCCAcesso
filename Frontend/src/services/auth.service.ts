@@ -1,23 +1,23 @@
-import api, { setTokens, clearTokens } from "./api";
+import api, { setTokens, clearTokens, getRefreshToken } from "./api";
 import type { CredenciaisLogin, RespostaLogin, Usuario } from "@/types";
 
 /** Serviço de autenticação — espelha as rotas `/auth` do backend Express. */
 export const authService = {
   async login(credenciais: CredenciaisLogin): Promise<RespostaLogin> {
     const { data } = await api.post<RespostaLogin>("/auth/login", credenciais);
-    setTokens(data.accessToken, data.refreshToken);
+    setTokens(data.token, data.refreshToken);
     return data;
   },
 
   async registrarCandidato(payload: Record<string, unknown>): Promise<RespostaLogin> {
     const { data } = await api.post<RespostaLogin>("/auth/register/candidato", payload);
-    setTokens(data.accessToken, data.refreshToken);
+    setTokens(data.token, data.refreshToken);
     return data;
   },
 
   async registrarEmpresa(payload: Record<string, unknown>): Promise<RespostaLogin> {
     const { data } = await api.post<RespostaLogin>("/auth/register/empresa", payload);
-    setTokens(data.accessToken, data.refreshToken);
+    setTokens(data.token, data.refreshToken);
     return data;
   },
 
@@ -28,7 +28,7 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      const refreshToken = window.localStorage.getItem("acesso:refreshToken");
+      const refreshToken = getRefreshToken();
       await api.post("/auth/logout", { refreshToken });
     } finally {
       clearTokens();

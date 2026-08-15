@@ -82,7 +82,7 @@ export function CardPostagem({
                 {autor?.nome ?? "Usuário"}
               </h2>
               <p className="truncate text-sm text-muted-foreground">
-                {formatarTempoRelativo(postagem.criadoEm)}
+                {formatarTempoRelativo(postagem.criadoEm ?? postagem.created_at)}
                 {postagem.editadoEm ? " · editado" : ""}
               </p>
             </div>

@@ -17,17 +17,17 @@ class PublicoService {
         const [empresas, vagasAbertas, candidatos, contratacoes] =
             await Promise.all([
                 Empresa.count({ where: { statusAprovacao: "aprovada" } }),
-                Vaga.count({ where: { status: "aberta", oculta: false } }),
+                Vaga.count({ where: { status: "Aberta", oculta: false } }),
                 Usuario.count({
                     where: { tipoUsuario: "candidato", ativo: true }
                 }),
-                Candidatura.count({ where: { status: "aprovada" } })
+                Candidatura.count({ where: { status: "Aprovada" } })
             ]);
 
         const [vagasDestaque, empresasParceiras, publicacoes] =
             await Promise.all([
                 Vaga.findAll({
-                    where: { status: "aberta", oculta: false },
+                    where: { status: "Aberta", oculta: false },
                     include: [
                         {
                             model: Empresa,
@@ -94,7 +94,7 @@ class PublicoService {
 
         return Vaga.findAll({
             where: {
-                status: "aberta",
+                status: "Aberta",
                 oculta: false,
                 ...(query.q
                     ? {

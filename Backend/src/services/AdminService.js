@@ -289,7 +289,7 @@ class AdminService {
             Usuario.count({ where: { tipoUsuario: "empresa" } }),
             Empresa.count({ where: { statusAprovacao: "pendente" } }),
             Vaga.count(),
-            Vaga.count({ where: { status: "aberta" } }),
+            Vaga.count({ where: { status: "Aberta" } }),
             Candidatura.count(),
             Postagem.count({ where: { ativo: true } }),
             Usuario.count({ where: { bloqueado: true } })
@@ -306,10 +306,11 @@ class AdminService {
                 [fn("COUNT", col("id")), "total"]
             ],
             where: {
-                createdAt: {
+                created_at: {
                     [Op.gte]: literal("NOW() - INTERVAL '12 months'")
                 }
             },
+
             group: [literal("1")],
             order: [literal("1 ASC")]
         });
@@ -323,7 +324,7 @@ class AdminService {
                 {
                     model: Deficiencia,
                     as: "deficiencia",
-                    attributes: ["nome", "tipo"]
+                    attributes: ["nome", "descricao"]
                 }
             ],
             group: ["CandidatoDeficiencia.deficiencia_id", "deficiencia.id"],
@@ -332,7 +333,7 @@ class AdminService {
         });
 
         const taxaContratacao = await Candidatura.count({
-            where: { status: "aprovada" }
+            where: { status: "Aprovada" }
         });
 
         return {

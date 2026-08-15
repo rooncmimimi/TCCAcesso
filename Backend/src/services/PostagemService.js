@@ -17,18 +17,24 @@ import NotificacaoService from "./NotificacaoService.js";
 import { emitirFeed } from "../realtime/socket.js";
 import { urlPublica, tipoDoArquivo } from "../middlewares/uploadMiddleware.js";
 
-const INCLUDE_AUTOR = {
+/**
+ * O Sequelize muta os objetos de `include` (grava associação/alias neles),
+ * portanto o MESMO objeto não pode ser reutilizado em níveis diferentes de
+ * aninhamento — isso gerava SQL inválido ("missing FROM-clause entry").
+ * Por isso cada include é criado por uma fábrica que devolve um objeto novo.
+ */
+const incluirAutor = () => ({
     model: Usuario,
     as: "usuario",
     attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
-};
+});
 
-const INCLUDE_ANEXOS = {
+const incluirAnexos = () => ({
     model: PostagemAnexo,
     as: "anexos",
     separate: true,
     order: [["ordem", "ASC"]]
-};
+});
 
 class PostagemService {
     async buscarAtiva(id, transaction) {
@@ -143,7 +149,7 @@ class PostagemService {
 
         const { rows, count } = await Postagem.findAndCountAll({
             where,
-            include: [INCLUDE_AUTOR, INCLUDE_ANEXOS],
+            include: [incluirAutor(), incluirAnexos()],
             limit: limite,
             offset,
             distinct: true,
@@ -162,21 +168,21 @@ class PostagemService {
         const postagem = await Postagem.findOne({
             where: { id, ativo: true },
             include: [
-                INCLUDE_AUTOR,
-                INCLUDE_ANEXOS,
+                incluirAutor(),
+                incluirAnexos(),
                 {
                     model: Comentario,
                     as: "comentarios",
                     where: { ativo: true, comentarioPaiId: null },
                     required: false,
                     include: [
-                        INCLUDE_AUTOR,
+                        incluirAutor(),
                         {
                             model: Comentario,
                             as: "respostas",
                             required: false,
                             where: { ativo: true },
-                            include: [INCLUDE_AUTOR]
+                            include: [incluirAutor()]
                         }
                     ]
                 }
@@ -207,12 +213,14 @@ class PostagemService {
 
         const transaction = await sequelize.transaction();
 
+        let postagem;
+
         try {
             const primeiraImagem = arquivos.find(
                 (arquivo) => tipoDoArquivo(arquivo) === "imagem"
             );
 
-            const postagem = await Postagem.create(
+            postagem = await Postagem.create(
                 {
                     usuarioId: solicitante.id,
                     conteudo,
@@ -238,17 +246,21 @@ class PostagemService {
             }
 
             await transaction.commit();
-
-            const criada = await this.findById(postagem.id, solicitante);
-
-            emitirFeed("feed:postagem", { postagem: criada });
-
-            return criada;
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
+
+        // Fora da transação: uma falha aqui não pode disparar rollback
+        // de uma transação já confirmada.
+        const criada = await this.findById(postagem.id, solicitante);
+
+        emitirFeed("feed:postagem", { postagem: criada });
+
+        return criada;
     }
+
+
 
     /* ==========================================================
        ATUALIZAR (autor ou admin)
@@ -363,7 +375,7 @@ class PostagemService {
         });
 
         const completo = await Comentario.findByPk(criado.id, {
-            include: [INCLUDE_AUTOR]
+            include: [incluirAutor()]
         });
 
         emitirFeed("feed:comentario", {

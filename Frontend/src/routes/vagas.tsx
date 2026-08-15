@@ -1,13 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, MapPin, Search } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Briefcase, Loader2 } from "lucide-react";
+
 import { AppShell } from "@/layouts/AppShell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { vagas } from "@/lib/mock-data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FiltrosVagas, type FiltrosVagasState } from "@/components/vagas/FiltrosVagas";
+import { VagaCard } from "@/components/vagas/VagaCard";
+import { useSession } from "@/contexts/SessionContext";
+import vagasService from "@/services/vagas.service";
+import dashboardService from "@/services/dashboard.service";
+import { extrairMensagemErro } from "@/services/api";
 
 export const Route = createFileRoute("/vagas")({
   head: () => ({
@@ -15,82 +20,151 @@ export const Route = createFileRoute("/vagas")({
       { title: "Vagas inclusivas — ACESSO" },
       {
         name: "description",
-        content: "Busque vagas com recursos de acessibilidade declarados por empresas verificadas.",
+        content:
+          "Busque vagas com recursos de acessibilidade declarados por empresas verificadas na plataforma ACESSO.",
       },
       { property: "og:title", content: "Vagas inclusivas — ACESSO" },
       { property: "og:description", content: "Oportunidades para PCD e profissionais 50+." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Vagas,
 });
 
+const FILTROS_INICIAIS: FiltrosVagasState = {
+  busca: "",
+  modalidade: "",
+  cidade: "",
+  exclusivaPcd: false,
+};
+
 function Vagas() {
-  const [busca, setBusca] = useState("");
-  const lista = vagas.filter((v) =>
-    `${v.titulo} ${v.empresa} ${v.local}`.toLowerCase().includes(busca.toLowerCase()),
-  );
+  const { user } = useSession();
+  const queryClient = useQueryClient();
+  const [rascunho, setRascunho] = useState<FiltrosVagasState>(FILTROS_INICIAIS);
+  const [filtros, setFiltros] = useState<FiltrosVagasState>(FILTROS_INICIAIS);
+  const [pagina, setPagina] = useState(1);
+
+  const ehCandidato = user?.tipo === "candidato";
+
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ["vagas", filtros, pagina],
+    queryFn: () =>
+      vagasService.listar({
+        page: pagina,
+        limit: 10,
+        q: filtros.busca || undefined,
+        cidade: filtros.cidade || undefined,
+        modalidade: filtros.modalidade || undefined,
+        exclusivaPcd: filtros.exclusivaPcd || undefined,
+      }),
+  });
+
+  const { data: favoritos } = useQuery({
+    queryKey: ["dashboard", "favoritos"],
+    queryFn: () => dashboardService.favoritos({ limit: 100 }),
+    enabled: ehCandidato,
+  });
+
+  const idsFavoritos = new Set((favoritos?.dados ?? []).map((vaga) => vaga.id));
+
+  const favoritar = useMutation({
+    mutationFn: (vagaId: string) => vagasService.favoritar(vagaId),
+    onSuccess: (resultado) => {
+      toast.success(resultado.favoritada ? "Vaga favoritada." : "Vaga removida dos favoritos.");
+      void queryClient.invalidateQueries({ queryKey: ["dashboard", "favoritos"] });
+    },
+    onError: (erro) => toast.error(extrairMensagemErro(erro)),
+  });
+
+  const vagas = data?.vagas ?? [];
+
+  function buscar() {
+    setPagina(1);
+    setFiltros(rascunho);
+  }
 
   return (
     <AppShell>
       <h1 className="text-3xl font-extrabold">Vagas inclusivas</h1>
-      <p className="mt-2 text-muted-foreground">
-        {lista.length} oportunidades com recursos de acessibilidade declarados.
+      <p className="mt-2 text-muted-foreground" role="status" aria-live="polite">
+        {isLoading
+          ? "Carregando oportunidades…"
+          : `${data?.total ?? 0} oportunidade${(data?.total ?? 0) === 1 ? "" : "s"} publicada${
+              (data?.total ?? 0) === 1 ? "" : "s"
+            }.`}
       </p>
 
-      <Card className="mt-6 shadow-none">
-        <CardContent className="p-4">
-          <Label htmlFor="busca-vagas" className="text-sm font-bold">
-            Buscar vaga
-          </Label>
-          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <Input
-              id="busca-vagas"
-              className="min-h-12"
-              placeholder="Cargo, empresa ou cidade"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-            <Button className="min-h-12 shrink-0" aria-label="Buscar">
-              <Search aria-hidden="true" />
-              <span className="hidden sm:inline">Buscar</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-6">
+        <FiltrosVagas valor={rascunho} aoMudar={setRascunho} aoBuscar={buscar} />
+      </div>
 
-      <ul className="mt-6 space-y-4">
-        {lista.map((v) => (
-          <li key={v.id}>
-            <Card className="shadow-card">
-              <CardContent className="p-5">
-                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-                  <div className="min-w-0">
-                    <h2 className="text-lg font-bold">{v.titulo}</h2>
-                    <p className="mt-1 text-sm font-medium text-muted-foreground">
-                      {v.empresa} · {v.contrato} · {v.salario}
-                    </p>
-                    <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="size-4 shrink-0" aria-hidden="true" /> {v.modalidade} ·{" "}
-                      {v.local} · {v.publicada}
-                    </p>
-                    <p className="mt-3 text-sm">{v.descricao}</p>
-                    <ul className="mt-3 flex flex-wrap gap-2">
-                      {v.recursos.map((r) => (
-                        <li key={r}>
-                          <Badge variant="secondary" className="gap-1 font-medium">
-                            <CheckCircle2 className="size-3" aria-hidden="true" /> {r}
-                          </Badge>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <Button className="min-h-12 shrink-0">Candidatar-se</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </li>
-        ))}
-      </ul>
+      {isLoading && (
+        <ul className="mt-6 space-y-4" aria-label="Carregando vagas">
+          {[1, 2, 3].map((i) => (
+            <li key={i}>
+              <Skeleton className="h-44 w-full rounded-xl" />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {isError && (
+        <div role="alert" className="mt-6 space-y-3 rounded-xl border border-destructive/40 p-6">
+          <p className="text-sm">Não foi possível carregar as vagas.</p>
+          <Button variant="outline" onClick={() => refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {!isLoading && !isError && vagas.length === 0 && (
+        <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border p-10 text-center text-muted-foreground">
+          <Briefcase className="size-8" aria-hidden="true" />
+          <p className="text-sm">Nenhuma vaga encontrada com esses filtros.</p>
+        </div>
+      )}
+
+      {vagas.length > 0 && (
+        <ul className="mt-6 space-y-4">
+          {vagas.map((vaga) => (
+            <li key={vaga.id}>
+              <VagaCard
+                vaga={vaga}
+                favoritada={idsFavoritos.has(vaga.id)}
+                favoritando={favoritar.isPending && favoritar.variables === vaga.id}
+                onFavoritar={() => {
+                  if (!ehCandidato) {
+                    toast.info("Entre com uma conta de candidato para favoritar vagas.");
+                    return;
+                  }
+                  favoritar.mutate(vaga.id);
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {(data?.totalPaginas ?? 1) > 1 && (
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <Button variant="outline" disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
+            Página anterior
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Página {data?.pagina} de {data?.totalPaginas}
+            {isFetching && <Loader2 className="ml-2 inline size-4 animate-spin" aria-hidden="true" />}
+          </p>
+          <Button
+            variant="outline"
+            disabled={pagina >= (data?.totalPaginas ?? 1)}
+            onClick={() => setPagina((p) => p + 1)}
+          >
+            Próxima página
+          </Button>
+        </div>
+      )}
     </AppShell>
   );
 }

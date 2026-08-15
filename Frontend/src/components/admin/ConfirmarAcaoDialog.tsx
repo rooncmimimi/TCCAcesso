@@ -8,40 +8,53 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-/** AlertDialog reutilizável para confirmar ações administrativas destrutivas. */
+type ConfirmarAcaoDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  titulo: string;
+  descricao: ReactNode;
+  textoConfirmar?: string;
+  destrutivo?: boolean;
+  carregando?: boolean;
+  onConfirmar: () => void;
+};
+
+/**
+ * Diálogo de confirmação reutilizável para ações administrativas
+ * sensíveis (aprovar/reprovar, bloquear/desbloquear, moderar).
+ */
 export function ConfirmarAcaoDialog({
-  trigger,
+  open,
+  onOpenChange,
   titulo,
   descricao,
-  rotuloConfirmar = "Confirmar",
+  textoConfirmar = "Confirmar",
   destrutivo = false,
+  carregando = false,
   onConfirmar,
-}: {
-  trigger: ReactNode;
-  titulo: string;
-  descricao: string;
-  rotuloConfirmar?: string;
-  destrutivo?: boolean;
-  onConfirmar: () => void;
-}) {
+}: ConfirmarAcaoDialogProps) {
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{titulo}</AlertDialogTitle>
           <AlertDialogDescription>{descricao}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={carregando}>Cancelar</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirmar}
-            className={destrutivo ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+            disabled={carregando}
+            onClick={(event) => {
+              event.preventDefault();
+              onConfirmar();
+            }}
+            className={cn(destrutivo && buttonVariants({ variant: "destructive" }))}
           >
-            {rotuloConfirmar}
+            {carregando ? "Aguarde…" : textoConfirmar}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

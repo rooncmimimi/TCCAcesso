@@ -46,7 +46,9 @@ type SessaoExpiradaListener = () => void;
 const listeners = new Set<SessaoExpiradaListener>();
 export function aoExpirarSessao(fn: SessaoExpiradaListener) {
   listeners.add(fn);
-  return () => listeners.delete(fn);
+  return () => {
+    listeners.delete(fn);
+  };
 }
 function dispararSessaoExpirada() {
   listeners.forEach((fn) => fn());
@@ -80,14 +82,16 @@ async function tentarRenovarToken(): Promise<string | null> {
 
   if (!refrescando) {
     refrescando = axios
-      .post<{ accessToken: string; refreshToken: string }>(
+      .post<{ token?: string; accessToken?: string; refreshToken: string }>(
         `${API_BASE_URL}/auth/refresh`,
         { refreshToken },
       )
       .then(({ data }) => {
-        setTokens(data.accessToken, data.refreshToken);
-        return data.accessToken;
+        const novo = data.token ?? data.accessToken ?? null;
+        setTokens(novo, data.refreshToken);
+        return novo;
       })
+
       .catch(() => {
         clearTokens();
         return null;

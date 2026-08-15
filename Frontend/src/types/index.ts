@@ -84,9 +84,11 @@ export interface CredenciaisLogin {
 
 export interface RespostaLogin {
   usuario: Usuario;
-  accessToken: string;
+  /** O backend Express devolve o access token no campo `token`. */
+  token: string;
   refreshToken: string;
 }
+
 
 export type ModalidadeVaga = "Presencial" | "Hibrido" | "Remoto";
 export type ContratoVaga = "CLT" | "PJ" | "Estagio" | "JovemAprendiz" | "Temporario";
@@ -115,7 +117,7 @@ export interface Vaga {
   };
 }
 
-export type StatusCandidatura = "Pendente" | "EmAnalise" | "Aprovada" | "Reprovada" | "Cancelada";
+export type StatusCandidatura = "Pendente" | "EmAnalise" | "Aprovada" | "Rejeitada" | "Cancelada" | "Visualizada";
 
 export interface Candidatura {
   id: string;
@@ -130,7 +132,9 @@ export interface Postagem {
   id: string;
   conteudo: string;
   imagem?: string | null;
-  criadoEm: string;
+  /** O backend serializa os timestamps como `created_at`/`updated_at`. */
+  criadoEm?: string;
+  created_at?: string;
   atualizadoEm?: string;
   autor?: Usuario;
   usuarioId?: string;
@@ -143,29 +147,15 @@ export interface Postagem {
 export interface Comentario {
   id: string;
   comentario: string;
-  criadoEm: string;
+  criadoEm?: string;
+  created_at?: string;
   autor?: Usuario;
   postagemId?: string;
   respostas?: Comentario[];
 }
 
-export interface Conversa {
-  id: string;
-  participantes?: Usuario[];
-  outroParticipante?: Usuario;
-  ultimaMensagem?: Mensagem | null;
-  naoLidas?: number;
-  atualizadoEm?: string;
-}
+export type { Conversa, Mensagem, ParticipanteConversa } from "@/lib/api-types";
 
-export interface Mensagem {
-  id: string;
-  conteudo: string;
-  remetenteId: string;
-  conversaId: string;
-  lida?: boolean;
-  criadoEm: string;
-}
 
 export type TipoNotificacao = string;
 
@@ -283,15 +273,24 @@ export interface MetricasAdmin {
 /* ==========================================================
    Preferências de acessibilidade (persistidas na conta)
    ========================================================== */
+/** Espelha exatamente a tabela `preferencias_acessibilidade` do Backend. */
 export interface PreferenciasAcessibilidade {
-  tamanhoFonte?: number;
+  tema?: "claro" | "escuro" | "sistema" | null;
   altoContraste?: boolean;
-  reduzirMovimento?: boolean;
-  leituraAutomatica?: boolean;
+  fonteDislexia?: boolean;
+  /** Percentual inteiro entre 80 e 200. */
+  escalaFonte?: number;
+  espacamentoTexto?: boolean;
+  reduzirAnimacoes?: boolean;
+  leituraPorVoz?: boolean;
+  consentimentoVoz?: boolean;
+  velocidadeVoz?: number | string;
+  linguagemSimplificada?: boolean;
   libras?: boolean;
-  tema?: string | null;
+  destaqueFoco?: boolean;
   [chave: string]: unknown;
 }
+
 
 /* ==========================================================
    Página inicial pública

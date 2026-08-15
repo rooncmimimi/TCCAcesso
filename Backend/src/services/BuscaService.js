@@ -96,7 +96,7 @@ class BuscaService {
     async buscarVagas(termo, limite, offset) {
         const { rows, count } = await Vaga.findAndCountAll({
             where: {
-                status: "aberta",
+                status: "Aberta",
                 oculta: false,
                 [Op.or]: [
                     this.like("Vaga.titulo", termo),

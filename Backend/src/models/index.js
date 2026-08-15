@@ -149,6 +149,14 @@ Candidato.belongsToMany(Vaga, {
     as: "vagasFavoritas"
 });
 
+/* Associações diretas na tabela de junção — necessárias para
+   listar favoritos/seguidas com os dados completos (eager loading). */
+FavoritoVaga.belongsTo(Vaga, { foreignKey: "vagaId", as: "vaga" });
+FavoritoVaga.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
+EmpresaSeguida.belongsTo(Empresa, { foreignKey: "empresaId", as: "empresa" });
+EmpresaSeguida.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
+
+
 /* ======================================================
    FEED
 ====================================================== */

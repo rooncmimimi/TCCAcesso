@@ -8,11 +8,12 @@ import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono } from "../utils/authorization.js";
 import NotificacaoService from "./NotificacaoService.js";
 
-const INCLUDE_AUTOR = {
+// Fábrica: o Sequelize muta objetos de include, então cada uso precisa de um novo objeto.
+const incluirAutor = () => ({
     model: Usuario,
     as: "usuario",
     attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
-};
+});
 
 /**
  * Compartilhamento de postagens do feed.
@@ -35,7 +36,7 @@ class CompartilhamentoService {
 
         const { rows, count } = await Compartilhamento.findAndCountAll({
             where: { postagemId },
-            include: [INCLUDE_AUTOR],
+            include: [incluirAutor()],
             limit: limite,
             offset,
             order: [["created_at", "DESC"]]
@@ -69,7 +70,7 @@ class CompartilhamentoService {
         }
 
         return Compartilhamento.findByPk(compartilhamento.id, {
-            include: [INCLUDE_AUTOR]
+            include: [incluirAutor()]
         });
     }
 

@@ -27,14 +27,16 @@ type Ctx = {
 const SpeechContext = createContext<Ctx | null>(null);
 
 export function SpeechProvider({ children }: { children: ReactNode }) {
-  const { prefs, set, save } = useAccessibility();
+  const { prefs, save } = useAccessibility();
   const [supported, setSupported] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [choice, setChoiceState] = useState<VoiceChoice>(null);
   const [askedThisSession, setAsked] = useState(false);
   const rateRef = useRef(prefs.speechRate);
+  const prefsRef = useRef(prefs);
 
   rateRef.current = prefs.speechRate;
+  prefsRef.current = prefs;
 
   useEffect(() => {
     setSupported(typeof window !== "undefined" && "speechSynthesis" in window);
@@ -78,12 +80,11 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
       } catch {
         /* noop */
       }
-      set("screenReader", next === "accepted");
-      // Persiste imediatamente a decisão do primeiro acesso.
-      setTimeout(save, 0);
+      // Persiste imediatamente a decisão do primeiro acesso (sem esperar re-render).
+      save({ ...prefsRef.current, screenReader: next === "accepted" });
       if (next === "declined") stop();
     },
-    [set, save, stop],
+    [save, stop],
   );
 
   const clearChoice = useCallback(() => {

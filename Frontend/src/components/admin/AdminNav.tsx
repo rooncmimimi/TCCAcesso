@@ -1,38 +1,33 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
+import { BarChart3, Briefcase, Building2, FileText, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITENS = [
-  { to: "/admin", label: "Relatórios" },
-  { to: "/admin/empresas", label: "Empresas pendentes" },
-  { to: "/admin/usuarios", label: "Usuários" },
-  { to: "/admin/postagens", label: "Publicações" },
-  { to: "/admin/vagas", label: "Vagas" },
+  { to: "/admin", label: "Relatórios", icon: BarChart3, exact: true },
+  { to: "/admin/empresas", label: "Empresas", icon: Building2, exact: false },
+  { to: "/admin/usuarios", label: "Usuários", icon: Users, exact: false },
+  { to: "/admin/postagens", label: "Postagens", icon: FileText, exact: false },
+  { to: "/admin/vagas", label: "Vagas", icon: Briefcase, exact: false },
 ] as const;
 
-/** Navegação por abas do painel administrativo. */
 export function AdminNav() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-
   return (
-    <nav aria-label="Seções do painel administrativo" className="mt-6 overflow-x-auto">
-      <ul className="flex min-w-max gap-2 rounded-lg bg-muted p-1">
-        {ITENS.map((item) => {
-          const ativo = item.to === "/admin" ? pathname === "/admin" : pathname.startsWith(item.to);
-          return (
-            <li key={item.to}>
-              <Link
-                to={item.to}
-                aria-current={ativo ? "page" : undefined}
-                className={cn(
-                  "flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors",
-                  ativo ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
+    <nav aria-label="Navegação administrativa" className="border-b bg-card">
+      <ul className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4">
+        {ITENS.map(({ to, label, icon: Icon, exact }) => (
+          <li key={to}>
+            <Link
+              to={to}
+              activeOptions={{ exact }}
+
+              className="flex min-h-12 items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground [&.active]:border-primary [&.active]:text-foreground"
+              activeProps={{ className: "active" }}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {label}
+            </Link>
+          </li>
+        ))}
       </ul>
     </nav>
   );

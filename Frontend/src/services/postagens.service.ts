@@ -7,6 +7,7 @@ export interface FiltroFeed {
   limit?: number;
   usuarioId?: string;
   busca?: string;
+  [chave: string]: unknown;
 }
 
 export interface NovaPostagem {

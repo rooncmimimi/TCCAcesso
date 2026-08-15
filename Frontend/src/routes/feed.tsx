@@ -37,7 +37,9 @@ function Feed() {
 
   return (
     <AppShell>
+      <h1 className="sr-only">Feed da comunidade ACESSO</h1>
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+
         <aside aria-label="Seu resumo" className="hidden space-y-4 lg:block">
           <Card className="shadow-card">
             <CardContent className="p-5 text-center">

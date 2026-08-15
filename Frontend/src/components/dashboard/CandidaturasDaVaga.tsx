@@ -11,17 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { candidaturasService } from "@/services/dashboard.service";
 import type { StatusCandidatura, Vaga } from "@/types";
 
-const OPCOES_STATUS: StatusCandidatura[] = ["Pendente", "EmAnalise", "Aprovada", "Reprovada"];
+const OPCOES_STATUS: StatusCandidatura[] = ["Pendente", "EmAnalise", "Aprovada", "Rejeitada"];
 
 const ROTULOS: Record<string, string> = {
   Pendente: "Pendente",
   EmAnalise: "Em análise",
   Aprovada: "Aprovada",
-  Reprovada: "Reprovada",
+  Rejeitada: "Rejeitada",
 };
 
 /** Candidaturas recebidas para uma vaga específica, com atualização de status. */

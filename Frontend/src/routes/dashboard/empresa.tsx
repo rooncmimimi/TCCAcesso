@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Briefcase, ClipboardList, Loader2, Users } from "lucide-react";
 import { AppShell } from "@/layouts/AppShell";
 import { Button } from "@/components/ui/button";
-import { GuardaAcesso } from "@/components/dashboard/GuardaAcesso";
+import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MinhasVagas } from "@/components/dashboard/MinhasVagas";
 import { CandidaturasDaVaga } from "@/components/dashboard/CandidaturasDaVaga";

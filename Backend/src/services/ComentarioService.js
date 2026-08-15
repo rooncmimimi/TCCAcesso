@@ -4,11 +4,12 @@ import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono } from "../utils/authorization.js";
 
-const INCLUDE_AUTOR = {
+// Fábrica: o Sequelize muta objetos de include, então cada uso precisa de um novo objeto.
+const incluirAutor = () => ({
     model: Usuario,
     as: "usuario",
     attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
-};
+});
 
 /**
  * Comentários do feed (com respostas em árvore).
@@ -22,13 +23,13 @@ class ComentarioService {
         const { rows, count } = await Comentario.findAndCountAll({
             where: { postagemId, ativo: true, comentarioPaiId: null },
             include: [
-                INCLUDE_AUTOR,
+                incluirAutor(),
                 {
                     model: Comentario,
                     as: "respostas",
                     required: false,
                     where: { ativo: true },
-                    include: [INCLUDE_AUTOR]
+                    include: [incluirAutor()]
                 }
             ],
             limit: limite,
@@ -73,7 +74,7 @@ class ComentarioService {
             editadoEm: new Date()
         });
 
-        return Comentario.findByPk(comentarioId, { include: [INCLUDE_AUTOR] });
+        return Comentario.findByPk(comentarioId, { include: [incluirAutor()] });
     }
 
     async delete(comentarioId, solicitante) {

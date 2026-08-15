@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bookmark, Briefcase, FileText, Loader2, Users } from "lucide-react";
 import { AppShell } from "@/layouts/AppShell";
 import { Button } from "@/components/ui/button";
-import { GuardaAcesso } from "@/components/dashboard/GuardaAcesso";
+import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { CandidaturasRecentes } from "@/components/dashboard/CandidaturasRecentes";
 import { VagasFavoritas } from "@/components/dashboard/VagasFavoritas";

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPanel";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useSession } from "@/contexts/SessionContext";
-import acessibilidadeService from "@/services/acessibilidade.service";
+import acessibilidadeService, { prefsParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 
 export const Route = createFileRoute("/boas-vindas")({
@@ -61,14 +61,8 @@ function BoasVindas() {
               save();
               if (autenticado) {
                 try {
-                  await acessibilidadeService.salvar({
-                    tamanhoFonte: draft.fontScale,
-                    altoContraste: draft.highContrast,
-                    reduzirMovimento: draft.reduceMotion,
-                    leituraAutomatica: draft.screenReader,
-                    libras: draft.vlibras,
-                    tema: draft.darkMode ? "escuro" : "claro",
-                  });
+                  await acessibilidadeService.salvar(prefsParaApi(draft));
+
                 } catch (erro) {
                   toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. As preferências ficaram salvas neste dispositivo."));
                 }

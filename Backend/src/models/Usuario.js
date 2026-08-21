@@ -82,6 +82,18 @@ const Usuario = sequelize.define(
         ultimoLogin: {
             field: "ultimo_login",
             type: DataTypes.DATE
+        },
+
+        pausadoPeloUsuario: {
+            field: "pausado_pelo_usuario",
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
+        },
+
+        pausadoEm: {
+            field: "pausado_em",
+            type: DataTypes.DATE
         }
     },
     {

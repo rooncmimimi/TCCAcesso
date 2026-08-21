@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Building2, Globe, Loader2, MapPin, Pencil, Users } from "lucide-react";
 
@@ -12,10 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/contexts/SessionContext";
 import { empresasService, seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/services/uploads.service";
-import { CapaUploader } from "./CapaUploader";
-import { FotoUploader } from "./FotoUploader";
 import { EditarEmpresaDialog } from "./EditarEmpresaDialog";
 import { SeguirButton } from "./SeguirButton";
+import { EnviarMensagemButton } from "./EnviarMensagemButton";
 import { AvisoAprovacaoEmpresa } from "./AvisoAprovacaoEmpresa";
 import { PostagensUsuario } from "./PostagensUsuario";
 import { CompartilhamentosUsuario } from "./CompartilhamentosUsuario";
@@ -28,7 +27,6 @@ import { CompartilhamentosUsuario } from "./CompartilhamentosUsuario";
  */
 export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
   const { user } = useSession();
-  const queryClient = useQueryClient();
 
   const proprioPerfil = !usuarioId || usuarioId === user?.id;
 
@@ -111,42 +109,19 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
   return (
     <AppShell>
       <Card className="overflow-hidden shadow-card">
-        {proprioPerfil ? (
-          <CapaUploader
-            capaUrl={empresa.capa}
-            onEnviar={async (arquivo) => {
-              await empresasService.atualizarCapa(empresa.id, arquivo);
-              await queryClient.invalidateQueries({ queryKey: ["minha-empresa"] });
-            }}
-          />
-        ) : (
-          <div
-            aria-hidden="true"
-            className="h-32 w-full bg-primary bg-cover bg-center sm:h-40"
-            style={empresa.capa ? { backgroundImage: `url(${urlArquivo(empresa.capa)})` } : undefined}
-          />
-        )}
+        <div
+          aria-hidden="true"
+          className="h-32 w-full bg-primary bg-cover bg-center sm:h-40"
+          style={empresa.capa ? { backgroundImage: `url(${urlArquivo(empresa.capa)})` } : undefined}
+        />
         <CardContent className="p-5 sm:p-6">
           <div className="-mt-16 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
-            {proprioPerfil ? (
-              <FotoUploader
-                nome={nome}
-                fotoUrl={empresa.logo}
-                fallback={<Building2 className="size-8" aria-hidden="true" />}
-                rotulo="Alterar logo"
-                onEnviar={async (arquivo) => {
-                  await empresasService.atualizarLogo(empresa.id, arquivo);
-                  await queryClient.invalidateQueries({ queryKey: ["minha-empresa"] });
-                }}
-              />
-            ) : (
-              <Avatar className="size-24 border-4 border-card">
-                <AvatarImage src={urlArquivo(empresa.logo)} alt="" />
-                <AvatarFallback className="bg-primary-soft text-2xl font-bold text-primary">
-                  <Building2 className="size-8" aria-hidden="true" />
-                </AvatarFallback>
-              </Avatar>
-            )}
+            <Avatar className="size-24 border-4 border-card">
+              <AvatarImage src={urlArquivo(empresa.logo)} alt="" />
+              <AvatarFallback className="bg-primary-soft text-2xl font-bold text-primary">
+                <Building2 className="size-8" aria-hidden="true" />
+              </AvatarFallback>
+            </Avatar>
 
             {proprioPerfil ? (
               <EditarEmpresaDialog empresa={empresa}>
@@ -155,11 +130,16 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                 </Button>
               </EditarEmpresaDialog>
             ) : (
-              <SeguirButton
-                alvoId={empresa.id}
-                tipo="empresa"
-                chaveResumo={["resumo-empresa", empresa.id]}
-              />
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                {user?.tipo === "candidato" ? (
+                  <EnviarMensagemButton tipo="empresa" alvoId={empresa.id} />
+                ) : null}
+                <SeguirButton
+                  alvoId={empresa.id}
+                  tipo="empresa"
+                  chaveResumo={["resumo-empresa", empresa.id]}
+                />
+              </div>
             )}
           </div>
 

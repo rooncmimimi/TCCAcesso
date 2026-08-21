@@ -33,6 +33,16 @@ class ConversaController {
             return next(erro);
         }
     }
+
+    async naoLidas(req, res, next) {
+        try {
+            const dados = await ConversaService.contarNaoLidas(req.user);
+
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
 }
 
 export default new ConversaController();

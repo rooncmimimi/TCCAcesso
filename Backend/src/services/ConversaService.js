@@ -14,6 +14,7 @@ import {
     emitirParaConversa,
     emitirParaUsuario
 } from "../realtime/socket.js";
+import { notificacaoPermitida } from "./NotificacaoService.js";
 
 const INCLUDE_PARTICIPANTES = [
     {
@@ -131,7 +132,72 @@ class ConversaService {
             order: [["ultima_mensagem", "DESC NULLS LAST"]]
         });
 
-        return montarResposta("conversas", rows, count, pagina, limite);
+        const idsConversas = rows.map((conversa) => conversa.id);
+
+        const contagens = idsConversas.length
+            ? await Mensagem.findAll({
+                  attributes: [
+                      "conversaId",
+                      [sequelize.fn("COUNT", sequelize.col("id")), "total"]
+                  ],
+                  where: {
+                      conversaId: { [Op.in]: idsConversas },
+                      remetenteId: { [Op.ne]: solicitante.id },
+                      lida: false
+                  },
+                  group: ["conversaId"],
+                  raw: true
+              })
+            : [];
+
+        const mapaNaoLidas = Object.fromEntries(
+            contagens.map((c) => [c.conversaId, Number(c.total)])
+        );
+
+        const comContagem = rows.map((conversa) => ({
+            ...conversa.toJSON(),
+            mensagensNaoLidas: mapaNaoLidas[conversa.id] ?? 0
+        }));
+
+        return montarResposta("conversas", comContagem, count, pagina, limite);
+    }
+
+    /* ==========================================================
+       TOTAL DE MENSAGENS NÃO LIDAS (para o badge do cabeçalho)
+    ========================================================== */
+    async contarNaoLidas(solicitante) {
+        const candidato = await Candidato.findOne({
+            where: { usuarioId: solicitante.id }
+        });
+        const empresa = await Empresa.findOne({
+            where: { usuarioId: solicitante.id }
+        });
+
+        const filtros = [];
+
+        if (candidato) filtros.push({ candidatoId: candidato.id });
+        if (empresa) filtros.push({ empresaId: empresa.id });
+
+        if (filtros.length === 0) {
+            return { naoLidas: 0 };
+        }
+
+        const total = await Mensagem.count({
+            where: {
+                remetenteId: { [Op.ne]: solicitante.id },
+                lida: false
+            },
+            include: [
+                {
+                    model: Conversa,
+                    as: "conversa",
+                    attributes: [],
+                    where: { [Op.or]: filtros }
+                }
+            ]
+        });
+
+        return { naoLidas: total };
     }
 
     /* ==========================================================
@@ -202,15 +268,17 @@ class ConversaService {
                     ? conversa.empresa.usuarioId
                     : conversa.candidato.usuarioId;
 
-            await Notificacao.create(
-                {
-                    usuarioId: destinatarioId,
-                    tipo: "Mensagem",
-                    titulo: "Nova mensagem recebida",
-                    descricao: "Você recebeu uma nova mensagem no chat."
-                },
-                { transaction }
-            );
+            if (await notificacaoPermitida(destinatarioId, "Mensagem")) {
+                await Notificacao.create(
+                    {
+                        usuarioId: destinatarioId,
+                        tipo: "Mensagem",
+                        titulo: "Nova mensagem recebida",
+                        descricao: "Você recebeu uma nova mensagem no chat."
+                    },
+                    { transaction }
+                );
+            }
 
             await transaction.commit();
 

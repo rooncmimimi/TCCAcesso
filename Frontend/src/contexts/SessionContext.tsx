@@ -11,7 +11,13 @@ import {
 import authService from "@/services/auth.service";
 import { aoExpirarSessao, clearTokens, getAccessToken } from "@/services/api";
 import { conectarSocket, desconectarSocket } from "@/services/socket";
-import type { CredenciaisLogin, TipoUsuario, Usuario } from "@/types";
+import type {
+  CredenciaisLogin,
+  RespostaLoginContaPausada,
+  RespostaLoginPendente2FA,
+  TipoUsuario,
+  Usuario,
+} from "@/types";
 
 /**
  * Sessão real da aplicação: autenticação JWT contra o backend Express.
@@ -30,7 +36,10 @@ type Ctx = {
   hydrated: boolean;
   carregando: boolean;
   autenticado: boolean;
-  login: (credenciais: CredenciaisLogin) => Promise<SessionUser>;
+  /** Retorna `{ requerDoisFatores: true }` ou `{ contaPausada: true }` (sem criar sessão) quando o login precisa de uma segunda etapa. */
+  login: (
+    credenciais: CredenciaisLogin,
+  ) => Promise<SessionUser | RespostaLoginPendente2FA | RespostaLoginContaPausada>;
   registrarCandidato: (payload: Record<string, unknown>) => Promise<SessionUser>;
   registrarEmpresa: (payload: Record<string, unknown>) => Promise<SessionUser>;
   signOut: () => Promise<void>;
@@ -100,6 +109,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       autenticado: Boolean(user),
       login: async (credenciais) => {
         const resposta = await authService.login(credenciais);
+        if ("requerDoisFatores" in resposta || "contaPausada" in resposta) {
+          return resposta;
+        }
         return aposAutenticar(resposta.usuario);
       },
       registrarCandidato: async (payload) => {

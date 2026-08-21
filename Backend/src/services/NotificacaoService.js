@@ -1,7 +1,41 @@
-import { Notificacao } from "../models/index.js";
+import { Notificacao, PreferenciaNotificacao } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { emitirParaUsuario } from "../realtime/socket.js";
+
+/**
+ * Mapeia o tipo da notificação para a coluna de preferência correspondente.
+ * "Sistema" nunca é filtrado — carrega avisos críticos da própria conta
+ * (aprovação de empresa, bloqueio) que o usuário não deve conseguir silenciar.
+ */
+const COLUNA_PREFERENCIA_POR_TIPO = {
+    Vaga: "vagasCandidaturas",
+    Candidatura: "vagasCandidaturas",
+    Mensagem: "mensagens",
+    Feed: "publicacoesComentarios"
+};
+
+/**
+ * Verifica se o usuário aceita notificações desse tipo.
+ *
+ * Reaproveitado por todo lugar que cria uma `Notificacao` — inclusive os
+ * poucos services que criam direto via `Notificacao.create` (dentro de uma
+ * transação própria, ex.: `ConversaService`, `CandidaturaService`) em vez de
+ * passar por `NotificacaoService.criar`.
+ */
+export async function notificacaoPermitida(usuarioId, tipo) {
+    const coluna = COLUNA_PREFERENCIA_POR_TIPO[tipo];
+
+    if (!coluna) {
+        return true;
+    }
+
+    const preferencia = await PreferenciaNotificacao.findOne({
+        where: { usuarioId }
+    });
+
+    return !(preferencia && preferencia[coluna] === false);
+}
 
 /**
  * Notificações — sempre escopadas ao usuário autenticado.
@@ -13,6 +47,10 @@ class NotificacaoService {
      */
     async criar({ usuarioId, tipo, titulo, descricao = null }) {
         try {
+            if (!(await notificacaoPermitida(usuarioId, tipo))) {
+                return null;
+            }
+
             const notificacao = await Notificacao.create({
                 usuarioId,
                 tipo,
@@ -111,6 +149,43 @@ class NotificacaoService {
         }
 
         return { mensagem: "Notificação removida." };
+    }
+
+    /* ==========================================================
+       PREFERÊNCIAS DE NOTIFICAÇÃO (Configurações)
+    ========================================================== */
+    async obterPreferencias(usuarioId) {
+        const [preferencia] = await PreferenciaNotificacao.findOrCreate({
+            where: { usuarioId },
+            defaults: { usuarioId }
+        });
+
+        return preferencia;
+    }
+
+    async atualizarPreferencias(usuarioId, dados) {
+        const [preferencia] = await PreferenciaNotificacao.findOrCreate({
+            where: { usuarioId },
+            defaults: { usuarioId }
+        });
+
+        const campos = [
+            "vagasCandidaturas",
+            "mensagens",
+            "publicacoesComentarios",
+            "redeSeguidores"
+        ];
+
+        const atualizacao = campos.reduce((acc, campo) => {
+            if (typeof dados[campo] === "boolean") {
+                acc[campo] = dados[campo];
+            }
+            return acc;
+        }, {});
+
+        await preferencia.update(atualizacao);
+
+        return preferencia;
     }
 }
 

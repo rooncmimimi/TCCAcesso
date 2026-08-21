@@ -1,36 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { GuardaAcesso } from "@/components/GuardaAcesso";
-import { useSession } from "@/contexts/SessionContext";
-import { PerfilPessoal } from "@/components/perfil/PerfilPessoal";
-import { PerfilEmpresa } from "@/components/perfil/PerfilEmpresa";
-
-export const Route = createFileRoute("/perfil")({
-  head: () => ({
-    meta: [
-      { title: "Meu perfil — ACESSO" },
-      { name: "description", content: "Seu perfil profissional acessível no ACESSO." },
-      { property: "og:title", content: "Meu perfil — ACESSO" },
-      { property: "og:description", content: "Perfil profissional com informações de acessibilidade." },
-    ],
-  }),
-  component: () => (
-    <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
-      <Perfil />
-    </GuardaAcesso>
-  ),
-});
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 /**
- * Roteador do perfil: uma empresa vê seu perfil empresarial (logo, vagas, status
- * de aprovação); candidato e administrador veem o perfil pessoal (experiência,
- * formação, publicações). Nunca mistura os dois conceitos na mesma tela.
+ * Layout puro de `/perfil` — existe só para o TanStack Router poder ter dois
+ * filhos independentes: `/perfil` (perfil.index.tsx, sempre o usuário logado)
+ * e `/perfil/$usuarioId` (perfil.$usuarioId.tsx, perfil de outra pessoa/empresa).
+ *
+ * BUG CORRIGIDO: antes deste arquivo virar um layout, `perfil.tsx` tinha o
+ * conteúdo do "meu perfil" diretamente aqui. Como `perfil.$usuarioId.tsx` é
+ * filho de `/perfil` na árvore de rotas (convenção do TanStack Router para
+ * arquivos com o mesmo prefixo), o filho só é renderizado dentro de um
+ * `<Outlet />` do pai — que não existia. Resultado: navegar para
+ * `/perfil/<id-de-outra-pessoa>` renderizava o componente do PAI (que sempre
+ * mostra o usuário logado), então qualquer "ver perfil" de outra pessoa
+ * aparentava abrir o próprio perfil, mesmo com a URL certa na barra de
+ * endereço. Mover o conteúdo de "meu perfil" para `perfil.index.tsx` resolve
+ * isso sem tocar em nenhuma lógica de `PerfilPessoal`/`PerfilEmpresa`.
  */
-function Perfil() {
-  const { user } = useSession();
-
-  if (user?.tipo === "empresa") {
-    return <PerfilEmpresa />;
-  }
-
-  return <PerfilPessoal />;
-}
+export const Route = createFileRoute("/perfil")({
+  component: () => <Outlet />,
+});

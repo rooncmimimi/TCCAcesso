@@ -79,9 +79,9 @@ function DetalheVaga() {
 
   const conversar = useMutation({
     mutationFn: () => mensagensService.criarConversa({ empresaId: vaga?.empresa?.id }),
-    onSuccess: async () => {
+    onSuccess: async (conversa) => {
       await queryClient.invalidateQueries({ queryKey: ["conversas"] });
-      void navigate({ to: "/mensagens" });
+      void navigate({ to: "/mensagens", search: { conversaId: conversa.id } });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível abrir a conversa.")),
   });

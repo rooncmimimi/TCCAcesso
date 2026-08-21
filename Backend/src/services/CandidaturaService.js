@@ -11,6 +11,7 @@ import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { ehAdministrador, garantirEmpresaAprovada } from "../utils/authorization.js";
 import { STATUS_CANDIDATURA } from "../models/Candidatura.js";
+import { notificacaoPermitida } from "./NotificacaoService.js";
 
 /** Status que somente a empresa dona da vaga pode aplicar. */
 const STATUS_EMPRESA = ["Visualizada", "EmAnalise", "Aprovada", "Rejeitada"];
@@ -81,15 +82,17 @@ class CandidaturaService {
                 { transaction }
             );
 
-            await Notificacao.create(
-                {
-                    usuarioId: vaga.empresa.usuarioId,
-                    tipo: "Candidatura",
-                    titulo: "Nova candidatura recebida",
-                    descricao: `Você recebeu uma nova candidatura para a vaga "${vaga.titulo}".`
-                },
-                { transaction }
-            );
+            if (await notificacaoPermitida(vaga.empresa.usuarioId, "Candidatura")) {
+                await Notificacao.create(
+                    {
+                        usuarioId: vaga.empresa.usuarioId,
+                        tipo: "Candidatura",
+                        titulo: "Nova candidatura recebida",
+                        descricao: `Você recebeu uma nova candidatura para a vaga "${vaga.titulo}".`
+                    },
+                    { transaction }
+                );
+            }
 
             await transaction.commit();
 
@@ -278,15 +281,17 @@ class CandidaturaService {
 
             await candidatura.update({ status }, { transaction });
 
-            await Notificacao.create(
-                {
-                    usuarioId: candidatura.candidato.usuarioId,
-                    tipo: "Candidatura",
-                    titulo: "Atualização na sua candidatura",
-                    descricao: `A vaga "${candidatura.vaga.titulo}" teve sua candidatura marcada como "${status}".`
-                },
-                { transaction }
-            );
+            if (await notificacaoPermitida(candidatura.candidato.usuarioId, "Candidatura")) {
+                await Notificacao.create(
+                    {
+                        usuarioId: candidatura.candidato.usuarioId,
+                        tipo: "Candidatura",
+                        titulo: "Atualização na sua candidatura",
+                        descricao: `A vaga "${candidatura.vaga.titulo}" teve sua candidatura marcada como "${status}".`
+                    },
+                    { transaction }
+                );
+            }
 
             await transaction.commit();
 

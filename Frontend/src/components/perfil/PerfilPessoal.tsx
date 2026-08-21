@@ -21,10 +21,9 @@ import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { perfilService } from "@/services/perfil.service";
 import { seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/services/uploads.service";
-import { CapaUploader } from "./CapaUploader";
-import { FotoUploader } from "./FotoUploader";
 import { EditarPerfilDialog } from "./EditarPerfilDialog";
 import { SeguirButton } from "./SeguirButton";
+import { EnviarMensagemButton } from "./EnviarMensagemButton";
 import { SecaoRecursoPerfil } from "./SecaoRecursoPerfil";
 import { SecaoDeficiencias } from "./SecaoDeficiencias";
 import { ListaSeguidoresDialog } from "./ListaSeguidoresDialog";
@@ -38,7 +37,7 @@ import { CompartilhamentosUsuario } from "./CompartilhamentosUsuario";
  * Com `usuarioId` de outra pessoa: modo leitura, com botão de seguir no lugar de editar.
  */
 export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
-  const { user, update } = useSession();
+  const { user } = useSession();
   const { prefs } = useAccessibility();
 
   const proprioPerfil = !usuarioId || usuarioId === user?.id;
@@ -106,41 +105,19 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   return (
     <AppShell>
       <Card className="overflow-hidden shadow-card">
-        {proprioPerfil ? (
-          <CapaUploader
-            capaUrl={capaPerfil}
-            onEnviar={async (arquivo) => {
-              const atualizado = await perfilService.atualizarCapa(user!.id, arquivo);
-              update({ capaPerfil: atualizado.capaPerfil });
-            }}
-          />
-        ) : (
-          <div
-            aria-hidden="true"
-            className="h-32 w-full bg-primary bg-cover bg-center sm:h-40"
-            style={capaPerfil ? { backgroundImage: `url(${urlArquivo(capaPerfil)})` } : undefined}
-          />
-        )}
+        <div
+          aria-hidden="true"
+          className="h-32 w-full bg-primary bg-cover bg-center sm:h-40"
+          style={capaPerfil ? { backgroundImage: `url(${urlArquivo(capaPerfil)})` } : undefined}
+        />
         <CardContent className="p-5 sm:p-6">
           <div className="-mt-16 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
-            {proprioPerfil ? (
-              <FotoUploader
-                nome={nome}
-                fotoUrl={fotoPerfil}
-                fallback={initials(nome)}
-                onEnviar={async (arquivo) => {
-                  const atualizado = await perfilService.atualizarFoto(user!.id, arquivo);
-                  update({ fotoPerfil: atualizado.fotoPerfil });
-                }}
-              />
-            ) : (
-              <Avatar className="size-24 border-4 border-card">
-                <AvatarImage src={urlArquivo(fotoPerfil)} alt="" />
-                <AvatarFallback className="bg-primary-soft text-2xl font-bold text-primary">
-                  {initials(nome)}
-                </AvatarFallback>
-              </Avatar>
-            )}
+            <Avatar className="size-24 border-4 border-card">
+              <AvatarImage src={urlArquivo(fotoPerfil)} alt="" />
+              <AvatarFallback className="bg-primary-soft text-2xl font-bold text-primary">
+                {initials(nome)}
+              </AvatarFallback>
+            </Avatar>
 
             {proprioPerfil ? (
               <EditarPerfilDialog candidato={ehCandidato ? candidato : null}>
@@ -149,11 +126,16 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                 </Button>
               </EditarPerfilDialog>
             ) : (
-              <SeguirButton
-                alvoId={alvoId}
-                tipo="usuario"
-                chaveResumo={["perfil-resumo-seguidores", alvoId]}
-              />
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                {user?.tipo === "empresa" && ehCandidato && candidato ? (
+                  <EnviarMensagemButton tipo="candidato" alvoId={candidato.id} />
+                ) : null}
+                <SeguirButton
+                  alvoId={alvoId}
+                  tipo="usuario"
+                  chaveResumo={["perfil-resumo-seguidores", alvoId]}
+                />
+              </div>
             )}
           </div>
 

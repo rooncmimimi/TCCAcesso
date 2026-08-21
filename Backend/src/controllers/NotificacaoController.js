@@ -58,6 +58,31 @@ class NotificacaoController {
             return next(erro);
         }
     }
+
+    async obterPreferencias(req, res, next) {
+        try {
+            const preferencias = await NotificacaoService.obterPreferencias(
+                req.user.id
+            );
+
+            return res.status(200).json({ sucesso: true, preferencias });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async atualizarPreferencias(req, res, next) {
+        try {
+            const preferencias = await NotificacaoService.atualizarPreferencias(
+                req.user.id,
+                req.body
+            );
+
+            return res.status(200).json({ sucesso: true, preferencias });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
 }
 
 export default new NotificacaoController();

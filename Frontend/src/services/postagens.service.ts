@@ -32,7 +32,9 @@ export const postagensService = {
     const form = new FormData();
     form.append("conteudo", conteudo);
     form.append("publica", String(publica));
-    anexos.slice(0, 4).forEach((arquivo) => form.append("anexos", arquivo));
+    // O campo precisa se chamar "arquivos" — é o nome que o Multer espera
+    // em `uploadAnexos.array("arquivos", 4)` (Backend/src/routes/postagemRoutes.js).
+    anexos.slice(0, 4).forEach((arquivo) => form.append("arquivos", arquivo));
 
     const { data } = await api.post<{ postagem: PostagemCompleta }>("/postagens", form, {
       headers: { "Content-Type": "multipart/form-data" },

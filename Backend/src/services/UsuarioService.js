@@ -94,12 +94,14 @@ class UsuarioService {
 
             garantirDono(solicitante, usuario.id);
 
+            // "!== undefined" (em vez de "??") permite limpar telefone/foto/capa
+            // enviando null explicitamente — "??" nunca deixava isso acontecer.
             await usuario.update(
                 {
                     nome: data.nome ?? usuario.nome,
-                    telefone: data.telefone ?? usuario.telefone,
-                    fotoPerfil: data.fotoPerfil ?? usuario.fotoPerfil,
-                    capaPerfil: data.capaPerfil ?? usuario.capaPerfil
+                    telefone: data.telefone !== undefined ? data.telefone : usuario.telefone,
+                    fotoPerfil: data.fotoPerfil !== undefined ? data.fotoPerfil : usuario.fotoPerfil,
+                    capaPerfil: data.capaPerfil !== undefined ? data.capaPerfil : usuario.capaPerfil
                 },
                 { transaction }
             );

@@ -1,6 +1,6 @@
 import api from "./api";
 import { buscarPaginado, type Paginado } from "./http";
-import type { Notificacao } from "@/types";
+import type { Notificacao, PreferenciasNotificacao } from "@/types";
 
 /** Notificações do usuário autenticado. */
 export const notificacoesService = {
@@ -23,6 +23,19 @@ export const notificacoesService = {
 
   async remover(id: string): Promise<void> {
     await api.delete(`/notificacoes/${id}`);
+  },
+
+  async obterPreferencias(): Promise<PreferenciasNotificacao> {
+    const { data } = await api.get<{ preferencias: PreferenciasNotificacao }>("/notificacoes/preferencias");
+    return data.preferencias;
+  },
+
+  async atualizarPreferencias(payload: Partial<PreferenciasNotificacao>): Promise<PreferenciasNotificacao> {
+    const { data } = await api.put<{ preferencias: PreferenciasNotificacao }>(
+      "/notificacoes/preferencias",
+      payload,
+    );
+    return data.preferencias;
   },
 };
 

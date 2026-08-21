@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MessagesSquare } from "lucide-react";
+import { z } from "zod";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import {
 import type { Conversa, Mensagem } from "@/lib/api-types";
 
 export const Route = createFileRoute("/mensagens")({
+  validateSearch: z.object({ conversaId: z.string().uuid().optional() }),
   head: () => ({
     meta: [
       { title: "Mensagens — ACESSO" },
@@ -48,12 +50,18 @@ function PaginaMensagens() {
 
 function Mensagens() {
   const { user } = useSession();
+  const { conversaId } = Route.useSearch();
   const queryClient = useQueryClient();
   const usuarioId = user?.id ?? null;
 
-  const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
+  const [selecionadaId, setSelecionadaId] = useState<string | null>(conversaId ?? null);
   const [contatoDigitando, setContatoDigitando] = useState(false);
   const timerDigitando = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* Chegando de "Conversar com a empresa" (vaga) ou de "Enviar mensagem" (perfil): abre a conversa certa direto. */
+  useEffect(() => {
+    if (conversaId) setSelecionadaId(conversaId);
+  }, [conversaId]);
 
   const conversasQuery = useQuery({
     queryKey: ["conversas"],

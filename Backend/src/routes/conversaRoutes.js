@@ -22,6 +22,8 @@ router.post(
     ConversaController.store
 );
 
+router.get("/nao-lidas", ConversaController.naoLidas);
+
 router.get(
     "/:id",
     validarUuidParam("id"),

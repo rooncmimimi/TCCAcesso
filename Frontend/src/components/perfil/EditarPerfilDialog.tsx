@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
-import { useSession } from "@/contexts/SessionContext";
+import { useSession, initials } from "@/contexts/SessionContext";
 import { useSpeech } from "@/contexts/SpeechContext";
+import { CapaUploader } from "./CapaUploader";
+import { FotoUploader } from "./FotoUploader";
 import type { Candidato } from "@/types";
 
 /** Edição do perfil pessoal: dados de conta (todos os tipos) + dados de candidato (quando aplicável). */
@@ -48,6 +50,8 @@ export function EditarPerfilDialog({
         await perfilService.atualizarCandidato(candidato.id, {
           tituloProfissional: texto("tituloProfissional") || null,
           biografia: texto("biografia") || null,
+          dataNascimento: texto("dataNascimento") || null,
+          genero: texto("genero") || null,
           cidade: texto("cidade") || null,
           estado: texto("estado").toUpperCase() || null,
           escolaridade: texto("escolaridade") || null,
@@ -71,10 +75,22 @@ export function EditarPerfilDialog({
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil.")),
   });
 
+  const removerBanner = useMutation({
+    mutationFn: () => perfilService.atualizarUsuario(user!.id, { capaPerfil: null }),
+    onSuccess: (usuarioAtualizado) => {
+      update({ capaPerfil: usuarioAtualizado.capaPerfil });
+      toast.success("Banner removido.");
+      speak("Banner removido.");
+    },
+    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
+  });
+
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     salvar.mutate(new FormData(evento.currentTarget));
   }
+
+  if (!user) return null;
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
@@ -85,7 +101,47 @@ export function EditarPerfilDialog({
           <DialogDescription>Essas informações aparecem no seu perfil e nas suas publicações.</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={enviar} className="space-y-4">
+        <div className="space-y-3">
+          <div>
+            <p className="mb-2 text-sm font-medium">Banner</p>
+            <div className="overflow-hidden rounded-lg border">
+              <CapaUploader
+                capaUrl={user.capaPerfil}
+                onEnviar={async (arquivo) => {
+                  const atualizado = await perfilService.atualizarCapa(user.id, arquivo);
+                  update({ capaPerfil: atualizado.capaPerfil });
+                }}
+              />
+            </div>
+            {user.capaPerfil ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-2 gap-1 text-destructive hover:text-destructive"
+                disabled={removerBanner.isPending}
+                onClick={() => removerBanner.mutate()}
+              >
+                <Trash2 className="size-4" aria-hidden="true" /> Remover banner
+              </Button>
+            ) : null}
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-medium">Foto de perfil</p>
+            <FotoUploader
+              nome={user.nome}
+              fotoUrl={user.fotoPerfil}
+              fallback={initials(user.nome)}
+              onEnviar={async (arquivo) => {
+                const atualizado = await perfilService.atualizarFoto(user.id, arquivo);
+                update({ fotoPerfil: atualizado.fotoPerfil });
+              }}
+            />
+          </div>
+        </div>
+
+        <form onSubmit={enviar} className="space-y-4 border-t pt-4">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome</Label>
             <Input id="nome" name="nome" required minLength={3} maxLength={150} defaultValue={user?.nome ?? ""} />
@@ -118,6 +174,28 @@ export function EditarPerfilDialog({
                   maxLength={2000}
                   defaultValue={candidato.biografia ?? ""}
                 />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="dataNascimento">Data de nascimento</Label>
+                  <Input
+                    id="dataNascimento"
+                    name="dataNascimento"
+                    type="date"
+                    defaultValue={candidato.dataNascimento ? candidato.dataNascimento.slice(0, 10) : ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="genero">Gênero</Label>
+                  <Input
+                    id="genero"
+                    name="genero"
+                    maxLength={40}
+                    placeholder="Como você se identifica"
+                    defaultValue={candidato.genero ?? ""}
+                  />
+                </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

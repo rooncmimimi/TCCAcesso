@@ -1,5 +1,6 @@
 import authService from "../services/authService.js";
 import RecuperacaoSenhaService from "../services/RecuperacaoSenhaService.js";
+import RefreshTokenService from "../services/RefreshTokenService.js";
 
 /**
  * Controller de autenticação — apenas orquestra requisição/resposta.
@@ -39,11 +40,13 @@ class AuthController {
 
     async login(req, res, next) {
         try {
-            const { email, senha } = req.body;
+            const { email, senha, codigoTotp, confirmarReativacao } = req.body;
             const resultado = await authService.login(
                 email,
                 senha,
-                contextoDa(req)
+                contextoDa(req),
+                codigoTotp,
+                Boolean(confirmarReativacao)
             );
 
             return res.status(200).json({ sucesso: true, ...resultado });
@@ -117,6 +120,98 @@ class AuthController {
     async logout(req, res, next) {
         try {
             const resultado = await authService.logout(req.body?.refreshToken);
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async pausarConta(req, res, next) {
+        try {
+            const resultado = await authService.pausarConta(
+                req.user.id,
+                req.body.senhaAtual
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async excluirConta(req, res, next) {
+        try {
+            const resultado = await authService.excluirConta(
+                req.user.id,
+                req.body.senhaAtual
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async solicitarTrocaEmail(req, res, next) {
+        try {
+            const resultado = await authService.solicitarTrocaEmail(
+                req.user.id,
+                req.body.senhaAtual,
+                req.body.novoEmail
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async confirmarTrocaEmail(req, res, next) {
+        try {
+            const resultado = await authService.confirmarTrocaEmail(
+                req.user.id,
+                req.body.codigo
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async sessoes(req, res, next) {
+        try {
+            const sessoes = await RefreshTokenService.listarAtivas(
+                req.user.id,
+                req.body?.refreshToken
+            );
+
+            return res.status(200).json({ sucesso: true, sessoes });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async revogarSessao(req, res, next) {
+        try {
+            const resultado = await RefreshTokenService.revogarPorId(
+                req.user.id,
+                req.params.id
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async revogarOutrasSessoes(req, res, next) {
+        try {
+            const resultado = await RefreshTokenService.revogarTodosExceto(
+                req.user.id,
+                req.body?.refreshToken
+            );
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

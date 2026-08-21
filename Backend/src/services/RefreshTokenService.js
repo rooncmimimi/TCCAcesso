@@ -45,6 +45,66 @@ class RefreshTokenService {
         );
     }
 
+    /* ==========================================================
+       SESSÕES ATIVAS (tela de Configurações)
+    ========================================================== */
+
+    /** Lista as sessões ativas do usuário, sinalizando qual é a atual. */
+    async listarAtivas(usuarioId, tokenAtual) {
+        const hashAtual = tokenAtual ? hashToken(tokenAtual) : null;
+
+        const registros = await RefreshToken.findAll({
+            where: {
+                usuarioId,
+                revogadoEm: null,
+                expiraEm: { [Op.gt]: new Date() }
+            },
+            order: [["created_at", "DESC"]]
+        });
+
+        return registros.map((registro) => ({
+            id: registro.id,
+            userAgent: registro.userAgent,
+            ip: registro.ip,
+            criadoEm: registro.created_at,
+            expiraEm: registro.expiraEm,
+            atual: hashAtual !== null && registro.tokenHash === hashAtual
+        }));
+    }
+
+    /** Revoga uma sessão específica — só se pertencer ao próprio usuário. */
+    async revogarPorId(usuarioId, id) {
+        const registro = await RefreshToken.findOne({
+            where: { id, usuarioId, revogadoEm: null }
+        });
+
+        if (!registro) {
+            throw ApiError.notFound("Sessão não encontrada.");
+        }
+
+        await registro.update({ revogadoEm: new Date() });
+
+        return { mensagem: "Sessão encerrada." };
+    }
+
+    /** Revoga todas as sessões do usuário, exceto a que corresponde ao token informado. */
+    async revogarTodosExceto(usuarioId, tokenAtual) {
+        const hashAtual = tokenAtual ? hashToken(tokenAtual) : null;
+
+        await RefreshToken.update(
+            { revogadoEm: new Date() },
+            {
+                where: {
+                    usuarioId,
+                    revogadoEm: null,
+                    ...(hashAtual ? { tokenHash: { [Op.ne]: hashAtual } } : {})
+                }
+            }
+        );
+
+        return { mensagem: "As outras sessões foram encerradas." };
+    }
+
     async rotacionar(token, contexto = {}) {
         if (!token) {
             throw ApiError.unauthorized("Refresh token não informado.");

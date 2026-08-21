@@ -35,6 +35,11 @@ export const mensagensService = {
   async marcarComoLidas(conversaId: string): Promise<void> {
     await api.patch(`/conversas/${conversaId}/mensagens/lidas`);
   },
+
+  async contarNaoLidas(): Promise<number> {
+    const { data } = await api.get<{ naoLidas?: number }>("/conversas/nao-lidas");
+    return Number(data.naoLidas ?? 0);
+  },
 };
 
 export default mensagensService;

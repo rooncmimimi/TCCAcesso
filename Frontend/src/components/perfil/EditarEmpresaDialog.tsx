@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Building2, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ import {
 import { extrairMensagemErro } from "@/services/api";
 import { empresasService } from "@/services/empresas.service";
 import { useSpeech } from "@/contexts/SpeechContext";
+import { CapaUploader } from "./CapaUploader";
+import { FotoUploader } from "./FotoUploader";
 import type { Empresa, PorteEmpresa } from "@/types";
 
 const PORTES: PorteEmpresa[] = ["MEI", "Micro", "Pequena", "Media", "Grande"];
@@ -37,15 +39,27 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
   const { speak } = useSpeech();
   const queryClient = useQueryClient();
 
+  const invalidarEmpresa = () => queryClient.invalidateQueries({ queryKey: ["minha-empresa"] });
+
   const salvar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => empresasService.atualizar(empresa.id, payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["minha-empresa"] });
+      void invalidarEmpresa();
       toast.success("Perfil da empresa atualizado.");
       speak("Perfil da empresa atualizado.");
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil da empresa.")),
+  });
+
+  const removerBanner = useMutation({
+    mutationFn: () => empresasService.atualizar(empresa.id, { capa: null }),
+    onSuccess: () => {
+      void invalidarEmpresa();
+      toast.success("Banner removido.");
+      speak("Banner removido.");
+    },
+    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -77,7 +91,48 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           <DialogDescription>Essas informações aparecem no perfil público da sua empresa.</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={enviar} className="space-y-4">
+        <div className="space-y-3">
+          <div>
+            <p className="mb-2 text-sm font-medium">Banner</p>
+            <div className="overflow-hidden rounded-lg border">
+              <CapaUploader
+                capaUrl={empresa.capa}
+                onEnviar={async (arquivo) => {
+                  await empresasService.atualizarCapa(empresa.id, arquivo);
+                  await invalidarEmpresa();
+                }}
+              />
+            </div>
+            {empresa.capa ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-2 gap-1 text-destructive hover:text-destructive"
+                disabled={removerBanner.isPending}
+                onClick={() => removerBanner.mutate()}
+              >
+                <Trash2 className="size-4" aria-hidden="true" /> Remover banner
+              </Button>
+            ) : null}
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-medium">Logo</p>
+            <FotoUploader
+              nome={empresa.nomeFantasia || empresa.razaoSocial}
+              fotoUrl={empresa.logo}
+              fallback={<Building2 className="size-8" aria-hidden="true" />}
+              rotulo="Alterar logo"
+              onEnviar={async (arquivo) => {
+                await empresasService.atualizarLogo(empresa.id, arquivo);
+                await invalidarEmpresa();
+              }}
+            />
+          </div>
+        </div>
+
+        <form onSubmit={enviar} className="space-y-4 border-t pt-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="razaoSocial">Razão social</Label>

@@ -3,13 +3,14 @@ import {
   Accessibility,
   Bell,
   ChevronRight,
-  Eye,
+  Clock,
   HelpCircle,
   Lock,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
 import { AppShell } from "@/layouts/AppShell";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/configuracoes/")({
   head: () => ({
     meta: [
       { title: "Configurações — ACESSO" },
-      { name: "description", content: "Gerencie conta, segurança, visibilidade, notificações, dados e acessibilidade." },
+      { name: "description", content: "Gerencie conta, segurança, notificações, acessibilidade e aparência." },
       { property: "og:title", content: "Configurações — ACESSO" },
       { property: "og:description", content: "Central de preferências da sua conta ACESSO." },
     ],
@@ -32,62 +33,24 @@ export const Route = createFileRoute("/configuracoes/")({
 const secoes = [
   {
     icon: UserCog,
-    titulo: "Preferências da conta",
+    titulo: "Conta",
     itens: [
-      "Nome, localidade e setor",
-      "Dados demográficos pessoais",
-      "Modo escuro e exibição",
-      "Idioma da interface",
-      "Reprodução automática de vídeos",
-      "Efeitos sonoros",
-      "Encerrar ou pausar conta",
+      { label: "Meus dados e perfil", to: "/configuracoes/conta" },
+      { label: "Alterar senha", to: "/configuracoes/senha" },
+      { label: "Sessões ativas", to: "/configuracoes/seguranca" },
     ],
   },
   {
     icon: Lock,
-    titulo: "Acesso e segurança",
-    itens: [
-      "Endereços de e-mail",
-      "Números de telefone",
-      "Alterar senha",
-      "Sessões ativas",
-      "Autenticação de dois fatores",
-    ],
-  },
-  {
-    icon: Eye,
-    titulo: "Visibilidade",
-    itens: [
-      "Quem pode ver seu perfil",
-      "Visibilidade do e-mail e telefone",
-      "Visibilidade de conexões",
-      "Status de atividade",
-      "Usuários bloqueados",
-    ],
+    titulo: "Segurança",
+    itens: [{ label: "Autenticação de dois fatores", to: "/configuracoes/seguranca" }],
   },
   {
     icon: Bell,
     titulo: "Notificações",
-    itens: [
-      "Vagas e candidaturas",
-      "Mensagens",
-      "Publicações e comentários",
-      "Atualizações da sua rede",
-      "Notícias de inclusão",
-    ],
+    itens: [{ label: "Preferências de notificação", to: "/configuracoes/notificacoes" }],
   },
-  {
-    icon: ShieldCheck,
-    titulo: "Privacidade dos dados",
-    itens: [
-      "Baixar seus dados",
-      "Gerenciar permissões de dados",
-      "Limpar histórico de pesquisa",
-      "Quem pode entrar em contato",
-      "Dados de currículo e candidaturas",
-    ],
-  },
-];
+] as const;
 
 function Configuracoes() {
   return (
@@ -106,9 +69,9 @@ function Configuracoes() {
             <Accessibility className="size-5" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-lg font-bold text-primary">Configurações de acessibilidade</h2>
+            <h2 className="text-lg font-bold text-primary">Acessibilidade e aparência</h2>
             <p className="text-sm text-primary/80">
-              Contraste, fonte, espaçamentos, voz, Libras e navegação por teclado — com
+              Contraste, tema claro/escuro, fonte, espaçamentos, voz, Libras e navegação por teclado — com
               pré-visualização em tempo real.
             </p>
           </div>
@@ -130,20 +93,34 @@ function Configuracoes() {
               </h2>
               <ul className="mt-3 space-y-1">
                 {s.itens.map((i) => (
-                  <li key={i}>
-                    <button
-                      type="button"
+                  <li key={i.label}>
+                    <Link
+                      to={i.to}
                       className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-2.5 text-left text-sm font-medium hover:bg-secondary"
                     >
-                      <span className="min-w-0 truncate">{i}</span>
+                      <span className="min-w-0 truncate">{i.label}</span>
                       <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    </button>
+                    </Link>
                   </li>
                 ))}
               </ul>
             </CardContent>
           </Card>
         ))}
+
+        <Card className="shadow-none">
+          <CardContent className="p-5">
+            <h2 className="flex items-center gap-2 text-base font-bold">
+              <ShieldCheck className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" /> Privacidade
+              <Badge variant="secondary" className="ml-auto gap-1 font-medium">
+                <Clock className="size-3" aria-hidden="true" /> Em breve
+              </Badge>
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Visibilidade de perfil e bloqueio de usuários estão planejados para uma próxima fase.
+            </p>
+          </CardContent>
+        </Card>
 
         <Card className="shadow-none">
           <CardContent className="p-5">

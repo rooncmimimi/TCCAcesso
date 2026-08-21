@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   Briefcase,
@@ -29,6 +29,7 @@ import {
 import { initials, useSession } from "@/contexts/SessionContext";
 import { cn } from "@/lib/utils";
 import notificacoesService from "@/services/notificacoes.service";
+import mensagensService from "@/services/mensagens.service";
 import { urlArquivo } from "@/services/uploads.service";
 import { ouvirEvento } from "@/services/socket";
 
@@ -44,10 +45,13 @@ export function AppHeader() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [naoLidas, setNaoLidas] = useState(0);
+  const [naoLidasMensagens, setNaoLidasMensagens] = useState(0);
+  const pathnameAnteriorRef = useRef(pathname);
 
   useEffect(() => {
     if (!autenticado) {
       setNaoLidas(0);
+      setNaoLidasMensagens(0);
       return;
     }
 
@@ -58,16 +62,34 @@ export function AppHeader() {
         if (ativo) setNaoLidas(total);
       })
       .catch(() => undefined);
+    mensagensService
+      .contarNaoLidas()
+      .then((total) => {
+        if (ativo) setNaoLidasMensagens(total);
+      })
+      .catch(() => undefined);
 
     const pararDeOuvir = ouvirEvento("notificacao:nova", () => {
       setNaoLidas((atual) => atual + 1);
+    });
+    const pararDeOuvirMensagem = ouvirEvento("mensagem:nova", () => {
+      setNaoLidasMensagens((atual) => atual + 1);
     });
 
     return () => {
       ativo = false;
       pararDeOuvir();
+      pararDeOuvirMensagem();
     };
   }, [autenticado]);
+
+  /* Ao sair da tela de mensagens, resincroniza a contagem (o usuário pode ter lido conversas lá). */
+  useEffect(() => {
+    if (autenticado && pathnameAnteriorRef.current.startsWith("/mensagens") && !pathname.startsWith("/mensagens")) {
+      void mensagensService.contarNaoLidas().then(setNaoLidasMensagens).catch(() => undefined);
+    }
+    pathnameAnteriorRef.current = pathname;
+  }, [pathname, autenticado]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -81,7 +103,9 @@ export function AppHeader() {
           <ul className="flex items-center gap-1 sm:gap-2">
             {nav.map((item) => {
               const active = pathname.startsWith(item.to);
-              const mostrarContador = item.to === "/notificacoes" && naoLidas > 0;
+              const contador =
+                item.to === "/notificacoes" ? naoLidas : item.to === "/mensagens" ? naoLidasMensagens : 0;
+              const mostrarContador = contador > 0;
               return (
                 <li key={item.to}>
                   <Link
@@ -101,14 +125,14 @@ export function AppHeader() {
                           aria-hidden="true"
                           className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-none"
                         >
-                          {naoLidas > 9 ? "9+" : naoLidas}
+                          {contador > 9 ? "9+" : contador}
                         </Badge>
                       )}
                     </span>
                     <span className="mt-0.5 hidden sm:inline">{item.label}</span>
                     <span className="sr-only sm:hidden">
                       {item.label}
-                      {mostrarContador ? ` — ${naoLidas} não lidas` : ""}
+                      {mostrarContador ? ` — ${contador} não lidas` : ""}
                     </span>
                   </Link>
                 </li>

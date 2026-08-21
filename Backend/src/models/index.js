@@ -41,6 +41,9 @@ import ChatbotConversa from "./ChatbotConversa.js";
 import ChatbotMensagem from "./ChatbotMensagem.js";
 import UsuarioSeguido from "./UsuarioSeguido.js";
 import Arquivo from "./Arquivo.js";
+import AutenticacaoDoisFatores from "./AutenticacaoDoisFatores.js";
+import CodigoVerificacaoEmail from "./CodigoVerificacaoEmail.js";
+import PreferenciaNotificacao from "./PreferenciaNotificacao.js";
 
 
 /* ======================================================
@@ -304,6 +307,33 @@ CodigoRecuperacaoSenha.belongsTo(Usuario, {
 Usuario.hasMany(RefreshToken, { foreignKey: "usuarioId", as: "refreshTokens" });
 RefreshToken.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 
+Usuario.hasOne(AutenticacaoDoisFatores, {
+    foreignKey: "usuarioId",
+    as: "doisFatores"
+});
+AutenticacaoDoisFatores.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+
+Usuario.hasMany(CodigoVerificacaoEmail, {
+    foreignKey: "usuarioId",
+    as: "codigosVerificacaoEmail"
+});
+CodigoVerificacaoEmail.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+
+Usuario.hasOne(PreferenciaNotificacao, {
+    foreignKey: "usuarioId",
+    as: "preferenciasNotificacao"
+});
+PreferenciaNotificacao.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+
 /* ======================================================
    ASSISTENTE VIRTUAL
 ====================================================== */
@@ -390,6 +420,9 @@ export {
     CodigoRecuperacaoSenha,
     RefreshToken,
     ChatbotConversa,
-    ChatbotMensagem
+    ChatbotMensagem,
+    AutenticacaoDoisFatores,
+    CodigoVerificacaoEmail,
+    PreferenciaNotificacao
 };
 

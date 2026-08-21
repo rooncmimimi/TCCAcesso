@@ -35,3 +35,29 @@ export const validarRedefinirSenha = [
         .matches(/\d/)
         .withMessage("A senha deve conter ao menos um número.")
 ];
+
+/** Autenticação de dois fatores (2FA). */
+
+export const validarSenhaAtual2FA = [
+    body("senhaAtual").isString().notEmpty().withMessage("Informe a senha atual.")
+];
+
+export const validarCodigo2FA = [
+    body("codigo")
+        .isLength({ min: 6, max: 6 })
+        .isNumeric()
+        .withMessage("O código deve ter 6 dígitos.")
+];
+
+/** Troca de e-mail. */
+
+export const validarSolicitarTrocaEmail = [
+    body("senhaAtual").isString().notEmpty().withMessage("Informe a senha atual."),
+
+    body("novoEmail")
+        .trim()
+        .isEmail()
+        .withMessage("Informe um e-mail válido.")
+        .isLength({ max: 150 })
+        .normalizeEmail()
+];

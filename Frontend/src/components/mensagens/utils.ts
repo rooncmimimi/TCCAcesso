@@ -9,7 +9,7 @@ export function participanteOposto(conversa: Conversa, usuarioId: string | null)
 }
 
 export function nomeParticipante(participante?: ParticipanteConversa): string {
-  return participante?.nomeFantasia || participante?.usuario?.nome || "Contato";
+  return participante?.nomeFantasia || participante?.razaoSocial || participante?.usuario?.nome || "Contato";
 }
 
 export function fotoParticipante(participante?: ParticipanteConversa): string | null {

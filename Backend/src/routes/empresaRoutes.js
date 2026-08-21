@@ -14,6 +14,13 @@ const router = Router();
 router.get("/", EmpresaController.index);
 router.get("/parceiras", EmpresaController.partners);
 
+router.get(
+    "/usuario/:usuarioId",
+    validarUuidParam("usuarioId"),
+    validationMiddleware,
+    EmpresaController.porUsuario
+);
+
 /* ---------- Rotas autenticadas ---------- */
 router.get("/me", authMiddleware, EmpresaController.me);
 
@@ -55,6 +62,15 @@ router.patch(
     validationMiddleware,
     upload.single("logo"),
     EmpresaController.uploadLogo
+);
+
+router.patch(
+    "/:id/capa",
+    authMiddleware,
+    validarUuidParam("id"),
+    validationMiddleware,
+    upload.single("capa"),
+    EmpresaController.uploadCapa
 );
 
 router.delete(

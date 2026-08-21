@@ -44,6 +44,14 @@ router.patch(
 );
 
 router.patch(
+    "/:id/capa",
+    validarUuidParam("id"),
+    validationMiddleware,
+    upload.single("capa"),
+    UsuarioController.updateCapa
+);
+
+router.patch(
     "/:id/ativar",
     rbacMiddleware("administrador"),
     validarUuidParam("id"),

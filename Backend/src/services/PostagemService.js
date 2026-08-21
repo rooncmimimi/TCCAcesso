@@ -4,6 +4,7 @@ import sequelize from "../config/database.js";
 import {
     Postagem,
     Usuario,
+    Empresa,
     Comentario,
     Curtida,
     PostagemAnexo,
@@ -12,7 +13,7 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono } from "../utils/authorization.js";
+import { garantirDono, garantirEmpresaAprovada } from "../utils/authorization.js";
 import NotificacaoService from "./NotificacaoService.js";
 import { emitirFeed } from "../realtime/socket.js";
 import { urlPublica, tipoDoArquivo } from "../middlewares/uploadMiddleware.js";
@@ -209,6 +210,16 @@ class PostagemService {
             throw ApiError.badRequest(
                 "Escreva algo ou anexe um arquivo para publicar."
             );
+        }
+
+        if (solicitante.tipoUsuario === "empresa") {
+            const empresa = await Empresa.findOne({
+                where: { usuarioId: solicitante.id }
+            });
+
+            if (empresa) {
+                garantirEmpresaAprovada(empresa, solicitante);
+            }
         }
 
         const transaction = await sequelize.transaction();

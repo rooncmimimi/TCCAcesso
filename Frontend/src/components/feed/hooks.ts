@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { extrairMensagemErro } from "@/services/api";
 import { ouvirEvento } from "@/services/socket";
+import { useSpeech } from "@/contexts/SpeechContext";
 import postagensService, { type FiltroFeed, type NovaPostagem } from "@/services/postagens.service";
 import type { Paginado } from "@/services/http";
 import type { ComentarioCompleto, PostagemCompleta } from "@/types";
@@ -80,20 +81,49 @@ function removerPostagemDoCacheFeed(dados: PaginasFeed | undefined, postagemId: 
   };
 }
 
-/** Assina os eventos de tempo real do feed e mantém o cache do React Query em dia. */
+/**
+ * Assina os eventos de tempo real do feed e mantém o cache do React Query em dia.
+ *
+ * Nomes e formatos de payload espelham exatamente o que o backend emite em
+ * `PostagemService` (`feed:postagem`, `feed:curtida`, `feed:comentario` —
+ * ver `Backend/src/services/PostagemService.js`).
+ */
 export function useFeedTempoReal() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const cancelarNovaPostagem = ouvirEvento<PostagemCompleta>("feed:nova-postagem", () => {
+    const cancelarPostagem = ouvirEvento<{
+      postagem?: PostagemCompleta;
+      id?: string;
+      atualizada?: boolean;
+      removida?: boolean;
+    }>("feed:postagem", (dados) => {
+      if (dados.removida && dados.id) {
+        queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
+          removerPostagemDoCacheFeed(atual, dados.id as string),
+        );
+        queryClient.removeQueries({ queryKey: ["postagem", dados.id] });
+        return;
+      }
+
+      if (dados.atualizada && dados.postagem) {
+        const postagemAtualizada = dados.postagem;
+        queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
+          atualizarPostagemNoCacheFeed(atual, postagemAtualizada.id, () => postagemAtualizada),
+        );
+        queryClient.setQueryData(["postagem", postagemAtualizada.id], postagemAtualizada);
+        return;
+      }
+
+      // Nova publicação de outro usuário: só marca como desatualizado,
+      // sem interromper quem já está lendo o feed com uma busca automática.
       void queryClient.invalidateQueries({ queryKey: ["postagens"], refetchType: "none" });
     });
 
     const cancelarCurtida = ouvirEvento<{
       postagemId: string;
       totalCurtidas: number;
-      curtido?: boolean;
-    }>("postagem:curtida", (dados) => {
+    }>("feed:curtida", (dados) => {
       queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
         atualizarPostagemNoCacheFeed(atual, dados.postagemId, (postagem) => ({
           ...postagem,
@@ -105,18 +135,25 @@ export function useFeedTempoReal() {
       );
     });
 
-    const cancelarComentario = ouvirEvento<{ postagemId: string }>("postagem:comentario", (dados) => {
+    const cancelarComentario = ouvirEvento<{
+      postagemId: string;
+      totalComentarios: number;
+      removido?: boolean;
+    }>("feed:comentario", (dados) => {
       void queryClient.invalidateQueries({ queryKey: ["comentarios", dados.postagemId] });
       queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
         atualizarPostagemNoCacheFeed(atual, dados.postagemId, (postagem) => ({
           ...postagem,
-          totalComentarios: (postagem.totalComentarios ?? 0) + 1,
+          totalComentarios: dados.totalComentarios,
         })),
+      );
+      queryClient.setQueryData<PostagemCompleta>(["postagem", dados.postagemId], (atual) =>
+        atual ? { ...atual, totalComentarios: dados.totalComentarios } : atual,
       );
     });
 
     return () => {
-      cancelarNovaPostagem();
+      cancelarPostagem();
       cancelarCurtida();
       cancelarComentario();
     };
@@ -258,6 +295,7 @@ export function useRemoverComentario(postagemId: string) {
 
 export function useCompartilharPostagem() {
   const queryClient = useQueryClient();
+  const { speak } = useSpeech();
   return useMutation({
     mutationFn: ({ postagemId, comentario }: { postagemId: string; comentario?: string }) =>
       postagensService.compartilhar(postagemId, comentario),
@@ -274,6 +312,7 @@ export function useCompartilharPostagem() {
         atual ? aplicar(atual) : atual,
       );
       toast.success("Publicação compartilhada.");
+      speak("Publicação compartilhada.");
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível compartilhar.")),
   });

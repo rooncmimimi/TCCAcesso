@@ -19,6 +19,7 @@ import { initials, useSession } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
 import { formatarTempoRelativo } from "@/utils/format";
 import type { ComentarioCompleto } from "@/types";
+import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { useComentarios, useCriarComentario, useRemoverComentario } from "./hooks";
 
 function LinhaComentario({
@@ -38,15 +39,21 @@ function LinhaComentario({
   return (
     <li>
       <div className="flex gap-3">
-        <Avatar className="size-8 shrink-0">
-          <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
-          <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-            {initials(autor?.nome ?? "Usuário")}
-          </AvatarFallback>
-        </Avatar>
+        <LinkAutor autorId={autor?.id} className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Avatar className="size-8">
+            <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
+            <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
+              {initials(autor?.nome ?? "Usuário")}
+            </AvatarFallback>
+          </Avatar>
+        </LinkAutor>
         <div className="min-w-0 flex-1">
           <div className="rounded-xl bg-secondary px-3 py-2">
-            <p className="text-sm font-bold">{autor?.nome ?? "Usuário"}</p>
+            <p className="text-sm font-bold">
+              <LinkAutor autorId={autor?.id} className="hover:underline focus-visible:underline">
+                {autor?.nome ?? "Usuário"}
+              </LinkAutor>
+            </p>
             <p className="text-sm leading-relaxed">{comentario.comentario}</p>
           </div>
           <div className="mt-1 flex items-center gap-3 px-1 text-xs text-muted-foreground">

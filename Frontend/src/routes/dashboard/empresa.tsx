@@ -8,7 +8,9 @@ import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { MinhasVagas } from "@/components/dashboard/MinhasVagas";
 import { CandidaturasDaVaga } from "@/components/dashboard/CandidaturasDaVaga";
+import { AvisoAprovacaoEmpresa } from "@/components/perfil/AvisoAprovacaoEmpresa";
 import { dashboardService } from "@/services/dashboard.service";
+import { empresasService } from "@/services/empresas.service";
 import type { Vaga } from "@/types";
 
 export const Route = createFileRoute("/dashboard/empresa")({
@@ -31,15 +33,53 @@ export const Route = createFileRoute("/dashboard/empresa")({
 function PainelEmpresa() {
   const [vagaSelecionada, setVagaSelecionada] = useState<Vaga | null>(null);
 
+  const {
+    data: empresa,
+    isLoading: carregandoEmpresa,
+    isError: erroEmpresa,
+  } = useQuery({
+    queryKey: ["minha-empresa"],
+    queryFn: () => empresasService.minhaEmpresa(),
+  });
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["metricas-empresa"],
     queryFn: () => dashboardService.empresa(),
+    enabled: empresa?.statusAprovacao === "aprovada",
   });
 
   const porStatus = data?.candidaturasPorStatus ?? {};
   const resumoTextual = Object.entries(porStatus)
     .map(([status, total]) => `${status}: ${total}`)
     .join(", ");
+
+  if (carregandoEmpresa) {
+    return (
+      <AppShell>
+        <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando painel da empresa…
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (erroEmpresa || !empresa) {
+    return (
+      <AppShell>
+        <div role="alert" className="py-10 text-sm text-destructive">
+          Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde.
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (empresa.statusAprovacao !== "aprovada") {
+    return (
+      <AppShell>
+        <AvisoAprovacaoEmpresa empresa={empresa} />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>

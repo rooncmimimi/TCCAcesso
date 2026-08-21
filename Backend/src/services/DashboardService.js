@@ -4,7 +4,10 @@ import {
     Empresa,
     Vaga,
     Candidatura,
-    Postagem
+    Postagem,
+    UsuarioSeguido,
+    EmpresaSeguida,
+    FavoritoVaga
 } from "../models/index.js";
 import sequelize from "../config/database.js";
 
@@ -58,10 +61,12 @@ class DashboardService {
 
         if (!empresa) {
             return {
-                totalVagas: 0,
+                vagas: 0,
                 vagasAbertas: 0,
-                totalCandidaturas: 0,
-                candidaturasPendentes: 0
+                candidaturas: 0,
+                candidaturasPendentes: 0,
+                postagens: 0,
+                seguidores: 0
             };
         }
 
@@ -72,22 +77,27 @@ class DashboardService {
 
         const vagaIds = vagas.map((vaga) => vaga.id);
 
-        const [totalCandidaturas, candidaturasPendentes] = await Promise.all([
-            vagaIds.length
-                ? Candidatura.count({ where: { vagaId: vagaIds } })
-                : 0,
-            vagaIds.length
-                ? Candidatura.count({
-                      where: { vagaId: vagaIds, status: "Pendente" }
-                  })
-                : 0
-        ]);
+        const [totalCandidaturas, candidaturasPendentes, totalPostagens, totalSeguidores] =
+            await Promise.all([
+                vagaIds.length
+                    ? Candidatura.count({ where: { vagaId: vagaIds } })
+                    : 0,
+                vagaIds.length
+                    ? Candidatura.count({
+                          where: { vagaId: vagaIds, status: "Pendente" }
+                      })
+                    : 0,
+                Postagem.count({ where: { usuarioId, ativo: true } }),
+                EmpresaSeguida.count({ where: { empresaId: empresa.id } })
+            ]);
 
         return {
-            totalVagas: vagas.length,
+            vagas: vagas.length,
             vagasAbertas: vagas.filter((vaga) => vaga.status === "Aberta").length,
-            totalCandidaturas,
-            candidaturasPendentes
+            candidaturas: totalCandidaturas,
+            candidaturasPendentes,
+            postagens: totalPostagens,
+            seguidores: totalSeguidores
         };
     }
 
@@ -95,23 +105,41 @@ class DashboardService {
         const candidato = await Candidato.findOne({ where: { usuarioId } });
 
         if (!candidato) {
-            return { totalCandidaturas: 0, emAndamento: 0, aprovadas: 0 };
+            return {
+                candidaturas: 0,
+                emAndamento: 0,
+                aprovadas: 0,
+                vagasFavoritas: 0,
+                postagens: 0,
+                seguidores: 0
+            };
         }
 
-        const [totalCandidaturas, emAndamento, aprovadas] = await Promise.all([
-            Candidatura.count({ where: { candidatoId: candidato.id } }),
-            Candidatura.count({
-                where: {
-                    candidatoId: candidato.id,
-                    status: ["Pendente", "Visualizada", "EmAnalise"]
-                }
-            }),
-            Candidatura.count({
-                where: { candidatoId: candidato.id, status: "Aprovada" }
-            })
-        ]);
+        const [totalCandidaturas, emAndamento, aprovadas, vagasFavoritas, totalPostagens, totalSeguidores] =
+            await Promise.all([
+                Candidatura.count({ where: { candidatoId: candidato.id } }),
+                Candidatura.count({
+                    where: {
+                        candidatoId: candidato.id,
+                        status: ["Pendente", "Visualizada", "EmAnalise"]
+                    }
+                }),
+                Candidatura.count({
+                    where: { candidatoId: candidato.id, status: "Aprovada" }
+                }),
+                FavoritoVaga.count({ where: { candidatoId: candidato.id } }),
+                Postagem.count({ where: { usuarioId, ativo: true } }),
+                UsuarioSeguido.count({ where: { seguidoId: usuarioId } })
+            ]);
 
-        return { totalCandidaturas, emAndamento, aprovadas };
+        return {
+            candidaturas: totalCandidaturas,
+            emAndamento,
+            aprovadas,
+            vagasFavoritas,
+            postagens: totalPostagens,
+            seguidores: totalSeguidores
+        };
     }
 }
 

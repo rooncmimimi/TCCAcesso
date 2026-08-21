@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { StatusCandidatura } from "@/types";
+import type { StatusCandidatura, StatusVaga } from "@/types";
 
 /**
- * Rótulos e variantes seguem exatamente o ENUM do backend
- * (Pendente, Visualizada, EmAnalise, Aprovada, Rejeitada, Cancelada).
+ * Rótulos e variantes seguem exatamente os ENUMs do backend:
+ * candidatura (Pendente, Visualizada, EmAnalise, Aprovada, Rejeitada, Cancelada)
+ * e vaga (Aberta, Pausada, Encerrada).
  */
 const ROTULOS: Record<string, string> = {
   Pendente: "Pendente",
@@ -13,6 +14,9 @@ const ROTULOS: Record<string, string> = {
   Aprovada: "Aprovada",
   Rejeitada: "Rejeitada",
   Cancelada: "Cancelada",
+  Aberta: "Aberta",
+  Pausada: "Arquivada",
+  Encerrada: "Encerrada",
 };
 
 const VARIANTES: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -22,6 +26,9 @@ const VARIANTES: Record<string, "default" | "secondary" | "destructive" | "outli
   Aprovada: "default",
   Rejeitada: "destructive",
   Cancelada: "outline",
+  Aberta: "default",
+  Pausada: "outline",
+  Encerrada: "secondary",
 };
 
 /** Tons usados pelas tabelas administrativas (rótulo livre via children). */
@@ -33,7 +40,7 @@ const TONS: Record<string, "default" | "secondary" | "destructive" | "outline"> 
 };
 
 type StatusBadgeProps =
-  | { status: StatusCandidatura | string; tom?: never; children?: never }
+  | { status: StatusCandidatura | StatusVaga | string; tom?: never; children?: never }
   | { tom: "sucesso" | "atencao" | "perigo" | "neutro"; children: ReactNode; status?: never };
 
 export function StatusBadge(props: StatusBadgeProps) {

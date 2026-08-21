@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/layouts/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
+import { GuardaAcesso } from "@/components/GuardaAcesso";
 
 export const Route = createFileRoute("/configuracoes/")({
   head: () => ({
@@ -21,7 +22,11 @@ export const Route = createFileRoute("/configuracoes/")({
       { property: "og:description", content: "Central de preferências da sua conta ACESSO." },
     ],
   }),
-  component: Configuracoes,
+  component: () => (
+    <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
+      <Configuracoes />
+    </GuardaAcesso>
+  ),
 });
 
 const secoes = [

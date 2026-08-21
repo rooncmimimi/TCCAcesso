@@ -6,22 +6,39 @@ export interface Usuario {
   nome: string;
   email: string;
   tipo: TipoUsuario;
+  /** Nome do campo como o backend serializa (`Usuario.tipoUsuario`) em objetos aninhados (autor de post, etc). */
+  tipoUsuario?: TipoUsuario;
   ativo: boolean;
   fotoPerfil?: string | null;
+  capaPerfil?: string | null;
   telefone?: string | null;
   criadoEm?: string;
 }
 
+/** Espelha a tabela `candidatos` do backend (ver Backend/src/models/Candidato.js). */
 export interface Candidato {
   id: string;
   usuarioId: string;
   usuario?: Usuario;
+  cpf?: string | null;
+  dataNascimento?: string | null;
+  genero?: string | null;
+  biografia?: string | null;
+  escolaridade?: string | null;
   tituloProfissional?: string | null;
-  resumo?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  endereco?: string | null;
+  cep?: string | null;
+  linkedin?: string | null;
+  github?: string | null;
+  disponibilidade?: string | null;
+  pretensaoSalarial?: number | string | null;
+  necessidadesAcessibilidade?: string | null;
   curriculo?: string | null;
-  deficiencias?: { id: string; nome: string; observacoes?: string | null }[];
+  curriculoNome?: string | null;
+  curriculoAtualizadoEm?: string | null;
+  deficiencias?: { id: string; nome: string; descricao?: string | null; CandidatoDeficiencia?: { observacoes?: string | null } }[];
   experiencias?: Experiencia[];
   formacoes?: Formacao[];
   certificados?: Certificado[];
@@ -31,9 +48,12 @@ export interface Candidato {
 export interface Experiencia {
   id: string;
   cargo: string;
-  empresaNome: string;
+  empresa: string;
+  local?: string | null;
+  modalidade?: string | null;
   dataInicio?: string;
   dataFim?: string | null;
+  atual?: boolean;
   descricao?: string | null;
 }
 
@@ -42,16 +62,20 @@ export interface Formacao {
   instituicao: string;
   curso: string;
   nivel?: string | null;
-  dataInicio?: string;
+  dataInicio?: string | null;
   dataFim?: string | null;
+  emAndamento?: boolean;
+  descricao?: string | null;
 }
 
 export interface Certificado {
   id: string;
-  nome: string;
+  titulo: string;
   instituicao?: string | null;
+  emitidoEm?: string | null;
+  expiraEm?: string | null;
+  credencialUrl?: string | null;
   arquivo?: string | null;
-  dataEmissao?: string | null;
 }
 
 export interface Habilidade {
@@ -60,21 +84,40 @@ export interface Habilidade {
   nivel?: string | null;
 }
 
+export interface Deficiencia {
+  id: string;
+  nome: string;
+  descricao?: string | null;
+}
+
+export type PorteEmpresa = "MEI" | "Micro" | "Pequena" | "Media" | "Grande";
+
 export interface Empresa {
   id: string;
   usuarioId?: string;
+  usuario?: Usuario;
   razaoSocial: string;
   nomeFantasia?: string | null;
   cnpj?: string;
   setor?: string | null;
+  porte?: PorteEmpresa | null;
   descricao?: string | null;
+  culturaInclusiva?: string | null;
+  site?: string | null;
   logo?: string | null;
+  capa?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  endereco?: string | null;
+  cep?: string | null;
   aprovada?: boolean;
   seguindo?: boolean;
   totalVagas?: number;
   totalSeguidores?: number;
+  vagas?: Vaga[];
+  statusAprovacao?: "pendente" | "aprovada" | "reprovada";
+  empresaVerificada?: boolean;
+  motivoReprovacao?: string | null;
 }
 
 export interface CredenciaisLogin {
@@ -102,18 +145,27 @@ export interface Vaga {
   beneficios?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  cargaHoraria?: string | null;
   modalidade: ModalidadeVaga;
   contrato?: ContratoVaga;
   salario?: number | string | null;
   exclusivaPcd?: boolean;
+  acessibilidade?: string | null;
+  recursosAcessibilidade?: string[] | null;
   status: StatusVaga;
-  criadoEm?: string;
+  /** O backend serializa os timestamps como `createdAt`/`updatedAt` (não `criadoEm`). */
+  createdAt?: string;
+  dataPublicacao?: string | null;
+  dataEncerramento?: string | null;
   empresaId?: string;
+  /** Só presente em `GET /vagas/minhas` (painel de gestão). */
+  totalCandidaturas?: number;
   empresa?: {
     id: string;
     nomeFantasia?: string | null;
     razaoSocial?: string;
     logo?: string | null;
+    usuario?: { id: string };
   };
 }
 
@@ -213,6 +265,14 @@ export interface PostagemCompleta extends Postagem {
   publica?: boolean;
 }
 
+export interface CompartilhamentoCompleto {
+  id: string;
+  comentario?: string | null;
+  criadoEm?: string;
+  usuario?: Usuario;
+  postagem?: PostagemCompleta;
+}
+
 export interface ComentarioCompleto extends Comentario {
   usuario?: Usuario;
   comentarioPaiId?: string | null;
@@ -223,9 +283,10 @@ export interface ComentarioCompleto extends Comentario {
 /* ==========================================================
    Seguidores
    ========================================================== */
+/** Espelha exatamente o retorno de `GET /seguir/resumo/:usuarioId` no backend. */
 export interface ResumoSeguidores {
-  seguidores: number;
-  seguindo: number;
+  totalSeguidores: number;
+  totalSeguindo: number;
   seguindoEsteUsuario?: boolean;
 }
 

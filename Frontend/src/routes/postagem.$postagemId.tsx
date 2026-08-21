@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CardPostagem } from "@/components/feed/CardPostagem";
 import { usePostagemDetalhe } from "@/components/feed/hooks";
+import { GuardaAcesso } from "@/components/GuardaAcesso";
 
 export const Route = createFileRoute("/postagem/$postagemId")({
   head: () => ({
@@ -21,7 +22,11 @@ export const Route = createFileRoute("/postagem/$postagemId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: DetalhePostagem,
+  component: () => (
+    <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
+      <DetalhePostagem />
+    </GuardaAcesso>
+  ),
 });
 
 function DetalhePostagem() {

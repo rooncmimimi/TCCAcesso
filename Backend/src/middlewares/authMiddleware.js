@@ -40,6 +40,10 @@ const authMiddleware = async (req, res, next) => {
             throw ApiError.forbidden("Usuário desativado.");
         }
 
+        if (usuario.bloqueado) {
+            throw ApiError.forbidden("Usuário bloqueado.");
+        }
+
         req.user = usuario;
 
         return next();

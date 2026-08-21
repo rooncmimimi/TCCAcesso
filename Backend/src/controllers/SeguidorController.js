@@ -66,6 +66,19 @@ class SeguidorController {
         }
     }
 
+    async resumoEmpresa(req, res, next) {
+        try {
+            const dados = await SeguidorService.resumoEmpresa(
+                req.params.empresaId,
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async sugestoes(req, res, next) {
         try {
             const dados = await SeguidorService.sugestoes(

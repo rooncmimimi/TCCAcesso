@@ -9,7 +9,7 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { ehAdministrador } from "../utils/authorization.js";
+import { ehAdministrador, garantirEmpresaAprovada } from "../utils/authorization.js";
 import { STATUS_CANDIDATURA } from "../models/Candidatura.js";
 
 /** Status que somente a empresa dona da vaga pode aplicar. */
@@ -158,6 +158,8 @@ class CandidaturaService {
             );
         }
 
+        garantirEmpresaAprovada(vaga.empresa, solicitante);
+
         const { pagina, limite, offset } = resolverPaginacao(query);
         const where = { vagaId };
 
@@ -265,6 +267,8 @@ class CandidaturaService {
                     "Apenas a empresa dona da vaga pode alterar o status."
                 );
             }
+
+            garantirEmpresaAprovada(candidatura.vaga.empresa, solicitante);
 
             if (!STATUS_EMPRESA.includes(status) && !ehAdministrador(solicitante)) {
                 throw ApiError.badRequest(

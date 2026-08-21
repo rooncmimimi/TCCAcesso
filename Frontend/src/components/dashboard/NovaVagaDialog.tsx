@@ -19,9 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { extrairMensagemErro } from "@/services/api";
 import vagasService from "@/services/vagas.service";
-
-const MODALIDADES = ["Presencial", "Hibrido", "Remoto"] as const;
-const CONTRATOS = ["CLT", "PJ", "Estagio", "JovemAprendiz", "Temporario"] as const;
+import { CONTRATOS, MODALIDADES, ROTULO_CONTRATO } from "./constantesVaga";
 
 /**
  * Publicação real de vaga pela empresa autenticada (POST /vagas).
@@ -130,7 +128,7 @@ export function NovaVagaDialog() {
               >
                 {CONTRATOS.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {ROTULO_CONTRATO[c]}
                   </option>
                 ))}
               </select>

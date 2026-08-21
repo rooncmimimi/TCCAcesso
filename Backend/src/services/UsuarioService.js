@@ -98,7 +98,8 @@ class UsuarioService {
                 {
                     nome: data.nome ?? usuario.nome,
                     telefone: data.telefone ?? usuario.telefone,
-                    fotoPerfil: data.fotoPerfil ?? usuario.fotoPerfil
+                    fotoPerfil: data.fotoPerfil ?? usuario.fotoPerfil,
+                    capaPerfil: data.capaPerfil ?? usuario.capaPerfil
                 },
                 { transaction }
             );

@@ -3,7 +3,7 @@ import sequelize from "../config/database.js";
 import { Vaga, Empresa, Usuario, Candidatura } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono } from "../utils/authorization.js";
+import { garantirDono, garantirEmpresaAprovada } from "../utils/authorization.js";
 
 const CAMPOS_EDITAVEIS = [
     "titulo",
@@ -167,6 +167,9 @@ class VagaService {
 
     /* ==========================================================
        VAGAS DA EMPRESA AUTENTICADA
+       Inclui `totalCandidaturas` por vaga (uma única consulta agregada,
+       não N+1) — usado pelo painel de gestão para mostrar quantas
+       candidaturas cada vaga recebeu sem precisar de outra chamada.
     ========================================================== */
     async findByEmpresaAutenticada(usuarioId, query) {
         const empresa = await this.empresaDoUsuario(usuarioId);
@@ -185,7 +188,29 @@ class VagaService {
             order: [["created_at", "DESC"]]
         });
 
-        return montarResposta("vagas", rows, count, pagina, limite);
+        const vagaIds = rows.map((vaga) => vaga.id);
+
+        const contagens = vagaIds.length
+            ? await Candidatura.findAll({
+                  where: { vagaId: vagaIds },
+                  attributes: [
+                      "vagaId",
+                      [sequelize.fn("COUNT", sequelize.col("id")), "total"]
+                  ],
+                  group: ["vagaId"]
+              })
+            : [];
+
+        const totalPorVaga = new Map(
+            contagens.map((c) => [c.vagaId, Number(c.get("total"))])
+        );
+
+        const vagasComContagem = rows.map((vaga) => ({
+            ...vaga.toJSON(),
+            totalCandidaturas: totalPorVaga.get(vaga.id) ?? 0
+        }));
+
+        return montarResposta("vagas", vagasComContagem, count, pagina, limite);
     }
 
     /* ==========================================================
@@ -193,6 +218,8 @@ class VagaService {
     ========================================================== */
     async create(data, solicitante) {
         const empresa = await this.empresaDoUsuario(solicitante.id);
+
+        garantirEmpresaAprovada(empresa, solicitante);
 
         const vaga = await Vaga.create({
             ...this.filtrarCampos(data),
@@ -214,6 +241,7 @@ class VagaService {
             const vaga = await this.buscarVagaComEmpresa(id, transaction);
 
             garantirDono(solicitante, vaga.empresa.usuarioId);
+            garantirEmpresaAprovada(vaga.empresa, solicitante);
 
             await vaga.update(this.filtrarCampos(data), { transaction });
             await transaction.commit();
@@ -232,6 +260,7 @@ class VagaService {
         const vaga = await this.buscarVagaComEmpresa(id);
 
         garantirDono(solicitante, vaga.empresa.usuarioId);
+        garantirEmpresaAprovada(vaga.empresa, solicitante);
 
         vaga.status = status;
         await vaga.save();
@@ -249,6 +278,7 @@ class VagaService {
             const vaga = await this.buscarVagaComEmpresa(id, transaction);
 
             garantirDono(solicitante, vaga.empresa.usuarioId);
+            garantirEmpresaAprovada(vaga.empresa, solicitante);
 
             await vaga.destroy({ transaction });
             await transaction.commit();
@@ -267,6 +297,7 @@ class VagaService {
         const vaga = await this.buscarVagaComEmpresa(id);
 
         garantirDono(solicitante, vaga.empresa.usuarioId);
+        garantirEmpresaAprovada(vaga.empresa, solicitante);
 
         const total = await Candidatura.count({ where: { vagaId: id } });
 

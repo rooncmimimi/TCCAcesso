@@ -4,7 +4,8 @@ import {
     CandidatoCertificado,
     CandidatoHabilidade,
     Candidato,
-    Usuario
+    Usuario,
+    Deficiencia
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import {
@@ -113,7 +114,12 @@ class PerfilCandidatoService {
                 { model: CandidatoExperiencia, as: "experiencias" },
                 { model: CandidatoFormacao, as: "formacoes" },
                 { model: CandidatoCertificado, as: "certificados" },
-                { model: CandidatoHabilidade, as: "habilidades" }
+                { model: CandidatoHabilidade, as: "habilidades" },
+                {
+                    model: Deficiencia,
+                    as: "deficiencias",
+                    through: { attributes: ["observacoes"] }
+                }
             ]
         });
 
@@ -122,6 +128,21 @@ class PerfilCandidatoService {
         }
 
         return candidato;
+    }
+
+    /**
+     * Mesmo perfil público/consolidado, mas resolvido a partir do `usuarioId`
+     * do autor de uma postagem/comentário — é o que permite "clicar na foto/nome
+     * no feed" sem o cliente precisar conhecer o `candidatoId` de antemão.
+     */
+    async perfilCompletoPorUsuario(usuarioId) {
+        const candidato = await Candidato.findOne({ where: { usuarioId } });
+
+        if (!candidato) {
+            throw ApiError.notFound("Candidato não encontrado.");
+        }
+
+        return this.perfilCompleto(candidato.id);
     }
 
     async listar(nome, candidatoId) {

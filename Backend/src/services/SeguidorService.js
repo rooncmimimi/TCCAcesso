@@ -211,6 +211,39 @@ class SeguidorService {
         };
     }
 
+    /** Contadores + estado do candidato autenticado em relação a uma empresa. */
+    async resumoEmpresa(empresaId, solicitante) {
+        const empresa = await Empresa.findByPk(empresaId, {
+            attributes: ["id"]
+        });
+
+        if (!empresa) {
+            throw ApiError.notFound("Empresa não encontrada.");
+        }
+
+        let candidato = null;
+
+        if (solicitante) {
+            candidato = await Candidato.findOne({
+                where: { usuarioId: solicitante.id }
+            });
+        }
+
+        const [totalSeguidores, relacao] = await Promise.all([
+            EmpresaSeguida.count({ where: { empresaId } }),
+            candidato
+                ? EmpresaSeguida.findOne({
+                      where: { empresaId, candidatoId: candidato.id }
+                  })
+                : null
+        ]);
+
+        return {
+            totalSeguidores,
+            seguindoEstaEmpresa: Boolean(relacao)
+        };
+    }
+
     /** IDs seguidos pelo usuário — usado para priorizar o feed. */
     async idsSeguidos(usuarioId) {
         const vinculos = await UsuarioSeguido.findAll({

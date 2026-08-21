@@ -21,6 +21,8 @@ export const validarAtualizacaoUsuario = [
 
     body("fotoPerfil").optional({ values: "falsy" }).isString().trim(),
 
+    body("capaPerfil").optional({ values: "falsy" }).isString().trim(),
+
     // Campos sensíveis são explicitamente rejeitados (mass assignment).
     body(["email", "senha", "senhaHash", "tipoUsuario", "ativo"])
         .not()

@@ -18,6 +18,11 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get(
+    "/candidatos/usuario/:usuarioId",
+    PerfilCandidatoController.perfilCompletoPorUsuario
+);
+
+router.get(
     "/candidatos/:candidatoId",
     PerfilCandidatoController.perfilCompleto
 );

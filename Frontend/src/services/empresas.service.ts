@@ -23,6 +23,12 @@ export const empresasService = {
     return data.empresa;
   },
 
+  /** Perfil público da empresa por usuarioId — usado para abrir o perfil a partir do feed. */
+  async porUsuario(usuarioId: string): Promise<Empresa> {
+    const { data } = await api.get<{ empresa: Empresa }>(`/empresas/usuario/${usuarioId}`);
+    return data.empresa;
+  },
+
   async atualizar(id: string, payload: Record<string, unknown>): Promise<Empresa> {
     const { data } = await api.put<{ empresa: Empresa }>(`/empresas/${id}`, payload);
     return data.empresa;
@@ -38,7 +44,19 @@ export const empresasService = {
     return data.empresa;
   },
 
-  async vagasDaEmpresa(params: { page?: number; limit?: number } = {}): Promise<Paginado<Vaga>> {
+  async atualizarCapa(id: string, arquivo: File): Promise<Empresa> {
+    const form = new FormData();
+    form.append("capa", arquivo);
+
+    const { data } = await api.patch<{ empresa: Empresa }>(`/empresas/${id}/capa`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data.empresa;
+  },
+
+  async vagasDaEmpresa(
+    params: { page?: number; limit?: number; status?: "Aberta" | "Pausada" | "Encerrada" } = {},
+  ): Promise<Paginado<Vaga>> {
     return buscarPaginado<Vaga>("/vagas/minhas", "vagas", params);
   },
 
@@ -74,8 +92,24 @@ export const seguidoresService = {
   },
 
   async resumo(usuarioId: string): Promise<ResumoSeguidores> {
-    const { data } = await api.get<{ resumo: ResumoSeguidores }>(`/seguir/resumo/${usuarioId}`);
-    return data.resumo ?? { seguidores: 0, seguindo: 0 };
+    const { data } = await api.get<ResumoSeguidores & { sucesso: boolean }>(`/seguir/resumo/${usuarioId}`);
+    return {
+      totalSeguidores: data.totalSeguidores ?? 0,
+      totalSeguindo: data.totalSeguindo ?? 0,
+      seguindoEsteUsuario: Boolean(data.seguindoEsteUsuario),
+    };
+  },
+
+  /** Mesmo formato de `ResumoSeguidores` para reaproveitar o `SeguirButton` também em empresas. */
+  async resumoEmpresa(empresaId: string): Promise<ResumoSeguidores> {
+    const { data } = await api.get<{ totalSeguidores: number; seguindoEstaEmpresa: boolean }>(
+      `/seguir/resumo/empresas/${empresaId}`,
+    );
+    return {
+      totalSeguidores: data.totalSeguidores ?? 0,
+      totalSeguindo: 0,
+      seguindoEsteUsuario: Boolean(data.seguindoEstaEmpresa),
+    };
   },
 };
 

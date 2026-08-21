@@ -10,6 +10,7 @@ import { CardPostagem } from "@/components/feed/CardPostagem";
 import { useFeedInfinito, useFeedTempoReal } from "@/components/feed/hooks";
 import { urlArquivo } from "@/services/uploads.service";
 import { initials, useSession } from "@/contexts/SessionContext";
+import { GuardaAcesso } from "@/components/GuardaAcesso";
 
 export const Route = createFileRoute("/feed")({
   head: () => ({
@@ -23,7 +24,11 @@ export const Route = createFileRoute("/feed")({
       { property: "og:description", content: "Vagas, comunidade e inclusão em um só lugar." },
     ],
   }),
-  component: Feed,
+  component: () => (
+    <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
+      <Feed />
+    </GuardaAcesso>
+  ),
 });
 
 function Feed() {

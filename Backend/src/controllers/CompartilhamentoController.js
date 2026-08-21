@@ -1,6 +1,19 @@
 import CompartilhamentoService from "../services/CompartilhamentoService.js";
 
 class CompartilhamentoController {
+    async porUsuario(req, res, next) {
+        try {
+            const dados = await CompartilhamentoService.listarPorUsuario(
+                req.params.usuarioId,
+                req.query
+            );
+
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async index(req, res, next) {
         try {
             const dados = await CompartilhamentoService.listarPorPostagem(

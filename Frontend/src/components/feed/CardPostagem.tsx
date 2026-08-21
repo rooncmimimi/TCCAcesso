@@ -27,6 +27,7 @@ import { initials, useSession } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
 import { formatarTempoRelativo } from "@/utils/format";
 import type { PostagemCompleta } from "@/types";
+import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { DialogCompartilhar } from "./DialogCompartilhar";
 import { GaleriaAnexos } from "./GaleriaAnexos";
 import { SecaoComentarios } from "./SecaoComentarios";
@@ -71,15 +72,19 @@ export function CardPostagem({
       <CardContent className="p-5">
         <article aria-labelledby={`autor-${postagem.id}`}>
           <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-            <Avatar className="size-11 shrink-0">
-              <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
-              <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-                {initials(autor?.nome ?? "Usuário")}
-              </AvatarFallback>
-            </Avatar>
+            <LinkAutor autorId={autor?.id} className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Avatar className="size-11">
+                <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
+                <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
+                  {initials(autor?.nome ?? "Usuário")}
+                </AvatarFallback>
+              </Avatar>
+            </LinkAutor>
             <div className="min-w-0">
               <h2 id={`autor-${postagem.id}`} className="truncate text-base font-bold">
-                {autor?.nome ?? "Usuário"}
+                <LinkAutor autorId={autor?.id} className="hover:underline focus-visible:underline">
+                  {autor?.nome ?? "Usuário"}
+                </LinkAutor>
               </h2>
               <p className="truncate text-sm text-muted-foreground">
                 {formatarTempoRelativo(postagem.criadoEm ?? postagem.created_at)}

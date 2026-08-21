@@ -3,6 +3,7 @@ import { buscarPaginado, type Paginado } from "./http";
 import type {
   Candidato,
   Certificado,
+  Deficiencia,
   Experiencia,
   Formacao,
   Habilidade,
@@ -25,6 +26,12 @@ export const perfilService = {
 
   async perfilCompleto(candidatoId: string): Promise<Candidato> {
     const { data } = await api.get<{ candidato: Candidato }>(`/perfil/candidatos/${candidatoId}`);
+    return data.candidato;
+  },
+
+  /** Perfil consolidado (dados + experiências + formações + certificados + habilidades + deficiências) por usuarioId — usado para abrir o perfil de outra pessoa a partir do feed. */
+  async perfilCompletoPorUsuario(usuarioId: string): Promise<Candidato> {
+    const { data } = await api.get<{ candidato: Candidato }>(`/perfil/candidatos/usuario/${usuarioId}`);
     return data.candidato;
   },
 
@@ -56,6 +63,12 @@ export const perfilService = {
 
   async removerDeficiencia(candidatoId: string, deficienciaId: string) {
     await api.delete(`/candidatos/${candidatoId}/deficiencias/${deficienciaId}`);
+  },
+
+  /** Catálogo público de deficiências, usado para o seletor no perfil. */
+  async catalogoDeficiencias(): Promise<Deficiencia[]> {
+    const { data } = await api.get<{ deficiencias: Deficiencia[] }>("/deficiencias");
+    return data.deficiencias ?? [];
   },
 
   /* -------- Recursos do perfil (CRUD genérico) -------- */
@@ -95,6 +108,16 @@ export const perfilService = {
     form.append("foto", arquivo);
 
     const { data } = await api.patch<{ usuario: Usuario }>(`/usuarios/${id}/foto`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data.usuario;
+  },
+
+  async atualizarCapa(id: string, arquivo: File): Promise<Usuario> {
+    const form = new FormData();
+    form.append("capa", arquivo);
+
+    const { data } = await api.patch<{ usuario: Usuario }>(`/usuarios/${id}/capa`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.usuario;

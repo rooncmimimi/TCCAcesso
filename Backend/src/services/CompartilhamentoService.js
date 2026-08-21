@@ -1,6 +1,7 @@
 import {
     Compartilhamento,
     Postagem,
+    PostagemAnexo,
     Usuario
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
@@ -39,6 +40,39 @@ class CompartilhamentoService {
             include: [incluirAutor()],
             limit: limite,
             offset,
+            order: [["created_at", "DESC"]]
+        });
+
+        return montarResposta(
+            "compartilhamentos",
+            rows,
+            count,
+            pagina,
+            limite
+        );
+    }
+
+    /** Compartilhamentos feitos por um usuário — usado na aba "Compartilhamentos" do perfil. */
+    async listarPorUsuario(usuarioId, query) {
+        const { pagina, limite, offset } = resolverPaginacao(query);
+
+        const { rows, count } = await Compartilhamento.findAndCountAll({
+            where: { usuarioId },
+            include: [
+                {
+                    model: Postagem,
+                    as: "postagem",
+                    where: { ativo: true },
+                    required: true,
+                    include: [
+                        incluirAutor(),
+                        { model: PostagemAnexo, as: "anexos" }
+                    ]
+                }
+            ],
+            limit: limite,
+            offset,
+            distinct: true,
             order: [["created_at", "DESC"]]
         });
 

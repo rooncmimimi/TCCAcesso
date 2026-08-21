@@ -3,7 +3,7 @@ import sequelize from "../config/database.js";
 import { Empresa, Usuario, Vaga } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, ehAdministrador } from "../utils/authorization.js";
+import { garantirDono, ehAdministrador, garantirEmpresaAprovada } from "../utils/authorization.js";
 
 /** Campos que a própria empresa pode atualizar. */
 const CAMPOS_EDITAVEIS = [
@@ -17,7 +17,9 @@ const CAMPOS_EDITAVEIS = [
     "estado",
     "endereco",
     "cep",
-    "logo"
+    "logo",
+    "capa",
+    "culturaInclusiva"
 ];
 
 class EmpresaService {
@@ -126,6 +128,38 @@ class EmpresaService {
         return empresa;
     }
 
+    /**
+     * Perfil público resolvido a partir do `usuarioId` do autor de uma
+     * postagem/comentário — permite "clicar na foto/nome no feed" quando o
+     * autor é uma conta empresa, sem o cliente conhecer o `empresaId` antes.
+     * Diferente de `findByUsuario` (usada só em /empresas/me): aqui o
+     * `Usuario` incluído é restrito a campos públicos (sem e-mail/telefone).
+     */
+    async findByUsuarioPublico(usuarioId) {
+        const empresa = await Empresa.findOne({
+            where: { usuarioId },
+            include: [
+                {
+                    model: Usuario,
+                    as: "usuario",
+                    attributes: ["id", "nome", "fotoPerfil"]
+                },
+                {
+                    model: Vaga,
+                    as: "vagas",
+                    where: { status: "Aberta" },
+                    required: false
+                }
+            ]
+        });
+
+        if (!empresa) {
+            throw ApiError.notFound("Empresa não encontrada.");
+        }
+
+        return empresa;
+    }
+
     /* ==========================================================
        PERFIL DA EMPRESA AUTENTICADA
     ========================================================== */
@@ -156,6 +190,7 @@ class EmpresaService {
             }
 
             garantirDono(solicitante, empresa.usuarioId);
+            garantirEmpresaAprovada(empresa, solicitante);
 
             await empresa.update(this.filtrarCampos(data, solicitante), {
                 transaction

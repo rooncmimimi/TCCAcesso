@@ -46,4 +46,11 @@ router.get(
     SeguidorController.resumo
 );
 
+router.get(
+    "/resumo/empresas/:empresaId",
+    validarUuidParam("empresaId"),
+    validationMiddleware,
+    SeguidorController.resumoEmpresa
+);
+
 export default router;

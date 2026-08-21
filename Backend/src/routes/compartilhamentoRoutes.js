@@ -9,6 +9,13 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get(
+    "/usuario/:usuarioId",
+    param("usuarioId").isUUID().withMessage("Usuário inválido."),
+    validationMiddleware,
+    CompartilhamentoController.porUsuario
+);
+
+router.get(
     "/postagem/:postagemId",
     param("postagemId").isUUID().withMessage("Postagem inválida."),
     validationMiddleware,

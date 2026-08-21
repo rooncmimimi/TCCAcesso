@@ -31,6 +31,16 @@ class EmpresaController {
         }
     }
 
+    async porUsuario(req, res, next) {
+        try {
+            const empresa = await EmpresaService.findByUsuarioPublico(req.params.usuarioId);
+
+            return res.status(200).json({ sucesso: true, empresa });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async show(req, res, next) {
         try {
             const empresa = await EmpresaService.findById(req.params.id);
@@ -62,6 +72,22 @@ class EmpresaController {
             const empresa = await EmpresaService.update(
                 req.params.id,
                 { logo },
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, empresa });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async uploadCapa(req, res, next) {
+        try {
+            const capa = req.file ? `/uploads/${req.file.filename}` : null;
+
+            const empresa = await EmpresaService.update(
+                req.params.id,
+                { capa },
                 req.user
             );
 

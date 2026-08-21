@@ -40,6 +40,10 @@ export const validarAtualizacaoEmpresa = [
         .matches(/^\d{8}$/)
         .withMessage("O CEP deve conter 8 dígitos numéricos."),
 
+    body("culturaInclusiva").optional({ values: "falsy" }).trim().isLength({ max: 4000 }),
+
+    body("capa").optional({ values: "falsy" }).isString().trim(),
+
     body("empresaVerificada")
         .optional()
         .isBoolean()

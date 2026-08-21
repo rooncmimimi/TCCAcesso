@@ -2,7 +2,7 @@ import { Router } from "express";
 import AuthController from "../controllers/AuthController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import { authLimiter } from "../middlewares/rateLimitMiddleware.js";
+import { authLimiter, refreshLimiter } from "../middlewares/rateLimitMiddleware.js";
 import {
     validarCadastroCandidato,
     validarCadastroEmpresa,
@@ -43,6 +43,7 @@ router.post(
 
 router.post(
     "/refresh",
+    refreshLimiter,
     validarRefresh,
     validationMiddleware,
     AuthController.refresh

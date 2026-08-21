@@ -59,3 +59,35 @@ export const garantirDono = (usuario, donoUsuarioId) => {
         );
     }
 };
+
+/**
+ * Garante que a empresa está com o cadastro aprovado antes de liberar
+ * recursos empresariais (publicar/gerenciar vagas, ver candidaturas,
+ * editar o perfil empresarial). Administradores sempre têm acesso —
+ * eles usam essas rotas para moderação, independente do status.
+ *
+ * `statusAprovacao` já existe no schema (`pendente`/`aprovada`/`reprovada`);
+ * este helper só passa a dar EFEITO a esse campo, sem alterar o schema.
+ */
+export const garantirEmpresaAprovada = (empresa, solicitante) => {
+    if (ehAdministrador(solicitante)) {
+        return;
+    }
+
+    if (empresa.statusAprovacao === "aprovada") {
+        return;
+    }
+
+    if (empresa.statusAprovacao === "reprovada") {
+        throw ApiError.forbidden(
+            empresa.motivoReprovacao
+                ? `Seu cadastro empresarial não foi aprovado. Motivo: ${empresa.motivoReprovacao}`
+                : "Seu cadastro empresarial não foi aprovado pela equipe do ACESSO."
+        );
+    }
+
+    // pendente (ou qualquer outro valor futuro que não seja "aprovada")
+    throw ApiError.forbidden(
+        "Sua empresa está aguardando aprovação da equipe do ACESSO. Você receberá uma notificação quando a análise for concluída."
+    );
+};

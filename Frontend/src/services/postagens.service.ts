@@ -1,6 +1,6 @@
 import api from "./api";
 import { buscarPaginado, type Paginado } from "./http";
-import type { ComentarioCompleto, PostagemCompleta } from "@/types";
+import type { ComentarioCompleto, CompartilhamentoCompleto, PostagemCompleta } from "@/types";
 
 export interface FiltroFeed {
   page?: number;
@@ -99,6 +99,18 @@ export const postagensService = {
 
   async listarCompartilhamentos(postagemId: string, params: { page?: number; limit?: number } = {}) {
     return buscarPaginado(`/compartilhamentos/postagem/${postagemId}`, "compartilhamentos", params);
+  },
+
+  /** Compartilhamentos feitos por um usuário — aba "Compartilhamentos" do perfil. */
+  async listarCompartilhamentosDoUsuario(
+    usuarioId: string,
+    params: { page?: number; limit?: number } = {},
+  ): Promise<Paginado<CompartilhamentoCompleto>> {
+    return buscarPaginado<CompartilhamentoCompleto>(
+      `/compartilhamentos/usuario/${usuarioId}`,
+      "compartilhamentos",
+      params,
+    );
   },
 
   async removerCompartilhamento(id: string): Promise<void> {

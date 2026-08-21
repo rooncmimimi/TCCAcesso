@@ -13,6 +13,18 @@ class PerfilCandidatoController {
         }
     }
 
+    async perfilCompletoPorUsuario(req, res, next) {
+        try {
+            const candidato = await PerfilCandidatoService.perfilCompletoPorUsuario(
+                req.params.usuarioId
+            );
+
+            return res.status(200).json({ sucesso: true, candidato });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async index(req, res, next) {
         try {
             const registros = await PerfilCandidatoService.listarDoUsuario(

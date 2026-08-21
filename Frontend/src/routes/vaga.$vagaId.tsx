@@ -118,6 +118,7 @@ function DetalheVaga() {
 
   const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa";
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
+  const ehDonoDaVaga = vaga.empresa?.usuario?.id === user?.id;
 
   return (
     <AppShell>
@@ -168,46 +169,58 @@ function DetalheVaga() {
           )}
         </ul>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button
-            className="min-h-12"
-            disabled={!ehCandidato || jaCandidatado || candidatar.isPending || vaga.status !== "Aberta"}
-            onClick={() => candidatar.mutate()}
-          >
-            {jaCandidatado ? "Candidatura enviada" : candidatar.isPending ? "Enviando…" : "Candidatar-se"}
-          </Button>
-          {ehCandidato && (
-            <Button
-              variant="outline"
-              className="min-h-12"
-              aria-pressed={favoritada}
-              disabled={favoritar.isPending}
-              onClick={() => favoritar.mutate()}
-            >
-              <Heart
-                className={cn("size-4", favoritada && "fill-primary text-primary")}
-                aria-hidden="true"
-              />
-              {favoritada ? "Favoritada" : "Favoritar"}
-            </Button>
-          )}
-          {ehCandidato && vaga.empresa?.id && (
-            <Button
-              variant="outline"
-              className="min-h-12"
-              disabled={conversar.isPending}
-              onClick={() => conversar.mutate()}
-            >
-              <MessagesSquare className="size-4" aria-hidden="true" />
-              {conversar.isPending ? "Abrindo…" : "Conversar com a empresa"}
-            </Button>
-          )}
-        </div>
-
-        {!ehCandidato && (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Entre com uma conta de candidato para se candidatar a esta vaga.
+        {ehDonoDaVaga ? (
+          <p className="mt-6 text-sm text-muted-foreground">
+            Esta é uma das suas vagas.{" "}
+            <Link to="/dashboard/empresa" className="font-semibold text-primary underline">
+              Gerenciar pelo painel da empresa
+            </Link>
+            .
           </p>
+        ) : (
+          <>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button
+                className="min-h-12"
+                disabled={!ehCandidato || jaCandidatado || candidatar.isPending || vaga.status !== "Aberta"}
+                onClick={() => candidatar.mutate()}
+              >
+                {jaCandidatado ? "Candidatura enviada" : candidatar.isPending ? "Enviando…" : "Candidatar-se"}
+              </Button>
+              {ehCandidato && (
+                <Button
+                  variant="outline"
+                  className="min-h-12"
+                  aria-pressed={favoritada}
+                  disabled={favoritar.isPending}
+                  onClick={() => favoritar.mutate()}
+                >
+                  <Heart
+                    className={cn("size-4", favoritada && "fill-primary text-primary")}
+                    aria-hidden="true"
+                  />
+                  {favoritada ? "Favoritada" : "Favoritar"}
+                </Button>
+              )}
+              {ehCandidato && vaga.empresa?.id && (
+                <Button
+                  variant="outline"
+                  className="min-h-12"
+                  disabled={conversar.isPending}
+                  onClick={() => conversar.mutate()}
+                >
+                  <MessagesSquare className="size-4" aria-hidden="true" />
+                  {conversar.isPending ? "Abrindo…" : "Conversar com a empresa"}
+                </Button>
+              )}
+            </div>
+
+            {!ehCandidato && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Entre com uma conta de candidato para se candidatar a esta vaga.
+              </p>
+            )}
+          </>
         )}
 
         <Card className="mt-6 shadow-none">
@@ -228,6 +241,20 @@ function DetalheVaga() {
               <section>
                 <h2 className="text-lg font-bold">Benefícios</h2>
                 <p className="mt-2 whitespace-pre-line text-sm">{vaga.beneficios}</p>
+              </section>
+            )}
+
+            {vaga.acessibilidade && (
+              <section>
+                <h2 className="text-lg font-bold">Recursos de acessibilidade</h2>
+                <p className="mt-2 whitespace-pre-line text-sm">{vaga.acessibilidade}</p>
+              </section>
+            )}
+
+            {vaga.cargaHoraria && (
+              <section>
+                <h2 className="text-lg font-bold">Carga horária</h2>
+                <p className="mt-2 text-sm">{vaga.cargaHoraria}</p>
               </section>
             )}
           </CardContent>

@@ -31,7 +31,7 @@ export function SeguirButton({
           ? {
               ...atual,
               seguindoEsteUsuario: !atual.seguindoEsteUsuario,
-              seguidores: Math.max(0, atual.seguidores + (atual.seguindoEsteUsuario ? -1 : 1)),
+              totalSeguidores: Math.max(0, atual.totalSeguidores + (atual.seguindoEsteUsuario ? -1 : 1)),
             }
           : atual,
       );

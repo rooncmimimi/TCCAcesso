@@ -30,3 +30,20 @@ export const authLimiter = rateLimit({
             "Muitas tentativas de autenticação. Tente novamente mais tarde."
     }
 });
+
+/**
+ * Limite dedicado para /auth/refresh — mais permissivo que o authLimiter
+ * (clientes legítimos renovam o token com frequência), mas ainda limita
+ * força bruta contra refresh tokens (antes só caía no apiLimiter geral).
+ */
+export const refreshLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: {
+        sucesso: false,
+        mensagem: "Muitas tentativas de renovação de sessão. Tente novamente mais tarde."
+    }
+});

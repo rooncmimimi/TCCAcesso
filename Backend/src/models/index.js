@@ -45,6 +45,8 @@ import AutenticacaoDoisFatores from "./AutenticacaoDoisFatores.js";
 import CodigoVerificacaoEmail from "./CodigoVerificacaoEmail.js";
 import PreferenciaNotificacao from "./PreferenciaNotificacao.js";
 import UsuarioBloqueio from "./UsuarioBloqueio.js";
+import AdminAuditLog from "./AdminAuditLog.js";
+import Denuncia from "./Denuncia.js";
 
 
 /* ======================================================
@@ -353,6 +355,35 @@ UsuarioBloqueio.belongsTo(Usuario, {
 });
 
 /* ======================================================
+   AUDITORIA ADMINISTRATIVA (migration 0021)
+====================================================== */
+
+Usuario.hasMany(AdminAuditLog, {
+    foreignKey: "adminId",
+    as: "logsAdministrativos"
+});
+AdminAuditLog.belongsTo(Usuario, { foreignKey: "adminId", as: "admin" });
+
+/* ======================================================
+   DENÚNCIAS (migration 0020)
+====================================================== */
+
+Usuario.hasMany(Denuncia, {
+    foreignKey: "denuncianteId",
+    as: "denunciasFeitas"
+});
+Denuncia.belongsTo(Usuario, { foreignKey: "denuncianteId", as: "denunciante" });
+
+Usuario.hasMany(Denuncia, {
+    foreignKey: "adminResponsavelId",
+    as: "denunciasResolvidas"
+});
+Denuncia.belongsTo(Usuario, {
+    foreignKey: "adminResponsavelId",
+    as: "adminResponsavel"
+});
+
+/* ======================================================
    ASSISTENTE VIRTUAL
 ====================================================== */
 
@@ -442,6 +473,8 @@ export {
     AutenticacaoDoisFatores,
     CodigoVerificacaoEmail,
     PreferenciaNotificacao,
-    UsuarioBloqueio
+    UsuarioBloqueio,
+    AdminAuditLog,
+    Denuncia
 };
 

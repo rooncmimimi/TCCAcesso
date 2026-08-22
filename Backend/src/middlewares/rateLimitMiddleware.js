@@ -47,3 +47,20 @@ export const refreshLimiter = rateLimit({
         mensagem: "Muitas tentativas de renovação de sessão. Tente novamente mais tarde."
     }
 });
+
+/**
+ * Limite de denúncias — 10 por usuário autenticado por hora (Fase 10).
+ * Chaveado por usuário (não por IP): authMiddleware roda antes deste
+ * limiter na rota, então req.user já está populado.
+ */
+export const denunciaLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.user?.id || req.ip,
+    message: {
+        sucesso: false,
+        mensagem: "Você atingiu o limite de denúncias por hora. Tente novamente mais tarde."
+    }
+});

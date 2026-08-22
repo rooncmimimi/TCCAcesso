@@ -28,6 +28,7 @@ import { urlArquivo } from "@/services/uploads.service";
 import { formatarTempoRelativo } from "@/utils/format";
 import type { PostagemCompleta } from "@/types";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
+import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 import { DialogCompartilhar } from "./DialogCompartilhar";
 import { GaleriaAnexos } from "./GaleriaAnexos";
 import { SecaoComentarios } from "./SecaoComentarios";
@@ -53,6 +54,7 @@ export function CardPostagem({
   const [editando, setEditando] = useState(false);
   const [textoEdicao, setTextoEdicao] = useState(postagem.conteudo);
   const [comentariosAbertos, setComentariosAbertos] = useState(mostrarComentariosAbertos);
+  const [denunciando, setDenunciando] = useState(false);
 
   const curtir = useAlternarCurtida();
   const atualizar = useAtualizarPostagem();
@@ -91,7 +93,7 @@ export function CardPostagem({
                 {postagem.editadoEm ? " · editado" : ""}
               </p>
             </div>
-            {ehAutor && (
+            {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -104,39 +106,59 @@ export function CardPostagem({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setEditando(true)}>Editar</DropdownMenuItem>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        Excluir
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir publicação?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. A publicação, seus anexos, curtidas e comentários
-                          serão removidos permanentemente.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          onClick={() => remover.mutate(postagem.id)}
-                        >
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {ehAutor ? (
+                    <>
+                      <DropdownMenuItem onSelect={() => setEditando(true)}>Editar</DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            Excluir
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir publicação?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. A publicação, seus anexos, curtidas e comentários
+                              serão removidos permanentemente.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => remover.mutate(postagem.id)}
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  ) : (
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onSelect={() => setDenunciando(true)}
+                    >
+                      Denunciar
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
           </header>
+
+          {!ehAutor && (
+            <DenunciarDialog
+              open={denunciando}
+              onOpenChange={setDenunciando}
+              entidadeTipo="postagem"
+              entidadeId={postagem.id}
+            />
+          )}
 
           {editando ? (
             <div className="mt-4 space-y-2">

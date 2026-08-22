@@ -1,5 +1,10 @@
 import VagaService from "../services/VagaService.js";
 
+const contextoDa = (req) => ({
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+});
+
 class VagaController {
     async index(req, res, next) {
         try {
@@ -63,7 +68,8 @@ class VagaController {
             const vaga = await VagaService.alterarStatus(
                 req.params.id,
                 req.body.status,
-                req.user
+                req.user,
+                contextoDa(req)
             );
 
             return res.status(200).json({ sucesso: true, vaga });
@@ -87,7 +93,11 @@ class VagaController {
 
     async destroy(req, res, next) {
         try {
-            const resultado = await VagaService.delete(req.params.id, req.user);
+            const resultado = await VagaService.delete(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

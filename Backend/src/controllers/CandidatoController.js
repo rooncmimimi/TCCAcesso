@@ -1,5 +1,10 @@
 import CandidatoService from "../services/CandidatoService.js";
 
+const contextoDa = (req) => ({
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+});
+
 class CandidatoController {
     async index(req, res, next) {
         try {
@@ -94,7 +99,8 @@ class CandidatoController {
         try {
             const resultado = await CandidatoService.remove(
                 req.params.id,
-                req.user
+                req.user,
+                contextoDa(req)
             );
 
             return res.status(200).json({ sucesso: true, ...resultado });

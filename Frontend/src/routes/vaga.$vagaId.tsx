@@ -1,13 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, Heart, MapPin, MessagesSquare } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Building2, Heart, MapPin, MessagesSquare, MoreVertical } from "lucide-react";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 import { useSession } from "@/contexts/SessionContext";
 import vagasService from "@/services/vagas.service";
 import mensagensService from "@/services/mensagens.service";
@@ -130,7 +138,10 @@ function DetalheVaga() {
       </Link>
 
       <article className="mt-4">
-        <h1 className="text-3xl font-extrabold">{vaga.titulo}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-3xl font-extrabold">{vaga.titulo}</h1>
+          {user && !ehDonoDaVaga && <DenunciarVagaMenu vagaId={vaga.id} titulo={vaga.titulo} />}
+        </div>
         <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <Building2 className="size-4" aria-hidden="true" /> {nomeEmpresa}
           {local && (
@@ -261,5 +272,37 @@ function DetalheVaga() {
         </Card>
       </article>
     </AppShell>
+  );
+}
+
+function DenunciarVagaMenu({ vagaId, titulo }: { vagaId: string; titulo: string }) {
+  const [denunciando, setDenunciando] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label="Mais opções da vaga">
+            <MoreVertical className="size-4" aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={() => setDenunciando(true)}
+          >
+            Denunciar vaga
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DenunciarDialog
+        open={denunciando}
+        onOpenChange={setDenunciando}
+        entidadeTipo="vaga"
+        entidadeId={vagaId}
+        nomeExibicao={titulo}
+      />
+    </>
   );
 }

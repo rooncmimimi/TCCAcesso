@@ -12,10 +12,35 @@ export interface EmpresaAdmin {
   cnpj?: string | null;
   cidade?: string | null;
   estado?: string | null;
-  statusAprovacao: "pendente" | "aprovada" | "reprovada";
+  statusAprovacao: "pendente" | "aprovada" | "reprovada" | "suspensa";
   empresaVerificada?: boolean;
   motivoReprovacao?: string | null;
+  motivoSuspensao?: string | null;
   usuario?: { id: string; nome: string; email: string; ativo: boolean; bloqueado: boolean };
+}
+
+export interface ComentarioAdmin {
+  id: string;
+  comentario: string;
+  ativo?: boolean;
+  createdAt?: string;
+  created_at?: string;
+  usuario?: { id: string; nome: string; email: string; tipoUsuario: string };
+  postagem?: { id: string; conteudo: string };
+}
+
+export interface LogAdmin {
+  id: string;
+  adminId: string | null;
+  acao: string;
+  entidadeTipo: string | null;
+  entidadeId: string | null;
+  descricao: string | null;
+  metadata: Record<string, unknown> | null;
+  ip: string | null;
+  userAgent: string | null;
+  created_at: string;
+  admin?: { id: string; nome: string; email: string } | null;
 }
 
 export interface UsuarioAdmin {
@@ -132,6 +157,18 @@ export async function reprovarEmpresa(id: string, motivo?: string): Promise<Empr
   return data.empresa;
 }
 
+export async function suspenderEmpresa(id: string, motivo?: string): Promise<EmpresaAdmin> {
+  const { data } = await api.post<{ empresa: EmpresaAdmin }>(`/admin/empresas/${id}/suspender`, {
+    motivo: motivo ?? null,
+  });
+  return data.empresa;
+}
+
+export async function reativarEmpresa(id: string): Promise<EmpresaAdmin> {
+  const { data } = await api.post<{ empresa: EmpresaAdmin }>(`/admin/empresas/${id}/reativar`);
+  return data.empresa;
+}
+
 /* ==========================================================
    Usuários
    ========================================================== */
@@ -166,6 +203,11 @@ export async function removerUsuario(id: string): Promise<void> {
   await api.delete(`/admin/usuarios/${id}`);
 }
 
+export async function obterUsuario(id: string): Promise<UsuarioAdmin> {
+  const { data } = await api.get<{ usuario: UsuarioAdmin }>(`/admin/usuarios/${id}`);
+  return data.usuario;
+}
+
 /* ==========================================================
    Conteúdo
    ========================================================== */
@@ -185,6 +227,11 @@ export async function removerPostagem(id: string): Promise<void> {
 
 export async function removerComentario(id: string): Promise<void> {
   await api.delete(`/admin/comentarios/${id}`);
+}
+
+export async function listarComentarios(params: { page?: number; limit?: number } = {}) {
+  const resposta = await listar<ComentarioAdmin>("/admin/comentarios", "comentarios", params);
+  return resposta as typeof resposta & { comentarios: ComentarioAdmin[] };
 }
 
 /* ==========================================================
@@ -218,22 +265,37 @@ export async function obterRelatorios(): Promise<RelatoriosAdmin> {
   return data;
 }
 
+/* ==========================================================
+   Logs de auditoria (somente leitura)
+   ========================================================== */
+export async function listarLogs(
+  params: { page?: number; limit?: number; acao?: string; entidadeTipo?: string; entidadeId?: string; adminId?: string } = {},
+) {
+  const resposta = await listar<LogAdmin>("/admin/logs", "logs", params);
+  return resposta as typeof resposta & { logs: LogAdmin[] };
+}
+
 export const adminService = {
   listarEmpresas,
   aprovarEmpresa,
   reprovarEmpresa,
+  suspenderEmpresa,
+  reativarEmpresa,
   listarUsuarios,
   ativarUsuario,
   desativarUsuario,
   removerUsuario,
+  obterUsuario,
   listarPostagens,
   removerPostagem,
   removerComentario,
+  listarComentarios,
   listarVagas,
   alterarStatusVaga,
   removerVaga,
   ocultarVaga,
   obterRelatorios,
+  listarLogs,
 };
 
 export default adminService;

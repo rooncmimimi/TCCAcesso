@@ -5,6 +5,7 @@ import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono, ehAdministrador, garantirEmpresaAprovada } from "../utils/authorization.js";
 import BloqueioService from "./BloqueioService.js";
+import AdminAuditService from "./AdminAuditService.js";
 
 /** Campos que a própria empresa pode atualizar. */
 const CAMPOS_EDITAVEIS = [
@@ -218,9 +219,12 @@ class EmpresaService {
 
     /* ==========================================================
        REMOVER (administrador)
+       Rota já restrita a administrador (rbacMiddleware) — não há caminho
+       de "dono" aqui, então a auditoria é sempre registrada.
     ========================================================== */
-    async delete(id) {
+    async delete(id, solicitante, contexto = {}) {
         const transaction = await sequelize.transaction();
+        let empresaRemovida;
 
         try {
             const empresa = await Empresa.findByPk(id, { transaction });
@@ -229,14 +233,31 @@ class EmpresaService {
                 throw ApiError.notFound("Empresa não encontrada.");
             }
 
+            empresaRemovida = {
+                id: empresa.id,
+                razaoSocial: empresa.razaoSocial,
+                usuarioId: empresa.usuarioId
+            };
+
             await empresa.destroy({ transaction });
             await transaction.commit();
-
-            return { mensagem: "Empresa removida com sucesso." };
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "EXCLUIR_EMPRESA",
+            entidadeTipo: "empresa",
+            entidadeId: id,
+            descricao: `Empresa ${empresaRemovida.razaoSocial} foi removida.`,
+            metadata: { empresa: empresaRemovida },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
+        return { mensagem: "Empresa removida com sucesso." };
     }
 }
 

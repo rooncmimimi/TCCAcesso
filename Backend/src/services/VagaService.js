@@ -3,7 +3,8 @@ import sequelize from "../config/database.js";
 import { Vaga, Empresa, Usuario, Candidatura } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, garantirEmpresaAprovada } from "../utils/authorization.js";
+import { garantirDono, garantirEmpresaAprovada, ehAdministrador } from "../utils/authorization.js";
+import AdminAuditService from "./AdminAuditService.js";
 
 const CAMPOS_EDITAVEIS = [
     "titulo",
@@ -256,14 +257,35 @@ class VagaService {
     /* ==========================================================
        ALTERAR STATUS
     ========================================================== */
-    async alterarStatus(id, status, solicitante) {
+    async alterarStatus(id, status, solicitante, contexto = {}) {
         const vaga = await this.buscarVagaComEmpresa(id);
 
         garantirDono(solicitante, vaga.empresa.usuarioId);
         garantirEmpresaAprovada(vaga.empresa, solicitante);
 
+        const ehModeracao =
+            ehAdministrador(solicitante) &&
+            String(vaga.empresa.usuarioId) !== String(solicitante.id);
+        const statusAnterior = vaga.status;
+
         vaga.status = status;
         await vaga.save();
+
+        if (ehModeracao) {
+            await AdminAuditService.log({
+                adminId: solicitante.id,
+                acao: "ALTERAR_STATUS_VAGA",
+                entidadeTipo: "vaga",
+                entidadeId: vaga.id,
+                descricao: `Status da vaga "${vaga.titulo}" alterado para ${status} pela moderação.`,
+                metadata: {
+                    before: { status: statusAnterior },
+                    after: { status }
+                },
+                ip: contexto.ip,
+                userAgent: contexto.userAgent
+            });
+        }
 
         return vaga;
     }
@@ -271,8 +293,10 @@ class VagaService {
     /* ==========================================================
        REMOVER (empresa dona ou administrador)
     ========================================================== */
-    async delete(id, solicitante) {
+    async delete(id, solicitante, contexto = {}) {
         const transaction = await sequelize.transaction();
+        let vagaRemovida;
+        let ehModeracao = false;
 
         try {
             const vaga = await this.buscarVagaComEmpresa(id, transaction);
@@ -280,14 +304,32 @@ class VagaService {
             garantirDono(solicitante, vaga.empresa.usuarioId);
             garantirEmpresaAprovada(vaga.empresa, solicitante);
 
+            ehModeracao =
+                ehAdministrador(solicitante) &&
+                String(vaga.empresa.usuarioId) !== String(solicitante.id);
+            vagaRemovida = { id: vaga.id, titulo: vaga.titulo, empresaId: vaga.empresaId };
+
             await vaga.destroy({ transaction });
             await transaction.commit();
-
-            return { mensagem: "Vaga removida com sucesso." };
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
+
+        if (ehModeracao) {
+            await AdminAuditService.log({
+                adminId: solicitante.id,
+                acao: "EXCLUIR_VAGA",
+                entidadeTipo: "vaga",
+                entidadeId: vagaRemovida.id,
+                descricao: `Vaga "${vagaRemovida.titulo}" removida pela moderação.`,
+                metadata: { vaga: vagaRemovida },
+                ip: contexto.ip,
+                userAgent: contexto.userAgent
+            });
+        }
+
+        return { mensagem: "Vaga removida com sucesso." };
     }
 
     /* ==========================================================

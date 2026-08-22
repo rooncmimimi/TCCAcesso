@@ -1,5 +1,10 @@
 import EmpresaService from "../services/EmpresaService.js";
 
+const contextoDa = (req) => ({
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+});
+
 class EmpresaController {
     async index(req, res, next) {
         try {
@@ -102,7 +107,11 @@ class EmpresaController {
 
     async destroy(req, res, next) {
         try {
-            const resultado = await EmpresaService.delete(req.params.id);
+            const resultado = await EmpresaService.delete(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

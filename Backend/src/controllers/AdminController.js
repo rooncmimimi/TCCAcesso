@@ -1,4 +1,11 @@
 import AdminService from "../services/AdminService.js";
+import UsuarioService from "../services/UsuarioService.js";
+import AdminAuditService from "../services/AdminAuditService.js";
+
+const contextoDa = (req) => ({
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+});
 
 class AdminController {
     async empresas(req, res, next) {
@@ -15,7 +22,8 @@ class AdminController {
             const empresa = await AdminService.avaliarEmpresa(
                 req.params.id,
                 { aprovada: true },
-                req.user
+                req.user,
+                contextoDa(req)
             );
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -28,7 +36,35 @@ class AdminController {
             const empresa = await AdminService.avaliarEmpresa(
                 req.params.id,
                 { aprovada: false, motivo: req.body.motivo },
-                req.user
+                req.user,
+                contextoDa(req)
+            );
+            return res.status(200).json({ sucesso: true, empresa });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async suspenderEmpresa(req, res, next) {
+        try {
+            const empresa = await AdminService.suspenderEmpresa(
+                req.params.id,
+                { motivo: req.body.motivo },
+                req.user,
+                contextoDa(req)
+            );
+            return res.status(200).json({ sucesso: true, empresa });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async reativarEmpresa(req, res, next) {
+        try {
+            const empresa = await AdminService.reativarEmpresa(
+                req.params.id,
+                req.user,
+                contextoDa(req)
             );
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -45,12 +81,22 @@ class AdminController {
         }
     }
 
+    async usuario(req, res, next) {
+        try {
+            const usuario = await UsuarioService.buscarPorId(req.params.id);
+            return res.status(200).json({ sucesso: true, usuario });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async bloquearUsuario(req, res, next) {
         try {
             const dados = await AdminService.alternarBloqueio(
                 req.params.id,
                 req.body,
-                req.user
+                req.user,
+                contextoDa(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -62,7 +108,8 @@ class AdminController {
         try {
             const dados = await AdminService.removerUsuario(
                 req.params.id,
-                req.user
+                req.user,
+                contextoDa(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -81,7 +128,11 @@ class AdminController {
 
     async removerPostagem(req, res, next) {
         try {
-            const dados = await AdminService.removerPostagem(req.params.id);
+            const dados = await AdminService.removerPostagem(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -90,7 +141,20 @@ class AdminController {
 
     async removerComentario(req, res, next) {
         try {
-            const dados = await AdminService.removerComentario(req.params.id);
+            const dados = await AdminService.removerComentario(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async comentarios(req, res, next) {
+        try {
+            const dados = await AdminService.listarComentarios(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -110,7 +174,9 @@ class AdminController {
         try {
             const dados = await AdminService.alternarVisibilidadeVaga(
                 req.params.id,
-                req.body.oculta
+                req.body.oculta,
+                req.user,
+                contextoDa(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -121,6 +187,15 @@ class AdminController {
     async relatorios(req, res, next) {
         try {
             const dados = await AdminService.relatorios();
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async logs(req, res, next) {
+        try {
+            const dados = await AdminAuditService.listar(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);

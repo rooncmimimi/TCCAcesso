@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Lock, Unlock, Users } from "lucide-react";
@@ -147,7 +148,15 @@ export function UsuariosTabela() {
             <TableBody>
               {usuarios.map((usuario) => (
                 <TableRow key={usuario.id}>
-                  <TableCell className="font-medium">{usuario.nome}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link
+                      to="/admin/usuarios/$usuarioId"
+                      params={{ usuarioId: usuario.id }}
+                      className="hover:underline"
+                    >
+                      {usuario.nome}
+                    </Link>
+                  </TableCell>
                   <TableCell className="break-all">{usuario.email}</TableCell>
                   <TableCell className="capitalize">{usuario.tipoUsuario}</TableCell>
                   <TableCell>

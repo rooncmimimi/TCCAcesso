@@ -21,6 +21,7 @@ import buscaRoutes from "./buscaRoutes.js";
 import seguidorRoutes from "./seguidorRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import publicoRoutes from "./publicoRoutes.js";
+import denunciaRoutes from "./denunciaRoutes.js";
 
 const router = Router();
 
@@ -49,5 +50,6 @@ router.use("/busca", buscaRoutes);
 router.use("/seguir", seguidorRoutes);
 router.use("/admin", adminRoutes);
 router.use("/publico", publicoRoutes);
+router.use("/denuncias", denunciaRoutes);
 
 export default router;

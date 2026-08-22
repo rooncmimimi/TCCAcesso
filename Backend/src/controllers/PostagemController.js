@@ -1,5 +1,10 @@
 import PostagemService from "../services/PostagemService.js";
 
+const contextoDa = (req) => ({
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+});
+
 class PostagemController {
     async index(req, res, next) {
         try {
@@ -50,7 +55,11 @@ class PostagemController {
 
     async destroy(req, res, next) {
         try {
-            const dados = await PostagemService.delete(req.params.id, req.user);
+            const dados = await PostagemService.delete(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);

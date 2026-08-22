@@ -13,8 +13,9 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, garantirEmpresaAprovada } from "../utils/authorization.js";
+import { garantirDono, garantirEmpresaAprovada, ehAdministrador } from "../utils/authorization.js";
 import NotificacaoService from "./NotificacaoService.js";
+import AdminAuditService from "./AdminAuditService.js";
 import { emitirFeed } from "../realtime/socket.js";
 import { urlPublica, tipoDoArquivo } from "../middlewares/uploadMiddleware.js";
 
@@ -300,15 +301,36 @@ class PostagemService {
     /* ==========================================================
        REMOVER (soft delete via coluna "ativo")
     ========================================================== */
-    async delete(id, solicitante) {
+    async delete(id, solicitante, contexto = {}) {
         const postagem = await this.buscarAtiva(id);
 
         garantirDono(solicitante, postagem.usuarioId);
+
+        const ehModeracao =
+            ehAdministrador(solicitante) &&
+            String(postagem.usuarioId) !== String(solicitante.id);
 
         postagem.ativo = false;
         await postagem.save();
 
         emitirFeed("feed:postagem", { id, removida: true });
+
+        if (ehModeracao) {
+            await AdminAuditService.log({
+                adminId: solicitante.id,
+                acao: "REMOVER_POSTAGEM",
+                entidadeTipo: "postagem",
+                entidadeId: postagem.id,
+                descricao: "Postagem removida pela moderação.",
+                metadata: {
+                    before: { ativo: true },
+                    after: { ativo: false },
+                    autorId: postagem.usuarioId
+                },
+                ip: contexto.ip,
+                userAgent: contexto.userAgent
+            });
+        }
 
         return { mensagem: "Postagem removida com sucesso." };
     }
@@ -398,7 +420,7 @@ class PostagemService {
         return completo;
     }
 
-    async removerComentario(comentarioId, solicitante) {
+    async removerComentario(comentarioId, solicitante, contexto = {}) {
         const comentario = await Comentario.findByPk(comentarioId);
 
         if (!comentario || !comentario.ativo) {
@@ -406,6 +428,10 @@ class PostagemService {
         }
 
         garantirDono(solicitante, comentario.usuarioId);
+
+        const ehModeracao =
+            ehAdministrador(solicitante) &&
+            String(comentario.usuarioId) !== String(solicitante.id);
 
         comentario.ativo = false;
         await comentario.save();
@@ -418,6 +444,23 @@ class PostagemService {
                 where: { postagemId: comentario.postagemId, ativo: true }
             })
         });
+
+        if (ehModeracao) {
+            await AdminAuditService.log({
+                adminId: solicitante.id,
+                acao: "REMOVER_COMENTARIO",
+                entidadeTipo: "comentario",
+                entidadeId: comentario.id,
+                descricao: "Comentário removido pela moderação.",
+                metadata: {
+                    before: { ativo: true },
+                    after: { ativo: false },
+                    autorId: comentario.usuarioId
+                },
+                ip: contexto.ip,
+                userAgent: contexto.userAgent
+            });
+        }
 
         return { mensagem: "Comentário removido com sucesso." };
     }

@@ -13,7 +13,9 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import { garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
 import NotificacaoService from "./NotificacaoService.js";
+import AdminAuditService from "./AdminAuditService.js";
 
 /**
  * Painel administrativo.
@@ -54,12 +56,14 @@ class AdminService {
         return montarResposta("empresas", rows, count, pagina, limite);
     }
 
-    async avaliarEmpresa(id, { aprovada, motivo }, solicitante) {
+    async avaliarEmpresa(id, { aprovada, motivo }, solicitante, contexto = {}) {
         const empresa = await Empresa.findByPk(id);
 
         if (!empresa) {
             throw ApiError.notFound("Empresa não encontrada.");
         }
+
+        const statusAnterior = empresa.statusAprovacao;
 
         await empresa.update({
             statusAprovacao: aprovada ? "aprovada" : "reprovada",
@@ -78,6 +82,117 @@ class AdminService {
             descricao: aprovada
                 ? "Sua empresa foi aprovada e já pode publicar vagas."
                 : `Seu cadastro foi reprovado. Motivo: ${motivo || "não informado"}.`
+        });
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: aprovada ? "APROVAR_EMPRESA" : "REPROVAR_EMPRESA",
+            entidadeTipo: "empresa",
+            entidadeId: empresa.id,
+            descricao: aprovada
+                ? `Empresa ${empresa.razaoSocial} foi aprovada.`
+                : `Empresa ${empresa.razaoSocial} foi reprovada.`,
+            metadata: {
+                before: { statusAprovacao: statusAnterior },
+                after: { statusAprovacao: empresa.statusAprovacao },
+                reason: aprovada ? null : motivo || null
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
+        return empresa;
+    }
+
+    /**
+     * Suspensão/reativação administrativa (Fase G) — ação isolada, sem
+     * efeito cascata sobre as vagas da empresa. Usa campos próprios
+     * (suspensoPor/suspensoEm/motivoSuspensao), nunca avaliadoPor/
+     * avaliadoEm/motivoReprovacao, que continuam representando só a
+     * avaliação cadastral inicial.
+     */
+    async suspenderEmpresa(id, { motivo }, solicitante, contexto = {}) {
+        const empresa = await Empresa.findByPk(id);
+
+        if (!empresa) {
+            throw ApiError.notFound("Empresa não encontrada.");
+        }
+
+        if (empresa.statusAprovacao !== "aprovada") {
+            throw ApiError.conflict(
+                "Só é possível suspender uma empresa que esteja aprovada."
+            );
+        }
+
+        await empresa.update({
+            statusAprovacao: "suspensa",
+            suspensoPor: solicitante.id,
+            suspensoEm: new Date(),
+            motivoSuspensao: motivo || null
+        });
+
+        await NotificacaoService.criar({
+            usuarioId: empresa.usuarioId,
+            tipo: "Moderacao",
+            titulo: "Empresa suspensa",
+            descricao: `Sua empresa foi suspensa pela moderação. Motivo: ${motivo || "não informado"}.`
+        });
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "SUSPENDER_EMPRESA",
+            entidadeTipo: "empresa",
+            entidadeId: empresa.id,
+            descricao: `Empresa ${empresa.razaoSocial} foi suspensa.`,
+            metadata: {
+                before: { statusAprovacao: "aprovada" },
+                after: { statusAprovacao: "suspensa" },
+                reason: motivo || null
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
+        return empresa;
+    }
+
+    async reativarEmpresa(id, solicitante, contexto = {}) {
+        const empresa = await Empresa.findByPk(id);
+
+        if (!empresa) {
+            throw ApiError.notFound("Empresa não encontrada.");
+        }
+
+        if (empresa.statusAprovacao !== "suspensa") {
+            throw ApiError.conflict(
+                "Só é possível reativar uma empresa que esteja suspensa."
+            );
+        }
+
+        // suspensoPor/suspensoEm/motivoSuspensao NÃO são apagados aqui —
+        // ficam como histórico de que a empresa já foi suspensa antes,
+        // mesmo padrão de motivoReprovacao sobrevivendo a uma aprovação.
+        await empresa.update({ statusAprovacao: "aprovada" });
+
+        await NotificacaoService.criar({
+            usuarioId: empresa.usuarioId,
+            tipo: "Moderacao",
+            titulo: "Empresa reativada",
+            descricao: "Sua empresa foi reativada pela moderação e voltou a operar normalmente."
+        });
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "REATIVAR_EMPRESA",
+            entidadeTipo: "empresa",
+            entidadeId: empresa.id,
+            descricao: `Empresa ${empresa.razaoSocial} foi reativada.`,
+            metadata: {
+                before: { statusAprovacao: "suspensa" },
+                after: { statusAprovacao: "aprovada" }
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
         });
 
         return empresa;
@@ -121,24 +236,43 @@ class AdminService {
         return montarResposta("usuarios", rows, count, pagina, limite);
     }
 
-    async alternarBloqueio(id, { bloqueado, motivo }, solicitante) {
-        if (String(id) === String(solicitante.id)) {
-            throw ApiError.badRequest(
-                "Você não pode bloquear a própria conta."
-            );
-        }
-
+    /**
+     * Localiza o usuário-alvo de uma ação administrativa restritiva
+     * (bloqueio, exclusão etc.), aplicando as duas proteções obrigatórias:
+     * o admin não pode agir contra a própria conta, nem contra outra
+     * conta administrativa. Centralizado aqui para que toda ação
+     * restritiva/destrutiva reutilize a mesma regra em vez de duplicá-la.
+     */
+    async resolverUsuarioModeravel(
+        id,
+        solicitante,
+        { mensagemAutoAcao, mensagemAdminProtegido }
+    ) {
         const usuario = await Usuario.findByPk(id);
 
         if (!usuario) {
             throw ApiError.notFound("Usuário não encontrado.");
         }
 
-        if (usuario.tipoUsuario === "administrador") {
-            throw ApiError.forbidden(
+        garantirAlvoDeAcaoAdministrativa(usuario, solicitante, {
+            mensagemAutoAcao,
+            mensagemAdminProtegido
+        });
+
+        return usuario;
+    }
+
+    async alternarBloqueio(id, { bloqueado, motivo }, solicitante, contexto = {}) {
+        const usuario = await this.resolverUsuarioModeravel(id, solicitante, {
+            mensagemAutoAcao: "Você não pode bloquear a própria conta.",
+            mensagemAdminProtegido:
                 "Contas administrativas não podem ser bloqueadas por aqui."
-            );
-        }
+        });
+
+        const estadoAnterior = {
+            bloqueado: usuario.bloqueado,
+            ativo: usuario.ativo
+        };
 
         const novoEstado =
             bloqueado === undefined ? !usuario.bloqueado : Boolean(bloqueado);
@@ -159,6 +293,23 @@ class AdminService {
                 : "Sua conta foi reativada pela moderação."
         });
 
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: novoEstado ? "BLOQUEAR_USUARIO" : "REATIVAR_USUARIO",
+            entidadeTipo: "usuario",
+            entidadeId: usuario.id,
+            descricao: novoEstado
+                ? `Usuário ${usuario.nome} (${usuario.email}) foi bloqueado.`
+                : `Usuário ${usuario.nome} (${usuario.email}) foi reativado.`,
+            metadata: {
+                before: estadoAnterior,
+                after: { bloqueado: novoEstado, ativo: !novoEstado },
+                reason: novoEstado ? motivo || null : null
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
         return {
             id: usuario.id,
             bloqueado: usuario.bloqueado,
@@ -166,18 +317,31 @@ class AdminService {
         };
     }
 
-    async removerUsuario(id, solicitante) {
-        if (String(id) === String(solicitante.id)) {
-            throw ApiError.badRequest("Você não pode excluir a própria conta.");
-        }
+    async removerUsuario(id, solicitante, contexto = {}) {
+        const usuario = await this.resolverUsuarioModeravel(id, solicitante, {
+            mensagemAutoAcao: "Você não pode excluir a própria conta.",
+            mensagemAdminProtegido:
+                "Contas administrativas não podem ser excluídas por aqui."
+        });
 
-        const usuario = await Usuario.findByPk(id);
-
-        if (!usuario) {
-            throw ApiError.notFound("Usuário não encontrado.");
-        }
+        const dadosRemovidos = {
+            tipoUsuario: usuario.tipoUsuario,
+            nome: usuario.nome,
+            email: usuario.email
+        };
 
         await usuario.destroy();
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "EXCLUIR_USUARIO",
+            entidadeTipo: "usuario",
+            entidadeId: id,
+            descricao: `Usuário ${dadosRemovidos.nome} (${dadosRemovidos.email}) foi excluído permanentemente.`,
+            metadata: { usuario: dadosRemovidos },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
 
         return { mensagem: "Usuário removido definitivamente." };
     }
@@ -205,7 +369,36 @@ class AdminService {
         return montarResposta("postagens", rows, count, pagina, limite);
     }
 
-    async removerPostagem(id) {
+    async listarComentarios(query) {
+        const { pagina, limite, offset } = resolverPaginacao(query);
+
+        const where = {};
+        if (query.postagemId) where.postagemId = query.postagemId;
+
+        const { rows, count } = await Comentario.findAndCountAll({
+            where,
+            include: [
+                {
+                    model: Usuario,
+                    as: "usuario",
+                    attributes: ["id", "nome", "email", "tipoUsuario"]
+                },
+                {
+                    model: Postagem,
+                    as: "postagem",
+                    attributes: ["id", "conteudo"]
+                }
+            ],
+            limit: limite,
+            offset,
+            distinct: true,
+            order: [["created_at", "DESC"]]
+        });
+
+        return montarResposta("comentarios", rows, count, pagina, limite);
+    }
+
+    async removerPostagem(id, solicitante, contexto = {}) {
         const postagem = await Postagem.findByPk(id);
 
         if (!postagem) {
@@ -222,10 +415,25 @@ class AdminService {
                 "Sua publicação foi removida pela moderação por violar as diretrizes da comunidade."
         });
 
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "REMOVER_POSTAGEM",
+            entidadeTipo: "postagem",
+            entidadeId: postagem.id,
+            descricao: "Postagem removida pela moderação.",
+            metadata: {
+                before: { ativo: true },
+                after: { ativo: false },
+                autorId: postagem.usuarioId
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
         return { mensagem: "Postagem removida pela moderação." };
     }
 
-    async removerComentario(id) {
+    async removerComentario(id, solicitante, contexto = {}) {
         const comentario = await Comentario.findByPk(id);
 
         if (!comentario) {
@@ -233,6 +441,21 @@ class AdminService {
         }
 
         await comentario.update({ ativo: false });
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "REMOVER_COMENTARIO",
+            entidadeTipo: "comentario",
+            entidadeId: comentario.id,
+            descricao: "Comentário removido pela moderação.",
+            metadata: {
+                before: { ativo: true },
+                after: { ativo: false },
+                autorId: comentario.usuarioId
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
 
         return { mensagem: "Comentário removido pela moderação." };
     }
@@ -257,14 +480,33 @@ class AdminService {
         return montarResposta("vagas", rows, count, pagina, limite);
     }
 
-    async alternarVisibilidadeVaga(id, oculta) {
+    async alternarVisibilidadeVaga(id, oculta, solicitante, contexto = {}) {
         const vaga = await Vaga.findByPk(id);
 
         if (!vaga) {
             throw ApiError.notFound("Vaga não encontrada.");
         }
 
-        await vaga.update({ oculta: Boolean(oculta) });
+        const estadoAnterior = { oculta: vaga.oculta };
+        const novoOculta = Boolean(oculta);
+
+        await vaga.update({ oculta: novoOculta });
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: novoOculta ? "OCULTAR_VAGA" : "REEXIBIR_VAGA",
+            entidadeTipo: "vaga",
+            entidadeId: vaga.id,
+            descricao: novoOculta
+                ? `Vaga "${vaga.titulo}" foi ocultada pela moderação.`
+                : `Vaga "${vaga.titulo}" voltou a ficar visível.`,
+            metadata: {
+                before: estadoAnterior,
+                after: { oculta: novoOculta }
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
 
         return { id: vaga.id, oculta: vaga.oculta };
     }

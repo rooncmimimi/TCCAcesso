@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, MoreVertical, ShieldOff } from "lucide-react";
+import { Flag, Loader2, MoreVertical, ShieldOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,12 +24,32 @@ import {
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { useSpeech } from "@/contexts/SpeechContext";
+import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
+import type { EntidadeDenunciaTipo } from "@/services/denuncia.service";
 
-/** Menu "•••" do perfil de terceiro, com a ação de bloquear (com confirmação). */
-export function BloquearUsuarioMenu({ alvoUsuarioId, nome }: { alvoUsuarioId: string; nome: string }) {
+/**
+ * Menu "•••" do perfil de terceiro: bloquear (com confirmação) e denunciar.
+ *
+ * `denunciaEntidadeTipo`/`denunciaEntidadeId` são independentes de
+ * `alvoUsuarioId`: bloqueio é sempre usuário-a-usuário, mas denunciar um
+ * perfil de EMPRESA precisa do id da empresa (entidade própria no
+ * backend), não do usuário dono dela.
+ */
+export function BloquearUsuarioMenu({
+  alvoUsuarioId,
+  nome,
+  denunciaEntidadeTipo = "usuario",
+  denunciaEntidadeId,
+}: {
+  alvoUsuarioId: string;
+  nome: string;
+  denunciaEntidadeTipo?: EntidadeDenunciaTipo;
+  denunciaEntidadeId?: string;
+}) {
   const navigate = useNavigate();
   const { speak } = useSpeech();
   const [confirmando, setConfirmando] = useState(false);
+  const [denunciando, setDenunciando] = useState(false);
 
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(alvoUsuarioId),
@@ -60,8 +80,24 @@ export function BloquearUsuarioMenu({ alvoUsuarioId, nome }: { alvoUsuarioId: st
           >
             <ShieldOff aria-hidden="true" className="size-4" /> Bloquear usuário
           </DropdownMenuItem>
+          {denunciaEntidadeId && (
+            <DropdownMenuItem className="gap-2" onSelect={() => setDenunciando(true)}>
+              <Flag aria-hidden="true" className="size-4" /> Denunciar{" "}
+              {denunciaEntidadeTipo === "empresa" ? "empresa" : "usuário"}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {denunciaEntidadeId && (
+        <DenunciarDialog
+          open={denunciando}
+          onOpenChange={setDenunciando}
+          entidadeTipo={denunciaEntidadeTipo}
+          entidadeId={denunciaEntidadeId}
+          nomeExibicao={nome}
+        />
+      )}
 
       <AlertDialog open={confirmando} onOpenChange={setConfirmando}>
         <AlertDialogContent>

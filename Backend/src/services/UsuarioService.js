@@ -8,7 +8,8 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono } from "../utils/authorization.js";
+import { garantirDono, garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
+import AdminAuditService from "./AdminAuditService.js";
 
 class UsuarioService {
     async buscarPorId(id) {
@@ -117,30 +118,58 @@ class UsuarioService {
 
     /* ==========================================================
        ATIVAR / DESATIVAR (administrador)
+       Rotas já restritas a administrador (rbacMiddleware); ainda assim
+       aplicamos a mesma proteção ADMIN->ADMIN / auto-ação do AdminService,
+       via helper compartilhado — nunca confie só na rota.
     ========================================================== */
-    async setAtivo(id, ativo) {
+    async setAtivo(id, ativo, solicitante, contexto = {}) {
         const usuario = await this.buscarPorId(id);
+
+        garantirAlvoDeAcaoAdministrativa(usuario, solicitante, {
+            mensagemAutoAcao: ativo
+                ? "Você não pode reativar a própria conta por aqui."
+                : "Você não pode desativar a própria conta por aqui.",
+            mensagemAdminProtegido: ativo
+                ? "Contas administrativas não podem ser reativadas por aqui."
+                : "Contas administrativas não podem ser desativadas por aqui."
+        });
+
+        const estadoAnterior = { ativo: usuario.ativo };
 
         usuario.ativo = ativo;
         await usuario.save();
 
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: ativo ? "ATIVAR_USUARIO" : "DESATIVAR_USUARIO",
+            entidadeTipo: "usuario",
+            entidadeId: usuario.id,
+            descricao: ativo
+                ? `Usuário ${usuario.nome} (${usuario.email}) foi reativado.`
+                : `Usuário ${usuario.nome} (${usuario.email}) foi desativado.`,
+            metadata: { before: estadoAnterior, after: { ativo } },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
         return usuario;
     }
 
-    async activate(id) {
-        return this.setAtivo(id, true);
+    async activate(id, solicitante, contexto = {}) {
+        return this.setAtivo(id, true, solicitante, contexto);
     }
 
-    async deactivate(id) {
-        return this.setAtivo(id, false);
+    async deactivate(id, solicitante, contexto = {}) {
+        return this.setAtivo(id, false, solicitante, contexto);
     }
 
     /* ==========================================================
        EXCLUIR (administrador)
        O banco remove perfis/relacionamentos via ON DELETE CASCADE.
     ========================================================== */
-    async delete(id) {
+    async delete(id, solicitante, contexto = {}) {
         const transaction = await sequelize.transaction();
+        let dadosRemovidos;
 
         try {
             const usuario = await Usuario.findByPk(id, { transaction });
@@ -149,14 +178,37 @@ class UsuarioService {
                 throw ApiError.notFound("Usuário não encontrado.");
             }
 
+            garantirAlvoDeAcaoAdministrativa(usuario, solicitante, {
+                mensagemAutoAcao: "Você não pode excluir a própria conta.",
+                mensagemAdminProtegido:
+                    "Contas administrativas não podem ser excluídas por aqui."
+            });
+
+            dadosRemovidos = {
+                tipoUsuario: usuario.tipoUsuario,
+                nome: usuario.nome,
+                email: usuario.email
+            };
+
             await usuario.destroy({ transaction });
             await transaction.commit();
-
-            return { mensagem: "Usuário removido com sucesso." };
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "EXCLUIR_USUARIO",
+            entidadeTipo: "usuario",
+            entidadeId: id,
+            descricao: `Usuário ${dadosRemovidos.nome} (${dadosRemovidos.email}) foi excluído permanentemente.`,
+            metadata: { usuario: dadosRemovidos },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
+        return { mensagem: "Usuário removido com sucesso." };
     }
 }
 

@@ -1,13 +1,16 @@
 import { Link } from "@tanstack/react-router";
-import { BarChart3, Briefcase, Building2, FileText, Users } from "lucide-react";
+import { BarChart3, Briefcase, Building2, FileText, Flag, MessageSquare, ScrollText, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITENS = [
   { to: "/admin", label: "Relatórios", icon: BarChart3, exact: true },
+  { to: "/admin/denuncias", label: "Denúncias", icon: Flag, exact: false },
   { to: "/admin/empresas", label: "Empresas", icon: Building2, exact: false },
   { to: "/admin/usuarios", label: "Usuários", icon: Users, exact: false },
   { to: "/admin/postagens", label: "Postagens", icon: FileText, exact: false },
+  { to: "/admin/comentarios", label: "Comentários", icon: MessageSquare, exact: false },
   { to: "/admin/vagas", label: "Vagas", icon: Briefcase, exact: false },
+  { to: "/admin/logs", label: "Logs", icon: ScrollText, exact: false },
 ] as const;
 
 export function AdminNav() {

@@ -9,6 +9,7 @@ import {
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono, ehAdministrador } from "../utils/authorization.js";
+import AdminAuditService from "./AdminAuditService.js";
 
 /** Campos que o próprio candidato pode atualizar. */
 const CAMPOS_EDITAVEIS = [
@@ -228,13 +229,17 @@ class CandidatoService {
 
     /* ==========================================================
        REMOVER (administrador)
+       Rota já restrita a administrador (verificado aqui também, na
+       própria service) — não há caminho de "dono", auditoria sempre
+       registrada.
     ========================================================== */
-    async remove(id, solicitante) {
+    async remove(id, solicitante, contexto = {}) {
         if (!ehAdministrador(solicitante)) {
             throw ApiError.forbidden("Apenas administradores podem remover candidatos.");
         }
 
         const transaction = await sequelize.transaction();
+        let candidatoRemovido;
 
         try {
             const candidato = await Candidato.findByPk(id, { transaction });
@@ -243,14 +248,27 @@ class CandidatoService {
                 throw ApiError.notFound("Candidato não encontrado.");
             }
 
+            candidatoRemovido = { id: candidato.id, usuarioId: candidato.usuarioId };
+
             await candidato.destroy({ transaction });
             await transaction.commit();
-
-            return { mensagem: "Candidato removido com sucesso." };
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: "EXCLUIR_CANDIDATO",
+            entidadeTipo: "usuario",
+            entidadeId: candidatoRemovido.usuarioId,
+            descricao: "Perfil de candidato removido.",
+            metadata: { candidato: candidatoRemovido },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
+        return { mensagem: "Candidato removido com sucesso." };
     }
 }
 

@@ -140,7 +140,12 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                   tipo="empresa"
                   chaveResumo={["resumo-empresa", empresa.id]}
                 />
-                <BloquearUsuarioMenu alvoUsuarioId={empresa.usuarioId ?? ""} nome={nome} />
+                <BloquearUsuarioMenu
+                  alvoUsuarioId={empresa.usuarioId ?? ""}
+                  nome={nome}
+                  denunciaEntidadeTipo="empresa"
+                  denunciaEntidadeId={empresa.id}
+                />
               </div>
             )}
           </div>

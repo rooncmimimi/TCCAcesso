@@ -77,8 +77,8 @@ class ComentarioService {
         return Comentario.findByPk(comentarioId, { include: [incluirAutor()] });
     }
 
-    async delete(comentarioId, solicitante) {
-        return PostagemService.removerComentario(comentarioId, solicitante);
+    async delete(comentarioId, solicitante, contexto = {}) {
+        return PostagemService.removerComentario(comentarioId, solicitante, contexto);
     }
 }
 

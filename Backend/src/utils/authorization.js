@@ -61,6 +61,31 @@ export const garantirDono = (usuario, donoUsuarioId) => {
 };
 
 /**
+ * Garante que uma ação administrativa restritiva (bloquear, excluir,
+ * desativar/reativar etc.) pode ser aplicada ao usuário-alvo: nunca
+ * contra a própria conta do solicitante, nunca contra outra conta
+ * administrativa.
+ *
+ * Centralizado aqui (não em AdminService) para que QUALQUER rota que
+ * chegue a um usuário-alvo — passando por /admin/* ou não — aplique
+ * exatamente a mesma regra, sem duplicar a checagem em cada service de
+ * domínio e sem criar dependência de um service para outro.
+ */
+export const garantirAlvoDeAcaoAdministrativa = (
+    usuarioAlvo,
+    solicitante,
+    { mensagemAutoAcao, mensagemAdminProtegido }
+) => {
+    if (String(usuarioAlvo.id) === String(solicitante.id)) {
+        throw ApiError.badRequest(mensagemAutoAcao);
+    }
+
+    if (usuarioAlvo.tipoUsuario === "administrador") {
+        throw ApiError.forbidden(mensagemAdminProtegido);
+    }
+};
+
+/**
  * Garante que a empresa está com o cadastro aprovado antes de liberar
  * recursos empresariais (publicar/gerenciar vagas, ver candidaturas,
  * editar o perfil empresarial). Administradores sempre têm acesso —

@@ -87,7 +87,7 @@ const Empresa = sequelize.define(
 
         statusAprovacao: {
             field: "status_aprovacao",
-            type: DataTypes.ENUM("pendente", "aprovada", "reprovada"),
+            type: DataTypes.ENUM("pendente", "aprovada", "reprovada", "suspensa"),
             allowNull: false,
             defaultValue: "pendente"
         },
@@ -114,6 +114,25 @@ const Empresa = sequelize.define(
         avaliadoPor: {
             field: "avaliado_por",
             type: DataTypes.UUID
+        },
+
+        // Suspensão administrativa (Fase 10 / Fase G) — deliberadamente
+        // separada de avaliadoPor/avaliadoEm/motivoReprovacao, que
+        // continuam representando exclusivamente a avaliação cadastral
+        // inicial da empresa (aprovação/reprovação).
+        suspensoPor: {
+            field: "suspenso_por",
+            type: DataTypes.UUID
+        },
+
+        suspensoEm: {
+            field: "suspenso_em",
+            type: DataTypes.DATE
+        },
+
+        motivoSuspensao: {
+            field: "motivo_suspensao",
+            type: DataTypes.TEXT
         }
     },
     {

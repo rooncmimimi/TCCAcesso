@@ -1,5 +1,10 @@
 import UsuarioService from "../services/UsuarioService.js";
 
+const contextoDa = (req) => ({
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+});
+
 class UsuarioController {
     async index(req, res, next) {
         try {
@@ -69,7 +74,11 @@ class UsuarioController {
 
     async activate(req, res, next) {
         try {
-            const usuario = await UsuarioService.activate(req.params.id);
+            const usuario = await UsuarioService.activate(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {
@@ -79,7 +88,11 @@ class UsuarioController {
 
     async deactivate(req, res, next) {
         try {
-            const usuario = await UsuarioService.deactivate(req.params.id);
+            const usuario = await UsuarioService.deactivate(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {
@@ -89,7 +102,11 @@ class UsuarioController {
 
     async destroy(req, res, next) {
         try {
-            const resultado = await UsuarioService.delete(req.params.id);
+            const resultado = await UsuarioService.delete(
+                req.params.id,
+                req.user,
+                contextoDa(req)
+            );
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

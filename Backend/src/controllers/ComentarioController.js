@@ -1,5 +1,10 @@
 import ComentarioService from "../services/ComentarioService.js";
 
+const contextoDa = (req) => ({
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+});
+
 class ComentarioController {
     async index(req, res, next) {
         try {
@@ -32,7 +37,8 @@ class ComentarioController {
         try {
             const resultado = await ComentarioService.delete(
                 req.params.id,
-                req.user
+                req.user,
+                contextoDa(req)
             );
 
             return res.status(200).json({ sucesso: true, ...resultado });

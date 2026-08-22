@@ -1,11 +1,44 @@
-import { Check, CheckCheck } from "lucide-react";
+import { useState } from "react";
+import { Check, CheckCheck, MoreVertical } from "lucide-react";
 import type { Mensagem } from "@/lib/api-types";
 import { cn } from "@/lib/utils";
 import { formatarHora } from "./utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 
 export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propria: boolean }) {
+  const [denunciando, setDenunciando] = useState(false);
+
   return (
-    <li className={cn("flex", propria ? "justify-end" : "justify-start")}>
+    <li className={cn("group flex items-center gap-1", propria ? "justify-end" : "justify-start")}>
+      {!propria && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+              aria-label="Mais opções da mensagem"
+            >
+              <MoreVertical className="size-4" aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => setDenunciando(true)}
+            >
+              Denunciar mensagem
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       <div
         className={cn(
           "max-w-[80%] rounded-2xl px-4 py-2 shadow-sm sm:max-w-[65%]",
@@ -30,6 +63,15 @@ export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propr
             ))}
         </div>
       </div>
+
+      {!propria && (
+        <DenunciarDialog
+          open={denunciando}
+          onOpenChange={setDenunciando}
+          entidadeTipo="mensagem"
+          entidadeId={mensagem.id}
+        />
+      )}
     </li>
   );
 }

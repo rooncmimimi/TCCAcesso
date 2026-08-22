@@ -136,7 +136,12 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                   tipo="usuario"
                   chaveResumo={["perfil-resumo-seguidores", alvoId]}
                 />
-                <BloquearUsuarioMenu alvoUsuarioId={alvoId} nome={nome} />
+                <BloquearUsuarioMenu
+                  alvoUsuarioId={alvoId}
+                  nome={nome}
+                  denunciaEntidadeTipo="usuario"
+                  denunciaEntidadeId={alvoId}
+                />
               </div>
             )}
           </div>

@@ -20,6 +20,7 @@ import { urlArquivo } from "@/services/uploads.service";
 import { formatarTempoRelativo } from "@/utils/format";
 import type { ComentarioCompleto } from "@/types";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
+import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 import { useComentarios, useCriarComentario, useRemoverComentario } from "./hooks";
 
 function LinhaComentario({
@@ -35,6 +36,7 @@ function LinhaComentario({
   const autor = comentario.usuario ?? comentario.autor;
   const remover = useRemoverComentario(postagemId);
   const podeExcluir = autor?.id === user?.id;
+  const [denunciando, setDenunciando] = useState(false);
 
   return (
     <li>
@@ -97,7 +99,25 @@ function LinhaComentario({
                 </AlertDialogContent>
               </AlertDialog>
             )}
+            {user && !podeExcluir && (
+              <button
+                type="button"
+                className="min-h-6 font-semibold text-muted-foreground hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                onClick={() => setDenunciando(true)}
+              >
+                Denunciar
+              </button>
+            )}
           </div>
+
+          {user && !podeExcluir && (
+            <DenunciarDialog
+              open={denunciando}
+              onOpenChange={setDenunciando}
+              entidadeTipo="comentario"
+              entidadeId={comentario.id}
+            />
+          )}
 
           {comentario.respostas && comentario.respostas.length > 0 && (
             <ul className="mt-3 space-y-3 border-l border-border pl-4" aria-label="Respostas">

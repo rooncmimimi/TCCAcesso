@@ -16,6 +16,15 @@ export interface Usuario {
   created_at?: string;
   ultimoLogin?: string | null;
   pausadoPeloUsuario?: boolean;
+  perfilPublico?: boolean;
+}
+
+/** Usuário bloqueado — item da lista em Configurações → Privacidade. */
+export interface UsuarioBloqueado {
+  id: string;
+  nome: string;
+  fotoPerfil?: string | null;
+  tipoUsuario?: TipoUsuario;
 }
 
 /** Espelha a tabela `candidatos` do backend (ver Backend/src/models/Candidato.js). */

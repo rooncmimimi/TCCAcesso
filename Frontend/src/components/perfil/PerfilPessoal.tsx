@@ -24,6 +24,7 @@ import { urlArquivo } from "@/services/uploads.service";
 import { EditarPerfilDialog } from "./EditarPerfilDialog";
 import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
+import { BloquearUsuarioMenu } from "./BloquearUsuarioMenu";
 import { SecaoRecursoPerfil } from "./SecaoRecursoPerfil";
 import { SecaoDeficiencias } from "./SecaoDeficiencias";
 import { ListaSeguidoresDialog } from "./ListaSeguidoresDialog";
@@ -135,6 +136,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                   tipo="usuario"
                   chaveResumo={["perfil-resumo-seguidores", alvoId]}
                 />
+                <BloquearUsuarioMenu alvoUsuarioId={alvoId} nome={nome} />
               </div>
             )}
           </div>

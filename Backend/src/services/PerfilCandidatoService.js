@@ -12,6 +12,7 @@ import {
     obterCandidatoDoUsuario,
     ehAdministrador
 } from "../utils/authorization.js";
+import BloqueioService from "./BloqueioService.js";
 
 /**
  * Perfil profissional detalhado do candidato:
@@ -96,7 +97,7 @@ class PerfilCandidatoService {
     }
 
     /** Perfil público/consolidado de um candidato. */
-    async perfilCompleto(candidatoId) {
+    async perfilCompleto(candidatoId, solicitante) {
         const candidato = await Candidato.findByPk(candidatoId, {
             include: [
                 {
@@ -108,7 +109,8 @@ class PerfilCandidatoService {
                         "email",
                         "fotoPerfil",
                         "capaPerfil",
-                        "tipoUsuario"
+                        "tipoUsuario",
+                        "perfilPublico"
                     ]
                 },
                 { model: CandidatoExperiencia, as: "experiencias" },
@@ -127,6 +129,11 @@ class PerfilCandidatoService {
             throw ApiError.notFound("Candidato não encontrado.");
         }
 
+        await BloqueioService.garantirVisibilidadePerfil(
+            candidato.usuario,
+            solicitante
+        );
+
         return candidato;
     }
 
@@ -135,14 +142,14 @@ class PerfilCandidatoService {
      * do autor de uma postagem/comentário — é o que permite "clicar na foto/nome
      * no feed" sem o cliente precisar conhecer o `candidatoId` de antemão.
      */
-    async perfilCompletoPorUsuario(usuarioId) {
+    async perfilCompletoPorUsuario(usuarioId, solicitante) {
         const candidato = await Candidato.findOne({ where: { usuarioId } });
 
         if (!candidato) {
             throw ApiError.notFound("Candidato não encontrado.");
         }
 
-        return this.perfilCompleto(candidato.id);
+        return this.perfilCompleto(candidato.id, solicitante);
     }
 
     async listar(nome, candidatoId) {

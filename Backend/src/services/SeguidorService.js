@@ -10,6 +10,7 @@ import {
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import NotificacaoService from "./NotificacaoService.js";
+import BloqueioService from "./BloqueioService.js";
 
 const PERFIL_PUBLICO = [
     "id",
@@ -47,6 +48,10 @@ class SeguidorService {
         }
 
         const seguido = await this.garantirUsuarioAtivo(seguidoId);
+
+        if (await BloqueioService.estaBloqueadoEntre(solicitante.id, seguidoId)) {
+            throw ApiError.forbidden("Você não pode seguir este usuário.");
+        }
 
         const existente = await UsuarioSeguido.findOne({
             where: { seguidorId: solicitante.id, seguidoId }
@@ -89,6 +94,15 @@ class SeguidorService {
 
         if (!empresa) {
             throw ApiError.notFound("Empresa não encontrada.");
+        }
+
+        if (
+            await BloqueioService.estaBloqueadoEntre(
+                solicitante.id,
+                empresa.usuarioId
+            )
+        ) {
+            throw ApiError.forbidden("Você não pode seguir esta empresa.");
         }
 
         const candidato = await Candidato.findOne({
@@ -255,14 +269,19 @@ class SeguidorService {
     }
 
     async sugestoes(solicitante, limite = 5) {
-        const jaSeguidos = await this.idsSeguidos(solicitante.id);
+        const [jaSeguidos, idsBloqueio] = await Promise.all([
+            this.idsSeguidos(solicitante.id),
+            BloqueioService.idsRelacionados(solicitante.id)
+        ]);
 
         return Usuario.findAll({
             where: {
                 ativo: true,
                 bloqueado: false,
                 tipoUsuario: { [Op.ne]: "administrador" },
-                id: { [Op.notIn]: [...jaSeguidos, solicitante.id] }
+                id: {
+                    [Op.notIn]: [...jaSeguidos, ...idsBloqueio, solicitante.id]
+                }
             },
             attributes: PERFIL_PUBLICO,
             include: [

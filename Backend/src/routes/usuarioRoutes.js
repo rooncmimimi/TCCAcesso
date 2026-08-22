@@ -1,5 +1,6 @@
 import { Router } from "express";
 import UsuarioController from "../controllers/UsuarioController.js";
+import BloqueioController from "../controllers/BloqueioController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
@@ -8,6 +9,7 @@ import {
     validarAtualizacaoUsuario,
     validarUuidParam
 } from "../validators/usuarioValidator.js";
+import { validarPrivacidade } from "../validators/bloqueioValidator.js";
 
 const router = Router();
 
@@ -18,6 +20,31 @@ router.get(
     "/",
     rbacMiddleware("administrador"),
     UsuarioController.index
+);
+
+/* ---------- Bloqueio e privacidade (rotas fixas, antes de "/:id") ---------- */
+
+router.get("/bloqueados", BloqueioController.listar);
+
+router.put(
+    "/privacidade",
+    validarPrivacidade,
+    validationMiddleware,
+    BloqueioController.atualizarPrivacidade
+);
+
+router.post(
+    "/:usuarioId/bloquear",
+    validarUuidParam("usuarioId"),
+    validationMiddleware,
+    BloqueioController.bloquear
+);
+
+router.delete(
+    "/:usuarioId/bloquear",
+    validarUuidParam("usuarioId"),
+    validationMiddleware,
+    BloqueioController.desbloquear
 );
 
 router.get(

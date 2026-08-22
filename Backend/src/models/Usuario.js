@@ -94,6 +94,13 @@ const Usuario = sequelize.define(
         pausadoEm: {
             field: "pausado_em",
             type: DataTypes.DATE
+        },
+
+        perfilPublico: {
+            field: "perfil_publico",
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true
         }
     },
     {

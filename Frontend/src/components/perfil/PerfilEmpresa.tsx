@@ -15,6 +15,7 @@ import { urlArquivo } from "@/services/uploads.service";
 import { EditarEmpresaDialog } from "./EditarEmpresaDialog";
 import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
+import { BloquearUsuarioMenu } from "./BloquearUsuarioMenu";
 import { AvisoAprovacaoEmpresa } from "./AvisoAprovacaoEmpresa";
 import { PostagensUsuario } from "./PostagensUsuario";
 import { CompartilhamentosUsuario } from "./CompartilhamentosUsuario";
@@ -139,6 +140,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                   tipo="empresa"
                   chaveResumo={["resumo-empresa", empresa.id]}
                 />
+                <BloquearUsuarioMenu alvoUsuarioId={empresa.usuarioId ?? ""} nome={nome} />
               </div>
             )}
           </div>

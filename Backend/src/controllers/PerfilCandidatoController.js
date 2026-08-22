@@ -4,7 +4,8 @@ class PerfilCandidatoController {
     async perfilCompleto(req, res, next) {
         try {
             const candidato = await PerfilCandidatoService.perfilCompleto(
-                req.params.candidatoId
+                req.params.candidatoId,
+                req.user
             );
 
             return res.status(200).json({ sucesso: true, candidato });
@@ -16,7 +17,8 @@ class PerfilCandidatoController {
     async perfilCompletoPorUsuario(req, res, next) {
         try {
             const candidato = await PerfilCandidatoService.perfilCompletoPorUsuario(
-                req.params.usuarioId
+                req.params.usuarioId,
+                req.user
             );
 
             return res.status(200).json({ sucesso: true, candidato });

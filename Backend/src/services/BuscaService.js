@@ -9,6 +9,7 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao } from "../utils/pagination.js";
+import BloqueioService from "./BloqueioService.js";
 
 const TIPOS = ["tudo", "usuarios", "empresas", "vagas", "postagens"];
 
@@ -39,12 +40,13 @@ class BuscaService {
         });
     }
 
-    async buscarUsuarios(termo, limite, offset) {
+    async buscarUsuarios(termo, limite, offset, idsExcluidos = []) {
         const { rows, count } = await Usuario.findAndCountAll({
             where: {
                 ativo: true,
                 bloqueado: false,
                 tipoUsuario: { [Op.ne]: "administrador" },
+                ...(idsExcluidos.length ? { id: { [Op.notIn]: idsExcluidos } } : {}),
                 [Op.and]: [this.like("Usuario.nome", termo)]
             },
             attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"],
@@ -64,10 +66,13 @@ class BuscaService {
         return { total: count, itens: rows };
     }
 
-    async buscarEmpresas(termo, limite, offset) {
+    async buscarEmpresas(termo, limite, offset, idsExcluidos = []) {
         const { rows, count } = await Empresa.findAndCountAll({
             where: {
                 statusAprovacao: "aprovada",
+                ...(idsExcluidos.length
+                    ? { usuarioId: { [Op.notIn]: idsExcluidos } }
+                    : {}),
                 [Op.or]: [
                     this.like("Empresa.nome_fantasia", termo),
                     this.like("Empresa.razao_social", termo),
@@ -142,15 +147,21 @@ class BuscaService {
         return { total: count, itens: rows };
     }
 
-    async buscar(query) {
+    async buscar(query, solicitante) {
         const termo = this.normalizar(query.q);
         const tipo = TIPOS.includes(query.tipo) ? query.tipo : "tudo";
         const { pagina, limite, offset } = resolverPaginacao(query, 10);
 
+        const idsExcluidos = solicitante
+            ? await BloqueioService.idsRelacionados(solicitante.id)
+            : [];
+
         if (tipo !== "tudo") {
             const mapa = {
-                usuarios: () => this.buscarUsuarios(termo, limite, offset),
-                empresas: () => this.buscarEmpresas(termo, limite, offset),
+                usuarios: () =>
+                    this.buscarUsuarios(termo, limite, offset, idsExcluidos),
+                empresas: () =>
+                    this.buscarEmpresas(termo, limite, offset, idsExcluidos),
                 vagas: () => this.buscarVagas(termo, limite, offset),
                 postagens: () => this.buscarPostagens(termo, limite, offset)
             };
@@ -171,8 +182,8 @@ class BuscaService {
         const limiteResumo = Math.min(limite, 5);
 
         const [usuarios, empresas, vagas, postagens] = await Promise.all([
-            this.buscarUsuarios(termo, limiteResumo, 0),
-            this.buscarEmpresas(termo, limiteResumo, 0),
+            this.buscarUsuarios(termo, limiteResumo, 0, idsExcluidos),
+            this.buscarEmpresas(termo, limiteResumo, 0, idsExcluidos),
             this.buscarVagas(termo, limiteResumo, 0),
             this.buscarPostagens(termo, limiteResumo, 0)
         ]);

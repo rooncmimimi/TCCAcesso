@@ -33,7 +33,10 @@ class EmpresaController {
 
     async porUsuario(req, res, next) {
         try {
-            const empresa = await EmpresaService.findByUsuarioPublico(req.params.usuarioId);
+            const empresa = await EmpresaService.findByUsuarioPublico(
+                req.params.usuarioId,
+                req.user
+            );
 
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -43,7 +46,7 @@ class EmpresaController {
 
     async show(req, res, next) {
         try {
-            const empresa = await EmpresaService.findById(req.params.id);
+            const empresa = await EmpresaService.findById(req.params.id, req.user);
 
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {

@@ -2,6 +2,7 @@ import { Router } from "express";
 import EmpresaController from "../controllers/EmpresaController.js";
 import InteracaoController from "../controllers/InteracaoController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
+import authOpcionalMiddleware from "../middlewares/authOpcionalMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
 import upload from "../middlewares/uploadMiddleware.js";
@@ -16,6 +17,7 @@ router.get("/parceiras", EmpresaController.partners);
 
 router.get(
     "/usuario/:usuarioId",
+    authOpcionalMiddleware,
     validarUuidParam("usuarioId"),
     validationMiddleware,
     EmpresaController.porUsuario
@@ -33,6 +35,7 @@ router.get(
 
 router.get(
     "/:id",
+    authOpcionalMiddleware,
     validarUuidParam("id"),
     validationMiddleware,
     EmpresaController.show

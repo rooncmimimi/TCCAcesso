@@ -3,14 +3,12 @@ import {
   Accessibility,
   Bell,
   ChevronRight,
-  Clock,
   HelpCircle,
   Lock,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
 import { AppShell } from "@/layouts/AppShell";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 
@@ -49,6 +47,14 @@ const secoes = [
     icon: Bell,
     titulo: "Notificações",
     itens: [{ label: "Preferências de notificação", to: "/configuracoes/notificacoes" }],
+  },
+  {
+    icon: ShieldCheck,
+    titulo: "Privacidade",
+    itens: [
+      { label: "Perfil público", to: "/configuracoes/privacidade" },
+      { label: "Usuários bloqueados", to: "/configuracoes/bloqueados" },
+    ],
   },
 ] as const;
 
@@ -107,20 +113,6 @@ function Configuracoes() {
             </CardContent>
           </Card>
         ))}
-
-        <Card className="shadow-none">
-          <CardContent className="p-5">
-            <h2 className="flex items-center gap-2 text-base font-bold">
-              <ShieldCheck className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" /> Privacidade
-              <Badge variant="secondary" className="ml-auto gap-1 font-medium">
-                <Clock className="size-3" aria-hidden="true" /> Em breve
-              </Badge>
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Visibilidade de perfil e bloqueio de usuários estão planejados para uma próxima fase.
-            </p>
-          </CardContent>
-        </Card>
 
         <Card className="shadow-none">
           <CardContent className="p-5">

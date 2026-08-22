@@ -4,6 +4,7 @@ import { Empresa, Usuario, Vaga } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono, ehAdministrador, garantirEmpresaAprovada } from "../utils/authorization.js";
+import BloqueioService from "./BloqueioService.js";
 
 /** Campos que a própria empresa pode atualizar. */
 const CAMPOS_EDITAVEIS = [
@@ -104,13 +105,13 @@ class EmpresaService {
     /* ==========================================================
        BUSCAR POR ID (público)
     ========================================================== */
-    async findById(id) {
+    async findById(id, solicitante) {
         const empresa = await Empresa.findByPk(id, {
             include: [
                 {
                     model: Usuario,
                     as: "usuario",
-                    attributes: ["id", "nome", "fotoPerfil"]
+                    attributes: ["id", "nome", "fotoPerfil", "perfilPublico"]
                 },
                 {
                     model: Vaga,
@@ -124,6 +125,11 @@ class EmpresaService {
         if (!empresa) {
             throw ApiError.notFound("Empresa não encontrada.");
         }
+
+        await BloqueioService.garantirVisibilidadePerfil(
+            empresa.usuario,
+            solicitante
+        );
 
         return empresa;
     }
@@ -135,14 +141,14 @@ class EmpresaService {
      * Diferente de `findByUsuario` (usada só em /empresas/me): aqui o
      * `Usuario` incluído é restrito a campos públicos (sem e-mail/telefone).
      */
-    async findByUsuarioPublico(usuarioId) {
+    async findByUsuarioPublico(usuarioId, solicitante) {
         const empresa = await Empresa.findOne({
             where: { usuarioId },
             include: [
                 {
                     model: Usuario,
                     as: "usuario",
-                    attributes: ["id", "nome", "fotoPerfil"]
+                    attributes: ["id", "nome", "fotoPerfil", "perfilPublico"]
                 },
                 {
                     model: Vaga,
@@ -156,6 +162,11 @@ class EmpresaService {
         if (!empresa) {
             throw ApiError.notFound("Empresa não encontrada.");
         }
+
+        await BloqueioService.garantirVisibilidadePerfil(
+            empresa.usuario,
+            solicitante
+        );
 
         return empresa;
     }

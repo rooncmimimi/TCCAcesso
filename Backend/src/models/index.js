@@ -44,6 +44,7 @@ import Arquivo from "./Arquivo.js";
 import AutenticacaoDoisFatores from "./AutenticacaoDoisFatores.js";
 import CodigoVerificacaoEmail from "./CodigoVerificacaoEmail.js";
 import PreferenciaNotificacao from "./PreferenciaNotificacao.js";
+import UsuarioBloqueio from "./UsuarioBloqueio.js";
 
 
 /* ======================================================
@@ -335,6 +336,23 @@ PreferenciaNotificacao.belongsTo(Usuario, {
 });
 
 /* ======================================================
+   BLOQUEIO DE USUÁRIOS (migration 0019)
+====================================================== */
+
+Usuario.hasMany(UsuarioBloqueio, {
+    foreignKey: "usuarioId",
+    as: "bloqueios"
+});
+UsuarioBloqueio.belongsTo(Usuario, {
+    foreignKey: "usuarioId",
+    as: "usuario"
+});
+UsuarioBloqueio.belongsTo(Usuario, {
+    foreignKey: "bloqueadoId",
+    as: "bloqueado"
+});
+
+/* ======================================================
    ASSISTENTE VIRTUAL
 ====================================================== */
 
@@ -423,6 +441,7 @@ export {
     ChatbotMensagem,
     AutenticacaoDoisFatores,
     CodigoVerificacaoEmail,
-    PreferenciaNotificacao
+    PreferenciaNotificacao,
+    UsuarioBloqueio
 };
 

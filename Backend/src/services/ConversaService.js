@@ -15,6 +15,7 @@ import {
     emitirParaUsuario
 } from "../realtime/socket.js";
 import { notificacaoPermitida } from "./NotificacaoService.js";
+import BloqueioService from "./BloqueioService.js";
 
 const INCLUDE_PARTICIPANTES = [
     {
@@ -91,6 +92,15 @@ class ConversaService {
 
         if (!candidato || !empresa) {
             throw ApiError.notFound("Participante da conversa não encontrado.");
+        }
+
+        if (
+            await BloqueioService.estaBloqueadoEntre(
+                candidato.usuarioId,
+                empresa.usuarioId
+            )
+        ) {
+            throw ApiError.forbidden("Não é possível iniciar esta conversa.");
         }
 
         const [conversa] = await Conversa.findOrCreate({
@@ -248,6 +258,19 @@ class ConversaService {
             const conversa = await this.carregarConversa(id, transaction);
 
             this.garantirParticipante(conversa, solicitante);
+
+            // Bloqueio pode ter acontecido DEPOIS da conversa já existir —
+            // uma conversa ativa também deve parar de funcionar.
+            if (
+                await BloqueioService.estaBloqueadoEntre(
+                    conversa.candidato.usuarioId,
+                    conversa.empresa.usuarioId
+                )
+            ) {
+                throw ApiError.forbidden(
+                    "Não é possível enviar mensagens nesta conversa."
+                );
+            }
 
             const mensagem = await Mensagem.create(
                 {

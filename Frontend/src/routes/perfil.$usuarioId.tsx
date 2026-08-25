@@ -31,6 +31,11 @@ export const Route = createFileRoute("/perfil/$usuarioId")({
  * ambas as consultas (`perfil-publico-candidato` / `perfil-publico-empresa`)
  * usam a mesma chave que `PerfilPessoal`/`PerfilEmpresa` já usam sozinhas,
  * então a resolução aqui não gera uma segunda busca de rede.
+ *
+ * Terceiro fallback (`usuarioGenerico`): usuários sem registro de candidato
+ * nem de empresa — hoje, só administradores. `PerfilPessoal` já sabe exibir
+ * esse caso (é o mesmo componente usado quando um administrador vê o
+ * próprio perfil), então reaproveitamos ele em vez de criar um componente novo.
  */
 function PerfilDeTerceiro() {
   const { usuarioId } = Route.useParams();
@@ -52,6 +57,13 @@ function PerfilDeTerceiro() {
     retry: false,
   });
 
+  const usuarioGenerico = useQuery({
+    queryKey: ["perfil-publico-usuario", usuarioId],
+    queryFn: () => perfilService.usuarioPublico(usuarioId),
+    enabled: !souEu && candidato.isError && empresa.isError,
+    retry: false,
+  });
+
   // Clicar no próprio nome/foto leva à página de perfil editável de sempre.
   if (souEu) {
     return <Navigate to="/perfil" />;
@@ -65,7 +77,11 @@ function PerfilDeTerceiro() {
     return <PerfilEmpresa usuarioId={usuarioId} />;
   }
 
-  if (candidato.isError && empresa.isError) {
+  if (usuarioGenerico.isSuccess) {
+    return <PerfilPessoal usuarioId={usuarioId} />;
+  }
+
+  if (candidato.isError && empresa.isError && usuarioGenerico.isError) {
     return (
       <AppShell>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">

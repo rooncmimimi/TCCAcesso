@@ -15,6 +15,7 @@ import {
   Accessibility,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { SearchBar } from "@/components/SearchBar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,11 +94,13 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-1 px-4 md:gap-3">
         <Link to="/feed" aria-label="ACESSO — ir para o início" className="shrink-0">
           <Logo showWordmark={false} className="sm:hidden" />
           <Logo className="hidden sm:inline-flex" />
         </Link>
+
+        {autenticado && <SearchBar />}
 
         <nav aria-label="Navegação principal" className="mx-auto">
           <ul className="flex items-center gap-1 sm:gap-2">

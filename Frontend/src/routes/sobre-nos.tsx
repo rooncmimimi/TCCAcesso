@@ -171,8 +171,8 @@ function SobreNos() {
                   </h2>
                   <p className="mt-2 flex items-center gap-2 text-primary-foreground/90">
                     <Mail className="size-4 shrink-0" aria-hidden="true" />
-                    <a href="mailto:contato@acesso.com.br" className="underline">
-                      contato@acesso.com.br
+                    <a href="mailto:projetoacessoinclusivo@gmail.com" className="underline">
+                      projetoacessoinclusivo@gmail.com
                     </a>
                   </p>
                   <p className="mt-1 flex items-center gap-2 text-primary-foreground/90">

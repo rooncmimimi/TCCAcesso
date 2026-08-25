@@ -6,13 +6,12 @@ import mensagensService from "@/services/mensagens.service";
 import { extrairMensagemErro } from "@/services/api";
 import { toast } from "sonner";
 
-/** Abre (ou reabre) a conversa com o candidato/empresa deste perfil e vai direto para ela. */
-export function EnviarMensagemButton({ tipo, alvoId }: { tipo: "candidato" | "empresa"; alvoId: string }) {
+/** Abre (ou reabre) a conversa com o usuário deste perfil e vai direto para ela. */
+export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
   const navigate = useNavigate();
 
   const mutacao = useMutation({
-    mutationFn: () =>
-      mensagensService.criarConversa(tipo === "candidato" ? { candidatoId: alvoId } : { empresaId: alvoId }),
+    mutationFn: () => mensagensService.criarConversa({ usuarioId: alvoId }),
     onSuccess: (conversa) => {
       void navigate({ to: "/mensagens", search: { conversaId: conversa.id } });
     },

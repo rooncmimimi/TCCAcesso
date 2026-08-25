@@ -196,11 +196,11 @@ Notificacao.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
    CHAT
 ====================================================== */
 
-Empresa.hasMany(Conversa, { foreignKey: "empresaId", as: "conversas" });
-Conversa.belongsTo(Empresa, { foreignKey: "empresaId", as: "empresa" });
+Usuario.hasMany(Conversa, { foreignKey: "usuarioAId", as: "conversasComoA" });
+Conversa.belongsTo(Usuario, { foreignKey: "usuarioAId", as: "usuarioA" });
 
-Candidato.hasMany(Conversa, { foreignKey: "candidatoId", as: "conversas" });
-Conversa.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
+Usuario.hasMany(Conversa, { foreignKey: "usuarioBId", as: "conversasComoB" });
+Conversa.belongsTo(Usuario, { foreignKey: "usuarioBId", as: "usuarioB" });
 
 Conversa.hasMany(Mensagem, { foreignKey: "conversaId", as: "mensagens" });
 Mensagem.belongsTo(Conversa, { foreignKey: "conversaId", as: "conversa" });

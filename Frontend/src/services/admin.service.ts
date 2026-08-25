@@ -51,6 +51,7 @@ export interface UsuarioAdmin {
   ativo: boolean;
   bloqueado: boolean;
   created_at?: string;
+  ultimoLogin?: string | null;
 }
 
 export interface VagaAdmin {

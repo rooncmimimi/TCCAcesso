@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type { Conversa, Mensagem } from "@/lib/api-types";
 import { initials } from "@/lib/session";
+import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { BolhaMensagem } from "./BolhaMensagem";
 import { fotoParticipante, nomeParticipante, participanteOposto } from "./utils";
 
@@ -56,14 +57,20 @@ export function JanelaConversa({
   return (
     <section aria-label={`Conversa com ${nome}`} className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border p-4">
-        <Avatar className="size-10 shrink-0">
-          {foto && <AvatarImage src={foto} alt="" />}
-          <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-            {initials(nome)}
-          </AvatarFallback>
-        </Avatar>
+        <LinkAutor autorId={contato?.id} className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Avatar className="size-10">
+            {foto && <AvatarImage src={foto} alt="" />}
+            <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
+              {initials(nome)}
+            </AvatarFallback>
+          </Avatar>
+        </LinkAutor>
         <div className="min-w-0">
-          <p className="truncate font-bold">{nome}</p>
+          <p className="truncate font-bold">
+            <LinkAutor autorId={contato?.id} className="hover:underline focus-visible:underline">
+              {nome}
+            </LinkAutor>
+          </p>
           {contatoDigitando && (
             <p className="text-xs font-medium text-primary" role="status" aria-live="polite">
               digitando…

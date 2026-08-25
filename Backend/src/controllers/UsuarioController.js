@@ -18,7 +18,20 @@ class UsuarioController {
 
     async show(req, res, next) {
         try {
-            const usuario = await UsuarioService.findById(req.params.id);
+            const usuario = await UsuarioService.findById(req.params.id, req.user);
+
+            return res.status(200).json({ sucesso: true, usuario });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async perfilPublico(req, res, next) {
+        try {
+            const usuario = await UsuarioService.perfilPublicoBasico(
+                req.params.usuarioId,
+                req.user
+            );
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {

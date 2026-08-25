@@ -19,10 +19,62 @@ export const publicoService = {
   },
 };
 
+export interface ResultadoBuscaUsuario {
+  id: string;
+  nome: string;
+  fotoPerfil?: string | null;
+  tipoUsuario: "candidato" | "empresa" | "administrador";
+  candidato?: {
+    id: string;
+    tituloProfissional?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+  } | null;
+}
+
+export interface ResultadoBuscaEmpresa {
+  id: string;
+  usuarioId: string;
+  nomeFantasia?: string | null;
+  razaoSocial: string;
+  setor?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  logo?: string | null;
+  empresaVerificada?: boolean;
+}
+
+export interface ResultadoBuscaVaga {
+  id: string;
+  titulo: string;
+  cidade?: string | null;
+  estado?: string | null;
+  empresa?: { id: string; nomeFantasia?: string | null; logo?: string | null } | null;
+}
+
+export interface ResultadoBuscaPostagem {
+  id: string;
+  conteudo: string;
+  usuario?: { id: string; nome: string; fotoPerfil?: string | null } | null;
+}
+
+export interface ResultadoBuscaGlobal {
+  termo: string;
+  tipo: string;
+  total: number;
+  totais?: { usuarios: number; empresas: number; vagas: number; postagens: number };
+  resultados: {
+    usuarios?: ResultadoBuscaUsuario[];
+    empresas?: ResultadoBuscaEmpresa[];
+    vagas?: ResultadoBuscaVaga[];
+    postagens?: ResultadoBuscaPostagem[];
+  };
+}
+
 /** Busca global (usuários, empresas, vagas e publicações). */
 export const buscaService = {
-  async global(termo: string, params: { tipo?: string; limit?: number } = {}) {
-    const { data } = await api.get<Record<string, unknown>>("/busca", {
+  async global(termo: string, params: { tipo?: string; limit?: number } = {}): Promise<ResultadoBuscaGlobal> {
+    const { data } = await api.get<ResultadoBuscaGlobal>("/busca", {
       params: { q: termo, busca: termo, ...params },
     });
     return data;

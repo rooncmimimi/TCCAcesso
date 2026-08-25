@@ -57,6 +57,21 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     retry: false,
   });
 
+  // Fallback para usuários sem registro de candidato (hoje, administradores)
+  // — só é consultado depois que a tentativa de candidato falha, e usa a
+  // mesma chave de query que a rota `/perfil/$usuarioId` já usa, então não
+  // gera uma segunda busca de rede quando ela também precisou desse dado.
+  const {
+    data: usuarioGenerico,
+    isLoading: carregandoUsuarioGenerico,
+    isError: erroUsuarioGenerico,
+  } = useQuery({
+    queryKey: ["perfil-publico-usuario", alvoId],
+    queryFn: () => perfilService.usuarioPublico(alvoId as string),
+    enabled: !proprioPerfil && Boolean(alvoId) && erroCandidatoAlheio,
+    retry: false,
+  });
+
   const { data: resumoSeguidores } = useQuery({
     queryKey: ["perfil-resumo-seguidores", alvoId],
     queryFn: () => seguidoresService.resumo(alvoId as string),
@@ -65,7 +80,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
 
   if (!alvoId) return null;
 
-  if (!proprioPerfil && erroCandidatoAlheio) {
+  if (!proprioPerfil && erroCandidatoAlheio && erroUsuarioGenerico) {
     return (
       <AppShell>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
@@ -75,7 +90,10 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     );
   }
 
-  if (!proprioPerfil && carregandoCandidatoAlheio) {
+  if (
+    !proprioPerfil &&
+    (carregandoCandidatoAlheio || (erroCandidatoAlheio && carregandoUsuarioGenerico))
+  ) {
     return (
       <AppShell>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
@@ -89,9 +107,13 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   const ehCandidato = proprioPerfil ? user?.tipo === "candidato" : Boolean(candidatoAlheio);
   const carregandoCandidato = proprioPerfil && carregandoMeuCandidato;
 
-  const nome = proprioPerfil ? user!.nome : candidato?.usuario?.nome ?? "Usuário";
-  const fotoPerfil = proprioPerfil ? user!.fotoPerfil : candidato?.usuario?.fotoPerfil;
-  const capaPerfil = proprioPerfil ? user!.capaPerfil : candidato?.usuario?.capaPerfil;
+  const nome = proprioPerfil ? user!.nome : candidato?.usuario?.nome ?? usuarioGenerico?.nome ?? "Usuário";
+  const fotoPerfil = proprioPerfil
+    ? user!.fotoPerfil
+    : candidato?.usuario?.fotoPerfil ?? usuarioGenerico?.fotoPerfil;
+  const capaPerfil = proprioPerfil
+    ? user!.capaPerfil
+    : candidato?.usuario?.capaPerfil ?? usuarioGenerico?.capaPerfil;
 
   const chipsAcessibilidade = proprioPerfil
     ? [
@@ -128,9 +150,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
               </EditarPerfilDialog>
             ) : (
               <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                {user?.tipo === "empresa" && ehCandidato && candidato ? (
-                  <EnviarMensagemButton tipo="candidato" alvoId={candidato.id} />
-                ) : null}
+                <EnviarMensagemButton alvoId={alvoId} />
                 <SeguirButton
                   alvoId={alvoId}
                   tipo="usuario"

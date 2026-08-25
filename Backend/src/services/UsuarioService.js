@@ -10,6 +10,7 @@ import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono, garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
 import AdminAuditService from "./AdminAuditService.js";
+import BloqueioService from "./BloqueioService.js";
 
 class UsuarioService {
     async buscarPorId(id) {
@@ -60,7 +61,7 @@ class UsuarioService {
     /* ==========================================================
        BUSCAR POR ID
     ========================================================== */
-    async findById(id) {
+    async findById(id, solicitante) {
         const usuario = await Usuario.findByPk(id, {
             include: [
                 { model: Candidato, as: "candidato" },
@@ -73,7 +74,52 @@ class UsuarioService {
             throw ApiError.notFound("Usuário não encontrado.");
         }
 
+        // Este endpoint retorna o registro completo (e-mail, telefone, CPF
+        // via candidato, CNPJ via empresa) — só o dono ou um administrador
+        // pode receber esses dados. Nenhum caller do frontend usa esta rota
+        // hoje; a checagem existe para fechar o acesso direto via API.
+        garantirDono(solicitante, usuario.id);
+
         return usuario;
+    }
+
+    /* ==========================================================
+       PERFIL PÚBLICO BÁSICO (qualquer usuário autenticado)
+
+       Fallback usado pela rota de perfil quando o alvo não tem registro
+       em Candidato nem Empresa (hoje, só administradores) — retorna
+       apenas o necessário para montar o cabeçalho do perfil público.
+       Nunca inclui e-mail/telefone/documentos. Reaproveita a mesma
+       checagem de bloqueio/privacidade usada pelo perfil de candidato e
+       de empresa, sem duplicar a regra.
+    ========================================================== */
+    async perfilPublicoBasico(id, solicitante) {
+        const usuario = await Usuario.findByPk(id, {
+            attributes: [
+                "id",
+                "nome",
+                "fotoPerfil",
+                "capaPerfil",
+                "tipoUsuario",
+                "perfilPublico",
+                "ativo",
+                "bloqueado"
+            ]
+        });
+
+        if (!usuario || !usuario.ativo) {
+            throw ApiError.notFound("Usuário não encontrado.");
+        }
+
+        await BloqueioService.garantirVisibilidadePerfil(usuario, solicitante);
+
+        return {
+            id: usuario.id,
+            nome: usuario.nome,
+            fotoPerfil: usuario.fotoPerfil,
+            capaPerfil: usuario.capaPerfil,
+            tipoUsuario: usuario.tipoUsuario
+        };
     }
 
     /* ==========================================================

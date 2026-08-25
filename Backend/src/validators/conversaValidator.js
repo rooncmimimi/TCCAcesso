@@ -1,15 +1,9 @@
 import { body, param } from "express-validator";
 
 export const validarAberturaConversa = [
-    body("candidatoId")
-        .optional({ values: "falsy" })
+    body("usuarioId")
         .isUUID()
-        .withMessage("Candidato inválido."),
-
-    body("empresaId")
-        .optional({ values: "falsy" })
-        .isUUID()
-        .withMessage("Empresa inválida.")
+        .withMessage("Usuário inválido.")
 ];
 
 export const validarEnvioMensagem = [

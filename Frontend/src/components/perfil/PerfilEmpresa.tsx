@@ -132,9 +132,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
               </EditarEmpresaDialog>
             ) : (
               <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                {user?.tipo === "candidato" ? (
-                  <EnviarMensagemButton tipo="empresa" alvoId={empresa.id} />
-                ) : null}
+                <EnviarMensagemButton alvoId={empresa.usuarioId ?? ""} />
                 <SeguirButton
                   alvoId={empresa.id}
                   tipo="empresa"

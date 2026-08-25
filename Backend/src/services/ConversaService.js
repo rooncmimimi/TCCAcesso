@@ -3,7 +3,6 @@ import sequelize from "../config/database.js";
 import {
     Conversa,
     Mensagem,
-    Candidato,
     Empresa,
     Usuario,
     Notificacao
@@ -17,30 +16,45 @@ import {
 import { notificacaoPermitida } from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
 
+const ATRIBUTOS_PARTICIPANTE = ["id", "nome", "fotoPerfil", "tipoUsuario"];
+
 const INCLUDE_PARTICIPANTES = [
     {
-        model: Candidato,
-        as: "candidato",
+        model: Usuario,
+        as: "usuarioA",
+        attributes: ATRIBUTOS_PARTICIPANTE,
         include: [
             {
-                model: Usuario,
-                as: "usuario",
-                attributes: ["id", "nome", "fotoPerfil"]
+                model: Empresa,
+                as: "empresa",
+                attributes: ["id", "nomeFantasia", "razaoSocial", "logo"],
+                required: false
             }
         ]
     },
     {
-        model: Empresa,
-        as: "empresa",
-        attributes: ["id", "usuarioId", "nomeFantasia", "razaoSocial", "logo"]
+        model: Usuario,
+        as: "usuarioB",
+        attributes: ATRIBUTOS_PARTICIPANTE,
+        include: [
+            {
+                model: Empresa,
+                as: "empresa",
+                attributes: ["id", "nomeFantasia", "razaoSocial", "logo"],
+                required: false
+            }
+        ]
     }
 ];
 
 /**
- * Chat 1:1 entre candidato e empresa.
+ * Chat 1:1 entre quaisquer dois usuários autenticados (candidato, empresa
+ * ou administrador) — qualquer usuário pode conversar com qualquer outro,
+ * respeitando bloqueios existentes.
  *
  * Toda leitura/escrita valida se o usuário autenticado é um dos dois
- * participantes da conversa (proteção contra IDOR — OWASP A01).
+ * participantes da conversa (proteção contra IDOR — OWASP A01). Ser
+ * administrador NÃO concede acesso a conversas das quais não participa.
  */
 class ConversaService {
     async carregarConversa(id, transaction) {
@@ -57,10 +71,7 @@ class ConversaService {
     }
 
     garantirParticipante(conversa, solicitante) {
-        const usuarios = [
-            conversa.candidato?.usuarioId,
-            conversa.empresa?.usuarioId
-        ];
+        const usuarios = [conversa.usuarioAId, conversa.usuarioBId];
 
         if (!usuarios.includes(solicitante.id)) {
             throw ApiError.forbidden("Você não participa desta conversa.");
@@ -70,41 +81,34 @@ class ConversaService {
     /* ==========================================================
        ABRIR / RECUPERAR CONVERSA
     ========================================================== */
-    async abrir({ candidatoId, empresaId }, solicitante) {
-        let candidato = null;
-        let empresa = null;
-
-        if (solicitante.tipoUsuario === "candidato") {
-            candidato = await Candidato.findOne({
-                where: { usuarioId: solicitante.id }
-            });
-            empresa = await Empresa.findByPk(empresaId);
-        } else if (solicitante.tipoUsuario === "empresa") {
-            empresa = await Empresa.findOne({
-                where: { usuarioId: solicitante.id }
-            });
-            candidato = await Candidato.findByPk(candidatoId);
-        } else {
-            throw ApiError.forbidden(
-                "Apenas candidatos e empresas podem iniciar conversas."
+    async abrir({ usuarioId }, solicitante) {
+        if (String(usuarioId) === String(solicitante.id)) {
+            throw ApiError.badRequest(
+                "Você não pode iniciar uma conversa consigo mesmo."
             );
         }
 
-        if (!candidato || !empresa) {
-            throw ApiError.notFound("Participante da conversa não encontrado.");
+        const alvo = await Usuario.findByPk(usuarioId, {
+            attributes: ["id", "ativo", "bloqueado"]
+        });
+
+        if (!alvo || !alvo.ativo || alvo.bloqueado) {
+            throw ApiError.notFound("Usuário não encontrado.");
         }
 
         if (
-            await BloqueioService.estaBloqueadoEntre(
-                candidato.usuarioId,
-                empresa.usuarioId
-            )
+            await BloqueioService.estaBloqueadoEntre(solicitante.id, usuarioId)
         ) {
             throw ApiError.forbidden("Não é possível iniciar esta conversa.");
         }
 
+        const [usuarioAId, usuarioBId] = [
+            String(solicitante.id).toLowerCase(),
+            String(usuarioId).toLowerCase()
+        ].sort();
+
         const [conversa] = await Conversa.findOrCreate({
-            where: { candidatoId: candidato.id, empresaId: empresa.id },
+            where: { usuarioAId, usuarioBId },
             defaults: { ultimaMensagem: new Date() }
         });
 
@@ -117,21 +121,10 @@ class ConversaService {
     async listar(solicitante, query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
-        const candidato = await Candidato.findOne({
-            where: { usuarioId: solicitante.id }
-        });
-        const empresa = await Empresa.findOne({
-            where: { usuarioId: solicitante.id }
-        });
-
-        const filtros = [];
-
-        if (candidato) filtros.push({ candidatoId: candidato.id });
-        if (empresa) filtros.push({ empresaId: empresa.id });
-
-        if (filtros.length === 0) {
-            return montarResposta("conversas", [], 0, pagina, limite);
-        }
+        const filtros = [
+            { usuarioAId: solicitante.id },
+            { usuarioBId: solicitante.id }
+        ];
 
         const { rows, count } = await Conversa.findAndCountAll({
             where: { [Op.or]: filtros },
@@ -176,22 +169,6 @@ class ConversaService {
        TOTAL DE MENSAGENS NÃO LIDAS (para o badge do cabeçalho)
     ========================================================== */
     async contarNaoLidas(solicitante) {
-        const candidato = await Candidato.findOne({
-            where: { usuarioId: solicitante.id }
-        });
-        const empresa = await Empresa.findOne({
-            where: { usuarioId: solicitante.id }
-        });
-
-        const filtros = [];
-
-        if (candidato) filtros.push({ candidatoId: candidato.id });
-        if (empresa) filtros.push({ empresaId: empresa.id });
-
-        if (filtros.length === 0) {
-            return { naoLidas: 0 };
-        }
-
         const total = await Mensagem.count({
             where: {
                 remetenteId: { [Op.ne]: solicitante.id },
@@ -202,7 +179,12 @@ class ConversaService {
                     model: Conversa,
                     as: "conversa",
                     attributes: [],
-                    where: { [Op.or]: filtros }
+                    where: {
+                        [Op.or]: [
+                            { usuarioAId: solicitante.id },
+                            { usuarioBId: solicitante.id }
+                        ]
+                    }
                 }
             ]
         });
@@ -263,8 +245,8 @@ class ConversaService {
             // uma conversa ativa também deve parar de funcionar.
             if (
                 await BloqueioService.estaBloqueadoEntre(
-                    conversa.candidato.usuarioId,
-                    conversa.empresa.usuarioId
+                    conversa.usuarioAId,
+                    conversa.usuarioBId
                 )
             ) {
                 throw ApiError.forbidden(
@@ -287,9 +269,9 @@ class ConversaService {
             );
 
             const destinatarioId =
-                conversa.candidato.usuarioId === solicitante.id
-                    ? conversa.empresa.usuarioId
-                    : conversa.candidato.usuarioId;
+                conversa.usuarioAId === solicitante.id
+                    ? conversa.usuarioBId
+                    : conversa.usuarioAId;
 
             if (await notificacaoPermitida(destinatarioId, "Mensagem")) {
                 await Notificacao.create(

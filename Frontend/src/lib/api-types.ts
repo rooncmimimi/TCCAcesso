@@ -5,23 +5,24 @@
 
 export interface ParticipanteConversa {
   id: string;
-  usuarioId?: string;
-  nomeFantasia?: string | null;
-  razaoSocial?: string | null;
-  logo?: string | null;
-  usuario?: {
+  nome: string;
+  fotoPerfil?: string | null;
+  tipoUsuario?: "candidato" | "empresa" | "administrador";
+  /** Preenchido só quando o participante é uma empresa — nome de exibição preferido. */
+  empresa?: {
     id: string;
-    nome: string;
-    fotoPerfil?: string | null;
-  };
+    nomeFantasia?: string | null;
+    razaoSocial?: string | null;
+    logo?: string | null;
+  } | null;
 }
 
 export interface Conversa {
   id: string;
-  candidatoId?: string;
-  empresaId?: string;
-  candidato?: ParticipanteConversa;
-  empresa?: ParticipanteConversa;
+  usuarioAId?: string;
+  usuarioBId?: string;
+  usuarioA?: ParticipanteConversa;
+  usuarioB?: ParticipanteConversa;
   /** Data/hora da última mensagem (o backend grava um timestamp aqui). */
   ultimaMensagem?: string | null;
   ultimaMensagemEm?: string | null;

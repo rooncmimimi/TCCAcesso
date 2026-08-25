@@ -13,14 +13,14 @@ const Conversa = sequelize.define(
             primaryKey: true
         },
 
-        candidatoId: {
-            field: "candidato_id",
+        usuarioAId: {
+            field: "usuario_a_id",
             type: DataTypes.UUID,
             allowNull: false
         },
 
-        empresaId: {
-            field: "empresa_id",
+        usuarioBId: {
+            field: "usuario_b_id",
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -49,7 +49,7 @@ const Conversa = sequelize.define(
         indexes: [
             {
                 unique: true,
-                fields: ["candidato_id", "empresa_id"]
+                fields: ["usuario_a_id", "usuario_b_id"]
             }
         ]
     }

@@ -12,6 +12,15 @@ import type {
 
 export type RecursoPerfil = "experiencias" | "formacoes" | "certificados" | "habilidades";
 
+/** Dados públicos mínimos de qualquer usuário — nunca inclui e-mail/telefone/documentos. */
+export interface UsuarioPublico {
+  id: string;
+  nome: string;
+  fotoPerfil?: string | null;
+  capaPerfil?: string | null;
+  tipoUsuario?: "candidato" | "empresa" | "administrador";
+}
+
 /** Perfil do candidato: dados, currículo, experiências, formações, certificados e habilidades. */
 export const perfilService = {
   async meuCandidato(): Promise<Candidato> {
@@ -33,6 +42,15 @@ export const perfilService = {
   async perfilCompletoPorUsuario(usuarioId: string): Promise<Candidato> {
     const { data } = await api.get<{ candidato: Candidato }>(`/perfil/candidatos/usuario/${usuarioId}`);
     return data.candidato;
+  },
+
+  /**
+   * Dados públicos mínimos de qualquer usuário — fallback usado quando o
+   * alvo não tem registro de candidato nem de empresa (hoje, administradores).
+   */
+  async usuarioPublico(usuarioId: string): Promise<UsuarioPublico> {
+    const { data } = await api.get<{ usuario: UsuarioPublico }>(`/perfil/usuario/${usuarioId}`);
+    return data.usuario;
   },
 
   async listarCandidatos(params: { page?: number; limit?: number; busca?: string } = {}) {

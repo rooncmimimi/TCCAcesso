@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,9 +64,18 @@ function AdminUsuarioDetalhe() {
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold sm:text-3xl">{usuario.nome}</h1>
-        <StatusBadge tom={usuario.ativo ? "sucesso" : "perigo"}>
-          {usuario.ativo ? "Ativo" : "Bloqueado"}
-        </StatusBadge>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge tom={usuario.ativo ? "sucesso" : "perigo"}>
+            {usuario.ativo ? "Ativo" : "Bloqueado"}
+          </StatusBadge>
+          <Link
+            to="/perfil/$usuarioId"
+            params={{ usuarioId }}
+            className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary"
+          >
+            <ExternalLink className="size-4" aria-hidden="true" /> Ver perfil público
+          </Link>
+        </div>
       </div>
 
       <Card className="mt-4 shadow-none">
@@ -83,6 +92,12 @@ function AdminUsuarioDetalhe() {
             <p className="text-xs font-bold uppercase text-muted-foreground">Cadastrado em</p>
             <p className="mt-1 text-sm">
               {usuario.created_at ? new Date(usuario.created_at).toLocaleDateString("pt-BR") : "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase text-muted-foreground">Última atividade</p>
+            <p className="mt-1 text-sm">
+              {usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString("pt-BR") : "Nunca acessou"}
             </p>
           </div>
         </CardContent>

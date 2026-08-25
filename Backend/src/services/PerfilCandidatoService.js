@@ -134,6 +134,16 @@ class PerfilCandidatoService {
             solicitante
         );
 
+        const souDono =
+            solicitante &&
+            String(solicitante.id) === String(candidato.usuarioId);
+
+        if (!souDono && !ehAdministrador(solicitante)) {
+            // Perfil de terceiro: e-mail é dado privado, não deve sair da API
+            // (o front nunca exibiu esse campo, mas ele vazava no JSON).
+            candidato.usuario.email = undefined;
+        }
+
         return candidato;
     }
 

@@ -2,18 +2,18 @@ import type { Conversa, ParticipanteConversa } from "@/lib/api-types";
 
 /** Retorna o participante "do outro lado" da conversa em relação ao usuário logado. */
 export function participanteOposto(conversa: Conversa, usuarioId: string | null): ParticipanteConversa | undefined {
-  if (!usuarioId) return conversa.empresa ?? conversa.candidato;
-  if (conversa.candidato?.usuarioId === usuarioId) return conversa.empresa;
-  if (conversa.empresa?.usuarioId === usuarioId) return conversa.candidato;
-  return conversa.empresa ?? conversa.candidato;
+  if (!usuarioId) return conversa.usuarioA ?? conversa.usuarioB;
+  if (conversa.usuarioA?.id === usuarioId) return conversa.usuarioB;
+  if (conversa.usuarioB?.id === usuarioId) return conversa.usuarioA;
+  return conversa.usuarioA ?? conversa.usuarioB;
 }
 
 export function nomeParticipante(participante?: ParticipanteConversa): string {
-  return participante?.nomeFantasia || participante?.razaoSocial || participante?.usuario?.nome || "Contato";
+  return participante?.empresa?.nomeFantasia || participante?.empresa?.razaoSocial || participante?.nome || "Contato";
 }
 
 export function fotoParticipante(participante?: ParticipanteConversa): string | null {
-  return participante?.logo || participante?.usuario?.fotoPerfil || null;
+  return participante?.empresa?.logo || participante?.fotoPerfil || null;
 }
 
 export function formatarHora(data?: string): string {

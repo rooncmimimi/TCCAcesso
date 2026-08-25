@@ -34,9 +34,23 @@ class BuscaService {
         return texto.slice(0, 120);
     }
 
+    /**
+     * Remove acentos e caixa alta, replicando em JS a mesma normalização do
+     * `acesso_normalizar()` do Postgres (lower + unaccent) — necessário para
+     * o termo digitado casar com o valor já normalizado pela função no lado
+     * da coluna, permitindo que os índices GIN trigram existentes sejam
+     * usados (ver migrations 0002/0003/0013).
+     */
+    normalizarAcentos(texto) {
+        return texto
+            .normalize("NFD")
+            .replace(/\p{Diacritic}/gu, "")
+            .toLowerCase();
+    }
+
     like(campo, termo) {
-        return sqlWhere(fn("LOWER", col(campo)), {
-            [Op.like]: `%${termo.toLowerCase()}%`
+        return sqlWhere(fn("acesso_normalizar", col(campo)), {
+            [Op.like]: `%${this.normalizarAcentos(termo)}%`
         });
     }
 

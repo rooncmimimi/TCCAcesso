@@ -86,7 +86,7 @@ function DetalheVaga() {
   });
 
   const conversar = useMutation({
-    mutationFn: () => mensagensService.criarConversa({ empresaId: vaga?.empresa?.id }),
+    mutationFn: () => mensagensService.criarConversa({ usuarioId: vaga?.empresa?.usuario?.id }),
     onSuccess: async (conversa) => {
       await queryClient.invalidateQueries({ queryKey: ["conversas"] });
       void navigate({ to: "/mensagens", search: { conversaId: conversa.id } });
@@ -143,7 +143,18 @@ function DetalheVaga() {
           {user && !ehDonoDaVaga && <DenunciarVagaMenu vagaId={vaga.id} titulo={vaga.titulo} />}
         </div>
         <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <Building2 className="size-4" aria-hidden="true" /> {nomeEmpresa}
+          <Building2 className="size-4" aria-hidden="true" />{" "}
+          {vaga.empresa?.usuario?.id ? (
+            <Link
+              to="/perfil/$usuarioId"
+              params={{ usuarioId: vaga.empresa.usuario.id }}
+              className="font-medium text-foreground hover:underline focus-visible:underline"
+            >
+              {nomeEmpresa}
+            </Link>
+          ) : (
+            nomeEmpresa
+          )}
           {local && (
             <>
               <span aria-hidden="true">·</span>
@@ -213,7 +224,7 @@ function DetalheVaga() {
                   {favoritada ? "Favoritada" : "Favoritar"}
                 </Button>
               )}
-              {ehCandidato && vaga.empresa?.id && (
+              {ehCandidato && vaga.empresa?.usuario?.id && (
                 <Button
                   variant="outline"
                   className="min-h-12"

@@ -289,7 +289,7 @@ export interface RespostaPaginada<T> {
 /* ==========================================================
    Arquivos e anexos
    ========================================================== */
-export type TipoArquivo = "imagem" | "documento";
+export type TipoArquivo = "imagem" | "documento" | "video";
 
 export interface Arquivo {
   id: string;

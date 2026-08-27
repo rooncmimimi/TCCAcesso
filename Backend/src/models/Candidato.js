@@ -3,6 +3,13 @@ import sequelize from "../config/database.js";
 
 /**
  * Tabela: candidatos
+ *
+ * `curriculo` guarda a referência estável (caminho) no bucket PRIVADO —
+ * de propósito, SEM getter automático de URL: currículo nunca deve virar
+ * uma URL pública (getPublicUrl), só uma URL assinada e temporária,
+ * gerada sob demanda e já autorizada (ver `CandidatoService.gerarUrlCurriculo`
+ * e `GET /candidatos/:id/curriculo`). Nunca serializar este campo cru numa
+ * resposta genérica de candidato — ver `utils/candidatoPrivacidade.js`.
  */
 const Candidato = sequelize.define(
     "Candidato",

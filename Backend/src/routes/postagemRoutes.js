@@ -4,7 +4,14 @@ import ComentarioController from "../controllers/ComentarioController.js";
 import CurtidaController from "../controllers/CurtidaController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import { uploadAnexos } from "../middlewares/uploadMiddleware.js";
+import { uploadAnexos, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+
+// Anexos de postagem vão para `postagens/<usuarioId>/<uuid>.ext`. O
+// postagemId ainda não existe neste ponto (a postagem é criada depois,
+// na mesma requisição), então agrupamos por autor.
+const processarAnexosPostagem = criarProcessadorArmazenamento({
+    pasta: (req) => `postagens/${req.user.id}`
+});
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarCriacaoPostagem,
@@ -28,6 +35,7 @@ router.get(
 router.post(
     "/",
     uploadAnexos.array("arquivos", 4),
+    processarAnexosPostagem,
     validarCriacaoPostagem,
     validationMiddleware,
     PostagemController.store

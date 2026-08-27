@@ -3,7 +3,7 @@ import CandidatoController from "../controllers/CandidatoController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js";
+import { uploadDocumento, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarAtualizacaoCandidato,
@@ -11,6 +11,13 @@ import {
 } from "../validators/candidatoValidator.js";
 
 const router = Router();
+
+// Currículo (documento privado) vai para `curriculos/<candidatoId>/<uuid>.ext`
+// no bucket PRIVADO — nunca resolvido para URL pública (ver Fase 4).
+const processarCurriculo = criarProcessadorArmazenamento({
+    pasta: (req) => `curriculos/${req.params.id}`,
+    privado: true
+});
 
 router.use(authMiddleware);
 
@@ -42,8 +49,18 @@ router.patch(
     "/:id/curriculo",
     validarUuidParam("id"),
     validationMiddleware,
-    upload.single("curriculo"),
+    uploadDocumento.single("curriculo"),
+    processarCurriculo,
     CandidatoController.uploadCurriculo
+);
+
+// URL assinada e temporária do currículo (nunca uma URL permanente).
+// Autorização (dono / empresa com candidatura / admin) no service.
+router.get(
+    "/:id/curriculo",
+    validarUuidParam("id"),
+    validationMiddleware,
+    CandidatoController.curriculoUrl
 );
 
 router.post(

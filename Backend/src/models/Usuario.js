@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
+import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
 
 /**
  * Tabela: usuarios
@@ -43,12 +44,18 @@ const Usuario = sequelize.define(
 
         fotoPerfil: {
             field: "foto_perfil",
-            type: DataTypes.TEXT
+            type: DataTypes.TEXT,
+            get() {
+                return resolverUrlExibicao(this.getDataValue("fotoPerfil"));
+            }
         },
 
         capaPerfil: {
             field: "capa_perfil",
-            type: DataTypes.TEXT
+            type: DataTypes.TEXT,
+            get() {
+                return resolverUrlExibicao(this.getDataValue("capaPerfil"));
+            }
         },
 
         bloqueado: {

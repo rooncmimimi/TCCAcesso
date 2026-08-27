@@ -8,6 +8,7 @@ import {
     urlPublica,
     tipoDoArquivo
 } from "../middlewares/uploadMiddleware.js";
+import { storageHabilitado, removerArquivo } from "../utils/supabaseStorage.js";
 
 const CATEGORIAS = [
     "foto_perfil",
@@ -81,16 +82,34 @@ class UploadService {
     }
 
     /**
-     * Remove fisicamente um arquivo servido em /uploads.
+     * Remove fisicamente um arquivo a partir da referência estável salva no
+     * banco (caminho relativo do Storage, ou `/uploads/...` local/legado).
+     * `privado` precisa ser informado por quem chama (ex.: currículo/
+     * certificado = true) — nunca é inferido do próprio caminho.
      * Nunca aceita caminho vindo do cliente sem normalizar (path traversal).
      */
-    async removerArquivoFisico(url) {
-        if (!url || !url.startsWith("/uploads/")) {
+    async removerArquivoFisico(caminho, { privado = false } = {}) {
+        if (!caminho) {
+            return false;
+        }
+
+        if (/^https?:\/\//i.test(caminho)) {
+            // URL completa antiga (anterior a esta arquitetura de caminho
+            // estável) — não há como remover do Storage só com a URL
+            // pública final, então não tenta (evita apagar o arquivo errado).
+            return false;
+        }
+
+        if (storageHabilitado && !caminho.startsWith("/uploads/")) {
+            return removerArquivo(caminho, { privado });
+        }
+
+        if (!caminho.startsWith("/uploads/")) {
             return false;
         }
 
         const base = path.resolve(process.cwd(), env.security.uploadDir);
-        const alvo = path.resolve(base, path.basename(url));
+        const alvo = path.resolve(base, path.basename(caminho));
 
         if (!alvo.startsWith(base)) {
             return false;

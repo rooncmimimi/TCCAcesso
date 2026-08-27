@@ -4,6 +4,7 @@ import app from "./app.js";
 import env from "./config/env.js";
 import conectarBanco from "./config/sequelize.js";
 import { iniciarSocket } from "./realtime/socket.js";
+import { storageHabilitado } from "./utils/supabaseStorage.js";
 
 /**
  * Bootstrap do servidor com desligamento gracioso.
@@ -14,6 +15,17 @@ import { iniciarSocket } from "./realtime/socket.js";
  */
 async function iniciarServidor() {
     await conectarBanco();
+
+    // Nunca loga as credenciais — só o modo em uso, para deixar óbvio em
+    // produção se o Storage persistente está realmente ativo ou se caiu
+    // (não deveria, dado o fail-fast em env.js) no disco local efêmero.
+    if (storageHabilitado) {
+        console.log(
+            `[STORAGE] Supabase Storage ativo (buckets: ${env.storage.publicBucket} / ${env.storage.privateBucket})`
+        );
+    } else {
+        console.log("[STORAGE] Disco local ativo — desenvolvimento");
+    }
 
     const server = http.createServer(app);
 

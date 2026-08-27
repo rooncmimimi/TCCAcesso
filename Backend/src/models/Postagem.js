@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
+import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
 
 /**
  * Tabela: postagens
@@ -22,7 +23,10 @@ const Postagem = sequelize.define(
             allowNull: false
         },
         imagem: {
-            type: DataTypes.TEXT
+            type: DataTypes.TEXT,
+            get() {
+                return resolverUrlExibicao(this.getDataValue("imagem"));
+            }
         },
         ativo: {
             type: DataTypes.BOOLEAN,

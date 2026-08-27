@@ -1,4 +1,7 @@
 import EmpresaService from "../services/EmpresaService.js";
+import { urlPublica } from "../middlewares/uploadMiddleware.js";
+import { Empresa } from "../models/index.js";
+import UploadService from "../services/UploadService.js";
 
 const contextoDa = (req) => ({
     ip: req.ip,
@@ -75,13 +78,24 @@ class EmpresaController {
 
     async uploadLogo(req, res, next) {
         try {
-            const logo = req.file ? `/uploads/${req.file.filename}` : null;
+            const logo = urlPublica(req.file);
+
+            const anterior = await Empresa.findByPk(req.params.id, {
+                attributes: ["logo"],
+                raw: true
+            });
 
             const empresa = await EmpresaService.update(
                 req.params.id,
                 { logo },
                 req.user
             );
+
+            if (anterior?.logo && anterior.logo !== logo) {
+                await UploadService.removerArquivoFisico(anterior.logo, {
+                    privado: false
+                });
+            }
 
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -91,13 +105,24 @@ class EmpresaController {
 
     async uploadCapa(req, res, next) {
         try {
-            const capa = req.file ? `/uploads/${req.file.filename}` : null;
+            const capa = urlPublica(req.file);
+
+            const anterior = await Empresa.findByPk(req.params.id, {
+                attributes: ["capa"],
+                raw: true
+            });
 
             const empresa = await EmpresaService.update(
                 req.params.id,
                 { capa },
                 req.user
             );
+
+            if (anterior?.capa && anterior.capa !== capa) {
+                await UploadService.removerArquivoFisico(anterior.capa, {
+                    privado: false
+                });
+            }
 
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {

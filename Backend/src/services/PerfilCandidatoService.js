@@ -12,6 +12,10 @@ import {
     obterCandidatoDoUsuario,
     ehAdministrador
 } from "../utils/authorization.js";
+import {
+    podeVerDadosPrivados,
+    aplicarPrivacidadeCandidato
+} from "../utils/candidatoPrivacidade.js";
 import BloqueioService from "./BloqueioService.js";
 
 /**
@@ -134,17 +138,13 @@ class PerfilCandidatoService {
             solicitante
         );
 
-        const souDono =
-            solicitante &&
-            String(solicitante.id) === String(candidato.usuarioId);
+        // Correção de IDOR: este perfil "público" devolvia o Candidato
+        // inteiro (cpf, currículo, endereço, necessidades de acessibilidade
+        // etc.) para qualquer usuário autenticado — só o e-mail era limpo.
+        // Agora aplica a mesma allowlist usada em `CandidatoService.findById`.
+        const autorizado = await podeVerDadosPrivados(candidato, solicitante);
 
-        if (!souDono && !ehAdministrador(solicitante)) {
-            // Perfil de terceiro: e-mail é dado privado, não deve sair da API
-            // (o front nunca exibiu esse campo, mas ele vazava no JSON).
-            candidato.usuario.email = undefined;
-        }
-
-        return candidato;
+        return aplicarPrivacidadeCandidato(candidato, autorizado);
     }
 
     /**

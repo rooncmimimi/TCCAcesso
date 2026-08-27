@@ -4,6 +4,16 @@ import sequelize from "../config/database.js";
 /**
  * Tabela: arquivos (migration 0014)
  * Catálogo de todos os uploads da plataforma (auditoria/limpeza).
+ *
+ * `url` guarda a referência estável (caminho), sem getter automático:
+ * ao contrário de fotoPerfil/capaPerfil/logo/etc., esta tabela mistura
+ * registros de categorias PÚBLICAS (postagem) e PRIVADAS (curriculo,
+ * certificado, documento) na mesma coluna — resolver automaticamente
+ * aqui exigiria saber, por linha, qual bucket usar, e currículo/
+ * certificado precisam de URL assinada (assíncrona), incompatível com
+ * getter de Sequelize. Quem precisar exibir/baixar resolve explicitamente
+ * (`resolverUrlExibicao` para categorias públicas, `gerarUrlAssinada`
+ * para privadas), sabendo a categoria da linha.
  */
 const Arquivo = sequelize.define(
     "Arquivo",

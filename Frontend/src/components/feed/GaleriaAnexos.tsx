@@ -3,11 +3,17 @@ import { FileText } from "lucide-react";
 import { urlArquivo } from "@/services/uploads.service";
 import type { AnexoPostagem } from "@/types";
 
-/** Exibe os anexos de uma publicação: galeria de imagens e links para documentos. */
+/**
+ * Exibe os anexos de uma publicação: galeria de imagens, vídeos e — apenas
+ * para publicações antigas — links para documentos. "Documento" não é mais
+ * uma opção ao criar uma publicação nova, mas anexos desse tipo já
+ * existentes no banco continuam sendo exibidos normalmente aqui.
+ */
 export function GaleriaAnexos({ anexos }: { anexos: AnexoPostagem[] }) {
   if (!anexos?.length) return null;
 
   const imagens = anexos.filter((a) => a.tipo === "imagem");
+  const videos = anexos.filter((a) => a.tipo === "video");
   const documentos = anexos.filter((a) => a.tipo === "documento");
 
   return (
@@ -32,6 +38,23 @@ export function GaleriaAnexos({ anexos }: { anexos: AnexoPostagem[] }) {
                   loading="lazy"
                 />
               </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {videos.length > 0 && (
+        <ul className="space-y-2" aria-label="Vídeos anexados à publicação">
+          {videos.map((video) => (
+            <li key={video.id}>
+              <video
+                src={urlArquivo(video.url)}
+                controls
+                preload="metadata"
+                className="max-h-96 w-full rounded-xl border border-border bg-black"
+              >
+                Seu navegador não suporta a reprodução deste vídeo.
+              </video>
             </li>
           ))}
         </ul>

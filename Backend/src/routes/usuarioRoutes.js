@@ -4,7 +4,7 @@ import BloqueioController from "../controllers/BloqueioController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js";
+import upload, { criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
 import {
     validarAtualizacaoUsuario,
     validarUuidParam
@@ -12,6 +12,12 @@ import {
 import { validarPrivacidade } from "../validators/bloqueioValidator.js";
 
 const router = Router();
+
+// Foto/capa vão para `perfis/<usuarioId>/<uuid>.ext` — :id da rota é o
+// próprio usuarioId (verificado como dono/admin antes pelo service).
+const processarFotoCapa = criarProcessadorArmazenamento({
+    pasta: (req) => `perfis/${req.params.id}`
+});
 
 // Todas as rotas de usuário exigem autenticação.
 router.use(authMiddleware);
@@ -67,6 +73,7 @@ router.patch(
     validarUuidParam("id"),
     validationMiddleware,
     upload.single("foto"),
+    processarFotoCapa,
     UsuarioController.updateFoto
 );
 
@@ -75,6 +82,7 @@ router.patch(
     validarUuidParam("id"),
     validationMiddleware,
     upload.single("capa"),
+    processarFotoCapa,
     UsuarioController.updateCapa
 );
 

@@ -1,4 +1,7 @@
 import UsuarioService from "../services/UsuarioService.js";
+import { urlPublica } from "../middlewares/uploadMiddleware.js";
+import { Usuario } from "../models/index.js";
+import UploadService from "../services/UploadService.js";
 
 const contextoDa = (req) => ({
     ip: req.ip,
@@ -55,13 +58,28 @@ class UsuarioController {
 
     async updateFoto(req, res, next) {
         try {
-            const fotoPerfil = req.file ? `/uploads/${req.file.filename}` : null;
+            const fotoPerfil = urlPublica(req.file);
+
+            // Ordem segura: lê a referência antiga ANTES de trocar (sem
+            // getter — precisa do caminho bruto, não da URL resolvida),
+            // só então confirma a nova no banco, e só DEPOIS remove a
+            // antiga — nunca o inverso.
+            const anterior = await Usuario.findByPk(req.params.id, {
+                attributes: ["fotoPerfil"],
+                raw: true
+            });
 
             const usuario = await UsuarioService.update(
                 req.params.id,
                 { fotoPerfil },
                 req.user
             );
+
+            if (anterior?.fotoPerfil && anterior.fotoPerfil !== fotoPerfil) {
+                await UploadService.removerArquivoFisico(anterior.fotoPerfil, {
+                    privado: false
+                });
+            }
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {
@@ -71,13 +89,24 @@ class UsuarioController {
 
     async updateCapa(req, res, next) {
         try {
-            const capaPerfil = req.file ? `/uploads/${req.file.filename}` : null;
+            const capaPerfil = urlPublica(req.file);
+
+            const anterior = await Usuario.findByPk(req.params.id, {
+                attributes: ["capaPerfil"],
+                raw: true
+            });
 
             const usuario = await UsuarioService.update(
                 req.params.id,
                 { capaPerfil },
                 req.user
             );
+
+            if (anterior?.capaPerfil && anterior.capaPerfil !== capaPerfil) {
+                await UploadService.removerArquivoFisico(anterior.capaPerfil, {
+                    privado: false
+                });
+            }
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {

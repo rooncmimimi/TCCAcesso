@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { FileText, Image as ImageIcon, Paperclip, X } from "lucide-react";
+import { Image as ImageIcon, Video, X } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { initials, useSession } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
 import { useCriarPostagem } from "./hooks";
-import { MAX_ANEXOS, MAX_CARACTERES, TIPOS_ACEITOS, ehImagem } from "./tiposAnexo";
+import { MAX_ANEXOS, MAX_CARACTERES, TIPOS_ACEITOS, ehImagem, ehVideo } from "./tiposAnexo";
 
-/** Formulário de nova publicação: texto + até 4 anexos (imagens/documentos). */
+/** Formulário de nova publicação: texto + até 4 anexos (imagens/vídeos). */
 export function ComposerPostagem() {
   const { user } = useSession();
   const [conteudo, setConteudo] = useState("");
@@ -28,7 +28,7 @@ export function ComposerPostagem() {
 
     const invalidos = arquivos.filter((arquivo) => !TIPOS_ACEITOS.includes(arquivo.type));
     if (invalidos.length) {
-      toast.error("Apenas imagens (PNG/JPEG/WEBP) e documentos (PDF/DOC/DOCX) são aceitos.");
+      toast.error("Apenas imagens (PNG/JPEG/WEBP) e vídeos (MP4/WEBM) são aceitos.");
     }
 
     const validos = arquivos.filter((arquivo) => TIPOS_ACEITOS.includes(arquivo.type));
@@ -106,12 +106,16 @@ export function ComposerPostagem() {
                       alt={`Pré-visualização de ${arquivo.name}`}
                       className="h-20 w-full rounded-md object-cover"
                     />
-                  ) : (
-                    <div className="flex h-20 flex-col items-center justify-center gap-1 rounded-md bg-secondary text-center">
-                      <FileText className="size-6 text-muted-foreground" aria-hidden="true" />
-                      <span className="line-clamp-1 px-1 text-xs">{arquivo.name}</span>
-                    </div>
-                  )}
+                  ) : ehVideo(arquivo) ? (
+                    <video
+                      src={URL.createObjectURL(arquivo)}
+                      controls
+                      muted
+                      preload="metadata"
+                      aria-label={`Pré-visualização de ${arquivo.name}`}
+                      className="h-20 w-full rounded-md bg-black object-cover"
+                    />
+                  ) : null}
                   <Button
                     type="button"
                     variant="destructive"
@@ -153,7 +157,7 @@ export function ComposerPostagem() {
               onClick={() => inputRef.current?.click()}
               disabled={anexos.length >= MAX_ANEXOS}
             >
-              <Paperclip className="size-4" aria-hidden="true" /> Documento
+              <Video className="size-4" aria-hidden="true" /> Vídeo
             </Button>
             <Button
               type="submit"

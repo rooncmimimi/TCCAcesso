@@ -9,9 +9,24 @@ import {
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono, ehAdministrador } from "../utils/authorization.js";
+import {
+    podeVerDadosPrivados,
+    aplicarPrivacidadeCandidato
+} from "../utils/candidatoPrivacidade.js";
+import { gerarUrlAssinada } from "../utils/supabaseStorage.js";
 import AdminAuditService from "./AdminAuditService.js";
 
-/** Campos que o próprio candidato pode atualizar. */
+/**
+ * Campos que o próprio candidato pode atualizar via PUT /candidatos/:id.
+ *
+ * `curriculo` é DELIBERADAMENTE excluído daqui: só pode ser definido pelo
+ * upload dedicado (`PATCH /candidatos/:id/curriculo` → `atualizarCurriculo`
+ * abaixo), depois de passar por validação de assinatura e ir para o bucket
+ * privado. Aceitar `curriculo` neste PUT genérico permitiria o cliente
+ * gravar qualquer texto arbitrário no campo, contornando toda a validação
+ * de upload — nunca confiar em valor de arquivo vindo direto do corpo da
+ * requisição.
+ */
 const CAMPOS_EDITAVEIS = [
     "cpf",
     "dataNascimento",
@@ -20,7 +35,6 @@ const CAMPOS_EDITAVEIS = [
     "escolaridade",
     "experiencia",
     "habilidades",
-    "curriculo",
     "linkedin",
     "github",
     "cidade",
@@ -28,7 +42,9 @@ const CAMPOS_EDITAVEIS = [
     "endereco",
     "cep",
     "disponibilidade",
-    "pretensaoSalarial"
+    "pretensaoSalarial",
+    "tituloProfissional",
+    "necessidadesAcessibilidade"
 ];
 
 class CandidatoService {
@@ -93,8 +109,11 @@ class CandidatoService {
 
     /* ==========================================================
        BUSCAR POR ID
+       (correção de IDOR — nunca devolve CPF/telefone/endereço/currículo/
+       necessidades de acessibilidade para quem não é dono, empresa com
+       candidatura legítima ou administrador)
     ========================================================== */
-    async findById(id) {
+    async findById(id, solicitante = null) {
         const candidato = await Candidato.findByPk(id, {
             include: [
                 { model: Usuario, as: "usuario" },
@@ -110,7 +129,66 @@ class CandidatoService {
             throw ApiError.notFound("Candidato não encontrado.");
         }
 
-        return candidato;
+        const autorizado = await podeVerDadosPrivados(candidato, solicitante);
+
+        return aplicarPrivacidadeCandidato(candidato, autorizado);
+    }
+
+    /* ==========================================================
+       URL ASSINADA DO CURRÍCULO (bucket privado)
+       Único caminho pelo qual o valor de `curriculo` vira uma URL
+       utilizável — nunca por serialização direta do model. Repete a
+       mesma verificação de autorização de `findById` (dono, empresa com
+       candidatura legítima, ou administrador) antes de gerar a URL.
+    ========================================================== */
+    async gerarUrlCurriculo(id, solicitante) {
+        const candidato = await Candidato.findByPk(id);
+
+        if (!candidato) {
+            throw ApiError.notFound("Candidato não encontrado.");
+        }
+
+        const autorizado = await podeVerDadosPrivados(candidato, solicitante);
+
+        if (!autorizado) {
+            throw ApiError.forbidden(
+                "Você não tem permissão para acessar este currículo."
+            );
+        }
+
+        if (!candidato.curriculo) {
+            throw ApiError.notFound("Este candidato ainda não enviou um currículo.");
+        }
+
+        const assinatura = await gerarUrlAssinada(candidato.curriculo);
+
+        return {
+            url: assinatura.url,
+            expiraEm: assinatura.expiraEm,
+            nomeArquivo: candidato.curriculoNome || null
+        };
+    }
+
+    /* ==========================================================
+       DEFINIR CURRÍCULO (só a partir do upload dedicado — nunca do PUT
+       genérico, ver comentário em CAMPOS_EDITAVEIS)
+    ========================================================== */
+    async atualizarCurriculo(id, { caminho, nomeOriginal }, solicitante) {
+        const candidato = await Candidato.findByPk(id);
+
+        if (!candidato) {
+            throw ApiError.notFound("Candidato não encontrado.");
+        }
+
+        garantirDono(solicitante, candidato.usuarioId);
+
+        await candidato.update({
+            curriculo: caminho,
+            curriculoNome: nomeOriginal?.slice(0, 255) || null,
+            curriculoAtualizadoEm: new Date()
+        });
+
+        return this.findById(id, solicitante);
     }
 
     /* ==========================================================
@@ -170,7 +248,7 @@ class CandidatoService {
             await candidato.update(dados, { transaction });
             await transaction.commit();
 
-            return this.findById(id);
+            return this.findById(id, solicitante);
         } catch (erro) {
             await transaction.rollback();
             throw erro;

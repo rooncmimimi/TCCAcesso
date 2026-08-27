@@ -1,8 +1,15 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
+import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
 
 /**
- * Tabela: postagem_anexos (migration 0005)
+ * Tabela: postagem_anexos (migration 0005, "video" adicionado na 0026)
+ *
+ * `url` guarda uma REFERÊNCIA ESTÁVEL (caminho relativo no bucket, ex.:
+ * `postagens/<usuarioId>/<uuid>.mp4`), nunca a URL pública final — a URL
+ * de exibição é resolvida sob demanda pelo getter abaixo, o que também
+ * preserva a leitura de registros antigos que já guardavam uma URL
+ * completa (`https://...` ou `/uploads/...`), sem precisar migrar dado.
  */
 const PostagemAnexo = sequelize.define(
     "PostagemAnexo",
@@ -18,12 +25,15 @@ const PostagemAnexo = sequelize.define(
             allowNull: false
         },
         tipo: {
-            type: DataTypes.ENUM("imagem", "documento"),
+            type: DataTypes.ENUM("imagem", "documento", "video"),
             allowNull: false
         },
         url: {
             type: DataTypes.TEXT,
-            allowNull: false
+            allowNull: false,
+            get() {
+                return resolverUrlExibicao(this.getDataValue("url"));
+            }
         },
         nomeOriginal: {
             field: "nome_original",

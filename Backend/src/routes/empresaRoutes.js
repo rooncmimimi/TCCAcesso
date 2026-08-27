@@ -5,11 +5,16 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 import authOpcionalMiddleware from "../middlewares/authOpcionalMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js";
+import upload, { criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import { validarAtualizacaoEmpresa } from "../validators/empresaValidator.js";
 
 const router = Router();
+
+// Logo/capa vão para `empresas/<empresaId>/<uuid>.ext`.
+const processarLogoCapa = criarProcessadorArmazenamento({
+    pasta: (req) => `empresas/${req.params.id}`
+});
 
 /* ---------- Rotas públicas ---------- */
 router.get("/", EmpresaController.index);
@@ -64,6 +69,7 @@ router.patch(
     validarUuidParam("id"),
     validationMiddleware,
     upload.single("logo"),
+    processarLogoCapa,
     EmpresaController.uploadLogo
 );
 
@@ -73,6 +79,7 @@ router.patch(
     validarUuidParam("id"),
     validationMiddleware,
     upload.single("capa"),
+    processarLogoCapa,
     EmpresaController.uploadCapa
 );
 

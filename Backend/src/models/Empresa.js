@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
+import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
 
 /**
  * Tabela: empresas
@@ -74,7 +75,10 @@ const Empresa = sequelize.define(
         },
 
         logo: {
-            type: DataTypes.TEXT
+            type: DataTypes.TEXT,
+            get() {
+                return resolverUrlExibicao(this.getDataValue("logo"));
+            }
         },
 
         empresaVerificada: {
@@ -93,7 +97,10 @@ const Empresa = sequelize.define(
         },
 
         capa: {
-            type: DataTypes.TEXT
+            type: DataTypes.TEXT,
+            get() {
+                return resolverUrlExibicao(this.getDataValue("capa"));
+            }
         },
 
         culturaInclusiva: {

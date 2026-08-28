@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -16,10 +16,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import vagasService from "@/services/vagas.service";
-import { CONTRATOS, MODALIDADES, ROTULO_CONTRATO } from "./constantesVaga";
+import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga } from "@/types";
+import {
+  CONTRATOS,
+  ICONE_RECURSO_ACESSIBILIDADE,
+  MODALIDADES,
+  PUBLICO_ALVO,
+  RECURSOS_ACESSIBILIDADE,
+  ROTULO_CONTRATO,
+  ROTULO_PUBLICO_ALVO,
+  ROTULO_RECURSO_ACESSIBILIDADE,
+} from "./constantesVaga";
 
 /**
  * Publicação real de vaga pela empresa autenticada (POST /vagas).
@@ -27,8 +38,19 @@ import { CONTRATOS, MODALIDADES, ROTULO_CONTRATO } from "./constantesVaga";
  */
 export function NovaVagaDialog() {
   const [aberto, setAberto] = useState(false);
-  const [exclusivaPcd, setExclusivaPcd] = useState(true);
+  const [publicoAlvo, setPublicoAlvo] = useState<PublicoAlvoVaga>("pcd");
+  const [recursosAcessibilidade, setRecursosAcessibilidade] = useState<RecursoAcessibilidadeVaga[]>([]);
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
   const queryClient = useQueryClient();
+
+  // Cada "Nova vaga" começa em branco, mesmo que o diálogo já tenha sido aberto antes.
+  useEffect(() => {
+    if (aberto) {
+      setCidade("");
+      setEstado("");
+    }
+  }, [aberto]);
 
   const criar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => vagasService.criar(payload),
@@ -59,8 +81,18 @@ export function NovaVagaDialog() {
       estado: texto("estado").toUpperCase() || null,
       cargaHoraria: texto("cargaHoraria") || null,
       acessibilidade: texto("acessibilidade") || null,
-      exclusivaPcd,
+      // exclusivaPcd é derivado do público-alvo para manter compatibilidade
+      // com o campo antigo, sem expor dois controles equivalentes ao usuário.
+      exclusivaPcd: publicoAlvo === "pcd" || publicoAlvo === "pcd_cinquenta_mais",
+      publicoAlvo,
+      recursosAcessibilidade,
     });
+  }
+
+  function alternarRecurso(recurso: RecursoAcessibilidadeVaga, marcado: boolean) {
+    setRecursosAcessibilidade((atuais) =>
+      marcado ? [...atuais, recurso] : atuais.filter((r) => r !== recurso),
+    );
   }
 
   return (
@@ -142,11 +174,25 @@ export function NovaVagaDialog() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" name="cidade" maxLength={100} />
+              <CidadeAutocomplete
+                id="cidade"
+                name="cidade"
+                value={cidade}
+                onChange={setCidade}
+                estado={estado}
+                aria-label="Cidade"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="estado">Estado (UF)</Label>
-              <Input id="estado" name="estado" maxLength={2} placeholder="SP" />
+              <Input
+                id="estado"
+                name="estado"
+                maxLength={2}
+                placeholder="SP"
+                value={estado}
+                onChange={(e) => setEstado(e.target.value.toUpperCase())}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cargaHoraria">Carga horária</Label>
@@ -155,20 +201,52 @@ export function NovaVagaDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="acessibilidade">Recursos de acessibilidade</Label>
+            <Label htmlFor="publicoAlvo">Público da vaga</Label>
+            <select
+              id="publicoAlvo"
+              value={publicoAlvo}
+              onChange={(e) => setPublicoAlvo(e.target.value as PublicoAlvoVaga)}
+              className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:max-w-sm"
+            >
+              {PUBLICO_ALVO.map((p) => (
+                <option key={p} value={p}>
+                  {ROTULO_PUBLICO_ALVO[p]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Recursos de acessibilidade desta vaga</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {RECURSOS_ACESSIBILIDADE.filter((r) => r !== "outro").map((recurso) => {
+                const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
+                const marcado = recursosAcessibilidade.includes(recurso);
+                return (
+                  <label
+                    key={recurso}
+                    className="flex min-h-11 items-center gap-2 rounded-md border border-input px-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary-soft"
+                  >
+                    <Checkbox
+                      checked={marcado}
+                      onCheckedChange={(c) => alternarRecurso(recurso, Boolean(c))}
+                    />
+                    <Icone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <span className="min-w-0 truncate">{ROTULO_RECURSO_ACESSIBILIDADE[recurso]}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <div className="space-y-2">
+            <Label htmlFor="acessibilidade">Detalhes adicionais de acessibilidade</Label>
             <Textarea
               id="acessibilidade"
               name="acessibilidade"
               rows={3}
-              placeholder="Ex.: rampas, elevador, leitor de tela, intérprete de Libras"
+              placeholder="Descreva qualquer recurso que não esteja na lista acima"
             />
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <Label htmlFor="exclusivaPcd" className="cursor-pointer">
-              Vaga exclusiva para pessoas com deficiência
-            </Label>
-            <Switch id="exclusivaPcd" checked={exclusivaPcd} onCheckedChange={setExclusivaPcd} />
           </div>
 
           <DialogFooter>

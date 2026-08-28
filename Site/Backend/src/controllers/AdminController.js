@@ -72,6 +72,20 @@ class AdminController {
         }
     }
 
+    async verificarEmpresa(req, res, next) {
+        try {
+            const empresa = await AdminService.verificarEmpresa(
+                req.params.id,
+                { verificada: req.body.verificada },
+                req.user,
+                contextoDa(req)
+            );
+            return res.status(200).json({ sucesso: true, empresa });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async usuarios(req, res, next) {
         try {
             const dados = await AdminService.listarUsuarios(req.query);

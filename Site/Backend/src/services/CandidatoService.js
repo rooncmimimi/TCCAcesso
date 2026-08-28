@@ -14,6 +14,9 @@ import {
     aplicarPrivacidadeCandidato
 } from "../utils/candidatoPrivacidade.js";
 import { gerarUrlAssinada } from "../utils/supabaseStorage.js";
+import { hashToken } from "../utils/tokens.js";
+import { extrairTextoDocumento } from "../utils/extrairTextoDocumento.js";
+import { parsearCurriculo } from "../utils/parsearCurriculo.js";
 import AdminAuditService from "./AdminAuditService.js";
 
 /**
@@ -192,6 +195,26 @@ class CandidatoService {
     }
 
     /* ==========================================================
+       IMPORTAR DADOS DO CURRÍCULO (rascunho — nunca grava nada sozinho)
+       Extrai texto do arquivo (sem IA) e devolve um rascunho para revisão.
+       O arquivo em si NÃO é salvo como currículo aqui — isso continua sendo
+       uma ação separada e explícita (PATCH /candidatos/:id/curriculo), para
+       nunca reescrever o currículo oficial sem o usuário confirmar.
+    ========================================================== */
+    async importarCurriculo(id, { buffer, mimetype }, solicitante) {
+        const candidato = await Candidato.findByPk(id);
+
+        if (!candidato) {
+            throw ApiError.notFound("Candidato não encontrado.");
+        }
+
+        garantirDono(solicitante, candidato.usuarioId);
+
+        const texto = await extrairTextoDocumento(buffer, mimetype);
+        return parsearCurriculo(texto);
+    }
+
+    /* ==========================================================
        BUSCAR PELO USUÁRIO AUTENTICADO
     ========================================================== */
     async findByUsuario(usuarioId) {
@@ -234,7 +257,7 @@ class CandidatoService {
             if (dados.cpf && dados.cpf !== candidato.cpf) {
                 const cpfExiste = await Candidato.findOne({
                     where: {
-                        cpf: dados.cpf,
+                        cpfHash: hashToken(dados.cpf),
                         id: { [Op.ne]: id }
                     },
                     transaction

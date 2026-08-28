@@ -27,7 +27,7 @@ export interface UsuarioBloqueado {
   tipoUsuario?: TipoUsuario;
 }
 
-/** Espelha a tabela `candidatos` do backend (ver Backend/src/models/Candidato.js). */
+/** Espelha a tabela `candidatos` do backend (ver Site/Backend/src/models/Candidato.js). */
 export interface Candidato {
   id: string;
   usuarioId: string;
@@ -55,6 +55,39 @@ export interface Candidato {
   formacoes?: Formacao[];
   certificados?: Certificado[];
   habilidades?: Habilidade[];
+}
+
+/**
+ * Espelha `POST /candidatos/:id/curriculo/importar` — rascunho extraído do
+ * arquivo (sem IA), nunca gravado sozinho. Nunca traz CPF, de propósito.
+ */
+export interface RascunhoExperiencia {
+  cargo: string;
+  empresa: string;
+  dataInicio: string;
+  dataFim: string;
+  atual: boolean;
+  descricaoSugerida: string;
+}
+
+export interface RascunhoFormacao {
+  instituicao: string;
+  curso: string;
+  dataFim: string;
+  emAndamento: boolean;
+  descricaoSugerida: string;
+}
+
+export interface RascunhoCurriculo {
+  email: string | null;
+  telefone: string | null;
+  linkedin: string | null;
+  github: string | null;
+  resumo: string | null;
+  experiencias: RascunhoExperiencia[];
+  formacoes: RascunhoFormacao[];
+  habilidades: string[];
+  aviso: string;
 }
 
 export interface Experiencia {
@@ -192,6 +225,16 @@ export interface AtivacaoDoisFatores {
 export type ModalidadeVaga = "Presencial" | "Hibrido" | "Remoto";
 export type ContratoVaga = "CLT" | "PJ" | "Estagio" | "JovemAprendiz" | "Temporario";
 export type StatusVaga = "Aberta" | "Pausada" | "Encerrada";
+export type PublicoAlvoVaga = "geral" | "pcd" | "cinquenta_mais" | "pcd_cinquenta_mais";
+export type RecursoAcessibilidadeVaga =
+  | "interprete_libras"
+  | "tecnologia_assistiva"
+  | "ambiente_fisico_acessivel"
+  | "banheiro_adaptado"
+  | "elevador_rampa"
+  | "jornada_adaptavel"
+  | "ferramentas_digitais_acessiveis"
+  | "outro";
 
 export interface Vaga {
   id: string;
@@ -206,8 +249,9 @@ export interface Vaga {
   contrato?: ContratoVaga;
   salario?: number | string | null;
   exclusivaPcd?: boolean;
+  publicoAlvo?: PublicoAlvoVaga;
   acessibilidade?: string | null;
-  recursosAcessibilidade?: string[] | null;
+  recursosAcessibilidade?: RecursoAcessibilidadeVaga[] | null;
   status: StatusVaga;
   /** O backend serializa os timestamps como `createdAt`/`updatedAt` (não `criadoEm`). */
   createdAt?: string;
@@ -221,6 +265,7 @@ export interface Vaga {
     nomeFantasia?: string | null;
     razaoSocial?: string;
     logo?: string | null;
+    empresaVerificada?: boolean;
     usuario?: { id: string };
   };
 }
@@ -306,6 +351,8 @@ export interface AnexoPostagem {
   url: string;
   tipo: TipoArquivo;
   nomeOriginal?: string | null;
+  /** Descrição acessível fornecida pelo autor — usada como `alt` real e lida pelo sistema de voz. */
+  descricao?: string | null;
   ordem?: number;
 }
 
@@ -352,6 +399,61 @@ export interface SugestaoPerfil {
   tipo?: TipoUsuario;
   fotoPerfil?: string | null;
   titulo?: string | null;
+  /** Explicação em texto simples de por que esta pessoa foi sugerida (`GET /seguir/sugestoes`). Nunca opaco. */
+  motivo?: string;
+}
+
+/** Espelha `GET /seguir/sugestoes/empresas` — sugestão explicável de empresa para seguir. */
+export interface SugestaoEmpresa {
+  id: string;
+  usuarioId?: string;
+  nomeFantasia?: string | null;
+  razaoSocial?: string;
+  logo?: string | null;
+  setor?: string | null;
+  empresaVerificada?: boolean;
+  motivo?: string;
+}
+
+/* ==========================================================
+   Minha atividade
+   Espelha `GET /atividade/minha` — sempre escopado ao próprio usuário
+   autenticado. Cada categoria traz uma prévia (`itens`) e o `total` real;
+   "ver tudo" usa os endpoints dedicados que já existiam (candidaturas,
+   favoritos, seguidores etc).
+   ========================================================== */
+export interface FavoritoVagaItem {
+  id: string;
+  created_at?: string;
+  vaga?: Vaga;
+}
+
+export interface EmpresaSeguidaItem {
+  id: string;
+  created_at?: string;
+  empresa?: Empresa;
+}
+
+export interface InteracaoFeedItem {
+  id: string;
+  created_at?: string;
+  comentario?: string;
+  postagem?: PostagemCompleta;
+}
+
+export interface AtividadePessoal {
+  ehCandidato: boolean;
+  candidaturas: { itens: Candidatura[]; total: number };
+  vagasFavoritas: { itens: FavoritoVagaItem[]; total: number };
+  seguindo: {
+    pessoas: { itens: Usuario[]; total: number };
+    empresas: { itens: EmpresaSeguidaItem[]; total: number };
+  };
+  interacoesFeed: {
+    curtidas: { itens: InteracaoFeedItem[]; total: number };
+    comentarios: { itens: InteracaoFeedItem[]; total: number };
+    compartilhamentos: { itens: InteracaoFeedItem[]; total: number };
+  };
 }
 
 /* ==========================================================
@@ -428,10 +530,19 @@ export interface HomePublica {
 /* ==========================================================
    Chatbot
    ========================================================== */
+export interface ChatbotConversa {
+  id: string;
+  titulo?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** `papel`/`created_at` espelham exatamente os nomes de atributo do model Sequelize (não `origem`/`criadoEm`). */
 export interface ChatbotMensagem {
   id: string;
+  conversaId: string;
   conteudo: string;
-  origem: "usuario" | "bot";
-  criadoEm: string;
+  papel: "usuario" | "assistente";
+  created_at?: string;
 }
 

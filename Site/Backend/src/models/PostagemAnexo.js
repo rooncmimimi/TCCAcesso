@@ -39,6 +39,12 @@ const PostagemAnexo = sequelize.define(
             field: "nome_original",
             type: DataTypes.STRING(255)
         },
+        // Descrição acessível (texto alternativo) do anexo — migration
+        // 0028. Fornecida pelo usuário; usada como `alt` real da imagem
+        // e lida pelo sistema de voz. Nunca gerada automaticamente.
+        descricao: {
+            type: DataTypes.STRING(500)
+        },
         mimeType: {
             field: "mime_type",
             type: DataTypes.STRING(120)

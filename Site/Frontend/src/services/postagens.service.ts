@@ -15,6 +15,8 @@ export interface NovaPostagem {
   publica?: boolean;
   /** Arquivos enviados junto da publicação (até 4). */
   anexos?: File[];
+  /** Descrição acessível de cada anexo, no mesmo índice de `anexos` (string vazia = sem descrição). */
+  descricoesAnexos?: string[];
 }
 
 /** Feed: publicações, curtidas, comentários, respostas e compartilhamentos. */
@@ -28,13 +30,19 @@ export const postagensService = {
     return data.postagem;
   },
 
-  async criar({ conteudo, publica = true, anexos = [] }: NovaPostagem): Promise<PostagemCompleta> {
+  async criar({ conteudo, publica = true, anexos = [], descricoesAnexos = [] }: NovaPostagem): Promise<PostagemCompleta> {
     const form = new FormData();
     form.append("conteudo", conteudo);
     form.append("publica", String(publica));
     // O campo precisa se chamar "arquivos" — é o nome que o Multer espera
-    // em `uploadAnexos.array("arquivos", 4)` (Backend/src/routes/postagemRoutes.js).
+    // em `uploadAnexos.array("arquivos", 4)` (Site/Backend/src/routes/postagemRoutes.js).
     anexos.slice(0, 4).forEach((arquivo) => form.append("arquivos", arquivo));
+    // Multipart não tem tipo array nativo — vai como JSON, uma posição por
+    // anexo (mesmo índice); `PostagemService.parseDescricoesAnexos` no
+    // backend faz o parse e nunca deixa isso quebrar a publicação.
+    if (descricoesAnexos.some((d) => d.trim())) {
+      form.append("descricoesAnexos", JSON.stringify(descricoesAnexos.slice(0, 4)));
+    }
 
     const { data } = await api.post<{ postagem: PostagemCompleta }>("/postagens", form, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -49,6 +57,19 @@ export const postagensService = {
 
   async remover(id: string): Promise<void> {
     await api.delete(`/postagens/${id}`);
+  },
+
+  /** Edita só a descrição acessível de um anexo já publicado — nunca o arquivo em si. */
+  async atualizarDescricaoAnexo(
+    postagemId: string,
+    anexoId: string,
+    descricao: string,
+  ): Promise<PostagemCompleta> {
+    const { data } = await api.patch<{ postagem: PostagemCompleta }>(
+      `/postagens/${postagemId}/anexos/${anexoId}`,
+      { descricao: descricao.trim() || null },
+    );
+    return data.postagem;
   },
 
   /* ---------------- Curtidas ---------------- */

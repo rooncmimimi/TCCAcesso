@@ -170,6 +170,14 @@ export async function reativarEmpresa(id: string): Promise<EmpresaAdmin> {
   return data.empresa;
 }
 
+/** Selo "Empresa verificada" — independente de aprovação cadastral. */
+export async function verificarEmpresa(id: string, verificada: boolean): Promise<EmpresaAdmin> {
+  const { data } = await api.post<{ empresa: EmpresaAdmin }>(`/admin/empresas/${id}/verificar`, {
+    verificada,
+  });
+  return data.empresa;
+}
+
 /* ==========================================================
    Usuários
    ========================================================== */
@@ -282,6 +290,7 @@ export const adminService = {
   reprovarEmpresa,
   suspenderEmpresa,
   reativarEmpresa,
+  verificarEmpresa,
   listarUsuarios,
   ativarUsuario,
   desativarUsuario,

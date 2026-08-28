@@ -1,5 +1,5 @@
 import api from "./api";
-import type { Candidatura, Vaga } from "@/types";
+import type { Candidatura, PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "@/types";
 
 /** Parâmetros aceitos pela listagem paginada de vagas (`GET /vagas`). */
 export interface FiltroVagas {
@@ -11,6 +11,9 @@ export interface FiltroVagas {
   modalidade?: string;
   contrato?: string;
   exclusivaPcd?: boolean;
+  publicoAlvo?: PublicoAlvoVaga;
+  /** Enviado como string separada por vírgula — o backend usa `Op.contains` (índice GIN). */
+  recursosAcessibilidade?: RecursoAcessibilidadeVaga[];
   status?: string;
   empresaId?: string;
 }
@@ -46,6 +49,11 @@ export const vagasService = {
   async listar(filtro: FiltroVagas = {}): Promise<ListaVagas> {
     const params: Record<string, unknown> = { ...filtro };
     if (!filtro.exclusivaPcd) delete params.exclusivaPcd;
+    if (filtro.recursosAcessibilidade?.length) {
+      params.recursosAcessibilidade = filtro.recursosAcessibilidade.join(",");
+    } else {
+      delete params.recursosAcessibilidade;
+    }
     const { data } = await api.get<Record<string, unknown>>("/vagas", { params });
     return normalizar(data, filtro);
   },

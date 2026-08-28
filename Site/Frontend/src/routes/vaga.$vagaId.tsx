@@ -2,7 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
-import { ArrowLeft, Building2, Heart, MapPin, MessagesSquare, MoreVertical } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Building2, Heart, MapPin, MessagesSquare, MoreVertical } from "lucide-react";
+import {
+  ICONE_RECURSO_ACESSIBILIDADE,
+  ROTULO_PUBLICO_ALVO_CURTO,
+  ROTULO_RECURSO_ACESSIBILIDADE,
+} from "@/components/dashboard/constantesVaga";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -155,6 +160,11 @@ function DetalheVaga() {
           ) : (
             nomeEmpresa
           )}
+          {vaga.empresa?.empresaVerificada && (
+            <span className="inline-flex items-center gap-1 font-medium text-primary" title="Empresa verificada pelo ACESSO">
+              <BadgeCheck className="size-4" aria-hidden="true" /> Verificada
+            </span>
+          )}
           {local && (
             <>
               <span aria-hidden="true">·</span>
@@ -175,9 +185,9 @@ function DetalheVaga() {
               {vaga.status}
             </Badge>
           </li>
-          {vaga.exclusivaPcd && (
+          {vaga.publicoAlvo && vaga.publicoAlvo !== "geral" && (
             <li>
-              <Badge className="font-medium">Exclusiva PCD</Badge>
+              <Badge className="font-medium">{ROTULO_PUBLICO_ALVO_CURTO[vaga.publicoAlvo]}</Badge>
             </li>
           )}
           {vaga.salario != null && vaga.salario !== "" && (
@@ -266,9 +276,28 @@ function DetalheVaga() {
               </section>
             )}
 
-            {vaga.acessibilidade && (
+            {(vaga.recursosAcessibilidade?.length ?? 0) > 0 && (
               <section>
                 <h2 className="text-lg font-bold">Recursos de acessibilidade</h2>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {vaga.recursosAcessibilidade!.map((recurso) => {
+                    const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
+                    return (
+                      <li key={recurso}>
+                        <Badge variant="outline" className="gap-1.5 py-1.5 font-medium">
+                          <Icone className="size-4" aria-hidden="true" />
+                          {ROTULO_RECURSO_ACESSIBILIDADE[recurso]}
+                        </Badge>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
+
+            {vaga.acessibilidade && (
+              <section>
+                <h2 className="text-lg font-bold">Detalhes adicionais de acessibilidade</h2>
                 <p className="mt-2 whitespace-pre-line text-sm">{vaga.acessibilidade}</p>
               </section>
             )}

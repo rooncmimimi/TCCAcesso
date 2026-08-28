@@ -81,7 +81,20 @@ class SeguidorController {
 
     async sugestoes(req, res, next) {
         try {
-            const dados = await SeguidorService.sugestoes(
+            const dados = await SeguidorService.sugestoesPessoas(
+                req.user,
+                req.query.limit
+            );
+
+            return res.status(200).json({ sucesso: true, sugestoes: dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async sugestoesEmpresas(req, res, next) {
+        try {
+            const dados = await SeguidorService.sugestoesEmpresas(
                 req.user,
                 req.query.limit
             );

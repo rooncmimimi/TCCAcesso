@@ -1,14 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   Accessibility,
   Contrast,
   Ear,
+  FileText,
   Loader2,
   MousePointerClick,
   Pencil,
   Sparkles,
+  Upload,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,18 +21,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { initials, useSession } from "@/contexts/SessionContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import { seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/services/uploads.service";
+import { formatarData } from "@/utils/format";
 import { EditarPerfilDialog } from "./EditarPerfilDialog";
 import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
 import { BloquearUsuarioMenu } from "./BloquearUsuarioMenu";
 import { SecaoRecursoPerfil } from "./SecaoRecursoPerfil";
 import { SecaoDeficiencias } from "./SecaoDeficiencias";
+import { ImportarCurriculoDialog } from "./ImportarCurriculoDialog";
 import { ListaSeguidoresDialog } from "./ListaSeguidoresDialog";
 import { PostagensUsuario } from "./PostagensUsuario";
 import { CompartilhamentosUsuario } from "./CompartilhamentosUsuario";
+
+const TIPOS_CURRICULO_ACEITOS = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
 
 /**
  * Perfil pessoal: candidato (completo) ou administrador (versão sem seções profissionais).
@@ -77,6 +89,27 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     queryFn: () => seguidoresService.resumo(alvoId as string),
     enabled: Boolean(alvoId),
   });
+
+  const queryClient = useQueryClient();
+  const enviarCurriculo = useMutation({
+    mutationFn: (arquivo: File) => perfilService.enviarCurriculo(meuCandidato!.id, arquivo),
+    onSuccess: () => {
+      toast.success("Currículo enviado.");
+      void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
+    },
+    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível enviar o currículo.")),
+  });
+
+  function aoEnviarCurriculo(evento: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = evento.target.files?.[0];
+    evento.target.value = "";
+    if (!arquivo) return;
+    if (!TIPOS_CURRICULO_ACEITOS.includes(arquivo.type)) {
+      toast.error("Envie um arquivo PDF, DOC ou DOCX.");
+      return;
+    }
+    enviarCurriculo.mutate(arquivo);
+  }
 
   if (!alvoId) return null;
 
@@ -167,9 +200,24 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
           </div>
 
           <h1 className="mt-4 text-2xl font-extrabold">{nome}</h1>
-          <p className="text-muted-foreground">
-            {ehCandidato ? candidato?.tituloProfissional || "Candidato no ACESSO" : "Administrador do ACESSO"}
-          </p>
+          {ehCandidato && candidato?.tituloProfissional ? (
+            <p className="text-muted-foreground">{candidato.tituloProfissional}</p>
+          ) : ehCandidato && proprioPerfil ? (
+            <EditarPerfilDialog candidato={candidato}>
+              <button
+                type="button"
+                className="text-sm font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                Adicionar título profissional
+              </button>
+            </EditarPerfilDialog>
+          ) : ehCandidato ? (
+            // Perfil de terceiro sem título: texto neutro, nunca uma
+            // chamada de ação que não pertence a quem está visitando.
+            <p className="text-muted-foreground">Perfil profissional</p>
+          ) : (
+            <p className="text-muted-foreground">Administrador do ACESSO</p>
+          )}
           {ehCandidato && candidato?.cidade ? (
             <p className="text-sm text-muted-foreground">
               {[candidato.cidade, candidato.estado].filter(Boolean).join(" - ")}
@@ -234,6 +282,50 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
         ) : candidato ? (
           <Card className="mt-4 shadow-card">
             <CardContent className="space-y-6 p-5 sm:p-6">
+              {proprioPerfil && (
+                <section aria-labelledby="secao-curriculo" className="border-t pt-6 first:border-t-0 first:pt-0">
+                  <h2 id="secao-curriculo" className="text-lg font-bold">
+                    Currículo
+                  </h2>
+                  {candidato.curriculoNome ? (
+                    <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileText className="size-4 shrink-0" aria-hidden="true" />
+                      {candidato.curriculoNome}
+                      {candidato.curriculoAtualizadoEm
+                        ? ` · enviado em ${formatarData(candidato.curriculoAtualizadoEm)}`
+                        : ""}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">Nenhum currículo enviado ainda.</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <label
+                      htmlFor="input-enviar-curriculo"
+                      className="flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md border border-input px-3 text-sm font-medium hover:bg-secondary"
+                    >
+                      {enviarCurriculo.isPending ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Upload className="size-4" aria-hidden="true" />
+                      )}
+                      {candidato.curriculoNome ? "Atualizar currículo" : "Enviar currículo"}
+                    </label>
+                    <input
+                      id="input-enviar-curriculo"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="sr-only"
+                      disabled={enviarCurriculo.isPending}
+                      onChange={aoEnviarCurriculo}
+                    />
+                    <ImportarCurriculoDialog candidatoId={candidato.id}>
+                      <Button type="button" variant="outline" size="sm" className="min-h-9 gap-1.5">
+                        <Sparkles className="size-4" aria-hidden="true" /> Importar dados do currículo
+                      </Button>
+                    </ImportarCurriculoDialog>
+                  </div>
+                </section>
+              )}
               <SecaoDeficiencias candidato={candidato} somenteLeitura={!proprioPerfil} />
               <SecaoRecursoPerfil
                 recurso="experiencias"

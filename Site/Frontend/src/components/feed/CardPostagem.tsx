@@ -197,53 +197,69 @@ export function CardPostagem({
             <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">{postagem.conteudo}</p>
           )}
 
-          <GaleriaAnexos anexos={postagem.anexos ?? []} />
+          <GaleriaAnexos anexos={postagem.anexos ?? []} postagemId={postagem.id} editavel={ehAutor} />
 
           <footer className="mt-4 flex flex-wrap items-center gap-1 border-t border-border pt-3">
             <Button
               variant="ghost"
               className="min-h-11 gap-2"
               aria-pressed={Boolean(postagem.curtidoPorMim)}
+              aria-label={`${postagem.curtidoPorMim ? "Descurtir" : "Curtir"} publicação de ${autor?.nome ?? "usuário"}. ${postagem.totalCurtidas ?? 0} curtida${(postagem.totalCurtidas ?? 0) === 1 ? "" : "s"}.`}
               onClick={() => curtir.mutate(postagem.id)}
             >
               <ThumbsUp
                 className={`size-4 ${postagem.curtidoPorMim ? "fill-primary text-primary" : ""}`}
                 aria-hidden="true"
               />
-              Curtir ({postagem.totalCurtidas ?? 0})
+              <span aria-hidden="true">Curtir ({postagem.totalCurtidas ?? 0})</span>
             </Button>
             <Button
               variant="ghost"
               className="min-h-11 gap-2"
               aria-expanded={comentariosAbertos}
+              aria-label={`${comentariosAbertos ? "Fechar" : "Abrir"} comentários. ${postagem.totalComentarios ?? 0} comentário${(postagem.totalComentarios ?? 0) === 1 ? "" : "s"}.`}
               onClick={() => setComentariosAbertos((v) => !v)}
             >
-              <MessageCircle className="size-4" aria-hidden="true" /> Comentar (
-              {postagem.totalComentarios ?? 0})
+              <MessageCircle className="size-4" aria-hidden="true" />
+              <span aria-hidden="true">
+                Comentar ({postagem.totalComentarios ?? 0})
+              </span>
             </Button>
             {postagem.compartilhadaPorMim ? (
               <Button
                 variant="ghost"
                 className="min-h-11 gap-2"
+                aria-label="Desfazer compartilhamento desta publicação."
                 onClick={() =>
                   desfazerCompartilhamento.mutate({ id: postagem.id, postagemId: postagem.id })
                 }
               >
-                <Undo2 className="size-4" aria-hidden="true" /> Desfazer compartilhamento
+                <Undo2 className="size-4" aria-hidden="true" />
+                <span aria-hidden="true">Desfazer compartilhamento</span>
               </Button>
             ) : (
               <DialogCompartilhar
                 postagemId={postagem.id}
                 trigger={
-                  <Button variant="ghost" className="min-h-11 gap-2">
-                    <Share2 className="size-4" aria-hidden="true" /> Compartilhar (
-                    {postagem.totalCompartilhamentos ?? 0})
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 gap-2"
+                    aria-label={`Compartilhar publicação de ${autor?.nome ?? "usuário"}. ${postagem.totalCompartilhamentos ?? 0} compartilhamento${(postagem.totalCompartilhamentos ?? 0) === 1 ? "" : "s"}.`}
+                  >
+                    <Share2 className="size-4" aria-hidden="true" />
+                    <span aria-hidden="true">
+                      Compartilhar ({postagem.totalCompartilhamentos ?? 0})
+                    </span>
                   </Button>
                 }
               />
             )}
             <Button asChild variant="ghost" className="ml-auto min-h-11">
-              <Link to="/postagem/$postagemId" params={{ postagemId: postagem.id }}>
+              <Link
+                to="/postagem/$postagemId"
+                params={{ postagemId: postagem.id }}
+                aria-label={`Ver publicação completa de ${autor?.nome ?? "usuário"}.`}
+              >
                 Ver publicação
               </Link>
             </Button>

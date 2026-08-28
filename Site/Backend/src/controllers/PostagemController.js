@@ -53,6 +53,20 @@ class PostagemController {
         }
     }
 
+    async atualizarDescricaoAnexo(req, res, next) {
+        try {
+            const postagem = await PostagemService.atualizarDescricaoAnexo(
+                req.params.id,
+                req.params.anexoId,
+                req.body.descricao,
+                req.user
+            );
+            return res.status(200).json({ sucesso: true, postagem });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async destroy(req, res, next) {
         try {
             const dados = await PostagemService.delete(

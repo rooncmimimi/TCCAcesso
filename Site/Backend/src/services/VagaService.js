@@ -19,6 +19,8 @@ const CAMPOS_EDITAVEIS = [
     "cargaHoraria",
     "exclusivaPcd",
     "acessibilidade",
+    "recursosAcessibilidade",
+    "publicoAlvo",
     "status",
     "dataEncerramento"
 ];
@@ -73,6 +75,8 @@ class VagaService {
             modalidade,
             contrato,
             exclusivaPcd,
+            publicoAlvo,
+            recursosAcessibilidade,
             empresaId,
             status
         } = query;
@@ -103,6 +107,22 @@ class VagaService {
 
         if (exclusivaPcd !== undefined) {
             where.exclusivaPcd = exclusivaPcd === "true" || exclusivaPcd === true;
+        }
+
+        if (publicoAlvo) {
+            where.publicoAlvo = publicoAlvo;
+        }
+
+        if (recursosAcessibilidade) {
+            // Aceita tanto `?recursosAcessibilidade=a,b` (querystring) quanto
+            // um array já resolvido — usa o índice GIN da migration 0013.
+            const lista = Array.isArray(recursosAcessibilidade)
+                ? recursosAcessibilidade
+                : String(recursosAcessibilidade).split(",").filter(Boolean);
+
+            if (lista.length > 0) {
+                where.recursosAcessibilidade = { [Op.contains]: lista };
+            }
         }
 
         if (search) {

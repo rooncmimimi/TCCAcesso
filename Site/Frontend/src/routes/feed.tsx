@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ComposerPostagem } from "@/components/feed/ComposerPostagem";
 import { CardPostagem } from "@/components/feed/CardPostagem";
+import { SugestoesResumo } from "@/components/feed/SugestoesResumo";
 import { useFeedInfinito, useFeedTempoReal } from "@/components/feed/hooks";
 import { urlArquivo } from "@/services/uploads.service";
 import { initials, useSession } from "@/contexts/SessionContext";
@@ -61,6 +62,8 @@ function Feed() {
               </Button>
             </CardContent>
           </Card>
+
+          <SugestoesResumo />
         </aside>
 
         <div className="space-y-4">

@@ -86,7 +86,7 @@ function removerPostagemDoCacheFeed(dados: PaginasFeed | undefined, postagemId: 
  *
  * Nomes e formatos de payload espelham exatamente o que o backend emite em
  * `PostagemService` (`feed:postagem`, `feed:curtida`, `feed:comentario` —
- * ver `Backend/src/services/PostagemService.js`).
+ * ver `Site/Backend/src/services/PostagemService.js`).
  */
 export function useFeedTempoReal() {
   const queryClient = useQueryClient();
@@ -185,6 +185,22 @@ export function useAtualizarPostagem() {
       toast.success("Publicação atualizada.");
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível editar a publicação.")),
+  });
+}
+
+export function useAtualizarDescricaoAnexo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postagemId, anexoId, descricao }: { postagemId: string; anexoId: string; descricao: string }) =>
+      postagensService.atualizarDescricaoAnexo(postagemId, anexoId, descricao),
+    onSuccess: (postagemAtualizada) => {
+      queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
+        atualizarPostagemNoCacheFeed(atual, postagemAtualizada.id, () => postagemAtualizada),
+      );
+      queryClient.setQueryData(["postagem", postagemAtualizada.id], postagemAtualizada);
+      toast.success("Descrição da imagem atualizada.");
+    },
+    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar a descrição.")),
   });
 }
 

@@ -3,6 +3,22 @@ import { body, param } from "express-validator";
 const MODALIDADES = ["Presencial", "Hibrido", "Remoto"];
 const CONTRATOS = ["CLT", "PJ", "Estagio", "JovemAprendiz", "Temporario"];
 const STATUS = ["Aberta", "Pausada", "Encerrada"];
+const PUBLICO_ALVO = ["geral", "pcd", "cinquenta_mais", "pcd_cinquenta_mais"];
+
+// Lista fechada — os recursos de acessibilidade da vaga não são texto
+// livre (esse já existe no campo `acessibilidade`). "outro" existe para
+// cobrir um recurso relevante que não está nesta lista, sem virar texto
+// livre disfarçado: o detalhe complementar vai no campo `acessibilidade`.
+export const RECURSOS_ACESSIBILIDADE = [
+    "interprete_libras",
+    "tecnologia_assistiva",
+    "ambiente_fisico_acessivel",
+    "banheiro_adaptado",
+    "elevador_rampa",
+    "jornada_adaptavel",
+    "ferramentas_digitais_acessiveis",
+    "outro"
+];
 
 const camposVaga = (obrigatorio) => [
     body("titulo")
@@ -49,6 +65,17 @@ const camposVaga = (obrigatorio) => [
     body("cargaHoraria").optional({ values: "falsy" }).trim().isLength({ max: 50 }),
 
     body("exclusivaPcd").optional().isBoolean(),
+
+    body("publicoAlvo").optional({ values: "falsy" }).isIn(PUBLICO_ALVO).withMessage("Público-alvo inválido."),
+
+    body("recursosAcessibilidade")
+        .optional()
+        .isArray({ max: RECURSOS_ACESSIBILIDADE.length })
+        .withMessage("Recursos de acessibilidade deve ser uma lista."),
+
+    body("recursosAcessibilidade.*")
+        .isIn(RECURSOS_ACESSIBILIDADE)
+        .withMessage("Recurso de acessibilidade inválido."),
 
     body("acessibilidade").optional({ values: "falsy" }).trim().isLength({ max: 2000 }),
 

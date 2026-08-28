@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import { useSession, initials } from "@/contexts/SessionContext";
@@ -33,9 +34,19 @@ export function EditarPerfilDialog({
   children: ReactNode;
 }) {
   const [aberto, setAberto] = useState(false);
+  const [cidade, setCidade] = useState(candidato?.cidade ?? "");
+  const [estado, setEstado] = useState(candidato?.estado ?? "");
   const { user, update } = useSession();
   const { speak } = useSpeech();
   const queryClient = useQueryClient();
+
+  // Reabrir o diálogo sempre reflete os dados mais recentes do candidato.
+  useEffect(() => {
+    if (aberto) {
+      setCidade(candidato?.cidade ?? "");
+      setEstado(candidato?.estado ?? "");
+    }
+  }, [aberto, candidato?.cidade, candidato?.estado]);
 
   const salvar = useMutation({
     mutationFn: async (dados: FormData) => {
@@ -201,11 +212,25 @@ export function EditarPerfilDialog({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
-                  <Input id="cidade" name="cidade" maxLength={100} defaultValue={candidato.cidade ?? ""} />
+                  <CidadeAutocomplete
+                    id="cidade"
+                    name="cidade"
+                    value={cidade}
+                    onChange={setCidade}
+                    estado={estado}
+                    aria-label="Cidade"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="estado">Estado (UF)</Label>
-                  <Input id="estado" name="estado" maxLength={2} placeholder="SP" defaultValue={candidato.estado ?? ""} />
+                  <Input
+                    id="estado"
+                    name="estado"
+                    maxLength={2}
+                    placeholder="SP"
+                    value={estado}
+                    onChange={(e) => setEstado(e.target.value.toUpperCase())}
+                  />
                 </div>
               </div>
 

@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, fn, col } from "sequelize";
 import sequelize from "../config/database.js";
 import { Empresa, Usuario, Vaga } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
@@ -96,10 +96,33 @@ class EmpresaService {
        EMPRESAS PARCEIRAS (vitrine da home)
     ========================================================== */
     async findPartners() {
-        return Empresa.findAll({
+        const empresas = await Empresa.findAll({
             where: { empresaVerificada: true },
             order: [["created_at", "DESC"]],
             limit: 6
+        });
+
+        if (empresas.length === 0) return empresas;
+
+        // Mesmo padrão de VagaService.findByEmpresaAutenticada / PublicoService.home:
+        // uma única consulta agregada, nunca uma por empresa.
+        const contagens = await Vaga.findAll({
+            where: {
+                empresaId: empresas.map((empresa) => empresa.id),
+                status: "Aberta"
+            },
+            attributes: ["empresaId", [fn("COUNT", col("id")), "total"]],
+            group: ["empresaId"]
+        });
+
+        const totalPorEmpresa = new Map(
+            contagens.map((c) => [c.empresaId, Number(c.get("total"))])
+        );
+
+        return empresas.map((empresa) => {
+            const objeto = empresa.toJSON();
+            objeto.totalVagas = totalPorEmpresa.get(empresa.id) ?? 0;
+            return objeto;
         });
     }
 

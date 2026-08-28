@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   Accessibility,
@@ -22,6 +22,7 @@ import { EstatisticasFaixa } from "@/components/home/EstatisticasFaixa";
 import { VagaDestaqueCard } from "@/components/home/VagaDestaqueCard";
 import { EmpresaParceiraCard } from "@/components/home/EmpresaParceiraCard";
 import { publicoService } from "@/services/publico.service";
+import { useSession } from "@/contexts/SessionContext";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -66,6 +67,7 @@ const recursos = [
 ];
 
 function Home() {
+  const { hydrated, autenticado } = useSession();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["publico", "home"],
     queryFn: () => publicoService.home(),
@@ -74,6 +76,14 @@ function Home() {
 
   const vagasDestaque = data?.vagasDestaque ?? [];
   const empresasParceiras = data?.empresasParceiras ?? [];
+
+  // Quem já está autenticado não deve ver a Home de visitante (com
+  // "Entrar"/"Criar conta") — o destino natural é o Feed, igual a quem
+  // acabou de fazer login. Só decide depois de `hydrated` para não
+  // piscar a Home antes de a sessão salva ser lida.
+  if (hydrated && autenticado) {
+    return <Navigate to="/feed" />;
+  }
 
   return (
     <div className="min-h-dvh bg-background">

@@ -1,3 +1,4 @@
+import { BadgeCheck } from "lucide-react";
 import { urlArquivo } from "@/services/uploads.service";
 import type { Empresa } from "@/types";
 
@@ -23,7 +24,15 @@ export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
         </span>
       )}
       <span className="min-w-0">
-        <span className="block truncate font-bold">{nome}</span>
+        <span className="flex items-center gap-1 truncate font-bold">
+          <span className="truncate">{nome}</span>
+          {empresa.empresaVerificada && (
+            <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+              <BadgeCheck className="size-3.5" aria-hidden="true" />
+              <span className="sr-only">Empresa verificada</span>
+            </span>
+          )}
+        </span>
         <span className="block truncate text-sm text-muted-foreground">
           {empresa.setor ?? "Empresa parceira"}
           {typeof empresa.totalVagas === "number" ? ` · ${empresa.totalVagas} vagas` : ""}

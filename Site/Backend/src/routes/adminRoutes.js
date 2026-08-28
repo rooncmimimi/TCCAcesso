@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { body } from "express-validator";
 
 import AdminController from "../controllers/AdminController.js";
 import DenunciaController from "../controllers/DenunciaController.js";
@@ -41,6 +42,14 @@ router.post(
     validarUuidParam("id"),
     validationMiddleware,
     AdminController.reativarEmpresa
+);
+// Selo de confiança, independente da aprovação cadastral (ver AdminService.verificarEmpresa).
+router.post(
+    "/empresas/:id/verificar",
+    validarUuidParam("id"),
+    body("verificada").isBoolean().withMessage("Informe verificada como true ou false."),
+    validationMiddleware,
+    AdminController.verificarEmpresa
 );
 
 router.get("/usuarios", AdminController.usuarios);

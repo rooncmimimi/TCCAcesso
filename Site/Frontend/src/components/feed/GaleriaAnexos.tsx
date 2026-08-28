@@ -1,15 +1,114 @@
-import { FileText } from "lucide-react";
+import { useState } from "react";
+import { FileText, Pencil, X } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { urlArquivo } from "@/services/uploads.service";
+import { useAtualizarDescricaoAnexo } from "./hooks";
 import type { AnexoPostagem } from "@/types";
+
+const MAX_DESCRICAO = 500;
+
+/**
+ * Legenda + ação de editar descrição, compartilhada entre imagem e vídeo.
+ * Apresentação discreta: texto pequeno, secundário, só aparece quando há
+ * descrição ou quando o autor está editando — nunca ocupa espaço à toa.
+ */
+function DescricaoAnexo({
+  anexo,
+  postagemId,
+  editavel,
+}: {
+  anexo: AnexoPostagem;
+  postagemId: string;
+  editavel: boolean;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [rascunho, setRascunho] = useState(anexo.descricao ?? "");
+  const atualizar = useAtualizarDescricaoAnexo();
+
+  if (editando) {
+    return (
+      <div className="mt-1.5 flex items-center gap-1.5">
+        <Input
+          value={rascunho}
+          maxLength={MAX_DESCRICAO}
+          autoFocus
+          placeholder="Descreva o que aparece para pessoas que utilizam leitores de tela"
+          onChange={(e) => setRascunho(e.target.value)}
+          className="h-8 text-xs"
+          aria-label={`Descrição acessível do anexo ${anexo.nomeOriginal ?? ""}`}
+        />
+        <Button
+          type="button"
+          size="sm"
+          className="h-8 shrink-0 px-2 text-xs"
+          disabled={atualizar.isPending}
+          onClick={() =>
+            atualizar.mutate(
+              { postagemId, anexoId: anexo.id, descricao: rascunho },
+              { onSuccess: () => setEditando(false) },
+            )
+          }
+        >
+          Salvar
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          aria-label="Cancelar edição da descrição"
+          onClick={() => {
+            setRascunho(anexo.descricao ?? "");
+            setEditando(false);
+          }}
+        >
+          <X className="size-3.5" aria-hidden="true" />
+        </Button>
+      </div>
+    );
+  }
+
+  if (!anexo.descricao && !editavel) return null;
+
+  return (
+    <div className="mt-1.5 flex items-start justify-between gap-2">
+      <p className="min-w-0 text-xs text-muted-foreground">
+        {anexo.descricao || (editavel ? "Sem descrição — adicione uma para leitores de tela." : "")}
+      </p>
+      {editavel && (
+        <button
+          type="button"
+          onClick={() => setEditando(true)}
+          className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+          aria-label={`Editar descrição do anexo ${anexo.nomeOriginal ?? ""}`}
+        >
+          <Pencil className="size-3" aria-hidden="true" /> {anexo.descricao ? "Editar" : "Adicionar"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 /**
  * Exibe os anexos de uma publicação: galeria de imagens, vídeos e — apenas
  * para publicações antigas — links para documentos. "Documento" não é mais
  * uma opção ao criar uma publicação nova, mas anexos desse tipo já
  * existentes no banco continuam sendo exibidos normalmente aqui.
+ *
+ * `editavel` (só true para o autor da publicação) libera o controle de
+ * editar a descrição de cada anexo, sem nunca permitir trocar o arquivo.
  */
-export function GaleriaAnexos({ anexos }: { anexos: AnexoPostagem[] }) {
+export function GaleriaAnexos({
+  anexos,
+  postagemId,
+  editavel = false,
+}: {
+  anexos: AnexoPostagem[];
+  postagemId?: string;
+  editavel?: boolean;
+}) {
   if (!anexos?.length) return null;
 
   const imagens = anexos.filter((a) => a.tipo === "imagem");
@@ -33,11 +132,14 @@ export function GaleriaAnexos({ anexos }: { anexos: AnexoPostagem[] }) {
               >
                 <img
                   src={urlArquivo(imagem.url)}
-                  alt={imagem.nomeOriginal ?? "Imagem anexada à publicação"}
+                  alt={imagem.descricao || imagem.nomeOriginal || "Imagem sem descrição fornecida pelo autor da publicação"}
                   className="max-h-96 w-full object-cover"
                   loading="lazy"
                 />
               </a>
+              {postagemId && (
+                <DescricaoAnexo anexo={imagem} postagemId={postagemId} editavel={editavel} />
+              )}
             </li>
           ))}
         </ul>
@@ -51,10 +153,14 @@ export function GaleriaAnexos({ anexos }: { anexos: AnexoPostagem[] }) {
                 src={urlArquivo(video.url)}
                 controls
                 preload="metadata"
+                aria-label={video.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
                 className="max-h-96 w-full rounded-xl border border-border bg-black"
               >
                 Seu navegador não suporta a reprodução deste vídeo.
               </video>
+              {postagemId && (
+                <DescricaoAnexo anexo={video} postagemId={postagemId} editavel={editavel} />
+              )}
             </li>
           ))}
         </ul>

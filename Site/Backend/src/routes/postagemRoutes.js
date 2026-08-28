@@ -15,7 +15,8 @@ const processarAnexosPostagem = criarProcessadorArmazenamento({
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarCriacaoPostagem,
-    validarAtualizacaoPostagem
+    validarAtualizacaoPostagem,
+    validarDescricaoAnexo
 } from "../validators/postagemValidator.js";
 import { validarCriacaoComentario } from "../validators/comentarioValidator.js";
 
@@ -53,6 +54,17 @@ router.delete(
     validarUuidParam("id"),
     validationMiddleware,
     PostagemController.destroy
+);
+
+// Edita só a descrição acessível de um anexo já publicado — nunca o
+// arquivo em si. Reaproveita a mesma autorização de dono de `update`.
+router.patch(
+    "/:id/anexos/:anexoId",
+    validarUuidParam("id"),
+    validarUuidParam("anexoId"),
+    validarDescricaoAnexo,
+    validationMiddleware,
+    PostagemController.atualizarDescricaoAnexo
 );
 
 /* ---------- Comentários ---------- */

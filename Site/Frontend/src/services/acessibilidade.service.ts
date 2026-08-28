@@ -1,5 +1,5 @@
 import api from "./api";
-import type { ChatbotMensagem, PreferenciasAcessibilidade } from "@/types";
+import type { ChatbotConversa, ChatbotMensagem, PreferenciasAcessibilidade } from "@/types";
 import type { AccessibilityPrefs } from "@/contexts/AccessibilityContext";
 
 /** Converte as preferências locais para o formato aceito pelo Backend. */
@@ -60,10 +60,8 @@ export const acessibilidadeService = {
 
 /** Assistente virtual (chatbot) com conversas persistidas. */
 export const chatbotService = {
-  async conversas() {
-    const { data } = await api.get<{ conversas: { id: string; titulo?: string }[] }>(
-      "/chatbot/conversas",
-    );
+  async conversas(): Promise<ChatbotConversa[]> {
+    const { data } = await api.get<{ conversas: ChatbotConversa[] }>("/chatbot/conversas");
     return data.conversas ?? [];
   },
 
@@ -74,11 +72,15 @@ export const chatbotService = {
     return data.mensagens ?? [];
   },
 
-  async enviar(conteudo: string, conversaId?: string | null) {
+  /** Espelha o retorno real de `ChatbotService.enviar` no backend: `{ conversa, pergunta, resposta }`. */
+  async enviar(
+    conteudo: string,
+    conversaId?: string | null,
+  ): Promise<{ conversa: ChatbotConversa; pergunta: ChatbotMensagem; resposta: ChatbotMensagem }> {
     const { data } = await api.post<{
-      conversaId: string;
+      conversa: ChatbotConversa;
+      pergunta: ChatbotMensagem;
       resposta: ChatbotMensagem;
-      mensagem?: ChatbotMensagem;
     }>("/chatbot/mensagens", { conteudo, conversaId: conversaId ?? null });
     return data;
   },

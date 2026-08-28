@@ -10,6 +10,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/sugestoes", SeguidorController.sugestoes);
+router.get("/sugestoes/empresas", SeguidorController.sugestoesEmpresas);
 
 router.post(
     "/usuarios/:usuarioId",

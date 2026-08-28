@@ -7,6 +7,7 @@ import type {
   Experiencia,
   Formacao,
   Habilidade,
+  RascunhoCurriculo,
   Usuario,
 } from "@/types";
 
@@ -72,6 +73,23 @@ export const perfilService = {
       { headers: { "Content-Type": "multipart/form-data" } },
     );
     return data.candidato;
+  },
+
+  /**
+   * Extrai um RASCUNHO do currículo (PDF/DOCX) para revisão — nunca grava
+   * nada no perfil sozinho, e o arquivo enviado aqui não vira o currículo
+   * oficial (isso continua sendo `enviarCurriculo`, chamado à parte).
+   */
+  async importarCurriculo(candidatoId: string, arquivo: File): Promise<RascunhoCurriculo> {
+    const form = new FormData();
+    form.append("curriculo", arquivo);
+
+    const { data } = await api.post<{ rascunho: RascunhoCurriculo }>(
+      `/candidatos/${candidatoId}/curriculo/importar`,
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return data.rascunho;
   },
 
   async adicionarDeficiencia(candidatoId: string, payload: Record<string, unknown>) {

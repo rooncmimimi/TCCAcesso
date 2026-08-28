@@ -140,6 +140,30 @@ class CandidatoController {
             return next(erro);
         }
     }
+
+    /**
+     * Extrai texto do arquivo enviado e devolve um RASCUNHO — nunca grava
+     * nada no perfil. O arquivo enviado aqui não vira o currículo oficial
+     * do candidato (isso continua exigindo `PATCH /candidatos/:id/curriculo`
+     * numa ação separada e explícita, depois que o usuário revisar/confirmar).
+     */
+    async importarCurriculo(req, res, next) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ sucesso: false, mensagem: "Envie um arquivo PDF ou DOCX." });
+            }
+
+            const rascunho = await CandidatoService.importarCurriculo(
+                req.params.id,
+                { buffer: req.file.buffer, mimetype: req.file.mimetype },
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, rascunho });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
 }
 
 export default new CandidatoController();

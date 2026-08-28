@@ -54,6 +54,16 @@ router.patch(
     CandidatoController.uploadCurriculo
 );
 
+// Extração (sem IA) de um rascunho a partir do arquivo — nunca grava nada
+// sozinho, nunca salva o arquivo como currículo oficial (ver controller).
+router.post(
+    "/:id/curriculo/importar",
+    validarUuidParam("id"),
+    validationMiddleware,
+    uploadDocumento.single("curriculo"),
+    CandidatoController.importarCurriculo
+);
+
 // URL assinada e temporária do currículo (nunca uma URL permanente).
 // Autorização (dono / empresa com candidatura / admin) no service.
 router.get(

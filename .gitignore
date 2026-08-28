@@ -18,6 +18,7 @@ build/
 
 # Uploads gerados em runtime
 Backend/uploads/
+Site/Backend/uploads/
 
 # Logs
 logs/
@@ -26,6 +27,7 @@ npm-debug.log*
 
 # Arquivos gerados
 Frontend/src/routeTree.gen.ts
+Site/Frontend/src/routeTree.gen.ts
 
 # Editores e sistema operacional
 .vscode/

@@ -5,18 +5,38 @@ import { Image as ImageIcon, Video, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { initials, useSession } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
 import { useCriarPostagem } from "./hooks";
-import { MAX_ANEXOS, MAX_CARACTERES, TIPOS_ACEITOS, ehImagem, ehVideo } from "./tiposAnexo";
+import {
+  MAX_ANEXOS,
+  MAX_CARACTERES,
+  TIPOS_ACEITOS,
+  TIPOS_IMAGEM_ACEITOS,
+  TIPOS_VIDEO_ACEITOS,
+  ehImagem,
+  ehVideo,
+} from "./tiposAnexo";
+
+const MAX_DESCRICAO = 500;
 
 /** Formulário de nova publicação: texto + até 4 anexos (imagens/vídeos). */
 export function ComposerPostagem() {
   const { user } = useSession();
   const [conteudo, setConteudo] = useState("");
   const [anexos, setAnexos] = useState<File[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Uma descrição por anexo, no mesmo índice — nunca gerada automaticamente,
+  // sempre em branco até o usuário escrever (ver PostagemAnexo.descricao).
+  const [descricoes, setDescricoes] = useState<string[]>([]);
+  // Dois inputs de arquivo distintos (não um só reaproveitado pelos dois
+  // botões) — "Foto" só abre o seletor filtrado para imagem, "Vídeo" só
+  // para vídeo. Antes os dois botões chamavam o mesmo input e faziam
+  // exatamente a mesma coisa.
+  const inputImagemRef = useRef<HTMLInputElement>(null);
+  const inputVideoRef = useRef<HTMLInputElement>(null);
   const criar = useCriarPostagem();
 
   const restantes = MAX_CARACTERES - conteudo.length;
@@ -39,10 +59,16 @@ export function ComposerPostagem() {
       }
       return combinados;
     });
+    setDescricoes((atuais) => [...atuais, ...validos.map(() => "")].slice(0, MAX_ANEXOS));
   }
 
   function removerAnexo(indice: number) {
     setAnexos((atuais) => atuais.filter((_, i) => i !== indice));
+    setDescricoes((atuais) => atuais.filter((_, i) => i !== indice));
+  }
+
+  function alterarDescricao(indice: number, valor: string) {
+    setDescricoes((atuais) => atuais.map((d, i) => (i === indice ? valor.slice(0, MAX_DESCRICAO) : d)));
   }
 
   function aoEnviar(evento: React.FormEvent) {
@@ -52,11 +78,12 @@ export function ComposerPostagem() {
       return;
     }
     criar.mutate(
-      { conteudo: conteudo.trim(), anexos },
+      { conteudo: conteudo.trim(), anexos, descricoesAnexos: descricoes },
       {
         onSuccess: () => {
           setConteudo("");
           setAnexos([]);
+          setDescricoes([]);
         },
       },
     );
@@ -97,14 +124,14 @@ export function ComposerPostagem() {
           </div>
 
           {anexos.length > 0 && (
-            <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Anexos selecionados">
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2" aria-label="Anexos selecionados">
               {anexos.map((arquivo, indice) => (
                 <li key={`${arquivo.name}-${indice}`} className="relative rounded-lg border border-border p-2">
                   {ehImagem(arquivo) ? (
                     <img
                       src={URL.createObjectURL(arquivo)}
                       alt={`Pré-visualização de ${arquivo.name}`}
-                      className="h-20 w-full rounded-md object-cover"
+                      className="h-32 w-full rounded-md object-cover"
                     />
                   ) : ehVideo(arquivo) ? (
                     <video
@@ -113,7 +140,7 @@ export function ComposerPostagem() {
                       muted
                       preload="metadata"
                       aria-label={`Pré-visualização de ${arquivo.name}`}
-                      className="h-20 w-full rounded-md bg-black object-cover"
+                      className="h-32 w-full rounded-md bg-black object-cover"
                     />
                   ) : null}
                   <Button
@@ -126,6 +153,23 @@ export function ComposerPostagem() {
                   >
                     <X className="size-3.5" aria-hidden="true" />
                   </Button>
+
+                  <div className="mt-2 space-y-1">
+                    <Label htmlFor={`descricao-anexo-${indice}`} className="text-xs font-semibold">
+                      Descrição da imagem (opcional)
+                    </Label>
+                    <Input
+                      id={`descricao-anexo-${indice}`}
+                      value={descricoes[indice] ?? ""}
+                      maxLength={MAX_DESCRICAO}
+                      placeholder="Descreva o que aparece nesta imagem para pessoas que utilizam leitores de tela"
+                      onChange={(e) => alterarDescricao(indice, e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      A descrição ajuda pessoas que utilizam leitores de tela a compreender o conteúdo visual.
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -133,11 +177,20 @@ export function ComposerPostagem() {
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input
-              ref={inputRef}
-              id="anexos-postagem"
+              ref={inputImagemRef}
+              id="anexos-postagem-imagem"
               type="file"
               multiple
-              accept={TIPOS_ACEITOS.join(",")}
+              accept={TIPOS_IMAGEM_ACEITOS.join(",")}
+              onChange={adicionarArquivos}
+              className="sr-only"
+            />
+            <input
+              ref={inputVideoRef}
+              id="anexos-postagem-video"
+              type="file"
+              multiple
+              accept={TIPOS_VIDEO_ACEITOS.join(",")}
               onChange={adicionarArquivos}
               className="sr-only"
             />
@@ -145,7 +198,8 @@ export function ComposerPostagem() {
               type="button"
               variant="ghost"
               className="min-h-11 gap-2"
-              onClick={() => inputRef.current?.click()}
+              aria-label="Adicionar foto à publicação"
+              onClick={() => inputImagemRef.current?.click()}
               disabled={anexos.length >= MAX_ANEXOS}
             >
               <ImageIcon className="size-4" aria-hidden="true" /> Foto
@@ -154,7 +208,8 @@ export function ComposerPostagem() {
               type="button"
               variant="ghost"
               className="min-h-11 gap-2"
-              onClick={() => inputRef.current?.click()}
+              aria-label="Adicionar vídeo à publicação"
+              onClick={() => inputVideoRef.current?.click()}
               disabled={anexos.length >= MAX_ANEXOS}
             >
               <Video className="size-4" aria-hidden="true" /> Vídeo

@@ -3,7 +3,7 @@ services:
     name: acesso-backend
     runtime: node
     plan: free
-    rootDir: Backend
+    rootDir: Site/Backend
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -30,3 +30,13 @@ services:
         value: "12"
       - key: FRONTEND_URL
         sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_PUBLIC_BUCKET
+        value: public-media
+      - key: SUPABASE_STORAGE_PRIVATE_BUCKET
+        value: private-documents
+      - key: MAX_VIDEO_UPLOAD_BYTES
+        value: "52428800"

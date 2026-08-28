@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import {
   Select,
   SelectContent,
@@ -11,12 +12,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ICONE_RECURSO_ACESSIBILIDADE,
+  PUBLICO_ALVO,
+  RECURSOS_ACESSIBILIDADE,
+  ROTULO_PUBLICO_ALVO,
+  ROTULO_RECURSO_ACESSIBILIDADE,
+} from "@/components/dashboard/constantesVaga";
+import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga } from "@/types";
 
 export interface FiltrosVagasState {
   busca: string;
   modalidade: string;
   cidade: string;
-  exclusivaPcd: boolean;
+  publicoAlvo: PublicoAlvoVaga | "";
+  recursosAcessibilidade: RecursoAcessibilidadeVaga[];
 }
 
 const MODALIDADES = ["Presencial", "Hibrido", "Remoto"] as const;
@@ -61,15 +71,13 @@ export function FiltrosVagas({
             <Label htmlFor="filtro-cidade" className="text-sm font-bold">
               Cidade
             </Label>
-            <Input
+            <CidadeAutocomplete
               id="filtro-cidade"
               className="mt-2 min-h-11"
               placeholder="Ex.: São Paulo"
               value={valor.cidade}
-              onChange={(e) => aoMudar({ ...valor, cidade: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") aoBuscar();
-              }}
+              onChange={(cidade) => aoMudar({ ...valor, cidade })}
+              onEnterSemSelecao={aoBuscar}
             />
           </div>
 
@@ -95,16 +103,61 @@ export function FiltrosVagas({
             </Select>
           </div>
 
-          <div className="flex items-end pb-1">
-            <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
-              <Checkbox
-                checked={valor.exclusivaPcd}
-                onCheckedChange={(c) => aoMudar({ ...valor, exclusivaPcd: Boolean(c) })}
-              />
-              Somente vagas exclusivas PCD
-            </label>
+          <div>
+            {/* Único controle de público — "exclusiva PCD" já é uma das
+                opções desta lista (junto de 50+ e PCD+50+), então não
+                existe mais um checkbox separado e sobreposto para isso. */}
+            <Label htmlFor="filtro-publico" className="text-sm font-bold">
+              Público da vaga
+            </Label>
+            <Select
+              value={valor.publicoAlvo || "todos"}
+              onValueChange={(v) =>
+                aoMudar({ ...valor, publicoAlvo: v === "todos" ? "" : (v as PublicoAlvoVaga) })
+              }
+            >
+              <SelectTrigger id="filtro-publico" className="mt-2 min-h-11">
+                <SelectValue placeholder="Todos os públicos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os públicos</SelectItem>
+                {PUBLICO_ALVO.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {ROTULO_PUBLICO_ALVO[p]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
+
+        <fieldset>
+          <legend className="text-sm font-bold">Recursos de acessibilidade da vaga</legend>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {RECURSOS_ACESSIBILIDADE.filter((r) => r !== "outro").map((recurso) => {
+              const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
+              const marcado = valor.recursosAcessibilidade.includes(recurso);
+              return (
+                <label
+                  key={recurso}
+                  className="flex min-h-11 items-center gap-2 rounded-md border border-input px-3 text-sm font-medium has-[:checked]:border-primary has-[:checked]:bg-primary-soft"
+                >
+                  <Checkbox
+                    checked={marcado}
+                    onCheckedChange={(c) => {
+                      const proximos = c
+                        ? [...valor.recursosAcessibilidade, recurso]
+                        : valor.recursosAcessibilidade.filter((r) => r !== recurso);
+                      aoMudar({ ...valor, recursosAcessibilidade: proximos });
+                    }}
+                  />
+                  <Icone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="min-w-0 truncate">{ROTULO_RECURSO_ACESSIBILIDADE[recurso]}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
       </CardContent>
     </Card>
   );

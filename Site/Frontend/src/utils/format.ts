@@ -20,10 +20,29 @@ export function formatarSalario(valor?: number | null): string {
   return formatadorMoeda.format(valor);
 }
 
-/** Formata uma data ISO no padrão brasileiro por extenso. */
+/**
+ * Formata uma data ISO no padrão brasileiro por extenso.
+ *
+ * Uma data "pura" (`AAAA-MM-DD`, sem hora — ex.: `dataInicio` de uma
+ * experiência, `dataNascimento`) representa um dia de calendário, não um
+ * instante no tempo: `new Date("2021-01-01")` interpreta isso como meia-noite
+ * em UTC, e formatar num fuso atrás de UTC (todo o Brasil) exibe "31 de
+ * dezembro de 2020" — um dia a menos. Por isso datas puras são montadas a
+ * partir dos componentes ano/mês/dia direto no fuso local, sem passar por
+ * UTC. Timestamps completos (`criadoEm`, `created_at`, com hora e fuso)
+ * continuam pelo caminho normal — aqueles precisam mesmo da conversão.
+ */
 export function formatarData(data?: string | Date | null): string {
   if (!data) return "";
-  const referencia = typeof data === "string" ? new Date(data) : data;
+
+  let referencia: Date;
+  if (typeof data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    const [ano, mes, dia] = data.split("-").map(Number);
+    referencia = new Date(ano, mes - 1, dia);
+  } else {
+    referencia = typeof data === "string" ? new Date(data) : data;
+  }
+
   if (Number.isNaN(referencia.getTime())) return "";
   return formatadorData.format(referencia);
 }

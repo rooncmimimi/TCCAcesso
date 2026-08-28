@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Building2, Globe, Loader2, MapPin, Pencil, Users } from "lucide-react";
+import { BadgeCheck, Building2, Globe, Loader2, MapPin, Pencil, Users } from "lucide-react";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -151,6 +151,15 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-extrabold">{nome}</h1>
             <StatusBadge tom="sucesso">Aprovada</StatusBadge>
+            {empresa.empresaVerificada && (
+              <span
+                className="inline-flex items-center gap-1 text-primary"
+                title="Empresa verificada pelo ACESSO"
+              >
+                <BadgeCheck className="size-5" aria-hidden="true" />
+                <span className="sr-only">Empresa verificada</span>
+              </span>
+            )}
           </div>
           <p className="text-muted-foreground">{empresa.razaoSocial}</p>
 

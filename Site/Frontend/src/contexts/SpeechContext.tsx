@@ -115,6 +115,15 @@ export function useSpeech() {
 
 /**
  * Lê em voz alta o conteúdo focado/apontado quando o leitor de voz está ativo.
+ *
+ * Também anuncia toasts (sucesso/erro de ações como publicar, curtir,
+ * candidatar-se, enviar mensagem) assim que aparecem — sem isso, um toast
+ * só seria percebido por quem usa um leitor de tela nativo (o
+ * `aria-live="polite"` do `sonner` já é lido por eles), nunca por quem
+ * depende só da leitura por voz própria do ACESSO, que hoje só reage a
+ * foco. Reaproveita o texto que o próprio toast já usa (`toast.success(...)`
+ * em toda a base já escreve frases completas, ex.: "Vaga publicada com
+ * sucesso.") — não inventa um texto novo.
  */
 export function useAutoSpeech() {
   const { prefs } = useAccessibility();
@@ -139,8 +148,44 @@ export function useAutoSpeech() {
 
     const onFocus = (e: FocusEvent) => readFrom(e.target);
     document.addEventListener("focusin", onFocus);
+
+    // Observa a região de toasts do sonner e fala cada novo toast — sem
+    // interromper uma fala em andamento (duas ações rápidas em sequência
+    // não devem cortar o anúncio uma da outra).
+    const observadorToast = new MutationObserver((mutacoes) => {
+      for (const mutacao of mutacoes) {
+        mutacao.addedNodes.forEach((node) => {
+          if (!(node instanceof HTMLElement)) return;
+          const texto = node.innerText?.trim();
+          if (texto) speak(texto.slice(0, 400), { interrupt: false });
+        });
+      }
+    });
+
+    const iniciarObservacaoToast = () => {
+      const regiao = document.querySelector("[data-sonner-toaster]");
+      if (regiao) {
+        observadorToast.observe(regiao, { childList: true, subtree: true });
+        return true;
+      }
+      return false;
+    };
+
+    // O <Toaster/> monta no primeiro render do app inteiro — tenta de
+    // novo em vez de assumir que já existe no momento deste efeito.
+    let idTentativa: number | undefined;
+    if (!iniciarObservacaoToast()) {
+      idTentativa = window.setInterval(() => {
+        if (iniciarObservacaoToast() && idTentativa !== undefined) {
+          window.clearInterval(idTentativa);
+        }
+      }, 300);
+    }
+
     return () => {
       document.removeEventListener("focusin", onFocus);
+      observadorToast.disconnect();
+      if (idTentativa !== undefined) window.clearInterval(idTentativa);
       stop();
     };
   }, [prefs.screenReader, speak, stop]);

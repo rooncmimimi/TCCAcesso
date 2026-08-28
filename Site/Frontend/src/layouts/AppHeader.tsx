@@ -1,9 +1,12 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  Accessibility,
+  Activity,
   Bell,
   Briefcase,
   ChevronDown,
+  Compass,
   HelpCircle,
   Home,
   LayoutDashboard,
@@ -12,7 +15,6 @@ import {
   Settings,
   ShieldCheck,
   User,
-  Accessibility,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SearchBar } from "@/components/SearchBar";
@@ -92,6 +94,39 @@ export function AppHeader() {
     pathnameAnteriorRef.current = pathname;
   }, [pathname, autenticado]);
 
+  // Visitante (sem sessão): nenhum elemento de navegação privada pode
+  // aparecer — nem os atalhos (Início/Vagas/Mensagens/Notificações), nem
+  // a busca global, nem o menu de perfil. É a mesma regra já aplicada na
+  // Home pública, só que reaproveitada aqui em vez de duplicada, porque
+  // AppHeader (via AppShell) também precisa funcionar em páginas públicas
+  // como a Ajuda.
+  if (!autenticado) {
+    return (
+      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+          <Link to="/" aria-label="ACESSO — página inicial" className="shrink-0">
+            <Logo showWordmark={false} className="sm:hidden" />
+            <Logo className="hidden sm:inline-flex" />
+          </Link>
+          <nav aria-label="Navegação pública" className="flex items-center gap-1 sm:gap-2">
+            <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
+              <Link to="/vagas">Vagas</Link>
+            </Button>
+            <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
+              <Link to="/ajuda">Ajuda</Link>
+            </Button>
+            <Button asChild variant="outline" className="min-h-11">
+              <Link to="/entrar">Entrar</Link>
+            </Button>
+            <Button asChild className="min-h-11">
+              <Link to="/cadastro">Criar conta</Link>
+            </Button>
+          </nav>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-1 px-4 md:gap-3">
@@ -100,7 +135,7 @@ export function AppHeader() {
           <Logo className="hidden sm:inline-flex" />
         </Link>
 
-        {autenticado && <SearchBar />}
+        <SearchBar />
 
         <nav aria-label="Navegação principal" className="mx-auto">
           <ul className="flex items-center gap-1 sm:gap-2">
@@ -176,18 +211,28 @@ export function AppHeader() {
                 <User aria-hidden="true" /> Ver perfil
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/minha-atividade">
+                <Activity aria-hidden="true" /> Minha atividade
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/descobrir">
+                <Compass aria-hidden="true" /> Descobrir
+              </Link>
+            </DropdownMenuItem>
             {(user?.tipo === "candidato" || user?.tipo === "empresa") && (
               <DropdownMenuItem asChild>
-                <a href="/dashboard">
+                <Link to="/dashboard">
                   <LayoutDashboard aria-hidden="true" /> Painel de indicadores
-                </a>
+                </Link>
               </DropdownMenuItem>
             )}
             {user?.tipo === "administrador" && (
               <DropdownMenuItem asChild>
-                <a href="/admin">
+                <Link to="/admin">
                   <ShieldCheck aria-hidden="true" /> Painel administrativo
-                </a>
+                </Link>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>

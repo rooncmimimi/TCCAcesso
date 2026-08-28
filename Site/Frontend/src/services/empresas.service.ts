@@ -1,6 +1,6 @@
 import api from "./api";
 import { buscarPaginado, type Paginado } from "./http";
-import type { Empresa, ResumoSeguidores, SugestaoPerfil, Vaga } from "@/types";
+import type { Empresa, ResumoSeguidores, SugestaoEmpresa, SugestaoPerfil, Vaga } from "@/types";
 
 /** Empresas e relacionamento de seguidores. */
 export const empresasService = {
@@ -68,8 +68,15 @@ export const empresasService = {
 
 /** Seguir usuários e empresas. */
 export const seguidoresService = {
-  async sugestoes(): Promise<SugestaoPerfil[]> {
-    const { data } = await api.get<{ sugestoes: SugestaoPerfil[] }>("/seguir/sugestoes");
+  /** Pessoas para seguir — cada sugestão vem com um `motivo` explicável (cidade, área, interações, conexões em comum). */
+  async sugestoes(limit = 8): Promise<SugestaoPerfil[]> {
+    const { data } = await api.get<{ sugestoes: SugestaoPerfil[] }>("/seguir/sugestoes", { params: { limit } });
+    return data.sugestoes ?? [];
+  },
+
+  /** Empresas para seguir — só relevante para candidatos; sempre traz `motivo`. */
+  async sugestoesEmpresas(limit = 8): Promise<SugestaoEmpresa[]> {
+    const { data } = await api.get<{ sugestoes: SugestaoEmpresa[] }>("/seguir/sugestoes/empresas", { params: { limit } });
     return data.sugestoes ?? [];
   },
 

@@ -68,7 +68,11 @@ class AdminService {
         await empresa.update({
             statusAprovacao: aprovada ? "aprovada" : "reprovada",
             motivoReprovacao: aprovada ? null : motivo || null,
-            empresaVerificada: Boolean(aprovada),
+            // "Aprovada" (checagem cadastral, libera publicar vaga) e
+            // "verificada" (selo de confiança adicional) são conceitos
+            // deliberadamente separados agora — aprovar não verifica mais
+            // automaticamente. Verificação é uma ação administrativa
+            // própria, ver `verificarEmpresa` abaixo.
             avaliadoEm: new Date(),
             avaliadoPor: solicitante.id
         });
@@ -96,6 +100,44 @@ class AdminService {
                 before: { statusAprovacao: statusAnterior },
                 after: { statusAprovacao: empresa.statusAprovacao },
                 reason: aprovada ? null : motivo || null
+            },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
+        return empresa;
+    }
+
+    /**
+     * Selo de confiança "Empresa verificada" — independente da aprovação
+     * cadastral (`statusAprovacao`). Reaproveita o campo `empresaVerificada`
+     * que já existe no schema; não precisa de migration. Pode ser
+     * concedido ou removido a qualquer momento, em qualquer status de
+     * aprovação (uma empresa pode perder a verificação sem deixar de
+     * poder publicar vagas, por exemplo).
+     */
+    async verificarEmpresa(id, { verificada }, solicitante, contexto = {}) {
+        const empresa = await Empresa.findByPk(id);
+
+        if (!empresa) {
+            throw ApiError.notFound("Empresa não encontrada.");
+        }
+
+        const estadoAnterior = empresa.empresaVerificada;
+
+        await empresa.update({ empresaVerificada: Boolean(verificada) });
+
+        await AdminAuditService.log({
+            adminId: solicitante.id,
+            acao: verificada ? "VERIFICAR_EMPRESA" : "REMOVER_VERIFICACAO_EMPRESA",
+            entidadeTipo: "empresa",
+            entidadeId: empresa.id,
+            descricao: verificada
+                ? `Empresa ${empresa.razaoSocial} recebeu o selo de verificada.`
+                : `Selo de verificada removido da empresa ${empresa.razaoSocial}.`,
+            metadata: {
+                before: { empresaVerificada: estadoAnterior },
+                after: { empresaVerificada: empresa.empresaVerificada }
             },
             ip: contexto.ip,
             userAgent: contexto.userAgent

@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import { empresasService } from "@/services/empresas.service";
 import { useSpeech } from "@/contexts/SpeechContext";
@@ -36,8 +37,18 @@ const PORTES: PorteEmpresa[] = ["MEI", "Micro", "Pequena", "Media", "Grande"];
 export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; children: ReactNode }) {
   const [aberto, setAberto] = useState(false);
   const [porte, setPorte] = useState<string>(empresa.porte ?? "");
+  const [cidade, setCidade] = useState(empresa.cidade ?? "");
+  const [estado, setEstado] = useState(empresa.estado ?? "");
   const { speak } = useSpeech();
   const queryClient = useQueryClient();
+
+  // Reabrir o diálogo sempre reflete os dados mais recentes da empresa.
+  useEffect(() => {
+    if (aberto) {
+      setCidade(empresa.cidade ?? "");
+      setEstado(empresa.estado ?? "");
+    }
+  }, [aberto, empresa.cidade, empresa.estado]);
 
   const invalidarEmpresa = () => queryClient.invalidateQueries({ queryKey: ["minha-empresa"] });
 
@@ -198,11 +209,25 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" name="cidade" maxLength={100} defaultValue={empresa.cidade ?? ""} />
+              <CidadeAutocomplete
+                id="cidade"
+                name="cidade"
+                value={cidade}
+                onChange={setCidade}
+                estado={estado}
+                aria-label="Cidade"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="estado">Estado (UF)</Label>
-              <Input id="estado" name="estado" maxLength={2} placeholder="SP" defaultValue={empresa.estado ?? ""} />
+              <Input
+                id="estado"
+                name="estado"
+                maxLength={2}
+                placeholder="SP"
+                value={estado}
+                onChange={(e) => setEstado(e.target.value.toUpperCase())}
+              />
             </div>
           </div>
 

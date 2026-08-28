@@ -36,7 +36,8 @@ const FILTROS_INICIAIS: FiltrosVagasState = {
   busca: "",
   modalidade: "",
   cidade: "",
-  exclusivaPcd: false,
+  publicoAlvo: "",
+  recursosAcessibilidade: [],
 };
 
 function Vagas() {
@@ -57,7 +58,10 @@ function Vagas() {
         q: filtros.busca || undefined,
         cidade: filtros.cidade || undefined,
         modalidade: filtros.modalidade || undefined,
-        exclusivaPcd: filtros.exclusivaPcd || undefined,
+        publicoAlvo: filtros.publicoAlvo || undefined,
+        recursosAcessibilidade: filtros.recursosAcessibilidade.length
+          ? filtros.recursosAcessibilidade
+          : undefined,
       }),
   });
 

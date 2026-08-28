@@ -201,6 +201,29 @@ class PostagemService {
         return decorada;
     }
 
+    /**
+     * `bruto` é a string JSON enviada pelo cliente (`descricoesAnexos`,
+     * uma por posição de arquivo). Nunca confia no formato do cliente:
+     * qualquer coisa que não seja um array de strings vira lista vazia
+     * silenciosamente (a publicação nunca falha por causa de descrição
+     * malformada — o pior caso é o anexo nascer sem descrição).
+     */
+    parseDescricoesAnexos(bruto) {
+        if (!bruto) return [];
+
+        try {
+            const lista = JSON.parse(bruto);
+
+            if (!Array.isArray(lista)) return [];
+
+            return lista.map((item) =>
+                typeof item === "string" ? item.trim().slice(0, 500) || null : null
+            );
+        } catch {
+            return [];
+        }
+    }
+
     /* ==========================================================
        CRIAR (texto + até 4 anexos)
     ========================================================== */
@@ -243,6 +266,8 @@ class PostagemService {
             );
 
             if (arquivos.length > 0) {
+                const descricoes = this.parseDescricoesAnexos(data.descricoesAnexos);
+
                 await PostagemAnexo.bulkCreate(
                     arquivos.map((arquivo, indice) => ({
                         postagemId: postagem.id,
@@ -251,7 +276,8 @@ class PostagemService {
                         nomeOriginal: arquivo.originalname?.slice(0, 255),
                         mimeType: arquivo.mimetype,
                         tamanhoBytes: arquivo.size,
-                        ordem: indice
+                        ordem: indice,
+                        descricao: descricoes[indice] || null
                     })),
                     { transaction }
                 );
@@ -292,6 +318,35 @@ class PostagemService {
         });
 
         const atualizada = await this.findById(id, solicitante);
+
+        emitirFeed("feed:postagem", { postagem: atualizada, atualizada: true });
+
+        return atualizada;
+    }
+
+    /**
+     * Edita SÓ a descrição acessível de um anexo já publicado — nunca o
+     * arquivo em si (trocar a imagem/vídeo exigiria um novo upload, fora
+     * do escopo desta ação). Mesma autorização de dono que `update`.
+     */
+    async atualizarDescricaoAnexo(postagemId, anexoId, descricao, solicitante) {
+        const postagem = await this.buscarAtiva(postagemId);
+
+        garantirDono(solicitante, postagem.usuarioId);
+
+        const anexo = await PostagemAnexo.findOne({
+            where: { id: anexoId, postagemId }
+        });
+
+        if (!anexo) {
+            throw ApiError.notFound("Anexo não encontrado nesta publicação.");
+        }
+
+        const descricaoLimpa = descricao == null ? null : String(descricao).trim().slice(0, 500) || null;
+
+        await anexo.update({ descricao: descricaoLimpa });
+
+        const atualizada = await this.findById(postagemId, solicitante);
 
         emitirFeed("feed:postagem", { postagem: atualizada, atualizada: true });
 

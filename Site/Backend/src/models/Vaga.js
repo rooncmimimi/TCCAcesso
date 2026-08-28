@@ -107,6 +107,15 @@ const Vaga = sequelize.define(
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: false
+        },
+
+        // ENUM publico_alvo_vaga (migration 0027). Coexiste com
+        // exclusivaPcd por compatibilidade — não remover exclusivaPcd.
+        publicoAlvo: {
+            field: "publico_alvo",
+            type: DataTypes.ENUM("geral", "pcd", "cinquenta_mais", "pcd_cinquenta_mais"),
+            allowNull: false,
+            defaultValue: "geral"
         }
     },
     {

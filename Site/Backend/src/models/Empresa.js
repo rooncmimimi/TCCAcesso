@@ -1,6 +1,13 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
 import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
+import { criarHooksCampoCifrado } from "../utils/campoCifrado.js";
+
+const hooksCnpj = criarHooksCampoCifrado({
+    campoPuro: "cnpj",
+    campoCifrado: "cnpjCifrado",
+    campoHash: "cnpjHash"
+});
 
 /**
  * Tabela: empresas
@@ -22,13 +29,29 @@ const Empresa = sequelize.define(
             unique: true
         },
 
+        // Mantido por compatibilidade com linhas antigas ainda não recifradas
+        // (ver migrations 0029/0030) — gravações novas nunca preenchem este
+        // campo em texto puro (ver hooks no fim do arquivo). A obrigatoriedade
+        // do CNPJ no cadastro é garantida na validação da aplicação, não mais
+        // pela coluna do banco.
         cnpj: {
             type: DataTypes.STRING(14),
-            allowNull: false,
+            allowNull: true,
             unique: true,
             validate: {
                 is: /^\d{14}$/
             }
+        },
+
+        cnpjCifrado: {
+            field: "cnpj_cifrado",
+            type: DataTypes.TEXT
+        },
+
+        cnpjHash: {
+            field: "cnpj_hash",
+            type: DataTypes.STRING(64),
+            unique: true
         },
 
         razaoSocial: {
@@ -146,7 +169,12 @@ const Empresa = sequelize.define(
         tableName: "empresas",
         timestamps: true,
         createdAt: "created_at",
-        updatedAt: "updated_at"
+        updatedAt: "updated_at",
+        hooks: {
+            beforeSave: hooksCnpj.beforeSave,
+            afterSave: hooksCnpj.afterSave,
+            afterFind: hooksCnpj.afterFind
+        }
     }
 );
 

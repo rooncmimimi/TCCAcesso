@@ -74,7 +74,7 @@ class AuthService {
             throw ApiError.conflict("E-mail já cadastrado.");
         }
 
-        if (cpf && (await Candidato.findOne({ where: { cpf } }))) {
+        if (cpf && (await Candidato.findOne({ where: { cpfHash: hashToken(cpf) } }))) {
             throw ApiError.conflict("CPF já cadastrado.");
         }
 
@@ -120,7 +120,7 @@ class AuthService {
             throw ApiError.conflict("E-mail já cadastrado.");
         }
 
-        if (await Empresa.findOne({ where: { cnpj } })) {
+        if (await Empresa.findOne({ where: { cnpjHash: hashToken(cnpj) } })) {
             throw ApiError.conflict("CNPJ já cadastrado.");
         }
 

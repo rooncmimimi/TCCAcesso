@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, fn, col } from "sequelize";
 
 import {
     Usuario,
@@ -37,7 +37,8 @@ class PublicoService {
                                 "nomeFantasia",
                                 "logo",
                                 "cidade",
-                                "estado"
+                                "estado",
+                                "empresaVerificada"
                             ]
                         }
                     ],
@@ -52,10 +53,37 @@ class PublicoService {
                         "logo",
                         "setor",
                         "cidade",
-                        "estado"
+                        "estado",
+                        "empresaVerificada"
                     ],
                     limit: 12,
                     order: [["created_at", "DESC"]]
+                }).then(async (empresas) => {
+                    // Total de vagas abertas por empresa, numa única consulta
+                    // agregada (nunca uma query por empresa) — mesmo padrão
+                    // já usado em VagaService.findByEmpresaAutenticada. Sem
+                    // isso, `totalVagas` nunca existia neste endpoint.
+                    if (empresas.length === 0) return empresas;
+
+                    const contagens = await Vaga.findAll({
+                        where: {
+                            empresaId: empresas.map((e) => e.id),
+                            status: "Aberta",
+                            oculta: false
+                        },
+                        attributes: ["empresaId", [fn("COUNT", col("id")), "total"]],
+                        group: ["empresaId"]
+                    });
+
+                    const totalPorEmpresa = new Map(
+                        contagens.map((c) => [c.empresaId, Number(c.get("total"))])
+                    );
+
+                    return empresas.map((empresa) => {
+                        const objeto = empresa.toJSON();
+                        objeto.totalVagas = totalPorEmpresa.get(empresa.id) ?? 0;
+                        return objeto;
+                    });
                 }),
                 Postagem.findAll({
                     where: { ativo: true, publica: true },

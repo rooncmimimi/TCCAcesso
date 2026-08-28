@@ -1,5 +1,12 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
+import { criarHooksCampoCifrado } from "../utils/campoCifrado.js";
+
+const hooksCpf = criarHooksCampoCifrado({
+    campoPuro: "cpf",
+    campoCifrado: "cpfCifrado",
+    campoHash: "cpfHash"
+});
 
 /**
  * Tabela: candidatos
@@ -27,6 +34,9 @@ const Candidato = sequelize.define(
             unique: true
         },
 
+        // Mantido por compatibilidade com linhas antigas ainda não recifradas
+        // (ver migration 0029) — a partir desta versão, gravações novas nunca
+        // preenchem este campo em texto puro (ver hooks no fim do arquivo).
         cpf: {
             type: DataTypes.STRING(11),
             allowNull: true,
@@ -34,6 +44,17 @@ const Candidato = sequelize.define(
             validate: {
                 is: /^\d{11}$/
             }
+        },
+
+        cpfCifrado: {
+            field: "cpf_cifrado",
+            type: DataTypes.TEXT
+        },
+
+        cpfHash: {
+            field: "cpf_hash",
+            type: DataTypes.STRING(64),
+            unique: true
         },
 
         dataNascimento: {
@@ -115,7 +136,12 @@ const Candidato = sequelize.define(
         tableName: "candidatos",
         timestamps: true,
         createdAt: "created_at",
-        updatedAt: "updated_at"
+        updatedAt: "updated_at",
+        hooks: {
+            beforeSave: hooksCpf.beforeSave,
+            afterSave: hooksCpf.afterSave,
+            afterFind: hooksCpf.afterFind
+        }
     }
 );
 

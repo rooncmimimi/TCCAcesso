@@ -8,12 +8,15 @@ inclusivas.
 
 ```
 TCCACESSO/
-├── Backend/    API REST (Node.js + Express + Sequelize + PostgreSQL)
-└── Frontend/   Aplicação web (React + TypeScript + Vite + TanStack Router)
+├── Site/
+│   ├── Backend/    API REST (Node.js + Express + Sequelize + PostgreSQL)
+│   └── Frontend/   Aplicação web (React + TypeScript + Vite + TanStack Router)
+└── App/
+    └── AcessoApk/  Aplicativo mobile (ainda não iniciado)
 ```
 
-Cada pasta é um projeto independente com seu próprio `package.json`, `.env.example`
-e README com instruções detalhadas.
+Cada pasta em `Site/` é um projeto independente com seu próprio `package.json`,
+`.env.example` e README com instruções detalhadas.
 
 ## Começando
 
@@ -21,13 +24,13 @@ Abra dois terminais no Visual Studio Code:
 
 ```bash
 # Terminal 1 — API
-cd Backend
+cd Site/Backend
 npm install
 cp .env.example .env
 npm run dev
 
 # Terminal 2 — Interface
-cd Frontend
+cd Site/Frontend
 npm install
 cp .env.example .env
 npm run dev
@@ -48,8 +51,8 @@ Nenhuma credencial fica no código.
 
 | Camada    | Serviço | Configuração                                        |
 | --------- | ------- | --------------------------------------------------- |
-| Frontend  | Vercel  | Root Directory `Frontend`, build `npm run build`, saída `dist` |
-| Backend   | Render  | Root Directory `Backend`, start `npm start` (ver `render.yaml`) |
+| Frontend  | Vercel  | Root Directory `Site/Frontend`, build `npm run build`, saída `dist` |
+| Backend   | Render  | Root Directory `Site/Backend`, start `npm start` (ver `render.yaml`) |
 
 Com o repositório conectado a esses serviços, cada `git push` na branch
 principal dispara o deploy automaticamente.

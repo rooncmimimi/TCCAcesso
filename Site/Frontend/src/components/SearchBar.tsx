@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, Building2, FileText, Search } from "lucide-react";
+import { BadgeCheck, Briefcase, Building2, FileText, Search } from "lucide-react";
 
 import {
   CommandDialog,
@@ -131,6 +131,12 @@ export function SearchBar() {
                     </AvatarFallback>
                   </Avatar>
                   <span className="truncate">{empresa.nomeFantasia ?? empresa.razaoSocial}</span>
+                  {empresa.empresaVerificada && (
+                    <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+                      <BadgeCheck className="size-3.5" aria-hidden="true" />
+                      <span className="sr-only">Empresa verificada</span>
+                    </span>
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>

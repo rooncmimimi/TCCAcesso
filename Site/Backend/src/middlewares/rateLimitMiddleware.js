@@ -64,3 +64,21 @@ export const denunciaLimiter = rateLimit({
         mensagem: "Você atingiu o limite de denúncias por hora. Tente novamente mais tarde."
     }
 });
+
+/**
+ * Limite de sugestões de descrição de imagem por IA — 30 por usuário
+ * autenticado por hora. Cada chamada bate num provedor externo (mesmo
+ * sendo o roteador gratuito), então o limite existe para conter custo/
+ * abuso, não porque o recurso em si seja perigoso.
+ */
+export const sugestaoDescricaoLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.user?.id || req.ip,
+    message: {
+        sucesso: false,
+        mensagem: "Você atingiu o limite de sugestões de descrição por hora. Tente novamente mais tarde ou escreva a descrição manualmente."
+    }
+});

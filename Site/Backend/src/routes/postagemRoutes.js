@@ -4,7 +4,8 @@ import ComentarioController from "../controllers/ComentarioController.js";
 import CurtidaController from "../controllers/CurtidaController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import { uploadAnexos, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+import { uploadAnexos, uploadImagem, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+import { sugestaoDescricaoLimiter } from "../middlewares/rateLimitMiddleware.js";
 
 // Anexos de postagem vão para `postagens/<usuarioId>/<uuid>.ext`. O
 // postagemId ainda não existe neste ponto (a postagem é criada depois,
@@ -40,6 +41,17 @@ router.post(
     validarCriacaoPostagem,
     validationMiddleware,
     PostagemController.store
+);
+
+// Sugestão de descrição por IA (OpenRouter) — stateless, nunca grava nada.
+// Imagem enviada só para gerar o texto sugerido; a foto em si nunca é
+// salva aqui (a publicação/edição de anexo continua sendo os fluxos já
+// existentes, que exigem confirmação explícita do usuário).
+router.post(
+    "/anexos/sugerir-descricao",
+    sugestaoDescricaoLimiter,
+    uploadImagem.single("imagem"),
+    PostagemController.sugerirDescricaoAnexo
 );
 
 router.put(

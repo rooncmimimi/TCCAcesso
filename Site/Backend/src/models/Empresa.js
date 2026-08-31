@@ -29,15 +29,15 @@ const Empresa = sequelize.define(
             unique: true
         },
 
-        // Mantido por compatibilidade com linhas antigas ainda não recifradas
-        // (ver migrations 0029/0030) — gravações novas nunca preenchem este
-        // campo em texto puro (ver hooks no fim do arquivo). A obrigatoriedade
-        // do CNPJ no cadastro é garantida na validação da aplicação, não mais
-        // pela coluna do banco.
+        // A coluna em texto puro foi removida do banco (migration 0031) —
+        // este é um campo VIRTUAL agora, nunca persistido diretamente. Os
+        // hooks de `campoCifrado.js` cifram/decifram por baixo dos panos em
+        // `cnpjCifrado`/`cnpjHash`, então todo código que já lia/escrevia
+        // `empresa.cnpj` continua funcionando sem nenhuma mudança. A
+        // obrigatoriedade no cadastro é garantida na validação da aplicação;
+        // a unicidade é garantida pelo índice único em `cnpj_hash`.
         cnpj: {
-            type: DataTypes.STRING(14),
-            allowNull: true,
-            unique: true,
+            type: DataTypes.VIRTUAL(DataTypes.STRING(14)),
             validate: {
                 is: /^\d{14}$/
             }

@@ -36,6 +36,10 @@ class ApiError extends Error {
     static conflict(mensagem) {
         return new ApiError(409, mensagem);
     }
+
+    static serviceUnavailable(mensagem = "Serviço temporariamente indisponível.") {
+        return new ApiError(503, mensagem);
+    }
 }
 
 export default ApiError;

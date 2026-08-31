@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { initials, useSession } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
+import { CampoDescricaoImagem } from "./CampoDescricaoImagem";
 import { useCriarPostagem } from "./hooks";
 import {
   MAX_ANEXOS,
@@ -154,19 +155,30 @@ export function ComposerPostagem() {
                     <X className="size-3.5" aria-hidden="true" />
                   </Button>
 
-                  <div className="mt-2 space-y-1">
-                    <Label htmlFor={`descricao-anexo-${indice}`} className="text-xs font-semibold">
-                      Descrição da imagem (opcional)
-                    </Label>
-                    <Input
-                      id={`descricao-anexo-${indice}`}
-                      value={descricoes[indice] ?? ""}
-                      maxLength={MAX_DESCRICAO}
-                      placeholder="Descreva o que aparece nesta imagem para pessoas que utilizam leitores de tela"
-                      onChange={(e) => alterarDescricao(indice, e.target.value)}
-                      className="h-9 text-xs"
-                    />
-                    <p className="text-[11px] text-muted-foreground">
+                  <div className="mt-2">
+                    {ehImagem(arquivo) ? (
+                      <CampoDescricaoImagem
+                        id={`descricao-anexo-${indice}`}
+                        value={descricoes[indice] ?? ""}
+                        onChange={(valor) => alterarDescricao(indice, valor)}
+                        obterImagem={() => Promise.resolve(arquivo)}
+                      />
+                    ) : (
+                      <>
+                        <Label htmlFor={`descricao-anexo-${indice}`} className="text-xs font-semibold">
+                          Descrição do vídeo (opcional)
+                        </Label>
+                        <Input
+                          id={`descricao-anexo-${indice}`}
+                          value={descricoes[indice] ?? ""}
+                          maxLength={MAX_DESCRICAO}
+                          placeholder="Descreva o que aparece neste vídeo para pessoas que utilizam leitores de tela"
+                          onChange={(e) => alterarDescricao(indice, e.target.value)}
+                          className="h-9 text-xs"
+                        />
+                      </>
+                    )}
+                    <p className="mt-1 text-[11px] text-muted-foreground">
                       A descrição ajuda pessoas que utilizam leitores de tela a compreender o conteúdo visual.
                     </p>
                   </div>

@@ -34,13 +34,15 @@ const Candidato = sequelize.define(
             unique: true
         },
 
-        // Mantido por compatibilidade com linhas antigas ainda não recifradas
-        // (ver migration 0029) — a partir desta versão, gravações novas nunca
-        // preenchem este campo em texto puro (ver hooks no fim do arquivo).
+        // A coluna em texto puro foi removida do banco (migration 0031) —
+        // este é um campo VIRTUAL agora, nunca persistido diretamente. Os
+        // hooks de `campoCifrado.js` cifram/decifram por baixo dos panos em
+        // `cpfCifrado`/`cpfHash`, então todo código que já lia/escrevia
+        // `candidato.cpf` continua funcionando sem nenhuma mudança. A
+        // unicidade é garantida pelo índice único em `cpf_hash`, não mais
+        // por uma constraint nesta coluna (que não existe mais no banco).
         cpf: {
-            type: DataTypes.STRING(11),
-            allowNull: true,
-            unique: true,
+            type: DataTypes.VIRTUAL(DataTypes.STRING(11)),
             validate: {
                 is: /^\d{11}$/
             }

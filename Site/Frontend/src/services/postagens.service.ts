@@ -72,6 +72,21 @@ export const postagensService = {
     return data.postagem;
   },
 
+  /**
+   * Sugestão de descrição por IA (OpenRouter) — nunca salva nada sozinha,
+   * só devolve um texto para o usuário revisar. A imagem só é enviada
+   * quando esta função é chamada (nunca automaticamente).
+   */
+  async sugerirDescricao(imagem: File | Blob): Promise<string> {
+    const form = new FormData();
+    form.append("imagem", imagem, imagem instanceof File ? imagem.name : "imagem.png");
+
+    const { data } = await api.post<{ descricao: string }>("/postagens/anexos/sugerir-descricao", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data.descricao;
+  },
+
   /* ---------------- Curtidas ---------------- */
   async alternarCurtida(postagemId: string): Promise<{ curtido: boolean; totalCurtidas: number }> {
     const { data } = await api.post<{ curtido: boolean; totalCurtidas: number }>(

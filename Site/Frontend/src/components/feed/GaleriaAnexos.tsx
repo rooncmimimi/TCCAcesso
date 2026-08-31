@@ -4,6 +4,7 @@ import { FileText, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { urlArquivo } from "@/services/uploads.service";
+import { CampoDescricaoImagem } from "./CampoDescricaoImagem";
 import { useAtualizarDescricaoAnexo } from "./hooks";
 import type { AnexoPostagem } from "@/types";
 
@@ -29,43 +30,55 @@ function DescricaoAnexo({
 
   if (editando) {
     return (
-      <div className="mt-1.5 flex items-center gap-1.5">
-        <Input
-          value={rascunho}
-          maxLength={MAX_DESCRICAO}
-          autoFocus
-          placeholder="Descreva o que aparece para pessoas que utilizam leitores de tela"
-          onChange={(e) => setRascunho(e.target.value)}
-          className="h-8 text-xs"
-          aria-label={`Descrição acessível do anexo ${anexo.nomeOriginal ?? ""}`}
-        />
-        <Button
-          type="button"
-          size="sm"
-          className="h-8 shrink-0 px-2 text-xs"
-          disabled={atualizar.isPending}
-          onClick={() =>
-            atualizar.mutate(
-              { postagemId, anexoId: anexo.id, descricao: rascunho },
-              { onSuccess: () => setEditando(false) },
-            )
-          }
-        >
-          Salvar
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          aria-label="Cancelar edição da descrição"
-          onClick={() => {
-            setRascunho(anexo.descricao ?? "");
-            setEditando(false);
-          }}
-        >
-          <X className="size-3.5" aria-hidden="true" />
-        </Button>
+      <div className="mt-1.5 space-y-2 rounded-md border border-border p-2">
+        {anexo.tipo === "imagem" ? (
+          <CampoDescricaoImagem
+            id={`descricao-anexo-editar-${anexo.id}`}
+            value={rascunho}
+            onChange={setRascunho}
+            obterImagem={() => fetch(urlArquivo(anexo.url) ?? "").then((resposta) => resposta.blob())}
+            rotulo="Descrição do anexo"
+          />
+        ) : (
+          <Input
+            value={rascunho}
+            maxLength={MAX_DESCRICAO}
+            autoFocus
+            placeholder="Descreva o que aparece para pessoas que utilizam leitores de tela"
+            onChange={(e) => setRascunho(e.target.value)}
+            className="h-8 text-xs"
+            aria-label={`Descrição acessível do anexo ${anexo.nomeOriginal ?? ""}`}
+          />
+        )}
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            className="h-8 shrink-0 px-2 text-xs"
+            disabled={atualizar.isPending}
+            onClick={() =>
+              atualizar.mutate(
+                { postagemId, anexoId: anexo.id, descricao: rascunho },
+                { onSuccess: () => setEditando(false) },
+              )
+            }
+          >
+            Salvar
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 shrink-0 gap-1 px-2 text-xs"
+            aria-label="Cancelar edição da descrição"
+            onClick={() => {
+              setRascunho(anexo.descricao ?? "");
+              setEditando(false);
+            }}
+          >
+            <X className="size-3.5" aria-hidden="true" /> Cancelar
+          </Button>
+        </div>
       </div>
     );
   }

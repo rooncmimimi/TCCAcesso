@@ -1,4 +1,6 @@
 import PostagemService from "../services/PostagemService.js";
+import SugestaoDescricaoService from "../services/SugestaoDescricaoService.js";
+import ApiError from "../utils/ApiError.js";
 
 const contextoDa = (req) => ({
     ip: req.ip,
@@ -62,6 +64,29 @@ class PostagemController {
                 req.user
             );
             return res.status(200).json({ sucesso: true, postagem });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /**
+     * Sugestão de descrição por IA — nunca grava nada, só devolve texto
+     * sugerido para o usuário revisar. Falha do provedor de IA vira um erro
+     * comum (tratado pelo errorMiddleware); o frontend trata isso como
+     * "sugestão indisponível agora", nunca como impedimento para publicar.
+     */
+    async sugerirDescricaoAnexo(req, res, next) {
+        try {
+            if (!req.file) {
+                throw ApiError.badRequest("Envie uma imagem para gerar a sugestão.");
+            }
+
+            const descricao = await SugestaoDescricaoService.sugerir(
+                req.file.buffer,
+                req.file.mimetype
+            );
+
+            return res.status(200).json({ sucesso: true, descricao });
         } catch (erro) {
             return next(erro);
         }

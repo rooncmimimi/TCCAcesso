@@ -105,6 +105,20 @@ const env = {
         // Validade da URL assinada de documentos privados (segundos).
         signedUrlExpiresSeconds:
             Number(process.env.SIGNED_URL_EXPIRES_SECONDS) || 300
+    },
+
+    // Sugestão de descrição de imagem por IA (OpenRouter) — sempre opcional.
+    // Sem `apiKey` configurada, o recurso fica indisponível e a aplicação
+    // continua funcionando normalmente (descrição manual nunca depende
+    // disto). Nunca falha o boot do servidor por causa dessa variável.
+    openRouter: {
+        apiKey: process.env.OPENROUTER_API_KEY || null,
+        // "openrouter/free" é o roteador da própria OpenRouter que escolhe,
+        // no momento da chamada, um modelo de visão gratuito disponível —
+        // gratuito permanente (não crédito promocional), evita depender de
+        // um único modelo/provedor que pode ser descontinuado.
+        model: process.env.OPENROUTER_MODEL || "openrouter/free",
+        timeoutMs: Number(process.env.OPENROUTER_TIMEOUT_MS) || 20000
     }
 };
 

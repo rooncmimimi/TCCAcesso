@@ -32,7 +32,7 @@ const CHAVE = ["usuarios", "bloqueados"] as const;
 
 function UsuariosBloqueados() {
   const queryClient = useQueryClient();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: CHAVE,
@@ -44,7 +44,9 @@ function UsuariosBloqueados() {
     onSuccess: (_dados, usuarioId) => {
       const pessoa = data?.dados.find((u) => u.id === usuarioId);
       toast.success(pessoa ? `${pessoa.nome} foi desbloqueado(a).` : "Usuário desbloqueado.");
-      speak("Usuário desbloqueado com sucesso.");
+      if (choice === "accepted") {
+        speak("Usuário desbloqueado com sucesso.");
+      }
       void queryClient.invalidateQueries({ queryKey: CHAVE });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível desbloquear este usuário.")),

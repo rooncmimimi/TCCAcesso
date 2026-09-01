@@ -171,7 +171,7 @@ export function DenunciasTabela() {
                 <TableRow key={denuncia.id}>
                   <TableCell>{TIPO_ROTULO[denuncia.entidadeTipo] ?? denuncia.entidadeTipo}</TableCell>
                   <TableCell>{MOTIVO_ROTULO[denuncia.motivo] ?? denuncia.motivo}</TableCell>
-                  <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? "—"}</TableCell>
+                  <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? "Usuário removido"}</TableCell>
                   <TableCell>
                     <StatusBadge tom={STATUS_TOM[denuncia.status]}>
                       {STATUS_ROTULO[denuncia.status]}

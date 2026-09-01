@@ -41,6 +41,14 @@ export function JanelaConversa({
   const contato = participanteOposto(conversa, usuarioId);
   const nome = nomeParticipante(contato);
   const foto = fotoParticipante(contato);
+  // Fase 8: `contato` só é `undefined` quando o outro participante excluiu
+  // a conta (backend devolve `usuarioA`/`usuarioB` como `null`) — o
+  // histórico continua visível, só a composição de novas mensagens é
+  // bloqueada, com o mesmo texto usado pelo backend (defesa em
+  // profundidade: mesmo que este aviso falhe, o envio é recusado lá).
+  const semParticipante = !contato;
+  const avisoSemParticipante =
+    "Esta conversa não permite novas mensagens porque o outro usuário foi removido.";
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ block: "end" });
@@ -99,7 +107,7 @@ export function JanelaConversa({
 
         {!carregando && !erro && mensagens.length === 0 && (
           <p className="p-4 text-center text-sm text-muted-foreground" role="status">
-            Nenhuma mensagem ainda. Envie a primeira mensagem para {nome}.
+            {semParticipante ? avisoSemParticipante : `Nenhuma mensagem ainda. Envie a primeira mensagem para ${nome}.`}
           </p>
         )}
 
@@ -113,30 +121,36 @@ export function JanelaConversa({
         <div ref={fimRef} />
       </div>
 
-      <form onSubmit={handleEnviar} className="flex items-end gap-2 border-t border-border p-3">
-        <label htmlFor="mensagem-texto" className="sr-only">
-          Escreva uma mensagem
-        </label>
-        <Textarea
-          id="mensagem-texto"
-          value={texto}
-          onChange={(e) => {
-            setTexto(e.target.value);
-            onDigitando();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleEnviar(e);
-            }
-          }}
-          placeholder="Escreva uma mensagem…"
-          className="min-h-12 flex-1 resize-none"
-        />
-        <Button type="submit" className="h-12 shrink-0" disabled={!texto.trim() || enviando} aria-label="Enviar mensagem">
-          <Send aria-hidden="true" />
-        </Button>
-      </form>
+      {semParticipante ? (
+        <p role="status" className="border-t border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
+          {avisoSemParticipante}
+        </p>
+      ) : (
+        <form onSubmit={handleEnviar} className="flex items-end gap-2 border-t border-border p-3">
+          <label htmlFor="mensagem-texto" className="sr-only">
+            Escreva uma mensagem
+          </label>
+          <Textarea
+            id="mensagem-texto"
+            value={texto}
+            onChange={(e) => {
+              setTexto(e.target.value);
+              onDigitando();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleEnviar(e);
+              }
+            }}
+            placeholder="Escreva uma mensagem…"
+            className="min-h-12 flex-1 resize-none"
+          />
+          <Button type="submit" className="h-12 shrink-0" disabled={!texto.trim() || enviando} aria-label="Enviar mensagem">
+            <Send aria-hidden="true" />
+          </Button>
+        </form>
+      )}
     </section>
   );
 }

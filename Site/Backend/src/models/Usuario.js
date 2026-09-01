@@ -110,6 +110,29 @@ const Usuario = sequelize.define(
             defaultValue: true
         },
 
+        // Migration 0035 (Fase 4). Quem pode INICIAR uma nova conversa com
+        // este usuário — independente de `perfilPublico` (ver
+        // ConversaService.podeIniciarConversa, autoridade central desta
+        // regra; nunca duplicar a lógica em outro lugar). Nunca incluir
+        // este campo nos `attributes` de endpoints que outros usuários
+        // consultam (perfil, resumo) — só o próprio dono/admin deve ver o
+        // valor bruto; para os demais, a informação relevante é o
+        // resultado computado ("pode iniciar conversa?"), não a
+        // configuração em si.
+        preferenciaMensagens: {
+            field: "preferencia_mensagens",
+            type: DataTypes.ENUM(
+                "todos",
+                "seguidores",
+                "seguindo",
+                "mutuo",
+                "empresas",
+                "ninguem"
+            ),
+            allowNull: false,
+            defaultValue: "todos"
+        },
+
         // Migration 0032. DEFAULT true no banco para não afetar contas já
         // existentes — só cadastros novos (AuthService.registerCandidate/
         // registerCompany) gravam `false` explicitamente, exigindo

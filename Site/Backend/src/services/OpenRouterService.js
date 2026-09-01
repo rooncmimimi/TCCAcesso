@@ -8,11 +8,16 @@ const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
  * agregador que dá acesso a modelos de dezenas de provedores por trás de
  * uma única API, sem prender a aplicação a um provedor específico.
  *
- * Modelo padrão: `openrouter/free`, o roteador da própria OpenRouter que
- * escolhe, a cada chamada, um modelo de VISÃO gratuito disponível no
- * momento — gratuito permanente (não é crédito promocional que expira),
- * documentado em https://openrouter.ai/openrouter/free. Configurável via
- * `OPENROUTER_MODEL` caso se queira fixar um modelo específico no futuro.
+ * Modelos: uma lista curada de modelos de VISÃO gratuitos (ver
+ * `env.openRouter.models`), enviada via o parâmetro `models` da API —
+ * a OpenRouter tenta cada um em ordem até um responder. Configurável via
+ * `OPENROUTER_MODEL` (lista separada por vírgula).
+ *
+ * Deliberadamente NÃO usa o roteador "openrouter/free": ele escolhe
+ * qualquer modelo gratuito disponível no momento, inclusive modelos sem
+ * relação com descrever imagem — já confirmado em teste real que ele
+ * pode cair num classificador de moderação de conteúdo e devolver algo
+ * como "User Safety: safe" em vez de uma descrição.
  *
  * Nunca lança o erro cru do provedor para quem chama — sempre um
  * `ApiError` com uma mensagem genérica seguinte ao princípio "nunca expor
@@ -50,7 +55,10 @@ class OpenRouterService {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    model: env.openRouter.model,
+                    // `models` (não `model`): tenta cada um da lista em
+                    // ordem até um responder — ver comentário em env.js
+                    // sobre por que não usamos mais "openrouter/free".
+                    models: env.openRouter.models,
                     messages: [
                         {
                             role: "user",

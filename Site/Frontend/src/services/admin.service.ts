@@ -1,4 +1,5 @@
 import api from "./api";
+import type { AnexoPostagem } from "@/types";
 
 /* ==========================================================
    Tipos devolvidos pelas rotas /admin do backend Express
@@ -27,6 +28,35 @@ export interface ComentarioAdmin {
   created_at?: string;
   usuario?: { id: string; nome: string; email: string; tipoUsuario: string };
   postagem?: { id: string; conteudo: string };
+}
+
+/**
+ * Snapshot mínimo capturado pelo backend ANTES da remoção (Fase 8) — única
+ * fonte usada para descrever o log, inclusive quando a postagem/comentário
+ * original já não existe mais. Nunca inclui e-mail/CPF/CNPJ.
+ */
+export interface SnapshotPostagemRemovida {
+  id: string;
+  autorId: string;
+  nomeAutor: string | null;
+  conteudo: string;
+  midiaPorTipo: Record<string, number>;
+  totalAnexos: number;
+  totalCurtidas: number;
+  totalComentarios: number;
+  publica: boolean;
+  criadaEm: string;
+}
+
+export interface SnapshotComentarioRemovido {
+  id: string;
+  autorId: string;
+  nomeAutor: string | null;
+  conteudo: string;
+  postagemId: string;
+  autorPostagemId: string | null;
+  nomeAutorPostagem: string | null;
+  criadaEm: string;
 }
 
 export interface LogAdmin {
@@ -70,7 +100,12 @@ export interface PostagemAdmin {
   conteudo: string;
   createdAt: string;
   ativo?: boolean;
+  publica?: boolean;
   usuario?: { id: string; nome: string; email: string; tipoUsuario: string };
+  /** Já assinados (URL de exibição pronta) — reaproveita a mesma decoração do feed (Fase 7/8). */
+  anexos?: AnexoPostagem[];
+  totalCurtidas?: number;
+  totalComentarios?: number;
 }
 
 export interface CandidaturaPorStatus {
@@ -208,8 +243,8 @@ export async function ativarUsuario(id: string) {
   return data;
 }
 
-export async function removerUsuario(id: string): Promise<void> {
-  await api.delete(`/admin/usuarios/${id}`);
+export async function removerUsuario(id: string, motivo?: string): Promise<void> {
+  await api.delete(`/admin/usuarios/${id}`, { data: { motivo: motivo ?? null } });
 }
 
 export async function obterUsuario(id: string): Promise<UsuarioAdmin> {
@@ -220,7 +255,7 @@ export async function obterUsuario(id: string): Promise<UsuarioAdmin> {
 /* ==========================================================
    Conteúdo
    ========================================================== */
-export async function listarPostagens(params: { page?: number; limit?: number } = {}) {
+export async function listarPostagens(params: { page?: number; limit?: number; q?: string } = {}) {
   const resposta = await listar<Record<string, unknown>>("/admin/postagens", "postagens", params);
   const postagens = (resposta.postagens as Record<string, unknown>[]).map((item) => ({
     ...item,
@@ -238,7 +273,7 @@ export async function removerComentario(id: string): Promise<void> {
   await api.delete(`/admin/comentarios/${id}`);
 }
 
-export async function listarComentarios(params: { page?: number; limit?: number } = {}) {
+export async function listarComentarios(params: { page?: number; limit?: number; q?: string } = {}) {
   const resposta = await listar<ComentarioAdmin>("/admin/comentarios", "comentarios", params);
   return resposta as typeof resposta & { comentarios: ComentarioAdmin[] };
 }

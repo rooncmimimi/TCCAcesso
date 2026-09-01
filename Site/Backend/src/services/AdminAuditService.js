@@ -25,17 +25,20 @@ class AdminAuditService {
         metadata = null,
         ip = null,
         userAgent = null
-    }) {
-        await AdminAuditLog.create({
-            adminId: adminId ?? null,
-            acao,
-            entidadeTipo,
-            entidadeId,
-            descricao,
-            metadata,
-            ip: ip ? String(ip).slice(0, 64) : null,
-            userAgent: userAgent ? String(userAgent).slice(0, 255) : null
-        });
+    }, { transaction } = {}) {
+        await AdminAuditLog.create(
+            {
+                adminId: adminId ?? null,
+                acao,
+                entidadeTipo,
+                entidadeId,
+                descricao,
+                metadata,
+                ip: ip ? String(ip).slice(0, 64) : null,
+                userAgent: userAgent ? String(userAgent).slice(0, 255) : null
+            },
+            { transaction }
+        );
     }
 
     /**

@@ -1,13 +1,19 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { LogsTabela } from "@/components/admin/LogsTabela";
+import { useSession } from "@/lib/session";
 import adminService from "@/services/admin.service";
 import denunciaService, { MOTIVO_ROTULO } from "@/services/denuncia.service";
 
@@ -20,6 +26,11 @@ export const Route = createFileRoute("/admin/usuarios/$usuarioId")({
 
 function AdminUsuarioDetalhe() {
   const { usuarioId } = Route.useParams();
+  const { user } = useSession();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [excluindo, setExcluindo] = useState(false);
+  const [motivoExclusao, setMotivoExclusao] = useState("");
 
   const { data: usuario, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "usuario", usuarioId],
@@ -30,6 +41,16 @@ function AdminUsuarioDetalhe() {
     queryKey: ["admin", "denuncias", "por-usuario", usuarioId],
     queryFn: () => denunciaService.listarDenuncias({ entidadeTipo: "usuario", entidadeId: usuarioId, limit: 5 }),
     enabled: Boolean(usuario),
+  });
+
+  const mutacaoExclusao = useMutation({
+    mutationFn: () => adminService.removerUsuario(usuarioId, motivoExclusao.trim() || undefined),
+    onSuccess: () => {
+      toast.success("Usuário excluído definitivamente.");
+      queryClient.invalidateQueries({ queryKey: ["admin", "usuarios"] });
+      void navigate({ to: "/admin/usuarios" });
+    },
+    onError: (erro: Error) => toast.error(erro.message || "Não foi possível excluir esta conta."),
   });
 
   if (isLoading) {
@@ -75,6 +96,13 @@ function AdminUsuarioDetalhe() {
           >
             <ExternalLink className="size-4" aria-hidden="true" /> Ver perfil público
           </Link>
+          {/* Mesma restrição do backend (garantirAlvoDeAcaoAdministrativa):
+              nunca oferecida contra a própria conta nem outra conta admin. */}
+          {usuario.tipoUsuario !== "administrador" && usuario.id !== user?.id && (
+            <Button variant="destructive" className="min-h-11" onClick={() => setExcluindo(true)}>
+              <Trash2 className="size-4" aria-hidden="true" /> Excluir conta
+            </Button>
+          )}
         </div>
       </div>
 
@@ -133,6 +161,44 @@ function AdminUsuarioDetalhe() {
           <LogsTabela entidadeId={usuarioId} />
         </CardContent>
       </Card>
+
+      <ConfirmarAcaoDialog
+        open={excluindo}
+        onOpenChange={(aberto) => {
+          if (!aberto) {
+            setExcluindo(false);
+            setMotivoExclusao("");
+          }
+        }}
+        titulo="Excluir conta definitivamente"
+        descricao={
+          <div className="space-y-3">
+            <p>
+              Tem certeza que deseja excluir permanentemente a conta de{" "}
+              <strong>&quot;{usuario.nome}&quot;</strong> ({usuario.email})?
+            </p>
+            <p className="font-semibold text-destructive">
+              Esta ação é irreversível. Todos os dados da conta — perfil, publicações,
+              candidaturas, mensagens e arquivos enviados — serão apagados
+              definitivamente do banco de dados e não poderão ser recuperados.
+            </p>
+            <div>
+              <Label htmlFor="motivo-exclusao-detalhe">Motivo (opcional)</Label>
+              <Textarea
+                id="motivo-exclusao-detalhe"
+                value={motivoExclusao}
+                onChange={(evento) => setMotivoExclusao(evento.target.value)}
+                className="mt-1 min-h-20 resize-none"
+                placeholder="Registrado no log de auditoria administrativa"
+              />
+            </div>
+          </div>
+        }
+        textoConfirmar="Excluir definitivamente"
+        destrutivo
+        carregando={mutacaoExclusao.isPending}
+        onConfirmar={() => mutacaoExclusao.mutate()}
+      />
     </AppShell>
   );
 }

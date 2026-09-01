@@ -11,6 +11,7 @@ import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono, garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
 import AdminAuditService from "./AdminAuditService.js";
 import BloqueioService from "./BloqueioService.js";
+import AdminService from "./AdminService.js";
 
 class UsuarioService {
     async buscarPorId(id) {
@@ -111,7 +112,7 @@ class UsuarioService {
             throw ApiError.notFound("Usuário não encontrado.");
         }
 
-        await BloqueioService.garantirVisibilidadePerfil(usuario, solicitante);
+        await BloqueioService.garantirNaoBloqueado(usuario, solicitante);
 
         return {
             id: usuario.id,
@@ -211,50 +212,18 @@ class UsuarioService {
 
     /* ==========================================================
        EXCLUIR (administrador)
-       O banco remove perfis/relacionamentos via ON DELETE CASCADE.
+
+       Fase 5: delega para `AdminService.removerUsuario` — antes, este
+       método tinha sua própria implementação, incompleta e divergente
+       da exclusão feita pelo painel admin (sem limpeza do Storage, sem
+       arquivar denúncias pendentes contra a conta, log de auditoria
+       fora da transação de exclusão). Esta rota não tem hoje nenhum
+       caller no frontend (o painel usa `/admin/usuarios/:id`), mas
+       continua ativa e alcançável via API — precisa produzir exatamente
+       o mesmo resultado que a exclusão administrativa "oficial".
     ========================================================== */
     async delete(id, solicitante, contexto = {}) {
-        const transaction = await sequelize.transaction();
-        let dadosRemovidos;
-
-        try {
-            const usuario = await Usuario.findByPk(id, { transaction });
-
-            if (!usuario) {
-                throw ApiError.notFound("Usuário não encontrado.");
-            }
-
-            garantirAlvoDeAcaoAdministrativa(usuario, solicitante, {
-                mensagemAutoAcao: "Você não pode excluir a própria conta.",
-                mensagemAdminProtegido:
-                    "Contas administrativas não podem ser excluídas por aqui."
-            });
-
-            dadosRemovidos = {
-                tipoUsuario: usuario.tipoUsuario,
-                nome: usuario.nome,
-                email: usuario.email
-            };
-
-            await usuario.destroy({ transaction });
-            await transaction.commit();
-        } catch (erro) {
-            await transaction.rollback();
-            throw erro;
-        }
-
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "EXCLUIR_USUARIO",
-            entidadeTipo: "usuario",
-            entidadeId: id,
-            descricao: `Usuário ${dadosRemovidos.nome} (${dadosRemovidos.email}) foi excluído permanentemente.`,
-            metadata: { usuario: dadosRemovidos },
-            ip: contexto.ip,
-            userAgent: contexto.userAgent
-        });
-
-        return { mensagem: "Usuário removido com sucesso." };
+        return AdminService.removerUsuario(id, {}, solicitante, contexto);
     }
 }
 

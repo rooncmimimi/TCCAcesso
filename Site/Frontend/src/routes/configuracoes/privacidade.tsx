@@ -1,17 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ChevronRight, ShieldCheck, UserX } from "lucide-react";
+import { ArrowLeft, ChevronRight, MessageSquare, ShieldCheck, UserX } from "lucide-react";
 
 import { AppShell } from "@/layouts/AppShell";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { useSession } from "@/contexts/SessionContext";
 import { useSpeech } from "@/contexts/SpeechContext";
+import type { PreferenciaMensagens } from "@/types";
+
+const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: string }[] = [
+  { value: "todos", label: "Todos" },
+  { value: "seguidores", label: "Apenas seguidores" },
+  { value: "seguindo", label: "Apenas pessoas que você segue" },
+  { value: "mutuo", label: "Apenas seguidores que você também segue" },
+  { value: "empresas", label: "Apenas empresas" },
+  { value: "ninguem", label: "Ninguém" },
+];
 
 export const Route = createFileRoute("/configuracoes/privacidade")({
   head: () => ({
@@ -29,8 +46,9 @@ export const Route = createFileRoute("/configuracoes/privacidade")({
 
 function Privacidade() {
   const { user, update } = useSession();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const perfilPublico = user?.perfilPublico ?? true;
+  const preferenciaMensagens = user?.preferenciaMensagens ?? "todos";
 
   const atualizar = useMutation({
     mutationFn: (valor: boolean) => bloqueioService.atualizarPrivacidade(valor),
@@ -39,7 +57,22 @@ function Privacidade() {
       toast.success(
         resultado.perfilPublico ? "Seu perfil agora é público." : "Seu perfil agora é privado.",
       );
-      speak(resultado.perfilPublico ? "Perfil público ativado." : "Perfil público desativado.");
+      if (choice === "accepted") {
+        speak(resultado.perfilPublico ? "Perfil público ativado." : "Perfil público desativado.");
+      }
+    },
+    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
+  });
+
+  const atualizarMensagens = useMutation({
+    mutationFn: (valor: PreferenciaMensagens) => bloqueioService.atualizarPreferenciaMensagens(valor),
+    onSuccess: (resultado) => {
+      update({ preferenciaMensagens: resultado.preferenciaMensagens });
+      const rotulo = OPCOES_PREFERENCIA_MENSAGENS.find((o) => o.value === resultado.preferenciaMensagens)?.label;
+      toast.success("Preferência de mensagens atualizada.");
+      if (choice === "accepted" && rotulo) {
+        speak(`Quem pode mandar mensagem para você: ${rotulo}.`);
+      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
   });
@@ -74,8 +107,10 @@ function Privacidade() {
                 Perfil público
               </Label>
               <p className="text-sm text-muted-foreground">
-                Quem pode encontrar e visualizar seu perfil. Desativado, só você continua vendo seu próprio
-                perfil — outras pessoas veem uma mensagem de perfil indisponível.
+                Seu nome, foto e informações do perfil continuam visíveis para outras pessoas mesmo
+                desativado. O que muda são suas publicações: com o perfil privado, elas só ficam
+                visíveis para quem você aprovar como seguidor — outras pessoas veem um botão para
+                solicitar seguir você.
               </p>
             </div>
             <Switch
@@ -85,6 +120,38 @@ function Privacidade() {
               onCheckedChange={(valor) => atualizar.mutate(valor)}
               aria-label={`Perfil público, ${perfilPublico ? "ativado" : "desativado"}`}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 shadow-none">
+        <CardContent className="p-5 sm:p-6">
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">Mensagens</h2>
+          <div className="mt-3 space-y-2">
+            <Label htmlFor="preferencia-mensagens" className="font-semibold">
+              Quem pode enviar novas mensagens para você?
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Essa configuração controla quem pode iniciar novas conversas com você. Usuários
+              bloqueados nunca poderão iniciar uma conversa, independentemente desta opção.
+            </p>
+            <Select
+              value={preferenciaMensagens}
+              onValueChange={(valor) => atualizarMensagens.mutate(valor as PreferenciaMensagens)}
+              disabled={atualizarMensagens.isPending}
+            >
+              <SelectTrigger id="preferencia-mensagens" className="mt-1 sm:max-w-sm">
+                <MessageSquare className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {OPCOES_PREFERENCIA_MENSAGENS.map((opcao) => (
+                  <SelectItem key={opcao.value} value={opcao.value}>
+                    {opcao.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

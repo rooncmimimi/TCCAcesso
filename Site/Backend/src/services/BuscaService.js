@@ -5,11 +5,15 @@ import {
     Empresa,
     Candidato,
     Vaga,
-    Postagem
+    Postagem,
+    PostagemAnexo
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao } from "../utils/pagination.js";
+import { ehAdministrador } from "../utils/authorization.js";
 import BloqueioService from "./BloqueioService.js";
+import SeguidorService from "./SeguidorService.js";
+import { assinarMidiaDasPostagens } from "./PostagemService.js";
 
 const TIPOS = ["tudo", "usuarios", "empresas", "vagas", "postagens"];
 
@@ -117,6 +121,9 @@ class BuscaService {
             where: {
                 status: "Aberta",
                 oculta: false,
+                // Fase 9: vaga de empresa suspensa/reprovada/pendente não
+                // aparece na busca — mesmo filtro de VagaService.findAll.
+                "$empresa.status_aprovacao$": "aprovada",
                 [Op.or]: [
                     this.like("Vaga.titulo", termo),
                     this.like("Vaga.descricao", termo),
@@ -139,17 +146,59 @@ class BuscaService {
         return { total: count, itens: rows };
     }
 
-    async buscarPostagens(termo, limite, offset) {
+    /**
+     * `solicitante` (Fase 3): postagens de autor com perfil privado só
+     * entram no resultado se o solicitante for o próprio autor, admin, ou
+     * já seguidor aprovado — mesmo filtro usado no feed geral
+     * (`PostagemService.findAll`), pra busca não virar um jeito alternativo
+     * de contornar a privacidade.
+     */
+    async buscarPostagens(termo, limite, offset, solicitante) {
+        const where = {
+            ativo: true,
+            [Op.and]: [this.like("Postagem.conteudo", termo)]
+        };
+
+        if (solicitante && !ehAdministrador(solicitante)) {
+            const [idsSeguidos, idsBloqueados] = await Promise.all([
+                SeguidorService.idsSeguidos(solicitante.id),
+                // Fase 9 (Bloco 2): mesma exclusão de PostagemService.findAll
+                // — busca nunca é um jeito alternativo de contornar bloqueio.
+                BloqueioService.idsRelacionados(solicitante.id)
+            ]);
+
+            where[Op.or] = [
+                { "$usuario.perfil_publico$": true },
+                { "$usuario.tipo_usuario$": "empresa" },
+                {
+                    usuarioId: {
+                        [Op.in]: [...idsSeguidos, solicitante.id]
+                    }
+                }
+            ];
+
+            if (idsBloqueados.length) {
+                where[Op.and].push({ usuarioId: { [Op.notIn]: idsBloqueados } });
+            }
+        }
+
         const { rows, count } = await Postagem.findAndCountAll({
-            where: {
-                ativo: true,
-                [Op.and]: [this.like("Postagem.conteudo", termo)]
-            },
+            where,
             include: [
                 {
                     model: Usuario,
                     as: "usuario",
                     attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
+                },
+                // Fase 7: sem isso, `assinarMidiaDasPostagens` não acha o
+                // anexo correspondente a `imagem` e resolve a privacidade
+                // errado (público), quebrando a URL de qualquer postagem
+                // enviada depois desta fase.
+                {
+                    model: PostagemAnexo,
+                    as: "anexos",
+                    attributes: ["id", "url", "privado"],
+                    separate: true
                 }
             ],
             limit: limite,
@@ -158,7 +207,13 @@ class BuscaService {
             order: [["created_at", "DESC"]]
         });
 
-        return { total: count, itens: rows };
+        // Fase 7: já filtrado acima (equivalente a garantirAcessoAPostagem)
+        // — resolve a URL de exibição só depois, nunca antes.
+        const planas = rows.map((linha) => linha.toJSON());
+
+        await assinarMidiaDasPostagens(planas);
+
+        return { total: count, itens: planas };
     }
 
     async buscar(query, solicitante) {
@@ -177,7 +232,8 @@ class BuscaService {
                 empresas: () =>
                     this.buscarEmpresas(termo, limite, offset, idsExcluidos),
                 vagas: () => this.buscarVagas(termo, limite, offset),
-                postagens: () => this.buscarPostagens(termo, limite, offset)
+                postagens: () =>
+                    this.buscarPostagens(termo, limite, offset, solicitante)
             };
 
             const resultado = await mapa[tipo]();
@@ -199,7 +255,7 @@ class BuscaService {
             this.buscarUsuarios(termo, limiteResumo, 0, idsExcluidos),
             this.buscarEmpresas(termo, limiteResumo, 0, idsExcluidos),
             this.buscarVagas(termo, limiteResumo, 0),
-            this.buscarPostagens(termo, limiteResumo, 0)
+            this.buscarPostagens(termo, limiteResumo, 0, solicitante)
         ]);
 
         return {

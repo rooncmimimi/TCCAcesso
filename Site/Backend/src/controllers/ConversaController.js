@@ -43,6 +43,24 @@ class ConversaController {
             return next(erro);
         }
     }
+
+    /**
+     * Consulta (nunca lança 4xx) usada pelo frontend para decidir o
+     * estado do botão "Mandar mensagem" ANTES do clique — mesma função
+     * central que `abrir()` usa para de fato autorizar a criação.
+     */
+    async podeIniciar(req, res, next) {
+        try {
+            const resultado = await ConversaService.podeIniciarConversa(
+                req.user.id,
+                req.params.usuarioId
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
 }
 
 export default new ConversaController();

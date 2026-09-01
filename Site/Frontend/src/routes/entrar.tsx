@@ -37,7 +37,7 @@ export const Route = createFileRoute("/entrar")({
 
 function Entrar() {
   const { login } = useSession();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [credenciaisPendentes, setCredenciaisPendentes] = useState<{ email: string; senha: string } | null>(null);
@@ -101,7 +101,9 @@ function Entrar() {
       const mensagem = extrairMensagemErro(erro, "Não foi possível entrar. Verifique seus dados.");
       setError("senha", { message: mensagem });
       toast.error(mensagem);
-      speak(mensagem);
+      if (choice === "accepted") {
+        speak(mensagem);
+      }
     } finally {
       setEnviando(false);
     }
@@ -133,12 +135,16 @@ function Entrar() {
       }
       if ("contaPausada" in resultado) return;
       toast.success("Conta reativada. Bem-vindo de volta!");
-      speak("Conta reativada. Bem-vindo de volta!");
+      if (choice === "accepted") {
+        speak("Conta reativada. Bem-vindo de volta!");
+      }
       navigate({ to: "/feed" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível reativar a conta.");
       toast.error(mensagem);
-      speak(mensagem);
+      if (choice === "accepted") {
+        speak(mensagem);
+      }
     } finally {
       setEnviando(false);
     }
@@ -160,7 +166,9 @@ function Entrar() {
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Código de verificação inválido.");
       setErroCodigo(mensagem);
-      speak(mensagem);
+      if (choice === "accepted") {
+        speak(mensagem);
+      }
       setCodigo("");
     } finally {
       setEnviando(false);

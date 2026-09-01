@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
   Accessibility,
@@ -46,25 +47,28 @@ const nav = [
 export function AppHeader() {
   const { user, autenticado, signOut } = useSession();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [naoLidas, setNaoLidas] = useState(0);
+  // Mesma chave-prefixo ["notificacoes"] usada em notificacoes.tsx — uma
+  // notificação marcada como lida/removida ali invalida esta contagem
+  // automaticamente (react-query invalida por prefixo), sem precisar de
+  // nenhum evento extra. Corrige o contador que antes só incrementava via
+  // socket e nunca diminuía até o próximo reload.
+  const { data: naoLidas = 0 } = useQuery({
+    queryKey: ["notificacoes", "contador"],
+    queryFn: () => notificacoesService.contarNaoLidas(),
+    enabled: autenticado,
+  });
   const [naoLidasMensagens, setNaoLidasMensagens] = useState(0);
   const pathnameAnteriorRef = useRef(pathname);
 
   useEffect(() => {
     if (!autenticado) {
-      setNaoLidas(0);
       setNaoLidasMensagens(0);
       return;
     }
 
     let ativo = true;
-    notificacoesService
-      .contarNaoLidas()
-      .then((total) => {
-        if (ativo) setNaoLidas(total);
-      })
-      .catch(() => undefined);
     mensagensService
       .contarNaoLidas()
       .then((total) => {
@@ -73,7 +77,7 @@ export function AppHeader() {
       .catch(() => undefined);
 
     const pararDeOuvir = ouvirEvento("notificacao:nova", () => {
-      setNaoLidas((atual) => atual + 1);
+      void queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
     });
     const pararDeOuvirMensagem = ouvirEvento("mensagem:nova", () => {
       setNaoLidasMensagens((atual) => atual + 1);
@@ -84,7 +88,7 @@ export function AppHeader() {
       pararDeOuvir();
       pararDeOuvirMensagem();
     };
-  }, [autenticado]);
+  }, [autenticado, queryClient]);
 
   /* Ao sair da tela de mensagens, resincroniza a contagem (o usuário pode ter lido conversas lá). */
   useEffect(() => {

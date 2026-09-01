@@ -10,8 +10,14 @@ import { sugestaoDescricaoLimiter } from "../middlewares/rateLimitMiddleware.js"
 // Anexos de postagem vão para `postagens/<usuarioId>/<uuid>.ext`. O
 // postagemId ainda não existe neste ponto (a postagem é criada depois,
 // na mesma requisição), então agrupamos por autor.
+//
+// `privado: true` (Fase 7): todo anexo novo vai para o bucket PRIVADO,
+// sem exceção — a autorização de exibição (garantirAcessoAPostagem) é
+// sempre checada antes de gerar uma URL assinada, nunca inferida da
+// privacidade do autor no momento do upload (que pode mudar depois).
 const processarAnexosPostagem = criarProcessadorArmazenamento({
-    pasta: (req) => `postagens/${req.user.id}`
+    pasta: (req) => `postagens/${req.user.id}`,
+    privado: true
 });
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
@@ -77,6 +83,31 @@ router.patch(
     validarDescricaoAnexo,
     validationMiddleware,
     PostagemController.atualizarDescricaoAnexo
+);
+
+// Fase 7: única forma de obter uma URL utilizável de um anexo — sempre
+// gerada sob demanda, depois de `garantirAcessoAPostagem` aprovar (nunca
+// uma URL pública fixa). `postagemId` + `anexoId` juntos (não só o
+// anexoId) fecham o caminho de IDOR "trocar o anexoId por um de outra
+// postagem": só resolve se o anexo pertencer À POSTAGEM informada.
+router.get(
+    "/:id/anexos/:anexoId/url",
+    validarUuidParam("id"),
+    validarUuidParam("anexoId"),
+    validationMiddleware,
+    PostagemController.urlAnexo
+);
+
+// Mesma autorização do endpoint acima, mas gera uma URL assinada com
+// `Content-Disposition: attachment` (força download em vez de exibição
+// inline) — reautorizada do zero a cada clique, nunca reaproveita uma
+// URL de exibição já emitida antes.
+router.get(
+    "/:id/anexos/:anexoId/download",
+    validarUuidParam("id"),
+    validarUuidParam("anexoId"),
+    validationMiddleware,
+    PostagemController.downloadAnexo
 );
 
 /* ---------- Comentários ---------- */

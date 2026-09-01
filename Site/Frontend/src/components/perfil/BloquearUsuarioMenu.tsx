@@ -47,7 +47,7 @@ export function BloquearUsuarioMenu({
   denunciaEntidadeId?: string;
 }) {
   const navigate = useNavigate();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const [confirmando, setConfirmando] = useState(false);
   const [denunciando, setDenunciando] = useState(false);
 
@@ -55,13 +55,17 @@ export function BloquearUsuarioMenu({
     mutationFn: () => bloqueioService.bloquear(alvoUsuarioId),
     onSuccess: () => {
       toast.success(`${nome} foi bloqueado(a).`);
-      speak("Usuário bloqueado com sucesso.");
+      if (choice === "accepted") {
+        speak("Usuário bloqueado com sucesso.");
+      }
       setConfirmando(false);
       void navigate({ to: "/feed" });
     },
     onError: (erro) => {
       toast.error(extrairMensagemErro(erro, "Não foi possível bloquear este usuário."));
-      speak("Não foi possível bloquear este usuário.");
+      if (choice === "accepted") {
+        speak("Não foi possível bloquear este usuário.");
+      }
     },
   });
 

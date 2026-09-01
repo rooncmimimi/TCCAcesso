@@ -5,8 +5,10 @@ import {
     Empresa,
     Vaga,
     Postagem,
+    PostagemAnexo,
     Candidatura
 } from "../models/index.js";
+import { assinarMidiaDasPostagens } from "./PostagemService.js";
 
 /**
  * Dados públicos da home (sem autenticação).
@@ -27,7 +29,14 @@ class PublicoService {
         const [vagasDestaque, empresasParceiras, publicacoes] =
             await Promise.all([
                 Vaga.findAll({
-                    where: { status: "Aberta", oculta: false },
+                    where: {
+                        status: "Aberta",
+                        oculta: false,
+                        // Fase 9: mesmo filtro de VagaService.findAll —
+                        // vitrine pública nunca destaca vaga de empresa
+                        // suspensa/reprovada/pendente.
+                        "$empresa.status_aprovacao$": "aprovada"
+                    },
                     include: [
                         {
                             model: Empresa,
@@ -86,7 +95,15 @@ class PublicoService {
                     });
                 }),
                 Postagem.findAll({
-                    where: { ativo: true, publica: true },
+                    // Visitante anônimo nunca pode ser "seguidor aprovado" —
+                    // teaser da home nunca mostra postagem de autor com
+                    // perfil privado, mesmo que a postagem em si seja
+                    // marcada como `publica` (Fase 3).
+                    where: {
+                        ativo: true,
+                        publica: true,
+                        "$usuario.perfil_publico$": true
+                    },
                     include: [
                         {
                             model: Usuario,
@@ -97,10 +114,29 @@ class PublicoService {
                                 "fotoPerfil",
                                 "tipoUsuario"
                             ]
+                        },
+                        // Fase 7: sem isso, `assinarMidiaDasPostagens` não
+                        // tem como saber se `imagem` está no bucket privado
+                        // (não acha o anexo correspondente) e resolve
+                        // errado como público — gerando uma URL quebrada
+                        // pra qualquer postagem enviada depois desta fase.
+                        {
+                            model: PostagemAnexo,
+                            as: "anexos",
+                            attributes: ["id", "url", "privado"],
+                            separate: true
                         }
                     ],
                     limit: 3,
                     order: [["created_at", "DESC"]]
+                }).then(async (postagens) => {
+                    // Fase 7: já filtrado a autor público acima — resolve a
+                    // URL de exibição só depois, nunca antes (mesmo sem
+                    // `solicitante`, é um visitante anônimo — sempre TTL
+                    // longo, decidido internamente pelo helper).
+                    const planas = postagens.map((postagem) => postagem.toJSON());
+                    await assinarMidiaDasPostagens(planas);
+                    return planas;
                 })
             ]);
 

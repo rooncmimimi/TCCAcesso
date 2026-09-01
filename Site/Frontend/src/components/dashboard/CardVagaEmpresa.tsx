@@ -53,7 +53,7 @@ export function CardVagaEmpresa({
   onVerCandidaturas: (vaga: Vaga) => void;
 }) {
   const queryClient = useQueryClient();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
 
   const invalidarListas = () => {
     void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
@@ -65,7 +65,9 @@ export function CardVagaEmpresa({
     mutationFn: (status: StatusVaga) => vagasService.alterarStatus(vaga.id, status),
     onSuccess: (_dados, status) => {
       toast.success(MENSAGEM_STATUS[status]);
-      speak(MENSAGEM_STATUS[status]);
+      if (choice === "accepted") {
+        speak(MENSAGEM_STATUS[status]);
+      }
       invalidarListas();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível alterar o status da vaga.")),
@@ -75,7 +77,9 @@ export function CardVagaEmpresa({
     mutationFn: () => vagasService.remover(vaga.id),
     onSuccess: () => {
       toast.success("Vaga excluída.");
-      speak("Vaga excluída.");
+      if (choice === "accepted") {
+        speak("Vaga excluída.");
+      }
       invalidarListas();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a vaga.")),

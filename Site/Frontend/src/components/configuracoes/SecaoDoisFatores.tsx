@@ -33,7 +33,7 @@ function AtivarDoisFatoresDialog({ onAtivado }: { onAtivado: () => void }) {
   const [codigo, setCodigo] = useState("");
   const [dadosAtivacao, setDadosAtivacao] = useState<AtivacaoDoisFatores | null>(null);
   const [copiado, setCopiado] = useState(false);
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
 
   function reiniciar() {
     setEtapa("senha");
@@ -56,7 +56,9 @@ function AtivarDoisFatoresDialog({ onAtivado }: { onAtivado: () => void }) {
     mutationFn: () => authService.confirmar2FA(codigo),
     onSuccess: () => {
       toast.success("Autenticação de dois fatores ativada.");
-      speak("Autenticação de dois fatores ativada.");
+      if (choice === "accepted") {
+        speak("Autenticação de dois fatores ativada.");
+      }
       setAberto(false);
       reiniciar();
       onAtivado();
@@ -193,13 +195,15 @@ function AtivarDoisFatoresDialog({ onAtivado }: { onAtivado: () => void }) {
 function DesativarDoisFatoresDialog({ onDesativado }: { onDesativado: () => void }) {
   const [aberto, setAberto] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState("");
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
 
   const desativar = useMutation({
     mutationFn: () => authService.desativar2FA(senhaAtual),
     onSuccess: () => {
       toast.success("Autenticação de dois fatores desativada.");
-      speak("Autenticação de dois fatores desativada.");
+      if (choice === "accepted") {
+        speak("Autenticação de dois fatores desativada.");
+      }
       setAberto(false);
       setSenhaAtual("");
       onDesativado();

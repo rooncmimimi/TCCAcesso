@@ -9,7 +9,10 @@ import {
     validarAtualizacaoUsuario,
     validarUuidParam
 } from "../validators/usuarioValidator.js";
-import { validarPrivacidade } from "../validators/bloqueioValidator.js";
+import {
+    validarPrivacidade,
+    validarPreferenciaMensagens
+} from "../validators/bloqueioValidator.js";
 
 const router = Router();
 
@@ -37,6 +40,13 @@ router.put(
     validarPrivacidade,
     validationMiddleware,
     BloqueioController.atualizarPrivacidade
+);
+
+router.put(
+    "/privacidade/mensagens",
+    validarPreferenciaMensagens,
+    validationMiddleware,
+    BloqueioController.atualizarPreferenciaMensagens
 );
 
 router.post(

@@ -104,7 +104,16 @@ const env = {
             process.env.SUPABASE_STORAGE_PRIVATE_BUCKET || "private-documents",
         // Validade da URL assinada de documentos privados (segundos).
         signedUrlExpiresSeconds:
-            Number(process.env.SIGNED_URL_EXPIRES_SECONDS) || 300
+            Number(process.env.SIGNED_URL_EXPIRES_SECONDS) || 300,
+        // Fase 7: validade da URL assinada de mídia de postagem cujo autor
+        // está PÚBLICO/é empresa no momento da leitura — mais longa que
+        // `signedUrlExpiresSeconds` de propósito. Não há ganho de segurança
+        // real em expirar rápido algo que qualquer pessoa já pode ver; uma
+        // validade maior só reduz quantas vezes o backend re-assina a mesma
+        // mídia durante uma sessão normal de navegação no feed. Mídia de
+        // autor PRIVADO continua usando `signedUrlExpiresSeconds` (curta).
+        signedUrlPublicExpiresSeconds:
+            Number(process.env.SIGNED_URL_PUBLIC_EXPIRES_SECONDS) || 21600
     },
 
     // Sugestão de descrição de imagem por IA (OpenRouter) — sempre opcional.
@@ -113,11 +122,24 @@ const env = {
     // disto). Nunca falha o boot do servidor por causa dessa variável.
     openRouter: {
         apiKey: process.env.OPENROUTER_API_KEY || null,
-        // "openrouter/free" é o roteador da própria OpenRouter que escolhe,
-        // no momento da chamada, um modelo de visão gratuito disponível —
-        // gratuito permanente (não crédito promocional), evita depender de
-        // um único modelo/provedor que pode ser descontinuado.
-        model: process.env.OPENROUTER_MODEL || "openrouter/free",
+        // Lista de modelos gratuitos com visão, em ordem de prioridade —
+        // usa o parâmetro `models` da OpenRouter (não `model`), que tenta
+        // o próximo da lista automaticamente se o anterior estiver fora
+        // do ar, limitado, ou recusar por moderação. Deliberadamente NÃO
+        // usa mais o roteador "openrouter/free": ele pode cair num modelo
+        // sem relação nenhuma com descrever imagem (confirmado: já
+        // devolveu a resposta crua de um classificador de moderação de
+        // conteúdo, "nvidia/nemotron-3.5-content-safety", em vez de uma
+        // descrição). Lista testada manualmente contra a API real da
+        // OpenRouter antes de virar padrão — ver relatório no chat.
+        // Configurável via OPENROUTER_MODEL (uma lista separada por
+        // vírgula) para o caso de a disponibilidade de modelos gratuitos
+        // mudar no futuro.
+        models: paraLista(process.env.OPENROUTER_MODEL, [
+            "minimax/minimax-m3:free",
+            "google/gemma-4-31b-it:free",
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+        ]),
         timeoutMs: Number(process.env.OPENROUTER_TIMEOUT_MS) || 20000
     },
 

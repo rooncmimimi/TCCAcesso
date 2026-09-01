@@ -38,7 +38,7 @@ export function EditarPerfilDialog({
   const [cidade, setCidade] = useState(candidato?.cidade ?? "");
   const [estado, setEstado] = useState(candidato?.estado ?? "");
   const { user, update } = useSession();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const queryClient = useQueryClient();
 
   // Reabrir o diálogo sempre reflete os dados mais recentes do candidato.
@@ -81,7 +81,9 @@ export function EditarPerfilDialog({
       update({ nome: usuarioAtualizado.nome, telefone: usuarioAtualizado.telefone });
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
       toast.success("Perfil atualizado.");
-      speak("Perfil atualizado.");
+      if (choice === "accepted") {
+        speak("Perfil atualizado.");
+      }
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil.")),
@@ -92,7 +94,9 @@ export function EditarPerfilDialog({
     onSuccess: (usuarioAtualizado) => {
       update({ capaPerfil: usuarioAtualizado.capaPerfil });
       toast.success("Banner removido.");
-      speak("Banner removido.");
+      if (choice === "accepted") {
+        speak("Banner removido.");
+      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
   });

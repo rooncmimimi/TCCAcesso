@@ -1,5 +1,6 @@
 import { Op } from "sequelize";
 
+import sequelize from "../config/database.js";
 import {
     Usuario,
     Candidato,
@@ -8,10 +9,13 @@ import {
     EmpresaSeguida,
     FavoritoVaga,
     Vaga,
-    Curtida
+    Curtida,
+    SolicitacaoSeguimento,
+    Notificacao
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import { ehAdministrador } from "../utils/authorization.js";
 import NotificacaoService from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
 
@@ -45,7 +49,7 @@ const ATRIBUTOS_EMPRESA_SUGESTAO = [
 class SeguidorService {
     async garantirUsuarioAtivo(usuarioId) {
         const usuario = await Usuario.findByPk(usuarioId, {
-            attributes: [...PERFIL_PUBLICO, "ativo", "bloqueado"]
+            attributes: [...PERFIL_PUBLICO, "ativo", "bloqueado", "perfilPublico"]
         });
 
         if (!usuario || !usuario.ativo || usuario.bloqueado) {
@@ -84,6 +88,16 @@ class SeguidorService {
             };
         }
 
+        // Perfil privado nunca é seguido diretamente por esta rota — o
+        // cliente precisa passar pela solicitação (`solicitar`). Isso vale
+        // mesmo que o frontend "erre" e chame esta rota por engano: o
+        // backend nunca confia só na escolha do cliente (Fase 3).
+        if (!seguido.perfilPublico) {
+            throw ApiError.forbidden(
+                "Este perfil é privado. Envie uma solicitação para seguir."
+            );
+        }
+
         await UsuarioSeguido.create({
             seguidorId: solicitante.id,
             seguidoId
@@ -93,7 +107,11 @@ class SeguidorService {
             usuarioId: seguido.id,
             tipo: "Sistema",
             titulo: "Você tem um novo seguidor",
-            descricao: `${solicitante.nome} começou a seguir você.`
+            descricao: `${solicitante.nome} começou a seguir você.`,
+            subtipo: "novo_seguidor_usuario",
+            entidadeTipo: "usuario",
+            entidadeId: solicitante.id,
+            atorId: solicitante.id
         });
 
         return {
@@ -155,13 +173,196 @@ class SeguidorService {
             usuarioId: empresa.usuarioId,
             tipo: "Sistema",
             titulo: "Novo seguidor",
-            descricao: `${solicitante.nome} começou a seguir sua empresa.`
+            descricao: `${solicitante.nome} começou a seguir sua empresa.`,
+            subtipo: "novo_seguidor_empresa",
+            entidadeTipo: "usuario",
+            entidadeId: solicitante.id,
+            atorId: solicitante.id
         });
 
         return {
             seguindo: true,
             totalSeguidores: await EmpresaSeguida.count({ where: { empresaId } })
         };
+    }
+
+    /* ==========================================================
+       SOLICITAÇÕES DE SEGUIMENTO (perfil privado) — Fase 3
+    ========================================================== */
+
+    /**
+     * Autorização de conteúdo: dono/admin sempre veem; qualquer outro
+     * usuário só se já for seguidor aprovado (`usuarios_seguidos`).
+     * Reaproveitado por todo lugar que precisa decidir se mostra as
+     * publicações de alguém — nunca duplicar esta lógica em outro service.
+     */
+    async podeVerConteudoPrivado(usuarioAlvoId, solicitante) {
+        if (!solicitante) return false;
+
+        if (String(solicitante.id) === String(usuarioAlvoId) || ehAdministrador(solicitante)) {
+            return true;
+        }
+
+        const segue = await UsuarioSeguido.findOne({
+            where: { seguidorId: solicitante.id, seguidoId: usuarioAlvoId }
+        });
+
+        return Boolean(segue);
+    }
+
+    /**
+     * "Seguir" um perfil PRIVADO — cria uma solicitação pendente em vez de
+     * seguir na hora. Se o alvo for público (cliente chamou a rota errada,
+     * ou o perfil mudou de privado pra público entre um clique e outro),
+     * segue direto por robustez — nunca deixa uma solicitação inútil
+     * pendurada contra um perfil que nem precisa mais de aprovação.
+     */
+    async solicitar(destinatarioId, solicitante) {
+        if (String(destinatarioId) === String(solicitante.id)) {
+            throw ApiError.badRequest("Você não pode solicitar seguir a si mesmo.");
+        }
+
+        const destinatario = await this.garantirUsuarioAtivo(destinatarioId);
+
+        if (await BloqueioService.estaBloqueadoEntre(solicitante.id, destinatarioId)) {
+            throw ApiError.forbidden("Você não pode seguir este usuário.");
+        }
+
+        if (destinatario.perfilPublico) {
+            return { ...(await this.alternarUsuario(destinatarioId, solicitante)), solicitacaoCriada: false };
+        }
+
+        const jaSegue = await UsuarioSeguido.findOne({
+            where: { seguidorId: solicitante.id, seguidoId: destinatarioId }
+        });
+
+        if (jaSegue) {
+            throw ApiError.conflict("Você já segue este usuário.");
+        }
+
+        let solicitacao;
+
+        try {
+            solicitacao = await SolicitacaoSeguimento.create({
+                solicitanteId: solicitante.id,
+                destinatarioId
+            });
+        } catch (erro) {
+            if (erro.name === "SequelizeUniqueConstraintError") {
+                throw ApiError.conflict(
+                    "Você já tem uma solicitação pendente para este usuário."
+                );
+            }
+            throw erro;
+        }
+
+        await NotificacaoService.criar({
+            usuarioId: destinatarioId,
+            tipo: "Sistema",
+            titulo: "Nova solicitação para seguir você",
+            descricao: `${solicitante.nome} solicitou seguir você.`,
+            subtipo: "solicitacao_seguimento",
+            entidadeTipo: "solicitacao_seguimento",
+            entidadeId: solicitacao.id,
+            atorId: solicitante.id
+        });
+
+        return { seguindo: false, solicitacaoCriada: true, solicitacaoPendente: true };
+    }
+
+    /** Desiste da própria solicitação pendente — idempotente. */
+    async cancelarSolicitacao(destinatarioId, solicitante) {
+        await SolicitacaoSeguimento.destroy({
+            where: {
+                solicitanteId: solicitante.id,
+                destinatarioId,
+                status: "pendente"
+            }
+        });
+
+        return { solicitacaoPendente: false };
+    }
+
+    /**
+     * Aceitar/recusar — mesma técnica de `RefreshTokenService.rotacionar`
+     * (transação + `SELECT ... FOR UPDATE`): garante que duas tentativas
+     * concorrentes sobre a MESMA solicitação (aceitar duas vezes, aceitar
+     * e recusar ao mesmo tempo, ou o solicitante cancelando enquanto o
+     * destinatário decide) nunca processam a mesma linha duas vezes — a
+     * segunda sempre encontra a linha já apagada pela primeira e recebe um
+     * 404 limpo, nunca um estado inconsistente.
+     *
+     * A linha é SEMPRE apagada ao final (aceita ou recusada) — decisão
+     * explicada no plano: uma solicitação resolvida não tem valor de
+     * histórico (o que importa, o seguimento em si, já fica em
+     * `usuarios_seguidos`), e apagar resolve de graça "não processar a
+     * mesma solicitação duas vezes".
+     */
+    async _resolverSolicitacao(solicitacaoId, solicitante, aceitar) {
+        const transaction = await sequelize.transaction();
+
+        try {
+            const solicitacao = await SolicitacaoSeguimento.findOne({
+                where: {
+                    id: solicitacaoId,
+                    destinatarioId: solicitante.id,
+                    status: "pendente"
+                },
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+
+            if (!solicitacao) {
+                throw ApiError.notFound("Solicitação não encontrada ou já processada.");
+            }
+
+            if (aceitar) {
+                // findOrCreate, não create puro: se por alguma corrida o
+                // seguimento já existir (ex.: o próprio destinatário já
+                // seguia de volta, ou dois cliques quase simultâneos),
+                // nunca falha por violar a UNIQUE de usuarios_seguidos.
+                await UsuarioSeguido.findOrCreate({
+                    where: {
+                        seguidorId: solicitacao.solicitanteId,
+                        seguidoId: solicitacao.destinatarioId
+                    },
+                    transaction
+                });
+            }
+
+            await solicitacao.destroy({ transaction });
+
+            // A notificação original ("fulano solicitou seguir você") deixa
+            // de aparecer como pendente/acionável — mesmo padrão de "marcar
+            // como lida" já usado no resto do app, sem inventar um estado novo.
+            await Notificacao.update(
+                { lida: true },
+                {
+                    where: {
+                        entidadeTipo: "solicitacao_seguimento",
+                        entidadeId: solicitacaoId
+                    },
+                    transaction
+                }
+            );
+
+            await transaction.commit();
+
+            return { aceita: aceitar };
+        } catch (erro) {
+            if (!transaction.finished) {
+                await transaction.rollback();
+            }
+            throw erro;
+        }
+    }
+
+    async aceitarSolicitacao(solicitacaoId, solicitante) {
+        return this._resolverSolicitacao(solicitacaoId, solicitante, true);
+    }
+
+    async recusarSolicitacao(solicitacaoId, solicitante) {
+        return this._resolverSolicitacao(solicitacaoId, solicitante, false);
     }
 
     /* ==========================================================
@@ -219,9 +420,16 @@ class SeguidorService {
         );
     }
 
-    /** Contadores + estado do usuário autenticado em relação ao perfil. */
+    /**
+     * Contadores + estado do usuário autenticado em relação ao perfil.
+     *
+     * `perfilPublico`/`elesSeguemVoce`/`solicitacaoPendente` (Fase 3) são
+     * aditivos — quem já lia só `seguindoEsteUsuario`/os contadores
+     * continua funcionando exatamente como antes.
+     */
     async resumo(usuarioId, solicitante) {
-        const [seguidores, seguindo, relacao] = await Promise.all([
+        const [alvo, seguidores, seguindo, relacao, elesSeguemVoce, solicitacaoPendente] = await Promise.all([
+            Usuario.findByPk(usuarioId, { attributes: ["perfilPublico"] }),
             UsuarioSeguido.count({ where: { seguidoId: usuarioId } }),
             UsuarioSeguido.count({ where: { seguidorId: usuarioId } }),
             solicitante
@@ -231,13 +439,30 @@ class SeguidorService {
                           seguidoId: usuarioId
                       }
                   })
+                : null,
+            solicitante
+                ? UsuarioSeguido.findOne({
+                      where: { seguidorId: usuarioId, seguidoId: solicitante.id }
+                  })
+                : null,
+            solicitante
+                ? SolicitacaoSeguimento.findOne({
+                      where: {
+                          solicitanteId: solicitante.id,
+                          destinatarioId: usuarioId,
+                          status: "pendente"
+                      }
+                  })
                 : null
         ]);
 
         return {
             totalSeguidores: seguidores,
             totalSeguindo: seguindo,
-            seguindoEsteUsuario: Boolean(relacao)
+            seguindoEsteUsuario: Boolean(relacao),
+            perfilPublico: alvo ? Boolean(alvo.perfilPublico) : true,
+            elesSeguemVoce: Boolean(elesSeguemVoce),
+            solicitacaoPendente: Boolean(solicitacaoPendente)
         };
     }
 

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { FileText, Pencil, X } from "lucide-react";
+import { FileText, Maximize2, Pencil, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { urlArquivo } from "@/services/uploads.service";
 import { CampoDescricaoImagem } from "./CampoDescricaoImagem";
+import { LightboxMidia } from "./LightboxMidia";
 import { useAtualizarDescricaoAnexo } from "./hooks";
 import type { AnexoPostagem } from "@/types";
 
@@ -122,11 +123,19 @@ export function GaleriaAnexos({
   postagemId?: string;
   editavel?: boolean;
 }) {
+  const [lightbox, setLightbox] = useState<{ itens: AnexoPostagem[]; indice: number } | null>(null);
+
   if (!anexos?.length) return null;
 
   const imagens = anexos.filter((a) => a.tipo === "imagem");
   const videos = anexos.filter((a) => a.tipo === "video");
   const documentos = anexos.filter((a) => a.tipo === "documento");
+  const midia = [...imagens, ...videos];
+
+  function abrirLightbox(anexo: AnexoPostagem) {
+    const indice = midia.findIndex((item) => item.id === anexo.id);
+    setLightbox({ itens: midia, indice: indice === -1 ? 0 : indice });
+  }
 
   return (
     <div className="mt-4 space-y-3">
@@ -137,11 +146,11 @@ export function GaleriaAnexos({
         >
           {imagens.map((imagem) => (
             <li key={imagem.id}>
-              <a
-                href={urlArquivo(imagem.url)}
-                target="_blank"
-                rel="noreferrer"
-                className="block overflow-hidden rounded-xl border border-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+              <button
+                type="button"
+                onClick={() => abrirLightbox(imagem)}
+                className="block w-full overflow-hidden rounded-xl border border-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                aria-label={`Ampliar imagem${imagem.descricao ? `: ${imagem.descricao}` : ""}`}
               >
                 <img
                   src={urlArquivo(imagem.url)}
@@ -149,7 +158,7 @@ export function GaleriaAnexos({
                   className="max-h-96 w-full object-cover"
                   loading="lazy"
                 />
-              </a>
+              </button>
               {postagemId && (
                 <DescricaoAnexo anexo={imagem} postagemId={postagemId} editavel={editavel} />
               )}
@@ -162,15 +171,27 @@ export function GaleriaAnexos({
         <ul className="space-y-2" aria-label="Vídeos anexados à publicação">
           {videos.map((video) => (
             <li key={video.id}>
-              <video
-                src={urlArquivo(video.url)}
-                controls
-                preload="metadata"
-                aria-label={video.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
-                className="max-h-96 w-full rounded-xl border border-border bg-black"
-              >
-                Seu navegador não suporta a reprodução deste vídeo.
-              </video>
+              <div className="relative overflow-hidden rounded-xl border border-border bg-black">
+                <video
+                  src={urlArquivo(video.url)}
+                  controls
+                  preload="metadata"
+                  aria-label={video.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
+                  className="max-h-96 w-full"
+                >
+                  Seu navegador não suporta a reprodução deste vídeo.
+                </video>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-2 size-8 rounded-full bg-background/80 hover:bg-background"
+                  aria-label={`Ampliar vídeo${video.descricao ? `: ${video.descricao}` : ""}`}
+                  onClick={() => abrirLightbox(video)}
+                >
+                  <Maximize2 className="size-4" aria-hidden="true" />
+                </Button>
+              </div>
               {postagemId && (
                 <DescricaoAnexo anexo={video} postagemId={postagemId} editavel={editavel} />
               )}
@@ -195,6 +216,18 @@ export function GaleriaAnexos({
             </li>
           ))}
         </ul>
+      )}
+
+      {lightbox && (
+        <LightboxMidia
+          aberto={Boolean(lightbox)}
+          onOpenChange={(aberto) => {
+            if (!aberto) setLightbox(null);
+          }}
+          itens={lightbox.itens}
+          indiceInicial={lightbox.indice}
+          postagemId={postagemId}
+        />
       )}
     </div>
   );

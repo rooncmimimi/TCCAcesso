@@ -73,6 +73,19 @@ export const postagensService = {
   },
 
   /**
+   * Fase 7 — URL de download de um anexo, gerada sob demanda a cada
+   * clique (nunca reaproveita a URL de exibição já carregada na tela).
+   * O backend reautoriza do zero e devolve uma URL de curta duração com
+   * download forçado (`Content-Disposition: attachment`).
+   */
+  async urlDownloadAnexo(postagemId: string, anexoId: string): Promise<string> {
+    const { data } = await api.get<{ url: string }>(
+      `/postagens/${postagemId}/anexos/${anexoId}/download`,
+    );
+    return data.url;
+  },
+
+  /**
    * Sugestão de descrição por IA (OpenRouter) — nunca salva nada sozinha,
    * só devolve um texto para o usuário revisar. A imagem só é enviada
    * quando esta função é chamada (nunca automaticamente).

@@ -311,7 +311,7 @@ export function useRemoverComentario(postagemId: string) {
 
 export function useCompartilharPostagem() {
   const queryClient = useQueryClient();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   return useMutation({
     mutationFn: ({ postagemId, comentario }: { postagemId: string; comentario?: string }) =>
       postagensService.compartilhar(postagemId, comentario),
@@ -328,7 +328,9 @@ export function useCompartilharPostagem() {
         atual ? aplicar(atual) : atual,
       );
       toast.success("Publicação compartilhada.");
-      speak("Publicação compartilhada.");
+      if (choice === "accepted") {
+        speak("Publicação compartilhada.");
+      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível compartilhar.")),
   });

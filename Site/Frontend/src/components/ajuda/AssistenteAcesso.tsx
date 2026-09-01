@@ -32,7 +32,7 @@ export function AssistenteAcesso() {
   const [mensagens, setMensagens] = useState<ChatbotMensagem[]>([SAUDACAO]);
   const [texto, setTexto] = useState("");
   const listaRef = useRef<HTMLDivElement>(null);
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const queryClient = useQueryClient();
 
   const enviar = useMutation({
@@ -40,7 +40,9 @@ export function AssistenteAcesso() {
     onSuccess: (dados) => {
       setConversaId(dados.conversa.id);
       setMensagens((atuais) => [...atuais, dados.resposta]);
-      speak(dados.resposta.conteudo, { interrupt: false });
+      if (choice === "accepted") {
+        speak(dados.resposta.conteudo, { interrupt: false });
+      }
       void queryClient.invalidateQueries({ queryKey: ["chatbot", "conversas"] });
     },
     onError: (erro) => {

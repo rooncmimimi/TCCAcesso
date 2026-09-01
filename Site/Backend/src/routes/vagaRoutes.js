@@ -3,6 +3,7 @@ import VagaController from "../controllers/VagaController.js";
 import CandidaturaController from "../controllers/CandidaturaController.js";
 import InteracaoController from "../controllers/InteracaoController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
+import authOpcionalMiddleware from "../middlewares/authOpcionalMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
@@ -28,6 +29,7 @@ router.get(
 
 router.get(
     "/:id",
+    authOpcionalMiddleware,
     validarUuidParam("id"),
     validationMiddleware,
     VagaController.show

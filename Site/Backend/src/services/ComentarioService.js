@@ -17,7 +17,14 @@ const incluirAutor = () => ({
  * centralizadas para evitar regras duplicadas.
  */
 class ComentarioService {
-    async listarPorPostagem(postagemId, query) {
+    /**
+     * `buscarAtiva` já aplica a checagem de acesso a conteúdo privado
+     * (Fase 3) — reaproveitada aqui em vez de duplicada, pra listar
+     * comentários de uma postagem exigir a mesma autorização de vê-la.
+     */
+    async listarPorPostagem(postagemId, query, solicitante) {
+        await PostagemService.buscarAtiva(postagemId, undefined, solicitante);
+
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const { rows, count } = await Comentario.findAndCountAll({
@@ -41,8 +48,8 @@ class ComentarioService {
         return montarResposta("comentarios", rows, count, pagina, limite);
     }
 
-    async create(postagemId, comentario, solicitante) {
-        return PostagemService.comentar(postagemId, comentario, solicitante);
+    async create(postagemId, comentario, solicitante, comentarioPaiId = null) {
+        return PostagemService.comentar(postagemId, comentario, solicitante, comentarioPaiId);
     }
 
     async responder(comentarioPaiId, comentario, solicitante) {

@@ -52,6 +52,19 @@ class BloqueioController {
             return next(erro);
         }
     }
+
+    async atualizarPreferenciaMensagens(req, res, next) {
+        try {
+            const resultado = await BloqueioService.atualizarPreferenciaMensagens(
+                req.user.id,
+                req.body.preferenciaMensagens
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
 }
 
 export default new BloqueioController();

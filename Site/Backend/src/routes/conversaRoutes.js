@@ -25,6 +25,13 @@ router.post(
 router.get("/nao-lidas", ConversaController.naoLidas);
 
 router.get(
+    "/pode-iniciar/:usuarioId",
+    validarUuidParam("usuarioId"),
+    validationMiddleware,
+    ConversaController.podeIniciar
+);
+
+router.get(
     "/:id",
     validarUuidParam("id"),
     validationMiddleware,

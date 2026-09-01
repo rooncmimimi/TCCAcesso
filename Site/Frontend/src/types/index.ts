@@ -1,6 +1,15 @@
 /** Perfis de usuário suportados pela plataforma. */
 export type TipoUsuario = "candidato" | "empresa" | "administrador";
 
+/** Quem pode iniciar uma nova conversa com o usuário (Fase 4). */
+export type PreferenciaMensagens =
+  | "todos"
+  | "seguidores"
+  | "seguindo"
+  | "mutuo"
+  | "empresas"
+  | "ninguem";
+
 export interface Usuario {
   id: string;
   nome: string;
@@ -17,6 +26,8 @@ export interface Usuario {
   ultimoLogin?: string | null;
   pausadoPeloUsuario?: boolean;
   perfilPublico?: boolean;
+  /** Só vem preenchido na resposta pro próprio dono (nunca em perfis de terceiros). */
+  preferenciaMensagens?: PreferenciaMensagens;
 }
 
 /** Usuário bloqueado — item da lista em Configurações → Privacidade. */
@@ -328,13 +339,34 @@ export type { Conversa, Mensagem, ParticipanteConversa } from "@/lib/api-types";
 
 export type TipoNotificacao = string;
 
+/** Quem praticou a ação de uma notificação — nunca traz dado sensível (ver NotificacaoService.INCLUIR_ATOR no backend). */
+export interface AtorNotificacao {
+  id: string;
+  nome: string;
+  fotoPerfil?: string | null;
+}
+
 export interface Notificacao {
   id: string;
   titulo: string;
-  mensagem?: string;
+  /** Campo real do backend (Notificacao.descricao) — nunca "mensagem", que nunca existiu na resposta da API. */
+  descricao?: string;
   tipo: TipoNotificacao;
+  /** String livre (migration 0033) para granularidade de ícone/ação — ausente em notificações anteriores à migration. */
+  subtipo?: string | null;
+  /** Ponteiro polimórfico (sem FK) para o conteúdo relacionado — ausente quando não há destino aplicável. */
+  entidadeTipo?: string | null;
+  entidadeId?: string | null;
+  ator?: AtorNotificacao | null;
   lida: boolean;
-  criadoEm: string;
+  /** Campo real serializado pelo backend (Notificacao usa createdAt: "created_at", que renomeia o próprio atributo) — nunca "criadoEm", que nunca existiu na resposta da API. Confirmado via chamada real à API, não só pelo código-fonte. */
+  created_at: string;
+}
+
+/** Resultado de `GET /conversas/pode-iniciar/:usuarioId` (Fase 4) — nunca lança erro, só informa. */
+export interface PodeIniciarConversa {
+  permitido: boolean;
+  motivo?: string;
 }
 
 export interface RespostaPaginada<T> {
@@ -407,6 +439,12 @@ export interface ResumoSeguidores {
   totalSeguidores: number;
   totalSeguindo: number;
   seguindoEsteUsuario?: boolean;
+  /** Perfil privado/público do alvo (Fase 3) — só usuário/candidato usa isso hoje. */
+  perfilPublico?: boolean;
+  /** O alvo já segue o usuário autenticado — necessário para "Seguir de volta". */
+  elesSeguemVoce?: boolean;
+  /** Usuário autenticado tem uma solicitação de seguir pendente para o alvo (perfil privado). */
+  solicitacaoPendente?: boolean;
 }
 
 export interface SugestaoPerfil {

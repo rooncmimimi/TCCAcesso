@@ -31,7 +31,7 @@ class VagaController {
 
     async show(req, res, next) {
         try {
-            const vaga = await VagaService.findById(req.params.id);
+            const vaga = await VagaService.findById(req.params.id, req.user);
 
             return res.status(200).json({ sucesso: true, vaga });
         } catch (erro) {

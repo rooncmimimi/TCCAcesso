@@ -13,6 +13,8 @@ import { gerarCodigoNumerico, hashToken, compararHash } from "../utils/tokens.js
 import RefreshTokenService from "./RefreshTokenService.js";
 import AutenticacaoDoisFatoresService from "./AutenticacaoDoisFatoresService.js";
 import EmailService from "./EmailService.js";
+import NotificacaoService from "./NotificacaoService.js";
+import AdminService from "./AdminService.js";
 import {
     templateConfirmacaoCadastro,
     templateConfirmacaoTrocaEmail,
@@ -319,6 +321,17 @@ class AuthService {
             throw erro;
         }
 
+        // Best-effort: o usuário ainda não está logado neste momento (é
+        // literalmente o passo que libera o primeiro login), mas a
+        // notificação já fica pronta para quando ele entrar.
+        await NotificacaoService.criar({
+            usuarioId: usuario.id,
+            tipo: "Sistema",
+            titulo: "E-mail confirmado",
+            descricao: "Seu e-mail foi confirmado com sucesso. Sua conta já está pronta para uso.",
+            subtipo: "email_confirmado"
+        });
+
         return { mensagem: "E-mail confirmado com sucesso. Você já pode fazer login." };
     }
 
@@ -525,6 +538,14 @@ class AuthService {
      * operação principal se o envio falhar.
      */
     async avisarSenhaAlterada(usuario) {
+        await NotificacaoService.criar({
+            usuarioId: usuario.id,
+            tipo: "Sistema",
+            titulo: "Senha alterada",
+            descricao: "Sua senha foi alterada com sucesso. Se não foi você, contate o suporte imediatamente.",
+            subtipo: "senha_alterada"
+        });
+
         if (!EmailService.disponivel()) return;
 
         const { assunto, html, texto } = templateSenhaAlterada({ nome: usuario.nome });
@@ -579,6 +600,17 @@ class AuthService {
     /* ==========================================================
        EXCLUIR CONTA (self-service — cascade já auditado no schema)
     ========================================================== */
+    /**
+     * Exclusão definitiva pelo PRÓPRIO usuário (Fase 5) — reaproveita o
+     * mesmo núcleo usado pela exclusão administrativa
+     * (`AdminService.excluirContaDefinitivamente`): limpa o Storage e
+     * arquiva denúncias pendentes contra a conta, exatamente como
+     * acontece quando um admin exclui. Antes da Fase 5 este método só
+     * fazia `usuario.destroy()`, deixando arquivos (foto, capa,
+     * currículo) publicamente acessíveis para sempre e denúncias
+     * pendentes contra a conta paradas na fila de moderação apontando
+     * para ninguém.
+     */
     async excluirConta(usuarioId, senhaAtual) {
         const usuario = await Usuario.scope("comSenha").findByPk(usuarioId);
 
@@ -592,7 +624,7 @@ class AuthService {
             throw ApiError.unauthorized("Senha atual incorreta.");
         }
 
-        await usuario.destroy();
+        await AdminService.excluirContaDefinitivamente(usuario);
 
         return { mensagem: "Conta excluída com sucesso." };
     }
@@ -718,6 +750,14 @@ class AuthService {
             await transaction.rollback();
             throw erro;
         }
+
+        await NotificacaoService.criar({
+            usuarioId: usuario.id,
+            tipo: "Sistema",
+            titulo: "E-mail alterado",
+            descricao: `Seu e-mail de acesso foi alterado para ${usuario.email}.`,
+            subtipo: "email_alterado"
+        });
 
         return { mensagem: "E-mail atualizado com sucesso.", usuario };
     }

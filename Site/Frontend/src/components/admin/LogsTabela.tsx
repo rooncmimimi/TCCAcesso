@@ -15,25 +15,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
-import { listarLogs } from "@/services/admin.service";
+import { DetalheLogSheet } from "@/components/admin/DetalheLogSheet";
+import { listarLogs, type LogAdmin } from "@/services/admin.service";
+import { formatarDataHora } from "@/utils/format";
 
 /**
  * Visualizador de admin_audit_logs — SOMENTE LEITURA. Não existe (e não
  * deve existir) nenhuma ação de editar/excluir aqui: a tabela é
  * conceitualmente imutável, sem endpoint de escrita em nenhuma camada.
+ *
+ * `entidadeId`/`entidadeTipo` (Fase 8): quando informados, mostra só os
+ * logs relacionados àquele recurso — reaproveitado dentro dos detalhes de
+ * usuário/publicação/comentário, em vez de duplicar a listagem.
  */
-export function LogsTabela({ entidadeId }: { entidadeId?: string } = {}) {
+export function LogsTabela({
+  entidadeId,
+  entidadeTipo,
+}: { entidadeId?: string; entidadeTipo?: string } = {}) {
   const [pagina, setPagina] = useState(1);
   const [acao, setAcao] = useState("");
+  const [detalhe, setDetalhe] = useState<LogAdmin | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["admin", "logs", pagina, acao, entidadeId],
+    queryKey: ["admin", "logs", pagina, acao, entidadeId, entidadeTipo],
     queryFn: () =>
       listarLogs({
         page: pagina,
         limit: 10,
         acao: acao || undefined,
         entidadeId,
+        entidadeTipo,
       }),
   });
 
@@ -98,15 +109,30 @@ export function LogsTabela({ entidadeId }: { entidadeId?: string } = {}) {
             </TableHeader>
             <TableBody>
               {logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="font-mono text-xs font-semibold">{log.acao}</TableCell>
+                <TableRow
+                  key={log.id}
+                  className="cursor-pointer hover:bg-secondary/50"
+                  onClick={() => setDetalhe(log)}
+                >
+                  <TableCell className="font-mono text-xs font-semibold">
+                    <button
+                      type="button"
+                      className="text-left underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                      onClick={(evento) => {
+                        evento.stopPropagation();
+                        setDetalhe(log);
+                      }}
+                    >
+                      {log.acao}
+                    </button>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {log.entidadeTipo ?? "—"}
                   </TableCell>
                   <TableCell>{log.admin?.nome ?? "Conta removida"}</TableCell>
                   <TableCell className="max-w-72 truncate">{log.descricao ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(log.created_at).toLocaleString("pt-BR")}
+                    {formatarDataHora(log.created_at)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -121,6 +147,8 @@ export function LogsTabela({ entidadeId }: { entidadeId?: string } = {}) {
           />
         </>
       )}
+
+      <DetalheLogSheet log={detalhe} open={Boolean(detalhe)} onOpenChange={(aberto) => !aberto && setDetalhe(null)} />
     </div>
   );
 }

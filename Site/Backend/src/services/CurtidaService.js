@@ -9,7 +9,14 @@ class CurtidaService {
         return PostagemService.alternarCurtida(postagemId, solicitante);
     }
 
-    async listarPorPostagem(postagemId) {
+    /**
+     * `buscarAtiva` aplica a checagem de acesso a conteúdo privado (Fase 3)
+     * — sem isso, dava pra listar quem curtiu uma postagem privada sem
+     * nunca ter tido acesso a ela.
+     */
+    async listarPorPostagem(postagemId, solicitante) {
+        await PostagemService.buscarAtiva(postagemId, undefined, solicitante);
+
         return Curtida.findAll({
             where: { postagemId },
             include: [

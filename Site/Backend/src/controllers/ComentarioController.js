@@ -10,7 +10,8 @@ class ComentarioController {
         try {
             const dados = await ComentarioService.listarPorPostagem(
                 req.params.postagemId,
-                req.query
+                req.query,
+                req.user
             );
 
             return res.status(200).json({ sucesso: true, ...dados });
@@ -24,7 +25,8 @@ class ComentarioController {
             const comentario = await ComentarioService.create(
                 req.params.postagemId,
                 req.body.comentario,
-                req.user
+                req.user,
+                req.body.comentarioPaiId || null
             );
 
             return res.status(201).json({ sucesso: true, comentario });

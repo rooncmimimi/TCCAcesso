@@ -166,7 +166,9 @@ function AdminDenunciaDetalhe() {
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">Denunciante</p>
               <p className="mt-1 text-sm">
-                {denuncia.denunciante?.nome} ({denuncia.denunciante?.email})
+                {denuncia.denunciante
+                  ? `${denuncia.denunciante.nome} (${denuncia.denunciante.email})`
+                  : "Usuário removido"}
               </p>
             </div>
             <div>

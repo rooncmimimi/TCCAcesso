@@ -92,6 +92,35 @@ class PostagemController {
         }
     }
 
+    /** Fase 7 — URL de exibição inline de um anexo (lightbox/vídeo). */
+    async urlAnexo(req, res, next) {
+        try {
+            const resultado = await PostagemService.gerarUrlAnexo(
+                req.params.id,
+                req.params.anexoId,
+                req.user
+            );
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /** Fase 7 — mesma autorização, URL com download forçado. */
+    async downloadAnexo(req, res, next) {
+        try {
+            const resultado = await PostagemService.gerarUrlAnexo(
+                req.params.id,
+                req.params.anexoId,
+                req.user,
+                { baixar: true }
+            );
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async destroy(req, res, next) {
         try {
             const dados = await PostagemService.delete(

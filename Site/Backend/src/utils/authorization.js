@@ -91,8 +91,13 @@ export const garantirAlvoDeAcaoAdministrativa = (
  * editar o perfil empresarial). Administradores sempre têm acesso —
  * eles usam essas rotas para moderação, independente do status.
  *
- * `statusAprovacao` já existe no schema (`pendente`/`aprovada`/`reprovada`);
- * este helper só passa a dar EFEITO a esse campo, sem alterar o schema.
+ * `statusAprovacao` já existe no schema (`pendente`/`aprovada`/`reprovada`/
+ * `suspensa`, migration 0022); este helper só passa a dar EFEITO a esse
+ * campo, sem alterar o schema. Mensagem específica por estado (Fase 9):
+ * "suspensa" tem causa e tratamento diferentes de "pendente" (moderação
+ * ativa depois de já aprovada, não uma análise inicial em andamento) —
+ * usar a mesma frase genérica de antes ("aguardando aprovação") para os
+ * dois casos confundia o dono da empresa sobre o que de fato aconteceu.
  */
 export const garantirEmpresaAprovada = (empresa, solicitante) => {
     if (ehAdministrador(solicitante)) {
@@ -103,6 +108,14 @@ export const garantirEmpresaAprovada = (empresa, solicitante) => {
         return;
     }
 
+    if (empresa.statusAprovacao === "suspensa") {
+        throw ApiError.forbidden(
+            empresa.motivoSuspensao
+                ? `Sua empresa está suspensa pela moderação do ACESSO. Motivo: ${empresa.motivoSuspensao}`
+                : "Sua empresa está suspensa pela moderação do ACESSO."
+        );
+    }
+
     if (empresa.statusAprovacao === "reprovada") {
         throw ApiError.forbidden(
             empresa.motivoReprovacao
@@ -111,8 +124,25 @@ export const garantirEmpresaAprovada = (empresa, solicitante) => {
         );
     }
 
-    // pendente (ou qualquer outro valor futuro que não seja "aprovada")
+    // pendente (ou qualquer outro valor futuro que não seja um dos acima)
     throw ApiError.forbidden(
         "Sua empresa está aguardando aprovação da equipe do ACESSO. Você receberá uma notificação quando a análise for concluída."
     );
+};
+
+/**
+ * Vaga cuja empresa não está aprovada, vista pela perspectiva de um
+ * TERCEIRO (candidato) — nunca pela própria empresa. Reaproveita o mesmo
+ * campo `statusAprovacao` de `garantirEmpresaAprovada`, mas com mensagem
+ * genérica: o motivo da suspensão/reprovação é informação de moderação
+ * entre o ACESSO e a empresa, não algo a expor para quem só está tentando
+ * se candidatar. Nunca chamar isto no lugar de `garantirEmpresaAprovada`
+ * quando quem age é a própria empresa.
+ */
+export const garantirVagaDisponivelParaCandidatura = (empresa) => {
+    if (empresa.statusAprovacao !== "aprovada") {
+        throw ApiError.forbidden(
+            "Esta vaga não está disponível para candidaturas no momento."
+        );
+    }
 };

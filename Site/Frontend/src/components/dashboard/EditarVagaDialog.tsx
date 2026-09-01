@@ -61,13 +61,15 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
       marcado ? [...atuais, recurso] : atuais.filter((r) => r !== recurso),
     );
   }
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
 
   const salvar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => vagasService.atualizar(vaga.id, payload),
     onSuccess: () => {
       toast.success("Vaga atualizada com sucesso.");
-      speak("Vaga atualizada.");
+      if (choice === "accepted") {
+        speak("Vaga atualizada.");
+      }
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["vaga", vaga.id] });

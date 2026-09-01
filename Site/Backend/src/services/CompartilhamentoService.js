@@ -1,3 +1,6 @@
+import { Op } from "sequelize";
+
+import sequelize from "../config/database.js";
 import {
     Compartilhamento,
     Postagem,
@@ -6,7 +9,9 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono } from "../utils/authorization.js";
+import { garantirDono, ehAdministrador } from "../utils/authorization.js";
+import { garantirAcessoAPostagem, assinarMidiaDasPostagens } from "./PostagemService.js";
+import SeguidorService from "./SeguidorService.js";
 import NotificacaoService from "./NotificacaoService.js";
 
 // Fábrica: o Sequelize muta objetos de include, então cada uso precisa de um novo objeto.
@@ -20,18 +25,29 @@ const incluirAutor = () => ({
  * Compartilhamento de postagens do feed.
  */
 class CompartilhamentoService {
-    async buscarPostagemAtiva(postagemId) {
+    /**
+     * `solicitante` é opcional só por compatibilidade com chamadas internas
+     * que não precisam da checagem (nenhuma hoje) — todo caller de fora
+     * deste arquivo deve sempre passar o usuário autenticado (Fase 3): sem
+     * isso, dava pra compartilhar/listar compartilhamentos de uma postagem
+     * de perfil privado sem nunca ter seguido o autor.
+     */
+    async buscarPostagemAtiva(postagemId, solicitante) {
         const postagem = await Postagem.findByPk(postagemId);
 
         if (!postagem || !postagem.ativo) {
             throw ApiError.notFound("Postagem não encontrada.");
         }
 
+        if (solicitante !== undefined) {
+            await garantirAcessoAPostagem(postagem, solicitante);
+        }
+
         return postagem;
     }
 
-    async listarPorPostagem(postagemId, query) {
-        await this.buscarPostagemAtiva(postagemId);
+    async listarPorPostagem(postagemId, query, solicitante) {
+        await this.buscarPostagemAtiva(postagemId, solicitante);
 
         const { pagina, limite, offset } = resolverPaginacao(query);
 
@@ -52,9 +68,39 @@ class CompartilhamentoService {
         );
     }
 
-    /** Compartilhamentos feitos por um usuário — usado na aba "Compartilhamentos" do perfil. */
-    async listarPorUsuario(usuarioId, query) {
+    /**
+     * Compartilhamentos feitos por um usuário — usado na aba
+     * "Compartilhamentos" do perfil. As postagens compartilhadas podem ser
+     * de QUALQUER autor; se o autor original for privado e o solicitante
+     * não tiver acesso (dono/admin/seguidor aprovado), o compartilhamento é
+     * excluído da lista — nunca vaza o conteúdo da postagem original só
+     * porque alguém a compartilhou (Fase 3).
+     */
+    async listarPorUsuario(usuarioId, query, solicitante) {
         const { pagina, limite, offset } = resolverPaginacao(query);
+
+        const wherePostagem = { ativo: true };
+
+        if (solicitante && !ehAdministrador(solicitante)) {
+            const idsSeguidos = await SeguidorService.idsSeguidos(solicitante.id);
+
+            // `$postagem.usuario.perfil_publico$` (dois níveis de associação
+            // a partir de Compartilhamento) gera SQL inválido no COUNT
+            // automático do `findAndCountAll` (o JOIN de "usuario" não
+            // existe ainda no ponto em que a condição é aplicada) — um
+            // `EXISTS` correlacionado evita depender desse caminho
+            // multi-nível e funciona igual no SELECT e no COUNT.
+            wherePostagem[Op.or] = [
+                sequelize.literal(
+                    `EXISTS (SELECT 1 FROM usuarios u WHERE u.id = "postagem"."usuario_id" AND (u.perfil_publico = true OR u.tipo_usuario = 'empresa'))`
+                ),
+                {
+                    usuarioId: {
+                        [Op.in]: [...idsSeguidos, solicitante.id]
+                    }
+                }
+            ];
+        }
 
         const { rows, count } = await Compartilhamento.findAndCountAll({
             where: { usuarioId },
@@ -62,7 +108,7 @@ class CompartilhamentoService {
                 {
                     model: Postagem,
                     as: "postagem",
-                    where: { ativo: true },
+                    where: wherePostagem,
                     required: true,
                     include: [
                         incluirAutor(),
@@ -76,9 +122,17 @@ class CompartilhamentoService {
             order: [["created_at", "DESC"]]
         });
 
+        // Fase 7: já filtrado pelo `wherePostagem` acima (equivalente ao
+        // `garantirAcessoAPostagem`) — só agora, com o acesso já decidido,
+        // resolve URL de exibição dos anexos da postagem original.
+        const planas = rows.map((linha) => linha.toJSON());
+        const postagensDasLinhas = planas.map((linha) => linha.postagem).filter(Boolean);
+
+        await assinarMidiaDasPostagens(postagensDasLinhas);
+
         return montarResposta(
             "compartilhamentos",
-            rows,
+            planas,
             count,
             pagina,
             limite
@@ -86,7 +140,7 @@ class CompartilhamentoService {
     }
 
     async compartilhar(postagemId, comentario, solicitante) {
-        const postagem = await this.buscarPostagemAtiva(postagemId);
+        const postagem = await this.buscarPostagemAtiva(postagemId, solicitante);
 
         const compartilhamento = await Compartilhamento.create({
             postagemId,
@@ -99,7 +153,11 @@ class CompartilhamentoService {
                 usuarioId: postagem.usuarioId,
                 tipo: "Feed",
                 titulo: "Sua publicação foi compartilhada",
-                descricao: `${solicitante.nome} compartilhou sua publicação.`
+                descricao: `${solicitante.nome} compartilhou sua publicação.`,
+                subtipo: "compartilhamento_postagem",
+                entidadeTipo: "postagem",
+                entidadeId: postagem.id,
+                atorId: solicitante.id
             });
         }
 

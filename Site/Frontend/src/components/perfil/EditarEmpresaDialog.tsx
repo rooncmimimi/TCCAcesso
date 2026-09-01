@@ -40,7 +40,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
   const [porte, setPorte] = useState<string>(empresa.porte ?? "");
   const [cidade, setCidade] = useState(empresa.cidade ?? "");
   const [estado, setEstado] = useState(empresa.estado ?? "");
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const queryClient = useQueryClient();
 
   // Reabrir o diálogo sempre reflete os dados mais recentes da empresa.
@@ -58,7 +58,9 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
     onSuccess: () => {
       void invalidarEmpresa();
       toast.success("Perfil da empresa atualizado.");
-      speak("Perfil da empresa atualizado.");
+      if (choice === "accepted") {
+        speak("Perfil da empresa atualizado.");
+      }
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil da empresa.")),
@@ -69,7 +71,9 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
     onSuccess: () => {
       void invalidarEmpresa();
       toast.success("Banner removido.");
-      speak("Banner removido.");
+      if (choice === "accepted") {
+        speak("Banner removido.");
+      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
   });

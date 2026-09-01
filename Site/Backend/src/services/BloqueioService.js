@@ -70,11 +70,42 @@ class BloqueioService {
     }
 
     /**
-     * Garante que `solicitante` pode ver o perfil de `usuarioAlvo` (mesma
-     * mensagem genérica nos dois casos, para não revelar se a causa foi
-     * bloqueio ou privacidade). Dono do perfil e administradores sempre passam.
+     * Garante que `solicitante` pode ver o perfil de `usuarioAlvo` — usada
+     * SÓ para empresa (`EmpresaService`), cujo comportamento de
+     * público/privado a Fase 3 explicitamente não altera (empresas não têm
+     * seguidor "aprovado" pendente — `EmpresaSeguida` é outra tabela, sem
+     * conceito de solicitação). Mesma mensagem genérica nos dois casos
+     * (bloqueio ou privacidade), para não revelar a causa. Dono do perfil e
+     * administradores sempre passam.
      */
     async garantirVisibilidadePerfil(usuarioAlvo, solicitante) {
+        const souDonoOuAdmin =
+            solicitante &&
+            (String(solicitante.id) === String(usuarioAlvo.id) ||
+                ehAdministrador(solicitante));
+
+        if (souDonoOuAdmin) {
+            return;
+        }
+
+        await this.garantirNaoBloqueado(usuarioAlvo, solicitante);
+
+        if (!usuarioAlvo.perfilPublico) {
+            throw ApiError.forbidden("Este perfil não está disponível.");
+        }
+    }
+
+    /**
+     * Só a checagem de bloqueio (sem a checagem de `perfilPublico`) — usada
+     * pelos perfis de USUÁRIO/CANDIDATO (Fase 3): perfil privado deixou de
+     * significar "perfil invisível" para esse caso — o nome, foto, dados
+     * profissionais e contadores continuam visíveis para qualquer usuário
+     * autenticado não bloqueado; só as PUBLICAÇÕES ficam condicionadas a
+     * seguidor aprovado (ver `SeguidorService.podeVerConteudoPrivado`,
+     * aplicado separadamente em `PostagemService`/`ComentarioService`/
+     * `CompartilhamentoService`/`BuscaService`). Dono/admin sempre passam.
+     */
+    async garantirNaoBloqueado(usuarioAlvo, solicitante) {
         const souDonoOuAdmin =
             solicitante &&
             (String(solicitante.id) === String(usuarioAlvo.id) ||
@@ -93,10 +124,6 @@ class BloqueioService {
             if (bloqueado) {
                 throw ApiError.forbidden("Este perfil não está disponível.");
             }
-        }
-
-        if (!usuarioAlvo.perfilPublico) {
-            throw ApiError.forbidden("Este perfil não está disponível.");
         }
     }
 
@@ -217,6 +244,24 @@ class BloqueioService {
         await usuario.save();
 
         return { perfilPublico: usuario.perfilPublico };
+    }
+
+    /**
+     * Quem pode INICIAR uma nova conversa com este usuário (Fase 4) — só
+     * grava a configuração; a autorização em si é decidida por
+     * `ConversaService.podeIniciarConversa`, nunca aqui.
+     */
+    async atualizarPreferenciaMensagens(usuarioId, preferenciaMensagens) {
+        const usuario = await Usuario.findByPk(usuarioId);
+
+        if (!usuario) {
+            throw ApiError.notFound("Usuário não encontrado.");
+        }
+
+        usuario.preferenciaMensagens = preferenciaMensagens;
+        await usuario.save();
+
+        return { preferenciaMensagens: usuario.preferenciaMensagens };
     }
 }
 

@@ -82,7 +82,12 @@ class VagaService {
         } = query;
 
         const where = {
-            status: status || "Aberta"
+            status: status || "Aberta",
+            // Fase 9: vaga de empresa suspensa/reprovada/pendente some dos
+            // fluxos públicos (listagem geral) — mesmo padrão já usado em
+            // PostagemService/PublicoService (`'$associacao.coluna$'`) para
+            // filtrar pela tabela associada sem uma segunda consulta.
+            "$empresa.status_aprovacao$": "aprovada"
         };
 
         if (empresaId) {
@@ -160,9 +165,11 @@ class VagaService {
     }
 
     /* ==========================================================
-       BUSCAR POR ID (público)
+       BUSCAR POR ID (público — rota sem authMiddleware, `solicitante` só
+       existe quando um token válido acompanha a requisição, via
+       `authOpcionalMiddleware`)
     ========================================================== */
-    async findById(id) {
+    async findById(id, solicitante) {
         const vaga = await Vaga.findByPk(id, {
             include: [
                 {
@@ -180,6 +187,21 @@ class VagaService {
         });
 
         if (!vaga) {
+            throw ApiError.notFound("Vaga não encontrada.");
+        }
+
+        // Fase 9: vaga de empresa não aprovada não existe para o público
+        // em geral — mesmo tratamento de "não encontrada" da listagem
+        // (nunca revela a um estranho que a vaga existe mas está
+        // suspensa). A própria empresa dona e o administrador continuam
+        // enxergando (acesso de somente leitura ao próprio histórico,
+        // consistente com `/vagas/minhas`, que nunca filtrou por status).
+        const ehDonoOuAdmin =
+            solicitante &&
+            (String(vaga.empresa.usuarioId) === String(solicitante.id) ||
+                ehAdministrador(solicitante));
+
+        if (vaga.empresa.statusAprovacao !== "aprovada" && !ehDonoOuAdmin) {
             throw ApiError.notFound("Vaga não encontrada.");
         }
 

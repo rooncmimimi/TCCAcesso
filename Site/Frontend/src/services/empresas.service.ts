@@ -104,7 +104,46 @@ export const seguidoresService = {
       totalSeguidores: data.totalSeguidores ?? 0,
       totalSeguindo: data.totalSeguindo ?? 0,
       seguindoEsteUsuario: Boolean(data.seguindoEsteUsuario),
+      perfilPublico: data.perfilPublico ?? true,
+      elesSeguemVoce: Boolean(data.elesSeguemVoce),
+      solicitacaoPendente: Boolean(data.solicitacaoPendente),
     };
+  },
+
+  /**
+   * "Seguir" um perfil privado — cria uma solicitação em vez de seguir na
+   * hora. Se o alvo for público (perfil mudou entre um clique e outro), o
+   * backend segue direto e devolve `solicitacaoCriada: false`.
+   */
+  async solicitar(
+    destinatarioId: string,
+  ): Promise<{ seguindo: boolean; solicitacaoCriada: boolean; solicitacaoPendente: boolean }> {
+    const { data } = await api.post<{
+      seguindo?: boolean;
+      solicitacaoCriada?: boolean;
+      solicitacaoPendente?: boolean;
+    }>(`/seguir/solicitacoes/${destinatarioId}`);
+
+    return {
+      seguindo: Boolean(data.seguindo),
+      solicitacaoCriada: Boolean(data.solicitacaoCriada),
+      solicitacaoPendente: Boolean(data.solicitacaoPendente),
+    };
+  },
+
+  /** Desiste da própria solicitação pendente (botão "Solicitação enviada"). */
+  async cancelarSolicitacao(destinatarioId: string): Promise<void> {
+    await api.delete(`/seguir/solicitacoes/${destinatarioId}`);
+  },
+
+  /** Aceita uma solicitação recebida — vira seguidor; não segue de volta automaticamente. */
+  async aceitarSolicitacao(solicitacaoId: string): Promise<void> {
+    await api.post(`/seguir/solicitacoes/${solicitacaoId}/aceitar`);
+  },
+
+  /** Recusa uma solicitação recebida — nenhum vínculo é criado. */
+  async recusarSolicitacao(solicitacaoId: string): Promise<void> {
+    await api.post(`/seguir/solicitacoes/${solicitacaoId}/recusar`);
   },
 
   /** Mesmo formato de `ResumoSeguidores` para reaproveitar o `SeguirButton` também em empresas. */

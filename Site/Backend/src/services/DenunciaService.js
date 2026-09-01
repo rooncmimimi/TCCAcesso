@@ -401,7 +401,14 @@ class DenunciaService {
             userAgent: contexto.userAgent
         });
 
-        if (novoStatus === "resolvida" || novoStatus === "rejeitada") {
+        // Sem `denuncianteId` (Fase 5, migration 0036): o denunciante
+        // excluiu a própria conta — a denúncia continua existindo e
+        // pode ser resolvida normalmente, só não há mais ninguém pra
+        // notificar sobre o desfecho.
+        if (
+            (novoStatus === "resolvida" || novoStatus === "rejeitada") &&
+            denuncia.denuncianteId
+        ) {
             await NotificacaoService.criar({
                 usuarioId: denuncia.denuncianteId,
                 tipo: "Moderacao",
@@ -409,7 +416,8 @@ class DenunciaService {
                 descricao:
                     novoStatus === "resolvida"
                         ? "Sua denúncia foi analisada e uma ação foi tomada pela nossa equipe."
-                        : "Sua denúncia foi analisada e não identificamos violação das diretrizes da comunidade."
+                        : "Sua denúncia foi analisada e não identificamos violação das diretrizes da comunidade.",
+                subtipo: novoStatus === "resolvida" ? "denuncia_resolvida" : "denuncia_rejeitada"
             });
         }
 

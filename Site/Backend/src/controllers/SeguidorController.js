@@ -104,6 +104,60 @@ class SeguidorController {
             return next(erro);
         }
     }
+
+    /* ---------- Solicitações de seguimento (perfil privado) — Fase 3 ---------- */
+
+    async solicitarSeguir(req, res, next) {
+        try {
+            const dados = await SeguidorService.solicitar(
+                req.params.destinatarioId,
+                req.user
+            );
+
+            return res.status(201).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async cancelarSolicitacao(req, res, next) {
+        try {
+            const dados = await SeguidorService.cancelarSolicitacao(
+                req.params.destinatarioId,
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async aceitarSolicitacao(req, res, next) {
+        try {
+            const dados = await SeguidorService.aceitarSolicitacao(
+                req.params.solicitacaoId,
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async recusarSolicitacao(req, res, next) {
+        try {
+            const dados = await SeguidorService.recusarSolicitacao(
+                req.params.solicitacaoId,
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
 }
 
 export default new SeguidorController();

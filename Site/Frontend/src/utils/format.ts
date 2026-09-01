@@ -14,6 +14,17 @@ const formatadorData = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
+const formatadorDataCurta = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+const formatadorHoraCurta = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 /** Formata um salário em reais; retorna "A combinar" quando não informado. */
 export function formatarSalario(valor?: number | null): string {
   if (valor === null || valor === undefined) return "A combinar";
@@ -45,6 +56,20 @@ export function formatarData(data?: string | Date | null): string {
 
   if (Number.isNaN(referencia.getTime())) return "";
   return formatadorData.format(referencia);
+}
+
+/**
+ * Formata data + hora absolutas no padrão "31/08/2026 às 14:32" — usado
+ * pelas telas administrativas (Fase 8) que precisam mostrar quando algo
+ * aconteceu, não só o dia. Substitui as implementações ad-hoc que existiam
+ * espalhadas (`PostagensTabela`, `LogsTabela`) — nenhum outro lugar deve
+ * formatar data+hora combinadas na mão.
+ */
+export function formatarDataHora(data?: string | Date | null): string {
+  if (!data) return "";
+  const referencia = typeof data === "string" ? new Date(data) : data;
+  if (Number.isNaN(referencia.getTime())) return "";
+  return `${formatadorDataCurta.format(referencia)} às ${formatadorHoraCurta.format(referencia)}`;
 }
 
 /** Retorna uma descrição relativa acessível, como "há 3 dias". */

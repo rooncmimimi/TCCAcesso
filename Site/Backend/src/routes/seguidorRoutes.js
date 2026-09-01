@@ -54,4 +54,34 @@ router.get(
     SeguidorController.resumoEmpresa
 );
 
+/* ---------- Solicitações de seguimento (perfil privado) — Fase 3 ---------- */
+
+router.post(
+    "/solicitacoes/:destinatarioId",
+    validarUuidParam("destinatarioId"),
+    validationMiddleware,
+    SeguidorController.solicitarSeguir
+);
+
+router.delete(
+    "/solicitacoes/:destinatarioId",
+    validarUuidParam("destinatarioId"),
+    validationMiddleware,
+    SeguidorController.cancelarSolicitacao
+);
+
+router.post(
+    "/solicitacoes/:solicitacaoId/aceitar",
+    validarUuidParam("solicitacaoId"),
+    validationMiddleware,
+    SeguidorController.aceitarSolicitacao
+);
+
+router.post(
+    "/solicitacoes/:solicitacaoId/recusar",
+    validarUuidParam("solicitacaoId"),
+    validationMiddleware,
+    SeguidorController.recusarSolicitacao
+);
+
 export default router;

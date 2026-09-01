@@ -4,17 +4,31 @@ import {
     Vaga,
     Empresa,
     Candidato,
-    Usuario,
-    Notificacao
+    Usuario
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { ehAdministrador, garantirEmpresaAprovada } from "../utils/authorization.js";
+import {
+    ehAdministrador,
+    garantirEmpresaAprovada,
+    garantirVagaDisponivelParaCandidatura
+} from "../utils/authorization.js";
 import { STATUS_CANDIDATURA } from "../models/Candidatura.js";
-import { notificacaoPermitida } from "./NotificacaoService.js";
+import NotificacaoService from "./NotificacaoService.js";
+import BloqueioService from "./BloqueioService.js";
 
 /** Status que somente a empresa dona da vaga pode aplicar. */
 const STATUS_EMPRESA = ["Visualizada", "EmAnalise", "Aprovada", "Rejeitada"];
+
+/** Texto por extenso de cada status — usado nas notificações. */
+const ROTULO_STATUS_CANDIDATURA = {
+    Pendente: "Pendente",
+    Visualizada: "Visualizada",
+    EmAnalise: "Em análise",
+    Aprovada: "Aprovada",
+    Rejeitada: "Rejeitada",
+    Cancelada: "Cancelada"
+};
 
 class CandidaturaService {
     async candidatoDoUsuario(usuarioId) {
@@ -56,6 +70,29 @@ class CandidaturaService {
                 throw ApiError.notFound("Vaga não encontrada.");
             }
 
+            // Fase 9: empresa suspensa/reprovada/pendente não pode receber
+            // NOVAS candidaturas, mesmo que a vaga em si ainda esteja com
+            // status "Aberta" (suspender a empresa não altera o status de
+            // cada vaga uma a uma) — checagem por terceiro, nunca a mensagem
+            // usada quando é a própria empresa agindo.
+            garantirVagaDisponivelParaCandidatura(vaga.empresa);
+
+            // Fase 9 (Bloco 2): bloqueio candidato↔empresa, em qualquer
+            // sentido — reaproveita o MESMO `UsuarioBloqueio` já usado para
+            // usuário↔usuário (a empresa não é uma entidade separada,
+            // seu bloqueio é o do próprio `Usuario` dela). Mensagem
+            // genérica, nunca revela que o motivo é bloqueio.
+            if (
+                await BloqueioService.estaBloqueadoEntre(
+                    solicitante.id,
+                    vaga.empresa.usuarioId
+                )
+            ) {
+                throw ApiError.forbidden(
+                    "Não é possível se candidatar a esta vaga."
+                );
+            }
+
             if (vaga.status !== "Aberta") {
                 throw ApiError.badRequest(
                     "Esta vaga não está aberta para candidaturas."
@@ -82,19 +119,28 @@ class CandidaturaService {
                 { transaction }
             );
 
-            if (await notificacaoPermitida(vaga.empresa.usuarioId, "Candidatura")) {
-                await Notificacao.create(
-                    {
-                        usuarioId: vaga.empresa.usuarioId,
-                        tipo: "Candidatura",
-                        titulo: "Nova candidatura recebida",
-                        descricao: `Você recebeu uma nova candidatura para a vaga "${vaga.titulo}".`
-                    },
-                    { transaction }
-                );
-            }
+            const notificacao = await NotificacaoService.criar(
+                {
+                    usuarioId: vaga.empresa.usuarioId,
+                    tipo: "Candidatura",
+                    titulo: "Nova candidatura recebida",
+                    descricao: `${solicitante.nome} se candidatou à vaga "${vaga.titulo}".`,
+                    subtipo: "candidatura_recebida",
+                    entidadeTipo: "vaga",
+                    entidadeId: vaga.id,
+                    atorId: solicitante.id
+                },
+                { transaction }
+            );
 
             await transaction.commit();
+
+            if (notificacao) {
+                NotificacaoService.emitirNotificacaoCriada(
+                    notificacao,
+                    await NotificacaoService.contarNaoLidasDe(vaga.empresa.usuarioId)
+                );
+            }
 
             return candidatura;
         } catch (erro) {
@@ -281,19 +327,28 @@ class CandidaturaService {
 
             await candidatura.update({ status }, { transaction });
 
-            if (await notificacaoPermitida(candidatura.candidato.usuarioId, "Candidatura")) {
-                await Notificacao.create(
-                    {
-                        usuarioId: candidatura.candidato.usuarioId,
-                        tipo: "Candidatura",
-                        titulo: "Atualização na sua candidatura",
-                        descricao: `A vaga "${candidatura.vaga.titulo}" teve sua candidatura marcada como "${status}".`
-                    },
-                    { transaction }
-                );
-            }
+            const notificacao = await NotificacaoService.criar(
+                {
+                    usuarioId: candidatura.candidato.usuarioId,
+                    tipo: "Candidatura",
+                    titulo: "Sua candidatura foi atualizada",
+                    descricao: `Sua candidatura para a vaga "${candidatura.vaga.titulo}" foi atualizada para ${ROTULO_STATUS_CANDIDATURA[status] ?? status}.`,
+                    subtipo: "candidatura_atualizada",
+                    entidadeTipo: "vaga",
+                    entidadeId: candidatura.vaga.id,
+                    atorId: solicitante.id
+                },
+                { transaction }
+            );
 
             await transaction.commit();
+
+            if (notificacao) {
+                NotificacaoService.emitirNotificacaoCriada(
+                    notificacao,
+                    await NotificacaoService.contarNaoLidasDe(candidatura.candidato.usuarioId)
+                );
+            }
 
             return candidatura;
         } catch (erro) {

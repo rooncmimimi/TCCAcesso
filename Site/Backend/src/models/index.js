@@ -47,6 +47,7 @@ import PreferenciaNotificacao from "./PreferenciaNotificacao.js";
 import UsuarioBloqueio from "./UsuarioBloqueio.js";
 import AdminAuditLog from "./AdminAuditLog.js";
 import Denuncia from "./Denuncia.js";
+import SolicitacaoSeguimento from "./SolicitacaoSeguimento.js";
 
 
 /* ======================================================
@@ -191,6 +192,12 @@ Usuario.hasMany(Notificacao, {
     as: "notificacoes"
 });
 Notificacao.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+// Quem praticou a ação (curtiu, seguiu, comentou...) — SET NULL se a
+// conta do ator for excluída depois (migration 0033). Sem `hasMany`
+// recíproco: não há necessidade de listar "notificações que eu causei"
+// a partir de Usuario.
+Notificacao.belongsTo(Usuario, { foreignKey: "atorId", as: "ator" });
 
 /* ======================================================
    CHAT
@@ -384,6 +391,28 @@ Denuncia.belongsTo(Usuario, {
 });
 
 /* ======================================================
+   SOLICITAÇÕES DE SEGUIMENTO (migration 0034, Fase 3)
+====================================================== */
+
+Usuario.hasMany(SolicitacaoSeguimento, {
+    foreignKey: "solicitanteId",
+    as: "solicitacoesEnviadas"
+});
+SolicitacaoSeguimento.belongsTo(Usuario, {
+    foreignKey: "solicitanteId",
+    as: "solicitante"
+});
+
+Usuario.hasMany(SolicitacaoSeguimento, {
+    foreignKey: "destinatarioId",
+    as: "solicitacoesRecebidas"
+});
+SolicitacaoSeguimento.belongsTo(Usuario, {
+    foreignKey: "destinatarioId",
+    as: "destinatario"
+});
+
+/* ======================================================
    ASSISTENTE VIRTUAL
 ====================================================== */
 
@@ -475,6 +504,7 @@ export {
     PreferenciaNotificacao,
     UsuarioBloqueio,
     AdminAuditLog,
-    Denuncia
+    Denuncia,
+    SolicitacaoSeguimento
 };
 

@@ -5,7 +5,8 @@ class CompartilhamentoController {
         try {
             const dados = await CompartilhamentoService.listarPorUsuario(
                 req.params.usuarioId,
-                req.query
+                req.query,
+                req.user
             );
 
             return res.status(200).json({ sucesso: true, ...dados });
@@ -18,7 +19,8 @@ class CompartilhamentoController {
         try {
             const dados = await CompartilhamentoService.listarPorPostagem(
                 req.params.postagemId,
-                req.query
+                req.query,
+                req.user
             );
 
             return res.status(200).json({ sucesso: true, ...dados });

@@ -133,7 +133,7 @@ class PerfilCandidatoService {
             throw ApiError.notFound("Candidato não encontrado.");
         }
 
-        await BloqueioService.garantirVisibilidadePerfil(
+        await BloqueioService.garantirNaoBloqueado(
             candidato.usuario,
             solicitante
         );

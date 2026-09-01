@@ -122,6 +122,7 @@ class AdminController {
         try {
             const dados = await AdminService.removerUsuario(
                 req.params.id,
+                { motivo: req.body?.motivo },
                 req.user,
                 contextoDa(req)
             );

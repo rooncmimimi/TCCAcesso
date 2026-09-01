@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
 import { postagensService } from "@/services/postagens.service";
+import { useSpeech } from "@/contexts/SpeechContext";
 
 type Modo = "escolha" | "ia" | "manual";
 
@@ -40,13 +41,22 @@ export function CampoDescricaoImagem({
 }) {
   const [modo, setModo] = useState<Modo>(value ? "manual" : "escolha");
   const idAnuncio = useId();
+  const { speak, choice } = useSpeech();
 
   const sugerir = useMutation({
     mutationFn: async () => {
       const imagem = await obterImagem();
       return postagensService.sugerirDescricao(imagem);
     },
-    onSuccess: (descricao) => onChange(descricao),
+    onSuccess: (descricao) => {
+      onChange(descricao);
+      // Lê a sugestão em voz alta só pra quem ativou a leitura por voz —
+      // ajuda a conferir se a IA acertou sem precisar ler o campo pequeno
+      // na tela. Nunca fala sozinho se a pessoa desligou esse recurso.
+      if (choice === "accepted") {
+        speak(`Sugestão da inteligência artificial: ${descricao}`);
+      }
+    },
   });
 
   if (modo === "escolha") {

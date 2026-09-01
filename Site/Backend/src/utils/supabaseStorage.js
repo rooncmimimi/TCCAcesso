@@ -92,7 +92,7 @@ export function resolverUrlExibicao(caminho) {
  * como está, marcado como `legado: true` e sem expiração real, em vez de
  * fingir que uma assinatura foi gerada.
  */
-export async function gerarUrlAssinada(caminho, { expiresIn } = {}) {
+export async function gerarUrlAssinada(caminho, { expiresIn, download } = {}) {
     if (!caminho) {
         return null;
     }
@@ -109,7 +109,7 @@ export async function gerarUrlAssinada(caminho, { expiresIn } = {}) {
 
     const { data, error } = await client.storage
         .from(env.storage.privateBucket)
-        .createSignedUrl(caminho, validade);
+        .createSignedUrl(caminho, validade, download ? { download } : undefined);
 
     if (error) {
         throw new Error(`Falha ao gerar URL assinada: ${error.message}`);
@@ -120,4 +120,69 @@ export async function gerarUrlAssinada(caminho, { expiresIn } = {}) {
         expiraEm: new Date(Date.now() + validade * 1000).toISOString(),
         legado: false
     };
+}
+
+/**
+ * Versão em LOTE de `gerarUrlAssinada` — uma única chamada ao Supabase
+ * para vários caminhos (ex.: todos os anexos de todas as postagens de
+ * uma página do feed), em vez de uma chamada por arquivo. Usada pela
+ * Fase 7 (mídia de postagem) para nunca fazer "N publicações → N
+ * chamadas separadas" ao gerar URL de exibição.
+ *
+ * Devolve um array na MESMA ordem/tamanho de `caminhos` — `null` no
+ * índice de qualquer entrada vazia ou que falhou ao assinar (nunca
+ * lança por um item individual falho, só por erro da chamada em lote
+ * inteira). `download`: string (nome sugerido) ou `true` força
+ * `Content-Disposition: attachment` em vez de exibição inline.
+ */
+export async function gerarUrlsAssinadas(caminhos, { expiresIn, download } = {}) {
+    const validade = expiresIn || env.storage.signedUrlExpiresSeconds;
+    const resultado = new Array(caminhos.length).fill(null);
+
+    const indices = [];
+    caminhos.forEach((caminho, i) => {
+        if (!caminho) return;
+
+        if (/^https?:\/\//i.test(caminho) || caminho.startsWith("/uploads/")) {
+            resultado[i] = { url: caminho, expiraEm: null, legado: true };
+            return;
+        }
+
+        if (!storageHabilitado) {
+            resultado[i] = { url: `/uploads/${caminho}`, expiraEm: null, legado: true };
+            return;
+        }
+
+        indices.push(i);
+    });
+
+    if (indices.length === 0) {
+        return resultado;
+    }
+
+    const { data, error } = await client.storage
+        .from(env.storage.privateBucket)
+        .createSignedUrls(
+            indices.map((i) => caminhos[i]),
+            validade,
+            download ? { download } : undefined
+        );
+
+    if (error) {
+        throw new Error(`Falha ao gerar URLs assinadas em lote: ${error.message}`);
+    }
+
+    indices.forEach((i, posicao) => {
+        const item = data[posicao];
+
+        resultado[i] = item?.signedUrl
+            ? {
+                  url: item.signedUrl,
+                  expiraEm: new Date(Date.now() + validade * 1000).toISOString(),
+                  legado: false
+              }
+            : null;
+    });
+
+    return resultado;
 }

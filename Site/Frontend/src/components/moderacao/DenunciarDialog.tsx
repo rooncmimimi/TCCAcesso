@@ -52,7 +52,7 @@ export function DenunciarDialog({
   entidadeId: string;
   nomeExibicao?: string;
 }) {
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const [motivo, setMotivo] = useState<MotivoDenuncia | "">("");
   const [descricao, setDescricao] = useState("");
 
@@ -72,13 +72,17 @@ export function DenunciarDialog({
       }),
     onSuccess: () => {
       toast.success("Denúncia enviada. Nossa equipe vai analisar.");
-      speak("Denúncia enviada com sucesso.");
+      if (choice === "accepted") {
+        speak("Denúncia enviada com sucesso.");
+      }
       limparEFechar();
     },
     onError: (erro) => {
       const mensagem = extrairMensagemErro(erro, "Não foi possível enviar a denúncia.");
       toast.error(mensagem);
-      speak(mensagem);
+      if (choice === "accepted") {
+        speak(mensagem);
+      }
     },
   });
 

@@ -25,7 +25,7 @@ import { useSpeech } from "@/contexts/SpeechContext";
 /** Troca de e-mail: senha atual + novo e-mail, depois confirma com o código enviado ao novo endereço. */
 export function SecaoTrocarEmail() {
   const { user, update } = useSession();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const [aberto, setAberto] = useState(false);
   const [etapa, setEtapa] = useState<"pedido" | "confirmar">("pedido");
   const [senhaAtual, setSenhaAtual] = useState("");
@@ -53,7 +53,9 @@ export function SecaoTrocarEmail() {
     onSuccess: (usuarioAtualizado) => {
       update({ email: usuarioAtualizado.email });
       toast.success("E-mail atualizado com sucesso.");
-      speak("E-mail atualizado com sucesso.");
+      if (choice === "accepted") {
+        speak("E-mail atualizado com sucesso.");
+      }
       setAberto(false);
       reiniciar();
     },

@@ -17,7 +17,8 @@ class CurtidaController {
     async index(req, res, next) {
         try {
             const curtidas = await CurtidaService.listarPorPostagem(
-                req.params.postagemId
+                req.params.postagemId,
+                req.user
             );
 
             return res.status(200).json({ sucesso: true, curtidas });

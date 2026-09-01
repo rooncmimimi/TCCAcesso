@@ -1,5 +1,6 @@
 import { Op, fn, col, literal } from "sequelize";
 
+import sequelize from "../config/database.js";
 import {
     Usuario,
     Empresa,
@@ -7,15 +8,78 @@ import {
     Vaga,
     Candidatura,
     Postagem,
+    PostagemAnexo,
     Comentario,
+    Curtida,
     Deficiencia,
-    CandidatoDeficiencia
+    CandidatoDeficiencia,
+    Denuncia,
+    Arquivo
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
 import NotificacaoService from "./NotificacaoService.js";
 import AdminAuditService from "./AdminAuditService.js";
+import UploadService from "./UploadService.js";
+import PostagemService from "./PostagemService.js";
+
+/**
+ * Nomes legíveis (singular/plural) por tipo de anexo — só para compor a
+ * frase do log de auditoria (Fase 8). Mesmos 3 valores do ENUM de
+ * `PostagemAnexo.tipo`.
+ */
+const NOMES_TIPO_ANEXO = {
+    imagem: ["imagem", "imagens"],
+    video: ["vídeo", "vídeos"],
+    documento: ["documento", "documentos"]
+};
+
+const pluralizar = (quantidade, singular, plural) =>
+    `${quantidade} ${quantidade === 1 ? singular : plural}`;
+
+/**
+ * Monta a descrição em texto corrido do log de "remover postagem"
+ * (Fase 8, Parte 15) a partir de um snapshot já capturado ANTES da
+ * remoção — nunca reconsulta a postagem (que pode já não existir mais
+ * quando o log for lido depois, ver auditoria da Fase 8, item 4).
+ * Exemplo: "Pedro Lima removeu uma publicação de João Silva. A
+ * publicação continha: texto; 1 imagem; 12 curtidas; 3 comentários."
+ */
+function descreverRemocaoPostagem(admin, snapshot) {
+    const partesConteudo = [];
+
+    if (snapshot.conteudo && snapshot.conteudo.trim()) {
+        partesConteudo.push("texto");
+    }
+
+    for (const [tipo, quantidade] of Object.entries(snapshot.midiaPorTipo || {})) {
+        const [singular, plural] = NOMES_TIPO_ANEXO[tipo] || [tipo, tipo];
+        partesConteudo.push(pluralizar(quantidade, singular, plural));
+    }
+
+    if (partesConteudo.length === 0) {
+        partesConteudo.push("nenhum conteúdo registrado");
+    }
+
+    return (
+        `${admin.nome} removeu uma publicação de ${snapshot.nomeAutor ?? "um usuário removido"}. ` +
+        `A publicação continha: ${partesConteudo.join("; ")}; ` +
+        `${pluralizar(snapshot.totalCurtidas, "curtida", "curtidas")}; ` +
+        `${pluralizar(snapshot.totalComentarios, "comentário", "comentários")}.`
+    );
+}
+
+/**
+ * Mesma lógica para "remover comentário" — exemplo: "Pedro Lima removeu
+ * um comentário de João Silva em uma publicação de Maria Souza."
+ */
+function descreverRemocaoComentario(admin, snapshot) {
+    return (
+        `${admin.nome} removeu um comentário de ${snapshot.nomeAutor ?? "um usuário removido"} ` +
+        `em uma publicação de ${snapshot.nomeAutorPostagem ?? "um usuário removido"}.`
+    );
+}
 
 /**
  * Painel administrativo.
@@ -85,7 +149,10 @@ class AdminService {
                 : "Cadastro reprovado",
             descricao: aprovada
                 ? "Sua empresa foi aprovada e já pode publicar vagas."
-                : `Seu cadastro foi reprovado. Motivo: ${motivo || "não informado"}.`
+                : `Seu cadastro foi reprovado. Motivo: ${motivo || "não informado"}.`,
+            subtipo: aprovada ? "empresa_aprovada" : "empresa_reprovada",
+            entidadeTipo: "usuario",
+            entidadeId: empresa.usuarioId
         });
 
         await AdminAuditService.log({
@@ -177,7 +244,10 @@ class AdminService {
             usuarioId: empresa.usuarioId,
             tipo: "Moderacao",
             titulo: "Empresa suspensa",
-            descricao: `Sua empresa foi suspensa pela moderação. Motivo: ${motivo || "não informado"}.`
+            descricao: `Sua empresa foi suspensa pela moderação. Motivo: ${motivo || "não informado"}.`,
+            subtipo: "empresa_suspensa",
+            entidadeTipo: "usuario",
+            entidadeId: empresa.usuarioId
         });
 
         await AdminAuditService.log({
@@ -220,7 +290,10 @@ class AdminService {
             usuarioId: empresa.usuarioId,
             tipo: "Moderacao",
             titulo: "Empresa reativada",
-            descricao: "Sua empresa foi reativada pela moderação e voltou a operar normalmente."
+            descricao: "Sua empresa foi reativada pela moderação e voltou a operar normalmente.",
+            subtipo: "empresa_reativada",
+            entidadeTipo: "usuario",
+            entidadeId: empresa.usuarioId
         });
 
         await AdminAuditService.log({
@@ -332,7 +405,8 @@ class AdminService {
             titulo: novoEstado ? "Conta bloqueada" : "Conta reativada",
             descricao: novoEstado
                 ? `Sua conta foi bloqueada. Motivo: ${motivo || "não informado"}.`
-                : "Sua conta foi reativada pela moderação."
+                : "Sua conta foi reativada pela moderação.",
+            subtipo: novoEstado ? "conta_bloqueada" : "conta_reativada"
         });
 
         await AdminAuditService.log({
@@ -359,30 +433,339 @@ class AdminService {
         };
     }
 
-    async removerUsuario(id, solicitante, contexto = {}) {
-        const usuario = await this.resolverUsuarioModeravel(id, solicitante, {
-            mensagemAutoAcao: "Você não pode excluir a própria conta.",
-            mensagemAdminProtegido:
-                "Contas administrativas não podem ser excluídas por aqui."
+    /**
+     * Reúne toda referência a arquivo do Storage pertencente à conta —
+     * usada só para saber o que apagar do bucket ANTES de excluir a
+     * conta (as linhas do banco em si já são CASCADE, ver removerUsuario).
+     *
+     * `raw: true` em toda leitura aqui é proposital: foto de
+     * perfil/capa/logo/capa de empresa e imagem de postagem/anexo têm
+     * getter que resolve para a URL pública final — para remover do
+     * bucket precisamos do CAMINHO cru salvo no banco, não da URL
+     * resolvida (mesma técnica já usada em UsuarioController ao trocar
+     * foto/capa).
+     */
+    async _coletarArquivosDaConta(usuario) {
+        const itens = [];
+        const vistos = new Set();
+
+        const adicionar = (caminho, privado, origem) => {
+            if (!caminho || vistos.has(caminho)) return;
+            vistos.add(caminho);
+            itens.push({ caminho, privado, origem });
+        };
+
+        const usuarioCru = await Usuario.findByPk(usuario.id, {
+            attributes: ["fotoPerfil", "capaPerfil"],
+            raw: true
+        });
+        adicionar(usuarioCru?.fotoPerfil, false, "usuario.fotoPerfil");
+        adicionar(usuarioCru?.capaPerfil, false, "usuario.capaPerfil");
+
+        if (usuario.tipoUsuario === "empresa") {
+            const empresa = await Empresa.findOne({
+                where: { usuarioId: usuario.id },
+                attributes: ["logo", "capa"],
+                raw: true
+            });
+            adicionar(empresa?.logo, false, "empresa.logo");
+            adicionar(empresa?.capa, false, "empresa.capa");
+        }
+
+        if (usuario.tipoUsuario === "candidato") {
+            const candidato = await Candidato.findOne({
+                where: { usuarioId: usuario.id },
+                attributes: ["curriculo"],
+                raw: true
+            });
+            adicionar(candidato?.curriculo, true, "candidato.curriculo");
+        }
+
+        // Catálogo geral de uploads (cobre foto/capa/logo já tratados acima
+        // de novo — a deduplicação por caminho evita chamada repetida —
+        // mais certificados, documentos e postagens que só existem aqui).
+        const CATEGORIAS_PRIVADAS = new Set(["curriculo", "certificado", "documento"]);
+        const arquivos = await Arquivo.findAll({
+            where: { usuarioId: usuario.id },
+            attributes: ["categoria", "url"],
+            raw: true
+        });
+        for (const arquivo of arquivos) {
+            adicionar(
+                arquivo.url,
+                CATEGORIAS_PRIVADAS.has(arquivo.categoria),
+                `arquivo:${arquivo.categoria}`
+            );
+        }
+
+        // Imagens de postagem e anexos — cobertos separadamente porque nem
+        // toda imagem de postagem necessariamente passa pelo catálogo
+        // `arquivos` (o campo `imagem` da própria postagem é escrito à
+        // parte, ver PostagemController).
+        //
+        // Fase 7: anexo de postagem passou a poder estar no bucket
+        // PRIVADO (`privado=true`) — remover do bucket errado falha
+        // silenciosamente (best-effort) e o arquivo vira órfão pra
+        // sempre. `postagens.imagem` não tem coluna própria de
+        // privacidade (nunca diverge do anexo cujo caminho é igual —
+        // ver migration 0039): resolve pelo anexo correspondente.
+        const postagens = await Postagem.findAll({
+            where: { usuarioId: usuario.id },
+            attributes: ["id", "imagem"],
+            raw: true
         });
 
+        let anexos = [];
+        if (postagens.length > 0) {
+            anexos = await PostagemAnexo.findAll({
+                where: { postagemId: postagens.map((p) => p.id) },
+                attributes: ["id", "url", "privado"],
+                raw: true
+            });
+            for (const anexo of anexos) {
+                adicionar(anexo.url, anexo.privado, `postagem_anexo:${anexo.id}`);
+            }
+        }
+
+        for (const postagem of postagens) {
+            const anexoCorrespondente = anexos.find((anexo) => anexo.url === postagem.imagem);
+            adicionar(
+                postagem.imagem,
+                anexoCorrespondente?.privado ?? false,
+                `postagem:${postagem.id}.imagem`
+            );
+        }
+
+        return itens;
+    }
+
+    /**
+     * Remove do Storage os arquivos coletados por `_coletarArquivosDaConta`.
+     * Best-effort e nunca lança: uma falha aqui não pode impedir a
+     * exclusão da conta (mesmo princípio já usado em
+     * `NotificacaoService.criar` — infraestrutura secundária nunca
+     * derruba a ação principal). Cada item é logado individualmente
+     * (sucesso ou falha, com motivo) para permitir limpeza manual
+     * posterior de qualquer blob que não tenha sido removido.
+     */
+    async _removerArquivosDoStorage(itens, usuarioId) {
+        const resultados = await Promise.allSettled(
+            itens.map((item) =>
+                UploadService.removerArquivoFisico(item.caminho, {
+                    privado: item.privado
+                })
+            )
+        );
+
+        const relatorio = itens.map((item, indice) => {
+            const resultado = resultados[indice];
+            const sucesso = resultado.status === "fulfilled" && resultado.value === true;
+            return {
+                origem: item.origem,
+                caminho: item.caminho,
+                sucesso,
+                erro: resultado.status === "rejected" ? String(resultado.reason?.message || resultado.reason) : null
+            };
+        });
+
+        const falhas = relatorio.filter((r) => !r.sucesso);
+
+        console.info(
+            JSON.stringify({
+                nivel: "info",
+                servico: "AdminService.removerUsuario",
+                etapa: "limpeza_storage",
+                usuarioId,
+                total: relatorio.length,
+                sucesso: relatorio.length - falhas.length,
+                falhas: falhas.length
+            })
+        );
+
+        if (falhas.length > 0) {
+            console.error(
+                JSON.stringify({
+                    nivel: "error",
+                    servico: "AdminService.removerUsuario",
+                    etapa: "limpeza_storage",
+                    motivo: "um_ou_mais_arquivos_nao_foram_removidos_do_storage",
+                    usuarioId,
+                    falhas
+                })
+            );
+        }
+
+        return relatorio;
+    }
+
+    /**
+     * Núcleo da exclusão DEFINITIVA de uma conta — limpeza do Storage +
+     * arquivamento de denúncias pendentes contra a conta + `destroy()`,
+     * tudo atômico. Compartilhado pelos dois caminhos ativos de exclusão
+     * (Fase 5): `removerUsuario` (administrador, abaixo) e
+     * `authService.excluirConta` (o próprio usuário) — antes desta
+     * extração, o caminho self-service tinha uma implementação própria,
+     * mais simples, que não limpava Storage nem arquivava denúncias.
+     * Nenhum outro lugar deve reimplementar esta lógica.
+     *
+     * Autorização e log de auditoria são responsabilidade de QUEM CHAMA:
+     * este método não decide se a ação é permitida (isso já aconteceu
+     * antes, via senha atual ou `garantirAlvoDeAcaoAdministrativa`), e só
+     * cria log de auditoria se o chamador pedir via `dentroDaTransacao`
+     * (só faz sentido para a ação administrativa — exclusão pelo próprio
+     * usuário não é uma "ação administrativa" a ser auditada como tal).
+     *
+     * `dentroDaTransacao`, se fornecido, roda ANTES do commit, na MESMA
+     * transação do `destroy()` — preserva a atomicidade original entre
+     * "conta excluída" e "log de auditoria escrito" (uma falha no log
+     * desfaz a exclusão inteira, nunca deixa a conta excluída sem log).
+     */
+    async excluirContaDefinitivamente(usuario, { dentroDaTransacao } = {}) {
         const dadosRemovidos = {
             tipoUsuario: usuario.tipoUsuario,
             nome: usuario.nome,
             email: usuario.email
         };
 
-        await usuario.destroy();
+        // Empresa vinculada (se houver) — reaproveitada tanto para a
+        // limpeza de Storage (logo/capa) quanto para arquivar denúncias
+        // pendentes contra a EMPRESA (não só contra o usuário-dono).
+        const empresaVinculada =
+            usuario.tipoUsuario === "empresa"
+                ? await Empresa.findOne({ where: { usuarioId: usuario.id } })
+                : null;
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "EXCLUIR_USUARIO",
-            entidadeTipo: "usuario",
-            entidadeId: id,
-            descricao: `Usuário ${dadosRemovidos.nome} (${dadosRemovidos.email}) foi excluído permanentemente.`,
-            metadata: { usuario: dadosRemovidos },
-            ip: contexto.ip,
-            userAgent: contexto.userAgent
+        // 1) Limpeza do Storage ANTES de excluir — best-effort, nunca
+        // bloqueia a exclusão da conta (ver `_removerArquivosDoStorage`).
+        // Feita fora de qualquer transação de banco: são chamadas de rede
+        // ao Supabase Storage, nunca devem segurar uma transação aberta.
+        const arquivosDaConta = await this._coletarArquivosDaConta(usuario);
+        const relatorioStorage = await this._removerArquivosDoStorage(
+            arquivosDaConta,
+            usuario.id
+        );
+
+        // 2) Exclusão do banco + arquivamento de denúncias pendentes contra
+        // a conta, atômicos numa única transação (mesmo padrão de
+        // `RefreshTokenService.rotacionar`): se qualquer parte falhar,
+        // nada é persistido.
+        const transaction = await sequelize.transaction();
+        let denunciasArquivadas = 0;
+
+        try {
+            // Corrida: duas exclusões da MESMA conta ao mesmo tempo (ex.:
+            // usuário clica "excluir conta" em duas abas, ou o próprio
+            // usuário e um admin simultaneamente) — sem isso, a segunda
+            // chamada chega até aqui, faz `usuario.destroy()` numa linha
+            // que a primeira já apagou (um DELETE sem linhas afetadas não
+            // é erro no Postgres/Sequelize) e devolve 200 de novo, como
+            // se tivesse excluído algo pela segunda vez. Trava a linha
+            // (mesmo padrão de `RefreshTokenService.rotacionar`) e
+            // confirma que ainda existe antes de prosseguir — a segunda
+            // chamada encontra a linha já removida e recebe um 404 limpo.
+            const usuarioTravado = await Usuario.findByPk(usuario.id, {
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+
+            if (!usuarioTravado) {
+                throw ApiError.notFound("Usuário não encontrado.");
+            }
+
+            const entidadeTipoAlvo = usuario.tipoUsuario === "empresa" ? "empresa" : "usuario";
+            const entidadeIdAlvo =
+                usuario.tipoUsuario === "empresa" ? empresaVinculada?.id : usuario.id;
+
+            if (entidadeIdAlvo) {
+                // `denuncias.entidade_id` é polimórfico e sem FK real, de
+                // propósito (schema) — não é apagado pelo CASCADE. Sem
+                // isso, uma denúncia pendente contra a conta excluída
+                // ficaria parada na fila de moderação apontando para nada.
+                const [linhasAtualizadas] = await Denuncia.update(
+                    {
+                        status: "arquivada",
+                        observacaoAdmin:
+                            "Encerrada automaticamente: a conta denunciada foi excluída."
+                    },
+                    {
+                        where: {
+                            entidadeTipo: entidadeTipoAlvo,
+                            entidadeId: entidadeIdAlvo,
+                            status: { [Op.in]: ["pendente", "em_analise"] }
+                        },
+                        transaction
+                    }
+                );
+                denunciasArquivadas = linhasAtualizadas;
+            }
+
+            // `admin_audit_logs` (entradas PASSADAS sobre esta conta, ex.:
+            // um bloqueio anterior), `denuncias.admin_responsavel_id`
+            // (quando esta conta já atuou como admin resolvendo uma
+            // denúncia) e `denuncias.denunciante_id` (quando esta conta
+            // denunciou outra pessoa — Fase 5, migration 0036) são
+            // deliberadamente NÃO tocados aqui — sobrevivem com
+            // `SET NULL`/snapshot em `metadata`, porque um log de
+            // auditoria (ou uma denúncia já registrada) precisa continuar
+            // legível mesmo depois que a conta que ele descreve deixa de
+            // existir. `usuario.destroy()` abaixo já respeita isso via as
+            // FKs do próprio banco.
+            await usuarioTravado.destroy({ transaction });
+
+            if (dentroDaTransacao) {
+                await dentroDaTransacao({
+                    transaction,
+                    dadosRemovidos,
+                    relatorioStorage,
+                    denunciasArquivadas
+                });
+            }
+
+            await transaction.commit();
+        } catch (erro) {
+            await transaction.rollback();
+            throw erro;
+        }
+
+        return { dadosRemovidos, relatorioStorage, denunciasArquivadas };
+    }
+
+    async removerUsuario(id, { motivo } = {}, solicitante, contexto = {}) {
+        const usuario = await this.resolverUsuarioModeravel(id, solicitante, {
+            mensagemAutoAcao: "Você não pode excluir a própria conta.",
+            mensagemAdminProtegido:
+                "Contas administrativas não podem ser excluídas por aqui."
+        });
+
+        await this.excluirContaDefinitivamente(usuario, {
+            dentroDaTransacao: async ({
+                transaction,
+                dadosRemovidos,
+                relatorioStorage,
+                denunciasArquivadas
+            }) => {
+                await AdminAuditService.log(
+                    {
+                        adminId: solicitante.id,
+                        acao: "EXCLUIR_USUARIO",
+                        entidadeTipo: "usuario",
+                        entidadeId: id,
+                        descricao: `Usuário ${dadosRemovidos.nome} (${dadosRemovidos.email}) foi excluído permanentemente.`,
+                        metadata: {
+                            usuario: dadosRemovidos,
+                            reason: motivo || null,
+                            denunciasArquivadas,
+                            storage: {
+                                totalArquivos: relatorioStorage.length,
+                                falhas: relatorioStorage.filter((r) => !r.sucesso).length
+                            }
+                        },
+                        ip: contexto.ip,
+                        userAgent: contexto.userAgent
+                    },
+                    { transaction }
+                );
+            }
         });
 
         return { mensagem: "Usuário removido definitivamente." };
@@ -394,12 +777,30 @@ class AdminService {
     async listarPostagens(query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
+        const where = { ativo: true };
+
+        if (query.q) {
+            where.conteudo = { [Op.iLike]: `%${String(query.q).slice(0, 120)}%` };
+        }
+
         const { rows, count } = await Postagem.findAndCountAll({
+            where,
             include: [
                 {
                     model: Usuario,
                     as: "usuario",
                     attributes: ["id", "nome", "email", "tipoUsuario"]
+                },
+                // Fase 8: sem isso, `PostagemService.decorar` (via
+                // `assinarMidiaDasPostagens`) não acha o anexo
+                // correspondente a `imagem` e resolve a privacidade errado
+                // — mesmo cuidado já necessário em BuscaService/
+                // PublicoService na Fase 7.
+                {
+                    model: PostagemAnexo,
+                    as: "anexos",
+                    attributes: ["id", "url", "tipo", "privado", "descricao"],
+                    separate: true
                 }
             ],
             limit: limite,
@@ -408,14 +809,24 @@ class AdminService {
             order: [["created_at", "DESC"]]
         });
 
-        return montarResposta("postagens", rows, count, pagina, limite);
+        // Reaproveita a mesma decoração usada no feed (contadores de
+        // curtidas/comentários + URLs de mídia assinadas) — nunca duplicar
+        // a lógica de Storage aqui (Fase 8, Parte 30: "não recrie a
+        // lógica de signed URL"). `solicitante: null` — só afeta
+        // `curtidoPorMim`, irrelevante para o painel administrativo.
+        const decoradas = await PostagemService.decorar(rows, null);
+
+        return montarResposta("postagens", decoradas, count, pagina, limite);
     }
 
     async listarComentarios(query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
-        const where = {};
+        const where = { ativo: true };
         if (query.postagemId) where.postagemId = query.postagemId;
+        if (query.q) {
+            where.comentario = { [Op.iLike]: `%${String(query.q).slice(0, 120)}%` };
+        }
 
         const { rows, count } = await Comentario.findAndCountAll({
             where,
@@ -440,15 +851,101 @@ class AdminService {
         return montarResposta("comentarios", rows, count, pagina, limite);
     }
 
+    /**
+     * Remoção idempotente (Fase 8, Parte 11): trava a linha e reconfirma
+     * `ativo===true` DENTRO da transação, mesmo padrão de
+     * `excluirContaDefinitivamente`. Uma segunda chamada contra a mesma
+     * postagem (duplo clique, retry de rede) encontra `ativo:false` e
+     * recebe 409 — nunca duplica notificação nem log.
+     *
+     * O snapshot é capturado ANTES do `update`, dentro da transação, e
+     * vai para `metadata.snapshot` — nunca dado pessoal além do nome do
+     * autor (sem e-mail/CPF/CNPJ). É a única fonte usada para descrever o
+     * log depois, mesmo que a postagem (ou a conta do autor, via CASCADE
+     * de `postagens.usuario_id`) deixe de existir no futuro.
+     */
     async removerPostagem(id, solicitante, contexto = {}) {
-        const postagem = await Postagem.findByPk(id);
+        const transaction = await sequelize.transaction();
+        let postagem;
 
-        if (!postagem) {
-            throw ApiError.notFound("Postagem não encontrada.");
+        try {
+            postagem = await Postagem.findByPk(id, {
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+
+            if (!postagem) {
+                throw ApiError.notFound("Postagem não encontrada.");
+            }
+
+            if (!postagem.ativo) {
+                throw ApiError.conflict("Esta publicação já foi removida.");
+            }
+
+            const [autor, totalCurtidas, totalComentarios, anexos] = await Promise.all([
+                Usuario.findByPk(postagem.usuarioId, {
+                    attributes: ["id", "nome"],
+                    transaction
+                }),
+                Curtida.count({ where: { postagemId: id }, transaction }),
+                Comentario.count({
+                    where: { postagemId: id, ativo: true },
+                    transaction
+                }),
+                PostagemAnexo.findAll({
+                    where: { postagemId: id },
+                    attributes: ["tipo"],
+                    transaction
+                })
+            ]);
+
+            const midiaPorTipo = anexos.reduce((mapa, anexo) => {
+                mapa[anexo.tipo] = (mapa[anexo.tipo] || 0) + 1;
+                return mapa;
+            }, {});
+
+            const snapshot = {
+                id: postagem.id,
+                autorId: postagem.usuarioId,
+                nomeAutor: autor?.nome ?? null,
+                conteudo: postagem.conteudo,
+                midiaPorTipo,
+                totalAnexos: anexos.length,
+                totalCurtidas,
+                totalComentarios,
+                publica: postagem.publica,
+                criadaEm: postagem.createdAt
+            };
+
+            await postagem.update({ ativo: false }, { transaction });
+
+            await AdminAuditService.log(
+                {
+                    adminId: solicitante.id,
+                    acao: "REMOVER_POSTAGEM",
+                    entidadeTipo: "postagem",
+                    entidadeId: postagem.id,
+                    descricao: descreverRemocaoPostagem(solicitante, snapshot),
+                    metadata: {
+                        before: { ativo: true },
+                        after: { ativo: false },
+                        snapshot
+                    },
+                    ip: contexto.ip,
+                    userAgent: contexto.userAgent
+                },
+                { transaction }
+            );
+
+            await transaction.commit();
+        } catch (erro) {
+            await transaction.rollback();
+            throw erro;
         }
 
-        await postagem.update({ ativo: false });
-
+        // Fora da transação, best-effort — `NotificacaoService.criar` já
+        // nunca lança (ver comentário no próprio serviço); uma falha aqui
+        // não pode desfazer uma remoção já commitada.
         await NotificacaoService.criar({
             usuarioId: postagem.usuarioId,
             tipo: "Feed",
@@ -457,46 +954,89 @@ class AdminService {
                 "Sua publicação foi removida pela moderação por violar as diretrizes da comunidade."
         });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "REMOVER_POSTAGEM",
-            entidadeTipo: "postagem",
-            entidadeId: postagem.id,
-            descricao: "Postagem removida pela moderação.",
-            metadata: {
-                before: { ativo: true },
-                after: { ativo: false },
-                autorId: postagem.usuarioId
-            },
-            ip: contexto.ip,
-            userAgent: contexto.userAgent
-        });
-
         return { mensagem: "Postagem removida pela moderação." };
     }
 
+    /** Mesmo padrão de `removerPostagem`, ver comentário acima. */
     async removerComentario(id, solicitante, contexto = {}) {
-        const comentario = await Comentario.findByPk(id);
+        const transaction = await sequelize.transaction();
+        let comentario;
 
-        if (!comentario) {
-            throw ApiError.notFound("Comentário não encontrado.");
+        try {
+            comentario = await Comentario.findByPk(id, {
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            });
+
+            if (!comentario) {
+                throw ApiError.notFound("Comentário não encontrado.");
+            }
+
+            if (!comentario.ativo) {
+                throw ApiError.conflict("Este comentário já foi removido.");
+            }
+
+            const [autor, postagemRelacionada] = await Promise.all([
+                Usuario.findByPk(comentario.usuarioId, {
+                    attributes: ["id", "nome"],
+                    transaction
+                }),
+                Postagem.findByPk(comentario.postagemId, {
+                    attributes: ["id", "usuarioId"],
+                    transaction
+                })
+            ]);
+
+            const autorPostagem = postagemRelacionada
+                ? await Usuario.findByPk(postagemRelacionada.usuarioId, {
+                      attributes: ["id", "nome"],
+                      transaction
+                  })
+                : null;
+
+            const snapshot = {
+                id: comentario.id,
+                autorId: comentario.usuarioId,
+                nomeAutor: autor?.nome ?? null,
+                conteudo: comentario.comentario,
+                postagemId: comentario.postagemId,
+                autorPostagemId: postagemRelacionada?.usuarioId ?? null,
+                nomeAutorPostagem: autorPostagem?.nome ?? null,
+                criadaEm: comentario.createdAt
+            };
+
+            await comentario.update({ ativo: false }, { transaction });
+
+            await AdminAuditService.log(
+                {
+                    adminId: solicitante.id,
+                    acao: "REMOVER_COMENTARIO",
+                    entidadeTipo: "comentario",
+                    entidadeId: comentario.id,
+                    descricao: descreverRemocaoComentario(solicitante, snapshot),
+                    metadata: {
+                        before: { ativo: true },
+                        after: { ativo: false },
+                        snapshot
+                    },
+                    ip: contexto.ip,
+                    userAgent: contexto.userAgent
+                },
+                { transaction }
+            );
+
+            await transaction.commit();
+        } catch (erro) {
+            await transaction.rollback();
+            throw erro;
         }
 
-        await comentario.update({ ativo: false });
-
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "REMOVER_COMENTARIO",
-            entidadeTipo: "comentario",
-            entidadeId: comentario.id,
-            descricao: "Comentário removido pela moderação.",
-            metadata: {
-                before: { ativo: true },
-                after: { ativo: false },
-                autorId: comentario.usuarioId
-            },
-            ip: contexto.ip,
-            userAgent: contexto.userAgent
+        await NotificacaoService.criar({
+            usuarioId: comentario.usuarioId,
+            tipo: "Feed",
+            titulo: "Comentário removido",
+            descricao: "Seu comentário foi removido pela moderação por violar as diretrizes da comunidade.",
+            subtipo: "comentario_removido_moderacao"
         });
 
         return { mensagem: "Comentário removido pela moderação." };
@@ -523,7 +1063,9 @@ class AdminService {
     }
 
     async alternarVisibilidadeVaga(id, oculta, solicitante, contexto = {}) {
-        const vaga = await Vaga.findByPk(id);
+        const vaga = await Vaga.findByPk(id, {
+            include: [{ model: Empresa, as: "empresa" }]
+        });
 
         if (!vaga) {
             throw ApiError.notFound("Vaga não encontrada.");
@@ -533,6 +1075,18 @@ class AdminService {
         const novoOculta = Boolean(oculta);
 
         await vaga.update({ oculta: novoOculta });
+
+        await NotificacaoService.criar({
+            usuarioId: vaga.empresa.usuarioId,
+            tipo: "Vaga",
+            titulo: novoOculta ? "Vaga ocultada pela moderação" : "Vaga voltou a ficar visível",
+            descricao: novoOculta
+                ? `Sua vaga "${vaga.titulo}" foi ocultada pela moderação e não aparece mais nas buscas.`
+                : `Sua vaga "${vaga.titulo}" voltou a ficar visível para candidatos.`,
+            subtipo: novoOculta ? "vaga_oculta_moderacao" : "vaga_reexibida_moderacao",
+            entidadeTipo: "vaga",
+            entidadeId: vaga.id
+        });
 
         await AdminAuditService.log({
             adminId: solicitante.id,

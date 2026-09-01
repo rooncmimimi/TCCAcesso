@@ -8,8 +8,19 @@ export function participanteOposto(conversa: Conversa, usuarioId: string | null)
   return conversa.usuarioA ?? conversa.usuarioB;
 }
 
+/**
+ * Fase 8: quando o participante do outro lado excluiu a conta, o backend
+ * devolve `usuarioA`/`usuarioB` como `null` (histórico preservado, ver
+ * migration 0040) — o fallback final passa a ser "Usuário removido" em vez
+ * de "Contato", que sugeria só um cadastro incompleto.
+ */
 export function nomeParticipante(participante?: ParticipanteConversa): string {
-  return participante?.empresa?.nomeFantasia || participante?.empresa?.razaoSocial || participante?.nome || "Contato";
+  return (
+    participante?.empresa?.nomeFantasia ||
+    participante?.empresa?.razaoSocial ||
+    participante?.nome ||
+    "Usuário removido"
+  );
 }
 
 export function fotoParticipante(participante?: ParticipanteConversa): string | null {

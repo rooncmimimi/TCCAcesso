@@ -1,6 +1,6 @@
 import api from "./api";
 import { buscarPaginado, type Paginado } from "./http";
-import type { Conversa, Mensagem } from "@/types";
+import type { Conversa, Mensagem, PodeIniciarConversa } from "@/types";
 
 /** Conversas e mensagens do chat (REST — o Socket.IO apenas complementa). */
 export const mensagensService = {
@@ -39,6 +39,12 @@ export const mensagensService = {
   async contarNaoLidas(): Promise<number> {
     const { data } = await api.get<{ naoLidas?: number }>("/conversas/nao-lidas");
     return Number(data.naoLidas ?? 0);
+  },
+
+  /** Consulta (nunca falha) se o usuário autenticado pode iniciar uma conversa nova com `usuarioId` — usada para decidir o estado do botão "Mandar mensagem" antes do clique (Fase 4). */
+  async podeIniciarConversa(usuarioId: string): Promise<PodeIniciarConversa> {
+    const { data } = await api.get<PodeIniciarConversa>(`/conversas/pode-iniciar/${usuarioId}`);
+    return { permitido: Boolean(data.permitido), motivo: data.motivo };
   },
 };
 

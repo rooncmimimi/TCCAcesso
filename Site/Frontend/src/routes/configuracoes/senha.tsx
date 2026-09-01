@@ -53,7 +53,7 @@ export const Route = createFileRoute("/configuracoes/senha")({
 
 function AlterarSenha() {
   const navigate = useNavigate();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
   const { signOut } = useSession();
   const [enviando, setEnviando] = useState(false);
 
@@ -77,13 +77,17 @@ function AlterarSenha() {
       // mesmo padrão já usado na redefinição de senha por código.
       await signOut();
       toast.success("Senha alterada com sucesso. Entre novamente com a nova senha.");
-      speak("Senha alterada com sucesso. Entre novamente com a nova senha.");
+      if (choice === "accepted") {
+        speak("Senha alterada com sucesso. Entre novamente com a nova senha.");
+      }
       void navigate({ to: "/entrar" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível alterar a senha.");
       setError("senhaAtual", { message: mensagem });
       toast.error(mensagem);
-      speak(mensagem);
+      if (choice === "accepted") {
+        speak(mensagem);
+      }
     } finally {
       setEnviando(false);
     }

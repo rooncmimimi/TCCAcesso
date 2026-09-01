@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import postagensService from "@/services/postagens.service";
 import { CardPostagem } from "@/components/feed/CardPostagem";
+import { extrairMensagemErro } from "@/services/api";
 
 /**
  * Publicações de um usuário específico, usadas na aba "Publicações" do
@@ -10,10 +11,11 @@ import { CardPostagem } from "@/components/feed/CardPostagem";
  * — antes esta aba tinha um card próprio, somente leitura.
  */
 export function PostagensUsuario({ usuarioId }: { usuarioId: string }) {
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["postagens-usuario", usuarioId],
     queryFn: () => postagensService.listar({ usuarioId, limit: 10 }),
     enabled: Boolean(usuarioId),
+    retry: false,
   });
 
   if (isLoading) {
@@ -25,7 +27,11 @@ export function PostagensUsuario({ usuarioId }: { usuarioId: string }) {
   }
 
   if (isError) {
-    return <p role="alert" className="py-4 text-sm text-destructive">Não foi possível carregar as publicações.</p>;
+    return (
+      <p role="alert" className="py-4 text-sm text-destructive">
+        {extrairMensagemErro(error, "Não foi possível carregar as publicações.")}
+      </p>
+    );
   }
 
   if (!data || data.dados.length === 0) {

@@ -1,4 +1,4 @@
-import { Notificacao, PreferenciaNotificacao } from "../models/index.js";
+import { Notificacao, PreferenciaNotificacao, Usuario } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { emitirParaUsuario } from "../realtime/socket.js";
@@ -13,6 +13,16 @@ const COLUNA_PREFERENCIA_POR_TIPO = {
     Candidatura: "vagasCandidaturas",
     Mensagem: "mensagens",
     Feed: "publicacoesComentarios"
+};
+
+// Dados do ator (quem praticou a ação) expostos por uma notificação —
+// deliberadamente restrito a id/nome/foto: nunca CPF, e-mail, endereço,
+// currículo ou qualquer outro dado privado, mesmo que o model Usuario os
+// tenha. Reaproveitado tanto na criação (socket) quanto na listagem.
+const INCLUIR_ATOR = {
+    model: Usuario,
+    as: "ator",
+    attributes: ["id", "nome", "fotoPerfil"]
 };
 
 /**
@@ -44,34 +54,101 @@ class NotificacaoService {
     /**
      * Cria uma notificação interna e a entrega em tempo real.
      * Falhas aqui nunca devem derrubar a ação principal do usuário.
+     *
+     * `subtipo`/`entidadeTipo`/`entidadeId`/`atorId` (migration 0033) são
+     * opcionais — quem chama sem eles continua funcionando exatamente
+     * como antes, só sem link/avatar na notificação criada.
+     *
+     * `transaction`: opcional, para participar de uma transação já aberta
+     * por quem chama (mesmo padrão de `RefreshTokenService.emitir`) —
+     * necessário para os chamadores que criam a notificação dentro da
+     * mesma transação do evento principal (ex.: nova candidatura).
      */
-    async criar({ usuarioId, tipo, titulo, descricao = null }) {
+    async criar(
+        {
+            usuarioId,
+            tipo,
+            titulo,
+            descricao = null,
+            subtipo = null,
+            entidadeTipo = null,
+            entidadeId = null,
+            atorId = null
+        },
+        { transaction } = {}
+    ) {
         try {
             if (!(await notificacaoPermitida(usuarioId, tipo))) {
                 return null;
             }
 
-            const notificacao = await Notificacao.create({
-                usuarioId,
-                tipo,
-                titulo,
-                descricao
+            const criada = await Notificacao.create(
+                {
+                    usuarioId,
+                    tipo,
+                    titulo,
+                    descricao,
+                    subtipo,
+                    entidadeTipo,
+                    entidadeId,
+                    atorId
+                },
+                { transaction }
+            );
+
+            // Recarrega com o ator incluso (id/nome/foto) — o `create` não
+            // traz a associação, e o frontend precisa disso para o avatar.
+            const notificacao = await Notificacao.findByPk(criada.id, {
+                include: [INCLUIR_ATOR],
+                transaction
             });
 
             const naoLidas = await Notificacao.count({
-                where: { usuarioId, lida: false }
+                where: { usuarioId, lida: false },
+                transaction
             });
 
-            emitirParaUsuario(usuarioId, "notificacao:nova", {
-                notificacao,
-                naoLidas
-            });
+            // Se `transaction` foi passada, quem chamou ainda não deu
+            // commit — emitir o socket agora anunciaria uma notificação
+            // que pode nunca existir de verdade (rollback). Nesse caso só
+            // devolvemos os dados; quem chamou emite depois do commit via
+            // `emitirNotificacaoCriada` (mesmo padrão de "tempo real só
+            // depois de persistir" já usado em `ConversaService`).
+            if (!transaction) {
+                emitirParaUsuario(usuarioId, "notificacao:nova", {
+                    notificacao,
+                    naoLidas
+                });
+            }
 
             return notificacao;
         } catch (erro) {
             console.error("Falha ao criar notificação:", erro.message);
             return null;
         }
+    }
+
+    /**
+     * Emite o evento em tempo real de uma notificação já criada via
+     * `criar(..., { transaction })` — chamar só DEPOIS do commit da
+     * transação do chamador. Nunca lança (mesmo princípio de `criar`).
+     */
+    emitirNotificacaoCriada(notificacao, naoLidas) {
+        if (!notificacao) return;
+
+        try {
+            emitirParaUsuario(notificacao.usuarioId, "notificacao:nova", {
+                notificacao,
+                naoLidas
+            });
+        } catch (erro) {
+            console.error("Falha ao emitir notificação em tempo real:", erro.message);
+        }
+    }
+
+    /** Conta não lidas de um usuário — exposto para quem precisa recalcular após um commit. */
+    async contarNaoLidasDe(usuarioId) {
+        return Notificacao.count({ where: { usuarioId, lida: false } });
     }
 
     async listar(solicitante, query) {
@@ -89,6 +166,7 @@ class NotificacaoService {
 
         const { rows, count } = await Notificacao.findAndCountAll({
             where,
+            include: [INCLUIR_ATOR],
             limit: limite,
             offset,
             order: [["created_at", "DESC"]]

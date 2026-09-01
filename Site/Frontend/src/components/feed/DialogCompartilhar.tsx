@@ -27,7 +27,7 @@ export function DialogCompartilhar({ postagemId, trigger }: { postagemId: string
   const [comentario, setComentario] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const compartilhar = useCompartilharPostagem();
-  const { speak } = useSpeech();
+  const { speak, choice } = useSpeech();
 
   const podeCompartilharNativo = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
@@ -36,7 +36,9 @@ export function DialogCompartilhar({ postagemId, trigger }: { postagemId: string
       await navigator.clipboard.writeText(urlDaPostagem(postagemId));
       setLinkCopiado(true);
       toast.success("Link copiado!");
-      speak("Link copiado.");
+      if (choice === "accepted") {
+        speak("Link copiado.");
+      }
       setTimeout(() => setLinkCopiado(false), 2000);
     } catch {
       toast.error("Não foi possível copiar o link.");

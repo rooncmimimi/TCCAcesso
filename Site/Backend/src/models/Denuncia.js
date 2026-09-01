@@ -17,10 +17,16 @@ const Denuncia = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        // Migration 0036 (Fase 5): antes NOT NULL + ON DELETE CASCADE — se
+        // o denunciante excluísse a própria conta, a denúncia inteira
+        // desaparecia, mesmo já resolvida e mesmo contra outra pessoa.
+        // Agora nullable + ON DELETE SET NULL (mesmo padrão de
+        // `adminResponsavelId`, logo abaixo): a denúncia sobrevive à
+        // exclusão do denunciante.
         denuncianteId: {
             field: "denunciante_id",
             type: DataTypes.UUID,
-            allowNull: false
+            allowNull: true
         },
         entidadeTipo: {
             field: "entidade_tipo",

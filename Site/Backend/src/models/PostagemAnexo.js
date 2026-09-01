@@ -1,15 +1,27 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
-import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
 
 /**
- * Tabela: postagem_anexos (migration 0005, "video" adicionado na 0026)
+ * Tabela: postagem_anexos (migration 0005, "video" adicionado na 0026,
+ * "privado" adicionado na 0039 — Fase 7).
  *
  * `url` guarda uma REFERÊNCIA ESTÁVEL (caminho relativo no bucket, ex.:
- * `postagens/<usuarioId>/<uuid>.mp4`), nunca a URL pública final — a URL
- * de exibição é resolvida sob demanda pelo getter abaixo, o que também
- * preserva a leitura de registros antigos que já guardavam uma URL
- * completa (`https://...` ou `/uploads/...`), sem precisar migrar dado.
+ * `postagens/<usuarioId>/<uuid>.mp4`), nunca a URL final de exibição —
+ * isso não mudou. O que mudou na Fase 7: o atributo `url` NÃO tem mais
+ * getter automático. Antes, qualquer leitura deste model resolvia
+ * sozinha uma URL pública permanente (`resolverUrlExibicao`), sem
+ * nenhuma checagem de autorização — exatamente o gap que a Fase 7
+ * corrige. Agora, resolver uma URL de exibição é sempre um passo
+ * EXPLÍCITO do service (`PostagemService.assinarAnexos`/equivalente),
+ * feito só depois de `garantirAcessoAPostagem` já ter aprovado o
+ * acesso. Ler `.url` diretamente devolve o caminho cru — inofensivo
+ * mesmo se vazado, porque sozinho não abre o arquivo em nenhum bucket.
+ *
+ * `privado`: true quando o arquivo físico está no bucket PRIVADO
+ * (todo upload novo, Fase 7 em diante); false para anexos antigos que
+ * ainda estão no bucket público (nunca migrados automaticamente — ver
+ * plano da Fase 7). Decide qual bucket consultar ao gerar a URL de
+ * exibição — nunca inferido do formato do caminho.
  */
 const PostagemAnexo = sequelize.define(
     "PostagemAnexo",
@@ -30,10 +42,12 @@ const PostagemAnexo = sequelize.define(
         },
         url: {
             type: DataTypes.TEXT,
+            allowNull: false
+        },
+        privado: {
+            type: DataTypes.BOOLEAN,
             allowNull: false,
-            get() {
-                return resolverUrlExibicao(this.getDataValue("url"));
-            }
+            defaultValue: false
         },
         nomeOriginal: {
             field: "nome_original",

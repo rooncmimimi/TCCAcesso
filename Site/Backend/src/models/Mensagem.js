@@ -19,10 +19,15 @@ const Mensagem = sequelize.define(
             allowNull: false
         },
 
+        // Fase 8 (migration 0040, pendente de execução): nullable — ver
+        // comentário equivalente em `models/Conversa.js`. Uma mensagem
+        // cujo remetente excluiu a conta permanece visível (histórico
+        // preservado), só com o remetente resolvido como "Usuário
+        // removido" no frontend.
         remetenteId: {
             field: "remetente_id",
             type: DataTypes.UUID,
-            allowNull: false
+            allowNull: true
         },
 
         conteudo: {

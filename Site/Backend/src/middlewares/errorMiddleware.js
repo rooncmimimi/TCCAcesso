@@ -53,6 +53,12 @@ const errorMiddleware = (err, req, res, next) => {
         mensagem = "Erro ao consultar o banco de dados.";
     }
 
+    // Quando o erro é uma mensagem amigável que embrulha uma causa raiz
+    // (ApiError.interno), o log usa a causa original — nunca a mensagem
+    // amigável — para não perder informação de diagnóstico.
+    const causaOriginal = err.causaOriginal ?? null;
+    const erroParaLog = causaOriginal ?? err;
+
     // Log estruturado no servidor (nunca enviado ao cliente).
     const log = {
         nivel: statusCode >= 500 ? "error" : "warn",
@@ -60,11 +66,12 @@ const errorMiddleware = (err, req, res, next) => {
         rota: req.originalUrl,
         usuarioId: req.user?.id ?? null,
         statusCode,
-        mensagem: err.message
+        mensagem: err.message,
+        ...(causaOriginal ? { causaOriginal: causaOriginal.message } : {})
     };
 
     if (statusCode >= 500) {
-        console.error(JSON.stringify(log), err.stack);
+        console.error(JSON.stringify(log), erroParaLog.stack);
     } else {
         console.warn(JSON.stringify(log));
     }

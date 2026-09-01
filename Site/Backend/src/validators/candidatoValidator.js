@@ -7,7 +7,7 @@ export const validarAtualizacaoCandidato = [
         .optional({ values: "falsy" })
         .trim()
         .matches(/^\d{11}$/)
-        .withMessage("O CPF deve conter 11 dígitos numéricos."),
+        .withMessage("Informe um CPF válido."),
 
     body("dataNascimento")
         .optional({ values: "falsy" })

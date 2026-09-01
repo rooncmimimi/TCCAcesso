@@ -6,6 +6,11 @@ import { extrairMensagemErro } from "@/services/api";
 import { urlArquivo } from "@/services/uploads.service";
 import { toast } from "sonner";
 
+// Mesmo limite padrão do backend (MAX_UPLOAD_BYTES, ver src/config/env.js) —
+// checar aqui evita que o usuário espere o upload todo só pra descobrir,
+// no fim, que o arquivo é grande demais.
+const TAMANHO_MAXIMO_BYTES = 5 * 1024 * 1024;
+
 /** Avatar com upload real de imagem (PNG/JPEG/WEBP), usado em perfis de pessoa e empresa. */
 export function FotoUploader({
   nome,
@@ -29,6 +34,10 @@ export function FotoUploader({
     if (!arquivo) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(arquivo.type)) {
       toast.error("Formato inválido. Envie uma imagem PNG, JPEG ou WEBP.");
+      return;
+    }
+    if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
+      toast.error("Imagem muito grande. O tamanho máximo permitido é 5 MB.");
       return;
     }
     try {

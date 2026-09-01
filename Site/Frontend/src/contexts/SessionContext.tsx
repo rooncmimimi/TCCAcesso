@@ -13,7 +13,9 @@ import { aoExpirarSessao, clearTokens, getAccessToken } from "@/services/api";
 import { conectarSocket, desconectarSocket } from "@/services/socket";
 import type {
   CredenciaisLogin,
+  RespostaCadastroPendenteVerificacao,
   RespostaLoginContaPausada,
+  RespostaLoginEmailNaoVerificado,
   RespostaLoginPendente2FA,
   TipoUsuario,
   Usuario,
@@ -36,12 +38,17 @@ type Ctx = {
   hydrated: boolean;
   carregando: boolean;
   autenticado: boolean;
-  /** Retorna `{ requerDoisFatores: true }` ou `{ contaPausada: true }` (sem criar sessão) quando o login precisa de uma segunda etapa. */
+  /** Retorna `{ requerDoisFatores: true }`, `{ contaPausada: true }` ou `{ emailNaoVerificado: true, email }` (sem criar sessão) quando o login precisa de uma etapa extra. */
   login: (
     credenciais: CredenciaisLogin,
-  ) => Promise<SessionUser | RespostaLoginPendente2FA | RespostaLoginContaPausada>;
-  registrarCandidato: (payload: Record<string, unknown>) => Promise<SessionUser>;
-  registrarEmpresa: (payload: Record<string, unknown>) => Promise<SessionUser>;
+  ) => Promise<SessionUser | RespostaLoginPendente2FA | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>;
+  /** Retorna `{ pendenteVerificacaoEmail: true, email }` (sem criar sessão) quando o cadastro exige confirmação de e-mail. */
+  registrarCandidato: (
+    payload: Record<string, unknown>,
+  ) => Promise<SessionUser | RespostaCadastroPendenteVerificacao>;
+  registrarEmpresa: (
+    payload: Record<string, unknown>,
+  ) => Promise<SessionUser | RespostaCadastroPendenteVerificacao>;
   signOut: () => Promise<void>;
   update: (patch: Partial<SessionUser>) => void;
   recarregar: () => Promise<void>;
@@ -109,17 +116,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       autenticado: Boolean(user),
       login: async (credenciais) => {
         const resposta = await authService.login(credenciais);
-        if ("requerDoisFatores" in resposta || "contaPausada" in resposta) {
+        if ("requerDoisFatores" in resposta || "contaPausada" in resposta || "emailNaoVerificado" in resposta) {
           return resposta;
         }
         return aposAutenticar(resposta.usuario);
       },
       registrarCandidato: async (payload) => {
         const resposta = await authService.registrarCandidato(payload);
+        if ("pendenteVerificacaoEmail" in resposta) return resposta;
         return aposAutenticar(resposta.usuario);
       },
       registrarEmpresa: async (payload) => {
         const resposta = await authService.registrarEmpresa(payload);
+        if ("pendenteVerificacaoEmail" in resposta) return resposta;
         return aposAutenticar(resposta.usuario);
       },
       signOut: async () => {

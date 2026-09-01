@@ -71,6 +71,24 @@ export const denunciaLimiter = rateLimit({
  * sendo o roteador gratuito), então o limite existe para conter custo/
  * abuso, não porque o recurso em si seja perigoso.
  */
+/**
+ * Reenvio de e-mail de confirmação de cadastro — 5 por IP a cada hora.
+ * Complementa (não substitui) o cooldown de 60s por conta já aplicado em
+ * AuthService.reenviarConfirmacaoCadastro: este aqui limita por IP
+ * (alguém tentando várias contas), aquele limita por conta (alguém
+ * clicando "reenviar" repetidamente na mesma conta).
+ */
+export const reenvioConfirmacaoLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        sucesso: false,
+        mensagem: "Muitas solicitações de reenvio. Tente novamente mais tarde."
+    }
+});
+
 export const sugestaoDescricaoLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 30,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Briefcase, Building2, FileText, Search } from "lucide-react";
+import { BadgeCheck, Briefcase, Building2, Clock, FileText, Search } from "lucide-react";
 
 import {
   CommandDialog,
@@ -16,6 +16,29 @@ import { initials } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
 import { buscaService } from "@/services/publico.service";
 
+const CHAVE_BUSCAS_RECENTES = "acesso:buscas-recentes";
+const MAX_BUSCAS_RECENTES = 5;
+
+function lerBuscasRecentes(): string[] {
+  try {
+    const bruto = window.localStorage.getItem(CHAVE_BUSCAS_RECENTES);
+    const lista = bruto ? JSON.parse(bruto) : [];
+    return Array.isArray(lista) ? lista.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function salvarBuscaRecente(termo: string) {
+  try {
+    const atual = lerBuscasRecentes().filter((item) => item.toLowerCase() !== termo.toLowerCase());
+    const atualizado = [termo, ...atual].slice(0, MAX_BUSCAS_RECENTES);
+    window.localStorage.setItem(CHAVE_BUSCAS_RECENTES, JSON.stringify(atualizado));
+  } catch {
+    // localStorage indisponível (modo privado, storage cheio) — busca recente é só conveniência, nunca crítico.
+  }
+}
+
 /**
  * Busca global do ACESSO: pessoas, empresas, vagas e publicações.
  * Reaproveita o endpoint `GET /busca` (já existente) e o primitivo
@@ -27,6 +50,7 @@ export function SearchBar() {
   const [aberto, setAberto] = useState(false);
   const [termo, setTermo] = useState("");
   const [termoBuscado, setTermoBuscado] = useState("");
+  const [buscasRecentes, setBuscasRecentes] = useState<string[]>([]);
 
   useEffect(() => {
     const id = setTimeout(() => setTermoBuscado(termo.trim()), 300);
@@ -34,7 +58,9 @@ export function SearchBar() {
   }, [termo]);
 
   useEffect(() => {
-    if (!aberto) {
+    if (aberto) {
+      setBuscasRecentes(lerBuscasRecentes());
+    } else {
       setTermo("");
       setTermoBuscado("");
     }
@@ -42,7 +68,7 @@ export function SearchBar() {
 
   const habilitada = termoBuscado.length >= 2;
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey: ["busca-global", termoBuscado],
     queryFn: () => buscaService.global(termoBuscado, { tipo: "tudo" }),
     enabled: habilitada,
@@ -54,9 +80,10 @@ export function SearchBar() {
   const vagas = data?.resultados.vagas ?? [];
   const postagens = data?.resultados.postagens ?? [];
   const semResultados =
-    habilitada && !isFetching && usuarios.length === 0 && empresas.length === 0 && vagas.length === 0 && postagens.length === 0;
+    habilitada && !isFetching && !isError && usuarios.length === 0 && empresas.length === 0 && vagas.length === 0 && postagens.length === 0;
 
   function irPara(destino: () => void) {
+    if (termoBuscado.length >= 2) salvarBuscaRecente(termoBuscado);
     destino();
     setAberto(false);
   }
@@ -81,10 +108,35 @@ export function SearchBar() {
           aria-label="Termo de pesquisa"
         />
         <CommandList aria-live="polite">
+          {!habilitada && buscasRecentes.length > 0 && (
+            <CommandGroup heading="Buscas recentes">
+              {buscasRecentes.map((recente) => (
+                <CommandItem key={recente} value={`recente-${recente}`} onSelect={() => setTermo(recente)}>
+                  <Clock className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="truncate">{recente}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
           {!habilitada ? (
-            <CommandEmpty>Digite ao menos 2 caracteres para pesquisar.</CommandEmpty>
+            buscasRecentes.length === 0 && <CommandEmpty>Digite ao menos 2 caracteres para pesquisar.</CommandEmpty>
+          ) : isError ? (
+            <div role="alert" className="flex flex-col items-center gap-2 px-4 py-8 text-center text-sm text-muted-foreground">
+              <p>Não foi possível pesquisar agora.</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                Tentar novamente
+              </button>
+            </div>
           ) : semResultados ? (
-            <CommandEmpty>Nenhum resultado para "{termoBuscado}".</CommandEmpty>
+            <CommandEmpty>
+              Não encontramos resultados para "{termoBuscado}". Tente pesquisar por outro nome, empresa, vaga ou
+              palavra-chave.
+            </CommandEmpty>
           ) : null}
 
           {usuarios.length > 0 && (

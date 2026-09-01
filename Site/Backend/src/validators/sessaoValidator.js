@@ -14,11 +14,11 @@ export const validarEsqueciSenha = [
         .trim()
         .isEmail()
         .normalizeEmail()
-        .withMessage("Informe um e-mail válido.")
+        .withMessage("Informe um endereço de e-mail válido.")
 ];
 
 export const validarRedefinirSenha = [
-    body("email").trim().isEmail().withMessage("Informe um e-mail válido."),
+    body("email").trim().isEmail().withMessage("Informe um endereço de e-mail válido."),
 
     body("codigo")
         .isLength({ min: 6, max: 6 })
@@ -34,6 +34,25 @@ export const validarRedefinirSenha = [
         .withMessage("A senha deve conter ao menos uma letra minúscula.")
         .matches(/\d/)
         .withMessage("A senha deve conter ao menos um número.")
+];
+
+/** Confirmação de e-mail de cadastro (rotas públicas — antes do login). */
+
+export const validarConfirmarCadastro = [
+    body("email").trim().isEmail().withMessage("Informe um endereço de e-mail válido."),
+
+    body("codigo")
+        .isLength({ min: 6, max: 6 })
+        .isNumeric()
+        .withMessage("O código deve ter 6 dígitos.")
+];
+
+export const validarReenviarConfirmacaoCadastro = [
+    body("email")
+        .trim()
+        .isEmail()
+        .normalizeEmail()
+        .withMessage("Informe um endereço de e-mail válido.")
 ];
 
 /** Autenticação de dois fatores (2FA). */
@@ -57,7 +76,7 @@ export const validarSolicitarTrocaEmail = [
     body("novoEmail")
         .trim()
         .isEmail()
-        .withMessage("Informe um e-mail válido.")
+        .withMessage("Informe um endereço de e-mail válido.")
         .isLength({ max: 150 })
         .normalizeEmail()
 ];

@@ -119,7 +119,28 @@ const env = {
         // um único modelo/provedor que pode ser descontinuado.
         model: process.env.OPENROUTER_MODEL || "openrouter/free",
         timeoutMs: Number(process.env.OPENROUTER_TIMEOUT_MS) || 20000
-    }
+    },
+
+    // E-mail transacional (confirmação de cadastro e recuperação de senha)
+    // via Brevo (brevo.com). Sem `apiKey` configurada, o recurso fica
+    // indisponível: em desenvolvimento o código continua sendo registrado
+    // no log do servidor (como já era); em produção o servidor sobe
+    // normalmente, mas emite um aviso alto no log — sem isso, ninguém
+    // recebe e-mail de confirmação/recuperação de verdade.
+    brevo: {
+        apiKey: process.env.BREVO_API_KEY || null,
+        // Precisa ser um remetente verificado no painel do Brevo (endereço
+        // ou domínio com SPF/DKIM configurados) — nunca invente um valor
+        // aqui sem confirmar isso no painel do Brevo antes de ir a produção.
+        remetenteEmail: process.env.BREVO_REMETENTE_EMAIL || null,
+        remetenteNome: process.env.BREVO_REMETENTE_NOME || "ACESSO",
+        timeoutMs: Number(process.env.BREVO_TIMEOUT_MS) || 15000
+    },
+
+    // URL base do Frontend para montar links de e-mail (confirmação de
+    // cadastro, redefinição de senha). Reaproveita FRONTEND_URL (mesma
+    // variável já usada para CORS) — usa a primeira origem da lista.
+    frontendUrl: paraLista(process.env.FRONTEND_URL, ["http://localhost:5173"])[0]
 };
 
 /**
@@ -137,6 +158,23 @@ if (env.isProducao && !(env.storage.supabaseUrl && env.storage.supabaseServiceRo
             "Configure o Supabase Storage antes de subir em produção."
     );
     process.exit(1);
+}
+
+/**
+ * Aviso (não fail-fast): sem BREVO_API_KEY em produção, nenhum e-mail de
+ * confirmação de cadastro ou recuperação de senha é enviado de verdade.
+ * A aplicação continua no ar — AuthService detecta a ausência do provedor
+ * e não exige confirmação de e-mail de contas novas nesse caso (evita
+ * travar cadastros por uma dependência externa não configurada), mas o
+ * comportamento correto (gate de verificação + recuperação de senha por
+ * e-mail) só é ativado com a chave configurada.
+ */
+if (env.isProducao && !env.brevo.apiKey) {
+    console.error(
+        "[ENV] Produção sem BREVO_API_KEY configurada. Recuperação de senha " +
+            "e confirmação de e-mail de cadastro não enviarão e-mails reais " +
+            "até essa variável ser configurada no Render."
+    );
 }
 
 export default env;

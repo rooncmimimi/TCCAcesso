@@ -1,6 +1,20 @@
 import authService from "../services/authService.js";
 import RecuperacaoSenhaService from "../services/RecuperacaoSenhaService.js";
 import RefreshTokenService from "../services/RefreshTokenService.js";
+import ApiError from "../utils/ApiError.js";
+
+const MENSAGEM_ERRO_CADASTRO =
+    "Não foi possível concluir o cadastro agora. Tente novamente.";
+
+/**
+ * Erros esperados de regra de negócio (ApiError, ex.: e-mail duplicado)
+ * já trazem mensagem amigável e devem seguir como estão. Qualquer outra
+ * falha (ex.: erro inesperado de banco de dados) é traduzida numa
+ * mensagem genérica e amigável para o cadastro — a causa original
+ * continua sendo logada no servidor via ApiError.interno.
+ */
+const tratarErroCadastro = (erro) =>
+    erro instanceof ApiError ? erro : ApiError.interno(MENSAGEM_ERRO_CADASTRO, erro);
 
 /**
  * Controller de autenticação — apenas orquestra requisição/resposta.
@@ -21,7 +35,7 @@ class AuthController {
 
             return res.status(201).json({ sucesso: true, ...resultado });
         } catch (erro) {
-            return next(erro);
+            return next(tratarErroCadastro(erro));
         }
     }
 
@@ -34,7 +48,7 @@ class AuthController {
 
             return res.status(201).json({ sucesso: true, ...resultado });
         } catch (erro) {
-            return next(erro);
+            return next(tratarErroCadastro(erro));
         }
     }
 
@@ -109,6 +123,31 @@ class AuthController {
     async redefinirSenha(req, res, next) {
         try {
             const resultado = await RecuperacaoSenhaService.redefinir(req.body);
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /** Confirma o e-mail de um cadastro recém-criado (rota pública — usuário ainda não está logado). */
+    async confirmarCadastro(req, res, next) {
+        try {
+            const resultado = await authService.confirmarEmailCadastro(
+                req.body.email,
+                req.body.codigo
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /** Reenvia o e-mail de confirmação de cadastro (rota pública, resposta sempre genérica). */
+    async reenviarConfirmacaoCadastro(req, res, next) {
+        try {
+            const resultado = await authService.reenviarConfirmacaoCadastro(req.body.email);
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

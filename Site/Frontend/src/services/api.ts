@@ -62,14 +62,22 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-/** Extrai a mensagem de erro padronizada pela API do backend. */
+/**
+ * Extrai a mensagem de erro padronizada pela API do backend.
+ *
+ * `erros[0].msg` (validação de campo, ex.: "Informe um CPF válido.") vem
+ * antes de `mensagem` de propósito: quando a validação falha, o backend
+ * sempre envia `mensagem: "Erro de validação."` (genérica) junto com a
+ * lista `erros` — sem essa ordem, o usuário nunca veria a mensagem
+ * específica do campo que falhou.
+ */
 export function extrairMensagemErro(erro: unknown, padrao = "Não foi possível concluir a ação."): string {
   const axiosErro = erro as AxiosError<{ mensagem?: string; message?: string; erros?: { msg?: string }[] }>;
   const dados = axiosErro?.response?.data;
   return (
+    dados?.erros?.[0]?.msg ??
     dados?.mensagem ??
     dados?.message ??
-    dados?.erros?.[0]?.msg ??
     padrao
   );
 }

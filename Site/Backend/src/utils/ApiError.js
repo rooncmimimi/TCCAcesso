@@ -40,6 +40,19 @@ class ApiError extends Error {
     static serviceUnavailable(mensagem = "Serviço temporariamente indisponível.") {
         return new ApiError(503, mensagem);
     }
+
+    /**
+     * Erro interno (500) com mensagem amigável para o cliente, preservando
+     * o erro original (`causaOriginal`) apenas para log — nunca é enviado
+     * na resposta HTTP. Use quando uma falha inesperada (ex.: erro de
+     * banco de dados) precisa virar uma mensagem específica para o
+     * usuário, sem esconder a causa raiz dos logs do servidor.
+     */
+    static interno(mensagem = "Erro interno do servidor.", causaOriginal = null) {
+        const erro = new ApiError(500, mensagem);
+        erro.causaOriginal = causaOriginal;
+        return erro;
+    }
 }
 
 export default ApiError;

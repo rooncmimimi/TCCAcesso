@@ -23,6 +23,7 @@ import { useSession, initials } from "@/contexts/SessionContext";
 import { useSpeech } from "@/contexts/SpeechContext";
 import { CapaUploader } from "./CapaUploader";
 import { FotoUploader } from "./FotoUploader";
+import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
 import type { Candidato } from "@/types";
 
 /** Edição do perfil pessoal: dados de conta (todos os tipos) + dados de candidato (quando aplicável). */
@@ -124,6 +125,7 @@ export function EditarPerfilDialog({
                 }}
               />
             </div>
+            <DicaDimensaoImagem tipo="banner" />
             {user.capaPerfil ? (
               <Button
                 type="button"
@@ -149,6 +151,7 @@ export function EditarPerfilDialog({
                 update({ fotoPerfil: atualizado.fotoPerfil });
               }}
             />
+            <DicaDimensaoImagem tipo="foto" />
           </div>
         </div>
 

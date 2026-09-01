@@ -43,7 +43,7 @@ function RecuperarSenha() {
     setEnviando(true);
     try {
       await authService.esqueciSenha(valores.email);
-      toast.success("Se o e-mail existir, enviamos um código de recuperação.");
+      toast.success("Se encontrarmos uma conta associada a este endereço, enviaremos as instruções para recuperação.");
       navigate({ to: "/redefinir-senha", search: { email: getValues("email") } });
     } catch (erro) {
       toast.error(extrairMensagemErro(erro, "Não foi possível solicitar a recuperação de senha."));

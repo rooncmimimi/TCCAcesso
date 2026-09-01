@@ -94,11 +94,18 @@ class EmpresaService {
 
     /* ==========================================================
        EMPRESAS PARCEIRAS (vitrine da home)
+       Critério de produto: "parceira" = aprovada pela plataforma
+       (pode publicar vagas). O selo "verificada" é um reconhecimento
+       ADICIONAL de confiança, independente — nunca um requisito para
+       aparecer como parceira. Mesmo critério de PublicoService.home().
     ========================================================== */
     async findPartners() {
         const empresas = await Empresa.findAll({
-            where: { empresaVerificada: true },
-            order: [["created_at", "DESC"]],
+            where: { statusAprovacao: "aprovada" },
+            order: [
+                ["empresaVerificada", "DESC"],
+                ["created_at", "DESC"]
+            ],
             limit: 6
         });
 

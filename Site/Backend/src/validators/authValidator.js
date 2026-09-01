@@ -27,7 +27,7 @@ const regrasComuns = [
     body("email")
         .trim()
         .isEmail()
-        .withMessage("Informe um e-mail válido.")
+        .withMessage("Informe um endereço de e-mail válido.")
         .isLength({ max: 150 })
         .normalizeEmail(),
 
@@ -47,7 +47,7 @@ export const validarCadastroCandidato = [
         .optional({ values: "falsy" })
         .trim()
         .matches(/^\d{11}$/)
-        .withMessage("O CPF deve conter 11 dígitos numéricos.")
+        .withMessage("Informe um CPF válido.")
 ];
 
 export const validarCadastroEmpresa = [
@@ -56,7 +56,7 @@ export const validarCadastroEmpresa = [
     body("cnpj")
         .trim()
         .matches(/^\d{14}$/)
-        .withMessage("O CNPJ deve conter 14 dígitos numéricos."),
+        .withMessage("Informe um CNPJ válido."),
 
     body("razaoSocial")
         .trim()
@@ -66,11 +66,33 @@ export const validarCadastroEmpresa = [
     body("nomeFantasia")
         .optional({ values: "falsy" })
         .trim()
-        .isLength({ max: 200 })
+        .isLength({ max: 200 }),
+
+    // Campos opcionais — cadastro reutiliza os mesmos limites do model
+    // Empresa e do fluxo de edição de perfil (EditarEmpresaDialog).
+    body("setor").optional({ values: "falsy" }).trim().isLength({ max: 120 }),
+    body("porte")
+        .optional({ values: "falsy" })
+        .isIn(["MEI", "Micro", "Pequena", "Media", "Grande"])
+        .withMessage("Porte inválido."),
+    body("site")
+        .optional({ values: "falsy" })
+        .trim()
+        .isURL({ require_protocol: true })
+        .withMessage("Informe uma URL válida (começando com http:// ou https://)."),
+    body("descricao").optional({ values: "falsy" }).trim().isLength({ max: 4000 }),
+    body("cidade").optional({ values: "falsy" }).trim().isLength({ max: 100 }),
+    body("estado").optional({ values: "falsy" }).trim().isLength({ min: 2, max: 2 }).withMessage("Informe a UF com 2 letras."),
+    body("endereco").optional({ values: "falsy" }).trim().isLength({ max: 255 }),
+    body("cep")
+        .optional({ values: "falsy" })
+        .trim()
+        .matches(/^\d{8}$/)
+        .withMessage("Informe um CEP válido (8 dígitos).")
 ];
 
 export const validarLogin = [
-    body("email").trim().isEmail().withMessage("Informe um e-mail válido."),
+    body("email").trim().isEmail().withMessage("Informe um endereço de e-mail válido."),
 
     body("senha").isString().notEmpty().withMessage("Informe a senha."),
 

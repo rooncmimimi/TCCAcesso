@@ -30,41 +30,42 @@ const BASE_CONHECIMENTO = [
     {
         chaves: ["criar conta", "criar uma conta", "cadastr", "me cadastrar", "fazer meu cadastro"],
         resposta:
-            "Na tela de Cadastro, escolha se você é candidato ou empresa e preencha os dados pedidos. O acesso é liberado imediatamente após o cadastro."
+            "1. Na tela inicial, toque em 'Criar conta'. 2. Escolha se você é 'Pessoa candidata' ou 'Empresa'. 3. Preencha os dados pedidos (nome, e-mail, senha e, para empresa, CNPJ e razão social). 4. Toque em 'Continuar para acessibilidade'. 5. Configure suas preferências de acessibilidade. Pronto — se a confirmação por e-mail estiver ativa, você recebe um link antes de poder entrar; caso contrário, o acesso já é liberado."
     },
     {
         chaves: ["login", "fazer login", "entrar na minha conta", "acessar minha conta"],
         resposta:
-            "Na tela de Entrar, informe seu e-mail e senha cadastrados. Se esqueceu a senha, toque em 'Esqueci minha senha' na mesma tela."
+            "1. Na tela 'Entrar no ACESSO', informe seu e-mail. 2. Informe sua senha. 3. Toque em 'Entrar'. 4. Se você tiver a verificação em duas etapas ativada, informe o código do seu aplicativo autenticador. Esqueceu a senha? Toque em 'Esqueceu a senha?', ao lado do campo de senha."
     },
     {
         chaves: ["esqueci", "recuperar senha", "esqueci minha senha", "recuperar minha senha"],
         resposta:
-            "Na tela de Entrar, toque em 'Esqueci minha senha'. Você recebe um código de 6 dígitos por e-mail, válido por 15 minutos, para definir uma nova senha."
+            "1. Na tela Entrar, toque em 'Esqueceu a senha?'. 2. Informe o e-mail da sua conta. 3. Verifique sua caixa de entrada — você recebe um código de 6 dígitos, válido por 15 minutos. 4. Na tela de redefinição, informe o código e a nova senha. 5. Faça login com a nova senha."
     },
     {
-        chaves: ["alterar minha senha", "trocar minha senha", "mudar minha senha", "alterar senha"],
+        chaves: ["alterar minha senha", "trocar minha senha", "mudar minha senha", "alterar senha", "altero minha senha", "altero a senha"],
         resposta:
-            "Em Configurações > Segurança você altera sua senha atual — basta informar a senha antiga e a nova."
+            "1. Acesse Configurações (menu do seu perfil). 2. Na seção Conta, toque em 'Alterar senha'. 3. Informe sua 'Senha atual'. 4. Informe a 'Nova senha'. 5. Repita em 'Confirmar nova senha'. 6. Toque em Salvar."
     },
     {
         regex: /\blogout\b|sa(ir|io)\s+da\s+(minha\s+)?conta|fazer logout|encerrar (a )?sessao/,
         resposta:
-            "Para sair da sua conta, abra o menu do seu perfil (sua foto, no topo da tela) e escolha 'Sair'."
+            "1. Toque na sua foto/nome, no canto superior da tela. 2. No menu que abrir, escolha 'Sair'."
     },
     {
         chaves: [
             "excluir conta", "excluir minha conta", "deletar conta", "deletar minha conta",
             "cancelar conta", "cancelar minha conta", "encerrar conta", "encerrar minha conta",
-            "pausar conta", "pausar minha conta"
+            "pausar conta", "pausar minha conta", "excluo minha conta", "excluo a conta",
+            "deleto minha conta", "encerro minha conta", "pauso minha conta"
         ],
         resposta:
-            "Em Configurações > Conta você encontra as opções de pausar ou excluir sua conta. A exclusão pede sua senha atual e é permanente."
+            "1. Acesse Configurações > Conta. 2. Escolha 'Pausar conta' (reversível — basta entrar de novo pra reativar) ou 'Excluir conta' (permanente). 3. Informe sua senha atual para confirmar. Atenção: excluir a conta não pode ser desfeito."
     },
     {
         chaves: ["2fa", "dois fatores", "duas etapas"],
         resposta:
-            "Ative a verificação em duas etapas em Configurações > Segurança. Você vai escanear um QR code com um aplicativo autenticador e confirmar um código antes de ativar."
+            "1. Acesse Configurações > Segurança. 2. Toque em 'Ativar autenticação de dois fatores'. 3. Informe sua senha atual. 4. Escaneie o QR code com um app autenticador (Google Authenticator, Authy ou similar) — ou copie o código e cole manualmente no app. 5. Digite o código de 6 dígitos gerado pelo app para confirmar. A partir daí, o login pede esse código toda vez."
     },
 
     // ---------- Perfil ----------
@@ -74,15 +75,17 @@ const BASE_CONHECIMENTO = [
             "alterar meu perfil", "editar meu perfil", "editar perfil",
             "ver meu perfil", "visualizar meu perfil", "editar minhas informacoes",
             "alterar minhas informacoes", "mudar meu titulo", "alterar meu titulo",
-            "alterar meus dados", "mudar meus dados", "altero meus dados"
+            "alterar meus dados", "mudar meus dados", "altero meus dados",
+            "titulo profissional", "adicionar titulo", "adicionar experiencia",
+            "adicionar formacao", "adicionar certificado", "adicionar habilidade"
         ],
         resposta:
-            "No seu perfil você edita foto, capa, biografia, título profissional e cadastra experiências, formações, certificados, habilidades e o currículo (tudo em 'Editar perfil'). O arquivo do currículo fica em armazenamento privado — só você, a equipe do ACESSO e empresas com uma candidatura sua conseguem acessá-lo."
+            "Para editar seu título profissional, biografia e dados pessoais: 1. Acesse seu perfil. 2. Toque em 'Editar perfil' (ou em 'Adicionar título profissional', se ainda não tiver um). 3. Preencha o campo 'Título profissional' (ex.: Auxiliar Administrativo). 4. Ajuste também biografia, cidade, escolaridade e outros campos, se quiser. 5. Toque em Salvar.\n\nPara adicionar experiência, formação, certificado ou habilidade: 1. No seu perfil, role até a seção correspondente (Experiência profissional, Formação acadêmica, Certificados ou Habilidades). 2. Toque em 'Adicionar'. 3. Preencha os campos (cargo, empresa, período, etc. — cada seção tem os seus). 4. Toque em Salvar. Você pode editar ou remover qualquer item depois, pelos ícones ao lado dele.\n\nPara enviar o currículo: em 'Editar perfil', envie o arquivo em PDF ou DOCX — ele fica em armazenamento privado, acessível só por você, pela equipe do ACESSO e por empresas com uma candidatura sua."
     },
     {
         chaves: ["ver perfil de outra pessoa", "visualizar outro perfil", "ver o perfil de"],
         resposta:
-            "Toque no nome ou na foto da pessoa em qualquer publicação, vaga ou resultado de busca para abrir o perfil dela."
+            "Toque no nome ou na foto da pessoa em qualquer publicação, vaga, sugestão do Descobrir ou resultado de busca — isso abre o perfil dela."
     },
     {
         // "sigo" é a conjugação em primeira pessoa de "seguir" — sem o
@@ -90,12 +93,12 @@ const BASE_CONHECIMENTO = [
         chaves: ["seguir alguem", "seguir uma pessoa", "seguir um perfil", "seguir uma empresa"],
         regex: /\bsigo\s+(uma\s+|um\s+)?(pessoa|empresa|perfil)/,
         resposta:
-            "No perfil de uma pessoa ou empresa, toque em 'Seguir'. Não é preciso aceite — diferente de um pedido de conexão, seguir é imediato."
+            "1. Abra o perfil da pessoa ou empresa. 2. Toque no botão 'Seguir'. Não é preciso aceite — diferente de um pedido de conexão, seguir é imediato."
     },
     {
         chaves: ["deixar de seguir", "parar de seguir", "deixo de seguir"],
         resposta:
-            "No perfil de quem você segue, toque novamente no botão (agora 'Seguindo') para deixar de seguir."
+            "1. Abra o perfil de quem você segue. 2. Toque no botão (que agora mostra 'Seguindo'). Isso já deixa de seguir a pessoa ou empresa."
     },
     {
         chaves: [
@@ -134,7 +137,7 @@ const BASE_CONHECIMENTO = [
             "tecnologia assistiva"
         ],
         resposta:
-            "Na página de Vagas você pode filtrar por público-alvo (PCD, 50+ ou ambos) e por recursos específicos, como intérprete de Libras, tecnologia assistiva, ambiente físico acessível e jornada adaptável."
+            "1. Acesse a página Vagas. 2. Abra os filtros. 3. Em 'Público da vaga', escolha PCD, 50+ ou PCD e 50+. 4. Em recursos de acessibilidade, marque os que você precisa (intérprete de Libras, tecnologia assistiva, ambiente físico acessível, jornada adaptável). Os selos escolhidos aparecem no card de cada vaga compatível."
     },
     {
         chaves: ["vaga para pcd", "vagas para pcd", "vaga para pessoa com deficiencia", "vagas para idoso"],
@@ -143,22 +146,22 @@ const BASE_CONHECIMENTO = [
         // enumerar toda variação de como alguém menciona 50+.
         regex: /(vaga|emprego)\w*[\s\S]*\b50\b|\b50\b[\s\S]*(vaga|emprego)\w*/,
         resposta:
-            "No filtro 'Público da vaga', em Vagas, escolha entre PCD, 50+ ou PCD e 50+ para ver só as vagas destinadas a esses públicos."
+            "1. Acesse a página Vagas. 2. Abra os filtros. 3. Em 'Público da vaga', escolha PCD, 50+ ou PCD e 50+. Só as vagas destinadas a esse público aparecem na lista."
     },
     {
         chaves: ["vaga", "emprego", "trabalho", "candidat", "achar vaga", "procurar vaga"],
         resposta:
-            "Acesse a página Vagas para buscar por palavra-chave e filtrar por modalidade, público-alvo (PCD, 50+ ou ambos) e recursos de acessibilidade. Toque em 'Candidatar-se' na vaga para enviar seu perfil à empresa."
+            "1. Acesse a página Vagas. 2. Busque por palavra-chave e/ou use os filtros (modalidade, público-alvo, recursos de acessibilidade). 3. Toque na vaga para ver os detalhes completos. 4. Toque em 'Candidatar-se' para enviar seu perfil à empresa. Sua candidatura usa os dados já cadastrados no seu perfil."
     },
     {
-        chaves: ["status", "andamento", "resultado da candidatura"],
+        chaves: ["status", "andamento", "resultado da candidatura", "minhas candidaturas", "ver minhas candidaturas"],
         resposta:
-            "Acompanhe suas candidaturas no seu painel. Cada mudança de status (em análise, aprovada, recusada) gera uma notificação, e você pode cancelar uma candidatura por lá."
+            "1. Acesse seu painel de candidato. 2. Veja a lista de candidaturas com o status atual de cada uma (pendente, em análise, aprovada ou rejeitada). Você recebe uma notificação a cada mudança de status."
     },
     {
-        regex: /(cancelar|desfazer)\s+(a\s+|uma\s+|minha\s+|sua\s+)?candidatura/,
+        regex: /(cancel|desfaz)\w*\s+(a\s+|uma\s+|minha\s+|sua\s+)?candidatura/,
         resposta:
-            "No seu painel de candidato, abra a candidatura desejada e escolha cancelar."
+            "1. Acesse seu painel de candidato. 2. Abra a candidatura desejada. 3. Escolha a opção de cancelar."
     },
     {
         chaves: [
@@ -178,7 +181,7 @@ const BASE_CONHECIMENTO = [
         // "publicação" do Feed.
         regex: /(public|edit|exclu|delet|remov|anunci|cadastr|recrut)\w*\s+(a\s+|uma\s+)?vaga/,
         resposta:
-            "Empresas com cadastro aprovado publicam, editam e excluem vagas pelo Painel de indicadores > Minhas vagas, podendo definir modalidade, público-alvo (PCD, 50+ ou ambos) e os recursos de acessibilidade oferecidos."
+            "Para criar: 1. No painel da empresa, toque em 'Nova vaga'. 2. Preencha cargo, descrição, localização, modalidade, público-alvo e recursos de acessibilidade oferecidos. 3. Publique.\n\nPara editar: 1. No painel, abra a vaga em 'Minhas vagas'. 2. Toque em 'Editar'. 3. Atualize o que precisar e salve.\n\nPara pausar, reabrir ou encerrar: use as ações na própria vaga, dentro de 'Minhas vagas' — elas ficam organizadas em Aberta, Pausada e Encerrada. Tudo isso exige que a empresa já esteja aprovada pela equipe do ACESSO."
     },
     {
         chaves: ["empresa"],
@@ -194,7 +197,7 @@ const BASE_CONHECIMENTO = [
             "publicar algo"
         ],
         resposta:
-            "No Feed, use o campo no topo para publicar um texto com até 4 imagens ou vídeos. Em cada publicação você pode curtir, comentar e compartilhar."
+            "1. Acesse o Feed. 2. Escreva no campo 'Compartilhe algo...' no topo. 3. Se quiser, toque em Foto ou Vídeo para anexar (até 4 arquivos). 4. Toque em 'Publicar'. Em qualquer publicação você também pode curtir, comentar e compartilhar."
     },
     {
         chaves: [
@@ -207,31 +210,45 @@ const BASE_CONHECIMENTO = [
     {
         regex: /denunc\w*\s+(uma\s+|um\s+)?(mensagem|conversa)/,
         resposta:
-            "Denúncias de mensagem são feitas dentro da própria conversa, no menu de opções da mensagem. A equipe do ACESSO analisa o contexto antes de tomar qualquer ação."
+            "1. Abra a conversa com a mensagem em questão. 2. Toque no menu de opções (⋮) da mensagem. 3. Escolha 'Denunciar'. A equipe do ACESSO analisa o contexto antes de tomar qualquer ação."
     },
     {
         regex: /denunc\w*\s+(um\s+|uma\s+)?(perfil|pessoa|usuario)/,
         resposta:
-            "No perfil da pessoa, use o menu de opções (⋮) e escolha 'Denunciar'. A equipe do ACESSO analisa cada denúncia."
+            "1. Abra o perfil da pessoa. 2. Toque no menu de opções (⋮). 3. Escolha 'Denunciar'. A equipe do ACESSO analisa cada denúncia."
     },
     {
         chaves: ["denunc", "abuso", "reportar"],
         resposta:
-            "Toque no menu de opções (⋮) de uma publicação, comentário, vaga, perfil ou mensagem e escolha 'Denunciar'. Nossa equipe analisa cada denúncia e você recebe uma notificação quando ela for concluída."
+            "1. No conteúdo que você quer denunciar (publicação, comentário, vaga, perfil ou mensagem), toque no menu de opções (⋮). 2. Escolha 'Denunciar'. 3. Descreva o motivo, se pedido. Nossa equipe analisa cada denúncia e você recebe uma notificação quando ela for concluída."
     },
     {
         chaves: ["bloque"],
         resposta:
-            "No perfil da pessoa, use o menu de opções para bloqueá-la. Um usuário bloqueado não consegue ver seu perfil nem enviar mensagens. Veja sua lista de bloqueados em Configurações > Privacidade."
+            "1. Abra o perfil da pessoa. 2. Toque no menu de opções. 3. Escolha 'Bloquear'. Um usuário bloqueado não consegue ver seu perfil nem enviar mensagens. Veja e gerencie sua lista de bloqueados em Configurações > Privacidade > Usuários bloqueados."
     },
 
     // ---------- Mensagens ----------
     {
         // "mensage" (sem o "m"/"ns" final) cobre "mensagem" e "mensagens" —
-        // "mensagem" sozinho não bate com a forma plural.
+        // "mensagem" sozinho não bate com a forma plural. O regex cobre
+        // "envio/enviar/mandar (uma) mensagem" com uma palavra no meio
+        // ("uma") — sem ele, essa frase colide em pontos com a chave
+        // curta "empresa" do tópico de Vagas e pode perder no empate.
         chaves: ["mensage", "chat", "conversa", "falar", "iniciar conversa"],
+        regex: /\b(envi|mand)\w*\s+(uma\s+)?mensage/,
         resposta:
-            "Use a área de Mensagens para conversar diretamente com empresas e candidatos — pelo perfil da pessoa/empresa ou pela página de uma vaga. As conversas ficam salvas e um contador mostra as mensagens não lidas."
+            "1. Abra o perfil da pessoa/empresa (ou a página de uma vaga). 2. Toque em 'Enviar mensagem' ou 'Conversar com a empresa'. 3. Digite e envie. Todas as conversas ficam disponíveis na área de Mensagens, com um contador de não lidas."
+    },
+
+    // ---------- Notificações ----------
+    {
+        chaves: [
+            "notificacao", "notificacoes", "receber notificacao", "desativar notificacao",
+            "silenciar notificacao"
+        ],
+        resposta:
+            "1. Acesse Configurações > Notificações. 2. Ligue ou desligue cada categoria separadamente: 'Vagas e candidaturas', 'Mensagens', 'Publicações e comentários' e rede/seguidores."
     },
 
     // ---------- Privacidade ----------
@@ -241,34 +258,34 @@ const BASE_CONHECIMENTO = [
             "quem pode ver meu perfil", "alterar minha privacidade", "alterar privacidade"
         ],
         resposta:
-            "Em Configurações > Privacidade você controla quem vê seu perfil e seus dados de contato. Informações sobre deficiência nunca são públicas por padrão — só ficam visíveis para você mesmo e, quando aplicável, para a equipe administrativa."
+            "1. Acesse Configurações > Privacidade > Perfil público. 2. Ajuste quem vê seu perfil e seus dados de contato. Informações sobre deficiência nunca são públicas por padrão — só ficam visíveis para você mesmo e, quando aplicável, para uma empresa com candidatura sua ou para a equipe administrativa."
     },
 
     // ---------- Acessibilidade ----------
     {
         chaves: ["libras", "surdo", "surdez", "sinais"],
         resposta:
-            "O ACESSO integra o VLibras. Clique no ícone de mãos no canto da tela para ativar a tradução em Libras de qualquer texto da plataforma."
+            "1. Toque no ícone de mãos (VLibras), fixo no canto da tela em qualquer página. 2. Selecione o texto que você quer traduzido. Você também pode ativar/desativar esse ícone em Configurações > Acessibilidade."
     },
     {
         regex: /desativ\w*.*(voz|leitura|leitor)|desligar.*(voz|leitura|leitor)|parar.*(a leitura|o leitor)/,
         resposta:
-            "Para desativar a leitura por voz, vá em Configurações > Acessibilidade e desligue 'Leitura por voz'. Você pode reativar quando quiser."
+            "1. Acesse Configurações > Acessibilidade. 2. Desligue a opção 'Leitura por voz'. Você pode reativar quando quiser, do mesmo jeito."
     },
     {
         chaves: ["voz", "leitura", "ler", "audio", "cego", "cega"],
         resposta:
-            "Ative a leitura por voz em Configurações > Acessibilidade. Na primeira ativação pedimos seu consentimento; depois é possível ajustar a velocidade da fala."
+            "1. Acesse Configurações > Acessibilidade. 2. Ative 'Leitura por voz' (na primeira vez, pedimos seu consentimento). 3. Ajuste a velocidade da fala, se quiser, na mesma tela."
     },
     {
         chaves: ["modo escuro", "tema escuro", "dark mode"],
         resposta:
-            "O modo escuro fica em Configurações > Acessibilidade, com uma prévia em tempo real antes de salvar."
+            "1. Acesse Configurações > Acessibilidade. 2. Ative o modo escuro. Você vê uma prévia em tempo real antes de salvar."
     },
     {
         chaves: ["cursor ampliado", "cursor grande", "aumentar o cursor"],
         resposta:
-            "O cursor ampliado fica em Configurações > Acessibilidade, na mesma tela de contraste e fonte."
+            "1. Acesse Configurações > Acessibilidade. 2. Ative 'Cursor ampliado', na mesma tela de contraste e fonte."
     },
     {
         chaves: [
@@ -277,7 +294,7 @@ const BASE_CONHECIMENTO = [
             "altero minhas configuracoes"
         ],
         resposta:
-            "Em Configurações > Acessibilidade você ajusta alto contraste, modo escuro, tamanho da fonte (até 200%), espaçamento entre letras e linhas, fonte para dislexia, cursor ampliado e redução de animações — tudo com uma prévia em tempo real antes de salvar."
+            "1. Acesse Configurações > Acessibilidade. 2. Ajuste alto contraste, modo escuro, tamanho da fonte (até 200%), espaçamento entre letras e linhas, fonte para dislexia, cursor ampliado e redução de animações. 3. Veja a prévia em tempo real. 4. Salve."
     }
 ];
 

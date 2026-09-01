@@ -2,8 +2,10 @@ import api, { setTokens, clearTokens, getRefreshToken } from "./api";
 import type {
   AtivacaoDoisFatores,
   CredenciaisLogin,
+  RespostaCadastroPendenteVerificacao,
   RespostaLogin,
   RespostaLoginContaPausada,
+  RespostaLoginEmailNaoVerificado,
   RespostaLoginPendente2FA,
   SessaoAtiva,
   StatusDoisFatores,
@@ -13,13 +15,27 @@ import type {
 /** Serviço de autenticação — espelha as rotas `/auth` do backend Express. */
 export const authService = {
   /** Se a conta tem 2FA ativado e `codigoTotp` não foi enviado, retorna `{ requerDoisFatores: true }` sem criar sessão.
-   *  Se a conta estiver pausada e `confirmarReativacao` não foi enviado, retorna `{ contaPausada: true }`. */
+   *  Se a conta estiver pausada e `confirmarReativacao` não foi enviado, retorna `{ contaPausada: true }`.
+   *  Se o e-mail do cadastro ainda não foi confirmado, retorna `{ emailNaoVerificado: true, email }`. */
   async login(
     credenciais: CredenciaisLogin,
-  ): Promise<RespostaLogin | RespostaLoginPendente2FA | RespostaLoginContaPausada> {
-    const { data } = await api.post<RespostaLogin | RespostaLoginPendente2FA | RespostaLoginContaPausada>(
-      "/auth/login",
-      credenciais,
+  ): Promise<RespostaLogin | RespostaLoginPendente2FA | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado> {
+    const { data } = await api.post<
+      RespostaLogin | RespostaLoginPendente2FA | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado
+    >("/auth/login", credenciais);
+    if ("token" in data) {
+      setTokens(data.token, data.refreshToken);
+    }
+    return data;
+  },
+
+  /** Se a confirmação de e-mail estiver ativa, retorna `{ pendenteVerificacaoEmail: true, email }` sem criar sessão. */
+  async registrarCandidato(
+    payload: Record<string, unknown>,
+  ): Promise<RespostaLogin | RespostaCadastroPendenteVerificacao> {
+    const { data } = await api.post<RespostaLogin | RespostaCadastroPendenteVerificacao>(
+      "/auth/register/candidato",
+      payload,
     );
     if ("token" in data) {
       setTokens(data.token, data.refreshToken);
@@ -27,16 +43,27 @@ export const authService = {
     return data;
   },
 
-  async registrarCandidato(payload: Record<string, unknown>): Promise<RespostaLogin> {
-    const { data } = await api.post<RespostaLogin>("/auth/register/candidato", payload);
-    setTokens(data.token, data.refreshToken);
+  async registrarEmpresa(
+    payload: Record<string, unknown>,
+  ): Promise<RespostaLogin | RespostaCadastroPendenteVerificacao> {
+    const { data } = await api.post<RespostaLogin | RespostaCadastroPendenteVerificacao>(
+      "/auth/register/empresa",
+      payload,
+    );
+    if ("token" in data) {
+      setTokens(data.token, data.refreshToken);
+    }
     return data;
   },
 
-  async registrarEmpresa(payload: Record<string, unknown>): Promise<RespostaLogin> {
-    const { data } = await api.post<RespostaLogin>("/auth/register/empresa", payload);
-    setTokens(data.token, data.refreshToken);
-    return data;
+  /** Confirma o e-mail de um cadastro recém-criado usando o código de 6 dígitos recebido por e-mail. */
+  async confirmarCadastro(email: string, codigo: string): Promise<void> {
+    await api.post("/auth/cadastro/confirmar-email", { email, codigo });
+  },
+
+  /** Reenvia o e-mail de confirmação de cadastro (resposta sempre genérica, não revela se a conta existe). */
+  async reenviarConfirmacaoCadastro(email: string): Promise<void> {
+    await api.post("/auth/cadastro/reenviar-confirmacao", { email });
   },
 
   async perfilAtual(): Promise<Usuario> {

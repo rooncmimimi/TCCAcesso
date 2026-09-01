@@ -137,7 +137,10 @@ export function RecursoFormDialog({
           <DialogTitle>
             {editando ? `Editar ${TITULOS[recurso]}` : `Adicionar ${TITULOS[recurso]}`}
           </DialogTitle>
-          <DialogDescription>Essas informações aparecem no seu perfil público.</DialogDescription>
+          <DialogDescription>
+            Essas informações aparecem no seu perfil público. Campos com <span aria-hidden="true">*</span>
+            <span className="sr-only">asterisco</span> são obrigatórios.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={enviar} className="space-y-4">
@@ -145,11 +148,11 @@ export function RecursoFormDialog({
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="cargo">Cargo</Label>
+                  <Label htmlFor="cargo">Cargo <span aria-hidden="true">*</span></Label>
                   <Input id="cargo" name="cargo" required minLength={2} maxLength={150} defaultValue={registro?.cargo ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="empresa">Empresa</Label>
+                  <Label htmlFor="empresa">Empresa <span aria-hidden="true">*</span></Label>
                   <Input id="empresa" name="empresa" required minLength={2} maxLength={150} defaultValue={registro?.empresa ?? ""} />
                 </div>
               </div>
@@ -165,7 +168,7 @@ export function RecursoFormDialog({
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="dataInicio">Início</Label>
+                  <Label htmlFor="dataInicio">Início <span aria-hidden="true">*</span></Label>
                   <Input id="dataInicio" name="dataInicio" type="date" required defaultValue={registro?.dataInicio?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
@@ -188,11 +191,11 @@ export function RecursoFormDialog({
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="instituicao">Instituição</Label>
+                  <Label htmlFor="instituicao">Instituição <span aria-hidden="true">*</span></Label>
                   <Input id="instituicao" name="instituicao" required minLength={2} maxLength={180} defaultValue={registro?.instituicao ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="curso">Curso</Label>
+                  <Label htmlFor="curso">Curso <span aria-hidden="true">*</span></Label>
                   <Input id="curso" name="curso" required minLength={2} maxLength={180} defaultValue={registro?.curso ?? ""} />
                 </div>
               </div>
@@ -224,7 +227,7 @@ export function RecursoFormDialog({
           {recurso === "certificados" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="titulo">Título</Label>
+                <Label htmlFor="titulo">Título <span aria-hidden="true">*</span></Label>
                 <Input id="titulo" name="titulo" required minLength={2} maxLength={180} defaultValue={registro?.titulo ?? ""} />
               </div>
               <div className="space-y-2">
@@ -251,7 +254,7 @@ export function RecursoFormDialog({
           {recurso === "habilidades" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="nome">Habilidade</Label>
+                <Label htmlFor="nome">Habilidade <span aria-hidden="true">*</span></Label>
                 <Input id="nome" name="nome" required minLength={2} maxLength={80} defaultValue={registro?.nome ?? ""} />
               </div>
               <div className="space-y-2">

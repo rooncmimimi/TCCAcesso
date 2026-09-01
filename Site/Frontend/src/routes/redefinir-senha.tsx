@@ -32,7 +32,7 @@ const esquema = z.object({
 type Formulario = z.infer<typeof esquema>;
 
 export const Route = createFileRoute("/redefinir-senha")({
-  validateSearch: z.object({ email: z.string().optional() }),
+  validateSearch: z.object({ email: z.string().optional(), codigo: z.string().optional() }),
   head: () => ({
     meta: [
       { title: "Redefinir senha — ACESSO" },
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/redefinir-senha")({
 });
 
 function RedefinirSenha() {
-  const { email } = Route.useSearch();
+  const { email, codigo } = Route.useSearch();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const {
@@ -52,7 +52,7 @@ function RedefinirSenha() {
     formState: { errors },
   } = useForm<Formulario>({
     resolver: zodResolver(esquema),
-    defaultValues: { email: email ?? "", codigo: "", novaSenha: "" },
+    defaultValues: { email: email ?? "", codigo: codigo ?? "", novaSenha: "" },
   });
 
   const aoEnviar = handleSubmit(async (valores) => {

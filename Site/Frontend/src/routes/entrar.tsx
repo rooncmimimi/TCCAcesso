@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, ArrowRight, Loader2, PauseCircle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Mail, PauseCircle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useSession } from "@/contexts/SessionContext";
 import { useSpeech } from "@/contexts/SpeechContext";
+import authService from "@/services/auth.service";
 import { extrairMensagemErro } from "@/services/api";
 
 const esquemaLogin = z.object({
@@ -41,10 +42,14 @@ function Entrar() {
   const [enviando, setEnviando] = useState(false);
   const [credenciaisPendentes, setCredenciaisPendentes] = useState<{ email: string; senha: string } | null>(null);
   const [contaPausadaPendente, setContaPausadaPendente] = useState<{ email: string; senha: string } | null>(null);
+  const [emailNaoVerificado, setEmailNaoVerificado] = useState<string | null>(null);
+  const [reenviando, setReenviando] = useState(false);
+  const [reenviado, setReenviado] = useState(false);
   const [codigo, setCodigo] = useState("");
   const [erroCodigo, setErroCodigo] = useState<string | null>(null);
   const tituloCodigoRef = useRef<HTMLHeadingElement>(null);
   const tituloPausadaRef = useRef<HTMLHeadingElement>(null);
+  const tituloNaoVerificadoRef = useRef<HTMLHeadingElement>(null);
 
   const {
     register,
@@ -68,6 +73,12 @@ function Entrar() {
     }
   }, [contaPausadaPendente]);
 
+  useEffect(() => {
+    if (emailNaoVerificado) {
+      tituloNaoVerificadoRef.current?.focus();
+    }
+  }, [emailNaoVerificado]);
+
   const aoEnviar = handleSubmit(async (valores) => {
     setEnviando(true);
     try {
@@ -78,6 +89,10 @@ function Entrar() {
       }
       if ("contaPausada" in resultado) {
         setContaPausadaPendente(valores);
+        return;
+      }
+      if ("emailNaoVerificado" in resultado) {
+        setEmailNaoVerificado(resultado.email);
         return;
       }
       toast.success("Login realizado com sucesso!");
@@ -91,6 +106,20 @@ function Entrar() {
       setEnviando(false);
     }
   });
+
+  async function reenviarConfirmacao() {
+    if (!emailNaoVerificado) return;
+    setReenviando(true);
+    try {
+      await authService.reenviarConfirmacaoCadastro(emailNaoVerificado);
+      setReenviado(true);
+      toast.success("Um novo e-mail de confirmação foi enviado.");
+    } catch (erro) {
+      toast.error(extrairMensagemErro(erro, "Não foi possível reenviar o e-mail agora."));
+    } finally {
+      setReenviando(false);
+    }
+  }
 
   async function reativarConta() {
     if (!contaPausadaPendente) return;
@@ -146,7 +175,59 @@ function Entrar() {
         </Link>
         <Card className="shadow-card">
           <CardContent className="p-6">
-            {contaPausadaPendente ? (
+            {emailNaoVerificado ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+                    <Mail className="size-5" />
+                  </span>
+                  <div>
+                    <h1
+                      ref={tituloNaoVerificadoRef}
+                      tabIndex={-1}
+                      data-speak="Confirme seu e-mail antes de entrar."
+                      className="text-xl font-extrabold outline-none"
+                    >
+                      Confirme seu e-mail
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      Enviamos um e-mail de confirmação para <strong className="text-foreground">{emailNaoVerificado}</strong>. Verifique
+                      sua caixa de entrada (e a pasta de spam) e clique no link antes de entrar.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-6 min-h-11 w-full"
+                  disabled={reenviando || reenviado}
+                  onClick={reenviarConfirmacao}
+                >
+                  {reenviando ? (
+                    <>
+                      <Loader2 className="animate-spin" aria-hidden="true" /> Reenviando…
+                    </>
+                  ) : reenviado ? (
+                    "E-mail reenviado"
+                  ) : (
+                    "Reenviar e-mail"
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="mt-2 min-h-11 w-full gap-2"
+                  onClick={() => {
+                    setEmailNaoVerificado(null);
+                    setReenviado(false);
+                  }}
+                >
+                  <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+                </Button>
+              </>
+            ) : contaPausadaPendente ? (
               <>
                 <div className="flex items-center gap-3">
                   <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">

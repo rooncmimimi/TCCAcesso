@@ -31,6 +31,7 @@ const ATRIBUTOS_EMPRESA_SUGESTAO = [
     "logo",
     "setor",
     "cidade",
+    "descricao",
     "empresaVerificada",
     "statusAprovacao"
 ];
@@ -314,10 +315,12 @@ class SeguidorService {
             candidatosPontuados.set(usuario.id, atual);
         };
 
+        // "Pessoas" precisa ser só candidatos — empresa e administrador nunca
+        // entram aqui (empresa tem sua própria seção em sugestoesEmpresas).
         const filtroBase = {
             ativo: true,
             bloqueado: false,
-            tipoUsuario: { [Op.ne]: "administrador" },
+            tipoUsuario: "candidato",
             id: { [Op.notIn]: excluidos }
         };
 
@@ -373,7 +376,7 @@ class SeguidorService {
                         as: "usuario",
                         required: true,
                         attributes: PERFIL_PUBLICO,
-                        where: { ativo: true, bloqueado: false, tipoUsuario: { [Op.ne]: "administrador" } }
+                        where: { ativo: true, bloqueado: false, tipoUsuario: "candidato" }
                     }
                 ],
                 limit: 50
@@ -393,7 +396,7 @@ class SeguidorService {
                         as: "seguido",
                         required: true,
                         attributes: PERFIL_PUBLICO,
-                        where: { ativo: true, bloqueado: false, tipoUsuario: { [Op.ne]: "administrador" } }
+                        where: { ativo: true, bloqueado: false, tipoUsuario: "candidato" }
                     }
                 ],
                 limit: 50
@@ -412,8 +415,7 @@ class SeguidorService {
                 where: { ...filtroBase, id: { [Op.notIn]: [...excluidos, ...jaEncontrados] } },
                 attributes: PERFIL_PUBLICO,
                 include: [
-                    { model: Candidato, as: "candidato", required: false, attributes: ["tituloProfissional"] },
-                    { model: Empresa, as: "empresa", required: false, attributes: ["nomeFantasia"] }
+                    { model: Candidato, as: "candidato", required: false, attributes: ["tituloProfissional"] }
                 ],
                 limit: limiteFinal - resultado.length,
                 order: [["created_at", "DESC"]]
@@ -427,7 +429,7 @@ class SeguidorService {
             nome: usuario.nome,
             fotoPerfil: usuario.fotoPerfil,
             tipo: usuario.tipoUsuario,
-            titulo: usuario.candidato?.tituloProfissional ?? usuario.empresa?.nomeFantasia ?? null,
+            titulo: usuario.candidato?.tituloProfissional ?? null,
             motivo: motivos[0] ?? "Novo no ACESSO"
         }));
     }
@@ -531,6 +533,8 @@ class SeguidorService {
             razaoSocial: empresa.razaoSocial,
             logo: empresa.logo,
             setor: empresa.setor,
+            cidade: empresa.cidade,
+            descricao: empresa.descricao,
             empresaVerificada: empresa.empresaVerificada,
             motivo: motivos[0] ?? "Empresa parceira do ACESSO"
         }));

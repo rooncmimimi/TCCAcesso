@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "./AppHeader";
+import { SuporteRodape } from "@/components/SuporteRodape";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main id="conteudo" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6">
         {children}
       </main>
+      <SuporteRodape />
     </div>
   );
 }

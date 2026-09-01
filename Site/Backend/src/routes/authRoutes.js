@@ -3,7 +3,7 @@ import AuthController from "../controllers/AuthController.js";
 import AutenticacaoDoisFatoresController from "../controllers/AutenticacaoDoisFatoresController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import { authLimiter, refreshLimiter } from "../middlewares/rateLimitMiddleware.js";
+import { authLimiter, refreshLimiter, reenvioConfirmacaoLimiter } from "../middlewares/rateLimitMiddleware.js";
 import {
     validarCadastroCandidato,
     validarCadastroEmpresa,
@@ -16,7 +16,9 @@ import {
     validarRedefinirSenha,
     validarSenhaAtual2FA,
     validarCodigo2FA,
-    validarSolicitarTrocaEmail
+    validarSolicitarTrocaEmail,
+    validarConfirmarCadastro,
+    validarReenviarConfirmacaoCadastro
 } from "../validators/sessaoValidator.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 
@@ -68,6 +70,24 @@ router.post(
     validarRedefinirSenha,
     validationMiddleware,
     AuthController.redefinirSenha
+);
+
+/* ---------- Confirmação de e-mail de cadastro (rotas públicas) ---------- */
+
+router.post(
+    "/cadastro/confirmar-email",
+    authLimiter,
+    validarConfirmarCadastro,
+    validationMiddleware,
+    AuthController.confirmarCadastro
+);
+
+router.post(
+    "/cadastro/reenviar-confirmacao",
+    reenvioConfirmacaoLimiter,
+    validarReenviarConfirmacaoCadastro,
+    validationMiddleware,
+    AuthController.reenviarConfirmacaoCadastro
 );
 
 router.get("/me", authMiddleware, AuthController.me);

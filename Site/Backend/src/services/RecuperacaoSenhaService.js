@@ -4,10 +4,21 @@ import { Usuario, CodigoRecuperacaoSenha } from "../models/index.js";
 import { gerarCodigoNumerico, hashToken, compararHash } from "../utils/tokens.js";
 import { hashPassword } from "../utils/bcrypt.js";
 import RefreshTokenService from "./RefreshTokenService.js";
+import EmailService from "./EmailService.js";
+import authService from "./authService.js";
+import { templateRecuperacaoSenha } from "../utils/emailTemplates.js";
+import env from "../config/env.js";
 import ApiError from "../utils/ApiError.js";
 
 const MINUTOS_VALIDADE = 15;
 const MAX_TENTATIVAS = 5;
+
+function linkRedefinicaoSenha(email, codigo) {
+    const url = new URL("/redefinir-senha", env.frontendUrl);
+    url.searchParams.set("email", email);
+    url.searchParams.set("codigo", codigo);
+    return url.toString();
+}
 
 /**
  * Recuperação de senha por código de 6 dígitos.
@@ -21,7 +32,7 @@ class RecuperacaoSenhaService {
     async solicitar(email, contexto = {}) {
         const generico = {
             mensagem:
-                "Se o e-mail estiver cadastrado, enviaremos um código de recuperação."
+                "Se encontrarmos uma conta associada a este endereço, enviaremos as instruções para recuperação."
         };
 
         const usuario = await Usuario.findOne({
@@ -48,9 +59,40 @@ class RecuperacaoSenhaService {
             ipSolicitante: contexto.ip ? String(contexto.ip).slice(0, 64) : null
         });
 
-        // O envio real do e-mail é feito pelo provedor configurado em produção.
-        // Em desenvolvimento o código é registrado no log do servidor.
-        if (process.env.NODE_ENV !== "production") {
+        if (EmailService.disponivel()) {
+            const { assunto, html, texto } = templateRecuperacaoSenha({
+                nome: usuario.nome,
+                codigo,
+                linkRedefinir: linkRedefinicaoSenha(usuario.email, codigo),
+                minutosValidade: MINUTOS_VALIDADE
+            });
+
+            try {
+                await EmailService.enviar({
+                    para: usuario.email,
+                    nomeDestinatario: usuario.nome,
+                    assunto,
+                    html,
+                    texto,
+                    tag: "recuperacao-senha"
+                });
+            } catch (erro) {
+                // Best-effort, igual ao cadastro: a resposta ao cliente é
+                // sempre a mesma genérica (anti-enumeração) — o usuário
+                // pode simplesmente solicitar de novo.
+                console.error(
+                    JSON.stringify({
+                        nivel: "error",
+                        servico: "RecuperacaoSenhaService",
+                        acao: "envio_codigo_recuperacao",
+                        usuarioId: usuario.id,
+                        erro: erro.message
+                    })
+                );
+            }
+        } else if (process.env.NODE_ENV !== "production") {
+            // Sem provedor de e-mail configurado: mantém o fallback só de
+            // desenvolvimento (nunca em produção) que já existia antes.
             console.info(
                 `[RECUPERACAO] Código para ${usuario.email}: ${codigo} (expira em ${MINUTOS_VALIDADE} min)`
             );
@@ -113,6 +155,7 @@ class RecuperacaoSenhaService {
         }
 
         await RefreshTokenService.revogarTodos(usuario.id);
+        await authService.avisarSenhaAlterada(usuario);
 
         return { mensagem: "Senha redefinida com sucesso. Faça login novamente." };
     }

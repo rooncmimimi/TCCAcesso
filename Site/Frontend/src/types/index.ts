@@ -191,6 +191,22 @@ export interface RespostaLoginContaPausada {
   contaPausada: true;
 }
 
+/** Retornado no lugar de `RespostaLogin` quando o cadastro ainda não confirmou o e-mail. */
+export interface RespostaLoginEmailNaoVerificado {
+  emailNaoVerificado: true;
+  email: string;
+}
+
+/**
+ * Retornado no lugar de `RespostaLogin` pelo cadastro (candidato/empresa)
+ * quando a confirmação de e-mail está ativa: a conta foi criada, mas
+ * nenhuma sessão é emitida até o e-mail ser confirmado.
+ */
+export interface RespostaCadastroPendenteVerificacao {
+  pendenteVerificacaoEmail: true;
+  email: string;
+}
+
 /** Uma sessão ativa (refresh token) do usuário — ver `GET /auth/sessoes`. */
 export interface SessaoAtiva {
   id: string;
@@ -411,6 +427,8 @@ export interface SugestaoEmpresa {
   razaoSocial?: string;
   logo?: string | null;
   setor?: string | null;
+  cidade?: string | null;
+  descricao?: string | null;
   empresaVerificada?: boolean;
   motivo?: string;
 }

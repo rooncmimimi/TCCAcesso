@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building2, Compass, Loader2, UserPlus, Users } from "lucide-react";
+import { BadgeCheck, Building2, Compass, Loader2, MapPin, UserPlus, Users } from "lucide-react";
 
 import { AppShell } from "@/layouts/AppShell";
 import { Button } from "@/components/ui/button";
@@ -218,15 +218,31 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
           </Avatar>
         </Link>
         <div className="min-w-0">
-          <Link
-            to="/perfil/$usuarioId"
-            params={{ usuarioId: empresa.usuarioId ?? "" }}
-            className="block truncate font-bold hover:underline focus-visible:underline"
-          >
-            {nome}
-          </Link>
+          <span className="flex items-center justify-center gap-1">
+            <Link
+              to="/perfil/$usuarioId"
+              params={{ usuarioId: empresa.usuarioId ?? "" }}
+              className="block truncate font-bold hover:underline focus-visible:underline"
+            >
+              {nome}
+            </Link>
+            {empresa.empresaVerificada && (
+              <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+                <BadgeCheck className="size-4" aria-hidden="true" />
+                <span className="sr-only">Empresa verificada</span>
+              </span>
+            )}
+          </span>
           {empresa.setor ? <p className="truncate text-sm text-muted-foreground">{empresa.setor}</p> : null}
+          {empresa.cidade ? (
+            <p className="flex items-center justify-center gap-1 truncate text-xs text-muted-foreground">
+              <MapPin className="size-3" aria-hidden="true" /> {empresa.cidade}
+            </p>
+          ) : null}
         </div>
+        {empresa.descricao ? (
+          <p className="line-clamp-2 text-xs text-muted-foreground">{empresa.descricao}</p>
+        ) : null}
         {empresa.motivo ? (
           <p className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{empresa.motivo}</p>
         ) : null}

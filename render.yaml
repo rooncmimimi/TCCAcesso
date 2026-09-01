@@ -40,3 +40,9 @@ services:
         value: private-documents
       - key: MAX_VIDEO_UPLOAD_BYTES
         value: "52428800"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_REMETENTE_EMAIL
+        sync: false
+      - key: BREVO_REMETENTE_NOME
+        value: ACESSO

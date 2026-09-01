@@ -113,7 +113,7 @@ export function AssistenteAcesso() {
                 {m.papel === "usuario" ? <User className="size-4" /> : <Bot className="size-4" />}
               </span>
               <p
-                className={`min-w-0 rounded-xl px-3 py-2 text-sm ${
+                className={`min-w-0 whitespace-pre-line rounded-xl px-3 py-2 text-sm ${
                   m.papel === "usuario"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-foreground"

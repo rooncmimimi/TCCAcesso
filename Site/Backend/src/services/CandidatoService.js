@@ -264,7 +264,7 @@ class CandidatoService {
                 });
 
                 if (cpfExiste) {
-                    throw ApiError.conflict("CPF já cadastrado.");
+                    throw ApiError.conflict("Este CPF já está cadastrado.");
                 }
             }
 

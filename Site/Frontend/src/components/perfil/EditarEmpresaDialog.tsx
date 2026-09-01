@@ -29,6 +29,7 @@ import { empresasService } from "@/services/empresas.service";
 import { useSpeech } from "@/contexts/SpeechContext";
 import { CapaUploader } from "./CapaUploader";
 import { FotoUploader } from "./FotoUploader";
+import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
 import type { Empresa, PorteEmpresa } from "@/types";
 
 const PORTES: PorteEmpresa[] = ["MEI", "Micro", "Pequena", "Media", "Grande"];
@@ -114,6 +115,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
                 }}
               />
             </div>
+            <DicaDimensaoImagem tipo="banner" />
             {empresa.capa ? (
               <Button
                 type="button"
@@ -140,6 +142,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
                 await invalidarEmpresa();
               }}
             />
+            <DicaDimensaoImagem tipo="foto" />
           </div>
         </div>
 

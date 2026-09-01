@@ -108,6 +108,17 @@ const Usuario = sequelize.define(
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: true
+        },
+
+        // Migration 0032. DEFAULT true no banco para não afetar contas já
+        // existentes — só cadastros novos (AuthService.registerCandidate/
+        // registerCompany) gravam `false` explicitamente, exigindo
+        // confirmação por e-mail antes do primeiro login.
+        emailVerificado: {
+            field: "email_verificado",
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true
         }
     },
     {

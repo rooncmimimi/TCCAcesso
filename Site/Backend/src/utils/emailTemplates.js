@@ -149,6 +149,62 @@ export function templateConfirmacaoTrocaEmail({ nome, codigo, minutosValidade })
     return { assunto, html, texto };
 }
 
+/**
+ * E-mail de aviso quando a conta é bloqueada pela moderação (Fase 9,
+ * Bloco 3) — canal fora de banda: o usuário deixa de conseguir logar ou
+ * usar uma sessão já aberta, então o aviso in-app sozinho (`Notificacao`)
+ * nunca chega a ser visto por quem foi bloqueado.
+ */
+export function templateContaBloqueada({ nome, motivo }) {
+    const assunto = "Sua conta foi bloqueada — ACESSO";
+    const corpoHtml = `
+      <p style="margin:0 0 16px 0;">Sua conta no ACESSO foi bloqueada pela nossa equipe de moderação.</p>
+      ${motivo ? `<p style="margin:0 0 16px 0;"><strong>Motivo:</strong> ${escaparHtml(motivo)}</p>` : ""}
+      <p style="margin:0;color:${COR_TEXTO_SECUNDARIO};">Se você acredita que isso foi um engano, entre em contato com o suporte do ACESSO respondendo este e-mail.</p>
+    `;
+    const html = layoutBase({
+        titulo: "Sua conta foi bloqueada",
+        saudacao: nome ? `Olá, ${nome}.` : "Olá.",
+        corpoHtml
+    });
+    const texto =
+        `Sua conta foi bloqueada — ACESSO\n\n` +
+        `Sua conta no ACESSO foi bloqueada pela nossa equipe de moderação.\n` +
+        (motivo ? `Motivo: ${motivo}\n\n` : "\n") +
+        `Se você acredita que isso foi um engano, entre em contato com o suporte respondendo este e-mail.`;
+
+    return { assunto, html, texto };
+}
+
+/**
+ * E-mail de aviso quando a EMPRESA é suspensa pela moderação (Fase 9,
+ * Bloco 1/3) — diferente de conta bloqueada: o login da empresa continua
+ * funcionando (só `Empresa.statusAprovacao` muda, não `Usuario.bloqueado`),
+ * mas ela não pode mais criar/editar vaga nem receber candidatura nova —
+ * o e-mail existe pra garantir que a empresa saiba do motivo mesmo se não
+ * abrir o painel imediatamente.
+ */
+export function templateEmpresaSuspensa({ nome, motivo }) {
+    const assunto = "Sua empresa foi suspensa — ACESSO";
+    const corpoHtml = `
+      <p style="margin:0 0 16px 0;">O cadastro da sua empresa no ACESSO foi suspenso pela nossa equipe de moderação. Enquanto a suspensão estiver ativa, não é possível publicar ou editar vagas, nem receber novas candidaturas — vagas e candidaturas já existentes continuam preservadas.</p>
+      ${motivo ? `<p style="margin:0 0 16px 0;"><strong>Motivo:</strong> ${escaparHtml(motivo)}</p>` : ""}
+      <p style="margin:0;color:${COR_TEXTO_SECUNDARIO};">Se você acredita que isso foi um engano, entre em contato com o suporte do ACESSO respondendo este e-mail.</p>
+    `;
+    const html = layoutBase({
+        titulo: "Sua empresa foi suspensa",
+        saudacao: nome ? `Olá, ${nome}.` : "Olá.",
+        corpoHtml
+    });
+    const texto =
+        `Sua empresa foi suspensa — ACESSO\n\n` +
+        `O cadastro da sua empresa foi suspenso pela nossa equipe de moderação. Vagas e candidaturas já existentes continuam preservadas, mas não é possível publicar/editar vaga nem receber candidatura nova enquanto a suspensão estiver ativa.\n` +
+        (motivo ? `Motivo: ${motivo}\n\n` : "\n") +
+        `Se você acredita que isso foi um engano, entre em contato com o suporte respondendo este e-mail.`;
+
+    return { assunto, html, texto };
+}
+
 /** E-mail de aviso após troca de senha bem-sucedida. */
 export function templateSenhaAlterada({ nome }) {
     const assunto = "Sua senha foi alterada — ACESSO";

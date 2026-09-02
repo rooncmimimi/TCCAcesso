@@ -36,6 +36,11 @@ export function CandidaturasRecentes() {
       toast.success("Candidatura cancelada.");
       queryClient.invalidateQueries({ queryKey: ["candidaturas-minhas"] });
       queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
+      // Fase 9, Bloco 6: a página de detalhe da vaga (`/vaga/$vagaId`) usa a
+      // OUTRA key (`["candidaturas","minhas"]`) para decidir se mostra
+      // "Candidatura enviada" — sem isto, cancelar aqui deixava aquela tela
+      // presa no estado antigo até o staleTime expirar.
+      queryClient.invalidateQueries({ queryKey: ["candidaturas", "minhas"] });
     },
     onError: () => toast.error("Não foi possível cancelar a candidatura."),
   });

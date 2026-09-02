@@ -61,6 +61,17 @@ const PreferenciaAcessibilidade = sequelize.define(
             allowNull: false,
             defaultValue: false
         },
+        // Fase 9, Bloco 8: a intenção final é NULL = ainda não respondeu o
+        // consentimento de voz, true/false = já respondeu — mas isso exige
+        // a migration 0042 (relaxa a constraint NOT NULL/DEFAULT FALSE que
+        // hoje torna esse terceiro estado impossível), AINDA NÃO EXECUTADA
+        // (aguardando autorização explícita). `allowNull:false` +
+        // `defaultValue:false` continuam aqui de propósito — testado ao
+        // vivo que trocar para `true`/`null` ANTES da migration quebra o
+        // `findOrCreate` de `obter()` (Sequelize tenta INSERT NULL contra
+        // a coluna NOT NULL real → 500 em toda primeira leitura de
+        // preferências de um usuário novo). Trocar os dois junto com a
+        // migration, nunca antes.
         consentimentoVoz: {
             field: "consentimento_voz",
             type: DataTypes.BOOLEAN,

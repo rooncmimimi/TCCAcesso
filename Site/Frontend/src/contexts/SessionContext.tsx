@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { toast } from "sonner";
+
 import authService from "@/services/auth.service";
 import { aoExpirarSessao, clearTokens, getAccessToken } from "@/services/api";
 import { conectarSocket, desconectarSocket } from "@/services/socket";
@@ -95,9 +97,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [carregarPerfil]);
 
   useEffect(() => {
-    return aoExpirarSessao(() => {
+    // Fase 9: `motivo` só vem preenchido quando o encerramento é por
+    // bloqueio administrativo (ver services/api.ts) — nesse caso mostra a
+    // mensagem real do backend em vez do encerramento silencioso de
+    // sempre, que faria parecer só uma sessão expirada.
+    return aoExpirarSessao((motivo) => {
       desconectarSocket();
       setUser(null);
+      if (motivo) {
+        toast.error(motivo, { duration: 10_000 });
+      }
     });
   }, []);
 

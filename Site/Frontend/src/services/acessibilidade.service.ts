@@ -12,6 +12,13 @@ export function prefsParaApi(prefs: AccessibilityPrefs): PreferenciasAcessibilid
     espacamentoTexto: prefs.letterSpacing > 0 || prefs.lineHeight > 1.6,
     reduzirAnimacoes: prefs.reduceMotion,
     leituraPorVoz: prefs.screenReader,
+    // Fase 9, Bloco 8: `voiceConsent` só é enviado quando já tem uma
+    // resposta real (`true`/`false`) — quando ainda é `null` (nunca
+    // perguntado), o campo fica de fora do payload (`undefined` some no
+    // `JSON.stringify`) para NUNCA sobrescrever um valor já respondido no
+    // backend com "ainda não respondido" só porque o usuário salvou uma
+    // preferência não relacionada (ex.: mudou o tamanho da fonte).
+    consentimentoVoz: prefs.voiceConsent ?? undefined,
     velocidadeVoz: Number(prefs.speechRate.toFixed(1)),
     libras: prefs.vlibras,
     destaqueFoco: prefs.focusHighlight,
@@ -27,6 +34,12 @@ export function prefsDaApi(dto: PreferenciasAcessibilidade): Partial<Accessibili
   if (typeof dto.escalaFonte === "number") parcial.fontScale = dto.escalaFonte / 100;
   if (typeof dto.reduzirAnimacoes === "boolean") parcial.reduceMotion = dto.reduzirAnimacoes;
   if (typeof dto.leituraPorVoz === "boolean") parcial.screenReader = dto.leituraPorVoz;
+  // Propaga os três estados (`true`/`false`/`null`) — `null` também é um
+  // valor real aqui (ainda não respondeu), diferente dos outros campos
+  // acima que só existem como boolean.
+  if (typeof dto.consentimentoVoz === "boolean" || dto.consentimentoVoz === null) {
+    parcial.voiceConsent = dto.consentimentoVoz;
+  }
   if (dto.velocidadeVoz !== undefined && dto.velocidadeVoz !== null) {
     const taxa = Number(dto.velocidadeVoz);
     if (Number.isFinite(taxa) && taxa > 0) parcial.speechRate = taxa;

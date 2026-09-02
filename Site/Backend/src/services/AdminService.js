@@ -23,6 +23,8 @@ import NotificacaoService from "./NotificacaoService.js";
 import AdminAuditService from "./AdminAuditService.js";
 import UploadService from "./UploadService.js";
 import PostagemService from "./PostagemService.js";
+import EmailService from "./EmailService.js";
+import { templateContaBloqueada, templateEmpresaSuspensa } from "../utils/emailTemplates.js";
 
 /**
  * Nomes legíveis (singular/plural) por tipo de anexo — só para compor a
@@ -90,6 +92,38 @@ function descreverRemocaoComentario(admin, snapshot) {
  * privilégios (defesa em profundidade).
  */
 class AdminService {
+    /**
+     * Aviso por e-mail best-effort (Fase 9, Bloco 3) — mesmo padrão já
+     * usado em `authService.avisarSenhaAlterada`/`RecuperacaoSenhaService`:
+     * nunca lança, nunca desfaz nem atrasa a ação principal (a sanção já
+     * foi persistida antes de chegar aqui em todo call-site). Uma falha da
+     * Brevo vira só um log estruturado no servidor.
+     */
+    async _avisarPorEmailBestEffort({ usuarioId, email, nome, template, tag, acao }) {
+        if (!EmailService.disponivel()) return;
+
+        try {
+            await EmailService.enviar({
+                para: email,
+                nomeDestinatario: nome,
+                assunto: template.assunto,
+                html: template.html,
+                texto: template.texto,
+                tag
+            });
+        } catch (erro) {
+            console.error(
+                JSON.stringify({
+                    nivel: "error",
+                    servico: "AdminService",
+                    acao,
+                    usuarioId,
+                    erro: erro.message
+                })
+            );
+        }
+    }
+
     /* ==========================================================
        EMPRESAS — APROVAÇÃO
     ========================================================== */
@@ -265,6 +299,24 @@ class AdminService {
             userAgent: contexto.userAgent
         });
 
+        // Fase 9 (Bloco 3): diferente de conta bloqueada, o login da
+        // empresa continua funcionando — mas o e-mail garante que ela
+        // saiba do motivo mesmo sem abrir o painel. Best-effort, depois de
+        // tudo já persistido.
+        const usuarioDaEmpresa = await Usuario.findByPk(empresa.usuarioId, {
+            attributes: ["id", "nome", "email"]
+        });
+        if (usuarioDaEmpresa) {
+            await this._avisarPorEmailBestEffort({
+                usuarioId: usuarioDaEmpresa.id,
+                email: usuarioDaEmpresa.email,
+                nome: usuarioDaEmpresa.nome,
+                template: templateEmpresaSuspensa({ nome: usuarioDaEmpresa.nome, motivo: motivo || null }),
+                tag: "empresa-suspensa",
+                acao: "aviso_empresa_suspensa"
+            });
+        }
+
         return empresa;
     }
 
@@ -425,6 +477,23 @@ class AdminService {
             ip: contexto.ip,
             userAgent: contexto.userAgent
         });
+
+        // Fase 9 (Bloco 3): só no bloqueio, nunca na reativação — quem
+        // volta a ter acesso já vai ver a notificação in-app normalmente
+        // (o login funciona de novo), diferente de quem acabou de ser
+        // bloqueado e não tem mais nenhum jeito de ver um aviso dentro do
+        // app. Best-effort, depois de tudo já persistido — uma falha da
+        // Brevo nunca desfaz nem atrasa o bloqueio em si.
+        if (novoEstado) {
+            await this._avisarPorEmailBestEffort({
+                usuarioId: usuario.id,
+                email: usuario.email,
+                nome: usuario.nome,
+                template: templateContaBloqueada({ nome: usuario.nome, motivo: motivo || null }),
+                tag: "conta-bloqueada",
+                acao: "aviso_conta_bloqueada"
+            });
+        }
 
         return {
             id: usuario.id,

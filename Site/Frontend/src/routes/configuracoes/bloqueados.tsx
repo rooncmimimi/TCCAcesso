@@ -12,7 +12,6 @@ import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { urlArquivo } from "@/services/uploads.service";
 import { initials } from "@/contexts/SessionContext";
-import { useSpeech } from "@/contexts/SpeechContext";
 
 export const Route = createFileRoute("/configuracoes/bloqueados")({
   head: () => ({
@@ -32,7 +31,6 @@ const CHAVE = ["usuarios", "bloqueados"] as const;
 
 function UsuariosBloqueados() {
   const queryClient = useQueryClient();
-  const { speak, choice } = useSpeech();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: CHAVE,
@@ -43,10 +41,9 @@ function UsuariosBloqueados() {
     mutationFn: (usuarioId: string) => bloqueioService.desbloquear(usuarioId),
     onSuccess: (_dados, usuarioId) => {
       const pessoa = data?.dados.find((u) => u.id === usuarioId);
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success(pessoa ? `${pessoa.nome} foi desbloqueado(a).` : "Usuário desbloqueado.");
-      if (choice === "accepted") {
-        speak("Usuário desbloqueado com sucesso.");
-      }
       void queryClient.invalidateQueries({ queryKey: CHAVE });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível desbloquear este usuário.")),

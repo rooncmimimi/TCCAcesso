@@ -301,8 +301,14 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
     };
 }
 
-/** Uso simples, sem organização em subpasta (upload genérico — bucket público). */
-export const processarArmazenamento = criarProcessadorArmazenamento({});
+// Correção (auditoria de segurança, achado A3): o antigo `processarArmazenamento`
+// exportado daqui (sem `pasta`, sempre bucket público, sem vínculo a usuário)
+// era usado pelas rotas `POST /uploads/imagem` e `POST /uploads/anexos`, sem
+// escopo por usuário. Substituído em `uploadRoutes.js` por um processador
+// local com `pasta: (req) => \`uploads/${req.user.id}\``, mesmo padrão de
+// `processarDocumentoPrivado`/`processarLogoCapa`/`processarAnexosPostagem` —
+// este export genérico deixou de existir para não voltar a ser usado sem
+// escopo por engano.
 
 /** Uso simples, bucket PRIVADO (upload genérico de documento — ex.: certificado). */
 export const processarArmazenamentoPrivado = criarProcessadorArmazenamento({

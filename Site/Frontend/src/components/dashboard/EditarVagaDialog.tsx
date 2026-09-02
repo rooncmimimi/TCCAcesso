@@ -20,7 +20,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import vagasService from "@/services/vagas.service";
-import { useSpeech } from "@/contexts/SpeechContext";
 import {
   CONTRATOS,
   ICONE_RECURSO_ACESSIBILIDADE,
@@ -61,15 +60,12 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
       marcado ? [...atuais, recurso] : atuais.filter((r) => r !== recurso),
     );
   }
-  const { speak, choice } = useSpeech();
-
   const salvar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => vagasService.atualizar(vaga.id, payload),
     onSuccess: () => {
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Vaga atualizada com sucesso.");
-      if (choice === "accepted") {
-        speak("Vaga atualizada.");
-      }
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["vaga", vaga.id] });

@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/services/auth.service";
 import { extrairMensagemErro } from "@/services/api";
-import { useSpeech } from "@/contexts/SpeechContext";
 import { useSession } from "@/contexts/SessionContext";
 
 const esquema = z
@@ -53,7 +52,6 @@ export const Route = createFileRoute("/configuracoes/senha")({
 
 function AlterarSenha() {
   const navigate = useNavigate();
-  const { speak, choice } = useSpeech();
   const { signOut } = useSession();
   const [enviando, setEnviando] = useState(false);
 
@@ -76,18 +74,14 @@ function AlterarSenha() {
       // O backend encerra TODAS as sessões (inclusive esta) ao trocar a senha —
       // mesmo padrão já usado na redefinição de senha por código.
       await signOut();
+      // Fase 9, Bloco 7: os toasts já são lidos automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Senha alterada com sucesso. Entre novamente com a nova senha.");
-      if (choice === "accepted") {
-        speak("Senha alterada com sucesso. Entre novamente com a nova senha.");
-      }
       void navigate({ to: "/entrar" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível alterar a senha.");
       setError("senhaAtual", { message: mensagem });
       toast.error(mensagem);
-      if (choice === "accepted") {
-        speak(mensagem);
-      }
     } finally {
       setEnviando(false);
     }

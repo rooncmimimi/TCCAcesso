@@ -3,6 +3,7 @@ import { Clock, Loader2, UserCheck, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { seguidoresService } from "@/services/empresas.service";
 import { extrairMensagemErro } from "@/services/api";
+import { cn } from "@/lib/utils";
 import type { ResumoSeguidores } from "@/types";
 import { toast } from "sonner";
 
@@ -53,10 +54,13 @@ export function SeguirButton({
   alvoId,
   tipo,
   chaveResumo,
+  className,
 }: {
   alvoId: string;
   tipo: "usuario" | "empresa";
   chaveResumo: readonly unknown[];
+  /** Classes extras de layout (ex.: `w-full` em cartões) — nunca substitui as classes de estado do botão. */
+  className?: string;
 }) {
   const queryClient = useQueryClient();
   const resumo = queryClient.getQueryData<ResumoSeguidores>(chaveResumo);
@@ -138,11 +142,21 @@ export function SeguirButton({
     },
   });
 
+  // Bloqueio (Fase 9, Bloco 5): nunca oferece uma ação de seguir que o
+  // backend recusaria de qualquer forma. `/descobrir` já exclui pessoas
+  // bloqueadas na origem (nunca chega aqui bloqueado); notificações antigas
+  // ("Seguir de volta" de alguém bloqueado depois de já ter seguido) são o
+  // caso real — em vez de mostrar um botão fadado a 403, não mostra nada.
+  // Depois de `useMutation` (nunca antes de um Hook — ordem fixa sempre).
+  if (tipo === "usuario" && resumo?.bloqueado) {
+    return null;
+  }
+
   return (
     <Button
       type="button"
       variant={variant}
-      className="min-h-11 gap-2"
+      className={cn("min-h-11 gap-2", className)}
       disabled={mutacao.isPending}
       aria-pressed={acao === "deixar-de-seguir" || acao === "cancelar-solicitacao"}
       onClick={() => mutacao.mutate(acao)}

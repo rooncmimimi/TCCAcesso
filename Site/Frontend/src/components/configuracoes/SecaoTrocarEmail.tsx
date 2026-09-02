@@ -20,12 +20,10 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { extrairMensagemErro } from "@/services/api";
 import { authService } from "@/services/auth.service";
 import { useSession } from "@/contexts/SessionContext";
-import { useSpeech } from "@/contexts/SpeechContext";
 
 /** Troca de e-mail: senha atual + novo e-mail, depois confirma com o código enviado ao novo endereço. */
 export function SecaoTrocarEmail() {
   const { user, update } = useSession();
-  const { speak, choice } = useSpeech();
   const [aberto, setAberto] = useState(false);
   const [etapa, setEtapa] = useState<"pedido" | "confirmar">("pedido");
   const [senhaAtual, setSenhaAtual] = useState("");
@@ -52,10 +50,9 @@ export function SecaoTrocarEmail() {
     mutationFn: () => authService.confirmarTrocaEmail(codigo),
     onSuccess: (usuarioAtualizado) => {
       update({ email: usuarioAtualizado.email });
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("E-mail atualizado com sucesso.");
-      if (choice === "accepted") {
-        speak("E-mail atualizado com sucesso.");
-      }
       setAberto(false);
       reiniciar();
     },

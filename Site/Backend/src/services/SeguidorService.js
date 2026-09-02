@@ -316,6 +316,8 @@ class SeguidorService {
                 throw ApiError.notFound("Solicitação não encontrada ou já processada.");
             }
 
+            let notificacaoAceite = null;
+
             if (aceitar) {
                 // findOrCreate, não create puro: se por alguma corrida o
                 // seguimento já existir (ex.: o próprio destinatário já
@@ -328,6 +330,26 @@ class SeguidorService {
                     },
                     transaction
                 });
+
+                // Avisa quem pediu para seguir que foi aprovado (Fase 9,
+                // Bloco 5 — gap encontrado na auditoria: só o destinatário
+                // era notificado da solicitação, o solicitante nunca sabia
+                // o resultado). Mesmo padrão de `ConversaService.enviarMensagem`:
+                // cria dentro da transação, só emite em tempo real depois do
+                // commit (nunca anuncia algo que pode sofrer rollback).
+                notificacaoAceite = await NotificacaoService.criar(
+                    {
+                        usuarioId: solicitacao.solicitanteId,
+                        tipo: "Sistema",
+                        titulo: "Solicitação para seguir aceita",
+                        descricao: `${solicitante.nome} aceitou sua solicitação para seguir.`,
+                        subtipo: "solicitacao_seguimento_aceita",
+                        entidadeTipo: "usuario",
+                        entidadeId: solicitante.id,
+                        atorId: solicitante.id
+                    },
+                    { transaction }
+                );
             }
 
             await solicitacao.destroy({ transaction });
@@ -347,6 +369,13 @@ class SeguidorService {
             );
 
             await transaction.commit();
+
+            if (notificacaoAceite) {
+                NotificacaoService.emitirNotificacaoCriada(
+                    notificacaoAceite,
+                    await NotificacaoService.contarNaoLidasDe(solicitacao.solicitanteId)
+                );
+            }
 
             return { aceita: aceitar };
         } catch (erro) {
@@ -426,9 +455,17 @@ class SeguidorService {
      * `perfilPublico`/`elesSeguemVoce`/`solicitacaoPendente` (Fase 3) são
      * aditivos — quem já lia só `seguindoEsteUsuario`/os contadores
      * continua funcionando exatamente como antes.
+     *
+     * `bloqueado` (Fase 9, Bloco 5) também é aditivo — necessário para que
+     * `SeguirButton` consiga se auto-esconder em superfícies que não têm
+     * nenhum outro gate de bloqueio antes de chegar ao botão (`/descobrir`
+     * já exclui bloqueados na origem; "Seguir de volta" em notificações,
+     * não — a notificação pode ser antiga, de antes de um bloqueio
+     * posterior). Reaproveita `BloqueioService.estaBloqueadoEntre`
+     * (bidirecional) — nunca reimplementa a checagem aqui.
      */
     async resumo(usuarioId, solicitante) {
-        const [alvo, seguidores, seguindo, relacao, elesSeguemVoce, solicitacaoPendente] = await Promise.all([
+        const [alvo, seguidores, seguindo, relacao, elesSeguemVoce, solicitacaoPendente, bloqueado] = await Promise.all([
             Usuario.findByPk(usuarioId, { attributes: ["perfilPublico"] }),
             UsuarioSeguido.count({ where: { seguidoId: usuarioId } }),
             UsuarioSeguido.count({ where: { seguidorId: usuarioId } }),
@@ -453,7 +490,10 @@ class SeguidorService {
                           status: "pendente"
                       }
                   })
-                : null
+                : null,
+            solicitante && String(solicitante.id) !== String(usuarioId)
+                ? BloqueioService.estaBloqueadoEntre(solicitante.id, usuarioId)
+                : false
         ]);
 
         return {
@@ -462,7 +502,8 @@ class SeguidorService {
             seguindoEsteUsuario: Boolean(relacao),
             perfilPublico: alvo ? Boolean(alvo.perfilPublico) : true,
             elesSeguemVoce: Boolean(elesSeguemVoce),
-            solicitacaoPendente: Boolean(solicitacaoPendente)
+            solicitacaoPendente: Boolean(solicitacaoPendente),
+            bloqueado: Boolean(bloqueado)
         };
     }
 

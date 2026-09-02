@@ -27,7 +27,16 @@ export type AccessibilityPrefs = {
   reduceMotion: boolean;
   focusHighlight: boolean;
   keyboardNav: boolean;
-  screenReader: boolean; // leitura por voz automática
+  screenReader: boolean; // leitura por voz — PREFERÊNCIA EFETIVA atual (liga/desliga a qualquer momento em Configurações)
+  /**
+   * Registro da resposta ao consentimento inicial (Fase 9, Bloco 8) — NUNCA
+   * usar para decidir se a voz está ativa agora (isso é `screenReader`).
+   * `null` = ainda não respondeu; `true`/`false` = já respondeu (aceitou ou
+   * recusou) — só controla se `VoiceConsentDialog` deve perguntar de novo.
+   * Sincronizado com o backend (`consentimentoVoz`) quando autenticado;
+   * antes do login, vive só em localStorage (ver `SpeechContext.setChoice`).
+   */
+  voiceConsent: boolean | null;
   speechRate: number;
   vlibras: boolean;
 };
@@ -44,6 +53,7 @@ export const DEFAULT_PREFS: AccessibilityPrefs = {
   focusHighlight: true,
   keyboardNav: true,
   screenReader: false,
+  voiceConsent: null,
   speechRate: 1,
   vlibras: true,
 };

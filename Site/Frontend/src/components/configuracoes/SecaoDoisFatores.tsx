@@ -20,7 +20,6 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { extrairMensagemErro } from "@/services/api";
 import { authService } from "@/services/auth.service";
-import { useSpeech } from "@/contexts/SpeechContext";
 import type { AtivacaoDoisFatores } from "@/types";
 
 const CHAVE_STATUS = ["seguranca", "2fa-status"] as const;
@@ -33,7 +32,6 @@ function AtivarDoisFatoresDialog({ onAtivado }: { onAtivado: () => void }) {
   const [codigo, setCodigo] = useState("");
   const [dadosAtivacao, setDadosAtivacao] = useState<AtivacaoDoisFatores | null>(null);
   const [copiado, setCopiado] = useState(false);
-  const { speak, choice } = useSpeech();
 
   function reiniciar() {
     setEtapa("senha");
@@ -55,10 +53,9 @@ function AtivarDoisFatoresDialog({ onAtivado }: { onAtivado: () => void }) {
   const confirmar = useMutation({
     mutationFn: () => authService.confirmar2FA(codigo),
     onSuccess: () => {
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Autenticação de dois fatores ativada.");
-      if (choice === "accepted") {
-        speak("Autenticação de dois fatores ativada.");
-      }
       setAberto(false);
       reiniciar();
       onAtivado();
@@ -195,15 +192,13 @@ function AtivarDoisFatoresDialog({ onAtivado }: { onAtivado: () => void }) {
 function DesativarDoisFatoresDialog({ onDesativado }: { onDesativado: () => void }) {
   const [aberto, setAberto] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState("");
-  const { speak, choice } = useSpeech();
 
   const desativar = useMutation({
     mutationFn: () => authService.desativar2FA(senhaAtual),
     onSuccess: () => {
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Autenticação de dois fatores desativada.");
-      if (choice === "accepted") {
-        speak("Autenticação de dois fatores desativada.");
-      }
       setAberto(false);
       setSenhaAtual("");
       onDesativado();

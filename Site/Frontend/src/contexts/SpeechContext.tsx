@@ -10,12 +10,41 @@ import {
 } from "react";
 import { useAccessibility, VOICE_CHOICE_KEY } from "@/contexts/AccessibilityContext";
 
+/**
+ * Arquitetura da leitura por voz (Fase 9, Blocos 7 e 8).
+ *
+ * TRÊS conceitos, cada um com um único dono — nunca misturar:
+ *
+ * 1. `prefs.screenReader` (de `AccessibilityContext`) — a ÚNICA fonte de
+ *    verdade sobre a leitura por voz estar ativa AGORA. `true` = voz
+ *    ativa, `false` = voz desativada. TODO código que decide se fala algo
+ *    (aqui, em `useAutoSpeech`, ou em qualquer componente) deve checar
+ *    `prefs.screenReader`, nunca `choice` nem `voiceConsent`. O usuário
+ *    pode ligar/desligar isso livremente em Configurações a qualquer
+ *    momento, sem que isso afete o consentimento já dado.
+ *
+ * 2. `prefs.voiceConsent` (Bloco 8) — o registro DURÁVEL de "o usuário já
+ *    respondeu a pergunta de consentimento?", sincronizado com o backend
+ *    (`consentimentoVoz`) assim que há conta autenticada. `null` = nunca
+ *    respondeu; `true`/`false` = já respondeu (aceitou/recusou). Depois de
+ *    respondido, continua com esse valor MESMO que `screenReader` mude
+ *    depois — os dois só coincidem no instante da decisão inicial.
+ *
+ * 3. `choice` (abaixo, só neste contexto) — cache local, restrito ao
+ *    visitante ANÔNIMO (antes de existir conta): a mesma resposta que vai
+ *    virar `voiceConsent`, guardada em localStorage porque ainda não há
+ *    onde persistir no backend. Some de relevância assim que a conta
+ *    existe (o backend passa a mandar `voiceConsent`). `setChoice` sempre
+ *    grava os três juntos (`choice` + `screenReader` + `voiceConsent`) no
+ *    mesmo instante — nunca controla a voz sozinho, só decide se
+ *    `VoiceConsentDialog` deve aparecer de novo (`choice !== null`).
+ */
 type VoiceChoice = "accepted" | "declined" | null;
 
 type Ctx = {
   supported: boolean;
   speaking: boolean;
-  /** Preferência salva do usuário sobre a leitura por voz. */
+  /** Registro de "já perguntou?" do primeiro acesso — NÃO usar para decidir se a voz está ativa (use `prefs.screenReader`). */
   choice: VoiceChoice;
   askedThisSession: boolean;
   speak: (text: string, opts?: { interrupt?: boolean }) => void;
@@ -80,8 +109,14 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
       } catch {
         /* noop */
       }
-      // Persiste imediatamente a decisão do primeiro acesso (sem esperar re-render).
-      save({ ...prefsRef.current, screenReader: next === "accepted" });
+      // Persiste imediatamente a decisão do primeiro acesso (sem esperar
+      // re-render). `voiceConsent` (Fase 9, Bloco 8) registra a RESPOSTA em
+      // si (nunca mais perguntar) — `screenReader` é a preferência efetiva
+      // que o usuário pode religar/desligar livremente depois, sem que
+      // isso desfaça o consentimento já dado. Os dois começam iguais aqui
+      // porque é o mesmo instante da decisão, mas são conceitos distintos
+      // a partir de agora (ver `AccessibilityPrefs.voiceConsent`).
+      save({ ...prefsRef.current, screenReader: next === "accepted", voiceConsent: next === "accepted" });
       if (next === "declined") stop();
     },
     [save, stop],
@@ -163,7 +198,29 @@ export function useAutoSpeech() {
     });
 
     const iniciarObservacaoToast = () => {
-      const regiao = document.querySelector("[data-sonner-toaster]");
+      // Fase 9, Bloco 7 — bug real encontrado ao testar no navegador: no
+      // sonner v2 (instalado neste projeto), `[data-sonner-toaster]` só
+      // existe no DOM enquanto há pelo menos um toast visível (o `<ol>`
+      // correspondente literalmente desmonta quando a lista de toasts
+      // esvazia — `if (!filteredToasts.length) return null;` no código do
+      // sonner) e é recriado do zero a cada novo ciclo. Como resultado,
+      // observar esse elemento nunca funcionava de verdade: na primeira
+      // vez que este efeito rodava não havia nenhum toast ainda, então o
+      // seletor nunca encontrava nada — e mesmo que a re-tentativa
+      // acertasse a janela de um toast já visível, o observer ficava
+      // "grudado" naquele `<ol>` específico, que era destruído no ciclo
+      // seguinte, sem nunca reconectar. Resultado prático: NENHUM toast
+      // era lido automaticamente, nunca — os únicos anúncios de toast que
+      // o usuário ouvia vinham das chamadas manuais de `speak()`
+      // (removidas neste bloco por parecerem duplicadas do observer, que
+      // na real nunca chegava a duplicar nada).
+      //
+      // Corrigido observando o `<section aria-live="polite">` que o
+      // sonner sempre mantém montado (é o wrapper fixo do `<Toaster/>`,
+      // existe mesmo sem nenhum toast ativo) — com `subtree: true`,
+      // qualquer novo toast adicionado em qualquer profundidade dentro
+      // dele é capturado, inclusive quando o `<ol>` interno é recriado.
+      const regiao = document.querySelector('section[aria-live="polite"]');
       if (regiao) {
         observadorToast.observe(regiao, { childList: true, subtree: true });
         return true;

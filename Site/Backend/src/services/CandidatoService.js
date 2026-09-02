@@ -144,7 +144,15 @@ class CandidatoService {
        mesma verificação de autorização de `findById` (dono, empresa com
        candidatura legítima, ou administrador) antes de gerar a URL.
     ========================================================== */
-    async gerarUrlCurriculo(id, solicitante) {
+    /**
+     * `baixar` (Fase 9, Bloco 4): mesma opção já usada por
+     * `PostagemService.gerarUrlAnexo` — quando true, força
+     * `Content-Disposition: attachment` na URL assinada (download real,
+     * não abertura inline). Reautoriza do zero a cada chamada, nunca
+     * reaproveita uma URL já emitida — mesmo princípio de currículo desde
+     * sempre e de mídia de postagem desde a Fase 7.
+     */
+    async gerarUrlCurriculo(id, solicitante, { baixar } = {}) {
         const candidato = await Candidato.findByPk(id);
 
         if (!candidato) {
@@ -163,7 +171,9 @@ class CandidatoService {
             throw ApiError.notFound("Este candidato ainda não enviou um currículo.");
         }
 
-        const assinatura = await gerarUrlAssinada(candidato.curriculo);
+        const assinatura = await gerarUrlAssinada(candidato.curriculo, {
+            download: baixar ? candidato.curriculoNome || true : undefined
+        });
 
         return {
             url: assinatura.url,

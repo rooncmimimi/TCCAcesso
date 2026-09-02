@@ -32,6 +32,7 @@ import { EnviarMensagemButton } from "./EnviarMensagemButton";
 import { BloquearUsuarioMenu } from "./BloquearUsuarioMenu";
 import { SecaoRecursoPerfil } from "./SecaoRecursoPerfil";
 import { SecaoDeficiencias } from "./SecaoDeficiencias";
+import { BotoesCurriculo } from "./BotoesCurriculo";
 import { ImportarCurriculoDialog } from "./ImportarCurriculoDialog";
 import { ListaSeguidoresDialog } from "./ListaSeguidoresDialog";
 import { PostagensUsuario } from "./PostagensUsuario";
@@ -298,6 +299,11 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                   ) : (
                     <p className="mt-1 text-sm text-muted-foreground">Nenhum currículo enviado ainda.</p>
                   )}
+                  {candidato.curriculoNome ? (
+                    <div className="mt-3">
+                      <BotoesCurriculo candidatoId={candidato.id} />
+                    </div>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <label
                       htmlFor="input-enviar-curriculo"
@@ -326,6 +332,27 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                   </div>
                 </section>
               )}
+              {!proprioPerfil && candidato.curriculoNome ? (
+                // Só chega aqui quando o backend já decidiu que este
+                // visitante pode ver dados privados do candidato (empresa
+                // com candidatura legítima ou administrador) — para
+                // qualquer outra pessoa, `curriculoNome` já vem ausente
+                // na resposta (ver `aplicarPrivacidadeCandidato` no
+                // backend), então esta seção simplesmente não aparece,
+                // sem revelar se existe ou não um currículo.
+                <section aria-labelledby="secao-curriculo-terceiro" className="border-t pt-6 first:border-t-0 first:pt-0">
+                  <h2 id="secao-curriculo-terceiro" className="text-lg font-bold">
+                    Currículo
+                  </h2>
+                  <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <FileText className="size-4 shrink-0" aria-hidden="true" />
+                    {candidato.curriculoNome}
+                  </p>
+                  <div className="mt-3">
+                    <BotoesCurriculo candidatoId={candidato.id} />
+                  </div>
+                </section>
+              ) : null}
               <SecaoDeficiencias candidato={candidato} somenteLeitura={!proprioPerfil} />
               <SecaoRecursoPerfil
                 recurso="experiencias"

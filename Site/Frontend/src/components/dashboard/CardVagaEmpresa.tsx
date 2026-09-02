@@ -30,7 +30,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { extrairMensagemErro } from "@/services/api";
 import vagasService from "@/services/vagas.service";
-import { useSpeech } from "@/contexts/SpeechContext";
 import { formatarData, formatarSalario } from "@/utils/format";
 import { ROTULO_CONTRATO } from "./constantesVaga";
 import { EditarVagaDialog } from "./EditarVagaDialog";
@@ -53,7 +52,6 @@ export function CardVagaEmpresa({
   onVerCandidaturas: (vaga: Vaga) => void;
 }) {
   const queryClient = useQueryClient();
-  const { speak, choice } = useSpeech();
 
   const invalidarListas = () => {
     void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
@@ -61,13 +59,12 @@ export function CardVagaEmpresa({
     void queryClient.invalidateQueries({ queryKey: ["vaga", vaga.id] });
   };
 
+  // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
+  // `useAutoSpeech` — falar aqui também duplicava.
   const alterarStatus = useMutation({
     mutationFn: (status: StatusVaga) => vagasService.alterarStatus(vaga.id, status),
     onSuccess: (_dados, status) => {
       toast.success(MENSAGEM_STATUS[status]);
-      if (choice === "accepted") {
-        speak(MENSAGEM_STATUS[status]);
-      }
       invalidarListas();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível alterar o status da vaga.")),
@@ -77,9 +74,6 @@ export function CardVagaEmpresa({
     mutationFn: () => vagasService.remover(vaga.id),
     onSuccess: () => {
       toast.success("Vaga excluída.");
-      if (choice === "accepted") {
-        speak("Vaga excluída.");
-      }
       invalidarListas();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a vaga.")),

@@ -26,7 +26,6 @@ import {
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import { empresasService } from "@/services/empresas.service";
-import { useSpeech } from "@/contexts/SpeechContext";
 import { CapaUploader } from "./CapaUploader";
 import { FotoUploader } from "./FotoUploader";
 import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
@@ -40,7 +39,6 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
   const [porte, setPorte] = useState<string>(empresa.porte ?? "");
   const [cidade, setCidade] = useState(empresa.cidade ?? "");
   const [estado, setEstado] = useState(empresa.estado ?? "");
-  const { speak, choice } = useSpeech();
   const queryClient = useQueryClient();
 
   // Reabrir o diálogo sempre reflete os dados mais recentes da empresa.
@@ -53,14 +51,13 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
 
   const invalidarEmpresa = () => queryClient.invalidateQueries({ queryKey: ["minha-empresa"] });
 
+  // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
+  // `useAutoSpeech` — falar aqui também duplicava.
   const salvar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => empresasService.atualizar(empresa.id, payload),
     onSuccess: () => {
       void invalidarEmpresa();
       toast.success("Perfil da empresa atualizado.");
-      if (choice === "accepted") {
-        speak("Perfil da empresa atualizado.");
-      }
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil da empresa.")),
@@ -71,9 +68,6 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
     onSuccess: () => {
       void invalidarEmpresa();
       toast.success("Banner removido.");
-      if (choice === "accepted") {
-        speak("Banner removido.");
-      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
   });

@@ -107,6 +107,7 @@ export const seguidoresService = {
       perfilPublico: data.perfilPublico ?? true,
       elesSeguemVoce: Boolean(data.elesSeguemVoce),
       solicitacaoPendente: Boolean(data.solicitacaoPendente),
+      bloqueado: Boolean(data.bloqueado),
     };
   },
 

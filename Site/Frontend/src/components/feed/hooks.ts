@@ -10,7 +10,6 @@ import { toast } from "sonner";
 
 import { extrairMensagemErro } from "@/services/api";
 import { ouvirEvento } from "@/services/socket";
-import { useSpeech } from "@/contexts/SpeechContext";
 import postagensService, { type FiltroFeed, type NovaPostagem } from "@/services/postagens.service";
 import type { Paginado } from "@/services/http";
 import type { ComentarioCompleto, PostagemCompleta } from "@/types";
@@ -311,7 +310,6 @@ export function useRemoverComentario(postagemId: string) {
 
 export function useCompartilharPostagem() {
   const queryClient = useQueryClient();
-  const { speak, choice } = useSpeech();
   return useMutation({
     mutationFn: ({ postagemId, comentario }: { postagemId: string; comentario?: string }) =>
       postagensService.compartilhar(postagemId, comentario),
@@ -327,10 +325,9 @@ export function useCompartilharPostagem() {
       queryClient.setQueryData<PostagemCompleta>(["postagem", variaveis.postagemId], (atual) =>
         atual ? aplicar(atual) : atual,
       );
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Publicação compartilhada.");
-      if (choice === "accepted") {
-        speak("Publicação compartilhada.");
-      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível compartilhar.")),
   });

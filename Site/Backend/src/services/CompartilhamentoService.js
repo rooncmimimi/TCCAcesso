@@ -13,6 +13,7 @@ import { garantirDono, ehAdministrador } from "../utils/authorization.js";
 import { garantirAcessoAPostagem, assinarMidiaDasPostagens } from "./PostagemService.js";
 import SeguidorService from "./SeguidorService.js";
 import NotificacaoService from "./NotificacaoService.js";
+import BloqueioService from "./BloqueioService.js";
 
 // Fábrica: o Sequelize muta objetos de include, então cada uso precisa de um novo objeto.
 const incluirAutor = () => ({
@@ -75,14 +76,36 @@ class CompartilhamentoService {
      * não tiver acesso (dono/admin/seguidor aprovado), o compartilhamento é
      * excluído da lista — nunca vaza o conteúdo da postagem original só
      * porque alguém a compartilhou (Fase 3).
+     *
+     * Correção (auditoria de segurança, achado A1): faltava aqui a mesma
+     * checagem de bloqueio que TODO outro acesso a conteúdo/perfil social já
+     * aplica (`garantirAcessoAPostagem`, `PostagemService.findAll`,
+     * `BloqueioService.garantirVisibilidadePerfil`) — um bloqueio entre o
+     * solicitante e o DONO da aba (quem compartilhou) não impedia ver esta
+     * lista, e o autor ORIGINAL de uma postagem compartilhada também não
+     * era excluído por bloqueio. Reaproveita a mesma autoridade central
+     * (`BloqueioService`) em vez de uma segunda implementação da regra.
      */
     async listarPorUsuario(usuarioId, query, solicitante) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
+        // Bloqueio entre o solicitante e o dono da aba tem prioridade sobre
+        // qualquer outra regra de visibilidade — mesmo padrão/mensagem
+        // genérica de `garantirVisibilidadePerfil`. Dono/admin sempre passam
+        // (checagem interna do próprio `garantirNaoBloqueado`); no-op se
+        // `solicitante` não vier (chamada interna sem usuário autenticado).
+        await BloqueioService.garantirNaoBloqueado({ id: usuarioId }, solicitante);
+
         const wherePostagem = { ativo: true };
 
         if (solicitante && !ehAdministrador(solicitante)) {
-            const idsSeguidos = await SeguidorService.idsSeguidos(solicitante.id);
+            const [idsSeguidos, idsBloqueados] = await Promise.all([
+                SeguidorService.idsSeguidos(solicitante.id),
+                // Mesmo filtro usado por `PostagemService.findAll`: exclui
+                // também postagens cujo autor ORIGINAL (não só quem
+                // compartilhou) tem bloqueio com o solicitante.
+                BloqueioService.idsRelacionados(solicitante.id)
+            ]);
 
             // `$postagem.usuario.perfil_publico$` (dois níveis de associação
             // a partir de Compartilhamento) gera SQL inválido no COUNT
@@ -90,15 +113,22 @@ class CompartilhamentoService {
             // existe ainda no ponto em que a condição é aplicada) — um
             // `EXISTS` correlacionado evita depender desse caminho
             // multi-nível e funciona igual no SELECT e no COUNT.
-            wherePostagem[Op.or] = [
-                sequelize.literal(
-                    `EXISTS (SELECT 1 FROM usuarios u WHERE u.id = "postagem"."usuario_id" AND (u.perfil_publico = true OR u.tipo_usuario = 'empresa'))`
-                ),
+            wherePostagem[Op.and] = [
                 {
-                    usuarioId: {
-                        [Op.in]: [...idsSeguidos, solicitante.id]
-                    }
-                }
+                    [Op.or]: [
+                        sequelize.literal(
+                            `EXISTS (SELECT 1 FROM usuarios u WHERE u.id = "postagem"."usuario_id" AND (u.perfil_publico = true OR u.tipo_usuario = 'empresa'))`
+                        ),
+                        {
+                            usuarioId: {
+                                [Op.in]: [...idsSeguidos, solicitante.id]
+                            }
+                        }
+                    ]
+                },
+                ...(idsBloqueados.length
+                    ? [{ usuarioId: { [Op.notIn]: idsBloqueados } }]
+                    : [])
             ];
         }
 

@@ -34,6 +34,10 @@ router.post(
 router.post(
     "/empresas/:id/suspender",
     validarUuidParam("id"),
+    // Fase 9, Bloco 8: `motivo` (vai para e-mail + notificação) não tinha
+    // nenhuma validação de tamanho/tipo — mesmo padrão já usado em
+    // `validarObservacaoAdmin` (denúncias).
+    body("motivo").optional({ values: "falsy" }).trim().isLength({ max: 1000 }).withMessage("Motivo deve ter no máximo 1000 caracteres."),
     validationMiddleware,
     AdminController.suspenderEmpresa
 );
@@ -62,6 +66,8 @@ router.get(
 router.post(
     "/usuarios/:id/bloquear",
     validarUuidParam("id"),
+    body("bloqueado").optional().isBoolean().withMessage("Informe bloqueado como true ou false."),
+    body("motivo").optional({ values: "falsy" }).trim().isLength({ max: 1000 }).withMessage("Motivo deve ter no máximo 1000 caracteres."),
     validationMiddleware,
     AdminController.bloquearUsuario
 );

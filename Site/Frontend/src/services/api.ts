@@ -41,8 +41,13 @@ export function clearTokens(): void {
   setTokens(null, null);
 }
 
-/** Notifica interessados (ex.: SessionContext) quando a sessão expira de vez. */
-type SessaoExpiradaListener = () => void;
+/**
+ * Notifica interessados (ex.: SessionContext) quando a sessão expira de
+ * vez. `motivo`, quando informado (Fase 9: bloqueio administrativo), é uma
+ * mensagem pronta para exibir ao usuário — sem motivo, o listener trata
+ * como o encerramento silencioso de sempre (sessão simplesmente expirada).
+ */
+type SessaoExpiradaListener = (motivo?: string) => void;
 const listeners = new Set<SessaoExpiradaListener>();
 export function aoExpirarSessao(fn: SessaoExpiradaListener) {
   listeners.add(fn);
@@ -50,8 +55,17 @@ export function aoExpirarSessao(fn: SessaoExpiradaListener) {
     listeners.delete(fn);
   };
 }
-function dispararSessaoExpirada() {
-  listeners.forEach((fn) => fn());
+/** Exportado para o módulo de socket (Fase 9) reaproveitar o MESMO encerramento de sessão — nunca uma segunda implementação. */
+export function dispararSessaoExpirada(motivo?: string) {
+  listeners.forEach((fn) => fn(motivo));
+}
+
+/** `detalhes.codigo` que o backend usa para marcar 403 de bloqueio administrativo — nunca confiar só no texto da mensagem. */
+const CODIGO_CONTA_BLOQUEADA = "CONTA_BLOQUEADA";
+
+function codigoDoErro(erro: unknown): string | undefined {
+  const axiosErro = erro as AxiosError<{ detalhes?: { codigo?: string } }>;
+  return axiosErro?.response?.data?.detalhes?.codigo;
 }
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -83,6 +97,8 @@ export function extrairMensagemErro(erro: unknown, padrao = "Não foi possível 
 }
 
 let refrescando: Promise<string | null> | null = null;
+/** Preenchido só quando a PRÓPRIA renovação falha por bloqueio administrativo (Fase 9) — motivo específico para `dispararSessaoExpirada`, em vez do encerramento silencioso de sempre. */
+let motivoUltimaFalhaRefresh: string | undefined;
 
 async function tentarRenovarToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
@@ -100,7 +116,10 @@ async function tentarRenovarToken(): Promise<string | null> {
         return novo;
       })
 
-      .catch(() => {
+      .catch((erroRefresh) => {
+        if (codigoDoErro(erroRefresh) === CODIGO_CONTA_BLOQUEADA) {
+          motivoUltimaFalhaRefresh = extrairMensagemErro(erroRefresh);
+        }
         clearTokens();
         return null;
       })
@@ -117,6 +136,19 @@ api.interceptors.response.use(
     const original = erro.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
     const isAuthRoute = original?.url?.includes("/auth/login") || original?.url?.includes("/auth/refresh");
 
+    // Fase 9: 403 de bloqueio administrativo é identificado pelo `codigo`
+    // (nunca pelo texto da mensagem) — chega em qualquer chamada feita com
+    // um access token que ainda é criptograficamente válido (por isso
+    // nunca seria pego pelo fluxo de renovação de 401 abaixo, que é para
+    // token expirado/ausente, um problema diferente). Encerra a sessão na
+    // hora, sem tentar renovar (renovar não ajudaria — a conta continua
+    // bloqueada) e sem esperar o chamador tratar o erro individualmente.
+    if (erro.response?.status === 403 && codigoDoErro(erro) === CODIGO_CONTA_BLOQUEADA && !isAuthRoute) {
+      clearTokens();
+      dispararSessaoExpirada(extrairMensagemErro(erro));
+      return Promise.reject(erro);
+    }
+
     if (erro.response?.status === 401 && original && !original._retry && !isAuthRoute) {
       original._retry = true;
       const novoToken = await tentarRenovarToken();
@@ -125,8 +157,10 @@ api.interceptors.response.use(
         (original.headers as Record<string, string>).Authorization = `Bearer ${novoToken}`;
         return api(original);
       }
+      const motivo = motivoUltimaFalhaRefresh;
+      motivoUltimaFalhaRefresh = undefined;
       clearTokens();
-      dispararSessaoExpirada();
+      dispararSessaoExpirada(motivo);
     }
     return Promise.reject(erro);
   },

@@ -77,7 +77,18 @@ function Vagas() {
     mutationFn: (vagaId: string) => vagasService.favoritar(vagaId),
     onSuccess: (resultado) => {
       toast.success(resultado.favoritada ? "Vaga favoritada." : "Vaga removida dos favoritos.");
+      // Fase 9, Bloco 6: existem DUAS queryKeys para favoritos —
+      // `["dashboard","favoritos"]` (esta tela e o detalhe da vaga, lista
+      // "achatada") e `["vagas-favoritas", pagina]` (widget do painel,
+      // paginado). São formas de busca genuinamente diferentes para o
+      // mesmo dado, então em vez de unificar (arriscar regressão na
+      // paginação do widget) invalidamos as duas — o prefixo sem `pagina`
+      // cobre qualquer página já cacheada do widget sem forçá-la de volta
+      // à página 1. `metricas-candidato` também conta favoritos (card
+      // "Vagas favoritas" do painel), por isso entra aqui também.
       void queryClient.invalidateQueries({ queryKey: ["dashboard", "favoritos"] });
+      void queryClient.invalidateQueries({ queryKey: ["vagas-favoritas"] });
+      void queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
   });

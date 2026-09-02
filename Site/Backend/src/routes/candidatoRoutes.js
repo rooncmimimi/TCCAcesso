@@ -73,6 +73,16 @@ router.get(
     CandidatoController.curriculoUrl
 );
 
+// Mesma autorização acima, mas força download (Content-Disposition:
+// attachment) em vez de exibição inline — mesmo padrão do anexo de
+// postagem (Fase 7).
+router.get(
+    "/:id/curriculo/download",
+    validarUuidParam("id"),
+    validationMiddleware,
+    CandidatoController.curriculoDownload
+);
+
 router.post(
     "/:id/deficiencias",
     validarVinculoDeficiencia,

@@ -1,8 +1,11 @@
 import { io, type Socket } from "socket.io-client";
-import { API_BASE_URL, getAccessToken } from "./api";
+import { API_BASE_URL, dispararSessaoExpirada, getAccessToken } from "./api";
 
 /** URL do servidor Socket.IO (mesmo host do Express, sem o sufixo `/api`). */
 export const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
+/** Mesmo `codigo` usado pelo backend REST (authMiddleware/realtime/socket.js) para marcar rejeição por bloqueio administrativo. */
+const CODIGO_CONTA_BLOQUEADA = "CONTA_BLOQUEADA";
 
 let socket: Socket | null = null;
 
@@ -25,6 +28,20 @@ export function conectarSocket(): Socket | null {
       reconnectionAttempts: 5,
       reconnectionDelay: 1_000,
       autoConnect: true,
+    });
+
+    // Fase 9: bloqueio administrativo rejeita o handshake com um `codigo`
+    // identificável (ver realtime/socket.js) — nesse caso específico não
+    // faz sentido deixar o socket.io-client insistir nas próximas
+    // tentativas automáticas (a conta continua bloqueada, vai falhar de
+    // novo); desconecta na hora e reaproveita o MESMO encerramento de
+    // sessão do REST (services/api.ts), em vez de uma segunda
+    // implementação só para o socket.
+    socket.on("connect_error", (erro: Error & { data?: { codigo?: string } }) => {
+      if (erro.data?.codigo === CODIGO_CONTA_BLOQUEADA) {
+        socket?.disconnect();
+        dispararSessaoExpirada(erro.message);
+      }
     });
   } else {
     socket.auth = { token };

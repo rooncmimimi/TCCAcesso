@@ -13,7 +13,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useSpeech } from "@/contexts/SpeechContext";
 import { useCompartilharPostagem } from "./hooks";
 
 /** Monta a URL pública e navegável de uma publicação (compatível com as rotas existentes). */
@@ -27,7 +26,6 @@ export function DialogCompartilhar({ postagemId, trigger }: { postagemId: string
   const [comentario, setComentario] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const compartilhar = useCompartilharPostagem();
-  const { speak, choice } = useSpeech();
 
   const podeCompartilharNativo = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
@@ -35,10 +33,9 @@ export function DialogCompartilhar({ postagemId, trigger }: { postagemId: string
     try {
       await navigator.clipboard.writeText(urlDaPostagem(postagemId));
       setLinkCopiado(true);
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Link copiado!");
-      if (choice === "accepted") {
-        speak("Link copiado.");
-      }
       setTimeout(() => setLinkCopiado(false), 2000);
     } catch {
       toast.error("Não foi possível copiar o link.");

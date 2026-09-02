@@ -81,28 +81,13 @@ class InteracaoService {
     /* ==========================================================
        EMPRESAS SEGUIDAS
     ========================================================== */
-    async alternarSeguir(empresaId, solicitante) {
-        const candidato = await this.candidatoDoUsuario(solicitante.id);
-
-        const empresa = await Empresa.findByPk(empresaId);
-
-        if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
-        }
-
-        const existente = await EmpresaSeguida.findOne({
-            where: { candidatoId: candidato.id, empresaId }
-        });
-
-        if (existente) {
-            await existente.destroy();
-            return { seguindo: false };
-        }
-
-        await EmpresaSeguida.create({ candidatoId: candidato.id, empresaId });
-
-        return { seguindo: true };
-    }
+    // Correção (auditoria de segurança, achado A2): existia aqui um segundo
+    // caminho para seguir empresa (`alternarSeguir`, rota `POST
+    // /empresas/:id/seguir`), duplicado de `SeguidorService.alternarEmpresa`
+    // mas sem checagem de bloqueio nem notificação — removido por não ter
+    // nenhum consumidor real (frontend, App, scripts, docs) e por ser código
+    // morto que só existia como superfície de bypass. Use sempre
+    // `SeguidorService.alternarEmpresa` (rota `POST /seguir/empresas/:id`).
 
     async listarSeguidas(solicitante, query) {
         const candidato = await this.candidatoDoUsuario(solicitante.id);

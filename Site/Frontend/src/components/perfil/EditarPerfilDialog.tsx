@@ -20,7 +20,6 @@ import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import { useSession, initials } from "@/contexts/SessionContext";
-import { useSpeech } from "@/contexts/SpeechContext";
 import { CapaUploader } from "./CapaUploader";
 import { FotoUploader } from "./FotoUploader";
 import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
@@ -38,7 +37,6 @@ export function EditarPerfilDialog({
   const [cidade, setCidade] = useState(candidato?.cidade ?? "");
   const [estado, setEstado] = useState(candidato?.estado ?? "");
   const { user, update } = useSession();
-  const { speak, choice } = useSpeech();
   const queryClient = useQueryClient();
 
   // Reabrir o diálogo sempre reflete os dados mais recentes do candidato.
@@ -80,10 +78,9 @@ export function EditarPerfilDialog({
     onSuccess: (usuarioAtualizado) => {
       update({ nome: usuarioAtualizado.nome, telefone: usuarioAtualizado.telefone });
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
+      // Fase 9, Bloco 7: os toasts já são lidos automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Perfil atualizado.");
-      if (choice === "accepted") {
-        speak("Perfil atualizado.");
-      }
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil.")),
@@ -94,9 +91,6 @@ export function EditarPerfilDialog({
     onSuccess: (usuarioAtualizado) => {
       update({ capaPerfil: usuarioAtualizado.capaPerfil });
       toast.success("Banner removido.");
-      if (choice === "accepted") {
-        speak("Banner removido.");
-      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
   });

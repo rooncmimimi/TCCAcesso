@@ -8,11 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
+import { SeguirButton } from "@/components/perfil/SeguirButton";
 import { initials, useSession } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
 import { seguidoresService } from "@/services/empresas.service";
 import { extrairMensagemErro } from "@/services/api";
 import type { SugestaoEmpresa, SugestaoPerfil } from "@/types";
+
+/**
+ * Mesma chave de query usada pelo perfil (`PerfilPessoal.tsx`) para o
+ * resumo de seguidores de um usuário — chave COMPARTILHADA de propósito:
+ * `SeguirButton` só lê o cache (nunca busca sozinho), então usar a mesma
+ * chave aqui garante uma única interpretação do estado de relacionamento
+ * em todo o app (perfil, notificações e `/descobrir` nunca divergem), e
+ * ainda aproveita o cache já quente se o usuário passou por um desses
+ * lugares antes (Fase 9, Bloco 5).
+ */
+const chaveResumoUsuario = (usuarioId: string) => ["perfil-resumo-seguidores", usuarioId] as const;
 
 const CHAVE_PESSOAS = ["descobrir-pessoas"] as const;
 const CHAVE_EMPRESAS = ["descobrir-empresas"] as const;
@@ -135,17 +147,15 @@ function EstadoVazio({ texto }: { texto: string }) {
 }
 
 function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
-  const queryClient = useQueryClient();
-
-  const seguir = useMutation({
-    mutationFn: () => seguidoresService.alternarUsuario(pessoa.id),
-    onSuccess: () => {
-      toast.success(`Agora você está seguindo ${pessoa.nome}.`);
-      queryClient.setQueryData<SugestaoPerfil[]>(CHAVE_PESSOAS, (atual) =>
-        atual?.filter((item) => item.id !== pessoa.id),
-      );
-    },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível seguir esta pessoa.")),
+  // Popula a MESMA chave de cache que `SeguirButton` lê — é essa busca que
+  // faz o botão saber se o perfil é público/privado, se já segue, se tem
+  // solicitação pendente ou se está bloqueado, sem duplicar nenhuma dessas
+  // regras aqui (Fase 9, Bloco 5). `sugestoesPessoas` já nunca sugere
+  // alguém bloqueado nem alguém que a pessoa já segue — só falta o estado
+  // de privacidade/solicitação, que só o resumo individual traz hoje.
+  useQuery({
+    queryKey: chaveResumoUsuario(pessoa.id),
+    queryFn: () => seguidoresService.resumo(pessoa.id),
   });
 
   return (
@@ -172,20 +182,12 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
         {pessoa.motivo ? (
           <p className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{pessoa.motivo}</p>
         ) : null}
-        <Button
-          type="button"
-          size="sm"
-          className="mt-auto min-h-9 w-full gap-2"
-          disabled={seguir.isPending}
-          onClick={() => seguir.mutate()}
-        >
-          {seguir.isPending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <UserPlus className="size-4" aria-hidden="true" />
-          )}
-          Seguir
-        </Button>
+        <SeguirButton
+          alvoId={pessoa.id}
+          tipo="usuario"
+          chaveResumo={chaveResumoUsuario(pessoa.id)}
+          className="mt-auto w-full min-h-9"
+        />
       </CardContent>
     </Card>
   );

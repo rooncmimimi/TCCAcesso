@@ -27,7 +27,6 @@ import denunciaService, {
   type EntidadeDenunciaTipo,
   type MotivoDenuncia,
 } from "@/services/denuncia.service";
-import { useSpeech } from "@/contexts/SpeechContext";
 
 const MOTIVOS = Object.keys(MOTIVO_ROTULO) as MotivoDenuncia[];
 
@@ -52,7 +51,6 @@ export function DenunciarDialog({
   entidadeId: string;
   nomeExibicao?: string;
 }) {
-  const { speak, choice } = useSpeech();
   const [motivo, setMotivo] = useState<MotivoDenuncia | "">("");
   const [descricao, setDescricao] = useState("");
 
@@ -71,18 +69,13 @@ export function DenunciarDialog({
         descricao: descricao.trim() || undefined,
       }),
     onSuccess: () => {
+      // Fase 9, Bloco 7: os toasts já são lidos automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Denúncia enviada. Nossa equipe vai analisar.");
-      if (choice === "accepted") {
-        speak("Denúncia enviada com sucesso.");
-      }
       limparEFechar();
     },
     onError: (erro) => {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível enviar a denúncia.");
-      toast.error(mensagem);
-      if (choice === "accepted") {
-        speak(mensagem);
-      }
+      toast.error(extrairMensagemErro(erro, "Não foi possível enviar a denúncia."));
     },
   });
 

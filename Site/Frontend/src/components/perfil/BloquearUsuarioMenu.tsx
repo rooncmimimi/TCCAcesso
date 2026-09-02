@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
-import { useSpeech } from "@/contexts/SpeechContext";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 import type { EntidadeDenunciaTipo } from "@/services/denuncia.service";
 
@@ -47,25 +46,22 @@ export function BloquearUsuarioMenu({
   denunciaEntidadeId?: string;
 }) {
   const navigate = useNavigate();
-  const { speak, choice } = useSpeech();
   const [confirmando, setConfirmando] = useState(false);
   const [denunciando, setDenunciando] = useState(false);
 
+  // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
+  // `useAutoSpeech` — falar aqui também duplicava (e, no erro, a fala
+  // manual usava um texto genérico fixo em vez da mensagem real do
+  // backend que o toast já mostra corretamente).
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(alvoUsuarioId),
     onSuccess: () => {
       toast.success(`${nome} foi bloqueado(a).`);
-      if (choice === "accepted") {
-        speak("Usuário bloqueado com sucesso.");
-      }
       setConfirmando(false);
       void navigate({ to: "/feed" });
     },
     onError: (erro) => {
       toast.error(extrairMensagemErro(erro, "Não foi possível bloquear este usuário."));
-      if (choice === "accepted") {
-        speak("Não foi possível bloquear este usuário.");
-      }
     },
   });
 

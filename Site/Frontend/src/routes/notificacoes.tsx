@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Trash2,
+  UserCheck,
   UserPlus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -26,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
+import { SeguirButton } from "@/components/perfil/SeguirButton";
 import notificacoesService from "@/services/notificacoes.service";
 import { seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/services/uploads.service";
@@ -67,6 +69,7 @@ const ICONE_POR_SUBTIPO: Record<string, LucideIcon> = {
   novo_seguidor_usuario: UserPlus,
   novo_seguidor_empresa: UserPlus,
   solicitacao_seguimento: UserPlus,
+  solicitacao_seguimento_aceita: UserCheck,
   candidatura_recebida: Briefcase,
   candidatura_atualizada: Briefcase,
   mensagem_nova: MessageSquare,
@@ -134,9 +137,6 @@ function PaginaNotificacoes() {
 
 function Notificacoes() {
   const queryClient = useQueryClient();
-  // Controla o botão "Seguir de volta" por notificação — evita reenviar o
-  // toggle (que desseguiria) depois de já ter seguido de volta nesta sessão.
-  const [seguidosDeVolta, setSeguidosDeVolta] = useState<Set<string>>(new Set());
   // Idem para Aceitar/Recusar solicitação — guarda o resultado por
   // `entidadeId` (id da solicitação) pra nunca reprocessar a mesma.
   const [solicitacoesProcessadas, setSolicitacoesProcessadas] = useState<
@@ -182,17 +182,6 @@ function Notificacoes() {
       invalidar();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
-  });
-
-  const seguirDeVolta = useMutation({
-    mutationFn: (usuarioId: string) => seguidoresService.alternarUsuario(usuarioId),
-    onSuccess: (resultado, usuarioId) => {
-      if (resultado.seguindo) {
-        toast.success("Agora você está seguindo de volta.");
-        setSeguidosDeVolta((atual) => new Set(atual).add(usuarioId));
-      }
-    },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível seguir de volta.")),
   });
 
   const aceitarSolicitacao = useMutation({
@@ -368,15 +357,7 @@ function Notificacoes() {
                       </div>
 
                       {n.subtipo === "novo_seguidor_usuario" && n.entidadeId && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="min-h-9 text-xs"
-                          disabled={seguirDeVolta.isPending || seguidosDeVolta.has(n.entidadeId)}
-                          onClick={() => n.entidadeId && seguirDeVolta.mutate(n.entidadeId)}
-                        >
-                          {seguidosDeVolta.has(n.entidadeId) ? "Seguindo de volta" : "Seguir de volta"}
-                        </Button>
+                        <BotaoSeguirDeVolta usuarioId={n.entidadeId} />
                       )}
 
                       {n.subtipo === "solicitacao_seguimento" && n.entidadeId && (
@@ -416,5 +397,34 @@ function Notificacoes() {
         </ul>
       )}
     </AppShell>
+  );
+}
+
+/**
+ * "Seguir de volta" (Fase 9, Bloco 5) — extraído em componente próprio
+ * porque cada notificação precisa do PRÓPRIO resumo de seguidores (Hooks
+ * não podem ser chamados dentro do `.map()` do componente pai). Busca o
+ * resumo na MESMA chave de cache que o perfil e `/descobrir` usam e
+ * delega inteiramente a `SeguirButton` — nunca reimplementa perfil
+ * privado/solicitação/bloqueio/já-seguindo aqui. Isso também corrige, de
+ * graça, um bug latente do botão antigo: ele usava um toggle
+ * (`alternarUsuario`) controlado só por estado local da sessão — reabrir
+ * a página perdia esse estado e um clique num "Seguir de volta" já
+ * seguido de fato DESSEGUIA. `SeguirButton` sempre reflete o estado real
+ * do servidor, nunca um toggle cego.
+ */
+function BotaoSeguirDeVolta({ usuarioId }: { usuarioId: string }) {
+  useQuery({
+    queryKey: ["perfil-resumo-seguidores", usuarioId],
+    queryFn: () => seguidoresService.resumo(usuarioId),
+  });
+
+  return (
+    <SeguirButton
+      alvoId={usuarioId}
+      tipo="usuario"
+      chaveResumo={["perfil-resumo-seguidores", usuarioId]}
+      className="min-h-9 text-xs"
+    />
   );
 }

@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
+import { BotoesCurriculo } from "@/components/perfil/BotoesCurriculo";
 import { candidaturasService } from "@/services/dashboard.service";
 import type { StatusCandidatura, Vaga } from "@/types";
 
@@ -76,6 +77,15 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                     <p className="truncate text-sm text-muted-foreground">
                       {candidatura.candidato?.tituloProfissional ?? "Sem título informado"}
                     </p>
+                    {/* `curriculoNome` só vem preenchido quando o backend já
+                        confirmou que esta empresa está autorizada (tem
+                        candidatura do candidato numa vaga própria) — nunca
+                        reimplementa essa checagem aqui. */}
+                    {candidatura.candidato?.id && candidatura.candidato?.curriculoNome ? (
+                      <div className="mt-2">
+                        <BotoesCurriculo candidatoId={candidatura.candidato.id} />
+                      </div>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <StatusBadge status={candidatura.status} />

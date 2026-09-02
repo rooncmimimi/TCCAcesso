@@ -46,15 +46,6 @@ router.get(
     EmpresaController.show
 );
 
-router.post(
-    "/:empresaId/seguir",
-    authMiddleware,
-    rbacMiddleware("candidato"),
-    validarUuidParam("empresaId"),
-    validationMiddleware,
-    InteracaoController.toggleSeguir
-);
-
 router.put(
     "/:id",
     authMiddleware,

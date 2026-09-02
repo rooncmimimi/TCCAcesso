@@ -25,8 +25,8 @@ class ApiError extends Error {
         return new ApiError(401, mensagem);
     }
 
-    static forbidden(mensagem = "Acesso negado.") {
-        return new ApiError(403, mensagem);
+    static forbidden(mensagem = "Acesso negado.", detalhes) {
+        return new ApiError(403, mensagem, detalhes);
     }
 
     static notFound(mensagem = "Recurso não encontrado.") {

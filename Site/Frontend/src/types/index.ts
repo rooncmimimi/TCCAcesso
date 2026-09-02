@@ -445,6 +445,13 @@ export interface ResumoSeguidores {
   elesSeguemVoce?: boolean;
   /** Usuário autenticado tem uma solicitação de seguir pendente para o alvo (perfil privado). */
   solicitacaoPendente?: boolean;
+  /**
+   * Bloqueio (bidirecional) entre o usuário autenticado e o alvo (Fase 9,
+   * Bloco 5) — só usuário/candidato usa isso hoje (empresa não tem esse
+   * campo). Usado por `SeguirButton` para nunca oferecer uma ação de
+   * seguir que o backend recusaria de qualquer forma.
+   */
+  bloqueado?: boolean;
 }
 
 export interface SugestaoPerfil {
@@ -558,7 +565,8 @@ export interface PreferenciasAcessibilidade {
   espacamentoTexto?: boolean;
   reduzirAnimacoes?: boolean;
   leituraPorVoz?: boolean;
-  consentimentoVoz?: boolean;
+  /** `null` = ainda não respondeu o consentimento inicial de voz; `true`/`false` = já respondeu (Fase 9, Bloco 8). */
+  consentimentoVoz?: boolean | null;
   velocidadeVoz?: number | string;
   linguagemSimplificada?: boolean;
   libras?: boolean;

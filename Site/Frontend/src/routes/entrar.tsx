@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useSession } from "@/contexts/SessionContext";
 import { useSpeech } from "@/contexts/SpeechContext";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 import authService from "@/services/auth.service";
 import { extrairMensagemErro } from "@/services/api";
 
@@ -37,7 +38,10 @@ export const Route = createFileRoute("/entrar")({
 
 function Entrar() {
   const { login } = useSession();
-  const { speak, choice } = useSpeech();
+  const { speak } = useSpeech();
+  // Fase 9, Bloco 7: `prefs.screenReader` é a única fonte de verdade sobre
+  // a leitura por voz — nunca `choice`.
+  const { prefs } = useAccessibility();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [credenciaisPendentes, setCredenciaisPendentes] = useState<{ email: string; senha: string } | null>(null);
@@ -100,10 +104,9 @@ function Entrar() {
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível entrar. Verifique seus dados.");
       setError("senha", { message: mensagem });
+      // Fase 9, Bloco 7: o toast já é lido automaticamente por
+      // `useAutoSpeech` (MutationObserver) — falar aqui também duplicava.
       toast.error(mensagem);
-      if (choice === "accepted") {
-        speak(mensagem);
-      }
     } finally {
       setEnviando(false);
     }
@@ -134,17 +137,13 @@ function Entrar() {
         return;
       }
       if ("contaPausada" in resultado) return;
+      // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
+      // `useAutoSpeech` — falar aqui também duplicava.
       toast.success("Conta reativada. Bem-vindo de volta!");
-      if (choice === "accepted") {
-        speak("Conta reativada. Bem-vindo de volta!");
-      }
       navigate({ to: "/feed" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível reativar a conta.");
       toast.error(mensagem);
-      if (choice === "accepted") {
-        speak(mensagem);
-      }
     } finally {
       setEnviando(false);
     }
@@ -165,8 +164,10 @@ function Entrar() {
       navigate({ to: "/feed" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Código de verificação inválido.");
+      // Este erro é só um texto inline (`erroCodigo`), nunca um toast —
+      // continua legítimo falar aqui, é a única leitura deste evento.
       setErroCodigo(mensagem);
-      if (choice === "accepted") {
+      if (prefs.screenReader) {
         speak(mensagem);
       }
       setCodigo("");

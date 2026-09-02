@@ -6,7 +6,6 @@ import {
     uploadImagem,
     uploadDocumento,
     uploadAnexos,
-    processarArmazenamento,
     criarProcessadorArmazenamento
 } from "../middlewares/uploadMiddleware.js";
 
@@ -21,10 +20,24 @@ const processarDocumentoPrivado = criarProcessadorArmazenamento({
     privado: true
 });
 
+// Correção (auditoria de segurança, achado A3): `/imagem` e `/anexos`
+// gravavam na raiz do bucket público, sem nenhum vínculo a um recurso do
+// usuário (`criarProcessadorArmazenamento({})`, sem `pasta`) — corrigido
+// para escopar por usuário, mesmo padrão de `processarDocumentoPrivado`
+// acima. Não removidas: `Site/Frontend/src/services/uploads.service.ts`
+// (`uploadsService.enviarImagem`/`enviarAnexos`) as consome de verdade —
+// nenhuma tela usa esse serviço hoje, mas ele existe, está corretamente
+// tipado e apontado para estas rotas, então não é código morto (uma
+// varredura inicial por "upload/imagem" não achou esse consumidor por um
+// erro de digitação — o prefixo real da rota é "/uploads", no plural).
+const processarUploadGenerico = criarProcessadorArmazenamento({
+    pasta: (req) => `uploads/${req.user.id}`
+});
+
 router.post(
     "/imagem",
     uploadImagem.single("arquivo"),
-    processarArmazenamento,
+    processarUploadGenerico,
     UploadController.imagem
 );
 
@@ -38,7 +51,7 @@ router.post(
 router.post(
     "/anexos",
     uploadAnexos.array("arquivos", 4),
-    processarArmazenamento,
+    processarUploadGenerico,
     UploadController.anexos
 );
 

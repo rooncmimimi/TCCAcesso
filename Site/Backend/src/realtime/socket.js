@@ -44,10 +44,28 @@ export const iniciarSocket = (httpServer) => {
             const payload = verifyToken(token);
 
             const usuario = await Usuario.findByPk(payload.id, {
-                attributes: ["id", "nome", "tipoUsuario", "ativo", "bloqueado"]
+                attributes: ["id", "nome", "tipoUsuario", "ativo", "bloqueado", "motivoBloqueio"]
             });
 
-            if (!usuario || !usuario.ativo || usuario.bloqueado) {
+            if (!usuario) {
+                return next(new Error("Sessão inválida."));
+            }
+
+            // Fase 9 (Bloco 3): mesma distinção do REST — bloqueio
+            // administrativo é identificável (`err.data.codigo`) para o
+            // cliente parar de tentar reconectar, em vez de insistir até
+            // esgotar as tentativas automáticas do socket.io-client.
+            if (usuario.bloqueado) {
+                const erro = new Error(
+                    usuario.motivoBloqueio
+                        ? `Sua conta foi bloqueada pela moderação do ACESSO. Motivo: ${usuario.motivoBloqueio}`
+                        : "Sua conta foi bloqueada pela moderação do ACESSO."
+                );
+                erro.data = { codigo: "CONTA_BLOQUEADA" };
+                return next(erro);
+            }
+
+            if (!usuario.ativo) {
                 return next(new Error("Sessão inválida."));
             }
 

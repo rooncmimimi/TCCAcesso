@@ -18,7 +18,6 @@ import {
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { useSession } from "@/contexts/SessionContext";
-import { useSpeech } from "@/contexts/SpeechContext";
 import type { PreferenciaMensagens } from "@/types";
 
 const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: string }[] = [
@@ -46,10 +45,12 @@ export const Route = createFileRoute("/configuracoes/privacidade")({
 
 function Privacidade() {
   const { user, update } = useSession();
-  const { speak, choice } = useSpeech();
   const perfilPublico = user?.perfilPublico ?? true;
   const preferenciaMensagens = user?.preferenciaMensagens ?? "todos";
 
+  // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
+  // `useAutoSpeech` — falar manualmente aqui também duplicava o anúncio
+  // do mesmo evento (mesma mutation, mesmo `onSuccess`).
   const atualizar = useMutation({
     mutationFn: (valor: boolean) => bloqueioService.atualizarPrivacidade(valor),
     onSuccess: (resultado) => {
@@ -57,9 +58,6 @@ function Privacidade() {
       toast.success(
         resultado.perfilPublico ? "Seu perfil agora é público." : "Seu perfil agora é privado.",
       );
-      if (choice === "accepted") {
-        speak(resultado.perfilPublico ? "Perfil público ativado." : "Perfil público desativado.");
-      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
   });
@@ -68,11 +66,7 @@ function Privacidade() {
     mutationFn: (valor: PreferenciaMensagens) => bloqueioService.atualizarPreferenciaMensagens(valor),
     onSuccess: (resultado) => {
       update({ preferenciaMensagens: resultado.preferenciaMensagens });
-      const rotulo = OPCOES_PREFERENCIA_MENSAGENS.find((o) => o.value === resultado.preferenciaMensagens)?.label;
       toast.success("Preferência de mensagens atualizada.");
-      if (choice === "accepted" && rotulo) {
-        speak(`Quem pode mandar mensagem para você: ${rotulo}.`);
-      }
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
   });

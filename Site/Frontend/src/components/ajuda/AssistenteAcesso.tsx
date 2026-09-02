@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { chatbotService } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useSpeech } from "@/contexts/SpeechContext";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 import type { ChatbotMensagem } from "@/types";
 
 const SAUDACAO: ChatbotMensagem = {
@@ -32,7 +33,12 @@ export function AssistenteAcesso() {
   const [mensagens, setMensagens] = useState<ChatbotMensagem[]>([SAUDACAO]);
   const [texto, setTexto] = useState("");
   const listaRef = useRef<HTMLDivElement>(null);
-  const { speak, choice } = useSpeech();
+  const { speak } = useSpeech();
+  // Fase 9, Bloco 7: `prefs.screenReader` é a única fonte de verdade sobre
+  // a leitura por voz estar ativa — nunca `choice` (registro de "já
+  // perguntou?" do primeiro acesso, que pode ficar desatualizado se o
+  // usuário mudar a preferência depois em Configurações).
+  const { prefs } = useAccessibility();
   const queryClient = useQueryClient();
 
   const enviar = useMutation({
@@ -40,7 +46,9 @@ export function AssistenteAcesso() {
     onSuccess: (dados) => {
       setConversaId(dados.conversa.id);
       setMensagens((atuais) => [...atuais, dados.resposta]);
-      if (choice === "accepted") {
+      // Resposta do assistente não passa por toast — não há duplicação
+      // possível aqui, é a única leitura deste evento.
+      if (prefs.screenReader) {
         speak(dados.resposta.conteudo, { interrupt: false });
       }
       void queryClient.invalidateQueries({ queryKey: ["chatbot", "conversas"] });

@@ -57,6 +57,26 @@ class CandidatoController {
         }
     }
 
+    /**
+     * Mesma autorização do endpoint acima, mas gera uma URL assinada com
+     * `Content-Disposition: attachment` (força download em vez de
+     * exibição inline) — mesmo padrão de
+     * `PostagemController.downloadAnexo` (Fase 7).
+     */
+    async curriculoDownload(req, res, next) {
+        try {
+            const resultado = await CandidatoService.gerarUrlCurriculo(
+                req.params.id,
+                req.user,
+                { baixar: true }
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async update(req, res, next) {
         try {
             const candidato = await CandidatoService.update(

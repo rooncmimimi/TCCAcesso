@@ -27,19 +27,6 @@ class InteracaoController {
         }
     }
 
-    async toggleSeguir(req, res, next) {
-        try {
-            const resultado = await InteracaoService.alternarSeguir(
-                req.params.empresaId,
-                req.user
-            );
-
-            return res.status(200).json({ sucesso: true, ...resultado });
-        } catch (erro) {
-            return next(erro);
-        }
-    }
-
     async listarSeguidas(req, res, next) {
         try {
             const dados = await InteracaoService.listarSeguidas(

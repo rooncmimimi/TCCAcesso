@@ -63,6 +63,27 @@ export const perfilService = {
     return data.candidato;
   },
 
+  /**
+   * URL assinada e temporária para VISUALIZAR o currículo — nunca
+   * persistir, buscar sempre sob demanda no momento do clique (mesmo
+   * princípio da Fase 7 para mídia de postagem). Backend reautoriza do
+   * zero (dono, empresa com candidatura ou administrador).
+   */
+  async urlCurriculo(candidatoId: string): Promise<{ url: string; nomeArquivo: string | null }> {
+    const { data } = await api.get<{ url: string; nomeArquivo: string | null }>(
+      `/candidatos/${candidatoId}/curriculo`,
+    );
+    return { url: data.url, nomeArquivo: data.nomeArquivo };
+  },
+
+  /** Mesma autorização acima, mas com download forçado (Content-Disposition: attachment). */
+  async urlDownloadCurriculo(candidatoId: string): Promise<{ url: string; nomeArquivo: string | null }> {
+    const { data } = await api.get<{ url: string; nomeArquivo: string | null }>(
+      `/candidatos/${candidatoId}/curriculo/download`,
+    );
+    return { url: data.url, nomeArquivo: data.nomeArquivo };
+  },
+
   async enviarCurriculo(candidatoId: string, arquivo: File): Promise<Candidato> {
     const form = new FormData();
     form.append("curriculo", arquivo);

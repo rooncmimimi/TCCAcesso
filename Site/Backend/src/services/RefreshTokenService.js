@@ -32,6 +32,27 @@ const SEGUNDOS_TOLERANCIA_REUSO = 20;
  *   a segunda espera a primeira terminar e já enxerga o estado atualizado.
  */
 class RefreshTokenService {
+    /**
+     * Fase 9 (Bloco 3): mesma distinção de `authMiddleware` — bloqueio
+     * administrativo tem mensagem específica e `codigo` identificável pelo
+     * frontend; qualquer outro motivo de conta indisponível (`!ativo` sem
+     * `bloqueado`, ou usuário já não existe mais) mantém a mensagem
+     * genérica de antes. Centralizado aqui para os dois pontos de
+     * `rotacionar` que precisam da mesma checagem nunca divergirem.
+     */
+    erroContaIndisponivel(usuario) {
+        if (usuario?.bloqueado) {
+            return ApiError.forbidden(
+                usuario.motivoBloqueio
+                    ? `Sua conta foi bloqueada pela moderação do ACESSO. Motivo: ${usuario.motivoBloqueio}`
+                    : "Sua conta foi bloqueada pela moderação do ACESSO.",
+                { codigo: "CONTA_BLOQUEADA" }
+            );
+        }
+
+        return ApiError.forbidden("Conta indisponível.");
+    }
+
     calcularExpiracao() {
         const data = new Date();
         data.setDate(data.getDate() + DIAS_VALIDADE);
@@ -179,9 +200,9 @@ class RefreshTokenService {
                         { transaction }
                     );
 
-                    if (!usuarioTolerado || !usuarioTolerado.ativo || usuarioTolerado.bloqueado) {
+                    if (!usuarioTolerado || usuarioTolerado.bloqueado || !usuarioTolerado.ativo) {
                         await transaction.rollback();
-                        throw ApiError.forbidden("Conta indisponível.");
+                        throw this.erroContaIndisponivel(usuarioTolerado);
                     }
 
                     const { refreshToken: tokenTolerado } = await this.emitir(
@@ -222,9 +243,9 @@ class RefreshTokenService {
 
             const usuario = await Usuario.findByPk(registro.usuarioId, { transaction });
 
-            if (!usuario || !usuario.ativo || usuario.bloqueado) {
+            if (!usuario || usuario.bloqueado || !usuario.ativo) {
                 await transaction.rollback();
-                throw ApiError.forbidden("Conta indisponível.");
+                throw this.erroContaIndisponivel(usuario);
             }
 
             const { refreshToken, registro: novo } = await this.emitir(

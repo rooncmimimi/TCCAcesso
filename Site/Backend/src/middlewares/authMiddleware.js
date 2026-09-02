@@ -36,12 +36,26 @@ const authMiddleware = async (req, res, next) => {
             throw ApiError.unauthorized("Usuário não encontrado.");
         }
 
-        if (!usuario.ativo) {
-            throw ApiError.forbidden("Usuário desativado.");
+        // Fase 9 (Bloco 3): checa `bloqueado` ANTES de `ativo` — hoje
+        // `alternarBloqueio` sempre seta os dois juntos
+        // (`ativo: !bloqueado`), então checar `ativo` primeiro fazia essa
+        // ramificação nunca ser alcançada de verdade: toda conta bloqueada
+        // caía no "Usuário desativado." genérico, sem motivo nenhum,
+        // idêntico ao texto que uma conta pausada pelo próprio usuário
+        // também poderia gerar no futuro. `codigo` em `detalhes` permite o
+        // frontend identificar este caso especificamente (bloqueio
+        // administrativo), sem depender de comparar o texto da mensagem.
+        if (usuario.bloqueado) {
+            throw ApiError.forbidden(
+                usuario.motivoBloqueio
+                    ? `Sua conta foi bloqueada pela moderação do ACESSO. Motivo: ${usuario.motivoBloqueio}`
+                    : "Sua conta foi bloqueada pela moderação do ACESSO.",
+                { codigo: "CONTA_BLOQUEADA" }
+            );
         }
 
-        if (usuario.bloqueado) {
-            throw ApiError.forbidden("Usuário bloqueado.");
+        if (!usuario.ativo) {
+            throw ApiError.forbidden("Usuário desativado.");
         }
 
         req.user = usuario;

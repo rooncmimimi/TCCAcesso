@@ -32,6 +32,33 @@ export const authLimiter = rateLimit({
 });
 
 /**
+ * Limite dedicado para /auth/senha/esqueci.
+ *
+ * `authLimiter` usa `skipSuccessfulRequests: true` (correto para
+ * login/cadastro, onde uma tentativa legítima responde 2xx e não deve
+ * contar contra o próprio usuário). "Esqueci minha senha" é diferente por
+ * design: SEMPRE responde 200, mesmo quando o e-mail não existe
+ * (anti-enumeração) — com `skipSuccessfulRequests`, isso fazia NENHUMA
+ * requisição a esta rota jamais contar para o limite, deixando-a sem
+ * proteção efetiva contra abuso (enumeração de e-mails, spam de envio via
+ * Brevo). Mesmos limites de `authLimiter`, só sem pular sucesso — a única
+ * mudança necessária; `/senha/redefinir` continua em `authLimiter` sem
+ * alteração, porque ali uma tentativa errada já responde 4xx e sempre
+ * contou normalmente.
+ */
+export const recuperacaoSenhaLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        sucesso: false,
+        mensagem:
+            "Muitas tentativas de autenticação. Tente novamente mais tarde."
+    }
+});
+
+/**
  * Limite dedicado para /auth/refresh — mais permissivo que o authLimiter
  * (clientes legítimos renovam o token com frequência), mas ainda limita
  * força bruta contra refresh tokens (antes só caía no apiLimiter geral).

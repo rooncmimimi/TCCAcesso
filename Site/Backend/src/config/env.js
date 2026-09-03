@@ -49,6 +49,16 @@ const paraLista = (valor, padrao) => {
         .filter(Boolean);
 };
 
+/** É uma URL absoluta (com protocolo) válida? Usado só para o aviso de boot abaixo. */
+const ehUrlAbsolutaValida = (valor) => {
+    try {
+        new URL(valor);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
 const env = {
     nodeEnv: process.env.NODE_ENV || "development",
     isProducao: process.env.NODE_ENV === "production",
@@ -196,6 +206,27 @@ if (env.isProducao && !env.brevo.apiKey) {
         "[ENV] Produção sem BREVO_API_KEY configurada. Recuperação de senha " +
             "e confirmação de e-mail de cadastro não enviarão e-mails reais " +
             "até essa variável ser configurada no Render."
+    );
+}
+
+/**
+ * Aviso (não fail-fast): uma `FRONTEND_URL` sem o esquema (ex.:
+ * "meusite.onrender.com" em vez de "https://meusite.onrender.com") não
+ * forma uma URL absoluta válida — `new URL(caminho, base)` lançava
+ * `TypeError: Invalid URL` direto de dentro do fluxo de e-mail, sem
+ * tratamento, virando "Erro interno do servidor." tanto na recuperação de
+ * senha quanto na confirmação de cadastro (causa raiz já corrigida em
+ * `utils/frontendUrl.js`, que nunca mais deixa isso derrubar a
+ * requisição). Este aviso é só para pegar o problema de configuração
+ * cedo, direto no log de boot — nunca imprime o valor da variável.
+ */
+if (!ehUrlAbsolutaValida(env.frontendUrl)) {
+    console.error(
+        "[ENV] FRONTEND_URL configurada de forma inválida (precisa ser uma " +
+            "URL absoluta com protocolo, ex.: https://seusite.com). Links " +
+            "de e-mail (confirmação de cadastro, redefinição de senha) vão " +
+            "sair sem o botão de acesso rápido até isso ser corrigido — o " +
+            "código numérico continua funcionando normalmente."
     );
 }
 

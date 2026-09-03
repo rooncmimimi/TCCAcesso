@@ -13,21 +13,33 @@ import { Label } from "@/components/ui/label";
 import authService from "@/services/auth.service";
 import { extrairMensagemErro } from "@/services/api";
 
-const esquema = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-  codigo: z
-    .string()
-    .trim()
-    .length(6, "O código deve ter 6 dígitos.")
-    .regex(/^\d{6}$/, "O código deve conter apenas números."),
-  novaSenha: z
-    .string()
-    .min(8, "A senha deve ter entre 8 e 72 caracteres.")
-    .max(72, "A senha deve ter entre 8 e 72 caracteres.")
-    .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
-    .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
-    .regex(/\d/, "A senha deve conter ao menos um número."),
-});
+const esquema = z
+  .object({
+    email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
+    codigo: z
+      .string()
+      .trim()
+      .length(6, "O código deve ter 6 dígitos.")
+      .regex(/^\d{6}$/, "O código deve conter apenas números."),
+    // Mesmas regras de `configuracoes/senha.tsx` (troca autenticada) —
+    // antes esta tela aceitava uma senha mais fraca (sem caractere
+    // especial) do que o resto do app exige, uma divergência silenciosa
+    // entre os dois validators do backend, corrigida junto (ambos agora
+    // reaproveitam a mesma regra em `authValidator.regrasSenha`).
+    novaSenha: z
+      .string()
+      .min(8, "A senha deve ter entre 8 e 72 caracteres.")
+      .max(72, "A senha deve ter entre 8 e 72 caracteres.")
+      .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
+      .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
+      .regex(/\d/, "A senha deve conter ao menos um número.")
+      .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial."),
+    confirmarSenha: z.string().min(1, "Confirme a nova senha."),
+  })
+  .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
+    message: "As senhas não coincidem.",
+    path: ["confirmarSenha"],
+  });
 
 type Formulario = z.infer<typeof esquema>;
 
@@ -49,20 +61,34 @@ function RedefinirSenha() {
   const {
     register,
     handleSubmit,
+    setError,
+    setFocus,
     formState: { errors },
   } = useForm<Formulario>({
     resolver: zodResolver(esquema),
-    defaultValues: { email: email ?? "", codigo: codigo ?? "", novaSenha: "" },
+    defaultValues: { email: email ?? "", codigo: codigo ?? "", novaSenha: "", confirmarSenha: "" },
   });
 
   const aoEnviar = handleSubmit(async (valores) => {
     setEnviando(true);
     try {
-      await authService.redefinirSenha(valores);
+      await authService.redefinirSenha({
+        email: valores.email,
+        codigo: valores.codigo,
+        novaSenha: valores.novaSenha,
+      });
       toast.success("Senha redefinida com sucesso! Faça login novamente.");
       navigate({ to: "/entrar" });
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível redefinir a senha."));
+      const mensagem = extrairMensagemErro(erro, "Não foi possível redefinir a senha.");
+      // Anexa a mensagem ao campo do código (causa mais comum de rejeição
+      // — código incorreto/expirado/já usado) e move o foco pra lá, pra
+      // quem usa teclado ou o leitor de voz não precisar procurar onde
+      // corrigir; o toast (lido automaticamente por `useAutoSpeech`)
+      // continua cobrindo qualquer outra causa (ex.: limite de tentativas).
+      setError("codigo", { message: mensagem });
+      setFocus("codigo");
+      toast.error(mensagem);
     } finally {
       setEnviando(false);
     }
@@ -122,16 +148,34 @@ function RedefinirSenha() {
                   type="password"
                   autoComplete="new-password"
                   className="min-h-12"
-                  aria-describedby="nova-senha-dica"
+                  aria-describedby={errors.novaSenha ? "nova-senha-erro" : "nova-senha-dica"}
                   aria-invalid={Boolean(errors.novaSenha)}
                   {...register("novaSenha")}
                 />
-                <p id="nova-senha-dica" className="text-sm text-muted-foreground">
-                  Use ao menos 8 caracteres, com maiúscula, minúscula e número.
-                </p>
-                {errors.novaSenha && (
-                  <p role="alert" className="text-sm font-medium text-destructive">
+                {errors.novaSenha ? (
+                  <p id="nova-senha-erro" role="alert" className="text-sm font-medium text-destructive">
                     {errors.novaSenha.message}
+                  </p>
+                ) : (
+                  <p id="nova-senha-dica" className="text-sm text-muted-foreground">
+                    Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+                <Input
+                  id="confirmar-senha"
+                  type="password"
+                  autoComplete="new-password"
+                  className="min-h-12"
+                  aria-invalid={Boolean(errors.confirmarSenha)}
+                  aria-describedby={errors.confirmarSenha ? "confirmar-senha-erro" : undefined}
+                  {...register("confirmarSenha")}
+                />
+                {errors.confirmarSenha && (
+                  <p id="confirmar-senha-erro" role="alert" className="text-sm font-medium text-destructive">
+                    {errors.confirmarSenha.message}
                   </p>
                 )}
               </div>

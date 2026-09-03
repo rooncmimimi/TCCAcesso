@@ -82,36 +82,61 @@ function botao(url, texto) {
 </table>`;
 }
 
-/** E-mail de confirmação de cadastro (candidato ou empresa). */
+/**
+ * E-mail de confirmação de cadastro (candidato ou empresa).
+ *
+ * `linkConfirmacao` pode vir `null` (ver `utils/frontendUrl.js`) quando
+ * `FRONTEND_URL` está mal configurada — o código de 6 dígitos nunca
+ * depende disso, então o e-mail continua útil sem o botão, só com o
+ * texto de introdução e o rodapé ajustados para não mencionar um botão
+ * que não existe.
+ */
 export function templateConfirmacaoCadastro({ nome, linkConfirmacao, codigo, minutosValidade }) {
     const assunto = "Confirme seu e-mail — ACESSO";
-    const corpoHtml = `
+    const corpoHtml = linkConfirmacao
+        ? `
       <p style="margin:0 0 16px 0;">Sua conta no ACESSO foi criada com sucesso. Para confirmar seu endereço de e-mail e liberar o acesso, clique no botão abaixo:</p>
       ${botao(linkConfirmacao, "Confirmar meu e-mail")}
       <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Se o botão não funcionar, use este código na tela de confirmação: <strong style="letter-spacing:2px;color:${COR_TEXTO};">${escaparHtml(codigo)}</strong></p>
       <p style="margin:8px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este link/código é válido por ${minutosValidade} minutos. Se você não criou esta conta, ignore este e-mail.</p>
+    `
+        : `
+      <p style="margin:0 0 16px 0;">Sua conta no ACESSO foi criada com sucesso. Para confirmar seu endereço de e-mail, use o código abaixo na tela de confirmação:</p>
+      <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
+      <p style="margin:8px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este código é válido por ${minutosValidade} minutos. Se você não criou esta conta, ignore este e-mail.</p>
     `;
     const html = layoutBase({
         titulo: "Bem-vindo ao ACESSO!",
         saudacao: nome ? `Olá, ${nome}!` : "Olá!",
         corpoHtml
     });
-    const texto =
-        `Bem-vindo ao ACESSO!\n\n` +
-        `Sua conta foi criada com sucesso. Para confirmar seu e-mail, acesse:\n${linkConfirmacao}\n\n` +
-        `Ou use o código ${codigo} na tela de confirmação (válido por ${minutosValidade} minutos).\n\n` +
-        `Se você não criou esta conta, ignore este e-mail.`;
+    const texto = linkConfirmacao
+        ? `Bem-vindo ao ACESSO!\n\n` +
+          `Sua conta foi criada com sucesso. Para confirmar seu e-mail, acesse:\n${linkConfirmacao}\n\n` +
+          `Ou use o código ${codigo} na tela de confirmação (válido por ${minutosValidade} minutos).\n\n` +
+          `Se você não criou esta conta, ignore este e-mail.`
+        : `Bem-vindo ao ACESSO!\n\n` +
+          `Sua conta foi criada com sucesso. Use o código ${codigo} na tela de confirmação ` +
+          `(válido por ${minutosValidade} minutos).\n\n` +
+          `Se você não criou esta conta, ignore este e-mail.`;
 
     return { assunto, html, texto };
 }
 
-/** E-mail de recuperação de senha. */
+/**
+ * E-mail de recuperação de senha.
+ *
+ * `linkRedefinir` pode vir `null` (ver `utils/frontendUrl.js`) quando
+ * `FRONTEND_URL` está mal configurada — o código já é o mecanismo
+ * principal (por isso vem em destaque, antes do botão), então o e-mail
+ * continua completo e utilizável mesmo sem o link.
+ */
 export function templateRecuperacaoSenha({ nome, codigo, linkRedefinir, minutosValidade }) {
     const assunto = "Redefinição de senha — ACESSO";
     const corpoHtml = `
       <p style="margin:0 0 16px 0;">Recebemos uma solicitação para redefinir a senha da sua conta no ACESSO. Use o código abaixo na tela de redefinição:</p>
       <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
-      ${botao(linkRedefinir, "Redefinir minha senha")}
+      ${linkRedefinir ? botao(linkRedefinir, "Redefinir minha senha") : ""}
       <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este código é válido por ${minutosValidade} minutos. Se você não solicitou essa alteração, ignore este e-mail — sua senha continua a mesma.</p>
     `;
     const html = layoutBase({
@@ -122,7 +147,7 @@ export function templateRecuperacaoSenha({ nome, codigo, linkRedefinir, minutosV
     const texto =
         `Redefinição de senha — ACESSO\n\n` +
         `Recebemos uma solicitação para redefinir sua senha. Use o código: ${codigo}\n` +
-        `Ou acesse: ${linkRedefinir}\n\n` +
+        (linkRedefinir ? `Ou acesse: ${linkRedefinir}\n\n` : "\n") +
         `Válido por ${minutosValidade} minutos. Se você não solicitou, ignore este e-mail.`;
 
     return { assunto, html, texto };

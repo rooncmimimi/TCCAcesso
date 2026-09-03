@@ -1,4 +1,5 @@
 import { body } from "express-validator";
+import { regrasSenha } from "./authValidator.js";
 
 /** Validações de sessão (refresh) e recuperação de senha. */
 
@@ -25,15 +26,7 @@ export const validarRedefinirSenha = [
         .isNumeric()
         .withMessage("O código deve ter 6 dígitos."),
 
-    body("novaSenha")
-        .isLength({ min: 8, max: 72 })
-        .withMessage("A senha deve ter entre 8 e 72 caracteres.")
-        .matches(/[A-Z]/)
-        .withMessage("A senha deve conter ao menos uma letra maiúscula.")
-        .matches(/[a-z]/)
-        .withMessage("A senha deve conter ao menos uma letra minúscula.")
-        .matches(/\d/)
-        .withMessage("A senha deve conter ao menos um número.")
+    regrasSenha("novaSenha")
 ];
 
 /** Confirmação de e-mail de cadastro (rotas públicas — antes do login). */

@@ -3,8 +3,14 @@ import { body } from "express-validator";
 /**
  * Regras de senha forte (OWASP ASVS 2.1):
  * mínimo 8 caracteres, com letra maiúscula, minúscula, número e símbolo.
+ *
+ * Exportada (Fase J2) para ser reaproveitada por `validarRedefinirSenha`
+ * (sessaoValidator.js) — antes existia uma cópia manual das mesmas regras
+ * ali, que havia silenciosamente ficado sem a exigência de caractere
+ * especial: dava para redefinir a senha (recuperação) para algo mais
+ * fraco do que o cadastro/troca de senha autenticada exigem.
  */
-const regrasSenha = (campo = "senha") =>
+export const regrasSenha = (campo = "senha") =>
     body(campo)
         .isString()
         .isLength({ min: 8, max: 72 })

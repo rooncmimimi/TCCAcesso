@@ -7,18 +7,11 @@ import RefreshTokenService from "./RefreshTokenService.js";
 import EmailService from "./EmailService.js";
 import authService from "./authService.js";
 import { templateRecuperacaoSenha } from "../utils/emailTemplates.js";
-import env from "../config/env.js";
+import { montarUrlFrontend } from "../utils/frontendUrl.js";
 import ApiError from "../utils/ApiError.js";
 
 const MINUTOS_VALIDADE = 15;
 const MAX_TENTATIVAS = 5;
-
-function linkRedefinicaoSenha(email, codigo) {
-    const url = new URL("/redefinir-senha", env.frontendUrl);
-    url.searchParams.set("email", email);
-    url.searchParams.set("codigo", codigo);
-    return url.toString();
-}
 
 /**
  * Recuperação de senha por código de 6 dígitos.
@@ -63,7 +56,10 @@ class RecuperacaoSenhaService {
             const { assunto, html, texto } = templateRecuperacaoSenha({
                 nome: usuario.nome,
                 codigo,
-                linkRedefinir: linkRedefinicaoSenha(usuario.email, codigo),
+                linkRedefinir: montarUrlFrontend("/redefinir-senha", {
+                    email: usuario.email,
+                    codigo
+                }),
                 minutosValidade: MINUTOS_VALIDADE
             });
 

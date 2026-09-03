@@ -20,7 +20,7 @@ import {
     templateConfirmacaoTrocaEmail,
     templateSenhaAlterada
 } from "../utils/emailTemplates.js";
-import env from "../config/env.js";
+import { montarUrlFrontend } from "../utils/frontendUrl.js";
 import ApiError from "../utils/ApiError.js";
 
 const MINUTOS_VALIDADE_EMAIL = 15;
@@ -28,13 +28,6 @@ const MAX_TENTATIVAS_EMAIL = 5;
 // Cooldown mínimo entre reenvios de confirmação de cadastro (anti-abuso,
 // independente do rate limit por IP da rota).
 const SEGUNDOS_COOLDOWN_REENVIO = 60;
-
-function linkConfirmacaoCadastro(email, codigo) {
-    const url = new URL("/confirmar-email", env.frontendUrl);
-    url.searchParams.set("email", email);
-    url.searchParams.set("codigo", codigo);
-    return url.toString();
-}
 
 /**
  * Regras de autenticação e cadastro.
@@ -240,7 +233,10 @@ class AuthService {
 
         const { assunto, html, texto } = templateConfirmacaoCadastro({
             nome: usuario.nome,
-            linkConfirmacao: linkConfirmacaoCadastro(usuario.email, codigo),
+            linkConfirmacao: montarUrlFrontend("/confirmar-email", {
+                email: usuario.email,
+                codigo
+            }),
             codigo,
             minutosValidade: MINUTOS_VALIDADE_EMAIL
         });

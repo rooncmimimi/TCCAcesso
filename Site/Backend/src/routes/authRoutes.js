@@ -3,7 +3,12 @@ import AuthController from "../controllers/AuthController.js";
 import AutenticacaoDoisFatoresController from "../controllers/AutenticacaoDoisFatoresController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
-import { authLimiter, refreshLimiter, reenvioConfirmacaoLimiter } from "../middlewares/rateLimitMiddleware.js";
+import {
+    authLimiter,
+    refreshLimiter,
+    reenvioConfirmacaoLimiter,
+    recuperacaoSenhaLimiter
+} from "../middlewares/rateLimitMiddleware.js";
 import {
     validarCadastroCandidato,
     validarCadastroEmpresa,
@@ -58,7 +63,7 @@ router.post(
 
 router.post(
     "/senha/esqueci",
-    authLimiter,
+    recuperacaoSenhaLimiter,
     validarEsqueciSenha,
     validationMiddleware,
     AuthController.esqueciSenha

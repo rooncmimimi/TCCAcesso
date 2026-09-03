@@ -221,6 +221,17 @@ function ConfirmeSeuEmail({ email }: { email: string }) {
         Enviamos um e-mail de confirmação para <strong className="text-foreground">{email}</strong>. Verifique sua
         caixa de entrada e também a pasta de spam, e clique no link para confirmar seu endereço antes de entrar.
       </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Prefere digitar o código de 6 dígitos que veio no e-mail? Você também pode{" "}
+        <Link
+          to="/confirmar-email"
+          search={{ email }}
+          className="font-semibold text-primary underline"
+        >
+          confirmar por código
+        </Link>
+        .
+      </p>
       <Button
         type="button"
         variant="outline"

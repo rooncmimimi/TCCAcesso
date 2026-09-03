@@ -44,7 +44,15 @@ const esquema = z
 type Formulario = z.infer<typeof esquema>;
 
 export const Route = createFileRoute("/redefinir-senha")({
-  validateSearch: z.object({ email: z.string().optional(), codigo: z.string().optional() }),
+  // `z.coerce.string()`, não `z.string()`: o parser de search params do
+  // TanStack Router converte um valor 100% numérico na URL para `number`
+  // antes da validação — um código de 6 dígitos é sempre "numérico" na
+  // aparência, então `z.string()` sozinho rejeitava TODO link de
+  // redefinição de senha com "Expected string, received number" (mesmo
+  // bug encontrado e corrigido em `confirmar-email.tsx` na auditoria J2.1
+  // — aqui também quebrava a Opção A/link, silenciosamente, desde antes
+  // do J2).
+  validateSearch: z.object({ email: z.string().optional(), codigo: z.coerce.string().optional() }),
   head: () => ({
     meta: [
       { title: "Redefinir senha — ACESSO" },

@@ -59,6 +59,24 @@ const ehUrlAbsolutaValida = (valor) => {
     }
 };
 
+const ORIGEM_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i;
+
+/**
+ * `FRONTEND_URL` é uma lista (usada para CORS, que legitimamente aceita
+ * MAIS de uma origem — ex.: localhost em dev junto com a URL real de
+ * produção). Mas para montar links de e-mail (confirmação de cadastro,
+ * redefinição de senha) precisa de UMA única URL "canônica" — e pegar
+ * sempre a primeira da lista (`[0]`) significa que, se `localhost:5173`
+ * ficar na frente por qualquer motivo (ex.: alguém configurou o Render
+ * copiando o formato do `.env` local, com produção só ANEXADA depois),
+ * todo link de e-mail sai apontando pra localhost mesmo em produção —
+ * mesmo com a URL de produção certinha, só que em segundo lugar na mesma
+ * variável. Preferir a primeira origem que NÃO é localhost resolve isso
+ * sem exigir nenhuma variável nova e sem mudar CORS (que continua usando
+ * a lista inteira, sem filtro nenhum).
+ */
+const escolherOrigemPublica = (lista) => lista.find((url) => !ORIGEM_LOCAL.test(url)) ?? lista[0];
+
 const env = {
     nodeEnv: process.env.NODE_ENV || "development",
     isProducao: process.env.NODE_ENV === "production",
@@ -171,8 +189,11 @@ const env = {
 
     // URL base do Frontend para montar links de e-mail (confirmação de
     // cadastro, redefinição de senha). Reaproveita FRONTEND_URL (mesma
-    // variável já usada para CORS) — usa a primeira origem da lista.
-    frontendUrl: paraLista(process.env.FRONTEND_URL, ["http://localhost:5173"])[0]
+    // variável já usada para CORS) — usa a primeira origem da lista que
+    // não for localhost (ver `escolherOrigemPublica` acima).
+    frontendUrl: escolherOrigemPublica(
+        paraLista(process.env.FRONTEND_URL, ["http://localhost:5173"])
+    )
 };
 
 /**

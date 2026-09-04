@@ -100,32 +100,88 @@ let refrescando: Promise<string | null> | null = null;
 /** Preenchido só quando a PRÓPRIA renovação falha por bloqueio administrativo (Fase 9) — motivo específico para `dispararSessaoExpirada`, em vez do encerramento silencioso de sempre. */
 let motivoUltimaFalhaRefresh: string | undefined;
 
+/**
+ * Chave do lock cross-aba (Web Locks API) usado para serializar a renovação
+ * do token entre TODAS as abas/janelas da mesma origem — não só dentro de
+ * uma aba. `refrescando` (acima) já evitava chamadas duplicadas a `/refresh`
+ * DENTRO de uma mesma aba (várias 401 simultâneas na mesma aba reaproveitam
+ * a mesma promise), mas cada aba tem seu próprio módulo JS, logo seu próprio
+ * `refrescando` — duas abas da mesma conta expirando o access token ao mesmo
+ * tempo cada uma via seu `refrescando === null` e cada uma chamava
+ * `/auth/refresh` com o MESMO refresh token ainda não rotacionado. O backend
+ * (`RefreshTokenService.rotacionar`) tem uma janela de tolerância de 20s
+ * justamente para não punir corridas legítimas — mas ela foi desenhada para
+ * um retry de rede do MESMO cliente, não para duas abas inteiras renovando
+ * ao mesmo tempo: cada chamada extra dentro da janela emite uma sessão
+ * NOVA e válida (nunca revogada depois), o que aparecia como "várias
+ * sessões para o mesmo dispositivo" — e, quando uma dessas sessões extras
+ * era reapresentada mais tarde (aba esquecida em segundo plano) já fora da
+ * janela de 20s, o backend corretamente tratava como roubo e derrubava a
+ * família inteira, forçando login de novo. Nada disso muda no backend (a
+ * rotação/replay detection continuam intactas) — o lock só evita que o
+ * cenário de corrida entre abas aconteça, deixando a tolerância de 20s para
+ * o que ela sempre foi pensada: um retry de rede isolado.
+ */
+const CHAVE_LOCK_REFRESH = "acesso:refresh-lock";
+
+async function chamarRefresh(refreshToken: string): Promise<string | null> {
+  try {
+    // `timeout` explícito (igual ao da instância `api`, nunca existiu aqui
+    // antes desta correção): com o lock cross-aba, uma renovação que nunca
+    // resolve passaria a travar TODAS as abas (todas esperam a mesma seção
+    // crítica), não só a que a iniciou — sem isso, uma rede lenta/travada
+    // numa aba deixaria as outras penduradas indefinidamente esperando o
+    // lock, mesmo com refresh token e rede próprias perfeitamente OK.
+    const { data } = await axios.post<{ token?: string; accessToken?: string; refreshToken: string }>(
+      `${API_BASE_URL}/auth/refresh`,
+      { refreshToken },
+      { timeout: 20_000 },
+    );
+    const novo = data.token ?? data.accessToken ?? null;
+    setTokens(novo, data.refreshToken);
+    return novo;
+  } catch (erroRefresh) {
+    if (codigoDoErro(erroRefresh) === CODIGO_CONTA_BLOQUEADA) {
+      motivoUltimaFalhaRefresh = extrairMensagemErro(erroRefresh);
+    }
+    clearTokens();
+    return null;
+  }
+}
+
+/**
+ * Executa a renovação já dentro da seção crítica (com o lock cross-aba já
+ * obtido, quando disponível). Antes de gastar uma chamada de rede, relê o
+ * refresh token do localStorage: se ele mudou desde que ESTA aba decidiu
+ * renovar, é porque outra aba já rotacionou por nós enquanto esperávamos —
+ * usa o access token que ela acabou de guardar em vez de rotacionar de novo.
+ */
+async function renovarNaSecaoCritica(refreshTokenDeQuandoComecou: string): Promise<string | null> {
+  const tokenAtual = getRefreshToken();
+  if (!tokenAtual) return null;
+  if (tokenAtual !== refreshTokenDeQuandoComecou) {
+    return getAccessToken();
+  }
+  return chamarRefresh(tokenAtual);
+}
+
+async function renovarComLockSePossivel(refreshToken: string): Promise<string | null> {
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  // Sem Web Locks API (navegador muito antigo) cai de volta ao comportamento
+  // anterior: dedup só dentro desta aba — pior caso é o mesmo de antes desta
+  // correção, nunca pior.
+  if (!locks) return renovarNaSecaoCritica(refreshToken);
+  return locks.request(CHAVE_LOCK_REFRESH, () => renovarNaSecaoCritica(refreshToken));
+}
+
 async function tentarRenovarToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
 
   if (!refrescando) {
-    refrescando = axios
-      .post<{ token?: string; accessToken?: string; refreshToken: string }>(
-        `${API_BASE_URL}/auth/refresh`,
-        { refreshToken },
-      )
-      .then(({ data }) => {
-        const novo = data.token ?? data.accessToken ?? null;
-        setTokens(novo, data.refreshToken);
-        return novo;
-      })
-
-      .catch((erroRefresh) => {
-        if (codigoDoErro(erroRefresh) === CODIGO_CONTA_BLOQUEADA) {
-          motivoUltimaFalhaRefresh = extrairMensagemErro(erroRefresh);
-        }
-        clearTokens();
-        return null;
-      })
-      .finally(() => {
-        refrescando = null;
-      });
+    refrescando = renovarComLockSePossivel(refreshToken).finally(() => {
+      refrescando = null;
+    });
   }
   return refrescando;
 }

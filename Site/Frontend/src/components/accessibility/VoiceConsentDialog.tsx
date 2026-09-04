@@ -22,18 +22,22 @@ const PERGUNTA =
  * redefinir as preferências.
  */
 export function VoiceConsentDialog() {
-  const { hydrated } = useAccessibility();
-  const { supported, choice, speak, stop, setChoice } = useSpeech();
+  const { hydrated, prefs } = useAccessibility();
+  const { supported, speak, stop, setChoice } = useSpeech();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!hydrated || !supported || choice !== null) return;
+    // Fonte da verdade é `prefs.voiceConsent` (durável, sincronizado com a
+    // conta), não `SpeechContext.choice` (cache local só de visitante) —
+    // caso contrário, um login numa conta que já respondeu, num dispositivo
+    // com localStorage vazio, perguntaria de novo.
+    if (!hydrated || !supported || prefs.voiceConsent !== null) return;
     const timer = window.setTimeout(() => {
       setOpen(true);
       speak(PERGUNTA);
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [hydrated, supported, choice, speak]);
+  }, [hydrated, supported, prefs.voiceConsent, speak]);
 
   if (!open) return null;
 

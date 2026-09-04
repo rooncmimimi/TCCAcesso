@@ -15,6 +15,10 @@ const AdminAuditLog = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        // ON DELETE SET NULL na FK (migration 0021): o log precisa
+        // continuar legível mesmo depois que a conta do admin que agiu
+        // for excluída — perder o registro junto com a conta destruiria
+        // justamente o histórico que a auditoria existe para preservar.
         adminId: {
             field: "admin_id",
             type: DataTypes.UUID,

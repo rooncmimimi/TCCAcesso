@@ -101,6 +101,17 @@ function Home() {
             <Logo />
           </Link>
           <div className="flex shrink-0 items-center gap-2">
+            <Button
+              asChild
+              variant="ghost"
+              className="min-h-11 gap-1.5"
+              aria-label="Configurações de acessibilidade"
+            >
+              <Link to="/configuracoes/acessibilidade">
+                <Accessibility aria-hidden="true" />
+                <span className="hidden sm:inline">Acessibilidade</span>
+              </Link>
+            </Button>
             <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
               <Link to="/sobre-nos">Sobre nós</Link>
             </Button>

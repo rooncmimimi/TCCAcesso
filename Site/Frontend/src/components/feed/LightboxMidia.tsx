@@ -24,12 +24,16 @@ import type { AnexoPostagem } from "@/types";
 export function LightboxMidia({
   aberto,
   onOpenChange,
+  aoFecharDevolverFoco,
   itens,
   indiceInicial,
   postagemId,
 }: {
   aberto: boolean;
   onOpenChange: (aberto: boolean) => void;
+  /** Chamado ao fechar, no lugar da devolução de foco automática do Radix
+   *  (ver comentário abaixo, em `onCloseAutoFocus`). */
+  aoFecharDevolverFoco?: () => void;
   itens: AnexoPostagem[];
   indiceInicial: number;
   postagemId?: string;
@@ -79,90 +83,110 @@ export function LightboxMidia({
     }
   }
 
-  if (!item) return null;
-
+  // O `Dialog` é renderizado SEMPRE (mesmo sem `item`) — nunca desmontado
+  // condicionalmente pelo componente pai (`GaleriaAnexos`). Correção
+  // (Fase 9, Bloco J3): desmontar `<LightboxMidia>` inteiro no mesmo
+  // instante em que `onOpenChange(false)` dispara competia com a própria
+  // devolução de foco do Radix — que só devolve o foco a quem abriu o
+  // diálogo (aqui, o botão "Ampliar imagem") quando o `Dialog` fecha de
+  // forma controlada, sem ser desmontado por fora ao mesmo tempo. Com o
+  // componente sempre montado, o Radix controla sozinho a transição de
+  // abertura/fechamento e a devolução de foco volta a funcionar.
   return (
     <Dialog open={aberto} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-h-[90dvh] w-[95vw] max-w-4xl flex-col gap-3 p-3 sm:p-4"
         onKeyDown={aoTeclar}
+        onCloseAutoFocus={(evento) => {
+          if (!aoFecharDevolverFoco) return;
+          // Assume o controle explícito da devolução de foco (testado ao
+          // vivo: o comportamento padrão do Radix não moveu o foco de
+          // volta pro botão que abriu o Lightbox neste app — o foco caía
+          // no <body>, perdendo a posição de quem navega por teclado/voz).
+          evento.preventDefault();
+          aoFecharDevolverFoco();
+        }}
       >
-        <DialogTitle className="sr-only">
-          {item.tipo === "video" ? "Vídeo ampliado" : "Imagem ampliada"}
-          {item.descricao ? `: ${item.descricao}` : ""}
-          {temVarios ? ` (${indice + 1} de ${itens.length})` : ""}
-        </DialogTitle>
+        {item && (
+          <>
+            <DialogTitle className="sr-only">
+              {item.tipo === "video" ? "Vídeo ampliado" : "Imagem ampliada"}
+              {item.descricao ? `: ${item.descricao}` : ""}
+              {temVarios ? ` (${indice + 1} de ${itens.length})` : ""}
+            </DialogTitle>
 
-        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-black">
-          {temVarios && (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
-                aria-label="Mídia anterior"
-                onClick={() => irPara(indice - 1)}
-              >
-                <ChevronLeft aria-hidden="true" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
-                aria-label="Próxima mídia"
-                onClick={() => irPara(indice + 1)}
-              >
-                <ChevronRight aria-hidden="true" />
-              </Button>
-            </>
-          )}
-
-          {item.tipo === "video" ? (
-            <video
-              key={item.id}
-              src={urlArquivo(item.url)}
-              controls
-              preload="metadata"
-              className="max-h-[75dvh] w-full"
-              aria-label={item.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
-            >
-              Seu navegador não suporta a reprodução deste vídeo.
-            </video>
-          ) : (
-            <img
-              key={item.id}
-              src={urlArquivo(item.url)}
-              alt={item.descricao || item.nomeOriginal || "Imagem sem descrição fornecida pelo autor da publicação"}
-              className="max-h-[75dvh] w-full object-contain"
-            />
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-sm text-muted-foreground" aria-hidden="true">
-            {item.descricao || (temVarios ? `${indice + 1} de ${itens.length}` : "")}
-          </p>
-          {postagemId && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0 gap-1.5"
-              disabled={baixando}
-              onClick={baixar}
-              aria-label={`Baixar ${item.tipo === "video" ? "vídeo" : "imagem"}${item.nomeOriginal ? `: ${item.nomeOriginal}` : ""}`}
-            >
-              {baixando ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Download className="size-4" aria-hidden="true" />
+            <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-black">
+              {temVarios && (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
+                    aria-label="Mídia anterior"
+                    onClick={() => irPara(indice - 1)}
+                  >
+                    <ChevronLeft aria-hidden="true" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
+                    aria-label="Próxima mídia"
+                    onClick={() => irPara(indice + 1)}
+                  >
+                    <ChevronRight aria-hidden="true" />
+                  </Button>
+                </>
               )}
-              Baixar
-            </Button>
-          )}
-        </div>
+
+              {item.tipo === "video" ? (
+                <video
+                  key={item.id}
+                  src={urlArquivo(item.url)}
+                  controls
+                  preload="metadata"
+                  className="max-h-[75dvh] w-full"
+                  aria-label={item.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
+                >
+                  Seu navegador não suporta a reprodução deste vídeo.
+                </video>
+              ) : (
+                <img
+                  key={item.id}
+                  src={urlArquivo(item.url)}
+                  alt={item.descricao || item.nomeOriginal || "Imagem sem descrição fornecida pelo autor da publicação"}
+                  className="max-h-[75dvh] w-full object-contain"
+                />
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <p className="min-w-0 truncate text-sm text-muted-foreground" aria-hidden="true">
+                {item.descricao || (temVarios ? `${indice + 1} de ${itens.length}` : "")}
+              </p>
+              {postagemId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5"
+                  disabled={baixando}
+                  onClick={baixar}
+                  aria-label={`Baixar ${item.tipo === "video" ? "vídeo" : "imagem"}${item.nomeOriginal ? `: ${item.nomeOriginal}` : ""}`}
+                >
+                  {baixando ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Download className="size-4" aria-hidden="true" />
+                  )}
+                  Baixar
+                </Button>
+              )}
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

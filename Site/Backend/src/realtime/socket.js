@@ -134,7 +134,15 @@ export const emitirParaConversa = (conversaId, evento, dados) => {
     io.to(salaConversa(conversaId)).emit(evento, dados);
 };
 
-/** Eventos públicos do feed (sem dados sensíveis). */
+/**
+ * Eventos públicos do feed — `io.emit`, sem sala, chega a TODO cliente
+ * conectado, independente de seguir o autor, ter bloqueio ou o perfil ser
+ * privado. Por isso `dados` nunca pode carregar um objeto de domínio
+ * completo (postagem, comentário) nem qualquer URL — assinada ou não — de
+ * anexo: qualquer um desses contornaria a autorização que o REST aplica
+ * (`garantirAcessoAPostagem`). Envie só `{ id, <flag> }`; quem recebe
+ * revalida via REST, que decide o que cada um pode realmente ver.
+ */
 export const emitirFeed = (evento, dados) => {
     if (!io) {
         return;

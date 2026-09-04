@@ -59,15 +59,13 @@ class AcessibilidadeService {
             espacamentoTexto: false,
             reduzirAnimacoes: false,
             leituraPorVoz: false,
-            // Fase 9, Bloco 8: o correto aqui é `null` (redefinir volta ao
-            // estado "nunca perguntado", fazendo a pergunta reaparecer) —
-            // mas a coluna `consentimento_voz` ainda é NOT NULL no banco
-            // (migration 0042, proposta mas NÃO aplicada ainda: aguardando
-            // autorização explícita). Escrever `null` aqui HOJE quebraria
-            // este endpoint inteiro (violação de constraint). Preserva o
-            // valor atual por enquanto — trocar para `null` assim que a
-            // migration 0042 for aprovada e executada.
-            consentimentoVoz: preferencias.consentimentoVoz,
+            // Fase 9, Bloco 8: redefinir volta ao estado "nunca perguntado"
+            // — a pergunta de consentimento deve reaparecer, exatamente como
+            // `AccessibilityContext.reset()` já faz no frontend (remove
+            // `VOICE_CHOICE_KEY` do localStorage). Migration 0042 (executada)
+            // relaxou a coluna para NULL-ável; antes disso, escrever `null`
+            // aqui violaria a constraint NOT NULL ainda vigente.
+            consentimentoVoz: null,
             velocidadeVoz: 1.0,
             linguagemSimplificada: false,
             libras: true,

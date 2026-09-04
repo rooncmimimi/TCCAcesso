@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAccessibility, VOICE_CHOICE_KEY } from "@/contexts/AccessibilityContext";
+import { descreverElemento, obterContextoDialogo, resolverAlvoFalavel, SELETOR_DIALOGO } from "@/lib/leitorSemantico";
 
 /**
  * Arquitetura da leitura por voz (Fase 9, Blocos 7 e 8).
@@ -36,8 +37,10 @@ import { useAccessibility, VOICE_CHOICE_KEY } from "@/contexts/AccessibilityCont
  *    onde persistir no backend. Some de relevância assim que a conta
  *    existe (o backend passa a mandar `voiceConsent`). `setChoice` sempre
  *    grava os três juntos (`choice` + `screenReader` + `voiceConsent`) no
- *    mesmo instante — nunca controla a voz sozinho, só decide se
- *    `VoiceConsentDialog` deve aparecer de novo (`choice !== null`).
+ *    mesmo instante. Etapa 5: `VoiceConsentDialog` decide se pergunta de
+ *    novo usando `prefs.voiceConsent !== null` (não `choice`) — assim um
+ *    login numa conta que já respondeu, em um dispositivo com localStorage
+ *    vazio, não pergunta de novo.
  */
 type VoiceChoice = "accepted" | "declined" | null;
 
@@ -149,7 +152,24 @@ export function useSpeech() {
 }
 
 /**
- * Lê em voz alta o conteúdo focado/apontado quando o leitor de voz está ativo.
+ * Lê em voz alta o elemento que o usuário está USANDO — foco por teclado ou
+ * clique — quando o leitor de voz está ativo. Arquitetura (Fase 9, Bloco J3):
+ * acompanha a interação, como o VLibras acompanha; nunca narra o DOM
+ * inteiro. Clique e foco passam pela MESMA camada de interpretação
+ * (`descreverElemento`, em `lib/leitorSemantico.ts`) — nunca duas lógicas
+ * diferentes para o mesmo elemento.
+ *
+ * Diálogos (Radix `role="dialog"`) são um caso especial: o Radix sempre
+ * move o foco para o primeiro elemento navegável ao abrir (documentado no
+ * próprio `@radix-ui/react-focus-scope`), que raramente é o mais
+ * importante de anunciar primeiro. Por isso, a primeira vez que o foco
+ * entra em um diálogo recém-aberto, anuncia o CONTEXTO do diálogo
+ * (`aria-labelledby`/`aria-describedby`, que o Radix já liga a
+ * `DialogTitle`/`DialogDescription`) em vez do elemento que recebeu o
+ * autofoco — o `Tab` seguinte volta a ler normalmente. Marcado no próprio
+ * nó do diálogo (`dataset.vozAnunciado`); como o Radix desmonta/remonta o
+ * nó do `Content` a cada abertura (não usa `forceMount`), a marca nunca
+ * "vaza" de uma abertura para a próxima.
  *
  * Também anuncia toasts (sucesso/erro de ações como publicar, curtir,
  * candidatar-se, enviar mensagem) assim que aparecem — sem isso, um toast
@@ -167,22 +187,72 @@ export function useAutoSpeech() {
   useEffect(() => {
     if (!prefs.screenReader) return;
 
-    const readFrom = (target: EventTarget | null) => {
-      if (!(target instanceof HTMLElement)) return;
-      const el = target.closest<HTMLElement>(
-        "[data-speak], a, button, [role='button'], h1, h2, h3, li, p, label, input, textarea",
-      );
+    // Evita falar o MESMO elemento duas vezes seguidas por causa de um
+    // clique que também dispara foco (comportamento padrão de botão no
+    // Chromium) — sem isso, um único clique falaria a mesma frase 2x.
+    let ultimoElemento: HTMLElement | null = null;
+    let ultimoInstante = 0;
+
+    // Fala AGORA (síncrono) — só usado depois que o DOM já está garantido
+    // como assentado (dentro do requestAnimationFrame de `anunciar`/
+    // `readFrom` abaixo). Nunca chamado direto a partir de um listener.
+    const anunciarAgora = (el: HTMLElement) => {
+      const agora = Date.now();
+      if (el === ultimoElemento && agora - ultimoInstante < 400) return;
+      const texto = descreverElemento(el);
+      if (!texto) return;
+      ultimoElemento = el;
+      ultimoInstante = agora;
+      speak(texto);
+    };
+
+    // Adia a leitura pro próximo frame — sem isso, um foco disparado
+    // dentro do MESMO evento que uma atualização de estado do React (ex.:
+    // react-hook-form focando automaticamente um campo inválido logo após
+    // a validação falhar) lê `aria-invalid`/`aria-expanded`/etc. ANTES do
+    // React confirmar a mudança no DOM (React só aplica isso depois que o
+    // handler síncrono termina) — o campo seria anunciado sem "com erro".
+    const anunciar = (el: HTMLElement | null) => {
       if (!el) return;
-      const text =
-        el.dataset.speak ||
-        el.getAttribute("aria-label") ||
-        (el as HTMLInputElement).placeholder ||
-        el.innerText;
-      if (text) speak(text.slice(0, 400));
+      requestAnimationFrame(() => anunciarAgora(el));
+    };
+
+    const readFrom = (target: EventTarget | null) => {
+      const el = resolverAlvoFalavel(target);
+      if (!el) return;
+
+      requestAnimationFrame(() => {
+        // Autofoco do Radix ao abrir um diálogo: anuncia o CONTEXTO do
+        // diálogo uma única vez (por nó), não o elemento que recebeu o foco.
+        const dialogo = el.closest<HTMLElement>(SELETOR_DIALOGO);
+        if (dialogo && dialogo.dataset.vozAnunciado !== "1") {
+          dialogo.dataset.vozAnunciado = "1";
+          const contexto = obterContextoDialogo(dialogo);
+          if (contexto) {
+            ultimoElemento = dialogo;
+            ultimoInstante = Date.now();
+            speak(contexto);
+            return;
+          }
+          // Diálogo sem `aria-labelledby`/`aria-describedby`: sem contexto
+          // pra anunciar, cai para o comportamento normal abaixo (melhor
+          // falar o elemento focado do que ficar em silêncio).
+        }
+
+        anunciarAgora(el);
+      });
     };
 
     const onFocus = (e: FocusEvent) => readFrom(e.target);
     document.addEventListener("focusin", onFocus);
+
+    // Clique (item 2/8 do Bloco J3): mesma camada de interpretação do
+    // foco — nunca uma lógica separada para "o que falar ao clicar".
+    // `capture: true` porque alguns cliques (ex.: `<img>`, que não é
+    // focável) nunca disparam `focusin`, e mesmo quando disparam, este
+    // handler roda primeiro — a deduplicação acima evita repetir.
+    const onClick = (e: MouseEvent) => anunciar(resolverAlvoFalavel(e.target));
+    document.addEventListener("click", onClick, true);
 
     // Observa a região de toasts do sonner e fala cada novo toast — sem
     // interromper uma fala em andamento (duas ações rápidas em sequência
@@ -241,6 +311,7 @@ export function useAutoSpeech() {
 
     return () => {
       document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("click", onClick, true);
       observadorToast.disconnect();
       if (idTentativa !== undefined) window.clearInterval(idTentativa);
       stop();

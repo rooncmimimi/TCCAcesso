@@ -64,21 +64,28 @@ class UploadService {
         };
     }
 
+    /**
+     * Etapa 3 (auditoria de performance): este loop virou `Promise.all`
+     * porque, diferente do que o nome do método sugere, nenhum destes
+     * arquivos ainda vai para o Storage aqui — isso já aconteceu antes,
+     * em `criarProcessadorArmazenamento` (uploadMiddleware.js), a única
+     * chamada de rede de verdade do fluxo de upload. Cada iteração deste
+     * método só grava uma linha independente em `arquivos` (metadado +
+     * auditoria); paralelizar é seguro porque (1) o multer já limita a no
+     * máximo 4 arquivos por requisição (`uploadAnexos.array("arquivos", 4)`),
+     * nunca uma quantidade ilimitada; (2) cada `registrar()` não depende do
+     * resultado nem do estado dos demais; (3) `Promise.all` preserva a
+     * ordem do array de entrada no de saída, igual ao loop sequencial que
+     * substituiu — o contrato desta função para quem chama não muda.
+     */
     async registrarVarios(arquivos, categoria, solicitante) {
         if (!Array.isArray(arquivos) || arquivos.length === 0) {
             throw ApiError.badRequest("Nenhum arquivo foi enviado.");
         }
 
-        const resultados = [];
-
-        for (const arquivo of arquivos) {
-            resultados.push(
-                // eslint-disable-next-line no-await-in-loop
-                await this.registrar(arquivo, categoria, solicitante)
-            );
-        }
-
-        return resultados;
+        return Promise.all(
+            arquivos.map((arquivo) => this.registrar(arquivo, categoria, solicitante))
+        );
     }
 
     /**

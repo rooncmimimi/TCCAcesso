@@ -50,8 +50,12 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
 
   const aprovada = empresa?.statusAprovacao === "aprovada";
 
+  // Mesmo recurso que o dashboard (`MinhasVagas.tsx`, queryKey ["minhas-vagas", status, pagina])
+  // — só uma prévia menor, sem filtro de status. Precisa ficar sob o mesmo prefixo "minhas-vagas"
+  // para que criar/editar/excluir uma vaga (que invalida ["minhas-vagas"]) também atualize esta
+  // lista; antes usava a chave isolada "minhas-vagas-perfil" e nunca era invalidada por elas.
   const { data: vagasProprias, isLoading: carregandoVagasProprias } = useQuery({
-    queryKey: ["minhas-vagas-perfil"],
+    queryKey: ["minhas-vagas", "perfil"],
     queryFn: () => empresasService.vagasDaEmpresa({ limit: 10 }),
     enabled: proprioPerfil && aprovada,
   });

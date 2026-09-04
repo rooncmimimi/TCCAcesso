@@ -41,7 +41,11 @@ function LinhaComentario({
   return (
     <li>
       <div className="flex gap-3">
-        <LinkAutor autorId={autor?.id} className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <LinkAutor
+          autorId={autor?.id}
+          className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          ariaLabel={`Ver perfil de ${autor?.nome ?? "usuário"}`}
+        >
           <Avatar className="size-8">
             <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">

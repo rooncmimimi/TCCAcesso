@@ -94,7 +94,11 @@ const env = {
 
     jwt: {
         secret: process.env.JWT_SECRET,
-        expiresIn: process.env.JWT_EXPIRES_IN || "1d"
+        // Access token de vida curta — a renovação transparente via refresh
+        // token (RefreshTokenService, validade própria de ~30 dias) é quem
+        // sustenta a sessão longa do usuário; o access token só precisa
+        // durar o suficiente entre duas renovações automáticas.
+        expiresIn: process.env.JWT_EXPIRES_IN || "30m"
     },
 
     security: {

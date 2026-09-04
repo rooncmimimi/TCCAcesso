@@ -9,7 +9,7 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, ehAdministrador } from "../utils/authorization.js";
+import { garantirDono, garantirEmpresaAprovadaSeForEmpresa, ehAdministrador } from "../utils/authorization.js";
 import { garantirAcessoAPostagem, assinarMidiaDasPostagens } from "./PostagemService.js";
 import SeguidorService from "./SeguidorService.js";
 import NotificacaoService from "./NotificacaoService.js";
@@ -41,6 +41,10 @@ class CompartilhamentoService {
         }
 
         if (solicitante !== undefined) {
+            // Empresa pendente/reprovada/suspensa não lista nem cria
+            // compartilhamento em nenhuma postagem — mesma autoridade de
+            // `PostagemService.buscarAtiva`, sem duplicar a regra.
+            await garantirEmpresaAprovadaSeForEmpresa(solicitante);
             await garantirAcessoAPostagem(postagem, solicitante);
         }
 
@@ -87,6 +91,8 @@ class CompartilhamentoService {
      * (`BloqueioService`) em vez de uma segunda implementação da regra.
      */
     async listarPorUsuario(usuarioId, query, solicitante) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         // Bloqueio entre o solicitante e o dono da aba tem prioridade sobre
@@ -197,6 +203,8 @@ class CompartilhamentoService {
     }
 
     async remover(id, solicitante) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const registro = await Compartilhamento.findByPk(id);
 
         if (!registro) {

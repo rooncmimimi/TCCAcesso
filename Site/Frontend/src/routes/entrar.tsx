@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, ArrowRight, Loader2, Mail, PauseCircle, ShieldCheck } from "lucide-react";
+import { Accessibility, ArrowLeft, ArrowRight, Loader2, Mail, PauseCircle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
@@ -179,9 +179,22 @@ function Entrar() {
   return (
     <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
       <div className="w-full max-w-md">
-        <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
-          <Logo />
-        </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+            <Logo />
+          </Link>
+          <Button
+            asChild
+            variant="ghost"
+            className="min-h-11 gap-1.5"
+            aria-label="Configurações de acessibilidade"
+          >
+            <Link to="/configuracoes/acessibilidade">
+              <Accessibility aria-hidden="true" />
+              <span className="hidden sm:inline">Acessibilidade</span>
+            </Link>
+          </Button>
+        </div>
         <Card className="shadow-card">
           <CardContent className="p-6">
             {emailNaoVerificado ? (

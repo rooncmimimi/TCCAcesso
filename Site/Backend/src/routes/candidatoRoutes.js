@@ -4,6 +4,7 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
 import { uploadDocumento, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+import { garantirDonoDeCandidato } from "../middlewares/garantirDonoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarAtualizacaoCandidato,
@@ -49,6 +50,7 @@ router.patch(
     "/:id/curriculo",
     validarUuidParam("id"),
     validationMiddleware,
+    garantirDonoDeCandidato,
     uploadDocumento.single("curriculo"),
     processarCurriculo,
     CandidatoController.uploadCurriculo

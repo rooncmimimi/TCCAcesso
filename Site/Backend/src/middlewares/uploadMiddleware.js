@@ -4,7 +4,7 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 import env from "../config/env.js";
 import ApiError from "../utils/ApiError.js";
-import { storageHabilitado, enviarArquivo } from "../utils/supabaseStorage.js";
+import { storageHabilitado, enviarArquivo, removerArquivo } from "../utils/supabaseStorage.js";
 
 /**
  * Uploads da plataforma.
@@ -162,6 +162,43 @@ async function apagarSeExistir(caminho) {
     }
 }
 
+/**
+ * Etapa 4 (auditoria de robustez do upload): remove do Storage os
+ * caminhos já enviados por ESTA MESMA requisição, quando um arquivo
+ * seguinte do mesmo lote falha (assinatura inválida, tamanho, erro do
+ * Storage). Sem isso, um lote de até 4 anexos onde o 3º falha deixava os
+ * 2 primeiros órfãos no bucket — enviados, mas sem nenhuma linha no
+ * banco os referenciando, já que a requisição inteira falha antes de
+ * chegar ao controller/service que gravaria isso.
+ *
+ * Best-effort e nunca lança: uma falha ao limpar não pode mascarar o
+ * erro original que o cliente precisa ver (ex.: "arquivo muito grande"
+ * virando "erro ao excluir arquivo" seria pior que não limpar nada).
+ */
+async function limparEnviadosNestaOperacao(caminhos, privado) {
+    if (caminhos.length === 0) return;
+
+    const resultados = await Promise.allSettled(
+        caminhos.map((caminho) => removerArquivo(caminho, { privado }))
+    );
+
+    const falhas = resultados.filter(
+        (r) => r.status === "rejected" || r.value === false
+    ).length;
+
+    if (falhas > 0) {
+        console.error(
+            JSON.stringify({
+                nivel: "error",
+                servico: "uploadMiddleware.criarProcessadorArmazenamento",
+                etapa: "limpeza_apos_falha_parcial_do_lote",
+                totalArquivos: caminhos.length,
+                falhas
+            })
+        );
+    }
+}
+
 const criarUpload = (allowlist, { files = 1, mensagem, limiteMaximo } = {}) => {
     const storage = storageHabilitado
         ? multer.memoryStorage()
@@ -188,8 +225,21 @@ const criarUpload = (allowlist, { files = 1, mensagem, limiteMaximo } = {}) => {
             // Teto absoluto do multer (por arquivo). Quando o allowlist mistura
             // tipos com limites diferentes (ex.: imagem + vídeo em uploadAnexos),
             // usa o maior deles aqui — o limite fino por mimetype é aplicado
-            // depois, em `criarProcessadorArmazenamento`.
-            fileSize: limiteMaximo ?? env.security.maxUploadBytes,
+            // depois, em `criarProcessadorArmazenamento` (`arquivo.size > limite`,
+            // esse sim o limite de verdade que vira mensagem pro usuário).
+            //
+            // `+ 1` (Fase J1, validação final): confirmado ao vivo que o
+            // busboy (usado pelo multer por baixo) trata `fileSize` como uma
+            // fronteira EXCLUSIVA — um arquivo de EXATAMENTE N bytes já
+            // dispara o limite (só N-1 bytes passa), diferente do texto da
+            // própria documentação do multer ("the maximum file size"). Sem
+            // este ajuste, um vídeo de exatamente 50MiB (o limite que a
+            // aplicação promete via `MAX_VIDEO_UPLOAD_BYTES`) era rejeitado
+            // aqui, antes mesmo de chegar na checagem fina abaixo — só
+            // compensa esse teto solto do multer; o limite que realmente
+            // importa (e que gera a mensagem de erro) continua sendo
+            // `LIMITE_BYTES_POR_MIME` em `criarProcessadorArmazenamento`.
+            fileSize: (limiteMaximo ?? env.security.maxUploadBytes) + 1,
             files
         },
 
@@ -249,6 +299,10 @@ export const uploadAnexos = criarUpload(
  */
 export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
     return async function processarArmazenamento(req, res, next) {
+        // Caminhos efetivamente enviados ao Storage por ESTA requisição —
+        // ver `limparEnviadosNestaOperacao` acima.
+        const enviadosNestaOperacao = [];
+
         try {
             const prefixo = typeof pasta === "function" ? pasta(req) : pasta;
 
@@ -277,9 +331,29 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
                     const caminho = prefixo ? `${prefixo}/${nomeArquivo}` : nomeArquivo;
 
                     arquivo.filename = nomeArquivo;
-                    arquivo.url = await enviarArquivo(arquivo.buffer, caminho, arquivo.mimetype, {
-                        privado
-                    });
+
+                    try {
+                        arquivo.url = await enviarArquivo(arquivo.buffer, caminho, arquivo.mimetype, {
+                            privado
+                        });
+                        enviadosNestaOperacao.push(arquivo.url);
+                    } catch (erroStorage) {
+                        // Correção (Fase J1): antes, um erro cru do Storage (ex.:
+                        // bucket recusando o mime type por configuração externa)
+                        // escapava daqui como `Error` genérico — o errorMiddleware
+                        // não reconhece esse tipo e responde com o 500 mais vago
+                        // possível ("Erro interno do servidor."), sem nenhuma pista
+                        // pro usuário. Mesmo padrão já usado por `EmailService.enviar`
+                        // pra outro serviço externo (Brevo): nunca repassa o erro cru
+                        // do provedor pro cliente, sempre uma mensagem específica,
+                        // preservando a causa original só pro log (`causaOriginal`,
+                        // já lido por `errorMiddleware.js`).
+                        const erroTratado = ApiError.serviceUnavailable(
+                            "Não foi possível enviar o arquivo agora. Tente novamente em alguns instantes."
+                        );
+                        erroTratado.causaOriginal = erroStorage;
+                        throw erroTratado;
+                    }
                 }
             };
 
@@ -296,6 +370,12 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
 
             return next();
         } catch (erro) {
+            // Um arquivo no meio do lote falhou depois que os anteriores já
+            // tinham sido enviados por esta mesma requisição — remove só
+            // esses (nunca arquivos de outra requisição/usuário/postagem).
+            // O erro de limpeza nunca substitui `erro`, que é o que o
+            // cliente precisa ver.
+            await limparEnviadosNestaOperacao(enviadosNestaOperacao, privado);
             return next(erro);
         }
     };
@@ -304,11 +384,11 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
 // Correção (auditoria de segurança, achado A3): o antigo `processarArmazenamento`
 // exportado daqui (sem `pasta`, sempre bucket público, sem vínculo a usuário)
 // era usado pelas rotas `POST /uploads/imagem` e `POST /uploads/anexos`, sem
-// escopo por usuário. Substituído em `uploadRoutes.js` por um processador
-// local com `pasta: (req) => \`uploads/${req.user.id}\``, mesmo padrão de
-// `processarDocumentoPrivado`/`processarLogoCapa`/`processarAnexosPostagem` —
-// este export genérico deixou de existir para não voltar a ser usado sem
-// escopo por engano.
+// escopo por usuário — este export genérico deixou de existir para não
+// voltar a ser usado sem escopo por engano. Etapa 5: as próprias rotas
+// `/imagem` e `/anexos` (e o processador local que as substituiu) foram
+// removidas de `uploadRoutes.js` por auditoria de código morto — nenhum
+// consumidor real restante.
 
 /** Uso simples, bucket PRIVADO (upload genérico de documento — ex.: certificado). */
 export const processarArmazenamentoPrivado = criarProcessadorArmazenamento({

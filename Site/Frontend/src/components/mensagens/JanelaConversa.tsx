@@ -65,7 +65,11 @@ export function JanelaConversa({
   return (
     <section aria-label={`Conversa com ${nome}`} className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border p-4">
-        <LinkAutor autorId={contato?.id} className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <LinkAutor
+          autorId={contato?.id}
+          className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          ariaLabel={`Ver perfil de ${nome}`}
+        >
           <Avatar className="size-10">
             {foto && <AvatarImage src={foto} alt="" />}
             <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">

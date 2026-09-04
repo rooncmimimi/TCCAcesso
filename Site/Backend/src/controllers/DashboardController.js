@@ -13,7 +13,7 @@ class DashboardController {
 
     async empresa(req, res, next) {
         try {
-            const metricas = await DashboardService.empresa(req.user.id);
+            const metricas = await DashboardService.empresa(req.user);
 
             return res.status(200).json({ sucesso: true, metricas });
         } catch (erro) {

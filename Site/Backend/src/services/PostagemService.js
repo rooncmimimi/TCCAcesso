@@ -5,7 +5,6 @@ import env from "../config/env.js";
 import {
     Postagem,
     Usuario,
-    Empresa,
     Comentario,
     Curtida,
     PostagemAnexo,
@@ -14,14 +13,54 @@ import {
 } from "../models/index.js";
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, garantirEmpresaAprovada, ehAdministrador } from "../utils/authorization.js";
+import { garantirDono, garantirEmpresaAprovadaSeForEmpresa, ehAdministrador } from "../utils/authorization.js";
 import NotificacaoService from "./NotificacaoService.js";
 import AdminAuditService from "./AdminAuditService.js";
 import SeguidorService from "./SeguidorService.js";
 import BloqueioService from "./BloqueioService.js";
+import UploadService from "./UploadService.js";
 import { emitirFeed } from "../realtime/socket.js";
 import { urlPublica, tipoDoArquivo } from "../middlewares/uploadMiddleware.js";
 import { resolverUrlExibicao, gerarUrlAssinada, gerarUrlsAssinadas } from "../utils/supabaseStorage.js";
+
+/**
+ * Etapa 4 (auditoria de robustez do upload) — compensação explícita:
+ * Supabase Storage e PostgreSQL não compartilham uma transaction, então
+ * uma falha em `Postagem.create`/`PostagemAnexo.bulkCreate` DEPOIS que
+ * `processarAnexosPostagem` (uploadMiddleware.js) já enviou os anexos ao
+ * Storage deixaria esses arquivos órfãos — nenhuma linha no banco chega a
+ * referenciá-los, já que a transaction inteira foi desfeita. Só é chamada
+ * quando `arquivos` não está vazio; percorre exatamente os arquivos desta
+ * requisição (nunca de outra postagem/usuário). Reaproveita
+ * `UploadService.removerArquivoFisico`, o mesmo mecanismo já usado em
+ * troca de foto/capa/logo/currículo — não um segundo mecanismo de limpeza.
+ * Best-effort: uma falha ao limpar nunca substitui o erro original.
+ */
+async function limparAnexosDaOperacao(arquivos) {
+    if (!arquivos || arquivos.length === 0) return;
+
+    const resultados = await Promise.allSettled(
+        arquivos.map((arquivo) =>
+            UploadService.removerArquivoFisico(urlPublica(arquivo), { privado: true })
+        )
+    );
+
+    const falhas = resultados.filter(
+        (r) => r.status === "rejected" || r.value === false
+    ).length;
+
+    if (falhas > 0) {
+        console.error(
+            JSON.stringify({
+                nivel: "error",
+                servico: "PostagemService.create",
+                etapa: "limpeza_apos_falha_no_banco",
+                totalArquivos: arquivos.length,
+                falhas
+            })
+        );
+    }
+}
 
 /**
  * Autor da postagem inclui `perfilPublico`/`tipoUsuario` só para a
@@ -211,6 +250,11 @@ class PostagemService {
         }
 
         if (solicitante !== undefined) {
+            // Ponto único usado por editar, remover, curtir, comentar e
+            // gerar URL de anexo — empresa pendente/reprovada/suspensa não
+            // interage com NENHUMA postagem por nenhuma dessas vias, sem
+            // duplicar a checagem em cada método.
+            await garantirEmpresaAprovadaSeForEmpresa(solicitante);
             await garantirAcessoAPostagem(postagem, solicitante);
         }
 
@@ -294,6 +338,12 @@ class PostagemService {
        FEED (autenticado) — prioriza quem o usuário segue
     ========================================================== */
     async findAll(query, solicitante) {
+        // Empresa pendente/reprovada/suspensa não acessa o feed (nem o
+        // geral, nem a aba "Publicações" de outro perfil) — mesma
+        // autoridade central de `garantirEmpresaAprovada`, nunca uma
+        // segunda regra. Nunca afeta candidato/administrador.
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const where = { ativo: true };
@@ -391,6 +441,8 @@ class PostagemService {
        DETALHE COM COMENTÁRIOS EM ÁRVORE
     ========================================================== */
     async findById(id, solicitante = null) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const postagem = await Postagem.findOne({
             where: { id, ativo: true },
             include: [
@@ -462,15 +514,7 @@ class PostagemService {
             );
         }
 
-        if (solicitante.tipoUsuario === "empresa") {
-            const empresa = await Empresa.findOne({
-                where: { usuarioId: solicitante.id }
-            });
-
-            if (empresa) {
-                garantirEmpresaAprovada(empresa, solicitante);
-            }
-        }
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
         const transaction = await sequelize.transaction();
 
@@ -516,6 +560,7 @@ class PostagemService {
             await transaction.commit();
         } catch (erro) {
             await transaction.rollback();
+            await limparAnexosDaOperacao(arquivos);
             throw erro;
         }
 
@@ -523,7 +568,10 @@ class PostagemService {
         // de uma transação já confirmada.
         const criada = await this.findById(postagem.id, solicitante);
 
-        emitirFeed("feed:postagem", { postagem: criada });
+        // Nunca inclua o objeto de domínio completo aqui — ver o comentário
+        // de segurança em `realtime/socket.js` sobre `emitirFeed`. O cliente
+        // revalida via REST, que já aplica `garantirAcessoAPostagem`.
+        emitirFeed("feed:postagem", { id: criada.id, criada: true });
 
         return criada;
     }
@@ -549,7 +597,9 @@ class PostagemService {
 
         const atualizada = await this.findById(id, solicitante);
 
-        emitirFeed("feed:postagem", { postagem: atualizada, atualizada: true });
+        // Nunca inclua o objeto de domínio completo aqui — mesma regra de
+        // `create()` acima.
+        emitirFeed("feed:postagem", { id: atualizada.id, atualizada: true });
 
         return atualizada;
     }
@@ -578,7 +628,9 @@ class PostagemService {
 
         const atualizada = await this.findById(postagemId, solicitante);
 
-        emitirFeed("feed:postagem", { postagem: atualizada, atualizada: true });
+        // Nunca inclua o objeto de domínio completo aqui — mesma regra de
+        // `create()` acima.
+        emitirFeed("feed:postagem", { id: atualizada.id, atualizada: true });
 
         return atualizada;
     }
@@ -790,9 +842,11 @@ class PostagemService {
             include: [incluirAutor()]
         });
 
+        // Nunca inclua o comentário completo aqui (autor + texto) — mesma
+        // regra de `create()`/`update()` acima: o cliente já ignora este
+        // campo hoje e revalida `["comentarios", postagemId]` via REST.
         emitirFeed("feed:comentario", {
             postagemId: id,
-            comentario: completo,
             totalComentarios: total
         });
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FileText, Maximize2, Pencil, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -124,6 +124,13 @@ export function GaleriaAnexos({
   editavel?: boolean;
 }) {
   const [lightbox, setLightbox] = useState<{ itens: AnexoPostagem[]; indice: number } | null>(null);
+  // Elemento que abriu o Lightbox — o foco volta pra ele ao fechar (Fase 9,
+  // Bloco J3). Não depende da devolução de foco automática do Radix: em
+  // teste real no navegador, o `FocusScope` do Radix não restaurou o foco
+  // de forma confiável neste app (o motivo exato não importa — a correção
+  // é assumir o controle explícito via `onCloseAutoFocus`, o mecanismo que
+  // o próprio Radix expõe pra isso).
+  const gatilhoLightboxRef = useRef<HTMLElement | null>(null);
 
   if (!anexos?.length) return null;
 
@@ -132,8 +139,9 @@ export function GaleriaAnexos({
   const documentos = anexos.filter((a) => a.tipo === "documento");
   const midia = [...imagens, ...videos];
 
-  function abrirLightbox(anexo: AnexoPostagem) {
+  function abrirLightbox(anexo: AnexoPostagem, gatilho: HTMLElement) {
     const indice = midia.findIndex((item) => item.id === anexo.id);
+    gatilhoLightboxRef.current = gatilho;
     setLightbox({ itens: midia, indice: indice === -1 ? 0 : indice });
   }
 
@@ -148,7 +156,7 @@ export function GaleriaAnexos({
             <li key={imagem.id}>
               <button
                 type="button"
-                onClick={() => abrirLightbox(imagem)}
+                onClick={(e) => abrirLightbox(imagem, e.currentTarget)}
                 className="block w-full overflow-hidden rounded-xl border border-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
                 aria-label={`Ampliar imagem${imagem.descricao ? `: ${imagem.descricao}` : ""}`}
               >
@@ -187,7 +195,7 @@ export function GaleriaAnexos({
                   size="icon"
                   className="absolute right-2 top-2 size-8 rounded-full bg-background/80 hover:bg-background"
                   aria-label={`Ampliar vídeo${video.descricao ? `: ${video.descricao}` : ""}`}
-                  onClick={() => abrirLightbox(video)}
+                  onClick={(e) => abrirLightbox(video, e.currentTarget)}
                 >
                   <Maximize2 className="size-4" aria-hidden="true" />
                 </Button>
@@ -218,17 +226,21 @@ export function GaleriaAnexos({
         </ul>
       )}
 
-      {lightbox && (
-        <LightboxMidia
-          aberto={Boolean(lightbox)}
-          onOpenChange={(aberto) => {
-            if (!aberto) setLightbox(null);
-          }}
-          itens={lightbox.itens}
-          indiceInicial={lightbox.indice}
-          postagemId={postagemId}
-        />
-      )}
+      {/* Sempre montado (Fase 9, Bloco J3) — o Dialog interno já não mostra
+          nada quando `itens` está vazio. `aoFecharDevolverFoco` garante o
+          retorno do foco ao botão que abriu o Lightbox (testado ao vivo: a
+          devolução de foco automática do Radix não é confiável neste app —
+          o controle explícito é a forma robusta). */}
+      <LightboxMidia
+        aberto={Boolean(lightbox)}
+        onOpenChange={(aberto) => {
+          if (!aberto) setLightbox(null);
+        }}
+        aoFecharDevolverFoco={() => gatilhoLightboxRef.current?.focus()}
+        itens={lightbox?.itens ?? []}
+        indiceInicial={lightbox?.indice ?? 0}
+        postagemId={postagemId}
+      />
     </div>
   );
 }

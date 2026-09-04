@@ -17,6 +17,7 @@ import {
 } from "../realtime/socket.js";
 import NotificacaoService from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
+import { garantirEmpresaAprovadaSeForEmpresa } from "../utils/authorization.js";
 
 // Prévia curta da mensagem na notificação — nunca o texto inteiro (pode
 // ter milhares de caracteres) nem dado sensível além do que a própria
@@ -291,6 +292,10 @@ class ConversaService {
        ABRIR / RECUPERAR CONVERSA
     ========================================================== */
     async abrir({ usuarioId }, solicitante) {
+        // Empresa pendente/reprovada/suspensa não usa mensagens — nem para
+        // iniciar, nem para reabrir uma conversa já existente.
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         if (String(usuarioId) === String(solicitante.id)) {
             throw ApiError.badRequest(
                 "Você não pode iniciar uma conversa consigo mesmo."
@@ -354,6 +359,8 @@ class ConversaService {
        LISTAR CONVERSAS DO USUÁRIO
     ========================================================== */
     async listar(solicitante, query) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const filtros = [
@@ -446,6 +453,8 @@ class ConversaService {
        DETALHE
     ========================================================== */
     async findById(id, solicitante) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const conversa = await this.carregarConversa(id);
 
         this.garantirParticipante(conversa, solicitante);
@@ -457,6 +466,8 @@ class ConversaService {
        MENSAGENS DA CONVERSA
     ========================================================== */
     async listarMensagens(id, solicitante, query) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const conversa = await this.carregarConversa(id);
 
         this.garantirParticipante(conversa, solicitante);
@@ -484,6 +495,8 @@ class ConversaService {
        ENVIAR MENSAGEM
     ========================================================== */
     async enviarMensagem(id, conteudo, solicitante) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const transaction = await sequelize.transaction();
 
         try {
@@ -588,6 +601,8 @@ class ConversaService {
        MARCAR MENSAGENS COMO LIDAS
     ========================================================== */
     async marcarComoLidas(id, solicitante) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
         const conversa = await this.carregarConversa(id);
 
         this.garantirParticipante(conversa, solicitante);

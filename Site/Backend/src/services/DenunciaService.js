@@ -13,7 +13,9 @@ import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import NotificacaoService from "./NotificacaoService.js";
 import AdminAuditService from "./AdminAuditService.js";
-import AdminService from "./AdminService.js";
+import AdminUsuarioService from "./AdminUsuarioService.js";
+import AdminConteudoService from "./AdminConteudoService.js";
+import AdminEmpresaService from "./AdminEmpresaService.js";
 import ConversaService from "./ConversaService.js";
 
 const INCLUDE_PARTES = [
@@ -41,9 +43,10 @@ const ACAO_MODERACAO_POR_TIPO = {
  *
  * Resolver uma denúncia pode, opcionalmente, disparar a ação de
  * moderação real correspondente — sempre reaproveitando os métodos já
- * existentes do AdminService (nunca duplicando a lógica, nunca pulando
- * a proteção ADMIN->ADMIN). A ação executa ANTES da denúncia ser
- * marcada como resolvida: se a ação falhar, a denúncia permanece
+ * existentes dos services administrativos de domínio (AdminUsuarioService/
+ * AdminConteudoService/AdminEmpresaService — nunca duplicando a lógica,
+ * nunca pulando a proteção ADMIN->ADMIN). A ação executa ANTES da denúncia
+ * ser marcada como resolvida: se a ação falhar, a denúncia permanece
  * intocada (nunca fica "parcialmente resolvida").
  */
 class DenunciaService {
@@ -303,9 +306,10 @@ class DenunciaService {
 
     /**
      * Executa a ação de moderação real correspondente à denúncia,
-     * reaproveitando o método já existente do AdminService — nunca
-     * duplica a lógica de bloqueio/remoção/suspensão nem a proteção
-     * ADMIN->ADMIN (ela já vive dentro de cada método reaproveitado).
+     * reaproveitando o método já existente do service administrativo do
+     * domínio certo — nunca duplica a lógica de bloqueio/remoção/suspensão
+     * nem a proteção ADMIN->ADMIN (ela já vive dentro de cada método
+     * reaproveitado).
      */
     async executarAcaoModeracao(denuncia, acao, observacao, solicitante, contexto) {
         const acaoEsperada = ACAO_MODERACAO_POR_TIPO[denuncia.entidadeTipo];
@@ -318,7 +322,7 @@ class DenunciaService {
 
         switch (denuncia.entidadeTipo) {
             case "usuario":
-                await AdminService.alternarBloqueio(
+                await AdminUsuarioService.alternarBloqueio(
                     denuncia.entidadeId,
                     { bloqueado: true, motivo: observacao },
                     solicitante,
@@ -327,7 +331,7 @@ class DenunciaService {
                 break;
 
             case "postagem":
-                await AdminService.removerPostagem(
+                await AdminConteudoService.removerPostagem(
                     denuncia.entidadeId,
                     solicitante,
                     contexto
@@ -335,7 +339,7 @@ class DenunciaService {
                 break;
 
             case "comentario":
-                await AdminService.removerComentario(
+                await AdminConteudoService.removerComentario(
                     denuncia.entidadeId,
                     solicitante,
                     contexto
@@ -343,7 +347,7 @@ class DenunciaService {
                 break;
 
             case "vaga":
-                await AdminService.alternarVisibilidadeVaga(
+                await AdminConteudoService.alternarVisibilidadeVaga(
                     denuncia.entidadeId,
                     true,
                     solicitante,
@@ -352,7 +356,7 @@ class DenunciaService {
                 break;
 
             case "empresa":
-                await AdminService.suspenderEmpresa(
+                await AdminEmpresaService.suspenderEmpresa(
                     denuncia.entidadeId,
                     { motivo: observacao },
                     solicitante,

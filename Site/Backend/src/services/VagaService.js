@@ -214,8 +214,11 @@ class VagaService {
        não N+1) — usado pelo painel de gestão para mostrar quantas
        candidaturas cada vaga recebeu sem precisar de outra chamada.
     ========================================================== */
-    async findByEmpresaAutenticada(usuarioId, query) {
-        const empresa = await this.empresaDoUsuario(usuarioId);
+    async findByEmpresaAutenticada(solicitante, query) {
+        const empresa = await this.empresaDoUsuario(solicitante.id);
+
+        garantirEmpresaAprovada(empresa, solicitante);
+
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const where = { empresaId: empresa.id };

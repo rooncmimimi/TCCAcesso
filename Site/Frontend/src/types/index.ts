@@ -28,6 +28,12 @@ export interface Usuario {
   perfilPublico?: boolean;
   /** Só vem preenchido na resposta pro próprio dono (nunca em perfis de terceiros). */
   preferenciaMensagens?: PreferenciaMensagens;
+  /**
+   * Só vem preenchido quando `tipo === "empresa"` (login/cadastro e
+   * `/auth/me` já retornam esta associação) — usado para decidir se a
+   * empresa está aprovada antes de liberar o app (ver `AppShell`).
+   */
+  empresa?: Empresa;
 }
 
 /** Usuário bloqueado — item da lista em Configurações → Privacidade. */
@@ -171,9 +177,10 @@ export interface Empresa {
   totalVagas?: number;
   totalSeguidores?: number;
   vagas?: Vaga[];
-  statusAprovacao?: "pendente" | "aprovada" | "reprovada";
+  statusAprovacao?: "pendente" | "aprovada" | "reprovada" | "suspensa";
   empresaVerificada?: boolean;
   motivoReprovacao?: string | null;
+  motivoSuspensao?: string | null;
 }
 
 export interface CredenciaisLogin {

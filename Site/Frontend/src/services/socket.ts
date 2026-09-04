@@ -30,6 +30,28 @@ export function conectarSocket(): Socket | null {
       autoConnect: true,
     });
 
+    // O access token some no handshake inicial acima e nunca mais era
+    // atualizado sozinho — com a validade de 1 dia isso quase nunca
+    // aparecia, mas com a validade reduzida (item 8, ~30min) uma
+    // reconexão automática do próprio socket.io-client (rede caiu,
+    // servidor reiniciou, etc.) reenviava esse MESMO token já expirado,
+    // o handshake falhava (`connect_error` sem o `codigo` de bloqueio, que
+    // é o único caso que o listener abaixo trata) e o socket ficava sem
+    // conectar silenciosamente até a próxima chamada explícita de
+    // `conectarSocket()` (troca de rota, F5) — mensagens/notificações em
+    // tempo real paravam de chegar mesmo com a sessão REST perfeitamente
+    // válida (o interceptor de `api.ts` renova o access token sozinho,
+    // mas o socket não sabia disso). Relê o token atual do localStorage
+    // antes de CADA tentativa de reconexão automática — mesmo mecanismo
+    // de reconexão do socket.io-client já existente, só garantindo que ele
+    // sempre carregue o token mais recente, nunca o do handshake original.
+    socket.io.on("reconnect_attempt", () => {
+      const tokenAtual = getAccessToken();
+      if (socket && tokenAtual) {
+        socket.auth = { token: tokenAtual };
+      }
+    });
+
     // Fase 9: bloqueio administrativo rejeita o handshake com um `codigo`
     // identificável (ver realtime/socket.js) — nesse caso específico não
     // faz sentido deixar o socket.io-client insistir nas próximas

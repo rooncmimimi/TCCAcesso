@@ -14,7 +14,7 @@ import RefreshTokenService from "./RefreshTokenService.js";
 import AutenticacaoDoisFatoresService from "./AutenticacaoDoisFatoresService.js";
 import EmailService from "./EmailService.js";
 import NotificacaoService from "./NotificacaoService.js";
-import AdminService from "./AdminService.js";
+import AdminUsuarioService from "./AdminUsuarioService.js";
 import {
     templateConfirmacaoCadastro,
     templateConfirmacaoTrocaEmail,
@@ -63,6 +63,20 @@ class AuthService {
     async montarSessao(usuario, contexto = {}) {
         const dados = usuario.toJSON();
         delete dados.senhaHash;
+
+        // Aditivo, só para empresa: sem isso, o Frontend só descobre
+        // `statusAprovacao` numa chamada separada a `/auth/me` — deixando
+        // uma janela logo após login/cadastro em que a sessão parece
+        // "normal" antes de qualquer endpoint empresarial barrar. Mesma
+        // associação que `me()` já devolve, nenhuma segunda implementação;
+        // não altera o token nem o contrato para candidato/administrador.
+        if (dados.tipoUsuario === "empresa") {
+            const empresa = await Empresa.findOne({
+                where: { usuarioId: usuario.id }
+            });
+
+            dados.empresa = empresa || null;
+        }
 
         const { refreshToken } = await RefreshTokenService.emitir(
             usuario.id,
@@ -599,7 +613,7 @@ class AuthService {
     /**
      * Exclusão definitiva pelo PRÓPRIO usuário (Fase 5) — reaproveita o
      * mesmo núcleo usado pela exclusão administrativa
-     * (`AdminService.excluirContaDefinitivamente`): limpa o Storage e
+     * (`AdminUsuarioService.excluirContaDefinitivamente`): limpa o Storage e
      * arquiva denúncias pendentes contra a conta, exatamente como
      * acontece quando um admin exclui. Antes da Fase 5 este método só
      * fazia `usuario.destroy()`, deixando arquivos (foto, capa,
@@ -620,7 +634,7 @@ class AuthService {
             throw ApiError.unauthorized("Senha atual incorreta.");
         }
 
-        await AdminService.excluirContaDefinitivamente(usuario);
+        await AdminUsuarioService.excluirContaDefinitivamente(usuario);
 
         return { mensagem: "Conta excluída com sucesso." };
     }

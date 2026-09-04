@@ -47,15 +47,21 @@ export const obterEmpresaDoUsuario = async (usuario, transaction = null) => {
 
 /**
  * Garante que o usuário é dono do recurso ou administrador.
+ *
+ * `mensagemCustomizada` é opcional — todo call site existente (21, em
+ * services e middlewares) continua usando a mensagem genérica padrão sem
+ * precisar mudar nada. Só existe para os poucos casos em que uma mensagem
+ * mais específica do recurso (ex.: "suas próprias candidaturas") já era
+ * usada antes de reaproveitar esta função.
  */
-export const garantirDono = (usuario, donoUsuarioId) => {
+export const garantirDono = (usuario, donoUsuarioId, mensagemCustomizada) => {
     if (ehAdministrador(usuario)) {
         return;
     }
 
     if (String(donoUsuarioId) !== String(usuario.id)) {
         throw ApiError.forbidden(
-            "Você não possui permissão sobre este recurso."
+            mensagemCustomizada || "Você não possui permissão sobre este recurso."
         );
     }
 };
@@ -66,7 +72,7 @@ export const garantirDono = (usuario, donoUsuarioId) => {
  * contra a própria conta do solicitante, nunca contra outra conta
  * administrativa.
  *
- * Centralizado aqui (não em AdminService) para que QUALQUER rota que
+ * Centralizado aqui (não em cada service administrativo) para que QUALQUER rota que
  * chegue a um usuário-alvo — passando por /admin/* ou não — aplique
  * exatamente a mesma regra, sem duplicar a checagem em cada service de
  * domínio e sem criar dependência de um service para outro.
@@ -128,6 +134,31 @@ export const garantirEmpresaAprovada = (empresa, solicitante) => {
     throw ApiError.forbidden(
         "Sua empresa está aguardando aprovação da equipe do ACESSO. Você receberá uma notificação quando a análise for concluída."
     );
+};
+
+/**
+ * Atalho para ações genéricas da plataforma (feed, curtir, comentar,
+ * compartilhar, mensagens, dashboard) que também precisam respeitar a
+ * aprovação da empresa, sem duplicar a consulta nem a regra em cada
+ * service — reaproveita `garantirEmpresaAprovada` (mesma autoridade usada
+ * em vagas/candidaturas/perfil). Nunca afeta candidato/administrador: só
+ * verifica quando `solicitante.tipoUsuario === "empresa"`. Se a conta é do
+ * tipo empresa mas o registro `empresas` ainda não existe (não deveria
+ * acontecer — cadastro cria os dois na mesma transação — mas defensivo),
+ * não bloqueia: sem empresa, não há status para negar.
+ */
+export const garantirEmpresaAprovadaSeForEmpresa = async (solicitante) => {
+    if (!solicitante || solicitante.tipoUsuario !== "empresa") {
+        return;
+    }
+
+    const empresa = await Empresa.findOne({
+        where: { usuarioId: solicitante.id }
+    });
+
+    if (empresa) {
+        garantirEmpresaAprovada(empresa, solicitante);
+    }
 };
 
 /**

@@ -16,17 +16,6 @@ export type CategoriaUpload =
  * Documentos: PDF/DOC/DOCX. Todos ficam registrados na tabela `arquivos`.
  */
 export const uploadsService = {
-  async enviarImagem(arquivo: File, categoria: CategoriaUpload = "postagem"): Promise<Arquivo> {
-    const form = new FormData();
-    form.append("arquivo", arquivo);
-    form.append("categoria", categoria);
-
-    const { data } = await api.post<{ arquivo: Arquivo }>("/uploads/imagem", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return data.arquivo;
-  },
-
   async enviarDocumento(arquivo: File, categoria: CategoriaUpload = "documento"): Promise<Arquivo> {
     const form = new FormData();
     form.append("arquivo", arquivo);
@@ -36,16 +25,6 @@ export const uploadsService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.arquivo;
-  },
-
-  async enviarAnexos(arquivos: File[]): Promise<Arquivo[]> {
-    const form = new FormData();
-    arquivos.slice(0, 4).forEach((arquivo) => form.append("arquivos", arquivo));
-
-    const { data } = await api.post<{ arquivos: Arquivo[] }>("/uploads/anexos", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return data.arquivos ?? [];
   },
 };
 

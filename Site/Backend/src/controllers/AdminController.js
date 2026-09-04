@@ -1,4 +1,7 @@
-import AdminService from "../services/AdminService.js";
+import AdminEmpresaService from "../services/AdminEmpresaService.js";
+import AdminUsuarioService from "../services/AdminUsuarioService.js";
+import AdminConteudoService from "../services/AdminConteudoService.js";
+import AdminRelatorioService from "../services/AdminRelatorioService.js";
 import UsuarioService from "../services/UsuarioService.js";
 import AdminAuditService from "../services/AdminAuditService.js";
 
@@ -10,7 +13,7 @@ const contextoDa = (req) => ({
 class AdminController {
     async empresas(req, res, next) {
         try {
-            const dados = await AdminService.listarEmpresas(req.query);
+            const dados = await AdminEmpresaService.listarEmpresas(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -19,7 +22,7 @@ class AdminController {
 
     async aprovarEmpresa(req, res, next) {
         try {
-            const empresa = await AdminService.avaliarEmpresa(
+            const empresa = await AdminEmpresaService.avaliarEmpresa(
                 req.params.id,
                 { aprovada: true },
                 req.user,
@@ -33,7 +36,7 @@ class AdminController {
 
     async reprovarEmpresa(req, res, next) {
         try {
-            const empresa = await AdminService.avaliarEmpresa(
+            const empresa = await AdminEmpresaService.avaliarEmpresa(
                 req.params.id,
                 { aprovada: false, motivo: req.body.motivo },
                 req.user,
@@ -47,7 +50,7 @@ class AdminController {
 
     async suspenderEmpresa(req, res, next) {
         try {
-            const empresa = await AdminService.suspenderEmpresa(
+            const empresa = await AdminEmpresaService.suspenderEmpresa(
                 req.params.id,
                 { motivo: req.body.motivo },
                 req.user,
@@ -61,7 +64,7 @@ class AdminController {
 
     async reativarEmpresa(req, res, next) {
         try {
-            const empresa = await AdminService.reativarEmpresa(
+            const empresa = await AdminEmpresaService.reativarEmpresa(
                 req.params.id,
                 req.user,
                 contextoDa(req)
@@ -74,7 +77,7 @@ class AdminController {
 
     async verificarEmpresa(req, res, next) {
         try {
-            const empresa = await AdminService.verificarEmpresa(
+            const empresa = await AdminEmpresaService.verificarEmpresa(
                 req.params.id,
                 { verificada: req.body.verificada },
                 req.user,
@@ -88,7 +91,7 @@ class AdminController {
 
     async usuarios(req, res, next) {
         try {
-            const dados = await AdminService.listarUsuarios(req.query);
+            const dados = await AdminUsuarioService.listarUsuarios(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -106,7 +109,7 @@ class AdminController {
 
     async bloquearUsuario(req, res, next) {
         try {
-            const dados = await AdminService.alternarBloqueio(
+            const dados = await AdminUsuarioService.alternarBloqueio(
                 req.params.id,
                 req.body,
                 req.user,
@@ -120,7 +123,7 @@ class AdminController {
 
     async removerUsuario(req, res, next) {
         try {
-            const dados = await AdminService.removerUsuario(
+            const dados = await AdminUsuarioService.removerUsuario(
                 req.params.id,
                 { motivo: req.body?.motivo },
                 req.user,
@@ -134,7 +137,7 @@ class AdminController {
 
     async postagens(req, res, next) {
         try {
-            const dados = await AdminService.listarPostagens(req.query);
+            const dados = await AdminConteudoService.listarPostagens(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -143,7 +146,7 @@ class AdminController {
 
     async removerPostagem(req, res, next) {
         try {
-            const dados = await AdminService.removerPostagem(
+            const dados = await AdminConteudoService.removerPostagem(
                 req.params.id,
                 req.user,
                 contextoDa(req)
@@ -156,7 +159,7 @@ class AdminController {
 
     async removerComentario(req, res, next) {
         try {
-            const dados = await AdminService.removerComentario(
+            const dados = await AdminConteudoService.removerComentario(
                 req.params.id,
                 req.user,
                 contextoDa(req)
@@ -169,7 +172,7 @@ class AdminController {
 
     async comentarios(req, res, next) {
         try {
-            const dados = await AdminService.listarComentarios(req.query);
+            const dados = await AdminConteudoService.listarComentarios(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -178,7 +181,7 @@ class AdminController {
 
     async vagas(req, res, next) {
         try {
-            const dados = await AdminService.listarVagas(req.query);
+            const dados = await AdminConteudoService.listarVagas(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -187,7 +190,7 @@ class AdminController {
 
     async ocultarVaga(req, res, next) {
         try {
-            const dados = await AdminService.alternarVisibilidadeVaga(
+            const dados = await AdminConteudoService.alternarVisibilidadeVaga(
                 req.params.id,
                 req.body.oculta,
                 req.user,
@@ -201,7 +204,7 @@ class AdminController {
 
     async relatorios(req, res, next) {
         try {
-            const dados = await AdminService.relatorios();
+            const dados = await AdminRelatorioService.relatorios();
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);

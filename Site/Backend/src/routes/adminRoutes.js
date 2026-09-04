@@ -47,7 +47,7 @@ router.post(
     validationMiddleware,
     AdminController.reativarEmpresa
 );
-// Selo de confiança, independente da aprovação cadastral (ver AdminService.verificarEmpresa).
+// Selo de confiança, independente da aprovação cadastral (ver AdminEmpresaService.verificarEmpresa).
 router.post(
     "/empresas/:id/verificar",
     validarUuidParam("id"),

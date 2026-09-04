@@ -9,10 +9,9 @@ router.get("/home", async (req, res, next) => {
         const dados = await PublicoService.home();
         return res.status(200).json({ sucesso: true, ...dados });
     } catch (erro) {
-    console.error("ERRO PUBLICO HOME:");
-    console.error(erro);
-    return next(erro);
-}
+        // Log estruturado já feito pelo errorMiddleware ao receber next(erro).
+        return next(erro);
+    }
 });
 
 router.get("/vagas", async (req, res, next) => {
@@ -20,10 +19,8 @@ router.get("/vagas", async (req, res, next) => {
         const vagas = await PublicoService.vagasPublicas(req.query);
         return res.status(200).json({ sucesso: true, vagas });
     } catch (erro) {
-    console.error("ERRO PUBLICO HOME:");
-    console.error(erro);
-    return next(erro);
-}
+        return next(erro);
+    }
 });
 
 export default router;

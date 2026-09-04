@@ -76,14 +76,10 @@ function DetalheVaga() {
     mutationFn: () => vagasService.candidatar(vagaId),
     onSuccess: () => {
       toast.success("Candidatura enviada com sucesso.");
-      // Fase 9, Bloco 6: `["candidaturas"]` só casa com `["candidaturas","minhas"]`
-      // (a query desta própria tela) — `["candidaturas-minhas", pagina]`, usada
-      // pelo widget "Minhas candidaturas recentes" do painel, tem o PRIMEIRO
-      // elemento da key como uma string diferente, então nunca era invalidada
-      // por este prefixo. Invalida as duas explicitamente, mais o card de
-      // métricas do painel (contagem de candidaturas).
-      void queryClient.invalidateQueries({ queryKey: ["candidaturas"] });
-      void queryClient.invalidateQueries({ queryKey: ["candidaturas-minhas"] });
+      // O widget "Minhas candidaturas recentes" do painel (CandidaturasRecentes.tsx)
+      // usa o mesmo prefixo ["candidaturas","minhas"] — invalidar aqui já
+      // cobre as duas telas, mais o card de métricas do painel.
+      void queryClient.invalidateQueries({ queryKey: ["candidaturas", "minhas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),

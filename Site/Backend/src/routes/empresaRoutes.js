@@ -6,6 +6,7 @@ import authOpcionalMiddleware from "../middlewares/authOpcionalMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
 import upload, { criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+import garantirEmpresaAprovadaMiddleware from "../middlewares/garantirEmpresaAprovadaMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import { validarAtualizacaoEmpresa } from "../validators/empresaValidator.js";
 
@@ -59,6 +60,7 @@ router.patch(
     authMiddleware,
     validarUuidParam("id"),
     validationMiddleware,
+    garantirEmpresaAprovadaMiddleware,
     upload.single("logo"),
     processarLogoCapa,
     EmpresaController.uploadLogo
@@ -69,6 +71,7 @@ router.patch(
     authMiddleware,
     validarUuidParam("id"),
     validationMiddleware,
+    garantirEmpresaAprovadaMiddleware,
     upload.single("capa"),
     processarLogoCapa,
     EmpresaController.uploadCapa

@@ -7,13 +7,13 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "migrate:storage": "node scripts/migrateStorage.js"
+    "migrate:storage": "node scripts/migrateStorage.js",
+    "test": "vitest run"
   },
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
     "bcrypt": "^6.0.0",
-    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
@@ -32,7 +32,9 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "socket.io-client": "^4.8.3",
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=20"

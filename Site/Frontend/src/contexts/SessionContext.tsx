@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -13,6 +14,8 @@ import { toast } from "sonner";
 import authService from "@/services/auth.service";
 import { aoExpirarSessao, clearTokens, getAccessToken } from "@/services/api";
 import { conectarSocket, desconectarSocket } from "@/services/socket";
+import acessibilidadeService, { prefsDaApi, prefsParaApi } from "@/services/acessibilidade.service";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 import type {
   CredenciaisLogin,
   RespostaCadastroPendenteVerificacao,
@@ -73,6 +76,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [carregando, setCarregando] = useState(false);
+  const { prefs, save } = useAccessibility();
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
 
   const carregarPerfil = useCallback(async () => {
     if (!getAccessToken()) {
@@ -117,6 +123,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return normalizado;
   }, []);
 
+  // Sincronização de acessibilidade no login/cadastro (Etapa 5). Best-effort
+  // por design: chamada depois que `aposAutenticar` já confirmou a sessão, e
+  // qualquer falha aqui só é logada — nunca impede nem invalida o
+  // login/cadastro, que já terminaram com sucesso antes desta chamada.
+  const sincronizarNoLogin = useCallback(async () => {
+    try {
+      const dto = await acessibilidadeService.obter();
+      const parcial = prefsDaApi(dto);
+      // A conta é a fonte de verdade no login — sobrescreve o que estava
+      // só localmente (ex.: outro dispositivo, ou um visitante que usou
+      // este navegador antes de logar em outra conta).
+      save({ ...prefsRef.current, ...parcial });
+    } catch (erro) {
+      console.error("Falha ao sincronizar preferências de acessibilidade no login:", erro);
+    }
+  }, [save]);
+
+  const sincronizarNoCadastro = useCallback(async () => {
+    try {
+      // A escolha feita como visitante, imediatamente antes do cadastro,
+      // prevalece — empurra o estado local para a conta recém-criada.
+      await acessibilidadeService.salvar(prefsParaApi(prefsRef.current));
+    } catch (erro) {
+      console.error("Falha ao sincronizar preferências de acessibilidade no cadastro:", erro);
+    }
+  }, []);
+
   const value = useMemo<Ctx>(
     () => ({
       user,
@@ -128,17 +161,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if ("requerDoisFatores" in resposta || "contaPausada" in resposta || "emailNaoVerificado" in resposta) {
           return resposta;
         }
-        return aposAutenticar(resposta.usuario);
+        const normalizado = aposAutenticar(resposta.usuario);
+        void sincronizarNoLogin();
+        return normalizado;
       },
       registrarCandidato: async (payload) => {
         const resposta = await authService.registrarCandidato(payload);
         if ("pendenteVerificacaoEmail" in resposta) return resposta;
-        return aposAutenticar(resposta.usuario);
+        const normalizado = aposAutenticar(resposta.usuario);
+        void sincronizarNoCadastro();
+        return normalizado;
       },
       registrarEmpresa: async (payload) => {
         const resposta = await authService.registrarEmpresa(payload);
         if ("pendenteVerificacaoEmail" in resposta) return resposta;
-        return aposAutenticar(resposta.usuario);
+        const normalizado = aposAutenticar(resposta.usuario);
+        void sincronizarNoCadastro();
+        return normalizado;
       },
       signOut: async () => {
         try {
@@ -151,7 +190,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       update: (patch) => setUser((atual) => (atual ? { ...atual, ...patch } : atual)),
       recarregar: carregarPerfil,
     }),
-    [user, hydrated, carregando, aposAutenticar, carregarPerfil],
+    [user, hydrated, carregando, aposAutenticar, carregarPerfil, sincronizarNoLogin, sincronizarNoCadastro],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

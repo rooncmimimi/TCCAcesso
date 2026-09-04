@@ -5,6 +5,7 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 import rbacMiddleware from "../middlewares/rbacMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
 import upload, { criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+import { garantirDonoDeUsuario } from "../middlewares/garantirDonoMiddleware.js";
 import {
     validarAtualizacaoUsuario,
     validarUuidParam
@@ -82,6 +83,7 @@ router.patch(
     "/:id/foto",
     validarUuidParam("id"),
     validationMiddleware,
+    garantirDonoDeUsuario,
     upload.single("foto"),
     processarFotoCapa,
     UsuarioController.updateFoto
@@ -91,6 +93,7 @@ router.patch(
     "/:id/capa",
     validarUuidParam("id"),
     validationMiddleware,
+    garantirDonoDeUsuario,
     upload.single("capa"),
     processarFotoCapa,
     UsuarioController.updateCapa

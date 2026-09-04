@@ -10,8 +10,9 @@ import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
  * service só CRIA e LÊ registros; nunca os altera ou remove — e nenhuma
  * rota/controller deste projeto expõe update/delete para este recurso.
  *
- * `adminId` nunca deve vir do corpo/query da requisição: o chamador
- * (AdminService) sempre resolve a partir de `solicitante.id`, que por
+ * `adminId` nunca deve vir do corpo/query da requisição: quem chama
+ * (AdminEmpresaService, AdminUsuarioService, AdminConteudoService,
+ * DenunciaService...) sempre resolve a partir de `solicitante.id`, que por
  * sua vez vem de `req.user` (populado pelo authMiddleware a partir do
  * token), nunca de um identificador enviado pelo frontend.
  */

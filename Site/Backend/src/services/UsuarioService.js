@@ -11,7 +11,7 @@ import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { garantirDono, garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
 import AdminAuditService from "./AdminAuditService.js";
 import BloqueioService from "./BloqueioService.js";
-import AdminService from "./AdminService.js";
+import AdminUsuarioService from "./AdminUsuarioService.js";
 
 class UsuarioService {
     async buscarPorId(id) {
@@ -166,8 +166,9 @@ class UsuarioService {
     /* ==========================================================
        ATIVAR / DESATIVAR (administrador)
        Rotas já restritas a administrador (rbacMiddleware); ainda assim
-       aplicamos a mesma proteção ADMIN->ADMIN / auto-ação do AdminService,
-       via helper compartilhado — nunca confie só na rota.
+       aplicamos a mesma proteção ADMIN->ADMIN / auto-ação que os services
+       administrativos usam (`garantirAlvoDeAcaoAdministrativa`, em
+       utils/authorization.js) — nunca confie só na rota.
     ========================================================== */
     async setAtivo(id, ativo, solicitante, contexto = {}) {
         const usuario = await this.buscarPorId(id);
@@ -213,7 +214,7 @@ class UsuarioService {
     /* ==========================================================
        EXCLUIR (administrador)
 
-       Fase 5: delega para `AdminService.removerUsuario` — antes, este
+       Fase 5: delega para `AdminUsuarioService.removerUsuario` — antes, este
        método tinha sua própria implementação, incompleta e divergente
        da exclusão feita pelo painel admin (sem limpeza do Storage, sem
        arquivar denúncias pendentes contra a conta, log de auditoria
@@ -223,7 +224,7 @@ class UsuarioService {
        o mesmo resultado que a exclusão administrativa "oficial".
     ========================================================== */
     async delete(id, solicitante, contexto = {}) {
-        return AdminService.removerUsuario(id, {}, solicitante, contexto);
+        return AdminUsuarioService.removerUsuario(id, {}, solicitante, contexto);
     }
 }
 

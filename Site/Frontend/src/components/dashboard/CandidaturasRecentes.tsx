@@ -25,8 +25,14 @@ export function CandidaturasRecentes() {
   const [pagina, setPagina] = useState(1);
   const queryClient = useQueryClient();
 
+  // Mesmo prefixo de key usado em `/vaga/$vagaId` (`["candidaturas", "minhas"]`)
+  // para o mesmo recurso (`candidaturasService.minhas()`) — antes eram duas
+  // chaves diferentes ("candidaturas-minhas" aqui, ["candidaturas","minhas"]
+  // lá) para o mesmo dado, exigindo invalidar as duas manualmente toda vez
+  // (Fase 9, Bloco 6). Com o mesmo prefixo, invalidar ["candidaturas","minhas"]
+  // já cobre esta query também, mesmo com `pagina` como terceiro elemento.
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["candidaturas-minhas", pagina],
+    queryKey: ["candidaturas", "minhas", pagina],
     queryFn: () => candidaturasService.minhas({ page: pagina, limit: 5 }),
   });
 
@@ -34,13 +40,8 @@ export function CandidaturasRecentes() {
     mutationFn: (id: string) => candidaturasService.cancelar(id),
     onSuccess: () => {
       toast.success("Candidatura cancelada.");
-      queryClient.invalidateQueries({ queryKey: ["candidaturas-minhas"] });
-      queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
-      // Fase 9, Bloco 6: a página de detalhe da vaga (`/vaga/$vagaId`) usa a
-      // OUTRA key (`["candidaturas","minhas"]`) para decidir se mostra
-      // "Candidatura enviada" — sem isto, cancelar aqui deixava aquela tela
-      // presa no estado antigo até o staleTime expirar.
       queryClient.invalidateQueries({ queryKey: ["candidaturas", "minhas"] });
+      queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
     },
     onError: () => toast.error("Não foi possível cancelar a candidatura."),
   });

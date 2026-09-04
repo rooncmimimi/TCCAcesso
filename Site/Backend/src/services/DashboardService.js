@@ -10,6 +10,7 @@ import {
     FavoritoVaga
 } from "../models/index.js";
 import sequelize from "../config/database.js";
+import { garantirEmpresaAprovadaSeForEmpresa } from "../utils/authorization.js";
 
 /**
  * Métricas agregadas.
@@ -56,7 +57,10 @@ class DashboardService {
         };
     }
 
-    async empresa(usuarioId) {
+    async empresa(solicitante) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+
+        const usuarioId = solicitante.id;
         const empresa = await Empresa.findOne({ where: { usuarioId } });
 
         if (!empresa) {

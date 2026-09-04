@@ -700,7 +700,13 @@ class SeguidorService {
         }));
     }
 
-    /** Mantido por compatibilidade — nunca foi consumido pelo frontend. */
+    /**
+     * `sugestoesPessoas` sem chamador direto: a rota GET /seguir/sugestoes
+     * (consumida por SugestoesResumo.tsx e descobrir.tsx) chama
+     * `sugestoesPessoas` direto pelo controller (SeguidorController.sugestoes),
+     * nunca por aqui. Continua existindo por não ter motivo concreto para
+     * remover ainda.
+     */
     async sugestoes(solicitante, limite = 5) {
         return this.sugestoesPessoas(solicitante, limite);
     }

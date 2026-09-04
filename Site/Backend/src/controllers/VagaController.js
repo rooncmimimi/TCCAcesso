@@ -19,7 +19,7 @@ class VagaController {
     async minhas(req, res, next) {
         try {
             const dados = await VagaService.findByEmpresaAutenticada(
-                req.user.id,
+                req.user,
                 req.query
             );
 

@@ -13,10 +13,19 @@ export function LinkAutor({
   autorId,
   className,
   children,
+  ariaLabel,
 }: {
   autorId?: string | null;
   className?: string;
   children: ReactNode;
+  /**
+   * Necessário quando `children` é só a foto (sem o nome como texto ao
+   * lado) — ex.: "Ver perfil de Maria." Sem isso, uma vez que a foto
+   * termina de carregar, o link fica sem nome acessível nenhum (a imagem
+   * é `alt=""` de propósito, pra não duplicar o nome que já aparece como
+   * texto ao lado — mas quando o link É só a foto, precisa do rótulo).
+   */
+  ariaLabel?: string;
 }) {
   const { user } = useSession();
 
@@ -31,6 +40,7 @@ export function LinkAutor({
       to={proprio ? "/perfil" : "/perfil/$usuarioId"}
       params={proprio ? undefined : { usuarioId: autorId }}
       className={className}
+      aria-label={ariaLabel}
     >
       {children}
     </Link>

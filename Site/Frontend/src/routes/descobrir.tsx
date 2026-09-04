@@ -161,7 +161,7 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
   return (
     <Card className="h-full shadow-none">
       <CardContent className="flex h-full flex-col items-center gap-3 p-5 text-center">
-        <Link to="/perfil/$usuarioId" params={{ usuarioId: pessoa.id }}>
+        <Link to="/perfil/$usuarioId" params={{ usuarioId: pessoa.id }} aria-label={`Ver perfil de ${pessoa.nome}`}>
           <Avatar className="size-16">
             <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-lg font-bold text-primary">
@@ -211,7 +211,7 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
   return (
     <Card className="h-full shadow-none">
       <CardContent className="flex h-full flex-col items-center gap-3 p-5 text-center">
-        <Link to="/perfil/$usuarioId" params={{ usuarioId: empresa.usuarioId ?? "" }}>
+        <Link to="/perfil/$usuarioId" params={{ usuarioId: empresa.usuarioId ?? "" }} aria-label={`Ver perfil de ${nome}`}>
           <Avatar className="size-16 rounded-md">
             <AvatarImage src={urlArquivo(empresa.logo)} alt="" />
             <AvatarFallback className="rounded-md bg-primary-soft text-lg font-bold text-primary">

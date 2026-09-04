@@ -10,6 +10,7 @@ import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import {
     ehAdministrador,
+    garantirDono,
     garantirEmpresaAprovada,
     garantirVagaDisponivelParaCandidatura
 } from "../utils/authorization.js";
@@ -198,14 +199,11 @@ class CandidaturaService {
             throw ApiError.notFound("Vaga não encontrada.");
         }
 
-        if (
-            !ehAdministrador(solicitante) &&
-            vaga.empresa.usuarioId !== solicitante.id
-        ) {
-            throw ApiError.forbidden(
-                "Você não tem permissão para ver as candidaturas desta vaga."
-            );
-        }
+        garantirDono(
+            solicitante,
+            vaga.empresa.usuarioId,
+            "Você não tem permissão para ver as candidaturas desta vaga."
+        );
 
         garantirEmpresaAprovada(vaga.empresa, solicitante);
 
@@ -308,14 +306,11 @@ class CandidaturaService {
                 throw ApiError.notFound("Candidatura não encontrada.");
             }
 
-            const ehDonoEmpresa =
-                candidatura.vaga?.empresa?.usuarioId === solicitante.id;
-
-            if (!ehAdministrador(solicitante) && !ehDonoEmpresa) {
-                throw ApiError.forbidden(
-                    "Apenas a empresa dona da vaga pode alterar o status."
-                );
-            }
+            garantirDono(
+                solicitante,
+                candidatura.vaga?.empresa?.usuarioId,
+                "Apenas a empresa dona da vaga pode alterar o status."
+            );
 
             garantirEmpresaAprovada(candidatura.vaga.empresa, solicitante);
 
@@ -369,14 +364,11 @@ class CandidaturaService {
             throw ApiError.notFound("Candidatura não encontrada.");
         }
 
-        if (
-            !ehAdministrador(solicitante) &&
-            candidatura.candidato.usuarioId !== solicitante.id
-        ) {
-            throw ApiError.forbidden(
-                "Você só pode cancelar as suas próprias candidaturas."
-            );
-        }
+        garantirDono(
+            solicitante,
+            candidatura.candidato.usuarioId,
+            "Você só pode cancelar as suas próprias candidaturas."
+        );
 
         candidatura.status = "Cancelada";
         await candidatura.save();

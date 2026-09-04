@@ -3,9 +3,7 @@ import { Router } from "express";
 import UploadController from "../controllers/UploadController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import {
-    uploadImagem,
     uploadDocumento,
-    uploadAnexos,
     criarProcessadorArmazenamento
 } from "../middlewares/uploadMiddleware.js";
 
@@ -20,39 +18,15 @@ const processarDocumentoPrivado = criarProcessadorArmazenamento({
     privado: true
 });
 
-// Correção (auditoria de segurança, achado A3): `/imagem` e `/anexos`
-// gravavam na raiz do bucket público, sem nenhum vínculo a um recurso do
-// usuário (`criarProcessadorArmazenamento({})`, sem `pasta`) — corrigido
-// para escopar por usuário, mesmo padrão de `processarDocumentoPrivado`
-// acima. Não removidas: `Site/Frontend/src/services/uploads.service.ts`
-// (`uploadsService.enviarImagem`/`enviarAnexos`) as consome de verdade —
-// nenhuma tela usa esse serviço hoje, mas ele existe, está corretamente
-// tipado e apontado para estas rotas, então não é código morto (uma
-// varredura inicial por "upload/imagem" não achou esse consumidor por um
-// erro de digitação — o prefixo real da rota é "/uploads", no plural).
-const processarUploadGenerico = criarProcessadorArmazenamento({
-    pasta: (req) => `uploads/${req.user.id}`
-});
-
-router.post(
-    "/imagem",
-    uploadImagem.single("arquivo"),
-    processarUploadGenerico,
-    UploadController.imagem
-);
-
+// Etapa 5: `/imagem` e `/anexos` (e `uploadsService.enviarImagem`/`enviarAnexos`
+// no frontend) foram removidas — auditoria confirmou zero consumidor real
+// (nenhuma tela chamava esse serviço; o fluxo real de postagem com anexos
+// usa `POST /postagens` diretamente, ver `postagemRoutes.js`).
 router.post(
     "/documento",
     uploadDocumento.single("arquivo"),
     processarDocumentoPrivado,
     UploadController.documento
-);
-
-router.post(
-    "/anexos",
-    uploadAnexos.array("arquivos", 4),
-    processarUploadGenerico,
-    UploadController.anexos
 );
 
 export default router;

@@ -74,7 +74,11 @@ export function CardPostagem({
       <CardContent className="p-5">
         <article aria-labelledby={`autor-${postagem.id}`}>
           <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-            <LinkAutor autorId={autor?.id} className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <LinkAutor
+              autorId={autor?.id}
+              className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              ariaLabel={`Ver perfil de ${autor?.nome ?? "usuário"}`}
+            >
               <Avatar className="size-11">
                 <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
                 <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">

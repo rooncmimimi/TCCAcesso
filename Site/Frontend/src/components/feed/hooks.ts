@@ -92,8 +92,8 @@ export function useFeedTempoReal() {
 
   useEffect(() => {
     const cancelarPostagem = ouvirEvento<{
-      postagem?: PostagemCompleta;
       id?: string;
+      criada?: boolean;
       atualizada?: boolean;
       removida?: boolean;
     }>("feed:postagem", (dados) => {
@@ -105,12 +105,13 @@ export function useFeedTempoReal() {
         return;
       }
 
-      if (dados.atualizada && dados.postagem) {
-        const postagemAtualizada = dados.postagem;
-        queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
-          atualizarPostagemNoCacheFeed(atual, postagemAtualizada.id, () => postagemAtualizada),
-        );
-        queryClient.setQueryData(["postagem", postagemAtualizada.id], postagemAtualizada);
+      // Publicação editada em outra aba/dispositivo: o Socket.IO só sinaliza
+      // QUAL postagem mudou — nunca carrega o conteúdo (broadcast sem sala,
+      // ver `emitirFeed` no backend). O conteúdo atualizado vem sempre de um
+      // refetch autorizado via REST, que reaplica `garantirAcessoAPostagem`.
+      if (dados.atualizada && dados.id) {
+        void queryClient.invalidateQueries({ queryKey: ["postagens"] });
+        void queryClient.invalidateQueries({ queryKey: ["postagem", dados.id] });
         return;
       }
 
@@ -217,6 +218,11 @@ export function useRemoverPostagem() {
   });
 }
 
+// A única mutation do feed com atualização otimista (`onMutate` + rollback
+// em `onError`) — curtir é a ação que mais se repete numa sessão de feed, e
+// esperar a resposta do servidor pra virar o coração fazia o clique parecer
+// travado. As outras (comentar, compartilhar, publicar) já têm sua própria
+// espera natural (digitar, abrir um diálogo) e não precisam do mesmo truque.
 export function useAlternarCurtida() {
   const queryClient = useQueryClient();
   return useMutation({

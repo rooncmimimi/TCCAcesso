@@ -32,9 +32,9 @@ const VARIANTES: Record<string, "default" | "secondary" | "destructive" | "outli
 };
 
 /** Tons usados pelas tabelas administrativas (rótulo livre via children). */
-const TONS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+const TONS: Record<string, "default" | "secondary" | "destructive" | "outline" | "warning"> = {
   sucesso: "default",
-  atencao: "secondary",
+  atencao: "warning",
   perigo: "destructive",
   neutro: "outline",
 };

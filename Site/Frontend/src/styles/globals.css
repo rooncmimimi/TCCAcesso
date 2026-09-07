@@ -157,10 +157,13 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.03 258);
 
-  --primary: oklch(0.49 0.19 264);
-  --primary-foreground: oklch(0.99 0.005 250);
-  --primary-soft: oklch(0.95 0.03 264);
-  --primary-strong: oklch(0.39 0.18 264);
+  /* Identidade ACESSO (verde/vermelho/amarelo/azul) — `oklch(from <hex> l c h)`
+     (sintaxe de cor relativa do CSS) em vez de converter hex→oklch à mão; o
+     navegador calcula o valor exato a partir do hex oficial da marca. */
+  --primary: oklch(from #21a848 l c h);
+  --primary-foreground: oklch(from #ffffff l c h);
+  --primary-soft: oklch(from #dcf3e2 l c h);
+  --primary-strong: oklch(from #178035 l c h);
 
   --secondary: oklch(0.96 0.01 255);
   --secondary-foreground: oklch(0.28 0.04 260);
@@ -170,17 +173,20 @@
 
   --accent: oklch(0.95 0.05 80);
   --accent-foreground: oklch(0.32 0.09 70);
-  --brand-accent: oklch(0.76 0.15 72);
+  --brand-accent: oklch(from #0a98e7 l c h);
 
-  --success: oklch(0.62 0.14 158);
+  --success: oklch(from #21a848 l c h);
   --success-foreground: oklch(0.99 0.005 250);
 
-  --destructive: oklch(0.58 0.22 27);
+  --warning: oklch(from #fad905 l c h);
+  --warning-foreground: oklch(from #050407 l c h);
+
+  --destructive: oklch(from #eb1b25 l c h);
   --destructive-foreground: oklch(0.99 0.005 250);
 
   --border: oklch(0.91 0.01 255);
   --input: oklch(0.91 0.01 255);
-  --ring: oklch(0.49 0.19 264);
+  --ring: oklch(from #21a848 l c h);
 
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.21 0.03 258);
@@ -208,10 +214,14 @@
   --popover: oklch(0.235 0.025 260);
   --popover-foreground: oklch(0.97 0.005 250);
 
-  --primary: oklch(0.72 0.15 264);
-  --primary-foreground: oklch(0.17 0.03 264);
-  --primary-soft: oklch(0.3 0.06 264);
-  --primary-strong: oklch(0.8 0.13 264);
+  /* Mesma técnica do claro, só fixando `L` (luminosidade) por modo — mesmo
+     padrão que este arquivo já usava pro azul antigo (compare `L 0.49`
+     claro vs `L 0.72` escuro): mantém a cor da marca reconhecível, só mais
+     clara no escuro pra manter contraste. */
+  --primary: oklch(from #21a848 0.72 c h);
+  --primary-foreground: oklch(from #21a848 0.17 c h);
+  --primary-soft: oklch(from #21a848 0.3 c h);
+  --primary-strong: oklch(from #21a848 0.8 c h);
 
   --secondary: oklch(0.29 0.03 260);
   --secondary-foreground: oklch(0.97 0.005 250);
@@ -219,11 +229,13 @@
   --muted-foreground: oklch(0.75 0.02 258);
   --accent: oklch(0.33 0.05 70);
   --accent-foreground: oklch(0.95 0.05 85);
-  --brand-accent: oklch(0.8 0.14 75);
+  --brand-accent: oklch(from #0a98e7 0.8 c h);
+  --warning: oklch(from #fad905 l c h);
+  --warning-foreground: oklch(from #050407 l c h);
 
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.72 0.15 264);
+  --ring: oklch(from #21a848 0.72 c h);
 
   --sidebar: oklch(0.235 0.025 260);
   --sidebar-foreground: oklch(0.97 0.005 250);
@@ -279,12 +291,20 @@
   text-shadow: none !important;
 }
 
+/* Alto contraste remove ruído visual decorativo (mesmo espírito de
+   `--shadow-card: none` acima) — o raio da Home é só identidade visual. */
+.a11y-contrast .raio-decorativo-home {
+  display: none;
+}
+
 @theme inline {
   --color-primary-soft: var(--primary-soft);
   --color-primary-strong: var(--primary-strong);
   --color-brand-accent: var(--brand-accent);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --shadow-card: var(--shadow-card);
@@ -338,7 +358,7 @@
 .a11y-focus :focus-visible {
   outline: 4px solid var(--brand-accent) !important;
   outline-offset: 3px !important;
-  box-shadow: 0 0 0 4px oklch(0.49 0.19 264 / 0.25) !important;
+  box-shadow: 0 0 0 4px oklch(from #0a98e7 l c h / 0.25) !important;
 }
 
 /* Redução de animações.
@@ -411,7 +431,7 @@
 [data-speaking="true"] {
   outline: 3px dashed var(--brand-accent);
   outline-offset: 3px;
-  background-color: oklch(0.76 0.15 72 / 0.12);
+  background-color: oklch(from #0a98e7 l c h / 0.12);
 }
 
 .sr-only-focusable:not(:focus):not(:focus-within) {
@@ -428,3 +448,4 @@ div[vw].enabled {
   position: fixed;
   z-index: 40;
 }
+

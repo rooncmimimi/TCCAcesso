@@ -74,7 +74,7 @@ export function AvisoAprovacaoEmpresa({
         <span
           aria-hidden="true"
           className={`grid size-14 place-items-center rounded-full ${
-            pendente ? "bg-amber-100 text-amber-700" : "bg-destructive/10 text-destructive"
+            pendente ? "bg-warning/15 text-warning-foreground" : "bg-destructive/10 text-destructive"
           }`}
         >
           {icone}

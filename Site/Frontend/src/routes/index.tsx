@@ -12,6 +12,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import raioAcesso from "@/assets/raio-acesso.svg";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +43,19 @@ export const Route = createFileRoute("/")({
   }),
   component: Home,
 });
+
+// Cada recurso do card "Recursos ativos nesta página" tem sua própria cor de
+// identidade (não um token único) — detalhe visual específico desta seção.
+const RECURSOS_ATIVOS = [
+  { icon: Headphones, texto: "Leitura por voz pronta para ativar", classeCor: "bg-[#21A848] text-white" },
+  { icon: Languages, texto: "VLibras disponível no canto da tela", classeCor: "bg-[#FAD905] text-[#050407]" },
+  {
+    icon: Ear,
+    texto: "Compatível com leitores de tela (NVDA, VoiceOver)",
+    classeCor: "bg-[#0A98E7] text-white",
+  },
+  { icon: Accessibility, texto: "Contraste e tipografia ajustáveis", classeCor: "bg-[#EB1B25] text-white" },
+];
 
 const recursos = [
   {
@@ -129,16 +143,27 @@ function Home() {
       </header>
 
       <main id="conteudo" tabIndex={-1}>
-        {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 lg:grid-cols-2 lg:py-20">
-          <div>
+        {/* Hero — wrapper de largura total só pra conter o raio decorativo:
+            a section em si é centralizada (max-w-6xl), então não sobra
+            margem lateral dentro dela pra ele vazar sem cruzar o texto. */}
+        <div className="relative overflow-hidden">
+          <img
+            src={raioAcesso}
+            alt=""
+            aria-hidden="true"
+            className="raio-decorativo-home pointer-events-none absolute inset-0 z-0 block h-full w-full scale-[1.3] object-cover opacity-25"
+          />
+
+          <section className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 lg:grid-cols-2 lg:py-20">
+          <div className="relative z-10">
             <Badge className="mb-5 gap-1.5 bg-primary-soft text-primary hover:bg-primary-soft">
               <Sparkles className="size-3.5" aria-hidden="true" /> Acessibilidade desde o primeiro
               clique
             </Badge>
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
               Conectando talentos PCD a oportunidades que{" "}
-              <span className="text-primary">transformam vidas</span>.
+              <span className="text-primary">transformam</span>{" "}
+              <span className="text-destructive">vidas</span>.
             </h1>
             <p className="mt-5 max-w-xl text-lg text-muted-foreground">
               O ACESSO é a rede profissional feita para pessoas com deficiência, profissionais 50+ e
@@ -168,22 +193,17 @@ function Home() {
             )}
           </div>
 
-          <Card className="overflow-hidden border-border shadow-card">
+          <Card className="relative z-10 overflow-hidden border-border shadow-card">
             <CardContent className="space-y-4 p-6">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                 Recursos ativos nesta página
               </p>
               <ul className="space-y-3">
-                {[
-                  { icon: Headphones, texto: "Leitura por voz pronta para ativar" },
-                  { icon: Languages, texto: "VLibras disponível no canto da tela" },
-                  { icon: Ear, texto: "Compatível com leitores de tela (NVDA, VoiceOver)" },
-                  { icon: Accessibility, texto: "Contraste e tipografia ajustáveis" },
-                ].map((item) => (
+                {RECURSOS_ATIVOS.map((item) => (
                   <li key={item.texto} className="flex items-start gap-3 rounded-xl bg-secondary p-3">
                     <span
                       aria-hidden="true"
-                      className="grid size-9 shrink-0 place-items-center rounded-lg bg-card text-primary"
+                      className={`grid size-9 shrink-0 place-items-center rounded-lg ${item.classeCor}`}
                     >
                       <item.icon className="size-5" />
                     </span>
@@ -191,14 +211,15 @@ function Home() {
                   </li>
                 ))}
               </ul>
-              <Button asChild variant="secondary" className="min-h-11 w-full">
+              <Button asChild className="min-h-11 w-full bg-foreground text-background hover:bg-foreground/90">
                 <Link to="/configuracoes/acessibilidade">
                   Configurar acessibilidade agora <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
             </CardContent>
           </Card>
-        </section>
+          </section>
+        </div>
 
         {/* Recursos */}
         <section aria-labelledby="recursos" className="border-y border-border bg-card">

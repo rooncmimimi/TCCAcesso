@@ -21,7 +21,6 @@ import type {
   RespostaCadastroPendenteVerificacao,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
-  RespostaLoginPendente2FA,
   TipoUsuario,
   Usuario,
 } from "@/types";
@@ -43,10 +42,10 @@ type Ctx = {
   hydrated: boolean;
   carregando: boolean;
   autenticado: boolean;
-  /** Retorna `{ requerDoisFatores: true }`, `{ contaPausada: true }` ou `{ emailNaoVerificado: true, email }` (sem criar sessão) quando o login precisa de uma etapa extra. */
+  /** Retorna `{ contaPausada: true }` ou `{ emailNaoVerificado: true, email }` (sem criar sessão) quando o login precisa de uma etapa extra. */
   login: (
     credenciais: CredenciaisLogin,
-  ) => Promise<SessionUser | RespostaLoginPendente2FA | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>;
+  ) => Promise<SessionUser | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>;
   /** Retorna `{ pendenteVerificacaoEmail: true, email }` (sem criar sessão) quando o cadastro exige confirmação de e-mail. */
   registrarCandidato: (
     payload: Record<string, unknown>,
@@ -158,7 +157,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       autenticado: Boolean(user),
       login: async (credenciais) => {
         const resposta = await authService.login(credenciais);
-        if ("requerDoisFatores" in resposta || "contaPausada" in resposta || "emailNaoVerificado" in resposta) {
+        if ("contaPausada" in resposta || "emailNaoVerificado" in resposta) {
           return resposta;
         }
         const normalizado = aposAutenticar(resposta.usuario);

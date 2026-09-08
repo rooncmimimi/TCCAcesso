@@ -54,12 +54,11 @@ class AuthController {
 
     async login(req, res, next) {
         try {
-            const { email, senha, codigoTotp, confirmarReativacao } = req.body;
+            const { email, senha, confirmarReativacao } = req.body;
             const resultado = await authService.login(
                 email,
                 senha,
                 contextoDa(req),
-                codigoTotp,
                 Boolean(confirmarReativacao)
             );
 

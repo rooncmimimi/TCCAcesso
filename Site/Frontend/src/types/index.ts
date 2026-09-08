@@ -186,8 +186,6 @@ export interface Empresa {
 export interface CredenciaisLogin {
   email: string;
   senha: string;
-  /** Código do app autenticador — só enviado na segunda etapa do login com 2FA. */
-  codigoTotp?: string;
   /** Reenviado como `true` quando o usuário confirma que quer reativar uma conta pausada. */
   confirmarReativacao?: boolean;
 }
@@ -197,11 +195,6 @@ export interface RespostaLogin {
   /** O backend Express devolve o access token no campo `token`. */
   token: string;
   refreshToken: string;
-}
-
-/** Retornado no lugar de `RespostaLogin` quando a conta tem 2FA ativado e o código ainda não foi enviado. */
-export interface RespostaLoginPendente2FA {
-  requerDoisFatores: true;
 }
 
 /** Retornado no lugar de `RespostaLogin` quando a conta foi pausada pelo próprio usuário. */
@@ -242,19 +235,6 @@ export interface PreferenciasNotificacao {
   publicacoesComentarios: boolean;
   redeSeguidores: boolean;
 }
-
-export interface StatusDoisFatores {
-  ativado: boolean;
-  metodo: "totp" | "sms";
-  ativadoEm: string | null;
-}
-
-export interface AtivacaoDoisFatores {
-  segredo: string;
-  uri: string;
-  qrCodeDataUrl: string;
-}
-
 
 export type ModalidadeVaga = "Presencial" | "Hibrido" | "Remoto";
 export type ContratoVaga = "CLT" | "PJ" | "Estagio" | "JovemAprendiz" | "Temporario";

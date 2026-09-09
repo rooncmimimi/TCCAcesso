@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { clearSession, registerSessionEndedListener, setSession, type SessionEndedReason } from "../services/api/client";
+import { desconectarSocket } from "../services/socket/socketClient";
 import { clearTokens, getTokens } from "../storage/secureStorage";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
 import { AuthService } from "./AuthService";
-import type { AuthStatus, AuthUser, Credenciais, LoginResposta } from "./types";
+import type {
+  AuthStatus,
+  AuthUser,
+  CadastroCandidatoDados,
+  CadastroEmpresaDados,
+  CadastroResposta,
+  Credenciais,
+  LoginResposta,
+} from "./types";
 
 /**
  * O app não tem nenhuma tela, rota ou menu administrativo (Fase 3, item 15).
@@ -31,6 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSessionEndedReason(reason);
       setUser(null);
       setStatus("unauthenticated");
+      // Fase 17: uma sessão encerrada (renovação falhou, ou bloqueio
+      // administrativo — inclusive quando é o PRÓPRIO handshake do socket
+      // que descobre o bloqueio) nunca deve deixar uma conexão de tempo
+      // real autenticada viva.
+      desconectarSocket();
     });
     return () => registerSessionEndedListener(null);
   }, []);
@@ -72,25 +86,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (credenciais: Credenciais): Promise<LoginResposta> => {
-    const resposta = await AuthService.login(credenciais);
-
+  /** Só autentica de fato quando a resposta já vem com sessão — mesma checagem de `login`, reaproveitada pelas duas variantes de cadastro (Fase 11). */
+  const aplicarSessaoSeHouver = useCallback((resposta: LoginResposta | CadastroResposta) => {
     if ("token" in resposta) {
       setSessionEndedReason(null);
       setUser(resposta.usuario);
       setStatus(tipoSuportado(resposta.usuario) ? "authenticated" : "unsupported");
     }
-
-    return resposta;
   }, []);
+
+  const login = useCallback(
+    async (credenciais: Credenciais): Promise<LoginResposta> => {
+      const resposta = await AuthService.login(credenciais);
+      aplicarSessaoSeHouver(resposta);
+      return resposta;
+    },
+    [aplicarSessaoSeHouver],
+  );
+
+  const registerCandidato = useCallback(
+    async (dados: CadastroCandidatoDados): Promise<CadastroResposta> => {
+      const resposta = await AuthService.registerCandidato(dados);
+      aplicarSessaoSeHouver(resposta);
+      return resposta;
+    },
+    [aplicarSessaoSeHouver],
+  );
+
+  const registerEmpresa = useCallback(
+    async (dados: CadastroEmpresaDados): Promise<CadastroResposta> => {
+      const resposta = await AuthService.registerEmpresa(dados);
+      aplicarSessaoSeHouver(resposta);
+      return resposta;
+    },
+    [aplicarSessaoSeHouver],
+  );
 
   const logout = useCallback(async () => {
     await AuthService.logout();
     setUser(null);
     setStatus("unauthenticated");
+    desconectarSocket();
   }, []);
 
   const clearSessionEndedReason = useCallback(() => setSessionEndedReason(null), []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const usuario = await AuthService.me();
+      setUser(usuario);
+      setStatus(tipoSuportado(usuario) ? "authenticated" : "unsupported");
+    } catch {
+      // Falha silenciosa — ver comentário em `AuthContext.ts`.
+    }
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -100,10 +149,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: status === "loading",
       sessionEndedReason,
       login,
+      registerCandidato,
+      registerEmpresa,
       logout,
       clearSessionEndedReason,
+      refreshUser,
     }),
-    [status, user, sessionEndedReason, login, logout, clearSessionEndedReason],
+    [
+      status,
+      user,
+      sessionEndedReason,
+      login,
+      registerCandidato,
+      registerEmpresa,
+      logout,
+      clearSessionEndedReason,
+      refreshUser,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

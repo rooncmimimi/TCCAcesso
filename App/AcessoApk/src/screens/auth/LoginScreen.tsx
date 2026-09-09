@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { announceForAccessibility } from "../../accessibility";
 import { AuthService, useAuth } from "../../auth";
@@ -48,11 +48,20 @@ const ANUNCIOS_TRANSICAO: Record<Exclude<Etapa, "credenciais">, string> = {
  * rotas do `AuthNavigator` (Fase 4). É a mesma decisão que o site já toma
  * na própria rota `/entrar` (auditoria da Fase 3).
  */
-export function LoginScreen({ onEsqueciSenha }: { onEsqueciSenha: () => void }) {
+export function LoginScreen({
+  onEsqueciSenha,
+  onCriarConta,
+  emailInicial,
+}: {
+  onEsqueciSenha: () => void;
+  onCriarConta: () => void;
+  /** Preenchido quando se chega aqui vindo de um cadastro recém-confirmado (Fase 11) — mesmo padrão de `ResetPasswordScreen`'s `emailInicial`. */
+  emailInicial?: string;
+}) {
   const { theme } = useTheme();
   const { login, sessionEndedReason, clearSessionEndedReason } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailInicial ?? "");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
@@ -67,6 +76,14 @@ export function LoginScreen({ onEsqueciSenha }: { onEsqueciSenha: () => void }) 
   const [etapa, setEtapa] = useState<Etapa>("credenciais");
   const [reenviando, setReenviando] = useState(false);
   const [reenviado, setReenviado] = useState(false);
+  // Fase 11: antes desta fase, "e-mail não verificado" só oferecia reenviar
+  // o e-mail — não havia NENHUM lugar no App para digitar o código e
+  // realmente confirmar. Fecha esse fluxo sem duplicar tela: o mesmo código
+  // de 6 dígitos que `RegisterScreen` usa logo após o cadastro também
+  // funciona aqui, para quem fechou o app antes de confirmar e só volta a
+  // encontrar essa etapa ao tentar entrar depois.
+  const [codigo, setCodigo] = useState("");
+  const [confirmando, setConfirmando] = useState(false);
 
   const senhaInputRef = useRef<TextInput>(null);
   // Trava síncrona contra duplo toque (Fase 3, item 22) — um `ref`, não o
@@ -123,6 +140,25 @@ export function LoginScreen({ onEsqueciSenha }: { onEsqueciSenha: () => void }) 
     }
   }
 
+  async function confirmarEmailEEntrar() {
+    if (confirmando || !codigo.trim()) return;
+    setConfirmando(true);
+    setErro(null);
+    try {
+      await AuthService.confirmarCadastro(email.trim(), codigo.trim());
+      setCodigo("");
+      // Credenciais já digitadas na tentativa que trouxe o usuário até esta
+      // etapa — em vez de mandar tocar "Entrar" pela terceira vez, tenta
+      // entrar de novo sozinho. `submeter` já cobre qualquer resultado
+      // (sucesso troca de tela via AuthGate; outro caso, trata normalmente).
+      await submeter();
+    } catch (erroRequisicao) {
+      setErro(getFriendlyErrorMessage(erroRequisicao, "Código inválido ou expirado."));
+    } finally {
+      setConfirmando(false);
+    }
+  }
+
   async function reenviarEmail() {
     if (reenviando) return;
     setReenviando(true);
@@ -141,6 +177,7 @@ export function LoginScreen({ onEsqueciSenha }: { onEsqueciSenha: () => void }) 
     setEtapa("credenciais");
     setErro(null);
     setReenviado(false);
+    setCodigo("");
   }
 
   return (
@@ -278,8 +315,19 @@ export function LoginScreen({ onEsqueciSenha }: { onEsqueciSenha: () => void }) 
               <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Confirme seu e-mail</Text>
               <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>
                 Enviamos um e-mail de confirmação para {email.trim()}. Verifique sua caixa de entrada (e a pasta de
-                spam) e clique no link antes de entrar.
+                spam) e informe o código de 6 dígitos abaixo.
               </Text>
+
+              <Input
+                label="Código de confirmação"
+                placeholder="000000"
+                value={codigo}
+                onChangeText={setCodigo}
+                keyboardType="number-pad"
+                maxLength={6}
+                editable={!confirmando}
+              />
+
               {reenviado ? (
                 // "polite" (não "assertive"): confirmação de sucesso, não
                 // erro — espera a fala atual terminar em vez de interromper
@@ -301,29 +349,39 @@ export function LoginScreen({ onEsqueciSenha }: { onEsqueciSenha: () => void }) 
                   {erro}
                 </Text>
               ) : null}
+              <Button
+                onPress={() => void confirmarEmailEEntrar()}
+                loading={confirmando}
+                disabled={confirmando || !codigo.trim()}
+              >
+                Confirmar e-mail
+              </Button>
               <Button onPress={() => void reenviarEmail()} loading={reenviando} disabled={reenviando} variant="outline">
                 Reenviar e-mail
               </Button>
-              <Button variant="ghost" onPress={voltarParaCredenciais} disabled={reenviando}>
+              <Button variant="ghost" onPress={voltarParaCredenciais} disabled={reenviando || confirmando}>
                 Voltar
               </Button>
             </Card>
           ) : null}
 
-          {/* Existe só para a UX ficar completa nesta tela — o cadastro em
-              si é escopo da próxima fase (Fase 3, item 17: "não crie um
-              fluxo incompleto"). Por isso não navega para lugar nenhum,
-              apenas avisa. */}
-          <Pressable
-            onPress={() => Alert.alert("Cadastro", "O cadastro pelo aplicativo será implementado em uma próxima etapa.")}
-            accessibilityRole="button"
-            accessibilityLabel="Criar conta"
-            hitSlop={14}
-          >
-            <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted, textAlign: "center" }]}>
-              Ainda não tem conta? Criar conta
-            </Text>
-          </Pressable>
+          {/* Fase 11: cadastro real (antes era um `Alert` avisando "em uma
+              próxima etapa"). Só aparece na etapa de credenciais — nas
+              etapas "conta-pausada"/"email-nao-verificado" o usuário já
+              está no meio de uma tentativa de entrar, navegar para outro
+              fluxo ali só arriscaria perder contexto sem ganhar nada. */}
+          {etapa === "credenciais" ? (
+            <Pressable
+              onPress={onCriarConta}
+              accessibilityRole="button"
+              accessibilityLabel="Criar conta"
+              hitSlop={14}
+            >
+              <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted, textAlign: "center" }]}>
+                Ainda não tem conta? Criar conta
+              </Text>
+            </Pressable>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>

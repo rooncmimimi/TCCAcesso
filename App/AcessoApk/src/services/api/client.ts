@@ -29,6 +29,8 @@ import { clearTokens as clearStoredTokens, saveTokens } from "../../storage/secu
 const ROTAS_PUBLICAS = [
   "/auth/login",
   "/auth/refresh",
+  "/auth/register/candidato",
+  "/auth/register/empresa",
   "/auth/senha/esqueci",
   "/auth/senha/redefinir",
   "/auth/cadastro/confirmar-email",
@@ -60,6 +62,17 @@ let refreshInFlight: Promise<string | null> | null = null;
 
 export function registerSessionEndedListener(listener: SessionEndedListener | null): void {
   sessionEndedListener = listener;
+}
+
+/**
+ * Dispara o mesmo encerramento de sessão que o interceptor abaixo já dispara
+ * sozinho num 401/403 — exportado para o cliente de Socket.IO (Fase 17)
+ * poder reaproveitar exatamente o mesmo mecanismo quando o handshake é
+ * rejeitado por bloqueio administrativo, em vez de duplicar a lógica de
+ * "encerrar sessão" numa segunda implementação.
+ */
+export function notifySessionEnded(reason: SessionEndedReason): void {
+  sessionEndedListener?.(reason);
 }
 
 export function setSession(tokens: { accessToken: string; refreshToken: string }): void {

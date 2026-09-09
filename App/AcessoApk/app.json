@@ -25,7 +25,13 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O ACESSO usa suas fotos para anexar imagens às suas publicações no feed."
+        }
+      ]
     ]
   }
 }

@@ -1,6 +1,7 @@
 /* eslint-disable import/first -- `jest.mock` precisa vir antes dos imports dos módulos que ele substitui. */
 const mockLogin = jest.fn();
 const mockReenviarConfirmacao = jest.fn();
+const mockConfirmarCadastro = jest.fn();
 const mockClearSessionEndedReason = jest.fn();
 
 jest.mock("../../../auth", () => ({
@@ -11,6 +12,7 @@ jest.mock("../../../auth", () => ({
   }),
   AuthService: {
     reenviarConfirmacao: (...args: unknown[]) => mockReenviarConfirmacao(...args),
+    confirmarCadastro: (...args: unknown[]) => mockConfirmarCadastro(...args),
   },
 }));
 
@@ -63,14 +65,14 @@ describe("LoginScreen", () => {
   afterEach(cleanup);
 
   it("renderiza os campos de e-mail e senha e o botão Entrar", async () => {
-    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
     expect(getByLabelText("E-mail")).toBeTruthy();
     expect(getByLabelText("Senha")).toBeTruthy();
     expect(getByRole("button", { name: "Entrar" })).toBeTruthy();
   });
 
   it("o campo de senha começa oculto e alterna ao tocar em 'Mostrar senha'", async () => {
-    const { getByLabelText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
     expect(getByLabelText("Senha").props.secureTextEntry).toBe(true);
 
     await pressionar(getByLabelText("Mostrar senha"));
@@ -79,7 +81,7 @@ describe("LoginScreen", () => {
   });
 
   it("com os campos vazios, não chama login — mostra um erro em vez disso", async () => {
-    const { getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await pressionar(getByRole("button", { name: "Entrar" }));
 
@@ -89,7 +91,7 @@ describe("LoginScreen", () => {
 
   it("preenchendo e-mail e senha e enviando, chama login com o payload correto", async () => {
     mockLogin.mockResolvedValue({ sucesso: true, token: "t", refreshToken: "r", usuario: {} });
-    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -105,7 +107,7 @@ describe("LoginScreen", () => {
         resolverLogin = resolve;
       }),
     );
-    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -127,7 +129,7 @@ describe("LoginScreen", () => {
         resolverLogin = resolve;
       }),
     );
-    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -146,7 +148,7 @@ describe("LoginScreen", () => {
 
   it("mostra uma mensagem de erro compreensível (nunca o erro técnico) quando o login falha", async () => {
     mockLogin.mockRejectedValue(new Error("Request failed with status code 401"));
-    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "senha-errada");
@@ -158,7 +160,7 @@ describe("LoginScreen", () => {
 
   it("chama onEsqueciSenha ao tocar em 'Esqueci minha senha'", async () => {
     const onEsqueciSenha = jest.fn();
-    const { getByLabelText } = await renderComTema(<LoginScreen onEsqueciSenha={onEsqueciSenha} />);
+    const { getByLabelText } = await renderComTema(<LoginScreen onEsqueciSenha={onEsqueciSenha} onCriarConta={jest.fn()} />);
 
     await pressionar(getByLabelText("Esqueci minha senha"));
 
@@ -172,7 +174,7 @@ describe("LoginScreen", () => {
     mockLogin
       .mockResolvedValueOnce({ sucesso: true, contaPausada: true })
       .mockRejectedValueOnce(new Error("falha ao reativar"));
-    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -188,7 +190,7 @@ describe("LoginScreen", () => {
   it("e-mail não verificado: reenviar com sucesso mostra a confirmação com accessibilityLiveRegion=polite", async () => {
     mockLogin.mockResolvedValue({ sucesso: true, emailNaoVerificado: true, email: "ana@exemplo.com" });
     mockReenviarConfirmacao.mockResolvedValue(undefined);
-    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -199,6 +201,86 @@ describe("LoginScreen", () => {
 
     const confirmacao = await findByText("E-mail reenviado.");
     expect(confirmacao.props.accessibilityLiveRegion).toBe("polite");
+  });
+
+  // Fase 11: antes desta fase não havia NENHUM campo para digitar o código
+  // de confirmação em lugar nenhum do App — só reenviar.
+  it("e-mail não verificado: confirmar com o código certo tenta entrar de novo automaticamente (mesmas credenciais)", async () => {
+    mockLogin
+      .mockResolvedValueOnce({ sucesso: true, emailNaoVerificado: true, email: "ana@exemplo.com" })
+      .mockResolvedValueOnce({ sucesso: true, token: "t", refreshToken: "r", usuario: {} });
+    mockConfirmarCadastro.mockResolvedValue({ mensagem: "E-mail confirmado com sucesso." });
+    const { getByLabelText, getByRole, findByText } = await renderComTema(
+      <LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />,
+    );
+
+    await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
+    await digitar(getByLabelText("Senha"), "123456");
+    await pressionar(getByRole("button", { name: "Entrar" }));
+    await findByText("Confirme seu e-mail");
+
+    await digitar(getByLabelText("Código de confirmação"), "123456");
+    await pressionar(getByRole("button", { name: "Confirmar e-mail" }));
+
+    expect(mockConfirmarCadastro).toHaveBeenCalledWith("ana@exemplo.com", "123456");
+    // Reentrou sozinho com o e-mail/senha já digitados — sem precisar de um terceiro toque em "Entrar".
+    expect(mockLogin).toHaveBeenCalledTimes(2);
+    expect(mockLogin).toHaveBeenLastCalledWith({ email: "ana@exemplo.com", senha: "123456" });
+  });
+
+  it("e-mail não verificado: código errado mostra a mensagem amigável, sem tentar login de novo", async () => {
+    mockLogin.mockResolvedValue({ sucesso: true, emailNaoVerificado: true, email: "ana@exemplo.com" });
+    const erro400 = Object.assign(new Error("400"), {
+      isAxiosError: true,
+      response: { data: { mensagem: "Código inválido ou expirado." } },
+    });
+    mockConfirmarCadastro.mockRejectedValue(erro400);
+    const { getByLabelText, getByRole, findByText } = await renderComTema(
+      <LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />,
+    );
+
+    await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
+    await digitar(getByLabelText("Senha"), "123456");
+    await pressionar(getByRole("button", { name: "Entrar" }));
+    await findByText("Confirme seu e-mail");
+
+    await digitar(getByLabelText("Código de confirmação"), "000000");
+    await pressionar(getByRole("button", { name: "Confirmar e-mail" }));
+
+    const mensagem = await findByText("Código inválido ou expirado.");
+    expect(mensagem.props.accessibilityLiveRegion).toBe("assertive");
+    expect(mockLogin).toHaveBeenCalledTimes(1); // não tentou entrar de novo
+  });
+
+  it("chama onCriarConta ao tocar em 'Criar conta'", async () => {
+    const onCriarConta = jest.fn();
+    const { getByLabelText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={onCriarConta} />);
+
+    await pressionar(getByLabelText("Criar conta"));
+
+    expect(onCriarConta).toHaveBeenCalledTimes(1);
+  });
+
+  it("'Criar conta' some durante a etapa de e-mail não verificado (não deve tirar o usuário do fluxo de confirmação)", async () => {
+    mockLogin.mockResolvedValue({ sucesso: true, emailNaoVerificado: true, email: "ana@exemplo.com" });
+    const { getByLabelText, getByRole, findByText, queryByLabelText } = await renderComTema(
+      <LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />,
+    );
+
+    await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
+    await digitar(getByLabelText("Senha"), "123456");
+    await pressionar(getByRole("button", { name: "Entrar" }));
+    await findByText("Confirme seu e-mail");
+
+    expect(queryByLabelText("Criar conta")).toBeNull();
+  });
+
+  it("preenche o e-mail inicial vindo de um cadastro recém-confirmado (emailInicial)", async () => {
+    const { getByLabelText } = await renderComTema(
+      <LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} emailInicial="nova@exemplo.com" />,
+    );
+
+    expect(getByLabelText("E-mail").props.value).toBe("nova@exemplo.com");
   });
 });
 
@@ -220,7 +302,7 @@ describe("LoginScreen — anúncios de transição de etapa (Fase 8)", () => {
   it("credenciais → conta pausada: anuncia exatamente 'Conta pausada.', uma única vez", async () => {
     const anunciar = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
     mockLogin.mockResolvedValue({ sucesso: true, contaPausada: true });
-    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -234,7 +316,7 @@ describe("LoginScreen — anúncios de transição de etapa (Fase 8)", () => {
   it("credenciais → e-mail não verificado: anuncia exatamente 'E-mail não verificado.', uma única vez", async () => {
     const anunciar = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
     mockLogin.mockResolvedValue({ sucesso: true, emailNaoVerificado: true, email: "ana@exemplo.com" });
-    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -248,7 +330,7 @@ describe("LoginScreen — anúncios de transição de etapa (Fase 8)", () => {
   it("voltar para credenciais (botão 'Voltar'/'Cancelar') não dispara nenhum anúncio — o usuário acabou de tocar num botão com esse nome", async () => {
     const anunciar = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
     mockLogin.mockResolvedValue({ sucesso: true, emailNaoVerificado: true, email: "ana@exemplo.com" });
-    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole, findByText } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");
@@ -265,7 +347,7 @@ describe("LoginScreen — anúncios de transição de etapa (Fase 8)", () => {
   it("login bem-sucedido (sem etapa intermediária) não dispara nenhum anúncio de transição", async () => {
     const anunciar = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
     mockLogin.mockResolvedValue({ sucesso: true, token: "t", refreshToken: "r", usuario: {} });
-    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} />);
+    const { getByLabelText, getByRole } = await renderComTema(<LoginScreen onEsqueciSenha={jest.fn()} onCriarConta={jest.fn()} />);
 
     await digitar(getByLabelText("E-mail"), "ana@exemplo.com");
     await digitar(getByLabelText("Senha"), "123456");

@@ -3,22 +3,36 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { ForgotPasswordScreen } from "../screens/auth/ForgotPasswordScreen";
 import { LoginScreen } from "../screens/auth/LoginScreen";
+import { RegisterScreen } from "../screens/auth/RegisterScreen";
 import { ResetPasswordScreen } from "../screens/auth/ResetPasswordScreen";
 import type { AuthStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 /**
- * As telas em si (`LoginScreen`/`ForgotPasswordScreen`/`ResetPasswordScreen`)
- * são exatamente as da Fase 3, sem nenhuma alteração — inclusive os testes
- * delas continuam passando exatamente como estavam. Elas recebem callbacks
- * simples (`onVoltar`, `onTenhoCodigo`, etc.), não `navigation`/`route`
- * diretamente; as três funções abaixo só adaptam esses callbacks para
- * chamadas reais de navegação, mantendo as telas desacopladas do React
- * Navigation (o que já as deixava fáceis de testar isoladamente).
+ * As telas em si (`LoginScreen`/`ForgotPasswordScreen`/`ResetPasswordScreen`/
+ * `RegisterScreen`) recebem callbacks simples (`onVoltar`, `onTenhoCodigo`,
+ * etc.), não `navigation`/`route` diretamente; as funções abaixo só adaptam
+ * esses callbacks para chamadas reais de navegação, mantendo as telas
+ * desacopladas do React Navigation (o que já as deixava fáceis de testar
+ * isoladamente).
  */
-function LoginRoute({ navigation }: NativeStackScreenProps<AuthStackParamList, "Login">) {
-  return <LoginScreen onEsqueciSenha={() => navigation.navigate("ForgotPassword")} />;
+function LoginRoute({ navigation, route }: NativeStackScreenProps<AuthStackParamList, "Login">) {
+  return (
+    <LoginScreen
+      onEsqueciSenha={() => navigation.navigate("ForgotPassword")}
+      onCriarConta={() => navigation.navigate("Register")}
+      emailInicial={route.params?.email}
+    />
+  );
+}
+
+function RegisterRoute({ navigation }: NativeStackScreenProps<AuthStackParamList, "Register">) {
+  return (
+    <RegisterScreen
+      onVoltarParaLogin={(emailConfirmado) => navigation.navigate("Login", { email: emailConfirmado })}
+    />
+  );
 }
 
 function ForgotPasswordRoute({ navigation }: NativeStackScreenProps<AuthStackParamList, "ForgotPassword">) {
@@ -46,6 +60,7 @@ export function AuthNavigator() {
       <Stack.Screen name="Login" component={LoginRoute} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordRoute} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordRoute} />
+      <Stack.Screen name="Register" component={RegisterRoute} />
     </Stack.Navigator>
   );
 }

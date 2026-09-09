@@ -60,6 +60,18 @@ jest.mock("../../auth", () => ({
   AuthService: { reenviarConfirmacao: jest.fn(), esqueciSenha: jest.fn(), redefinirSenha: jest.fn() },
 }));
 
+// Fase 10: qualquer teste com status "authenticated" monta `HomeScreen`, que
+// agora busca o feed de verdade ao montar (deixou de ser o placeholder
+// estático) — sem este mock, estes testes chamariam a API real.
+jest.mock("../../feed", () => ({
+  ...jest.requireActual("../../feed"),
+  FeedService: {
+    listar: jest
+      .fn()
+      .mockResolvedValue({ sucesso: true, total: 0, pagina: 1, limite: 10, totalPaginas: 0, postagens: [] }),
+  },
+}));
+
 import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import { AccessibilityProvider } from "../../accessibility";

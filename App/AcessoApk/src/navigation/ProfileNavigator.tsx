@@ -2,8 +2,12 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { AccessibilityScreen } from "../screens/AccessibilityScreen";
 import { ActivitiesScreen } from "../screens/ActivitiesScreen";
+import { BlockedUsersScreen } from "../screens/BlockedUsersScreen";
 import { DiscoverScreen } from "../screens/DiscoverScreen";
 import { HelpScreen } from "../screens/HelpScreen";
+import { JobApplicantsScreen } from "../screens/JobApplicantsScreen";
+import { JobFormScreen } from "../screens/JobFormScreen";
+import { MyJobsScreen } from "../screens/MyJobsScreen";
 import { MyProfileScreen } from "../screens/MyProfileScreen";
 import { ProfileMenuScreen } from "../screens/ProfileMenuScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -37,6 +41,18 @@ export function ProfileNavigator() {
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: "Configurações" }} />
       <Stack.Screen name="Accessibility" component={AccessibilityScreen} options={{ title: "Acessibilidade" }} />
       <Stack.Screen name="Help" component={HelpScreen} options={{ title: "Ajuda" }} />
+      <Stack.Screen name="MyJobs" component={MyJobsScreen} options={{ title: "Minhas Vagas" }} />
+      <Stack.Screen
+        name="JobForm"
+        component={JobFormScreen}
+        options={({ route }) => ({ title: route.params.vagaId ? "Editar vaga" : "Nova vaga" })}
+      />
+      <Stack.Screen
+        name="JobApplicants"
+        component={JobApplicantsScreen}
+        options={({ route }) => ({ title: route.params.vagaTitulo || "Candidaturas" })}
+      />
+      <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ title: "Usuários bloqueados" }} />
     </Stack.Navigator>
   );
 }

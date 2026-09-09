@@ -1,15 +1,66 @@
 /* eslint-disable import/first -- `jest.mock` precisa vir antes dos imports dos módulos que ele substitui. */
+// Fase 18: convertido de retorno fixo para `jest.fn()` sobrescrevível —
+// precisa poder trocar `tipoUsuario` entre candidato/empresa por teste (o
+// menu da aba Perfil ganha "Minhas Vagas" só para empresa). Valor padrão
+// (candidato) é o MESMO de antes da Fase 18, para os testes já existentes
+// não precisarem mudar nada.
+const mockUseAuth = jest.fn().mockReturnValue({
+  status: "authenticated",
+  user: { id: "1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato", perfilPublico: true, preferenciaMensagens: "todos" },
+  isAuthenticated: true,
+  isLoading: false,
+  sessionEndedReason: null,
+  login: jest.fn(),
+  logout: jest.fn(),
+  clearSessionEndedReason: jest.fn(),
+  refreshUser: jest.fn(),
+});
+
 jest.mock("../../auth", () => ({
-  useAuth: () => ({
-    status: "authenticated",
-    user: { id: "1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato" },
-    isAuthenticated: true,
-    isLoading: false,
-    sessionEndedReason: null,
-    login: jest.fn(),
-    logout: jest.fn(),
-    clearSessionEndedReason: jest.fn(),
-  }),
+  ...jest.requireActual("../../auth"),
+  useAuth: () => mockUseAuth(),
+  AuthService: {
+    listarSessoes: jest.fn().mockResolvedValue([]),
+  },
+}));
+
+// Fase 18: `MyJobsScreen`/`EmpresaProfileScreen` (só alcançáveis por uma
+// conta empresa) buscam de verdade ao montar — mesmo raciocínio de
+// `VagasService`/`FeedService` já mockados neste arquivo: o comportamento
+// real de cada tela já tem sua própria suíte.
+jest.mock("../../vagas", () => ({
+  ...jest.requireActual("../../vagas"),
+  VagasService: {
+    minhas: jest.fn().mockResolvedValue({ sucesso: true, total: 0, pagina: 1, limite: 10, totalPaginas: 0, vagas: [] }),
+  },
+}));
+
+// Fase 15: `SettingsScreen` deixou de ser placeholder — busca sessões
+// ativas e preferências de notificação de verdade ao montar. Mesmo
+// raciocínio de `VagasService`/`FeedService` mockados neste arquivo: o
+// comportamento real da tela já tem sua própria suíte.
+jest.mock("../../configuracoes", () => ({
+  ...jest.requireActual("../../configuracoes"),
+  ConfiguracoesService: {
+    obterPreferenciasNotificacao: jest.fn().mockResolvedValue({
+      id: "p1",
+      usuarioId: "1",
+      vagasCandidaturas: true,
+      mensagens: true,
+      publicacoesComentarios: true,
+      redeSeguidores: true,
+    }),
+  },
+}));
+
+// Fase 19: "Usuários bloqueados" (alcançada a partir de Configurações) busca
+// de verdade ao montar — mesmo raciocínio dos mocks acima: o comportamento
+// real da tela já tem sua própria suíte.
+jest.mock("../../moderacao", () => ({
+  ...jest.requireActual("../../moderacao"),
+  ModeracaoService: {
+    listarBloqueados: jest.fn().mockResolvedValue({ sucesso: true, total: 0, pagina: 1, limite: 20, totalPaginas: 0, bloqueados: [] }),
+  },
 }));
 
 import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
@@ -58,12 +109,27 @@ describe("ProfileNavigator", () => {
     expect(getByLabelText("Ajuda")).toBeTruthy();
   });
 
-  it("Perfil → Configurações empilha a tela de Configurações", async () => {
+  it("Perfil → Configurações empilha a tela real de Configurações (Fase 15, não mais o placeholder)", async () => {
     const { getByLabelText, findByText } = await renderProfileStack();
     await act(async () => {
       fireEvent.press(getByLabelText("Configurações"));
     });
-    expect(await findByText("Aqui ficarão as configurações da sua conta.")).toBeTruthy();
+    expect(await findByText("Privacidade")).toBeTruthy();
+    expect(await findByText("Zona de perigo")).toBeTruthy();
+  });
+
+  it("Perfil → Configurações → Usuários bloqueados empilha a tela real de bloqueios (Fase 19)", async () => {
+    const { getByLabelText, getByRole, findByText } = await renderProfileStack();
+    await act(async () => {
+      fireEvent.press(getByLabelText("Configurações"));
+    });
+    await findByText("Privacidade");
+
+    await act(async () => {
+      fireEvent.press(getByRole("button", { name: "Usuários bloqueados" }));
+    });
+
+    expect(await findByText("Você não bloqueou ninguém ainda.")).toBeTruthy();
   });
 
   it("Perfil → Acessibilidade empilha a tela real de Acessibilidade (Fase 6, não mais o placeholder)", async () => {
@@ -88,12 +154,57 @@ describe("ProfileNavigator", () => {
     await act(async () => {
       fireEvent.press(getByLabelText("Configurações"));
     });
-    expect(await findByText("Aqui ficarão as configurações da sua conta.")).toBeTruthy();
+    expect(await findByText("Privacidade")).toBeTruthy();
 
     await act(async () => {
       navigationRef.current?.goBack();
     });
 
     expect(await findByText("Ana")).toBeTruthy();
+  });
+
+  describe("Modo Empresa (Fase 18)", () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        status: "authenticated",
+        user: { id: "2", nome: "ACME", email: "acme@exemplo.com", tipoUsuario: "empresa" },
+        isAuthenticated: true,
+        isLoading: false,
+        sessionEndedReason: null,
+        login: jest.fn(),
+        logout: jest.fn(),
+        clearSessionEndedReason: jest.fn(),
+        refreshUser: jest.fn(),
+      });
+    });
+
+    it("conta empresa vê 'Minhas Vagas' no menu; conta candidato não vê", async () => {
+      const { getByLabelText } = await renderProfileStack();
+      expect(getByLabelText("Minhas Vagas")).toBeTruthy();
+    });
+
+    it("candidato não vê 'Minhas Vagas'", async () => {
+      mockUseAuth.mockReturnValue({
+        status: "authenticated",
+        user: { id: "1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato" },
+        isAuthenticated: true,
+        isLoading: false,
+        sessionEndedReason: null,
+        login: jest.fn(),
+        logout: jest.fn(),
+        clearSessionEndedReason: jest.fn(),
+        refreshUser: jest.fn(),
+      });
+      const { queryByLabelText } = await renderProfileStack();
+      expect(queryByLabelText("Minhas Vagas")).toBeNull();
+    });
+
+    it("Perfil → Minhas Vagas empilha a tela real de gestão de vagas", async () => {
+      const { getByLabelText, findByText } = await renderProfileStack();
+      await act(async () => {
+        fireEvent.press(getByLabelText("Minhas Vagas"));
+      });
+      expect(await findByText("Nova vaga")).toBeTruthy();
+    });
   });
 });

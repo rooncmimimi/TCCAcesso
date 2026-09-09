@@ -45,15 +45,17 @@ export const linking: LinkingOptions<RootStackParamList> = {
                 screens: {
                   ProfileMenu: "perfil",
                 },
-                // `acesso://perfil/123` (perfil de OUTRO usuário) e
-                // `acesso://vagas/123` (detalhe de uma vaga) ainda não têm
-                // tela — MyProfile só mostra o perfil do próprio usuário
-                // logado, e o detalhe de vaga é da Fase 7 (item 16).
-                // PENDÊNCIA PARA FASE FUTURA: mapear esses dois assim que as
-                // telas de destino existirem.
+                // `acesso://perfil/123` (perfil de OUTRO usuário) ainda não
+                // tem tela — MyProfile só mostra o perfil do próprio usuário
+                // logado. PENDÊNCIA PARA FASE FUTURA: mapear assim que a
+                // tela de destino existir.
               },
             },
           },
+          // `VagaDetail` mora no Stack pai (irmão de `Tabs`), não dentro de
+          // `Tabs.screens.Jobs` — é lá que a tela vive (Fase 9, resolve a
+          // pendência que este arquivo documentava desde a Fase 4).
+          VagaDetail: "vagas/:vagaId",
         },
       },
       // Splash/Unsupported não são destinos de link — são estados

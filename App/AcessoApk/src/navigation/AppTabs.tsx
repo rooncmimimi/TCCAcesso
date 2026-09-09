@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import type { ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 
 import { ProfileNavigator } from "./ProfileNavigator";
 import { HomeScreen } from "../screens/HomeScreen";
 import { JobsScreen } from "../screens/JobsScreen";
 import { MessagesScreen } from "../screens/MessagesScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
+import { NotificacaoService } from "../notificacoes";
 import { useTheme } from "../theme";
 import type { AppTabParamList } from "./types";
 
@@ -36,6 +37,39 @@ const ICONES: Record<keyof AppTabParamList, { ativo: NomeIonicon; inativo: NomeI
  */
 export function AppTabs() {
   const { theme } = useTheme();
+  // Selo (badge) de não lidas na aba (Fase 16). Sem tempo real/polling aqui
+  // (Socket.IO fica para uma fase futura, mesmo raciocínio já usado no
+  // Feed) — só recalcula ao montar e sempre que a própria aba de
+  // Notificações ganha ou perde foco, que é quando o número pode ter
+  // mudado de verdade (usuário leu algo, ou algo novo pode ter chegado).
+  const [naoLidas, setNaoLidas] = useState(0);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function buscarNaoLidas() {
+      try {
+        const total = await NotificacaoService.contarNaoLidas();
+        if (!cancelado) setNaoLidas(total);
+      } catch {
+        // O selo é só um indicador secundário — uma falha aqui não deve
+        // aparecer como erro em lugar nenhum, só deixa o número desatualizado.
+      }
+    }
+
+    void buscarNaoLidas();
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  function recalcularNaoLidas() {
+    NotificacaoService.contarNaoLidas()
+      .then(setNaoLidas)
+      .catch(() => {
+        // Ver comentário acima.
+      });
+  }
 
   return (
     <Tab.Navigator
@@ -68,7 +102,12 @@ export function AppTabs() {
       <Tab.Screen
         name="Notifications"
         component={NotificationsScreen}
-        options={{ tabBarLabel: "Notificações", tabBarAccessibilityLabel: "Notificações" }}
+        options={{
+          tabBarLabel: "Notificações",
+          tabBarAccessibilityLabel: "Notificações",
+          tabBarBadge: naoLidas > 0 ? naoLidas : undefined,
+        }}
+        listeners={{ focus: recalcularNaoLidas, blur: recalcularNaoLidas }}
       />
       <Tab.Screen
         name="Profile"

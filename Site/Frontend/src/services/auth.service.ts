@@ -1,28 +1,25 @@
 import api, { setTokens, clearTokens, getRefreshToken } from "./api";
 import type {
-  AtivacaoDoisFatores,
   CredenciaisLogin,
   RespostaCadastroPendenteVerificacao,
   RespostaLogin,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
-  RespostaLoginPendente2FA,
   SessaoAtiva,
-  StatusDoisFatores,
   Usuario,
 } from "@/types";
 
 /** Serviço de autenticação — espelha as rotas `/auth` do backend Express. */
 export const authService = {
-  /** Se a conta tem 2FA ativado e `codigoTotp` não foi enviado, retorna `{ requerDoisFatores: true }` sem criar sessão.
-   *  Se a conta estiver pausada e `confirmarReativacao` não foi enviado, retorna `{ contaPausada: true }`.
+  /** Se a conta estiver pausada e `confirmarReativacao` não foi enviado, retorna `{ contaPausada: true }`.
    *  Se o e-mail do cadastro ainda não foi confirmado, retorna `{ emailNaoVerificado: true, email }`. */
   async login(
     credenciais: CredenciaisLogin,
-  ): Promise<RespostaLogin | RespostaLoginPendente2FA | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado> {
-    const { data } = await api.post<
-      RespostaLogin | RespostaLoginPendente2FA | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado
-    >("/auth/login", credenciais);
+  ): Promise<RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado> {
+    const { data } = await api.post<RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>(
+      "/auth/login",
+      credenciais,
+    );
     if ("token" in data) {
       setTokens(data.token, data.refreshToken);
     }
@@ -93,30 +90,6 @@ export const authService = {
   /** Redefine a senha usando o código de 6 dígitos recebido por e-mail. */
   async redefinirSenha(payload: { email: string; codigo: string; novaSenha: string }): Promise<void> {
     await api.post("/auth/senha/redefinir", payload);
-  },
-
-  /* -------- Autenticação de dois fatores (2FA) -------- */
-
-  async status2FA(): Promise<StatusDoisFatores> {
-    const { data } = await api.get<{ sucesso: boolean } & StatusDoisFatores>("/auth/2fa/status");
-    return { ativado: data.ativado, metodo: data.metodo, ativadoEm: data.ativadoEm };
-  },
-
-  /** Inicia a ativação: confirma a senha atual e gera um novo segredo (ainda não ativado). */
-  async iniciar2FA(senhaAtual: string): Promise<AtivacaoDoisFatores> {
-    const { data } = await api.post<{ sucesso: boolean } & AtivacaoDoisFatores>("/auth/2fa/iniciar", {
-      senhaAtual,
-    });
-    return { segredo: data.segredo, uri: data.uri, qrCodeDataUrl: data.qrCodeDataUrl };
-  },
-
-  /** Confirma a ativação com o código gerado pelo app autenticador. */
-  async confirmar2FA(codigo: string): Promise<void> {
-    await api.post("/auth/2fa/confirmar", { codigo });
-  },
-
-  async desativar2FA(senhaAtual: string): Promise<void> {
-    await api.post("/auth/2fa/desativar", { senhaAtual });
   },
 
   /* -------- Sessões ativas -------- */

@@ -82,11 +82,6 @@ const CATEGORIAS_CANDIDATO: Categoria[] = [
           "Em Configurações > Segurança você altera a senha. A troca de e-mail fica em Configurações > Conta e exige confirmação por um código enviado ao novo endereço.",
       },
       {
-        pergunta: "Como ativo a verificação em duas etapas?",
-        resposta:
-          "Em Configurações > Segurança, ative a autenticação em duas etapas: escaneie o QR code com um aplicativo autenticador e confirme com o código gerado.",
-      },
-      {
         pergunta: "Como pauso ou excluo minha conta?",
         resposta:
           "Em Configurações > Conta você encontra as opções de pausar (reversível, basta entrar de novo) ou excluir sua conta (permanente, pede sua senha atual).",

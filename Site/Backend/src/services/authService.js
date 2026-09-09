@@ -11,7 +11,6 @@ import { hashPassword, comparePassword } from "../utils/bcrypt.js";
 import { generateToken } from "../utils/jwt.js";
 import { gerarCodigoNumerico, hashToken, compararHash } from "../utils/tokens.js";
 import RefreshTokenService from "./RefreshTokenService.js";
-import AutenticacaoDoisFatoresService from "./AutenticacaoDoisFatoresService.js";
 import EmailService from "./EmailService.js";
 import NotificacaoService from "./NotificacaoService.js";
 import AdminUsuarioService from "./AdminUsuarioService.js";
@@ -397,7 +396,7 @@ class AuthService {
     /* ==========================================================
        LOGIN
     ========================================================== */
-    async login(email, senha, contexto = {}, codigoTotp, confirmarReativacao = false) {
+    async login(email, senha, contexto = {}, confirmarReativacao = false) {
         const usuario = await this.buscarPorEmail(email, { comSenha: true });
 
         // Executa a comparação mesmo sem usuário para reduzir timing attacks.
@@ -424,9 +423,9 @@ class AuthService {
         }
 
         // E-mail/senha corretos, mas o cadastro ainda não foi confirmado:
-        // não emite sessão (mesmo padrão de resposta especial do 2FA e da
-        // conta pausada abaixo) — o Frontend usa isso para oferecer
-        // "reenviar e-mail de confirmação" em vez de um erro genérico.
+        // não emite sessão (mesmo padrão de resposta especial da conta
+        // pausada abaixo) — o Frontend usa isso para oferecer "reenviar
+        // e-mail de confirmação" em vez de um erro genérico.
         // Contas criadas antes desta funcionalidade (ou quando o provedor
         // de e-mail não está configurado) já nascem com emailVerificado
         // = true, então nunca caem aqui.
@@ -435,8 +434,7 @@ class AuthService {
         }
 
         // Conta pausada pelo próprio usuário: e-mail/senha corretos, mas não
-        // emite sessão até o usuário confirmar que quer reativar (mesmo
-        // padrão do 2FA abaixo — nenhuma arquitetura nova).
+        // emite sessão até o usuário confirmar que quer reativar.
         if (usuario.pausadoPeloUsuario) {
             if (!confirmarReativacao) {
                 return { contaPausada: true };
@@ -444,29 +442,6 @@ class AuthService {
 
             usuario.pausadoPeloUsuario = false;
             usuario.pausadoEm = null;
-        }
-
-        // E-mail/senha corretos, mas a conta exige o segundo fator: não
-        // emite sessão ainda — o front reenvia login com `codigoTotp`.
-        const exigeDoisFatores =
-            await AutenticacaoDoisFatoresService.possuiDoisFatoresAtivo(
-                usuario.id
-            );
-
-        if (exigeDoisFatores) {
-            if (!codigoTotp) {
-                return { requerDoisFatores: true };
-            }
-
-            const codigoValido =
-                await AutenticacaoDoisFatoresService.verificarCodigoLogin(
-                    usuario.id,
-                    codigoTotp
-                );
-
-            if (!codigoValido) {
-                throw ApiError.unauthorized("Código de verificação inválido.");
-            }
         }
 
         usuario.ultimoLogin = new Date();

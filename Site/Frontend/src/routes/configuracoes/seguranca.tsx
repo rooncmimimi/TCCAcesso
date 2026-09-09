@@ -3,14 +3,13 @@ import { ArrowLeft, Lock } from "lucide-react";
 
 import { AppShell } from "@/layouts/AppShell";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
-import { SecaoDoisFatores } from "@/components/configuracoes/SecaoDoisFatores";
 import { SecaoSessoes } from "@/components/configuracoes/SecaoSessoes";
 
 export const Route = createFileRoute("/configuracoes/seguranca")({
   head: () => ({
     meta: [
       { title: "Segurança — ACESSO" },
-      { name: "description", content: "Gerencie a autenticação de dois fatores e a segurança da sua conta ACESSO." },
+      { name: "description", content: "Gerencie a segurança da sua conta ACESSO." },
     ],
   }),
   component: () => (
@@ -41,7 +40,6 @@ function Seguranca() {
       </div>
 
       <div className="mt-6 space-y-4">
-        <SecaoDoisFatores />
         <SecaoSessoes />
       </div>
     </AppShell>

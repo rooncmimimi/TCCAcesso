@@ -4,7 +4,6 @@ import {
   Bell,
   ChevronRight,
   HelpCircle,
-  Lock,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
@@ -37,11 +36,6 @@ const secoes = [
       { label: "Alterar senha", to: "/configuracoes/senha" },
       { label: "Sessões ativas", to: "/configuracoes/seguranca" },
     ],
-  },
-  {
-    icon: Lock,
-    titulo: "Segurança",
-    itens: [{ label: "Autenticação de dois fatores", to: "/configuracoes/seguranca" }],
   },
   {
     icon: Bell,

@@ -35,7 +35,7 @@ const BASE_CONHECIMENTO = [
     {
         chaves: ["login", "fazer login", "entrar na minha conta", "acessar minha conta"],
         resposta:
-            "1. Na tela 'Entrar no ACESSO', informe seu e-mail. 2. Informe sua senha. 3. Toque em 'Entrar'. 4. Se você tiver a verificação em duas etapas ativada, informe o código do seu aplicativo autenticador. Esqueceu a senha? Toque em 'Esqueceu a senha?', ao lado do campo de senha."
+            "1. Na tela 'Entrar no ACESSO', informe seu e-mail. 2. Informe sua senha. 3. Toque em 'Entrar'. Esqueceu a senha? Toque em 'Esqueceu a senha?', ao lado do campo de senha."
     },
     {
         chaves: ["esqueci", "recuperar senha", "esqueci minha senha", "recuperar minha senha"],
@@ -62,12 +62,6 @@ const BASE_CONHECIMENTO = [
         resposta:
             "1. Acesse Configurações > Conta. 2. Escolha 'Pausar conta' (reversível — basta entrar de novo pra reativar) ou 'Excluir conta' (permanente). 3. Informe sua senha atual para confirmar. Atenção: excluir a conta não pode ser desfeito."
     },
-    {
-        chaves: ["2fa", "dois fatores", "duas etapas"],
-        resposta:
-            "1. Acesse Configurações > Segurança. 2. Toque em 'Ativar autenticação de dois fatores'. 3. Informe sua senha atual. 4. Escaneie o QR code com um app autenticador (Google Authenticator, Authy ou similar) — ou copie o código e cole manualmente no app. 5. Digite o código de 6 dígitos gerado pelo app para confirmar. A partir daí, o login pede esse código toda vez."
-    },
-
     // ---------- Perfil ----------
     {
         chaves: [

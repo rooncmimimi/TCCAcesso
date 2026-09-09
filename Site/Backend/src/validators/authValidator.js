@@ -100,13 +100,7 @@ export const validarCadastroEmpresa = [
 export const validarLogin = [
     body("email").trim().isEmail().withMessage("Informe um endereço de e-mail válido."),
 
-    body("senha").isString().notEmpty().withMessage("Informe a senha."),
-
-    body("codigoTotp")
-        .optional({ values: "falsy" })
-        .isLength({ min: 6, max: 6 })
-        .isNumeric()
-        .withMessage("O código de verificação deve ter 6 dígitos.")
+    body("senha").isString().notEmpty().withMessage("Informe a senha.")
 ];
 
 export const validarTrocaSenha = [

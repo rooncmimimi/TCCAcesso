@@ -6,8 +6,8 @@ import env from "../config/env.js";
  * recuperados em texto puro pela aplicação — diferente de senha (bcrypt,
  * uma via) ou de tokens/códigos (SHA-256, só comparação).
  *
- * Uso atual: segredo TOTP do 2FA, que precisa ser lido de volta a cada
- * verificação de código — por isso não pode ser um hash.
+ * Uso atual: CPF/CNPJ (ver `campoCifrado.js`), que precisam ser lidos de
+ * volta em texto puro pela aplicação — por isso não podem ser um hash.
  *
  * A chave é derivada do `JWT_SECRET` (já validado com 32+ caracteres no
  * boot da aplicação — ver `config/env.js`) via SHA-256, evitando adicionar

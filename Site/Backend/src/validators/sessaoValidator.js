@@ -48,13 +48,16 @@ export const validarReenviarConfirmacaoCadastro = [
         .withMessage("Informe um endereço de e-mail válido.")
 ];
 
-/** Autenticação de dois fatores (2FA). */
+/**
+ * Senha atual e código de verificação de 6 dígitos — genéricos, reaproveitados
+ * por mais de uma rota (pausar/excluir conta, confirmar troca de e-mail).
+ */
 
-export const validarSenhaAtual2FA = [
+export const validarSenhaAtual = [
     body("senhaAtual").isString().notEmpty().withMessage("Informe a senha atual.")
 ];
 
-export const validarCodigo2FA = [
+export const validarCodigoVerificacao = [
     body("codigo")
         .isLength({ min: 6, max: 6 })
         .isNumeric()

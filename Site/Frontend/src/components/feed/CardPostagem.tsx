@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, MoreVertical, Share2, ThumbsUp, Undo2 } from "lucide-react";
 
@@ -55,6 +55,10 @@ export function CardPostagem({
   const [textoEdicao, setTextoEdicao] = useState(postagem.conteudo);
   const [comentariosAbertos, setComentariosAbertos] = useState(mostrarComentariosAbertos);
   const [denunciando, setDenunciando] = useState(false);
+  // Foco volta pra este botão ao fechar o DenunciarDialog — ver comentário
+  // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
+  // o diálogo que abre.
+  const gatilhoMenuRef = useRef<HTMLButtonElement>(null);
 
   const curtir = useAlternarCurtida();
   const atualizar = useAtualizarPostagem();
@@ -101,6 +105,7 @@ export function CardPostagem({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
+                    ref={gatilhoMenuRef}
                     variant="ghost"
                     size="icon"
                     className="min-h-11 min-w-11"
@@ -161,6 +166,9 @@ export function CardPostagem({
               onOpenChange={setDenunciando}
               entidadeTipo="postagem"
               entidadeId={postagem.id}
+              nomeExibicao={autor?.nome}
+              autorUsuarioId={autor?.id}
+              aoFecharDevolverFoco={() => gatilhoMenuRef.current?.focus()}
             />
           )}
 

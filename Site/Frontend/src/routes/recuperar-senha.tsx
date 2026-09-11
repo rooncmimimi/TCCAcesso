@@ -1,11 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
+import { AuthLayout } from "@/layouts/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,19 +24,24 @@ export const Route = createFileRoute("/recuperar-senha")({
   head: () => ({
     meta: [
       { title: "Recuperar senha — ACESSO" },
-      { name: "description", content: "Solicite um código para redefinir sua senha do ACESSO." },
+      { name: "description", content: "Solicite um link para redefinir sua senha do ACESSO." },
     ],
   }),
   component: RecuperarSenha,
 });
 
 function RecuperarSenha() {
-  const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
+  // O backend responde de forma deliberadamente genérica (não revela se o
+  // e-mail existe — anti-enumeração), então não há nada além de "e-mail
+  // enviado" para mostrar depois de solicitar. Diferente de antes, NÃO
+  // navega mais para `/redefinir-senha?email=...`: o mecanismo principal
+  // agora é o link do e-mail (token), então o próximo passo é o usuário
+  // abrir a caixa de entrada, não preencher outro formulário aqui.
+  const [enviado, setEnviado] = useState(false);
   const {
     register,
     handleSubmit,
-    getValues,
     formState: { errors },
   } = useForm<Formulario>({ resolver: zodResolver(esquema), defaultValues: { email: "" } });
 
@@ -43,8 +49,7 @@ function RecuperarSenha() {
     setEnviando(true);
     try {
       await authService.esqueciSenha(valores.email);
-      toast.success("Se encontrarmos uma conta associada a este endereço, enviaremos as instruções para recuperação.");
-      navigate({ to: "/redefinir-senha", search: { email: getValues("email") } });
+      setEnviado(true);
     } catch (erro) {
       toast.error(extrairMensagemErro(erro, "Não foi possível solicitar a recuperação de senha."));
     } finally {
@@ -53,62 +58,79 @@ function RecuperarSenha() {
   });
 
   return (
-    <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
-      <div className="w-full max-w-md">
+    <AuthLayout>
         <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
           <Logo />
         </Link>
         <Card className="shadow-card">
           <CardContent className="p-6">
-            <h1 className="text-2xl font-extrabold">Recuperar senha</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Informe seu e-mail para receber um código de verificação de 6 dígitos.
-            </p>
-            <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className="min-h-12"
-                  aria-invalid={Boolean(errors.email)}
-                  aria-describedby={errors.email ? "email-erro" : undefined}
-                  {...register("email")}
-                />
-                {errors.email && (
-                  <p id="email-erro" role="alert" className="text-sm font-medium text-destructive">
-                    {errors.email.message}
-                  </p>
-                )}
+            {enviado ? (
+              <div role="status" aria-live="polite" className="space-y-4 text-center">
+                <MailCheck className="mx-auto size-10 text-primary" aria-hidden="true" />
+                <h1 className="text-2xl font-extrabold">Verifique seu e-mail</h1>
+                <p className="text-sm text-muted-foreground">
+                  Se encontrarmos uma conta associada a este endereço, enviaremos um link para redefinir sua senha.
+                  Clique nele para continuar.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Está no aplicativo ACESSO?{" "}
+                  <Link to="/redefinir-senha" className="font-semibold text-primary underline">
+                    Usar o código do e-mail
+                  </Link>
+                </p>
               </div>
-              <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
-                {enviando ? (
-                  <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
-                  </>
-                ) : (
-                  <>
-                    Enviar código <ArrowRight aria-hidden="true" />
-                  </>
-                )}
-              </Button>
-            </form>
-            <p className="mt-6 text-sm text-muted-foreground">
-              Já tem o código?{" "}
-              <Link to="/redefinir-senha" className="font-semibold text-primary underline">
-                Redefinir senha
-              </Link>
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Lembrou a senha?{" "}
-              <Link to="/entrar" className="font-semibold text-primary underline">
-                Entrar
-              </Link>
-            </p>
+            ) : (
+              <>
+                <h1 className="text-2xl font-extrabold">Recuperar senha</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Informe seu e-mail para receber um link de redefinição de senha.
+                </p>
+                <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      className="min-h-12"
+                      aria-invalid={Boolean(errors.email)}
+                      aria-describedby={errors.email ? "email-erro" : undefined}
+                      {...register("email")}
+                    />
+                    {errors.email && (
+                      <p id="email-erro" role="alert" className="text-sm font-medium text-destructive">
+                        {errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                  <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
+                    {enviando ? (
+                      <>
+                        <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                      </>
+                    ) : (
+                      <>
+                        Enviar link <ArrowRight aria-hidden="true" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+                <p className="mt-6 text-sm text-muted-foreground">
+                  Já tem um código?{" "}
+                  <Link to="/redefinir-senha" className="font-semibold text-primary underline">
+                    Redefinir senha
+                  </Link>
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Lembrou a senha?{" "}
+                  <Link to="/entrar" className="font-semibold text-primary underline">
+                    Entrar
+                  </Link>
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -17,6 +17,7 @@ jest.mock("../../auth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -60,9 +61,12 @@ async function renderTela(vagaId = "v1") {
 }
 
 describe("VagaDetailScreen", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     mockUseAuth.mockReturnValue({ user: candidato });
+    // Fase 21: nenhum teste deste arquivo depende de `voiceEnabled` — limpa
+    // pra não vazar entre eles, mesma razão de `AccessibilityScreen.test.tsx`.
+    await AsyncStorage.clear();
   });
 
   it("mostra loading e depois o detalhe da vaga", async () => {
@@ -284,6 +288,25 @@ describe("VagaDetailScreen", () => {
 
       await findByText("Desenvolvedor Front-end");
       expect(queryByRole("button", { name: "Denunciar vaga" })).toBeNull();
+    });
+  });
+
+  describe("Ouvir em voz alta (Fase 21)", () => {
+    it("com 'Leitura por voz' desativada (padrão), o botão não aparece", async () => {
+      mockObterPorId.mockResolvedValue(vaga());
+      const { findByText, queryByRole } = await renderTela();
+
+      await findByText("Desenvolvedor Front-end");
+      expect(queryByRole("button", { name: "Ouvir esta vaga em voz alta" })).toBeNull();
+    });
+
+    it("com 'Leitura por voz' ativada, mostra o botão e ele lê título, empresa, descrição e requisitos", async () => {
+      await AsyncStorage.setItem("acesso.accessibilityPreferences", JSON.stringify({ voiceEnabled: true }));
+      mockObterPorId.mockResolvedValue(vaga({ requisitos: "Experiência com React." }));
+      const { findByText, getByRole } = await renderTela();
+
+      await findByText("Desenvolvedor Front-end");
+      expect(getByRole("button", { name: "Ouvir esta vaga em voz alta" })).toBeTruthy();
     });
   });
 });

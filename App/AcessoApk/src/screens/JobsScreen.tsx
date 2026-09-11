@@ -1,16 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
+import { memo, useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Modal, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { Badge, Button, Card, ScreenContainer } from "../components/ui";
+import { Badge, Button, Card, Input, ScreenContainer, SegmentedControl } from "../components/ui";
 import type { AppStackParamList, AppTabParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
 import type { Theme } from "../theme";
-import { MODALIDADE_LABEL, PUBLICO_ALVO_LABEL, VagasService } from "../vagas";
-import type { Vaga } from "../vagas";
+import {
+  CONTRATO_LABEL,
+  MODALIDADE_LABEL,
+  PUBLICO_ALVO_LABEL,
+  RECURSO_ACESSIBILIDADE_LABEL,
+  VagasService,
+} from "../vagas";
+import type { ContratoVaga, ListarVagasParametros, ModalidadeVaga, PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "../vagas";
 
 const LIMITE_POR_PAGINA = 10;
 
@@ -18,8 +24,70 @@ const LIMITE_POR_PAGINA = 10;
  * pra duas coisas ao mesmo tempo: desabilitar TODOS os controles enquanto
  * qualquer busca está em andamento (evita chamadas concorrentes/duplo
  * toque, Fase 9 item 3) e mostrar o spinner só no botão que o usuário
- * realmente tocou (feedback visual por ação, não um spinner genérico). */
-type AcaoBusca = "inicial" | "anterior" | "proxima" | "retry";
+ * realmente tocou (feedback visual por ação, não um spinner genérico).
+ * `"filtro"` (Fase R1) cobre busca textual e os filtros do modal — nenhum
+ * botão específico tem `loading` amarrado a ela (o modal já fechou quando a
+ * busca começa), por isso vira um `ActivityIndicator` no lugar do contador. */
+type AcaoBusca = "inicial" | "anterior" | "proxima" | "retry" | "atualizar" | "filtro";
+
+/** Estado local dos filtros do modal (Fase R1) — `""` em cada campo de enum
+ * significa "qualquer" (sem filtro), nunca enviado à API (ver
+ * `construirParametros`). Não inclui a busca textual: essa tem seu próprio
+ * campo sempre visível, fora do modal. */
+interface FiltrosVagas {
+  cidade: string;
+  modalidade: ModalidadeVaga | "";
+  contrato: ContratoVaga | "";
+  publicoAlvo: PublicoAlvoVaga | "";
+  recursosAcessibilidade: RecursoAcessibilidadeVaga[];
+}
+
+const FILTROS_VAZIOS: FiltrosVagas = {
+  cidade: "",
+  modalidade: "",
+  contrato: "",
+  publicoAlvo: "",
+  recursosAcessibilidade: [],
+};
+
+const OPCOES_MODALIDADE: { label: string; value: ModalidadeVaga | "" }[] = [
+  { label: "Qualquer", value: "" },
+  ...(Object.keys(MODALIDADE_LABEL) as ModalidadeVaga[]).map((valor) => ({ label: MODALIDADE_LABEL[valor], value: valor })),
+];
+const OPCOES_CONTRATO: { label: string; value: ContratoVaga | "" }[] = [
+  { label: "Qualquer", value: "" },
+  ...(Object.keys(CONTRATO_LABEL) as ContratoVaga[]).map((valor) => ({ label: CONTRATO_LABEL[valor], value: valor })),
+];
+const OPCOES_PUBLICO_ALVO: { label: string; value: PublicoAlvoVaga | "" }[] = [
+  { label: "Qualquer", value: "" },
+  ...(Object.keys(PUBLICO_ALVO_LABEL) as PublicoAlvoVaga[]).map((valor) => ({ label: PUBLICO_ALVO_LABEL[valor], value: valor })),
+];
+const OPCOES_RECURSOS = Object.keys(RECURSO_ACESSIBILIDADE_LABEL) as RecursoAcessibilidadeVaga[];
+
+/** Quantos filtros do MODAL estão ativos agora — usado só pro selo do botão "Filtros" (a busca textual já mostra o próprio texto digitado, não precisa contar aqui). */
+function contarFiltrosAtivos(filtros: FiltrosVagas): number {
+  return [
+    filtros.cidade.trim() !== "",
+    filtros.modalidade !== "",
+    filtros.contrato !== "",
+    filtros.publicoAlvo !== "",
+    filtros.recursosAcessibilidade.length > 0,
+  ].filter(Boolean).length;
+}
+
+/** Monta os parâmetros reais da API (Fase R1) — só inclui um campo quando
+ * ele de fato tem valor; nunca envia `""`/array vazio (equivalente a "sem
+ * filtro" para o backend, mas mais limpo não mandar o parâmetro à toa). */
+function construirParametros(pagina: number, texto: string, filtros: FiltrosVagas): ListarVagasParametros {
+  const parametros: ListarVagasParametros = { page: pagina, limit: LIMITE_POR_PAGINA };
+  if (texto.trim()) parametros.search = texto.trim();
+  if (filtros.cidade.trim()) parametros.cidade = filtros.cidade.trim();
+  if (filtros.modalidade) parametros.modalidade = filtros.modalidade;
+  if (filtros.contrato) parametros.contrato = filtros.contrato;
+  if (filtros.publicoAlvo) parametros.publicoAlvo = filtros.publicoAlvo;
+  if (filtros.recursosAcessibilidade.length > 0) parametros.recursosAcessibilidade = filtros.recursosAcessibilidade;
+  return parametros;
+}
 
 /**
  * `Jobs` (a aba) precisa navegar para `VagaDetail`, que mora no Stack PAI
@@ -37,11 +105,18 @@ type JobsScreenProps = CompositeScreenProps<
  * Primeiro módulo de conteúdo real do App (Fase 9) — substitui o placeholder
  * das fases anteriores. Lista vagas abertas com paginação clássica (a API já
  * entrega `pagina`/`totalPaginas`/`total` prontos pra isso — sem
- * infinite-scroll, sem filtros nesta fase). Candidatar-se e favoritar vivem
- * só em `VagaDetailScreen`, não aqui: mostrar favoritar em cada item da
- * lista multiplicaria o problema já documentado de "estado inicial
- * desconhecido" (a API não informa se a vaga já está favoritada) por N
- * itens ao mesmo tempo — um único botão no detalhe é mais honesto.
+ * infinite-scroll). Candidatar-se e favoritar vivem só em
+ * `VagaDetailScreen`, não aqui: mostrar favoritar em cada item da lista
+ * multiplicaria o problema já documentado de "estado inicial desconhecido"
+ * (a API não informa se a vaga já está favoritada) por N itens ao mesmo
+ * tempo — um único botão no detalhe é mais honesto.
+ *
+ * Fase R1 (recomendada) — filtros e busca: usa só os parâmetros que `GET
+ * /vagas` já aceita de verdade (`VagaService.findAll`, auditado antes de
+ * escrever qualquer código aqui) — busca textual, cidade, modalidade,
+ * contrato, público-alvo e recursos de acessibilidade. Aplicar um filtro
+ * (ou buscar por texto) sempre volta pra página 1 — é uma consulta nova,
+ * não continuação da paginação anterior.
  */
 export function JobsScreen({ navigation }: JobsScreenProps) {
   const { theme } = useTheme();
@@ -54,29 +129,39 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
   const [buscando, setBuscando] = useState<AcaoBusca | null>("inicial");
   const [primeiroCarregamentoConcluido, setPrimeiroCarregamentoConcluido] = useState(false);
 
-  /** Usada pelos botões (retry/anterior/próxima) — nunca chamada por um
-   * efeito, por isso pode fazer `setState` síncrono no início sem problema
-   * nenhum (é exatamente o que dá o feedback visual imediato do item 3). */
-  const buscar = useCallback(async (paginaAlvo: number, acao: AcaoBusca) => {
-    setBuscando(acao);
-    setErro(null);
-    try {
-      const resposta = await VagasService.listar({ page: paginaAlvo, limit: LIMITE_POR_PAGINA });
-      setVagas(resposta.vagas);
-      setPagina(resposta.pagina);
-      setTotalPaginas(resposta.totalPaginas);
-      setTotal(resposta.total);
-    } catch (erroRequisicao) {
-      // Fase 9, item 8: uma falha ao trocar de página NUNCA apaga a lista
-      // atual — `vagas`/`pagina`/`totalPaginas` só são sobrescritos no bloco
-      // de sucesso acima. O erro aparece perto do paginador (ou em tela
-      // cheia, se ainda não havia nenhuma vaga carregada).
-      setErro(getFriendlyErrorMessage(erroRequisicao, "Não foi possível carregar as vagas."));
-    } finally {
-      setBuscando(null);
-      setPrimeiroCarregamentoConcluido(true);
-    }
-  }, []);
+  const [textoBusca, setTextoBusca] = useState("");
+  const [filtros, setFiltros] = useState<FiltrosVagas>(FILTROS_VAZIOS);
+  const [filtrosRascunho, setFiltrosRascunho] = useState<FiltrosVagas>(FILTROS_VAZIOS);
+  const [modalFiltrosAberto, setModalFiltrosAberto] = useState(false);
+
+  /** Recebe os filtros/texto a usar EXPLICITAMENTE (não lê `filtros`/
+   * `textoBusca` do closure) — necessário porque aplicar um filtro novo
+   * precisa buscar com o valor RECÉM-ESCOLHIDO no mesmo gesto, antes que o
+   * componente re-renderize com o estado atualizado (senão a busca usaria o
+   * filtro antigo, um closure obsoleto clássico). Por isso não depende de
+   * `filtros`/`textoBusca` e pode ficar com `useCallback([])` de verdade. */
+  const buscar = useCallback(
+    async (paginaAlvo: number, acao: AcaoBusca, filtrosParaUsar: FiltrosVagas, textoParaUsar: string) => {
+      setBuscando(acao);
+      setErro(null);
+      try {
+        const resposta = await VagasService.listar(construirParametros(paginaAlvo, textoParaUsar, filtrosParaUsar));
+        setVagas(resposta.vagas);
+        setPagina(resposta.pagina);
+        setTotalPaginas(resposta.totalPaginas);
+        setTotal(resposta.total);
+      } catch (erroRequisicao) {
+        // Fase 9, item 8: uma falha ao trocar de página/filtro NUNCA apaga a
+        // lista atual — `vagas`/`pagina`/`totalPaginas` só são sobrescritos
+        // no bloco de sucesso acima.
+        setErro(getFriendlyErrorMessage(erroRequisicao, "Não foi possível carregar as vagas."));
+      } finally {
+        setBuscando(null);
+        setPrimeiroCarregamentoConcluido(true);
+      }
+    },
+    [],
+  );
 
   // Busca da MONTAGEM: função declarada dentro do próprio efeito (mesmo
   // padrão de `AuthProvider.tsx`), não uma chamada a `buscar` de fora —
@@ -114,9 +199,42 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
     };
   }, []);
 
-  function abrirDetalhe(vagaId: string) {
-    navigation.navigate("VagaDetail", { vagaId });
+  // Fase 25 (performance) — `useCallback` + `React.memo` no `VagaListItem`:
+  // sem isto, cada troca de página/filtro passaria um `onPress` NOVO a cada
+  // item, invalidando o memo. Ver a explicação completa em `HomeScreen.tsx`.
+  // `[navigation]` é estável durante a vida da tela (garantia do React Navigation).
+  const abrirDetalhe = useCallback(
+    (vagaId: string) => {
+      navigation.navigate("VagaDetail", { vagaId });
+    },
+    [navigation],
+  );
+
+  function submeterBusca() {
+    void buscar(1, "filtro", filtros, textoBusca);
   }
+
+  function abrirFiltros() {
+    setFiltrosRascunho(filtros);
+    setModalFiltrosAberto(true);
+  }
+
+  function aplicarFiltros() {
+    setModalFiltrosAberto(false);
+    setFiltros(filtrosRascunho);
+    void buscar(1, "filtro", filtrosRascunho, textoBusca);
+  }
+
+  function limparFiltros() {
+    setModalFiltrosAberto(false);
+    setFiltrosRascunho(FILTROS_VAZIOS);
+    setFiltros(FILTROS_VAZIOS);
+    setTextoBusca("");
+    void buscar(1, "filtro", FILTROS_VAZIOS, "");
+  }
+
+  const filtrosAtivos = contarFiltrosAtivos(filtros);
+  const algumFiltroAtivo = filtrosAtivos > 0 || textoBusca.trim() !== "";
 
   // Fase 9, item 9: primeiro carregamento é tela cheia de loading, sem lista
   // nenhuma por baixo — só acontece uma vez, antes de `primeiroCarregamentoConcluido`.
@@ -131,8 +249,8 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
   }
 
   // Erro logo no primeiro carregamento (nunca chegou a ter nenhuma vaga) —
-  // tela cheia de erro, diferente do erro de uma troca de página (abaixo).
-  if (erro && vagas.length === 0) {
+  // tela cheia de erro, diferente do erro de uma troca de página/filtro (abaixo).
+  if (erro && vagas.length === 0 && !algumFiltroAtivo) {
     return (
       <ScreenContainer>
         <View style={{ flex: 1, justifyContent: "center" }}>
@@ -145,7 +263,7 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
               Não foi possível carregar as vagas
             </Text>
             <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void buscar(1, "retry")} loading={buscando === "retry"} disabled={buscando !== null}>
+            <Button onPress={() => void buscar(1, "retry", filtros, textoBusca)} loading={buscando === "retry"} disabled={buscando !== null}>
               Tentar novamente
             </Button>
           </Card>
@@ -156,12 +274,56 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
 
   return (
     <ScreenContainer>
+      <View style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-end", marginBottom: theme.spacing.sm }}>
+        <View style={{ flex: 1 }}>
+          <Input
+            value={textoBusca}
+            onChangeText={setTextoBusca}
+            placeholder="Buscar por título, descrição..."
+            accessibilityLabel="Buscar vagas por palavra-chave"
+            returnKeyType="search"
+            onSubmitEditing={submeterBusca}
+            editable={buscando === null}
+          />
+        </View>
+        <Button variant="outline" size="small" onPress={submeterBusca} disabled={buscando !== null}>
+          Buscar
+        </Button>
+        <Button
+          variant={filtrosAtivos > 0 ? "primary" : "outline"}
+          size="small"
+          onPress={abrirFiltros}
+          disabled={buscando !== null}
+          accessibilityLabel={filtrosAtivos > 0 ? `Filtros, ${filtrosAtivos} ativos` : "Filtros"}
+        >
+          {filtrosAtivos > 0 ? `Filtros (${filtrosAtivos})` : "Filtros"}
+        </Button>
+      </View>
+
       <FlatList
+        testID="vagas-lista"
         data={vagas}
         keyExtractor={(vaga) => vaga.id}
+        // Fase 25 (performance) — ver o mesmo ajuste, com a razão completa, em `HomeScreen.tsx`.
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         contentContainerStyle={{ flexGrow: 1, gap: theme.spacing.sm, paddingVertical: theme.spacing.md }}
+        // Fase 26 (polish) — puxar para atualizar refaz a MESMA página que
+        // já está aberta (não pula pra página 1 sozinho): paginação
+        // clássica é uma navegação explícita do usuário, atualizar não deve
+        // desfazer isso. Mantém os filtros/busca atuais.
+        refreshControl={
+          <RefreshControl
+            refreshing={buscando === "atualizar"}
+            onRefresh={() => void buscar(pagina, "atualizar", filtros, textoBusca)}
+            colors={[theme.colors.primary.solid]}
+          />
+        }
         ListHeaderComponent={
-          total > 0 ? (
+          buscando === "filtro" ? (
+            <ActivityIndicator color={theme.colors.primary.solid} style={{ marginBottom: theme.spacing.sm }} />
+          ) : total > 0 ? (
             <Text
               // Fase 8: contador é texto MUDANDO num nó que persiste entre
               // trocas de página (o próprio cabeçalho do FlatList) — o caso
@@ -177,15 +339,26 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
           ) : null
         }
         ListEmptyComponent={
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhuma vaga encontrada</Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              Ainda não há vagas abertas no momento. Volte mais tarde.
-            </Text>
-          </Card>
+          buscando === "filtro" ? null : (
+            <Card elevation="md" style={{ gap: theme.spacing.xs }}>
+              <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhuma vaga encontrada</Text>
+              <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
+                {algumFiltroAtivo
+                  ? "Nenhuma vaga corresponde à busca ou aos filtros atuais."
+                  : "Ainda não há vagas abertas no momento. Volte mais tarde."}
+              </Text>
+              {algumFiltroAtivo ? (
+                <Button variant="outline" size="small" onPress={limparFiltros}>
+                  Limpar filtros
+                </Button>
+              ) : null}
+            </Card>
+          )
         }
         renderItem={({ item }) => (
-          <VagaListItem vaga={item} theme={theme} onPress={() => abrirDetalhe(item.id)} />
+          // `onPress` passado DIRETO (não `() => abrirDetalhe(item.id)`) — o
+          // item chama `onPress(vaga.id)` internamente. Ver `HomeScreen.tsx`.
+          <VagaListItem vaga={item} theme={theme} onPress={abrirDetalhe} />
         )}
         ListFooterComponent={
           <View style={{ gap: theme.spacing.sm, marginTop: theme.spacing.sm }}>
@@ -194,7 +367,7 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
                 <Button
                   variant="outline"
                   size="small"
-                  onPress={() => void buscar(pagina - 1, "anterior")}
+                  onPress={() => void buscar(pagina - 1, "anterior", filtros, textoBusca)}
                   loading={buscando === "anterior"}
                   disabled={buscando !== null || pagina <= 1}
                 >
@@ -203,7 +376,7 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
                 <Button
                   variant="outline"
                   size="small"
-                  onPress={() => void buscar(pagina + 1, "proxima")}
+                  onPress={() => void buscar(pagina + 1, "proxima", filtros, textoBusca)}
                   loading={buscando === "proxima"}
                   disabled={buscando !== null || pagina >= totalPaginas}
                 >
@@ -211,8 +384,8 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
                 </Button>
               </View>
             ) : null}
-            {/* Erro de uma troca de página — a lista acima continua visível, só isto aparece junto. */}
-            {erro && vagas.length > 0 ? (
+            {/* Erro de uma troca de página/filtro — a lista acima continua visível, só isto aparece junto. */}
+            {erro && (vagas.length > 0 || algumFiltroAtivo) ? (
               <View style={{ gap: theme.spacing.xs }}>
                 <Text
                   accessibilityRole="alert"
@@ -224,7 +397,7 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
                 <Button
                   variant="outline"
                   size="small"
-                  onPress={() => void buscar(pagina, "retry")}
+                  onPress={() => void buscar(pagina, "retry", filtros, textoBusca)}
                   loading={buscando === "retry"}
                   disabled={buscando !== null}
                 >
@@ -235,6 +408,111 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
           </View>
         }
       />
+
+      <Modal visible={modalFiltrosAberto} transparent animationType="slide" onRequestClose={() => setModalFiltrosAberto(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: theme.colors.surface, borderTopLeftRadius: theme.radius.lg, borderTopRightRadius: theme.radius.lg, maxHeight: "85%" }}>
+            <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.md, paddingBottom: theme.spacing.xl }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text accessibilityRole="header" style={[theme.typography.heading, { color: theme.colors.textPrimary }]}>
+                  Filtrar vagas
+                </Text>
+                <Pressable onPress={() => setModalFiltrosAberto(false)} accessibilityRole="button" accessibilityLabel="Fechar filtros" hitSlop={10}>
+                  <Text style={[theme.typography.button, { color: theme.colors.primary.solid }]}>Fechar</Text>
+                </Pressable>
+              </View>
+
+              <Input
+                label="Cidade"
+                value={filtrosRascunho.cidade}
+                onChangeText={(valor) => setFiltrosRascunho((atual) => ({ ...atual, cidade: valor }))}
+                placeholder="Ex.: São Paulo"
+              />
+
+              <SegmentedControl
+                label="Modalidade"
+                value={filtrosRascunho.modalidade}
+                onChange={(valor) => setFiltrosRascunho((atual) => ({ ...atual, modalidade: valor }))}
+                options={OPCOES_MODALIDADE}
+              />
+              <SegmentedControl
+                label="Contrato"
+                value={filtrosRascunho.contrato}
+                onChange={(valor) => setFiltrosRascunho((atual) => ({ ...atual, contrato: valor }))}
+                options={OPCOES_CONTRATO}
+              />
+              <SegmentedControl
+                label="Público-alvo"
+                value={filtrosRascunho.publicoAlvo}
+                onChange={(valor) => setFiltrosRascunho((atual) => ({ ...atual, publicoAlvo: valor }))}
+                options={OPCOES_PUBLICO_ALVO}
+              />
+
+              <View style={{ gap: theme.spacing.xs }}>
+                <Text style={[theme.typography.label, { color: theme.colors.textSecondary }]}>Recursos de acessibilidade</Text>
+                {/* Semântica real da API (`Op.contains`, ver `src/vagas/types.ts`): a vaga precisa ter TODOS os
+                    recursos marcados, não qualquer um deles — deixa isso explícito para não parecer "ou" (o mais
+                    intuitivo ao marcar várias caixas). */}
+                <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>
+                  Mostra só vagas que tenham TODOS os recursos marcados abaixo.
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs }}>
+                  {OPCOES_RECURSOS.map((recurso) => {
+                    const selecionado = filtrosRascunho.recursosAcessibilidade.includes(recurso);
+                    return (
+                      <Pressable
+                        key={recurso}
+                        onPress={() =>
+                          setFiltrosRascunho((atual) => ({
+                            ...atual,
+                            recursosAcessibilidade: selecionado
+                              ? atual.recursosAcessibilidade.filter((item) => item !== recurso)
+                              : [...atual.recursosAcessibilidade, recurso],
+                          }))
+                        }
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: selecionado }}
+                        accessibilityLabel={RECURSO_ACESSIBILIDADE_LABEL[recurso]}
+                        android_ripple={{ color: theme.colors.divider }}
+                        style={{
+                          minHeight: theme.sizes.touchTarget,
+                          paddingHorizontal: theme.spacing.md,
+                          borderRadius: theme.radius.md,
+                          borderWidth: selecionado ? 2 : 1,
+                          borderColor: selecionado ? theme.colors.primary.solid : theme.colors.border,
+                          backgroundColor: selecionado ? theme.colors.primary.soft : theme.colors.surface,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Text
+                          style={[
+                            theme.typography.bodySmall,
+                            { color: selecionado ? theme.colors.primary.onSoft : theme.colors.textPrimary, fontWeight: selecionado ? "700" : "400" },
+                          ]}
+                        >
+                          {RECURSO_ACESSIBILIDADE_LABEL[recurso]}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={{ flexDirection: "row", gap: theme.spacing.sm, marginTop: theme.spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <Button variant="outline" onPress={limparFiltros}>
+                    Limpar filtros
+                  </Button>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button onPress={aplicarFiltros}>Aplicar filtros</Button>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -242,11 +520,22 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
 /**
  * Função local, não exportada — só `JobsScreen` consome. `src/vagas/` fica
  * flat (igual `src/auth/`), sem subpasta `components/`, então este card não
- * vira um arquivo próprio por ter um único consumidor (mesmo raciocínio de
- * `PlaceholderScreen`, que só virou compartilhado por servir 8 telas ao
- * mesmo tempo).
+ * vira um arquivo próprio por ter um único consumidor.
+ *
+ * `React.memo` (Fase 25, performance) — mesma razão de `PostagemListItem` em
+ * `HomeScreen.tsx`: com o `onPress` estável (`useCallback` no pai) e
+ * recebendo o `id` como parâmetro em vez de uma closure por item, só a
+ * linha cujo objeto `vaga` mudou reprocessa numa troca de página/filtro.
  */
-function VagaListItem({ vaga, theme, onPress }: { vaga: Vaga; theme: Theme; onPress: () => void }) {
+const VagaListItem = memo(function VagaListItem({
+  vaga,
+  theme,
+  onPress,
+}: {
+  vaga: Vaga;
+  theme: Theme;
+  onPress: (vagaId: string) => void;
+}) {
   const empresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa não informada";
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
   const modalidade = MODALIDADE_LABEL[vaga.modalidade] ?? vaga.modalidade;
@@ -266,7 +555,7 @@ function VagaListItem({ vaga, theme, onPress }: { vaga: Vaga; theme: Theme; onPr
     // por baixo — sem isso o ripple "vaza" quadrado por cima do card redondo.
     <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
       <Pressable
-        onPress={onPress}
+        onPress={() => onPress(vaga.id)}
         accessibilityRole="button"
         accessibilityLabel={rotulo}
         android_ripple={{ color: theme.colors.divider }}
@@ -287,4 +576,4 @@ function VagaListItem({ vaga, theme, onPress }: { vaga: Vaga; theme: Theme; onPr
       </Pressable>
     </View>
   );
-}
+});

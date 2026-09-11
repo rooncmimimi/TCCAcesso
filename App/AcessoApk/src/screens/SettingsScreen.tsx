@@ -1,14 +1,22 @@
+import * as LocalAuthentication from "expo-local-authentication";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { useAccessibility } from "../accessibility";
 import { AuthService, useAuth } from "../auth";
 import type { SessaoAtiva } from "../auth";
 import { Button, Card, Input, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
 import type { PreferenciaMensagens, PreferenciasNotificacao } from "../configuracoes";
 import { ConfiguracoesService } from "../configuracoes";
 import type { ProfileStackParamList } from "../navigation/types";
+import {
+  coletarMeusDados,
+  exportarECompartilhar,
+  getBloqueioBiometricoAtivo,
+  setBloqueioBiometricoAtivo,
+} from "../seguranca";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
 import type { Theme } from "../theme";
@@ -133,12 +141,14 @@ export function SettingsScreen() {
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: theme.spacing.xl, paddingVertical: theme.spacing.lg }}>
         <SecaoPrivacidade theme={theme} />
+        <SecaoExportarDados theme={theme} />
         {prefsNotificacao ? (
           <SecaoNotificacoes theme={theme} prefs={prefsNotificacao} onAtualizar={setPrefsNotificacao} />
         ) : null}
         <SecaoSenha theme={theme} />
         <SecaoEmail theme={theme} />
         <SecaoSessoes theme={theme} sessoes={sessoes} onAtualizarLista={setSessoes} />
+        <SecaoBiometria theme={theme} />
         <SecaoZonaDePerigo theme={theme} />
       </ScrollView>
     </ScreenContainer>
@@ -511,6 +521,120 @@ function SecaoSessoes({
           Encerrar todas as outras sessões
         </Button>
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * "Exportar meus dados" (Fase 22, LGPD/portabilidade) — monta um arquivo
+ * JSON a partir de endpoints "meus dados" que já existem (nenhuma rota nova
+ * no backend) e abre a folha de compartilhamento do aparelho. Escopo
+ * deliberado: conta + perfil + preferências, NUNCA o histórico de
+ * publicações/comentários/mensagens (coleções sem limite, exportação
+ * futura separada — ver `seguranca/exportarDados.ts`).
+ */
+function SecaoExportarDados({ theme }: { theme: Theme }) {
+  const { user } = useAuth();
+  const { preferences } = useAccessibility();
+  const [exportando, setExportando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function exportar() {
+    if (exportando || !user) return;
+    setExportando(true);
+    setErro(null);
+    try {
+      const dados = await coletarMeusDados(user, preferences);
+      await exportarECompartilhar(dados);
+    } catch (erroRequisicao) {
+      setErro(getFriendlyErrorMessage(erroRequisicao, "Não foi possível exportar seus dados agora."));
+    } finally {
+      setExportando(false);
+    }
+  }
+
+  return (
+    <View style={{ gap: theme.spacing.sm }}>
+      <SectionHeader title="Seus dados" theme={theme} />
+      <Card elevation="sm" style={{ gap: theme.spacing.md }}>
+        <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>
+          Baixe uma cópia dos dados que o ACESSO guarda sobre você: dados da conta, perfil e preferências.
+        </Text>
+        {erro ? <ErroAcao mensagem={erro} theme={theme} /> : null}
+        <Button variant="outline" onPress={() => void exportar()} loading={exportando} disabled={exportando}>
+          Exportar meus dados
+        </Button>
+      </Card>
+    </View>
+  );
+}
+
+/**
+ * "Bloqueio por biometria" (Fase 22) — só oferece o controle quando o
+ * aparelho de fato tem biometria disponível E cadastrada
+ * (`hasHardwareAsync`/`isEnrolledAsync`); nunca um toggle "morto" que liga
+ * sem nenhum efeito real. Preferência local (`seguranca/segurancaStorage.ts`),
+ * nunca sincronizada com o backend — ver `useSeguranca()`, que é quem de
+ * fato aplica o bloqueio (`RootNavigator`/`BiometricLockScreen`).
+ */
+function SecaoBiometria({ theme }: { theme: Theme }) {
+  const [carregando, setCarregando] = useState(true);
+  const [disponivelNoAparelho, setDisponivelNoAparelho] = useState(false);
+  const [ativo, setAtivo] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+
+    async function carregar() {
+      const [hardware, matriculado, preferenciaAtiva] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+        getBloqueioBiometricoAtivo(),
+      ]);
+      if (!vivo) return;
+      setDisponivelNoAparelho(hardware && matriculado);
+      setAtivo(preferenciaAtiva);
+      setCarregando(false);
+    }
+
+    void carregar();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  async function alternar(valor: boolean) {
+    setErro(null);
+    try {
+      await setBloqueioBiometricoAtivo(valor);
+      setAtivo(valor);
+    } catch {
+      setErro("Não foi possível salvar esta preferência agora.");
+    }
+  }
+
+  if (carregando) return null;
+
+  return (
+    <View style={{ gap: theme.spacing.sm }}>
+      <SectionHeader title="Segurança do aparelho" theme={theme} />
+      <Card elevation="sm" style={{ gap: theme.spacing.md }}>
+        {disponivelNoAparelho ? (
+          <ToggleRow
+            label="Bloqueio por biometria"
+            description="Exige sua digital ou reconhecimento facial para abrir o ACESSO, além do login."
+            value={ativo}
+            onValueChange={(valor) => void alternar(valor)}
+          />
+        ) : (
+          <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>
+            Cadastre uma biometria (digital ou reconhecimento facial) nas configurações do aparelho para usar o
+            bloqueio do ACESSO.
+          </Text>
+        )}
+        {erro ? <ErroAcao mensagem={erro} theme={theme} /> : null}
+      </Card>
     </View>
   );
 }

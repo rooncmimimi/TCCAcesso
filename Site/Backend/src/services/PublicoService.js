@@ -16,14 +16,21 @@ import { assinarMidiaDasPostagens } from "./PostagemService.js";
  */
 class PublicoService {
     async home() {
-        const [empresas, vagasAbertas, candidatos, contratacoes] =
+        // `contratacoes` (Candidatura.count status "Aprovada") foi removido
+        // da home pública na auditoria do Site (item 7): o ACESSO só conecta
+        // empresa↔candidato, não confirma contratação efetivada — exibir
+        // isso como "contratações" prometia um dado que a plataforma não
+        // tem (mesma causa raiz já corrigida no painel administrativo).
+        // `candidaturas` (sem filtro de status) é o dado real e não
+        // enganoso que substitui esse espaço na faixa de estatísticas.
+        const [empresas, vagasAbertas, candidatos, candidaturas] =
             await Promise.all([
                 Empresa.count({ where: { statusAprovacao: "aprovada" } }),
                 Vaga.count({ where: { status: "Aberta", oculta: false } }),
                 Usuario.count({
                     where: { tipoUsuario: "candidato", ativo: true }
                 }),
-                Candidatura.count({ where: { status: "Aprovada" } })
+                Candidatura.count()
             ]);
 
         const [vagasDestaque, empresasParceiras, publicacoes] =
@@ -145,7 +152,7 @@ class PublicoService {
                 empresas,
                 vagasAbertas,
                 candidatos,
-                contratacoes
+                candidaturas
             },
             vagasDestaque,
             empresasParceiras,

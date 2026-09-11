@@ -8,6 +8,7 @@ import { NovaPostagemScreen } from "../screens/NovaPostagemScreen";
 import { PostagemDetailScreen } from "../screens/PostagemDetailScreen";
 import { PublicProfileScreen } from "../screens/PublicProfileScreen";
 import { ReportScreen } from "../screens/ReportScreen";
+import { SearchResultsScreen, TITULO_TIPO_BUSCA } from "../screens/SearchResultsScreen";
 import { VagaDetailScreen } from "../screens/VagaDetailScreen";
 import { useTheme } from "../theme";
 
@@ -25,6 +26,21 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 export function AppNavigator() {
   const { theme } = useTheme();
 
+  // O título do header nativo (`react-native-screens`) é um componente
+  // nativo à parte — não um `<Text>` do próprio app — então NÃO herda
+  // `theme.typography` sozinho; sem isto, seria a única exceção ao "ponto
+  // único de composição" que `theme/accessibleTheme.ts` documenta, e a
+  // preferência `dyslexiaFont` ficaria sem efeito nos títulos de tela em
+  // pilha (Rodada 3, item 13). Só `fontFamily` — não `fontSize`/
+  // `lineHeight`/`letterSpacing`: a barra do header nativo tem altura fixa
+  // da plataforma, escalar o tamanho do texto ali arriscaria cortar o
+  // título quando `fontScale`/`lineHeightScale` também estão no máximo, e
+  // não há dispositivo real disponível para validar isso nesta rodada —
+  // fica registrado como gap pré-existente, não como parte desta correção.
+  const headerTitleStyle = theme.typography.title.fontFamily
+    ? { fontFamily: theme.typography.title.fontFamily }
+    : undefined;
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Tabs" component={AppTabs} />
@@ -36,6 +52,7 @@ export function AppNavigator() {
           title: "Detalhe da vaga",
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
           headerShadowVisible: false,
         }}
       />
@@ -47,6 +64,7 @@ export function AppNavigator() {
           title: "Nova publicação",
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
           headerShadowVisible: false,
         }}
       />
@@ -58,6 +76,7 @@ export function AppNavigator() {
           title: "Publicação",
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
           headerShadowVisible: false,
         }}
       />
@@ -69,6 +88,7 @@ export function AppNavigator() {
           title: "Perfil",
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
           headerShadowVisible: false,
         }}
       />
@@ -83,6 +103,7 @@ export function AppNavigator() {
               : `Seguindo${route.params.nomeUsuario ? ` — ${route.params.nomeUsuario}` : ""}`,
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
           headerShadowVisible: false,
         })}
       />
@@ -97,6 +118,7 @@ export function AppNavigator() {
           title: route.params.nomeOutroParticipante || "Conversa",
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
           headerShadowVisible: false,
         })}
       />
@@ -108,8 +130,21 @@ export function AppNavigator() {
           title: "Denunciar",
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
           headerShadowVisible: false,
         }}
+      />
+      <Stack.Screen
+        name="SearchResults"
+        component={SearchResultsScreen}
+        options={({ route }) => ({
+          headerShown: true,
+          title: TITULO_TIPO_BUSCA[route.params.tipo],
+          headerStyle: { backgroundColor: theme.colors.surface },
+          headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle,
+          headerShadowVisible: false,
+        })}
       />
     </Stack.Navigator>
   );

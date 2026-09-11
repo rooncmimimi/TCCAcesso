@@ -1,0 +1,14 @@
+appId: com.acesso.app
+name: (subfluxo) Login com conta de teste
+---
+# Subfluxo reutilizado via `runFlow` pelos outros arquivos desta pasta —
+# nunca roda sozinho num CI de verdade sem que alguém primeiro tenha uma
+# conta de teste real (ver README.md desta pasta: por quê não é uma conta
+# criada e descartada a cada execução).
+- launchApp
+- tapOn: "E-mail"
+- inputText: "${ACESSO_TEST_EMAIL}"
+- tapOn: "Senha"
+- inputText: "${ACESSO_TEST_SENHA}"
+- tapOn: "Entrar"
+- assertVisible: "Página inicial"

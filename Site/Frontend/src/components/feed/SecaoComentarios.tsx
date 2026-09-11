@@ -120,6 +120,8 @@ function LinhaComentario({
               onOpenChange={setDenunciando}
               entidadeTipo="comentario"
               entidadeId={comentario.id}
+              nomeExibicao={autor?.nome}
+              autorUsuarioId={autor?.id}
             />
           )}
 

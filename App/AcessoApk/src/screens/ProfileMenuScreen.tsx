@@ -12,7 +12,7 @@ import { useTheme } from "../theme";
  * `JobApplicants` (Fase 18) exigem `vagaId`, então não fazem sentido aqui
  * (são alcançadas a partir de `MyJobs`, nunca direto do menu).
  */
-type TelaDoMenu = "MyProfile" | "Activities" | "Discover" | "Settings" | "Accessibility" | "Help" | "MyJobs";
+type TelaDoMenu = "MyProfile" | "Activities" | "Discover" | "Search" | "Settings" | "Accessibility" | "Help" | "MyJobs";
 
 type ItemMenu = { label: string; hint: string; screen: TelaDoMenu };
 
@@ -20,6 +20,7 @@ const ITENS_MENU_BASE: ItemMenu[] = [
   { label: "Meu perfil", hint: "Ver e editar seu perfil", screen: "MyProfile" },
   { label: "Atividades", hint: "Ver seu histórico de atividades", screen: "Activities" },
   { label: "Descobrir", hint: "Encontrar pessoas e empresas no ACESSO", screen: "Discover" },
+  { label: "Buscar", hint: "Pesquisar pessoas, empresas, vagas e publicações", screen: "Search" },
   { label: "Configurações", hint: "Ajustar as configurações da sua conta", screen: "Settings" },
   { label: "Acessibilidade", hint: "Ajustar preferências de acessibilidade do aplicativo", screen: "Accessibility" },
   { label: "Ajuda", hint: "Ver perguntas frequentes e suporte", screen: "Help" },

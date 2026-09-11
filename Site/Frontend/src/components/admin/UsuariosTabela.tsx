@@ -172,7 +172,17 @@ export function UsuariosTabela() {
                       {usuario.nome}
                     </Link>
                   </TableCell>
-                  <TableCell className="break-all">{usuario.email}</TableCell>
+                  {/* `Table` (components/ui/table.tsx) já envolve a tabela num
+                      contêiner com scroll horizontal — mas só entra em ação se
+                      o conteúdo da célula puder ficar mais largo que a coluna.
+                      `break-all` fazia o e-mail quebrar a CADA caractere numa
+                      coluna estreita (item 5 da auditoria do Site: tabela
+                      ilegível em telas menores), sem nunca deixar a tabela
+                      "vazar" o bastante para o scroll aparecer. `whitespace-nowrap`
+                      deixa o e-mail inteiro numa linha só — a tabela fica mais
+                      larga que a viewport e o scroll horizontal (que já existia)
+                      passa a funcionar de verdade. */}
+                  <TableCell className="whitespace-nowrap">{usuario.email}</TableCell>
                   <TableCell className="capitalize">{usuario.tipoUsuario}</TableCell>
                   <TableCell>
                     <StatusBadge tom={usuario.ativo ? "sucesso" : "perigo"}>

@@ -10,7 +10,7 @@ import { AppShell } from "@/layouts/AppShell";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/services/auth.service";
 import { extrairMensagemErro } from "@/services/api";
@@ -114,9 +114,8 @@ function AlterarSenha() {
           <form className="space-y-4" onSubmit={aoEnviar} noValidate>
             <div className="space-y-2">
               <Label htmlFor="senhaAtual">Senha atual</Label>
-              <Input
+              <PasswordInput
                 id="senhaAtual"
-                type="password"
                 autoComplete="current-password"
                 className="min-h-12"
                 aria-invalid={Boolean(errors.senhaAtual)}
@@ -132,9 +131,8 @@ function AlterarSenha() {
 
             <div className="space-y-2">
               <Label htmlFor="novaSenha">Nova senha</Label>
-              <Input
+              <PasswordInput
                 id="novaSenha"
-                type="password"
                 autoComplete="new-password"
                 className="min-h-12"
                 aria-invalid={Boolean(errors.novaSenha)}
@@ -154,9 +152,8 @@ function AlterarSenha() {
 
             <div className="space-y-2">
               <Label htmlFor="confirmarSenha">Confirmar nova senha</Label>
-              <Input
+              <PasswordInput
                 id="confirmarSenha"
-                type="password"
                 autoComplete="new-password"
                 className="min-h-12"
                 aria-invalid={Boolean(errors.confirmarSenha)}

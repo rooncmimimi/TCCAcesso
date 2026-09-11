@@ -411,6 +411,21 @@ export interface CompartilhamentoCompleto {
   postagem?: PostagemCompleta;
 }
 
+/**
+ * Item da linha do tempo unificada de um perfil (auditoria do Site, item 6
+ * — `GET /postagens/usuario/:usuarioId/linha-do-tempo`): publicações
+ * próprias e compartilhamentos intercalados por data, em vez de duas abas
+ * separadas. `tipo` distingue os dois; `postagem` é sempre a publicação a
+ * exibir (própria ou a ORIGINAL, no caso de compartilhamento).
+ */
+export interface ItemLinhaDoTempo {
+  tipo: "postagem" | "compartilhamento";
+  id: string;
+  criadoEm: string;
+  comentario?: string | null;
+  postagem?: PostagemCompleta;
+}
+
 export interface ComentarioCompleto extends Comentario {
   usuario?: Usuario;
   comentarioPaiId?: string | null;
@@ -566,9 +581,16 @@ export interface PreferenciasAcessibilidade {
    Página inicial pública
    ========================================================== */
 export interface HomePublica {
+  // Nomes alinhados ao que `PublicoService.home()` (Backend) realmente
+  // devolve — auditoria do Site (item 7) encontrou um descompasso: o tipo
+  // aqui esperava `usuarios`/`vagas`/`candidaturas`, mas a API sempre
+  // devolveu `candidatos`/`vagasAbertas`/`contratacoes`. Como nenhuma chave
+  // batia, `EstatisticasFaixa` só conseguia exibir "empresas parceiras" (a
+  // única coincidência) — as outras 3 estatísticas da faixa pública nunca
+  // apareceram de verdade, silenciosamente.
   estatisticas?: {
-    usuarios?: number;
-    vagas?: number;
+    candidatos?: number;
+    vagasAbertas?: number;
     empresas?: number;
     candidaturas?: number;
     [chave: string]: unknown;

@@ -1,15 +1,25 @@
-import { NavigationContainer } from "@react-navigation/native";
+import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { useAuth } from "../auth";
+import { BiometricLockScreen } from "../screens/BiometricLockScreen";
 import { SplashScreen } from "../screens/SplashScreen";
 import { UnsupportedAccountScreen } from "../screens/UnsupportedAccountScreen";
+import { useSeguranca } from "../seguranca";
 import { AppNavigator } from "./AppNavigator";
 import { AuthNavigator } from "./AuthNavigator";
 import { linking } from "./linking";
 import type { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+/**
+ * Ref do container de navegação — usada para navegar a partir de FORA de um
+ * componente React (padrão oficial do React Navigation). Hoje só o toque num
+ * push nativo (Fase R5, `navigation/pushTapNavigation.ts`) precisa disso;
+ * tudo o mais navega via `useNavigation()`/props normalmente.
+ */
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 /**
  * Raiz de toda a navegação. Decide entre Splash/Auth/Unsupported/App
@@ -31,11 +41,16 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  */
 export function RootNavigator() {
   const { status } = useAuth();
+  // Fase 22: `carregando` aqui é a leitura de hardware/preferência de
+  // bloqueio biométrico — tão rápida quanto a de `AuthProvider`, tratada
+  // com a MESMA tela de Splash (não é um novo estado de loading visível,
+  // só estende quanto tempo o Splash já ficava na tela).
+  const { carregando: carregandoSeguranca, precisaDesbloquear } = useSeguranca();
 
   return (
-    <NavigationContainer linking={linking} fallback={<SplashScreen />}>
+    <NavigationContainer ref={navigationRef} linking={linking} fallback={<SplashScreen />}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {status === "loading" ? (
+        {status === "loading" || (status === "authenticated" && carregandoSeguranca) ? (
           <Stack.Screen name="Splash" component={SplashScreen} />
         ) : status === "unauthenticated" ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
@@ -44,6 +59,12 @@ export function RootNavigator() {
           // item 22/23) — fica presa neste ramo, com a única saída sendo o
           // botão "Sair" já existente na própria tela.
           <Stack.Screen name="Unsupported" component={UnsupportedAccountScreen} />
+        ) : precisaDesbloquear ? (
+          // Fase 22: sessão já autenticada, mas o CONTEÚDO fica atrás da
+          // biometria — nunca substitui `status`, só intercepta ANTES de
+          // `AppNavigator` renderizar (mesma técnica de "um branch a mais
+          // no if/else", nunca um `isLoggedIn` paralelo).
+          <Stack.Screen name="BiometricLock" component={BiometricLockScreen} />
         ) : (
           <Stack.Screen name="App" component={AppNavigator} />
         )}

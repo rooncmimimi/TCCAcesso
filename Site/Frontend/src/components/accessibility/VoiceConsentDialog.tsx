@@ -10,8 +10,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { useSpeech } from "@/contexts/SpeechContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useSession } from "@/contexts/SessionContext";
+import acessibilidadeService, { prefsParaApi } from "@/services/acessibilidade.service";
+import { extrairMensagemErro } from "@/services/api";
 
 const PERGUNTA =
   "Olá! Bem-vindo ao ACESSO. Deseja utilizar o sistema de leitura por voz como padrão durante toda a sua navegação? Escolha sim ou não.";
@@ -24,6 +28,7 @@ const PERGUNTA =
 export function VoiceConsentDialog() {
   const { hydrated, prefs } = useAccessibility();
   const { supported, speak, stop, setChoice } = useSpeech();
+  const { autenticado } = useSession();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -50,6 +55,21 @@ export function VoiceConsentDialog() {
         () => speak("Leitura por voz ativada. Use a tecla Tab para navegar pelo site."),
         250,
       );
+    }
+    // `setChoice` (SpeechContext) só grava em localStorage — sem isto, a
+    // resposta nunca chegava à conta (`consentimentoVoz` ficava `null` no
+    // backend para sempre), e a pessoa era perguntada de novo em qualquer
+    // outro dispositivo/navegador, exatamente o que este fluxo deveria
+    // evitar. Mesmo payload que `setChoice` já grava localmente.
+    if (autenticado) {
+      const aceito = valor === "accepted";
+      acessibilidadeService
+        .salvar(prefsParaApi({ ...prefs, screenReader: aceito, voiceConsent: aceito }))
+        .catch((erro) => {
+          toast.error(
+            extrairMensagemErro(erro, "Não foi possível salvar essa escolha na sua conta. Ficou salva neste dispositivo."),
+          );
+        });
     }
   };
 

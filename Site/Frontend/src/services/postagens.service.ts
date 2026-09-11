@@ -1,6 +1,6 @@
 import api from "./api";
 import { buscarPaginado, type Paginado } from "./http";
-import type { ComentarioCompleto, CompartilhamentoCompleto, PostagemCompleta } from "@/types";
+import type { ComentarioCompleto, CompartilhamentoCompleto, ItemLinhaDoTempo, PostagemCompleta } from "@/types";
 
 export interface FiltroFeed {
   page?: number;
@@ -23,6 +23,22 @@ export interface NovaPostagem {
 export const postagensService = {
   async listar(filtro: FiltroFeed = {}): Promise<Paginado<PostagemCompleta>> {
     return buscarPaginado<PostagemCompleta>("/postagens", "postagens", filtro);
+  },
+
+  /**
+   * Linha do tempo unificada de um perfil: publicações + compartilhamentos
+   * intercalados por data (auditoria do Site, item 6) — substitui as duas
+   * abas separadas "Publicações"/"Compartilhamentos".
+   */
+  async listarLinhaDoTempo(
+    usuarioId: string,
+    params: { page?: number; limit?: number } = {},
+  ): Promise<Paginado<ItemLinhaDoTempo>> {
+    return buscarPaginado<ItemLinhaDoTempo>(
+      `/postagens/usuario/${usuarioId}/linha-do-tempo`,
+      "itens",
+      params,
+    );
   },
 
   async detalhar(id: string): Promise<PostagemCompleta> {

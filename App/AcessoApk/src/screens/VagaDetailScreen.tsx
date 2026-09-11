@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-nati
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuth } from "../auth";
-import { Badge, Button, Card, ScreenContainer } from "../components/ui";
+import { Badge, Button, Card, ScreenContainer, SpeechButton } from "../components/ui";
 import type { AppStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
@@ -177,6 +177,20 @@ export function VagaDetailScreen({ route, navigation }: VagaDetailScreenProps) {
   const dataFormatada = formatarData(vaga.dataPublicacao);
   const vagaAberta = vaga.status === "Aberta";
 
+  // Texto lido pelo botão "Ouvir em voz alta" (Fase 21) — o conteúdo real
+  // da vaga, na mesma ordem em que aparece na tela, nunca um resumo/geração
+  // própria. `.filter(Boolean)` pula requisitos/benefícios ausentes sem
+  // deixar uma pausa vazia na leitura.
+  const textoParaLeitura = [
+    vaga.titulo,
+    `Empresa: ${empresa}.`,
+    `Descrição: ${vaga.descricao}`,
+    vaga.requisitos ? `Requisitos: ${vaga.requisitos}` : null,
+    vaga.beneficios ? `Benefícios: ${vaga.beneficios}` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: theme.spacing.md, paddingVertical: theme.spacing.md }}>
@@ -195,6 +209,7 @@ export function VagaDetailScreen({ route, navigation }: VagaDetailScreenProps) {
             <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{empresa}</Text>
           )}
           {!vagaAberta ? <Badge variant="warning">{STATUS_VAGA_LABEL[vaga.status]}</Badge> : null}
+          <SpeechButton texto={textoParaLeitura} rotulo="esta vaga" />
         </View>
 
         <Card elevation="sm" style={{ gap: theme.spacing.xs }}>

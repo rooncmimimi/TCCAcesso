@@ -34,7 +34,11 @@ const CARTOES: { chave: keyof RelatoriosTotais; rotulo: string }[] = [
   { chave: "candidaturas", rotulo: "Candidaturas" },
   { chave: "postagens", rotulo: "Publicações" },
   { chave: "usuariosBloqueados", rotulo: "Usuários bloqueados" },
-  { chave: "contratacoes", rotulo: "Contratações" },
+  // "Contratações" removido (auditoria do Site): o número vinha de
+  // `Candidatura.count` com status aprovado no backend, mas o ACESSO só
+  // conecta empresa↔candidato — não confirma contratação efetivada, então o
+  // indicador prometia um dado que a plataforma não tem. O backend continua
+  // devolvendo o campo (nenhuma migration), só deixou de ser exibido aqui.
 ];
 
 type RelatoriosTotais = {
@@ -47,7 +51,6 @@ type RelatoriosTotais = {
   candidaturas: number;
   postagens: number;
   usuariosBloqueados: number;
-  contratacoes: number;
 };
 
 function RelatoriosAdmin() {
@@ -61,7 +64,7 @@ function RelatoriosAdmin() {
       <div className="space-y-4" aria-busy="true" aria-live="polite">
         <Skeleton className="h-8 w-64" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {Array.from({ length: 10 }).map((_, i) => (
+          {Array.from({ length: CARTOES.length }).map((_, i) => (
             <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))}
         </div>

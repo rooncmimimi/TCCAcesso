@@ -1,5 +1,6 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 
+import type { TipoBusca } from "../busca";
 import type { EntidadeTipoDenuncia } from "../moderacao";
 
 /**
@@ -33,6 +34,8 @@ export type ProfileStackParamList = {
   MyProfile: undefined;
   Activities: undefined;
   Discover: undefined;
+  /** Fase R2 (recomendada) — busca global (resumo agrupado por categoria); "ver mais" de cada categoria empilha `SearchResults`, no Stack pai. */
+  Search: undefined;
   Settings: undefined;
   Accessibility: undefined;
   Help: undefined;
@@ -76,6 +79,8 @@ export type AppStackParamList = {
   Conversation: { conversaId: string; nomeOutroParticipante?: string };
   /** Fase 19 — genérica: qualquer superfície (perfil, publicação, comentário, vaga) navega pra cá informando o que está denunciando. `tituloAlvo` só para dar contexto visual (opcional). */
   Report: { entidadeTipo: EntidadeTipoDenuncia; entidadeId: string; tituloAlvo?: string };
+  /** Fase R2 (recomendada) — resultados completos e paginados de UMA categoria da busca global (destino do "ver mais" de `SearchScreen`). Mesmo padrão de `FollowList` acima: uma tela genérica de listagem, parametrizada por `tipo`. */
+  SearchResults: { termo: string; tipo: TipoBusca };
 };
 
 /**
@@ -86,6 +91,8 @@ export type RootStackParamList = {
   Splash: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   Unsupported: undefined;
+  /** Fase 22 — sessão autenticada, conteúdo trancado atrás da biometria do aparelho (`SegurancaProvider`/`useSeguranca`). */
+  BiometricLock: undefined;
   App: NavigatorScreenParams<AppStackParamList> | undefined;
 };
 

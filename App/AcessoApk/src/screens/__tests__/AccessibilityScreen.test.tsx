@@ -1,3 +1,15 @@
+/* eslint-disable import/first -- `jest.mock` precisa vir antes dos imports dos módulos que ele substitui. */
+const mockSpeak = jest.fn();
+
+// Fase 21: `AccessibilityScreen` passou a chamar `Speech.speak` diretamente
+// no botão "Testar leitura por voz" — mesma técnica de mock simples de
+// `SpeechButton.test.tsx`.
+jest.mock("expo-speech", () => ({
+  speak: (...a: unknown[]) => mockSpeak(...a),
+  stop: jest.fn(),
+}));
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, waitFor, within } from "@testing-library/react-native";
 import { Alert } from "react-native";
 
@@ -23,6 +35,18 @@ async function renderTela() {
 }
 
 describe("AccessibilityScreen", () => {
+  // Fase 21: sem isso, o mock do `AsyncStorage` (persistente por padrão
+  // entre `it()`s do MESMO arquivo — só o teste de "persistência" abaixo
+  // depende disso, de propósito, dentro de si mesmo) deixaria a preferência
+  // `voiceEnabled` ligada por um teste vazar para o próximo, que também a
+  // alterna — o segundo teste desligaria em vez de ligar. Limpar entre
+  // testes torna cada `it()` independente da ordem, sem mudar o
+  // comportamento do teste de persistência (que só depende de si mesmo).
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
+  });
+
   it("renderiza o título e as quatro seções", async () => {
     const { getByText } = await renderTela();
     expect(getByText("Personalize sua experiência")).toBeTruthy();
@@ -115,18 +139,66 @@ describe("AccessibilityScreen", () => {
     await waitFor(() => expect(getByLabelText("Foco ampliado").props.value).toBe(true));
   });
 
-  it("recursos em preparação/indisponíveis não têm nenhum controle interativo — só texto informativo", async () => {
+  it("recursos sem aplicação real (cursor ampliado, navegação por teclado) não têm nenhum controle interativo — só texto informativo", async () => {
     const { queryByLabelText, getByText } = await renderTela();
 
-    expect(getByText("Em preparação — chegará em uma atualização futura do aplicativo.")).toBeTruthy();
-    expect(getByText("Não disponível nesta plataforma.")).toBeTruthy();
+    expect(getByText("Não se aplica a interfaces por toque.")).toBeTruthy();
     expect(getByText("Suportada automaticamente pelo aplicativo, sem nenhum ajuste necessário.")).toBeTruthy();
 
-    // Nenhum desses três vira um Switch/rádio de verdade.
-    expect(queryByLabelText("Leitura por voz")).toBeNull();
-    expect(queryByLabelText("Fonte para dislexia")).toBeNull();
+    // Nenhum destes dois vira um Switch/rádio de verdade — diferente de
+    // "Fonte para dislexia" (Rodada 2) e "Leitura por voz" (Fase 21), que
+    // são reais (ver describes abaixo).
     expect(queryByLabelText("Cursor ampliado")).toBeNull();
     expect(queryByLabelText("Navegação por teclado")).toBeNull();
+  });
+
+  describe("fonte para dislexia (Rodada 2)", () => {
+    it("o switch reflete a preferência e persiste", async () => {
+      const { getByLabelText } = await renderTela();
+
+      expect(getByLabelText("Fonte para dislexia").props.value).toBe(false);
+
+      await act(async () => {
+        fireEvent(getByLabelText("Fonte para dislexia"), "valueChange", true);
+      });
+
+      await waitFor(() => expect(getByLabelText("Fonte para dislexia").props.value).toBe(true));
+    });
+  });
+
+  describe("leitura por voz (Fase 21)", () => {
+    it("o switch começa desativado e o botão de teste não aparece", async () => {
+      const { getByLabelText, queryByRole } = await renderTela();
+
+      expect(getByLabelText("Leitura por voz").props.value).toBe(false);
+      expect(queryByRole("button", { name: "Testar leitura por voz" })).toBeNull();
+    });
+
+    it("ativar o switch persiste a preferência e mostra o botão de teste", async () => {
+      const { getByLabelText, findByRole } = await renderTela();
+
+      await act(async () => {
+        fireEvent(getByLabelText("Leitura por voz"), "valueChange", true);
+      });
+
+      await waitFor(() => expect(getByLabelText("Leitura por voz").props.value).toBe(true));
+      expect(await findByRole("button", { name: "Testar leitura por voz" })).toBeTruthy();
+    });
+
+    it("'Testar leitura por voz' chama Speech.speak com uma frase de exemplo em pt-BR", async () => {
+      const { getByLabelText, findByRole } = await renderTela();
+
+      await act(async () => {
+        fireEvent(getByLabelText("Leitura por voz"), "valueChange", true);
+      });
+      const botaoTestar = await findByRole("button", { name: "Testar leitura por voz" });
+
+      await act(async () => {
+        fireEvent.press(botaoTestar);
+      });
+
+      expect(mockSpeak).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ language: "pt-BR" }));
+    });
   });
 
   it("restaurar padrões: pede confirmação e só reseta se o usuário confirmar", async () => {

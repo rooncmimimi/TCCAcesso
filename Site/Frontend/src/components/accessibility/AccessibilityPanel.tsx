@@ -1,7 +1,6 @@
 import {
   Contrast,
   Eye,
-  Keyboard,
   Languages,
   MousePointer2,
   Moon,
@@ -221,6 +220,19 @@ export function AccessibilityPanel() {
         />
       </section>
 
+      {/* Auditoria de acessibilidade (Rodada 3): esta seção tinha um quarto
+          controle, "Navegação por teclado" (chave `keyboardNav`), prometendo
+          "atalhos e ordem de tabulação otimizados para uso sem mouse" — mas
+          nada no site lia essa preferência (só existia no tipo/estado e
+          nesta linha), então ligar/desligar não mudava nada de verdade.
+          Pior: navegação por teclado nunca pode ser uma preferência
+          opcional (WCAG 2.1.1) — o site inteiro já É operável só por
+          teclado, sempre, para todo mundo, sem precisar habilitar nada
+          aqui. Um controle que promete algo e não faz nada é pior do que
+          não ter controle nenhum, então foi removido em vez de mantido
+          como decoração. `AccessibilityPrefs.keyboardNav` continua existindo
+          no tipo (preferências já salvas de quem já mexeu nele antes
+          continuam válidas), só não aparece mais como controle aqui. */}
       <section aria-labelledby="grupo-navegacao" className="space-y-3">
         <h3
           id="grupo-navegacao"
@@ -248,13 +260,6 @@ export function AccessibilityPanel() {
           titulo="Destaque de foco do teclado"
           descricao="Contorno bem visível no elemento em foco."
           chave="focusHighlight"
-        />
-        <ToggleRow
-          id="a11y-keyboard"
-          icon={Keyboard}
-          titulo="Navegação por teclado"
-          descricao="Atalhos e ordem de tabulação otimizados para uso sem mouse."
-          chave="keyboardNav"
         />
       </section>
 

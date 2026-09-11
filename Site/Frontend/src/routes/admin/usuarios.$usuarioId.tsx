@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -54,28 +53,22 @@ function AdminUsuarioDetalhe() {
   });
 
   if (isLoading) {
-    return (
-      <AppShell>
-        <Skeleton className="h-40 w-full" />
-      </AppShell>
-    );
+    return <Skeleton className="h-40 w-full" />;
   }
 
   if (isError || !usuario) {
     return (
-      <AppShell>
-        <div role="alert" className="space-y-3 p-6 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar este usuário.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
-      </AppShell>
+      <div role="alert" className="space-y-3 p-6 text-center">
+        <p className="text-sm text-muted-foreground">Não foi possível carregar este usuário.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
     );
   }
 
   return (
-    <AppShell>
+    <>
       <Link
         to="/admin/usuarios"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -199,6 +192,6 @@ function AdminUsuarioDetalhe() {
         carregando={mutacaoExclusao.isPending}
         onConfirmar={() => mutacaoExclusao.mutate()}
       />
-    </AppShell>
+    </>
   );
 }

@@ -20,6 +20,14 @@ jest.mock("../../services/api/client", () => ({
   registerSessionEndedListener: jest.fn(),
 }));
 
+// Fase R5 — `AuthProvider` registra/remove o push token no login/logout.
+// Efeito colateral fora do escopo destes testes (o comportamento real do
+// push tem sua própria suíte) — no-op aqui, mesma ideia dos mocks acima.
+jest.mock("../../notificacoes", () => ({
+  registrarDispositivoParaPush: jest.fn(async () => undefined),
+  removerDispositivoDoPush: jest.fn(async () => undefined),
+}));
+
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Pressable, Text } from "react-native";
 

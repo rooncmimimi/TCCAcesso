@@ -48,6 +48,25 @@ export function Button({
   };
 
   /**
+   * Rodada 2 (auditoria de acessibilidade) — só `size="small"` (40dp) fica
+   * abaixo do padrão de 48dp do app (`theme.sizes.touchTarget`);
+   * `medium`/`large` já atingem ou excedem. Mesma técnica já usada em vários
+   * pontos do app para controles pequenos (ex.: "Mostrar senha" em
+   * `LoginScreen.tsx`, "×" de habilidade em `MyProfileScreen.tsx`): a altura
+   * VISÍVEL continua 40 — não infla o layout de quem já escolheu "small" por
+   * causa de espaço apertado (ex.: botões de paginação lado a lado) — mas a
+   * área de TOQUE aceita cresce para 48dp via `hitSlop` vertical (4 de cada
+   * lado). Só vertical: a largura de um botão com texto real já é bem maior
+   * que 48dp, então a altura (40dp) era a única dimensão deficiente. Usado
+   * em 18 telas — corrigir aqui, uma vez só, corrige todas de uma vez.
+   */
+  const hitSlopPorTamanho: Record<ButtonSize, { top: number; bottom: number; left: number; right: number } | undefined> = {
+    small: { top: 4, bottom: 4, left: 0, right: 0 },
+    medium: undefined,
+    large: undefined,
+  };
+
+  /**
    * Fase 8: com `enhancedFocus`, o indicador de foco deixa de ser a borda
    * DENTRO do botão. Medido (fórmula de contraste do WCAG): essa borda
    * interna tinha só ~1.0-1.4:1 contra o preenchimento de `primary`/
@@ -72,6 +91,7 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? children}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       android_ripple={{ color: palette.ripple }}
+      hitSlop={hitSlopPorTamanho[size]}
       style={({ pressed }) => [
         styles.base,
         {

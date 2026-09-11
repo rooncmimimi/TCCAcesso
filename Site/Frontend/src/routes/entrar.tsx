@@ -6,9 +6,11 @@ import { Accessibility, ArrowLeft, ArrowRight, Loader2, Mail, PauseCircle } from
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
+import { AuthLayout } from "@/layouts/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/contexts/SessionContext";
 import authService from "@/services/auth.service";
@@ -43,6 +45,14 @@ function Entrar() {
   const [reenviado, setReenviado] = useState(false);
   const tituloPausadaRef = useRef<HTMLHeadingElement>(null);
   const tituloNaoVerificadoRef = useRef<HTMLHeadingElement>(null);
+  // Guarda SÍNCRONA contra envio duplicado (auditoria do Site, item 10):
+  // `enviando` (estado do React) só reflete no atributo `disabled` do botão
+  // depois de um novo render — um clique duplo rápido o bastante passa
+  // pelos dois cliques ANTES de o botão desabilitar de verdade, disparando
+  // duas chamadas a `/auth/login` (confirmado por reprodução real, ver
+  // relatório da auditoria). Uma `ref` muda de valor na hora, sem esperar
+  // re-render, então o segundo clique é barrado de verdade.
+  const enviandoRef = useRef(false);
 
   const {
     register,
@@ -67,6 +77,8 @@ function Entrar() {
   }, [emailNaoVerificado]);
 
   const aoEnviar = handleSubmit(async (valores) => {
+    if (enviandoRef.current) return;
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       const resultado = await login(valores);
@@ -79,7 +91,13 @@ function Entrar() {
         return;
       }
       toast.success("Login realizado com sucesso!");
-      navigate({ to: "/feed" });
+      // Administrador vai direto para o painel administrativo — antes
+      // caía em `/feed` como qualquer outro usuário, sem nenhum sinal de
+      // que o login (que funcionou) levava a algum lugar diferente. Isso é
+      // o que a auditoria do item 10 confirmou como a causa real de "o
+      // login parece falhar": some administradores, ao não ver o próprio
+      // painel aparecer, presumiam erro e tentavam de novo.
+      navigate({ to: resultado.tipo === "administrador" ? "/admin" : "/feed" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível entrar. Verifique seus dados.");
       setError("senha", { message: mensagem });
@@ -87,6 +105,7 @@ function Entrar() {
       // `useAutoSpeech` (MutationObserver) — falar aqui também duplicava.
       toast.error(mensagem);
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   });
@@ -124,8 +143,7 @@ function Entrar() {
   }
 
   return (
-    <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
-      <div className="w-full max-w-md">
+    <AuthLayout>
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
             <Logo />
@@ -272,9 +290,8 @@ function Entrar() {
                         Esqueceu a senha?
                       </Link>
                     </div>
-                    <Input
+                    <PasswordInput
                       id="senha"
-                      type="password"
                       autoComplete="current-password"
                       className="min-h-12"
                       aria-invalid={Boolean(errors.senha)}
@@ -309,7 +326,6 @@ function Entrar() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

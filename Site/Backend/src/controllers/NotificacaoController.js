@@ -1,4 +1,5 @@
 import NotificacaoService from "../services/NotificacaoService.js";
+import PushTokenService from "../services/PushTokenService.js";
 
 class NotificacaoController {
     async index(req, res, next) {
@@ -52,6 +53,32 @@ class NotificacaoController {
                 req.params.id,
                 req.user
             );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /** Fase R5 — registra/reaponta o Expo push token do dispositivo atual. */
+    async registrarPushToken(req, res, next) {
+        try {
+            const resultado = await PushTokenService.registrar(
+                req.user.id,
+                req.body.token,
+                req.body.plataforma
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /** Fase R5 — remove o token no logout do app (idempotente). */
+    async removerPushToken(req, res, next) {
+        try {
+            const resultado = await PushTokenService.remover(req.body.token);
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

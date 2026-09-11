@@ -10,6 +10,7 @@ import { JobFormScreen } from "../screens/JobFormScreen";
 import { MyJobsScreen } from "../screens/MyJobsScreen";
 import { MyProfileScreen } from "../screens/MyProfileScreen";
 import { ProfileMenuScreen } from "../screens/ProfileMenuScreen";
+import { SearchScreen } from "../screens/SearchScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useTheme } from "../theme";
 import type { ProfileStackParamList } from "./types";
@@ -26,11 +27,21 @@ const Stack = createNativeStackNavigator<ProfileStackParamList>();
 export function ProfileNavigator() {
   const { theme } = useTheme();
 
+  // Mesmo raciocínio de `AppNavigator.tsx` (Rodada 3, item 13): o título do
+  // header nativo não herda `theme.typography` sozinho, então sem isto a
+  // preferência `dyslexiaFont` não teria efeito nos títulos deste Stack. Só
+  // `fontFamily`, pelo mesmo motivo (altura fixa do header nativo, sem
+  // dispositivo real para validar `fontSize`/`lineHeight` maiores ali).
+  const headerTitleStyle = theme.typography.title.fontFamily
+    ? { fontFamily: theme.typography.title.fontFamily }
+    : undefined;
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerStyle: { backgroundColor: theme.colors.surface },
         headerTintColor: theme.colors.textPrimary,
+        headerTitleStyle,
         headerShadowVisible: false,
       }}
     >
@@ -38,6 +49,7 @@ export function ProfileNavigator() {
       <Stack.Screen name="MyProfile" component={MyProfileScreen} options={{ title: "Meu perfil" }} />
       <Stack.Screen name="Activities" component={ActivitiesScreen} options={{ title: "Atividades" }} />
       <Stack.Screen name="Discover" component={DiscoverScreen} options={{ title: "Descobrir" }} />
+      <Stack.Screen name="Search" component={SearchScreen} options={{ title: "Buscar" }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: "Configurações" }} />
       <Stack.Screen name="Accessibility" component={AccessibilityScreen} options={{ title: "Acessibilidade" }} />
       <Stack.Screen name="Help" component={HelpScreen} options={{ title: "Ajuda" }} />

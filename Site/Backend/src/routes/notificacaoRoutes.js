@@ -3,7 +3,11 @@ import NotificacaoController from "../controllers/NotificacaoController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import validationMiddleware from "../middlewares/validationMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
-import { validarPreferenciasNotificacao } from "../validators/notificacaoValidator.js";
+import {
+    validarPreferenciasNotificacao,
+    validarRegistroPushToken,
+    validarRemocaoPushToken
+} from "../validators/notificacaoValidator.js";
 
 const router = Router();
 
@@ -19,6 +23,21 @@ router.put(
     validarPreferenciasNotificacao,
     validationMiddleware,
     NotificacaoController.atualizarPreferencias
+);
+
+// Fase R5 — push tokens. Rotas com caminho fixo, ANTES de `/:id` (senão
+// `validarUuidParam("id")` recusaria "push-token" como UUID inválido).
+router.post(
+    "/push-token",
+    validarRegistroPushToken,
+    validationMiddleware,
+    NotificacaoController.registrarPushToken
+);
+router.delete(
+    "/push-token",
+    validarRemocaoPushToken,
+    validationMiddleware,
+    NotificacaoController.removerPushToken
 );
 
 router.patch(

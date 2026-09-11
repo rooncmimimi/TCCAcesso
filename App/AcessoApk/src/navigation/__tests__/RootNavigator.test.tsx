@@ -60,6 +60,21 @@ jest.mock("../../auth", () => ({
   AuthService: { reenviarConfirmacao: jest.fn(), esqueciSenha: jest.fn(), redefinirSenha: jest.fn() },
 }));
 
+// Fase 22: `SegurancaProvider` (agora obrigatório em torno de `RootNavigator`,
+// ver `renderRoot` abaixo) chama estas três funções ao montar. Por padrão
+// "sem hardware/matrícula" — a maioria dos testes deste arquivo não quer
+// saber de bloqueio biométrico nenhum; só o describe "bloqueio biométrico"
+// no fim do arquivo sobrescreve isso por teste.
+const mockHasHardwareAsync = jest.fn();
+const mockIsEnrolledAsync = jest.fn();
+const mockAuthenticateAsync = jest.fn();
+
+jest.mock("expo-local-authentication", () => ({
+  hasHardwareAsync: (...a: unknown[]) => mockHasHardwareAsync(...a),
+  isEnrolledAsync: (...a: unknown[]) => mockIsEnrolledAsync(...a),
+  authenticateAsync: (...a: unknown[]) => mockAuthenticateAsync(...a),
+}));
+
 // Fase 10: qualquer teste com status "authenticated" monta `HomeScreen`, que
 // agora busca o feed de verdade ao montar (deixou de ser o placeholder
 // estático) — sem este mock, estes testes chamariam a API real.
@@ -72,21 +87,29 @@ jest.mock("../../feed", () => ({
   },
 }));
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import { AccessibilityProvider } from "../../accessibility";
+import { SegurancaProvider } from "../../seguranca";
 import { ThemeProvider } from "../../theme";
 import { RootNavigator } from "../RootNavigator";
 
 // `AccessibilityProvider` (Fase 5) é obrigatório: `ThemeProvider` lê
 // preferências dele e renderiza `null` até a leitura inicial do
-// AsyncStorage mockado terminar.
+// AsyncStorage mockado terminar. `SegurancaProvider` (Fase 22) é obrigatório
+// pelo mesmo motivo que `AuthProvider` é em `App.tsx`: `RootNavigator` lê
+// `useSeguranca()` — sem hardware biométrico mockado (nenhum teste aqui
+// mexe nisso), `disponivelNoAparelho` fica `false`, então
+// `precisaDesbloquear` nunca interfere nestes testes.
 async function renderRoot(estadoInicial: { status: AuthStatus; user: AuthUser | null }) {
   mockEstado = estadoInicial;
   const utils = await render(
     <AccessibilityProvider>
       <ThemeProvider>
-        <RootNavigator />
+        <SegurancaProvider>
+          <RootNavigator />
+        </SegurancaProvider>
       </ThemeProvider>
     </AccessibilityProvider>,
   );
@@ -95,6 +118,11 @@ async function renderRoot(estadoInicial: { status: AuthStatus; user: AuthUser | 
 }
 
 describe("RootNavigator", () => {
+  beforeEach(async () => {
+    mockHasHardwareAsync.mockResolvedValue(false);
+    mockIsEnrolledAsync.mockResolvedValue(false);
+    await AsyncStorage.clear();
+  });
   afterEach(cleanup);
 
   it("status 'loading' mostra a Splash", async () => {
@@ -172,5 +200,51 @@ describe("RootNavigator", () => {
     await waitFor(() => expect(getByLabelText("E-mail")).toBeTruthy());
     expect(queryByLabelText("Página inicial")).toBeNull();
     expect(queryByText("Olá, Ana!")).toBeNull();
+  });
+
+  describe("bloqueio biométrico (Fase 22)", () => {
+    const anaAutenticada = { status: "authenticated" as const, user: { id: "1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato" as const } };
+
+    it("sem hardware/matrícula no aparelho, mesmo com a preferência ligada, mostra o App direto (nunca trava ninguém)", async () => {
+      await AsyncStorage.setItem("acesso.segurancaPreferences", JSON.stringify({ bloqueioBiometricoAtivo: true }));
+      mockHasHardwareAsync.mockResolvedValue(false);
+      mockIsEnrolledAsync.mockResolvedValue(false);
+
+      const { getByText } = await renderRoot(anaAutenticada);
+
+      expect(getByText("Olá, Ana!")).toBeTruthy();
+    });
+
+    it("com hardware disponível mas a preferência DESLIGADA, mostra o App direto", async () => {
+      mockHasHardwareAsync.mockResolvedValue(true);
+      mockIsEnrolledAsync.mockResolvedValue(true);
+
+      const { getByText } = await renderRoot(anaAutenticada);
+
+      expect(getByText("Olá, Ana!")).toBeTruthy();
+    });
+
+    it("com hardware disponível E a preferência ligada, mostra a tela de bloqueio em vez do App", async () => {
+      await AsyncStorage.setItem("acesso.segurancaPreferences", JSON.stringify({ bloqueioBiometricoAtivo: true }));
+      mockHasHardwareAsync.mockResolvedValue(true);
+      mockIsEnrolledAsync.mockResolvedValue(true);
+      mockAuthenticateAsync.mockResolvedValue({ success: false, error: "user_cancel" });
+
+      const { getByText, queryByText } = await renderRoot(anaAutenticada);
+
+      expect(await waitFor(() => getByText("ACESSO bloqueado"))).toBeTruthy();
+      expect(queryByText("Olá, Ana!")).toBeNull();
+    });
+
+    it("desbloquear com sucesso troca a tela de bloqueio pelo App", async () => {
+      await AsyncStorage.setItem("acesso.segurancaPreferences", JSON.stringify({ bloqueioBiometricoAtivo: true }));
+      mockHasHardwareAsync.mockResolvedValue(true);
+      mockIsEnrolledAsync.mockResolvedValue(true);
+      mockAuthenticateAsync.mockResolvedValue({ success: true });
+
+      const { findByText } = await renderRoot(anaAutenticada);
+
+      expect(await findByText("Olá, Ana!")).toBeTruthy();
+    });
   });
 });

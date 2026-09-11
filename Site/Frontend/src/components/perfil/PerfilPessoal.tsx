@@ -6,7 +6,6 @@ import {
   Ear,
   FileText,
   Loader2,
-  MousePointerClick,
   Pencil,
   Sparkles,
   Upload,
@@ -18,7 +17,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { initials, useSession } from "@/contexts/SessionContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { extrairMensagemErro } from "@/services/api";
@@ -35,8 +33,7 @@ import { SecaoDeficiencias } from "./SecaoDeficiencias";
 import { BotoesCurriculo } from "./BotoesCurriculo";
 import { ImportarCurriculoDialog } from "./ImportarCurriculoDialog";
 import { ListaSeguidoresDialog } from "./ListaSeguidoresDialog";
-import { PostagensUsuario } from "./PostagensUsuario";
-import { CompartilhamentosUsuario } from "./CompartilhamentosUsuario";
+import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
 
 const TIPOS_CURRICULO_ACEITOS = [
   "application/pdf",
@@ -149,13 +146,17 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     ? user!.capaPerfil
     : candidato?.usuario?.capaPerfil ?? usuarioGenerico?.capaPerfil;
 
+  // "Navegação por teclado" removida desta lista (auditoria de
+  // acessibilidade, Rodada 3): era um controle sem efeito real nenhum em
+  // Configurações (ver AccessibilityPanel.tsx) — o site já é 100% operável
+  // por teclado por padrão, não é uma preferência que se liga, então exibir
+  // isso como um "recurso ativado" desta pessoa não comunicava nada real.
   const chipsAcessibilidade = proprioPerfil
     ? [
         { ativo: prefs.screenReader, icon: Ear, label: "Leitura por voz" },
         { ativo: prefs.vlibras, icon: Accessibility, label: "Libras (VLibras)" },
         { ativo: prefs.highContrast, icon: Contrast, label: "Alto contraste" },
         { ativo: prefs.dyslexiaFont, icon: Sparkles, label: "Fonte para dislexia" },
-        { ativo: prefs.keyboardNav, icon: MousePointerClick, label: "Navegação por teclado" },
       ].filter((c) => c.ativo)
     : [];
 
@@ -385,18 +386,11 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
 
       <Card className="mt-4 shadow-card">
         <CardContent className="p-5 sm:p-6">
-          <Tabs defaultValue="publicacoes">
-            <TabsList>
-              <TabsTrigger value="publicacoes">Publicações</TabsTrigger>
-              <TabsTrigger value="compartilhamentos">Compartilhamentos</TabsTrigger>
-            </TabsList>
-            <TabsContent value="publicacoes">
-              <PostagensUsuario usuarioId={alvoId} />
-            </TabsContent>
-            <TabsContent value="compartilhamentos">
-              <CompartilhamentosUsuario usuarioId={alvoId} />
-            </TabsContent>
-          </Tabs>
+          {/* Uma linha do tempo só (publicações + compartilhamentos
+              intercalados por data), não mais duas abas desconectadas —
+              auditoria do Site, item 6. */}
+          <h2 className="mb-4 text-lg font-bold">Publicações</h2>
+          <LinhaDoTempoUsuario usuarioId={alvoId} />
         </CardContent>
       </Card>
     </AppShell>

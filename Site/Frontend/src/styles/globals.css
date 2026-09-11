@@ -159,10 +159,20 @@
 
   /* Identidade ACESSO (verde/vermelho/amarelo/azul) — `oklch(from <hex> l c h)`
      (sintaxe de cor relativa do CSS) em vez de converter hex→oklch à mão; o
-     navegador calcula o valor exato a partir do hex oficial da marca. */
-  --primary: oklch(from #21a848 l c h);
+     navegador calcula o valor exato a partir do hex oficial da marca.
+     Auditoria de acessibilidade (Rodada 3, contraste): `#21a848` (o verde
+     "vivo" da marca) com `primary-foreground` branco media 3.11:1 — abaixo
+     do mínimo AA de 4.5:1 pra texto normal (WCAG 1.4.3), então TODO botão
+     primário do site (Entrar, Publicar, Candidatar-se, Salvar...) tinha
+     texto ilegível pra baixa visão. `--primary` passa a usar o mesmo verde
+     "forte" que `--primary-strong` já definia (mas nunca era usado em
+     lugar nenhum) — mesma matiz da marca, só mais escuro: 5.03:1 com texto
+     branco. `--primary-soft` (fundo claro atrás de `text-primary`, usado
+     em iniciais de avatar e ícones de badge) também clareado — a
+     combinação antiga só alcançava 2.66:1. */
+  --primary: oklch(from #178035 l c h);
   --primary-foreground: oklch(from #ffffff l c h);
-  --primary-soft: oklch(from #dcf3e2 l c h);
+  --primary-soft: oklch(from #eefaf1 l c h);
   --primary-strong: oklch(from #178035 l c h);
 
   --secondary: oklch(0.96 0.01 255);
@@ -181,12 +191,29 @@
   --warning: oklch(from #fad905 l c h);
   --warning-foreground: oklch(from #050407 l c h);
 
-  --destructive: oklch(from #eb1b25 l c h);
+  /* `#eb1b25` com texto branco media 4.45:1 — abaixo do mínimo AA de
+     4.5:1 por uma margem pequena, mas real (botões destrutivos: excluir
+     conta, bloquear, excluir publicação). `#d5131c` (mesmo vermelho da
+     marca, um pouco mais escuro) alcança 5.33:1. */
+  --destructive: oklch(from #d5131c l c h);
   --destructive-foreground: oklch(0.99 0.005 250);
 
   --border: oklch(0.91 0.01 255);
   --input: oklch(0.91 0.01 255);
-  --ring: oklch(from #21a848 l c h);
+  /* Mesmo verde escurecido de `--primary` acima — o contorno de foco fica
+     mais visível de brinde (era 3.11:1 contra branco, passa a 5.03:1). */
+  --ring: oklch(from #178035 l c h);
+
+  /* Paleta de gráficos ACESSO (auditoria do Site). `--chart-1` é o verde da
+     marca — usado nos gráficos de barra dos relatórios; `2..5` são hues
+     distintos e legíveis no modo claro para o gráfico de pizza. Antes estas
+     variáveis só existiam nos blocos shadcn de fábrica (mais acima) e os
+     componentes as envolviam em `hsl()`, gerando cor inválida (preto). */
+  --chart-1: oklch(from #21a848 l c h);
+  --chart-2: oklch(from #0a98e7 l c h);
+  --chart-3: oklch(0.62 0.16 55);
+  --chart-4: oklch(0.52 0.2 300);
+  --chart-5: oklch(from #eb1b25 l c h);
 
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.21 0.03 258);
@@ -233,9 +260,29 @@
   --warning: oklch(from #fad905 l c h);
   --warning-foreground: oklch(from #050407 l c h);
 
+  /* Auditoria de acessibilidade (Rodada 3, contraste): este bloco nunca
+     redefinia `--destructive`/`--destructive-foreground` — sem override,
+     o modo escuro caía nos valores de fábrica do shadcn (bloco .dark
+     genérico, acima), um vermelho fora da marca que media só 2,76:1
+     contra o texto quase-branco (bem abaixo do mínimo AA de 4,5:1). Todo
+     botão destrutivo (Excluir conta, Bloquear, Excluir publicação) ficava
+     praticamente ilegível pra baixa visão no escuro. Corrigido seguindo o
+     MESMO padrão que `--primary` já usa neste bloco (fundo mais claro +
+     texto escuro, em vez de fundo escuro + texto claro): 4,82:1. */
+  --destructive: oklch(from #eb1b25 0.62 c h);
+  --destructive-foreground: oklch(0.16 0 0);
+
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(from #21a848 0.72 c h);
+
+  /* Mesma paleta, com L fixada mais alta por modo (igual ao `--primary`
+     acima) para manter contraste sobre o fundo escuro dos cards. */
+  --chart-1: oklch(from #21a848 0.72 c h);
+  --chart-2: oklch(from #0a98e7 0.72 c h);
+  --chart-3: oklch(0.75 0.15 60);
+  --chart-4: oklch(0.7 0.18 305);
+  --chart-5: oklch(from #eb1b25 0.68 c h);
 
   --sidebar: oklch(0.235 0.025 260);
   --sidebar-foreground: oklch(0.97 0.005 250);
@@ -266,6 +313,14 @@
   --input: oklch(0 0 0);
   --ring: oklch(0 0 0);
   --shadow-card: none;
+
+  /* Alto contraste: hues escuros e saturados, todos com contraste forte
+     sobre o branco. */
+  --chart-1: oklch(0.42 0.17 150);
+  --chart-2: oklch(0.4 0.16 250);
+  --chart-3: oklch(0.45 0.13 70);
+  --chart-4: oklch(0.38 0.2 300);
+  --chart-5: oklch(0.45 0.2 25);
 }
 
 .dark.a11y-contrast {
@@ -285,6 +340,13 @@
   --border: oklch(1 0 0);
   --input: oklch(1 0 0);
   --ring: oklch(0.95 0.18 100);
+
+  /* Alto contraste no escuro: hues claros e saturados sobre o preto. */
+  --chart-1: oklch(0.85 0.2 150);
+  --chart-2: oklch(0.8 0.16 240);
+  --chart-3: oklch(0.88 0.17 90);
+  --chart-4: oklch(0.82 0.2 310);
+  --chart-5: oklch(0.75 0.2 25);
 }
 
 .a11y-contrast * {

@@ -146,6 +146,12 @@ export interface CriarComentarioResposta {
   comentario: Comentario;
 }
 
+/** `DELETE /comentarios/:id` (Fase R6) — soft delete (`ativo=false`), só o autor ou admin (`garantirDono` no backend, 403 caso contrário; 404 se já removido). Emite `feed:comentario` com `removido:true` — o mesmo evento que a tela de detalhe já trata. */
+export interface RemoverComentarioResposta {
+  sucesso: true;
+  mensagem: string;
+}
+
 export interface ListarPostagensParametros {
   page?: number;
   limit?: number;

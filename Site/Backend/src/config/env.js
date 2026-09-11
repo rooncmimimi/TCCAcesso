@@ -197,7 +197,17 @@ const env = {
     // não for localhost (ver `escolherOrigemPublica` acima).
     frontendUrl: escolherOrigemPublica(
         paraLista(process.env.FRONTEND_URL, ["http://localhost:5173"])
-    )
+    ),
+
+    // Notificações push nativas via serviço de push da Expo (Fase R5).
+    // SEMPRE opcional: sem `accessToken` o `PushTokenService` ainda envia
+    // (o serviço da Expo aceita requisições sem token), mas o "Enhanced
+    // Security" da Expo fica desligado — configure EXPO_ACCESS_TOKEN em
+    // produção (painel expo.dev → Access Tokens). Um erro de envio de push
+    // NUNCA derruba a criação da notificação nem qualquer ação do usuário.
+    expoPush: {
+        accessToken: process.env.EXPO_ACCESS_TOKEN || null
+    }
 };
 
 /**

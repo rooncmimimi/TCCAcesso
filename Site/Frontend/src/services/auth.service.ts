@@ -87,8 +87,14 @@ export const authService = {
     await api.post("/auth/senha/esqueci", { email });
   },
 
-  /** Redefine a senha usando o código de 6 dígitos recebido por e-mail. */
-  async redefinirSenha(payload: { email: string; codigo: string; novaSenha: string }): Promise<void> {
+  /**
+   * Redefine a senha. Dois formatos possíveis (ver auditoria do Site, item 1):
+   * - `{ token, novaSenha }` — mecanismo principal, token do link de e-mail.
+   * - `{ email, codigo, novaSenha }` — fallback (código de 6 dígitos, usado pelo app mobile).
+   */
+  async redefinirSenha(
+    payload: { token: string; novaSenha: string } | { email: string; codigo: string; novaSenha: string },
+  ): Promise<void> {
     await api.post("/auth/senha/redefinir", payload);
   },
 

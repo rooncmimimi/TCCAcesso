@@ -6,6 +6,7 @@ import { CheckCircle2, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
+import { AuthLayout } from "@/layouts/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -125,8 +126,7 @@ function ConfirmarEmail() {
   }
 
   return (
-    <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
-      <div className="w-full max-w-md">
+    <AuthLayout>
         <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
           <Logo />
         </Link>
@@ -250,7 +250,6 @@ function ConfirmarEmail() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

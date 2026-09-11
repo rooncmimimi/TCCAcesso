@@ -18,8 +18,13 @@ import type { TextStyle } from "react-native";
  * `AccessibilityProvider` — por isso o campo `letterSpacing` é opcional
  * aqui (os valores base não têm nenhum) mas sempre presente no resultado
  * escalado.
+ *
+ * `fontFamily` também é opcional aqui pelo mesmo motivo que `letterSpacing`
+ * — os tokens base não definem nenhuma (fonte padrão da plataforma); só o
+ * resultado escalado por `theme/accessibleTheme.ts` pode ter um valor,
+ * quando a preferência `dyslexiaFont` está ativa (ver `theme/dyslexiaFont.ts`).
  */
-export type TypographyToken = Pick<TextStyle, "fontSize" | "fontWeight" | "lineHeight" | "letterSpacing">;
+export type TypographyToken = Pick<TextStyle, "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "letterSpacing">;
 
 export const typography = {
   display: { fontSize: 32, fontWeight: "800", lineHeight: 40 },

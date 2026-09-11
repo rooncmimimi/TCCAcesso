@@ -1,0 +1,84 @@
+name: CI
+
+# Roda lint/typecheck/testes dos três projetos do monorepo em todo push e
+# pull request. Nenhum job precisa de banco de dados real ou de segredo
+# nenhum: os testes de cada projeto já são isolados por design (Backend
+# mocka Sequelize/Supabase Storage em todo teste que os tocaria — conferido
+# arquivo por arquivo antes de escrever este workflow, nunca presumido; App
+# e Frontend usam suas próprias suítes com mocks de API). As variáveis de
+# ambiente do Backend abaixo existem só para passar da validação de
+# "obrigatórias" em `config/env.js` — nenhuma delas precisa apontar para
+# algo que responde de verdade.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App (lint, typecheck, testes)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: App/AcessoApk
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: App/AcessoApk/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx jest --ci
+
+  backend:
+    name: Backend (testes)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Site/Backend
+    env:
+      # Só para passar do fail-fast de `config/env.js` — nenhum teste do
+      # Backend abre uma conexão de verdade com este host (conferido: os 5
+      # arquivos de teste existentes mockam `config/database.js`/
+      # `models/index.js`/`utils/supabaseStorage.js`, sempre). Nunca aponte
+      # isto para um banco real, nem em desenvolvimento local.
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: acesso_ci
+      DB_USER: acesso_ci
+      DB_PASSWORD: acesso_ci
+      JWT_SECRET: "00000000000000000000000000000000ci"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Site/Backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  frontend:
+    name: Frontend (lint, typecheck, testes)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Site/Frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Site/Frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test

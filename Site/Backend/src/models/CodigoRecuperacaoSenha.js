@@ -2,8 +2,15 @@ import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
 
 /**
- * Tabela: codigos_recuperacao_senha (migration 0008)
- * Apenas o hash do código é persistido.
+ * Tabela: codigos_recuperacao_senha (migration 0008; `tokenHash` — migration 0045)
+ * Apenas o hash do código/token é persistido, nunca o valor em claro.
+ *
+ * `tokenHash` guarda o hash do token opaco de alta entropia (mecanismo
+ * principal, entregue por link no e-mail); `codigoHash` guarda o hash do
+ * código de 6 dígitos (fallback documentado, único mecanismo usado pelo
+ * app mobile). Os dois convivem na MESMA linha — resgatar um invalida o
+ * outro (ambos marcam `utilizadoEm`). `tokenHash` é `NULL` em linhas
+ * anteriores à migration 0045.
  */
 const CodigoRecuperacaoSenha = sequelize.define(
     "CodigoRecuperacaoSenha",
@@ -22,6 +29,11 @@ const CodigoRecuperacaoSenha = sequelize.define(
             field: "codigo_hash",
             type: DataTypes.STRING(255),
             allowNull: false
+        },
+        tokenHash: {
+            field: "token_hash",
+            type: DataTypes.STRING(255),
+            allowNull: true
         },
         expiraEm: {
             field: "expira_em",

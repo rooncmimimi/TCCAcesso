@@ -4,13 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, Briefcase, Building2, Clock, FileText, Search } from "lucide-react";
 
 import {
-  CommandDialog,
+  Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/contexts/SessionContext";
 import { urlArquivo } from "@/services/uploads.service";
@@ -89,18 +90,31 @@ export function SearchBar() {
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        aria-label="Pesquisar pessoas, empresas ou vagas no ACESSO"
-        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary md:w-28 md:justify-start md:px-4 lg:w-64"
-      >
-        <Search className="size-4 shrink-0" aria-hidden="true" />
-        <span className="hidden truncate md:inline">Pesquisar pessoas, empresas ou vagas…</span>
-      </button>
+    <Popover open={aberto} onOpenChange={setAberto}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Pesquisar pessoas, empresas ou vagas no ACESSO"
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary md:w-28 md:justify-start md:px-4 lg:w-64"
+        >
+          <Search className="size-4 shrink-0" aria-hidden="true" />
+          <span className="hidden truncate md:inline">Pesquisar pessoas, empresas ou vagas…</span>
+        </button>
+      </PopoverTrigger>
 
-      <CommandDialog open={aberto} onOpenChange={setAberto}>
+      {/* Dropdown ancorado ao campo (como no LinkedIn), não mais um modal
+          centralizado e escurecido — o resultado aparece colado embaixo da
+          busca, no lugar onde o olhar já está (auditoria do Site, item 11).
+          Sem `onOpenAutoFocus` customizado: o comportamento padrão do Radix
+          Popover (focar o primeiro elemento focável de dentro, aqui o
+          próprio campo de busca) já é o correto — uma tentativa anterior de
+          focar via `id` aqui não funcionava porque o `cmdk` gera o PRÓPRIO
+          `id` do input internamente (ignora um `id` passado por fora),
+          então cancelar o foco automático do Radix só para tentar focar
+          "na mão" por um id que nunca existia deixava o campo sem foco
+          nenhum ao abrir. */}
+      <PopoverContent align="start" className="w-[min(26rem,calc(100vw-2rem))] overflow-hidden p-0">
+        <Command shouldFilter={false} className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2">
         <CommandInput
           value={termo}
           onValueChange={setTermo}
@@ -236,7 +250,8 @@ export function SearchBar() {
             </CommandGroup>
           )}
         </CommandList>
-      </CommandDialog>
-    </>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -193,6 +193,7 @@ export function ComposerPostagem() {
               id="anexos-postagem-imagem"
               type="file"
               multiple
+              tabIndex={-1}
               accept={TIPOS_IMAGEM_ACEITOS.join(",")}
               onChange={adicionarArquivos}
               className="sr-only"
@@ -202,6 +203,7 @@ export function ComposerPostagem() {
               id="anexos-postagem-video"
               type="file"
               multiple
+              tabIndex={-1}
               accept={TIPOS_VIDEO_ACEITOS.join(",")}
               onChange={adicionarArquivos}
               className="sr-only"

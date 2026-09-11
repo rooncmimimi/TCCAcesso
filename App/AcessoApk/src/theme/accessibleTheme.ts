@@ -5,6 +5,7 @@ import type {
   LineHeightScaleKey,
 } from "../accessibility/accessibilityTypes";
 import { darkHighContrastColors, lightHighContrastColors } from "./colors";
+import { DYSLEXIA_FONT_FAMILY_BY_WEIGHT } from "./dyslexiaFont";
 import { themes, type Theme, type ThemeMode } from "./themes";
 import { typography as baseTypography, type TypographyToken, type TypographyVariant } from "./typography";
 
@@ -43,7 +44,16 @@ const LINE_HEIGHT_MULTIPLIER: Record<LineHeightScaleKey, number> = {
   loose: 1.3,
 };
 
-function scaleTypography(preferences: AccessibilityPreferences): Record<TypographyVariant, TypographyToken> {
+/**
+ * `dyslexiaFontActive` já vem calculado (preferência E fonte de fato
+ * carregada — ver `buildAccessibleTheme`) em vez de recebido como a
+ * preferência bruta, mesmo padrão de `effectiveReduceMotion`: um único
+ * lugar decide a regra de prioridade, esta função só aplica o resultado.
+ */
+function scaleTypography(
+  preferences: AccessibilityPreferences,
+  dyslexiaFontActive: boolean,
+): Record<TypographyVariant, TypographyToken> {
   const fontFactor = FONT_SCALE_MULTIPLIER[preferences.fontScale];
   const letterFactor = LETTER_SPACING_FACTOR[preferences.letterSpacing];
   const lineFactor = LINE_HEIGHT_MULTIPLIER[preferences.lineHeightScale];
@@ -55,8 +65,17 @@ function scaleTypography(preferences: AccessibilityPreferences): Record<Typograp
     const fontSize = Math.round(token.fontSize! * fontFactor);
     const lineHeight = Math.round(token.lineHeight! * fontFactor * lineFactor);
     const letterSpacing = Math.round(fontSize * letterFactor * 10) / 10;
+    // Cada variante de tipografia usa um `fontWeight` diferente (ver
+    // `typography.ts`) — uma fonte carregada via `expo-font` só respeita o
+    // peso EXATO do arquivo carregado, então o `fontFamily` certo depende
+    // do `fontWeight` do próprio token, nunca um valor único fixo para
+    // todas as variantes. Se o peso não estiver no mapa (não deveria
+    // acontecer — `dyslexiaFont.ts` cobre todos os pesos usados aqui),
+    // fica sem `fontFamily`: cai na fonte padrão da plataforma em vez de
+    // quebrar.
+    const fontFamily = dyslexiaFontActive ? DYSLEXIA_FONT_FAMILY_BY_WEIGHT[String(token.fontWeight)] : undefined;
 
-    resultado[chave] = { ...token, fontSize, lineHeight, letterSpacing };
+    resultado[chave] = { ...token, fontSize, lineHeight, letterSpacing, ...(fontFamily ? { fontFamily } : {}) };
   }
 
   return resultado;
@@ -70,11 +89,22 @@ function scaleTypography(preferences: AccessibilityPreferences): Record<Typograp
  * `effectiveReduceMotion` é passado já calculado (preferência OU sistema)
  * em vez de recalculado aqui — o `AccessibilityProvider` é a única fonte
  * desse cálculo (ver seu comentário sobre a regra de prioridade).
+ *
+ * `dyslexiaFontLoaded` tem um valor padrão (`false`) só para não quebrar
+ * quem já chamava esta função com 3 argumentos (ex.: os testes existentes
+ * antes da Rodada 2) — `ThemeProvider.tsx` sempre passa o valor real,
+ * vindo de `useFonts()` (`expo-font`). Enquanto a fonte ainda não carregou
+ * (poucos milissegundos no início do app — os arquivos são locais, não
+ * baixados da rede), a preferência `dyslexiaFont` fica sem efeito visual
+ * temporariamente em vez de quebrar com um `fontFamily` inexistente; assim
+ * que `useFonts()` resolve, o React já re-renderiza com a fonte certa
+ * automaticamente, sem precisar reiniciar o app.
  */
 export function buildAccessibleTheme(
   mode: ThemeMode,
   preferences: AccessibilityPreferences,
   effectiveReduceMotion: boolean,
+  dyslexiaFontLoaded = false,
 ): Theme {
   const base = themes[mode];
 
@@ -84,10 +114,12 @@ export function buildAccessibleTheme(
       : lightHighContrastColors
     : base.colors;
 
+  const dyslexiaFontActive = preferences.dyslexiaFont && dyslexiaFontLoaded;
+
   return {
     ...base,
     colors,
-    typography: scaleTypography(preferences),
+    typography: scaleTypography(preferences, dyslexiaFontActive),
     a11y: {
       highContrast: preferences.highContrast,
       reduceMotion: effectiveReduceMotion,

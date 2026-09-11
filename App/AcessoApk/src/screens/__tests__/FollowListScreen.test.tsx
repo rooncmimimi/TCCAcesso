@@ -60,6 +60,33 @@ describe("FollowListScreen", () => {
     expect(mockListarSeguindo).not.toHaveBeenCalled();
   });
 
+  // Fase 26 (polish): puxar para atualizar — faltava aqui.
+  it("puxar para atualizar refaz a MESMA página aberta", async () => {
+    mockListarSeguidores.mockResolvedValueOnce(
+      envelopeSeguidores([{ id: "u2", nome: "Bia", tipoUsuario: "candidato" }], { pagina: 2, totalPaginas: 2, total: 21 }),
+    );
+    const { getByTestId, findByText } = await renderTela("seguidores");
+    await findByText("Bia");
+
+    let resolver: (valor: unknown) => void = () => {};
+    mockListarSeguidores.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+
+    const lista = getByTestId("follow-lista");
+    await act(async () => {
+      lista.props.refreshControl.props.onRefresh();
+    });
+
+    expect(getByTestId("follow-lista").props.refreshControl.props.refreshing).toBe(true);
+    expect(mockListarSeguidores).toHaveBeenLastCalledWith("u1", { page: 2, limit: 20 });
+
+    await act(async () => {
+      resolver(envelopeSeguidores([{ id: "u2", nome: "Bia Atualizada", tipoUsuario: "candidato" }], { pagina: 2, totalPaginas: 2, total: 21 }));
+    });
+
+    expect(await findByText("Bia Atualizada")).toBeTruthy();
+    expect(getByTestId("follow-lista").props.refreshControl.props.refreshing).toBe(false);
+  });
+
   it("modo 'seguindo': chama listarSeguindo", async () => {
     mockListarSeguindo.mockResolvedValue({ sucesso: true, total: 0, pagina: 1, limite: 20, totalPaginas: 0, seguindo: [] });
     await renderTela("seguindo");

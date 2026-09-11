@@ -231,4 +231,23 @@ describe("FeedService", () => {
       await expect(FeedService.criarComentario("p1", "texto", "invalido")).rejects.toBe(erro);
     });
   });
+
+  // Fase R6 — excluir comentário.
+  describe("removerComentario", () => {
+    it("chama DELETE /comentarios/:id e devolve a mensagem do backend", async () => {
+      (apiClient.delete as jest.Mock).mockResolvedValue({ data: { sucesso: true, mensagem: "Comentário removido com sucesso." } });
+
+      const resposta = await FeedService.removerComentario("c1");
+
+      expect(apiClient.delete).toHaveBeenCalledWith("/comentarios/c1");
+      expect(resposta).toEqual({ mensagem: "Comentário removido com sucesso." });
+    });
+
+    it("propaga erro (ex.: 403 de comentário de outra pessoa) sem engolir", async () => {
+      const erro = Object.assign(new Error("403"), { isAxiosError: true });
+      (apiClient.delete as jest.Mock).mockRejectedValue(erro);
+
+      await expect(FeedService.removerComentario("alheio")).rejects.toBe(erro);
+    });
+  });
 });

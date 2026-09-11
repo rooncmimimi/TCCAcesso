@@ -17,6 +17,11 @@
  * (não existe cursor de mouse em toque comum, e o foco por teclado/D-pad já
  * funciona sempre, independente de qualquer flag). Ver `README.md` desta
  * pasta para o detalhamento completo, preferência por preferência.
+ *
+ * `dyslexiaFont` TEM efeito real desde a Rodada 2 da auditoria de
+ * acessibilidade — troca `fontFamily` pela Lexend (`theme/dyslexiaFont.ts`,
+ * aplicado em `theme/accessibleTheme.ts`). Ficou de fora do parágrafo acima
+ * de propósito: só `keyboardNavigation`/`largeCursor` continuam sem efeito.
  */
 export interface AccessibilityPreferences {
   /** Fonte de verdade do tema claro/escuro do app inteiro — substitui o antigo `setMode` local do `ThemeProvider` (Fase 2/3). */
@@ -26,9 +31,9 @@ export interface AccessibilityPreferences {
   fontScale: FontScaleKey;
   letterSpacing: LetterSpacingKey;
   lineHeightScale: LineHeightScaleKey;
-  /** Preparado, sem efeito visual hoje — nenhuma fonte para dislexia está empacotada no app. Ver item 29 do relatório da Fase 5. */
+  /** Real (Rodada 2). Troca a fonte do app pela Lexend (`theme/dyslexiaFont.ts`) quando ativa. */
   dyslexiaFont: boolean;
-  /** Preparado, sem efeito hoje — Android não expõe um "cursor do sistema" controlável por um app comum. */
+  /** Preparado, sem efeito — não existe cursor de mouse em interfaces de toque comuns, e a plataforma não expõe um "cursor do sistema" controlável por um app comum. Ver `README.md` (Rodada 2). */
   largeCursor: boolean;
   reduceMotion: boolean;
   enhancedFocus: boolean;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
@@ -131,14 +131,18 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
     [carregandoInicial, pagina, totalPaginas],
   );
 
-  function atualizarNaLista(id: string, alteracoes: Partial<Notificacao>) {
+  // Fase 25 (performance) — os handlers passados ao `NotificacaoItem`
+  // (memoizado abaixo) e suas dependências ficam estáveis por `useCallback`,
+  // senão cada refresh/paginação passaria funções novas e invalidaria o
+  // memo de TODAS as linhas. Ver a razão completa em `HomeScreen.tsx`.
+  const atualizarNaLista = useCallback((id: string, alteracoes: Partial<Notificacao>) => {
     setNotificacoes((atual) => atual.map((notificacao) => (notificacao.id === id ? { ...notificacao, ...alteracoes } : notificacao)));
-  }
+  }, []);
 
-  function removerDaLista(id: string) {
+  const removerDaLista = useCallback((id: string) => {
     setNotificacoes((atual) => atual.filter((notificacao) => notificacao.id !== id));
     setTotal((atual) => Math.max(0, atual - 1));
-  }
+  }, []);
 
   /**
    * Só os `entidadeTipo` com tela correspondente NESTE app navegam — os
@@ -147,45 +151,54 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
    * inventar uma rota que não existe (achado da auditoria, ver comentário em
    * `notificacoes/types.ts`).
    */
-  function navegarSePossivel(notificacao: Notificacao) {
-    switch (notificacao.entidadeTipo) {
-      case "usuario":
-        if (notificacao.entidadeId) navigation.navigate("PublicProfile", { usuarioId: notificacao.entidadeId });
-        return;
-      case "postagem":
-        if (notificacao.entidadeId) navigation.navigate("PostagemDetail", { postagemId: notificacao.entidadeId });
-        return;
-      case "vaga":
-        if (notificacao.entidadeId) navigation.navigate("VagaDetail", { vagaId: notificacao.entidadeId });
-        return;
-      case "solicitacao_seguimento":
-        // Sem tela de "solicitação" — mas o ator (quem pediu pra seguir) tem
-        // perfil visível, então o toque no corpo do card leva até ele.
-        if (notificacao.ator) navigation.navigate("PublicProfile", { usuarioId: notificacao.ator.id });
-        return;
-      default:
-        return;
-    }
-  }
+  const navegarSePossivel = useCallback(
+    (notificacao: Notificacao) => {
+      switch (notificacao.entidadeTipo) {
+        case "usuario":
+          if (notificacao.entidadeId) navigation.navigate("PublicProfile", { usuarioId: notificacao.entidadeId });
+          return;
+        case "postagem":
+          if (notificacao.entidadeId) navigation.navigate("PostagemDetail", { postagemId: notificacao.entidadeId });
+          return;
+        case "vaga":
+          if (notificacao.entidadeId) navigation.navigate("VagaDetail", { vagaId: notificacao.entidadeId });
+          return;
+        case "solicitacao_seguimento":
+          // Sem tela de "solicitação" — mas o ator (quem pediu pra seguir) tem
+          // perfil visível, então o toque no corpo do card leva até ele.
+          if (notificacao.ator) navigation.navigate("PublicProfile", { usuarioId: notificacao.ator.id });
+          return;
+        default:
+          return;
+      }
+    },
+    [navigation],
+  );
 
-  async function marcarComoLidaEmSegundoPlano(id: string) {
-    try {
-      await NotificacaoService.marcarComoLida(id);
-      atualizarNaLista(id, { lida: true });
-    } catch {
-      // Estado de "lida" não é crítico (mesmo raciocínio do curtir em
-      // `HomeScreen`) — uma falha aqui não deve incomodar quem só queria ver
-      // o conteúdo. A notificação continua marcada como não lida na lista;
-      // a próxima ação sobre ela tenta de novo.
-    }
-  }
+  const marcarComoLidaEmSegundoPlano = useCallback(
+    async (id: string) => {
+      try {
+        await NotificacaoService.marcarComoLida(id);
+        atualizarNaLista(id, { lida: true });
+      } catch {
+        // Estado de "lida" não é crítico (mesmo raciocínio do curtir em
+        // `HomeScreen`) — uma falha aqui não deve incomodar quem só queria ver
+        // o conteúdo. A notificação continua marcada como não lida na lista;
+        // a próxima ação sobre ela tenta de novo.
+      }
+    },
+    [atualizarNaLista],
+  );
 
-  function abrirNotificacao(notificacao: Notificacao) {
-    if (!notificacao.lida) {
-      void marcarComoLidaEmSegundoPlano(notificacao.id);
-    }
-    navegarSePossivel(notificacao);
-  }
+  const abrirNotificacao = useCallback(
+    (notificacao: Notificacao) => {
+      if (!notificacao.lida) {
+        void marcarComoLidaEmSegundoPlano(notificacao.id);
+      }
+      navegarSePossivel(notificacao);
+    },
+    [marcarComoLidaEmSegundoPlano, navegarSePossivel],
+  );
 
   async function marcarTodasComoLidas() {
     if (marcandoTodas) return;
@@ -200,29 +213,38 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
     }
   }
 
-  async function removerNotificacao(id: string) {
-    try {
-      await NotificacaoService.remover(id);
-      removerDaLista(id);
-    } catch {
-      // Sem mensagem bloqueante — a linha simplesmente continua ali, quem
-      // tentou pode tocar em "Remover" de novo.
-    }
-  }
+  const removerNotificacao = useCallback(
+    async (id: string) => {
+      try {
+        await NotificacaoService.remover(id);
+        removerDaLista(id);
+      } catch {
+        // Sem mensagem bloqueante — a linha simplesmente continua ali, quem
+        // tentou pode tocar em "Remover" de novo.
+      }
+    },
+    [removerDaLista],
+  );
 
-  async function aceitarSolicitacao(notificacao: Notificacao) {
-    if (!notificacao.entidadeId) return;
-    await SeguidorService.aceitarSolicitacao(notificacao.entidadeId);
-    atualizarNaLista(notificacao.id, { lida: true, subtipo: "solicitacao_seguimento_resolvida_aceita" });
-    void marcarComoLidaEmSegundoPlano(notificacao.id);
-  }
+  const aceitarSolicitacao = useCallback(
+    async (notificacao: Notificacao) => {
+      if (!notificacao.entidadeId) return;
+      await SeguidorService.aceitarSolicitacao(notificacao.entidadeId);
+      atualizarNaLista(notificacao.id, { lida: true, subtipo: "solicitacao_seguimento_resolvida_aceita" });
+      void marcarComoLidaEmSegundoPlano(notificacao.id);
+    },
+    [atualizarNaLista, marcarComoLidaEmSegundoPlano],
+  );
 
-  async function recusarSolicitacao(notificacao: Notificacao) {
-    if (!notificacao.entidadeId) return;
-    await SeguidorService.recusarSolicitacao(notificacao.entidadeId);
-    atualizarNaLista(notificacao.id, { lida: true, subtipo: "solicitacao_seguimento_resolvida_recusada" });
-    void marcarComoLidaEmSegundoPlano(notificacao.id);
-  }
+  const recusarSolicitacao = useCallback(
+    async (notificacao: Notificacao) => {
+      if (!notificacao.entidadeId) return;
+      await SeguidorService.recusarSolicitacao(notificacao.entidadeId);
+      atualizarNaLista(notificacao.id, { lida: true, subtipo: "solicitacao_seguimento_resolvida_recusada" });
+      void marcarComoLidaEmSegundoPlano(notificacao.id);
+    },
+    [atualizarNaLista, marcarComoLidaEmSegundoPlano],
+  );
 
   const existeNaoLida = notificacoes.some((notificacao) => !notificacao.lida);
 
@@ -262,6 +284,10 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
         testID="notificacoes-lista"
         data={notificacoes}
         keyExtractor={(notificacao) => notificacao.id}
+        // Fase 25 (performance) — ver o mesmo ajuste, com a razão completa, em `HomeScreen.tsx`.
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         contentContainerStyle={{ flexGrow: 1, gap: theme.spacing.sm, paddingVertical: theme.spacing.md }}
         onEndReachedThreshold={0.4}
         onEndReached={() => void buscarProximaPagina("proximaPagina")}
@@ -291,13 +317,15 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
           </Card>
         }
         renderItem={({ item }) => (
+          // Handlers passados DIRETO (estáveis por `useCallback`) — o item chama
+          // cada um com a notificação/id que precisa. Ver `HomeScreen.tsx`.
           <NotificacaoItem
             notificacao={item}
             theme={theme}
-            onAbrir={() => abrirNotificacao(item)}
-            onAceitar={() => aceitarSolicitacao(item)}
-            onRecusar={() => recusarSolicitacao(item)}
-            onRemover={() => removerNotificacao(item.id)}
+            onAbrir={abrirNotificacao}
+            onAceitar={aceitarSolicitacao}
+            onRecusar={recusarSolicitacao}
+            onRemover={removerNotificacao}
           />
         )}
         ListFooterComponent={
@@ -355,8 +383,16 @@ function formatarData(valor: string): string {
 const SOLICITACAO_ACEITA = "solicitacao_seguimento_resolvida_aceita";
 const SOLICITACAO_RECUSADA = "solicitacao_seguimento_resolvida_recusada";
 
-/** Função local, não exportada — só `NotificationsScreen` consome (mesmo padrão de `PostagemListItem` em `HomeScreen`). */
-function NotificacaoItem({
+/**
+ * Função local, não exportada — só `NotificationsScreen` consome (mesmo
+ * padrão de `PostagemListItem` em `HomeScreen`).
+ *
+ * `React.memo` (Fase 25, performance) — cada handler recebe a notificação/id
+ * como parâmetro (não uma closure pré-vinculada por item), e o pai os
+ * mantém estáveis com `useCallback`; assim, marcar UMA notificação como
+ * lida (ou remover uma) não reprocessa as outras linhas. Ver `HomeScreen.tsx`.
+ */
+const NotificacaoItem = memo(function NotificacaoItem({
   notificacao,
   theme,
   onAbrir,
@@ -366,10 +402,10 @@ function NotificacaoItem({
 }: {
   notificacao: Notificacao;
   theme: Theme;
-  onAbrir: () => void;
-  onAceitar: () => Promise<void>;
-  onRecusar: () => Promise<void>;
-  onRemover: () => Promise<void>;
+  onAbrir: (notificacao: Notificacao) => void;
+  onAceitar: (notificacao: Notificacao) => Promise<void>;
+  onRecusar: (notificacao: Notificacao) => Promise<void>;
+  onRemover: (id: string) => Promise<void>;
 }) {
   const [resolvendo, setResolvendo] = useState<"aceitar" | "recusar" | null>(null);
   const [removendo, setRemovendo] = useState(false);
@@ -383,7 +419,7 @@ function NotificacaoItem({
     setResolvendo("aceitar");
     setErroAcao(null);
     try {
-      await onAceitar();
+      await onAceitar(notificacao);
     } catch (erro) {
       setErroAcao(getFriendlyErrorMessage(erro, "Não foi possível aceitar agora."));
     } finally {
@@ -396,7 +432,7 @@ function NotificacaoItem({
     setResolvendo("recusar");
     setErroAcao(null);
     try {
-      await onRecusar();
+      await onRecusar(notificacao);
     } catch (erro) {
       setErroAcao(getFriendlyErrorMessage(erro, "Não foi possível recusar agora."));
     } finally {
@@ -408,7 +444,7 @@ function NotificacaoItem({
     if (removendo) return;
     setRemovendo(true);
     try {
-      await onRemover();
+      await onRemover(notificacao.id);
     } finally {
       setRemovendo(false);
     }
@@ -418,7 +454,12 @@ function NotificacaoItem({
 
   return (
     <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
-      <Pressable onPress={onAbrir} accessibilityRole="button" accessibilityLabel={rotuloAcessibilidade} android_ripple={{ color: theme.colors.divider }}>
+      <Pressable
+        onPress={() => onAbrir(notificacao)}
+        accessibilityRole="button"
+        accessibilityLabel={rotuloAcessibilidade}
+        android_ripple={{ color: theme.colors.divider }}
+      >
         <Card
           elevation="sm"
           style={{
@@ -507,4 +548,4 @@ function NotificacaoItem({
       </Pressable>
     </View>
   );
-}
+});

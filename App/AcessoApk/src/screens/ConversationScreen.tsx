@@ -204,6 +204,12 @@ export function ConversationScreen({ route, navigation }: ConversationScreenProp
           testID="mensagens-lista"
           data={mensagens}
           keyExtractor={(mensagem) => mensagem.id}
+          // Fase 25 (performance) — mesma razão de `HomeScreen.tsx`; valores um pouco
+          // maiores aqui porque uma bolha de mensagem é mais leve que um cartão do feed
+          // e a conversa pode carregar até `LIMITE_MENSAGENS` (100) de uma vez.
+          initialNumToRender={15}
+          maxToRenderPerBatch={15}
+          windowSize={10}
           contentContainerStyle={{ gap: theme.spacing.sm, padding: theme.spacing.md, flexGrow: 1, justifyContent: "flex-end" }}
           onContentSizeChange={() => listaRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={

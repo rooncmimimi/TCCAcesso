@@ -17,6 +17,20 @@ class PostagemController {
         }
     }
 
+    /** Linha do tempo unificada (publicações + compartilhamentos) de um perfil — auditoria do Site, item 6. */
+    async linhaDoTempoDoUsuario(req, res, next) {
+        try {
+            const dados = await PostagemService.linhaDoTempoDoUsuario(
+                req.params.usuarioId,
+                req.query,
+                req.user
+            );
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async show(req, res, next) {
         try {
             const postagem = await PostagemService.findById(

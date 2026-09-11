@@ -79,4 +79,59 @@ describe("buildAccessibleTheme", () => {
     expect(normal.a11y.focusRingWidth).toBe(2);
     expect(realcado.a11y.focusRingWidth).toBe(4);
   });
+
+  describe("dyslexiaFont (Rodada 2)", () => {
+    it("sem a preferência ativa, nenhum token de tipografia recebe fontFamily", () => {
+      const tema = buildAccessibleTheme("light", comPreferencias({ dyslexiaFont: false }), false, true);
+
+      for (const token of Object.values(tema.typography)) {
+        expect(token.fontFamily).toBeUndefined();
+      }
+    });
+
+    it("com a preferência ativa mas a fonte ainda não carregada, fica sem efeito (não quebra com fontFamily inexistente)", () => {
+      const tema = buildAccessibleTheme("light", comPreferencias({ dyslexiaFont: true }), false, false);
+
+      for (const token of Object.values(tema.typography)) {
+        expect(token.fontFamily).toBeUndefined();
+      }
+    });
+
+    it("sem passar o 4º argumento (compatibilidade com chamadas antigas), o padrão é 'fonte não carregada'", () => {
+      const tema = buildAccessibleTheme("light", comPreferencias({ dyslexiaFont: true }), false);
+      expect(tema.typography.body.fontFamily).toBeUndefined();
+    });
+
+    it("com a preferência ativa E a fonte carregada, cada variante usa o Lexend do peso certo", () => {
+      const tema = buildAccessibleTheme("light", comPreferencias({ dyslexiaFont: true }), false, true);
+
+      expect(tema.typography.body.fontFamily).toBe("Lexend_400Regular"); // body: fontWeight 400
+      expect(tema.typography.caption.fontFamily).toBe("Lexend_500Medium"); // caption: fontWeight 500
+      expect(tema.typography.label.fontFamily).toBe("Lexend_600SemiBold"); // label: fontWeight 600
+      expect(tema.typography.heading.fontFamily).toBe("Lexend_700Bold"); // heading: fontWeight 700
+      expect(tema.typography.display.fontFamily).toBe("Lexend_800ExtraBold"); // display: fontWeight 800
+    });
+
+    it("dyslexiaFont não interfere em fontScale/letterSpacing/lineHeightScale — continuam calculados normalmente", () => {
+      const semDislexia = buildAccessibleTheme(
+        "light",
+        comPreferencias({ dyslexiaFont: false, fontScale: "large", letterSpacing: "wide", lineHeightScale: "loose" }),
+        false,
+        true,
+      );
+      const comDislexia = buildAccessibleTheme(
+        "light",
+        comPreferencias({ dyslexiaFont: true, fontScale: "large", letterSpacing: "wide", lineHeightScale: "loose" }),
+        false,
+        true,
+      );
+
+      expect(comDislexia.typography.body.fontSize).toBe(semDislexia.typography.body.fontSize);
+      expect(comDislexia.typography.body.lineHeight).toBe(semDislexia.typography.body.lineHeight);
+      expect(comDislexia.typography.body.letterSpacing).toBe(semDislexia.typography.body.letterSpacing);
+      // A única diferença é o fontFamily.
+      expect(semDislexia.typography.body.fontFamily).toBeUndefined();
+      expect(comDislexia.typography.body.fontFamily).toBe("Lexend_400Regular");
+    });
+  });
 });

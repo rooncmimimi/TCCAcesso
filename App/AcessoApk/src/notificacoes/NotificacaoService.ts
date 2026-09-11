@@ -5,6 +5,9 @@ import type {
   MarcarComoLidaResposta,
   NaoLidasResposta,
   Notificacao,
+  PlataformaPush,
+  RegistrarPushTokenResposta,
+  RemoverPushTokenResposta,
 } from "./types";
 
 /**
@@ -41,5 +44,15 @@ export const NotificacaoService = {
   /** `DELETE /notificacoes/:id`. */
   async remover(id: string): Promise<void> {
     await apiClient.delete(`/notificacoes/${id}`);
+  },
+
+  /** `POST /notificacoes/push-token` (Fase R5) — registra/reaponta o Expo push token deste dispositivo. */
+  async registrarPushToken(token: string, plataforma: PlataformaPush): Promise<void> {
+    await apiClient.post<RegistrarPushTokenResposta>("/notificacoes/push-token", { token, plataforma });
+  },
+
+  /** `DELETE /notificacoes/push-token` (Fase R5) — remove o token no logout. Idempotente no backend. */
+  async removerPushToken(token: string): Promise<void> {
+    await apiClient.delete<RemoverPushTokenResposta>("/notificacoes/push-token", { data: { token } });
   },
 };

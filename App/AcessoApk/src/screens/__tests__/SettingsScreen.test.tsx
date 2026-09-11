@@ -16,6 +16,22 @@ const mockAtualizarPreferenciasNotificacao = jest.fn();
 const mockAtualizarPrivacidade = jest.fn();
 const mockAtualizarPreferenciaMensagens = jest.fn();
 
+// Fase 22.
+const mockHasHardwareAsync = jest.fn();
+const mockIsEnrolledAsync = jest.fn();
+jest.mock("expo-local-authentication", () => ({
+  hasHardwareAsync: (...a: unknown[]) => mockHasHardwareAsync(...a),
+  isEnrolledAsync: (...a: unknown[]) => mockIsEnrolledAsync(...a),
+}));
+
+const mockColetarMeusDados = jest.fn();
+const mockExportarECompartilhar = jest.fn();
+jest.mock("../../seguranca", () => ({
+  ...jest.requireActual("../../seguranca"),
+  coletarMeusDados: (...a: unknown[]) => mockColetarMeusDados(...a),
+  exportarECompartilhar: (...a: unknown[]) => mockExportarECompartilhar(...a),
+}));
+
 jest.mock("../../auth", () => ({
   ...jest.requireActual("../../auth"),
   useAuth: () => mockUseAuth(),
@@ -51,6 +67,7 @@ jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
@@ -102,7 +119,7 @@ async function renderTela() {
 }
 
 describe("SettingsScreen", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     alertSpy = jest.spyOn(Alert, "alert");
     mockUseAuth.mockReturnValue({
@@ -110,6 +127,11 @@ describe("SettingsScreen", () => {
       logout: mockLogout,
       refreshUser: mockRefreshUser,
     });
+    // Fase 22: sem biometria disponível por padrão — só o describe dedicado
+    // sobrescreve isso por teste.
+    mockHasHardwareAsync.mockResolvedValue(false);
+    mockIsEnrolledAsync.mockResolvedValue(false);
+    await AsyncStorage.clear();
   });
 
   it("mostra loading e depois todas as seções", async () => {
@@ -415,6 +437,73 @@ describe("SettingsScreen", () => {
 
       expect(queryByLabelText("Confirme sua senha")).toBeNull();
       expect(mockExcluirConta).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Segurança do aparelho — bloqueio biométrico (Fase 22)", () => {
+    it("sem biometria cadastrada no aparelho, mostra a explicação em vez de um toggle", async () => {
+      mockCargaPadrao();
+      mockHasHardwareAsync.mockResolvedValue(false);
+      const { findByText, queryByLabelText } = await renderTela();
+
+      expect(await findByText("Segurança do aparelho")).toBeTruthy();
+      expect(await findByText(/Cadastre uma biometria/)).toBeTruthy();
+      expect(queryByLabelText("Bloqueio por biometria")).toBeNull();
+    });
+
+    it("com biometria disponível, mostra o toggle desligado por padrão; ligar persiste a preferência", async () => {
+      mockCargaPadrao();
+      mockHasHardwareAsync.mockResolvedValue(true);
+      mockIsEnrolledAsync.mockResolvedValue(true);
+      const { findByLabelText, getByLabelText } = await renderTela();
+
+      const toggle = await findByLabelText("Bloqueio por biometria");
+      expect(toggle.props.value).toBe(false);
+
+      await act(async () => {
+        fireEvent(toggle, "valueChange", true);
+      });
+
+      await waitFor(() => expect(getByLabelText("Bloqueio por biometria").props.value).toBe(true));
+      await expect(AsyncStorage.getItem("acesso.segurancaPreferences")).resolves.toBe(
+        JSON.stringify({ bloqueioBiometricoAtivo: true }),
+      );
+    });
+  });
+
+  describe("Seus dados — exportar (Fase 22)", () => {
+    it("exportar com sucesso chama coletarMeusDados e exportarECompartilhar", async () => {
+      mockCargaPadrao();
+      mockColetarMeusDados.mockResolvedValue({ geradoEm: "x", conta: {}, preferenciasAcessibilidade: {} });
+      mockExportarECompartilhar.mockResolvedValue(undefined);
+      const { getByRole, findByText } = await renderTela();
+      await findByText("Seus dados");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Exportar meus dados" }));
+      });
+
+      await waitFor(() => expect(mockExportarECompartilhar).toHaveBeenCalled());
+      expect(mockColetarMeusDados).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "u1" }),
+        expect.any(Object),
+      );
+    });
+
+    it("erro ao exportar mostra mensagem amigável", async () => {
+      mockCargaPadrao();
+      const erro = Object.assign(new Error("falhou"), { isAxiosError: true });
+      mockColetarMeusDados.mockRejectedValue(erro);
+      const { getByRole, findByText } = await renderTela();
+      await findByText("Seus dados");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Exportar meus dados" }));
+      });
+
+      expect(
+        await findByText("Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."),
+      ).toBeTruthy();
     });
   });
 });

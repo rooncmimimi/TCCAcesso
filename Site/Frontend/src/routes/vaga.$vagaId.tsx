@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, BadgeCheck, Building2, Heart, MapPin, MessagesSquare, MoreVertical } from "lucide-react";
 import {
   ICONE_RECURSO_ACESSIBILIDADE,
@@ -153,7 +153,14 @@ function DetalheVaga() {
       <article className="mt-4">
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-3xl font-extrabold">{vaga.titulo}</h1>
-          {user && !ehDonoDaVaga && <DenunciarVagaMenu vagaId={vaga.id} titulo={vaga.titulo} />}
+          {user && !ehDonoDaVaga && (
+            <DenunciarVagaMenu
+              vagaId={vaga.id}
+              titulo={vaga.titulo}
+              autorUsuarioId={vaga.empresa?.usuario?.id}
+              autorNomeExibicao={nomeEmpresa}
+            />
+          )}
         </div>
         <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <Building2 className="size-4" aria-hidden="true" />{" "}
@@ -323,14 +330,34 @@ function DetalheVaga() {
   );
 }
 
-function DenunciarVagaMenu({ vagaId, titulo }: { vagaId: string; titulo: string }) {
+function DenunciarVagaMenu({
+  vagaId,
+  titulo,
+  autorUsuarioId,
+  autorNomeExibicao,
+}: {
+  vagaId: string;
+  titulo: string;
+  autorUsuarioId?: string;
+  autorNomeExibicao?: string;
+}) {
   const [denunciando, setDenunciando] = useState(false);
+  // Foco volta pra este botão ao fechar o DenunciarDialog — ver comentário
+  // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
+  // o diálogo que abre.
+  const gatilhoMenuRef = useRef<HTMLButtonElement>(null);
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label="Mais opções da vaga">
+          <Button
+            ref={gatilhoMenuRef}
+            variant="ghost"
+            size="icon"
+            className="min-h-11 min-w-11 shrink-0"
+            aria-label="Mais opções da vaga"
+          >
             <MoreVertical className="size-4" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
@@ -350,6 +377,9 @@ function DenunciarVagaMenu({ vagaId, titulo }: { vagaId: string; titulo: string 
         entidadeTipo="vaga"
         entidadeId={vagaId}
         nomeExibicao={titulo}
+        autorUsuarioId={autorUsuarioId}
+        autorNomeExibicao={autorNomeExibicao}
+        aoFecharDevolverFoco={() => gatilhoMenuRef.current?.focus()}
       />
     </>
   );

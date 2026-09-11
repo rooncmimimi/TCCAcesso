@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -141,13 +141,20 @@ export function JobApplicantsScreen({ route, navigation }: JobApplicantsScreenPr
     navigation.navigate("JobForm", { vagaId });
   }
 
-  function abrirPerfilCandidato(usuarioId: string) {
-    navigation.navigate("PublicProfile", { usuarioId });
-  }
+  // Fase 25 (performance) — `useCallback` + `React.memo` no `CandidaturaItem`
+  // (renderizado via `.map()`, mesmo raciocínio: mudar o status de UMA
+  // candidatura recria o array e reprocessaria todas as linhas sem o memo +
+  // handlers estáveis). Ver `HomeScreen.tsx`.
+  const abrirPerfilCandidato = useCallback(
+    (usuarioId: string) => {
+      navigation.navigate("PublicProfile", { usuarioId });
+    },
+    [navigation],
+  );
 
-  function atualizarCandidaturaNaLista(id: string, atualizada: Candidatura) {
+  const atualizarCandidaturaNaLista = useCallback((id: string, atualizada: Candidatura) => {
     setCandidaturas((atual) => atual.map((candidatura) => (candidatura.id === id ? atualizada : candidatura)));
-  }
+  }, []);
 
   if (carregando) {
     return (
@@ -271,13 +278,15 @@ export function JobApplicantsScreen({ route, navigation }: JobApplicantsScreenPr
               </Text>
             </Card>
           ) : (
+            // Handlers passados DIRETO (estáveis por `useCallback`) — o item chama
+            // `onAtualizada(candidatura.id, atualizada)`. Ver `HomeScreen.tsx`.
             candidaturas.map((candidatura) => (
               <CandidaturaItem
                 key={candidatura.id}
                 candidatura={candidatura}
                 theme={theme}
                 onAbrirPerfil={abrirPerfilCandidato}
-                onAtualizada={(atualizada) => atualizarCandidaturaNaLista(candidatura.id, atualizada)}
+                onAtualizada={atualizarCandidaturaNaLista}
               />
             ))
           )}
@@ -287,8 +296,15 @@ export function JobApplicantsScreen({ route, navigation }: JobApplicantsScreenPr
   );
 }
 
-/** Função local, não exportada — só `JobApplicantsScreen` consome. */
-function CandidaturaItem({
+/**
+ * Função local, não exportada — só `JobApplicantsScreen` consome.
+ *
+ * `React.memo` (Fase 25, performance) — mesma razão de `PostagemListItem` em
+ * `HomeScreen.tsx`: cada handler recebe o id/objeto como parâmetro (não uma
+ * closure por item) e o pai os mantém estáveis; mudar o status de UMA
+ * candidatura não reprocessa as outras linhas.
+ */
+const CandidaturaItem = memo(function CandidaturaItem({
   candidatura,
   theme,
   onAbrirPerfil,
@@ -297,7 +313,7 @@ function CandidaturaItem({
   candidatura: Candidatura;
   theme: Theme;
   onAbrirPerfil: (usuarioId: string) => void;
-  onAtualizada: (atualizada: Candidatura) => void;
+  onAtualizada: (candidaturaId: string, atualizada: Candidatura) => void;
 }) {
   const [alterando, setAlterando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -310,7 +326,7 @@ function CandidaturaItem({
     setErro(null);
     try {
       const atualizada = await VagasService.atualizarStatusCandidatura(candidatura.id, novoStatus);
-      onAtualizada(atualizada);
+      onAtualizada(candidatura.id, atualizada);
     } catch (erroRequisicao) {
       setErro(getFriendlyErrorMessage(erroRequisicao, "Não foi possível atualizar o status agora."));
     } finally {
@@ -371,4 +387,4 @@ function CandidaturaItem({
       ) : null}
     </Card>
   );
-}
+});

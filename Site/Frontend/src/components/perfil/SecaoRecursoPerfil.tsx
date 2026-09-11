@@ -105,7 +105,7 @@ export function SecaoRecursoPerfil({
                       type="button"
                       size="icon"
                       variant="ghost"
-                      className="size-9"
+                      className="min-h-11 min-w-11"
                       aria-label={`Editar ${linhaPrincipal(recurso, item)}`}
                     >
                       <Pencil className="size-4" aria-hidden="true" />
@@ -117,7 +117,7 @@ export function SecaoRecursoPerfil({
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="size-9 text-destructive hover:text-destructive"
+                        className="min-h-11 min-w-11 text-destructive hover:text-destructive"
                         aria-label={`Remover ${linhaPrincipal(recurso, item)}`}
                       >
                         <Trash2 className="size-4" aria-hidden="true" />

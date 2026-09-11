@@ -2,6 +2,7 @@ import { Notificacao, PreferenciaNotificacao, Usuario } from "../models/index.js
 import ApiError from "../utils/ApiError.js";
 import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
 import { emitirParaUsuario } from "../realtime/socket.js";
+import PushTokenService from "./PushTokenService.js";
 
 /**
  * Mapeia o tipo da notificação para a coluna de preferência correspondente.
@@ -115,10 +116,7 @@ class NotificacaoService {
             // `emitirNotificacaoCriada` (mesmo padrão de "tempo real só
             // depois de persistir" já usado em `ConversaService`).
             if (!transaction) {
-                emitirParaUsuario(usuarioId, "notificacao:nova", {
-                    notificacao,
-                    naoLidas
-                });
+                this.emitirNotificacaoCriada(notificacao, naoLidas);
             }
 
             return notificacao;
@@ -129,9 +127,11 @@ class NotificacaoService {
     }
 
     /**
-     * Emite o evento em tempo real de uma notificação já criada via
-     * `criar(..., { transaction })` — chamar só DEPOIS do commit da
-     * transação do chamador. Nunca lança (mesmo princípio de `criar`).
+     * Entrega uma notificação já criada: evento em tempo real (Socket.IO) +
+     * push nativo (Fase R5). Chamada tanto pelo caminho sem transação de
+     * `criar` quanto pelos chamadores com transação, DEPOIS do commit.
+     * Nunca lança nem espera o push (mesmo princípio de `criar`: infra
+     * secundária nunca derruba a ação principal).
      */
     emitirNotificacaoCriada(notificacao, naoLidas) {
         if (!notificacao) return;
@@ -144,6 +144,20 @@ class NotificacaoService {
         } catch (erro) {
             console.error("Falha ao emitir notificação em tempo real:", erro.message);
         }
+
+        // Push nativo — fire-and-forget (a preferência do usuário JÁ foi
+        // checada em `criar` via `notificacaoPermitida`; se chegou aqui, é
+        // porque a notificação é permitida). O `data` carrega o alvo pra o
+        // app abrir o conteúdo relacionado ao tocar no push.
+        void PushTokenService.enviarParaUsuario(notificacao.usuarioId, {
+            titulo: notificacao.titulo,
+            corpo: notificacao.descricao || "",
+            dados: {
+                notificacaoId: notificacao.id,
+                entidadeTipo: notificacao.entidadeTipo || null,
+                entidadeId: notificacao.entidadeId || null
+            }
+        });
     }
 
     /** Conta não lidas de um usuário — exposto para quem precisa recalcular após um commit. */

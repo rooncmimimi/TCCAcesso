@@ -126,18 +126,21 @@ export function templateConfirmacaoCadastro({ nome, linkConfirmacao, codigo, min
 /**
  * E-mail de recuperação de senha.
  *
- * `linkRedefinir` pode vir `null` (ver `utils/frontendUrl.js`) quando
- * `FRONTEND_URL` está mal configurada — o código já é o mecanismo
- * principal (por isso vem em destaque, antes do botão), então o e-mail
- * continua completo e utilizável mesmo sem o link.
+ * O LINK (token opaco) é o mecanismo principal — por isso vem em destaque,
+ * antes do código. `linkRedefinir` pode vir `null` (ver
+ * `utils/frontendUrl.js`) quando `FRONTEND_URL` está mal configurada; o
+ * código de 6 dígitos nunca depende disso e continua funcionando sozinho
+ * (é o único mecanismo que o aplicativo mobile usa), então o e-mail
+ * continua completo e utilizável mesmo sem o botão.
  */
 export function templateRecuperacaoSenha({ nome, codigo, linkRedefinir, minutosValidade }) {
     const assunto = "Redefinição de senha — ACESSO";
     const corpoHtml = `
-      <p style="margin:0 0 16px 0;">Recebemos uma solicitação para redefinir a senha da sua conta no ACESSO. Use o código abaixo na tela de redefinição:</p>
-      <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
+      <p style="margin:0 0 16px 0;">Recebemos uma solicitação para redefinir a senha da sua conta no ACESSO.</p>
       ${linkRedefinir ? botao(linkRedefinir, "Redefinir minha senha") : ""}
-      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este código é válido por ${minutosValidade} minutos. Se você não solicitou essa alteração, ignore este e-mail — sua senha continua a mesma.</p>
+      <p style="margin:0 0 8px 0;color:${COR_TEXTO_SECUNDARIO};">${linkRedefinir ? "Se estiver no aplicativo ACESSO, use o código abaixo em vez do botão:" : "Use o código abaixo na tela de redefinição:"}</p>
+      <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
+      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Válido por ${minutosValidade} minutos. Se você não solicitou essa alteração, ignore este e-mail — sua senha continua a mesma.</p>
     `;
     const html = layoutBase({
         titulo: "Redefinição de senha",
@@ -146,8 +149,9 @@ export function templateRecuperacaoSenha({ nome, codigo, linkRedefinir, minutosV
     });
     const texto =
         `Redefinição de senha — ACESSO\n\n` +
-        `Recebemos uma solicitação para redefinir sua senha. Use o código: ${codigo}\n` +
-        (linkRedefinir ? `Ou acesse: ${linkRedefinir}\n\n` : "\n") +
+        `Recebemos uma solicitação para redefinir sua senha.\n` +
+        (linkRedefinir ? `Acesse: ${linkRedefinir}\n\n` : "\n") +
+        `Se estiver no aplicativo ACESSO, use o código: ${codigo}\n\n` +
         `Válido por ${minutosValidade} minutos. Se você não solicitou, ignore este e-mail.`;
 
     return { assunto, html, texto };

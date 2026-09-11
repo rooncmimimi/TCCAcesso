@@ -1,0 +1,26 @@
+appId: com.acesso.app
+name: Login → publica um texto no feed → curte → exclui a própria publicação
+tags:
+  - smoke
+---
+# Cria conteúdo PRÓPRIO em vez de depender do feed já ter alguma publicação
+# (uma conta de teste nova normalmente está vazia) — e EXCLUI no final: um
+# fluxo de UI não tem como fazer a varredura de resíduo por SQL que os
+# scripts de verificação ao vivo desta sessão sempre fizeram, então a
+# limpeza aqui tem que ser a própria ação "Excluir publicação" da tela
+# (Fase 20), não pode depender de ninguém limpar depois manualmente.
+# Rótulos conferidos em `HomeScreen.tsx`/`NovaPostagemScreen.tsx`/
+# `PostagemDetailScreen.tsx` antes de escrever este fluxo. NÃO EXECUTADO
+# neste ambiente (sem SDK Android/emulador) — ver README.md desta pasta.
+- runFlow: 00_login.yaml
+- tapOn: "Criar nova publicação"
+- tapOn: "Texto da publicação"
+- inputText: "Publicação de teste automatizado (Maestro) — pode ignorar."
+- tapOn: "Publicar"
+- assertVisible: "Publicação de teste automatizado (Maestro) — pode ignorar."
+- tapOn: "Curtir"
+- assertVisible: "Descurtir"
+- tapOn: "Publicação de teste automatizado (Maestro) — pode ignorar."
+- tapOn: "Excluir publicação"
+- tapOn: "Excluir"
+- assertNotVisible: "Publicação de teste automatizado (Maestro) — pode ignorar."

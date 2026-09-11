@@ -43,6 +43,7 @@ import UsuarioSeguido from "./UsuarioSeguido.js";
 import Arquivo from "./Arquivo.js";
 import CodigoVerificacaoEmail from "./CodigoVerificacaoEmail.js";
 import PreferenciaNotificacao from "./PreferenciaNotificacao.js";
+import PushToken from "./PushToken.js";
 import UsuarioBloqueio from "./UsuarioBloqueio.js";
 import AdminAuditLog from "./AdminAuditLog.js";
 import Denuncia from "./Denuncia.js";
@@ -197,6 +198,10 @@ Notificacao.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 // recíproco: não há necessidade de listar "notificações que eu causei"
 // a partir de Usuario.
 Notificacao.belongsTo(Usuario, { foreignKey: "atorId", as: "ator" });
+
+// Push tokens (Fase R5) — CASCADE ao excluir a conta (migration 0044).
+Usuario.hasMany(PushToken, { foreignKey: "usuarioId", as: "pushTokens" });
+PushToken.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 
 /* ======================================================
    CHAT
@@ -491,6 +496,7 @@ export {
     ChatbotMensagem,
     CodigoVerificacaoEmail,
     PreferenciaNotificacao,
+    PushToken,
     UsuarioBloqueio,
     AdminAuditLog,
     Denuncia,

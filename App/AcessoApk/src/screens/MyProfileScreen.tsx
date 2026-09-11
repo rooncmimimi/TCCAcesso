@@ -995,7 +995,14 @@ function SecaoHabilidades({
                 onPress={() => setFormulario({ modo: "editar", item })}
                 accessibilityRole="button"
                 accessibilityLabel={`Editar habilidade ${item.nome}`}
-                hitSlop={6}
+                // Rodada 2 — 6 → 8 (mesmo mínimo usado em outros textos
+                // curtos e compactos do app, ex.: "Remover notificação" em
+                // `NotificationsScreen.tsx`). Ainda não fecha os 48dp
+                // completos (o texto sozinho tem ~20dp de altura — chegar a
+                // 48dp exigiria aumentar a altura do chip inteiro, uma
+                // mudança visual maior, fora do escopo deste ajuste
+                // pontual); ver relatório da Rodada 2.
+                hitSlop={8}
               >
                 <Text style={[theme.typography.bodySmall, { color: theme.colors.textPrimary }]}>
                   {item.nome}
@@ -1009,7 +1016,13 @@ function SecaoHabilidades({
                 disabled={excluindoId !== null}
                 accessibilityRole="button"
                 accessibilityLabel={`Remover habilidade ${item.nome}`}
-                hitSlop={10}
+                // Rodada 2 — a área VISÍVEL (24×24, metade do touchTarget de
+                // 48) precisa continuar pequena para caber no chip, mas a
+                // área de TOQUE aceita precisa bater os 48dp (mesma técnica
+                // já usada em `LoginScreen.tsx`/`RegisterScreen.tsx` para
+                // "Mostrar senha"): 24 + 12 de cada lado = 48. Antes era
+                // hitSlop={10} (24 + 20 = 44dp, abaixo do padrão do app).
+                hitSlop={12}
                 style={{
                   width: theme.sizes.touchTarget / 2,
                   height: theme.sizes.touchTarget / 2,

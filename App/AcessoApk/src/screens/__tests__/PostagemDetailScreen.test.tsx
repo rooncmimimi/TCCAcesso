@@ -3,6 +3,7 @@ const mockObterPorId = jest.fn();
 const mockAlternarCurtida = jest.fn();
 const mockListarComentarios = jest.fn();
 const mockCriarComentario = jest.fn();
+const mockRemoverComentario = jest.fn();
 const mockAtualizar = jest.fn();
 const mockRemover = jest.fn();
 const mockAtualizarDescricaoAnexo = jest.fn();
@@ -17,6 +18,7 @@ jest.mock("../../feed", () => ({
     alternarCurtida: (...args: unknown[]) => mockAlternarCurtida(...args),
     listarComentarios: (...args: unknown[]) => mockListarComentarios(...args),
     criarComentario: (...args: unknown[]) => mockCriarComentario(...args),
+    removerComentario: (...args: unknown[]) => mockRemoverComentario(...args),
     atualizar: (...args: unknown[]) => mockAtualizar(...args),
     remover: (...args: unknown[]) => mockRemover(...args),
     atualizarDescricaoAnexo: (...args: unknown[]) => mockAtualizarDescricaoAnexo(...args),
@@ -42,6 +44,7 @@ jest.mock("../../auth", () => ({
   useAuth: () => ({ user: { id: "u9", nome: "Quem Está Vendo", email: "vendo@exemplo.com", tipoUsuario: "candidato" } }),
 }));
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -111,10 +114,12 @@ async function renderTela(postagemId = "p1") {
 }
 
 describe("PostagemDetailScreen", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     alertSpy = jest.spyOn(Alert, "alert");
     mockOuvirEvento.mockReturnValue(() => undefined);
+    // Fase 21: nenhum outro teste deste arquivo depende de `voiceEnabled` — limpa pra não vazar entre eles.
+    await AsyncStorage.clear();
   });
 
   it("publicação e comentários carregam de forma independente — os dois aparecem quando ambos têm sucesso", async () => {
@@ -449,6 +454,107 @@ describe("PostagemDetailScreen", () => {
     });
   });
 
+  describe("excluir o próprio comentário (Fase R6)", () => {
+    const meuComentario = (sobrescreve: Partial<Record<string, unknown>> = {}) =>
+      comentario({ id: "cmeu", usuario: { id: "u9", nome: "Quem Está Vendo" }, ...sobrescreve });
+
+    it("mostra 'Excluir' só no próprio comentário, nunca no dos outros", async () => {
+      mockObterPorId.mockResolvedValue(postagem());
+      mockListarComentarios.mockResolvedValue(
+        envelopeComentarios([meuComentario({ comentario: "Meu comentário." }), comentario({ id: "coutro", comentario: "Comentário alheio." })]),
+      );
+      const { findByText, getByRole, queryByRole } = await renderTela();
+      await findByText("Meu comentário.");
+
+      // `getByRole` lança se houver mais de um — passar já prova que só o MEU comentário tem "Excluir".
+      expect(getByRole("button", { name: "Excluir meu comentário" })).toBeTruthy();
+      // O comentário alheio tem "Denunciar", nunca "Excluir".
+      expect(getByRole("button", { name: "Denunciar comentário de Carlos Lima" })).toBeTruthy();
+      expect(queryByRole("button", { name: "Denunciar comentário de Quem Está Vendo" })).toBeNull();
+    });
+
+    it("confirmar a exclusão chama a API, tira o comentário da lista e atualiza o contador", async () => {
+      mockObterPorId.mockResolvedValue(postagem());
+      mockListarComentarios.mockResolvedValue(envelopeComentarios([meuComentario({ comentario: "Vou apagar isto." })]));
+      mockRemoverComentario.mockResolvedValue({ mensagem: "Comentário removido com sucesso." });
+      const { findByText, getByRole, queryByText } = await renderTela();
+      await findByText("Vou apagar isto.");
+      expect(await findByText("Comentários (1)")).toBeTruthy();
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Excluir meu comentário" }));
+      });
+      await act(async () => {
+        confirmarViaAlert("Excluir");
+      });
+
+      expect(mockRemoverComentario).toHaveBeenCalledWith("cmeu");
+      expect(queryByText("Vou apagar isto.")).toBeNull();
+      expect(await findByText("Comentários (0)")).toBeTruthy();
+    });
+
+    it("cancelar no diálogo não chama a API", async () => {
+      mockObterPorId.mockResolvedValue(postagem());
+      mockListarComentarios.mockResolvedValue(envelopeComentarios([meuComentario()]));
+      const { findByText, getByRole } = await renderTela();
+      await findByText("Um comentário de teste.");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Excluir meu comentário" }));
+      });
+      await act(async () => {
+        confirmarViaAlert("Cancelar");
+      });
+
+      expect(mockRemoverComentario).not.toHaveBeenCalled();
+    });
+
+    it("excluir uma RESPOSTA minha também funciona (1 nível)", async () => {
+      mockObterPorId.mockResolvedValue(postagem());
+      mockListarComentarios.mockResolvedValue(
+        envelopeComentarios([
+          comentario({
+            id: "craiz",
+            comentario: "Comentário raiz de outra pessoa.",
+            respostas: [{ id: "rmeu", comentario: "Minha resposta.", created_at: "2026-01-01T02:00:00.000Z", usuario: { id: "u9", nome: "Quem Está Vendo" } }],
+          }),
+        ]),
+      );
+      mockRemoverComentario.mockResolvedValue({ mensagem: "Comentário removido com sucesso." });
+      const { findByText, getByRole, queryByText } = await renderTela();
+      await findByText("Minha resposta.");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Excluir meu comentário" }));
+      });
+      await act(async () => {
+        confirmarViaAlert("Excluir");
+      });
+
+      expect(mockRemoverComentario).toHaveBeenCalledWith("rmeu");
+      expect(queryByText("Minha resposta.")).toBeNull();
+      expect(await findByText("Comentário raiz de outra pessoa.")).toBeTruthy(); // o pai continua
+    });
+
+    it("falha na exclusão mantém o comentário e mostra a mensagem amigável", async () => {
+      mockObterPorId.mockResolvedValue(postagem());
+      mockListarComentarios.mockResolvedValue(envelopeComentarios([meuComentario({ comentario: "Continua aqui." })]));
+      mockRemoverComentario.mockRejectedValueOnce(new Error("falhou"));
+      const { findByText, getByRole } = await renderTela();
+      await findByText("Continua aqui.");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Excluir meu comentário" }));
+      });
+      await act(async () => {
+        confirmarViaAlert("Excluir");
+      });
+
+      expect(await findByText("Não foi possível excluir o comentário agora.")).toBeTruthy();
+      expect(await findByText("Continua aqui.")).toBeTruthy();
+    });
+  });
+
   describe("anexos (Fase 20)", () => {
     const anexoImagem = (sobrescreve: Partial<Record<string, unknown>> = {}) => ({
       id: "a1",
@@ -648,6 +754,35 @@ describe("PostagemDetailScreen", () => {
       expect(await findByText("Esta publicação foi removida e não está mais disponível.")).toBeTruthy();
       expect(getByRole("button", { name: "Curtir" }).props.accessibilityState.disabled).toBe(true);
       expect(mockGoBack).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Ouvir em voz alta (Fase 21)", () => {
+    it("com 'Leitura por voz' desativada (padrão), o botão não aparece", async () => {
+      mockObterPorId.mockResolvedValue(postagem());
+      mockListarComentarios.mockResolvedValue(envelopeComentarios([]));
+      const { findByText, queryByRole } = await renderTela();
+
+      await findByText("Minha publicação de teste.");
+      expect(queryByRole("button", { name: "Ouvir esta publicação em voz alta" })).toBeNull();
+    });
+
+    it("com 'Leitura por voz' ativada, mostra o botão; some durante a edição (o conteúdo lido não está visível)", async () => {
+      await AsyncStorage.setItem("acesso.accessibilityPreferences", JSON.stringify({ voiceEnabled: true }));
+      mockObterPorId.mockResolvedValue(
+        postagem({ usuario: { id: "u9", nome: "Quem Está Vendo", fotoPerfil: null, tipoUsuario: "candidato" } }),
+      );
+      mockListarComentarios.mockResolvedValue(envelopeComentarios([]));
+      const { findByText, getByRole, queryByRole } = await renderTela();
+      await findByText("Minha publicação de teste.");
+
+      expect(getByRole("button", { name: "Ouvir esta publicação em voz alta" })).toBeTruthy();
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Editar publicação" }));
+      });
+
+      expect(queryByRole("button", { name: "Ouvir esta publicação em voz alta" })).toBeNull();
     });
   });
 });

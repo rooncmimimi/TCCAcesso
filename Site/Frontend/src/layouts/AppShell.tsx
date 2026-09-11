@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AppHeader } from "./AppHeader";
 import { TelaStatusEmpresa } from "./TelaStatusEmpresa";
 import { SuporteRodape } from "@/components/SuporteRodape";
+import { VoiceConsentDialog } from "@/components/accessibility/VoiceConsentDialog";
 import { useSession } from "@/contexts/SessionContext";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -22,6 +23,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-background">
+      {/* A Home (`routes/index.tsx`) também renderiza este diálogo, mas só
+          alcança quem visita `/` deslogado — quem entra por `/entrar` (o
+          caminho real de login) ou acabou de se cadastrar cai direto numa
+          rota autenticada, sem nunca passar por `/`. Ponto único aqui em
+          `AppShell` (toda página autenticada passa por ele) garante que a
+          pergunta de primeiro acesso realmente aconteça para quem tem
+          conta — o componente já é idempotente (só pergunta quando
+          `prefs.voiceConsent` ainda é `null`), então não duplica a
+          pergunta pra quem já respondeu na Home. */}
+      <VoiceConsentDialog />
       <a
         href="#conteudo"
         className="sr-only-focusable absolute left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"

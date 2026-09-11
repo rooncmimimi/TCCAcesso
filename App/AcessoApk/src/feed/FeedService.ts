@@ -15,6 +15,7 @@ import type {
   ListarPostagensParametros,
   Postagem,
   PostagemDetalheResposta,
+  RemoverComentarioResposta,
   RemoverPostagemResposta,
   SugerirDescricaoResposta,
 } from "./types";
@@ -163,5 +164,11 @@ export const FeedService = {
       comentarioPaiId,
     });
     return data.comentario;
+  },
+
+  /** `DELETE /comentarios/:id` (Fase R6) — só o autor (o backend recusa com 403 caso contrário). Soft delete; o backend emite `feed:comentario` com `removido:true` logo em seguida. Sem pré-checagem de posse aqui: a tela só oferece a ação nos comentários do próprio usuário, e o backend é a autoridade final. */
+  async removerComentario(comentarioId: string): Promise<{ mensagem: string }> {
+    const { data } = await apiClient.delete<RemoverComentarioResposta>(`/comentarios/${comentarioId}`);
+    return { mensagem: data.mensagem };
   },
 };

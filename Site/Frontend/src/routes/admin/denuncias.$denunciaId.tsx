@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, MessageSquareText } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -118,32 +117,28 @@ function AdminDenunciaDetalhe() {
 
   if (isLoading) {
     return (
-      <AppShell>
-        <div className="space-y-3" aria-busy="true" aria-live="polite">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-      </AppShell>
+      <div className="space-y-3" aria-busy="true" aria-live="polite">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-40 w-full" />
+      </div>
     );
   }
 
   if (isError || !denuncia) {
     return (
-      <AppShell>
-        <div role="alert" className="space-y-3 p-6 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar esta denúncia.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
-      </AppShell>
+      <div role="alert" className="space-y-3 p-6 text-center">
+        <p className="text-sm text-muted-foreground">Não foi possível carregar esta denúncia.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
     );
   }
 
   const transitavel = denuncia.status === "pendente" || denuncia.status === "em_analise";
 
   return (
-    <AppShell>
+    <>
       <Link
         to="/admin/denuncias"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -337,7 +332,7 @@ function AdminDenunciaDetalhe() {
           ) : null}
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </>
   );
 }
 

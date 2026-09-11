@@ -193,7 +193,7 @@ export function GaleriaAnexos({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-2 size-8 rounded-full bg-background/80 hover:bg-background"
+                  className="absolute right-2 top-2 min-h-11 min-w-11 rounded-full bg-background/80 hover:bg-background"
                   aria-label={`Ampliar vídeo${video.descricao ? `: ${video.descricao}` : ""}`}
                   onClick={(e) => abrirLightbox(video, e.currentTarget)}
                 >

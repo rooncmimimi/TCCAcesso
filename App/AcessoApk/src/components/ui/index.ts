@@ -5,4 +5,5 @@ export * from "./Badge";
 export * from "./Divider";
 export * from "./ScreenContainer";
 export * from "./SegmentedControl";
+export * from "./SpeechButton";
 export * from "./ToggleRow";

@@ -1,0 +1,75 @@
+name: EAS Build (App)
+
+# Só roda por acionamento manual (workflow_dispatch) — nunca em todo push,
+# de propósito: cada build consome cota de build da conta Expo. Pré-
+# requisitos que esta sessão NÃO configurou (precisam de uma conta Expo de
+# verdade, fora do alcance deste ambiente — ver App/AcessoApk/eas.json e o
+# comentário no topo de `app.json`):
+#
+# 1. Rodar `eas init` (ou `eas build:configure`) uma vez, localmente, com
+#    login na conta Expo do projeto — isso preenche `extra.eas.projectId`
+#    em `app.json` sozinho. Sem isso, `eas build` abaixo falha pedindo
+#    o projeto.
+# 2. Gerar um token em https://expo.dev/settings/access-tokens e salvá-lo
+#    como o segredo do repositório `EXPO_TOKEN` (Settings → Secrets and
+#    variables → Actions).
+#
+# Este workflow nunca foi executado (nenhum dos dois pré-requisitos acima
+# existe ainda) — a etapa "Conferir EXPO_TOKEN" abaixo falha cedo e com uma
+# mensagem clara em vez de deixar o `eas build` tentar e falhar de um jeito
+# mais confuso.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Perfil de build (de eas.json)"
+        required: true
+        default: preview
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+      platform:
+        description: "Plataforma"
+        required: true
+        default: android
+        type: choice
+        options:
+          - android
+          - ios
+          - all
+
+jobs:
+  build:
+    name: eas build (${{ inputs.profile }} / ${{ inputs.platform }})
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: App/AcessoApk
+    steps:
+      - name: Conferir EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "::error::Segredo EXPO_TOKEN não configurado. Gere um em https://expo.dev/settings/access-tokens e salve em Settings > Secrets and variables > Actions do repositório."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: App/AcessoApk/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: eas build
+        run: eas build --profile ${{ inputs.profile }} --platform ${{ inputs.platform }} --non-interactive --no-wait

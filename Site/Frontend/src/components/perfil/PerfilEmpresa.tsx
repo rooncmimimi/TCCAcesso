@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/contexts/SessionContext";
 import { empresasService, seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/services/uploads.service";
@@ -17,8 +16,7 @@ import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
 import { BloquearUsuarioMenu } from "./BloquearUsuarioMenu";
 import { AvisoAprovacaoEmpresa } from "./AvisoAprovacaoEmpresa";
-import { PostagensUsuario } from "./PostagensUsuario";
-import { CompartilhamentosUsuario } from "./CompartilhamentosUsuario";
+import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
 
 /**
  * Perfil empresarial: dados, vagas abertas, publicações e seguidores da empresa.
@@ -247,18 +245,11 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
 
       <Card className="mt-4 shadow-card">
         <CardContent className="p-5 sm:p-6">
-          <Tabs defaultValue="publicacoes">
-            <TabsList>
-              <TabsTrigger value="publicacoes">Publicações</TabsTrigger>
-              <TabsTrigger value="compartilhamentos">Compartilhamentos</TabsTrigger>
-            </TabsList>
-            <TabsContent value="publicacoes">
-              <PostagensUsuario usuarioId={empresa.usuarioId ?? ""} />
-            </TabsContent>
-            <TabsContent value="compartilhamentos">
-              <CompartilhamentosUsuario usuarioId={empresa.usuarioId ?? ""} />
-            </TabsContent>
-          </Tabs>
+          {/* Uma linha do tempo só (publicações + compartilhamentos
+              intercalados por data), não mais duas abas desconectadas —
+              auditoria do Site, item 6. */}
+          <h2 className="mb-4 text-lg font-bold">Publicações</h2>
+          <LinhaDoTempoUsuario usuarioId={empresa.usuarioId ?? ""} />
         </CardContent>
       </Card>
     </AppShell>

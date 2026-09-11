@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { memo, useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { Badge, Button, Card, ScreenContainer } from "../components/ui";
@@ -13,7 +13,7 @@ import type { VagaComContagem } from "../vagas";
 
 const LIMITE_POR_PAGINA = 10;
 
-type AcaoBusca = "inicial" | "anterior" | "proxima" | "retry";
+type AcaoBusca = "inicial" | "anterior" | "proxima" | "retry" | "atualizar";
 
 type MyJobsScreenProps = NativeStackScreenProps<ProfileStackParamList, "MyJobs">;
 
@@ -92,9 +92,15 @@ export function MyJobsScreen({ navigation }: MyJobsScreenProps) {
     navigation.navigate("JobForm", {});
   }
 
-  function abrirCandidaturas(vaga: VagaComContagem) {
-    navigation.navigate("JobApplicants", { vagaId: vaga.id, vagaTitulo: vaga.titulo });
-  }
+  // Fase 25 (performance) — `useCallback` + `React.memo` no `MinhaVagaItem`
+  // (renderizado via `.map()`, mesmo raciocínio: cada refresh/paginação
+  // recria o array). `[navigation]` é estável. Ver `HomeScreen.tsx`.
+  const abrirCandidaturas = useCallback(
+    (vagaId: string, vagaTitulo: string) => {
+      navigation.navigate("JobApplicants", { vagaId, vagaTitulo });
+    },
+    [navigation],
+  );
 
   if (!primeiroCarregamentoConcluido) {
     return (
@@ -130,7 +136,17 @@ export function MyJobsScreen({ navigation }: MyJobsScreenProps) {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={{ gap: theme.spacing.sm, paddingVertical: theme.spacing.md, flexGrow: 1 }}>
+      <ScrollView
+        testID="minhas-vagas-scroll"
+        contentContainerStyle={{ gap: theme.spacing.sm, paddingVertical: theme.spacing.md, flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={buscando === "atualizar"}
+            onRefresh={() => void buscar(pagina, "atualizar")}
+            colors={[theme.colors.primary.solid]}
+          />
+        }
+      >
         <Button onPress={novaVaga}>Nova vaga</Button>
 
         {total > 0 ? (
@@ -150,7 +166,8 @@ export function MyJobsScreen({ navigation }: MyJobsScreenProps) {
             </Text>
           </Card>
         ) : (
-          vagas.map((vaga) => <MinhaVagaItem key={vaga.id} vaga={vaga} theme={theme} onPress={() => abrirCandidaturas(vaga)} />)
+          // `onPress` passado DIRETO — o item chama `onPress(vaga.id, vaga.titulo)`. Ver `HomeScreen.tsx`.
+          vagas.map((vaga) => <MinhaVagaItem key={vaga.id} vaga={vaga} theme={theme} onPress={abrirCandidaturas} />)
         )}
 
         {totalPaginas > 1 ? (
@@ -191,12 +208,27 @@ export function MyJobsScreen({ navigation }: MyJobsScreenProps) {
   );
 }
 
-/** Função local, não exportada — só `MyJobsScreen` consome (mesmo padrão de `VagaListItem` em `JobsScreen.tsx`). */
-function MinhaVagaItem({ vaga, theme, onPress }: { vaga: VagaComContagem; theme: Theme; onPress: () => void }) {
+/**
+ * Função local, não exportada — só `MyJobsScreen` consome (mesmo padrão de
+ * `VagaListItem` em `JobsScreen.tsx`).
+ *
+ * `React.memo` (Fase 25, performance) — mesma razão de `PostagemListItem` em
+ * `HomeScreen.tsx`: `onPress` estável recebendo `id`/`titulo` como
+ * parâmetro, então uma troca de página não reprocessa as outras linhas.
+ */
+const MinhaVagaItem = memo(function MinhaVagaItem({
+  vaga,
+  theme,
+  onPress,
+}: {
+  vaga: VagaComContagem;
+  theme: Theme;
+  onPress: (vagaId: string, vagaTitulo: string) => void;
+}) {
   return (
     <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
       <Pressable
-        onPress={onPress}
+        onPress={() => onPress(vaga.id, vaga.titulo)}
         accessibilityRole="button"
         accessibilityLabel={`${vaga.titulo}, ${STATUS_VAGA_LABEL[vaga.status]}, ${vaga.totalCandidaturas} candidatura${vaga.totalCandidaturas === 1 ? "" : "s"}`}
         android_ripple={{ color: theme.colors.divider }}
@@ -216,4 +248,4 @@ function MinhaVagaItem({ vaga, theme, onPress }: { vaga: VagaComContagem; theme:
       </Pressable>
     </View>
   );
-}
+});

@@ -71,3 +71,18 @@ export interface MarcarComoLidaResposta {
   sucesso: true;
   notificacao: Notificacao;
 }
+
+/** Plataformas aceitas por `POST /notificacoes/push-token` (Fase R5) — o backend valida `isIn(["android","ios"])`. */
+export type PlataformaPush = "android" | "ios";
+
+/** `POST /notificacoes/push-token` — 200 em sucesso. */
+export interface RegistrarPushTokenResposta {
+  sucesso: true;
+  registrado: true;
+}
+
+/** `DELETE /notificacoes/push-token` — 200 em sucesso; idempotente. */
+export interface RemoverPushTokenResposta {
+  sucesso: true;
+  removido: true;
+}

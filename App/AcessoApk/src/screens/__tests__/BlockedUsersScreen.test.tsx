@@ -59,6 +59,32 @@ describe("BlockedUsersScreen", () => {
     expect(mockListarBloqueados).toHaveBeenCalledWith({ page: 1, limit: 20 });
   });
 
+  // Fase 26 (polish): a lista inteira era um `View` fixo sem `ScrollView`
+  // nenhum por baixo — corrigido pra um `ScrollView` com puxar-para-atualizar.
+  it("puxar para atualizar refaz a MESMA página aberta", async () => {
+    mockListarBloqueados.mockResolvedValueOnce(envelope([usuario()], { pagina: 2, totalPaginas: 2, total: 21 }));
+    const { getByTestId, findByText } = await renderTela();
+    await findByText("Beatriz Souza");
+
+    let resolver: (valor: unknown) => void = () => {};
+    mockListarBloqueados.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+
+    const scroll = getByTestId("bloqueados-scroll");
+    await act(async () => {
+      scroll.props.refreshControl.props.onRefresh();
+    });
+
+    expect(getByTestId("bloqueados-scroll").props.refreshControl.props.refreshing).toBe(true);
+    expect(mockListarBloqueados).toHaveBeenLastCalledWith({ page: 2, limit: 20 });
+
+    await act(async () => {
+      resolver(envelope([usuario({ nome: "Carlos Atualizado" })], { pagina: 2, totalPaginas: 2, total: 21 }));
+    });
+
+    expect(await findByText("Carlos Atualizado")).toBeTruthy();
+    expect(getByTestId("bloqueados-scroll").props.refreshControl.props.refreshing).toBe(false);
+  });
+
   it("resposta vazia mostra o estado vazio, sem paginador", async () => {
     mockListarBloqueados.mockResolvedValue(envelope([]));
     const { findByText, queryByText } = await renderTela();

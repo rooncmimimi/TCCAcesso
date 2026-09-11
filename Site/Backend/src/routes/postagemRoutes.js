@@ -33,6 +33,17 @@ router.use(authMiddleware);
 
 router.get("/", PostagemController.index);
 
+// Linha do tempo unificada de um perfil (publicações + compartilhamentos,
+// intercalados por data) — auditoria do Site, item 6. Antes de `/:id" para
+// deixar claro que não colide (4 segmentos aqui contra 1 em `/:id`), mesmo
+// o Express já resolvendo isso sozinho pela contagem de segmentos.
+router.get(
+    "/usuario/:usuarioId/linha-do-tempo",
+    validarUuidParam("usuarioId"),
+    validationMiddleware,
+    PostagemController.linhaDoTempoDoUsuario
+);
+
 router.get(
     "/:id",
     validarUuidParam("id"),

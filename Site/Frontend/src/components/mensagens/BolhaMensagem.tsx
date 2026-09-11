@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, CheckCheck, MoreVertical } from "lucide-react";
 import type { Mensagem } from "@/lib/api-types";
 import { cn } from "@/lib/utils";
@@ -14,16 +14,21 @@ import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 
 export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propria: boolean }) {
   const [denunciando, setDenunciando] = useState(false);
+  // Foco volta pra este botão ao fechar o DenunciarDialog — ver comentário
+  // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
+  // o diálogo que abre.
+  const gatilhoRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <li className={cn("group flex items-center gap-1", propria ? "justify-end" : "justify-start")}>
+    <li className={cn("flex items-center gap-1", propria ? "justify-end" : "justify-start")}>
       {!propria && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
+              ref={gatilhoRef}
               variant="ghost"
               size="icon"
-              className="size-8 shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+              className="min-h-11 min-w-11 shrink-0"
               aria-label="Mais opções da mensagem"
             >
               <MoreVertical className="size-4" aria-hidden="true" />
@@ -70,6 +75,9 @@ export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propr
           onOpenChange={setDenunciando}
           entidadeTipo="mensagem"
           entidadeId={mensagem.id}
+          nomeExibicao={mensagem.remetente?.nome}
+          autorUsuarioId={mensagem.remetenteId}
+          aoFecharDevolverFoco={() => gatilhoRef.current?.focus()}
         />
       )}
     </li>

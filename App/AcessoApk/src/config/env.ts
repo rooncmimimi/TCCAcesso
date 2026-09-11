@@ -17,3 +17,14 @@
  * uma tela real que a use.
  */
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000/api";
+
+/**
+ * Fase 25 (observabilidade) — DSN do Sentry, sempre opcional: `undefined`
+ * (não configurado) desliga o relato de falhas por completo, nunca quebra o
+ * app (mesmo raciocínio já usado no Backend para `OPENROUTER_API_KEY` — um
+ * recurso de terceiro nunca pode ser uma dependência obrigatória). DSN de
+ * cliente NÃO é segredo (é o próprio modelo de segurança do Sentry — a
+ * documentação deles mesmo expõe o DSN direto no código do cliente), por
+ * isso `EXPO_PUBLIC_*`, igual `API_URL` acima.
+ */
+export const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || null;

@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { extrairMensagemErro } from "@/services/api";
@@ -102,9 +103,8 @@ export function SecaoTrocarEmail() {
                 >
                   <div className="space-y-2">
                     <Label htmlFor="senha-trocar-email">Senha atual</Label>
-                    <Input
+                    <PasswordInput
                       id="senha-trocar-email"
-                      type="password"
                       autoComplete="current-password"
                       required
                       value={senhaAtual}

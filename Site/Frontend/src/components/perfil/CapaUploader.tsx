@@ -55,6 +55,7 @@ export function CapaUploader({
       <input
         ref={inputRef}
         type="file"
+        tabIndex={-1}
         accept="image/png,image/jpeg,image/webp"
         className="sr-only"
         onChange={(e) => tratarArquivo(e.target.files?.[0])}

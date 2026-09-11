@@ -64,6 +64,31 @@ describe("MyJobsScreen", () => {
     expect(mockMinhas).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
+  // Fase 26 (polish): puxar para atualizar — faltava aqui.
+  it("puxar para atualizar refaz a MESMA página aberta", async () => {
+    mockMinhas.mockResolvedValueOnce(envelope([vaga()], { pagina: 2, totalPaginas: 2, total: 11 }));
+    const { getByTestId, findByText } = await renderTela();
+    await findByText("Desenvolvedor Front-end");
+
+    let resolver: (valor: unknown) => void = () => {};
+    mockMinhas.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+
+    const scroll = getByTestId("minhas-vagas-scroll");
+    await act(async () => {
+      scroll.props.refreshControl.props.onRefresh();
+    });
+
+    expect(getByTestId("minhas-vagas-scroll").props.refreshControl.props.refreshing).toBe(true);
+    expect(mockMinhas).toHaveBeenLastCalledWith({ page: 2, limit: 10 });
+
+    await act(async () => {
+      resolver(envelope([vaga({ titulo: "Vaga atualizada" })], { pagina: 2, totalPaginas: 2, total: 11 }));
+    });
+
+    expect(await findByText("Vaga atualizada")).toBeTruthy();
+    expect(getByTestId("minhas-vagas-scroll").props.refreshControl.props.refreshing).toBe(false);
+  });
+
   it("resposta vazia mostra o estado vazio, sem paginador", async () => {
     mockMinhas.mockResolvedValue(envelope([]));
     const { findByText, queryByText } = await renderTela();

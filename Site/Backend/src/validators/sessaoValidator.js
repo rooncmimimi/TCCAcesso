@@ -18,10 +18,28 @@ export const validarEsqueciSenha = [
         .withMessage("Informe um endereço de e-mail válido.")
 ];
 
+/**
+ * Redefinição de senha: aceita DOIS formatos de corpo, mutuamente exclusivos.
+ * - `{ token, novaSenha }` — mecanismo principal (link do e-mail, token opaco).
+ * - `{ email, codigo, novaSenha }` — fallback (usado pelo app mobile, sem deep link).
+ * A presença de `token` no corpo decide qual conjunto de campos é exigido.
+ */
 export const validarRedefinirSenha = [
-    body("email").trim().isEmail().withMessage("Informe um endereço de e-mail válido."),
+    body("token")
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ min: 32 })
+        .withMessage("Token inválido."),
+
+    body("email")
+        .if((_valor, { req }) => !req.body?.token)
+        .trim()
+        .isEmail()
+        .withMessage("Informe um endereço de e-mail válido."),
 
     body("codigo")
+        .if((_valor, { req }) => !req.body?.token)
         .isLength({ min: 6, max: 6 })
         .isNumeric()
         .withMessage("O código deve ter 6 dígitos."),

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { registrarDispositivoParaPush, removerDispositivoDoPush } from "../notificacoes";
+import { definirUsuarioObservabilidade } from "../observabilidade";
 import { clearSession, registerSessionEndedListener, setSession, type SessionEndedReason } from "../services/api/client";
 import { desconectarSocket } from "../services/socket/socketClient";
 import { clearTokens, getTokens } from "../storage/secureStorage";
@@ -45,6 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // que descobre o bloqueio) nunca deve deixar uma conexão de tempo
       // real autenticada viva.
       desconectarSocket();
+      // Fase 25: os próximos eventos de observabilidade não devem continuar
+      // marcados com a conta que acabou de perder a sessão.
+      definirUsuarioObservabilidade(null);
     });
     return () => registerSessionEndedListener(null);
   }, []);
@@ -71,7 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelado) return;
 
         setUser(usuario);
-        setStatus(tipoSuportado(usuario) ? "authenticated" : "unsupported");
+        const suportado = tipoSuportado(usuario);
+        setStatus(suportado ? "authenticated" : "unsupported");
+        definirUsuarioObservabilidade(usuario.id);
+        // Fase R5 — registra este dispositivo para push (fire-and-forget,
+        // nunca trava a restauração da sessão).
+        if (suportado) void registrarDispositivoParaPush();
       } catch {
         if (cancelado) return;
         clearSession();
@@ -91,7 +101,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if ("token" in resposta) {
       setSessionEndedReason(null);
       setUser(resposta.usuario);
-      setStatus(tipoSuportado(resposta.usuario) ? "authenticated" : "unsupported");
+      const suportado = tipoSuportado(resposta.usuario);
+      setStatus(suportado ? "authenticated" : "unsupported");
+      definirUsuarioObservabilidade(resposta.usuario.id);
+      // Fase R5 — registra este dispositivo para push (fire-and-forget).
+      if (suportado) void registrarDispositivoParaPush();
     }
   }, []);
 
@@ -123,10 +137,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // Fase R5 — tira este dispositivo dos pushes da conta ANTES de derrubar
+    // a sessão (a chamada precisa do token ainda válido). Fail-soft: se
+    // falhar, o logout segue e o backend limpa o token sozinho depois.
+    await removerDispositivoDoPush();
     await AuthService.logout();
     setUser(null);
     setStatus("unauthenticated");
     desconectarSocket();
+    definirUsuarioObservabilidade(null);
   }, []);
 
   const clearSessionEndedReason = useCallback(() => setSessionEndedReason(null), []);

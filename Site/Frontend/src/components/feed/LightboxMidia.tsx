@@ -122,7 +122,7 @@ export function LightboxMidia({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
+                    className="absolute left-2 top-1/2 z-10 min-h-11 min-w-11 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
                     aria-label="Mídia anterior"
                     onClick={() => irPara(indice - 1)}
                   >
@@ -132,7 +132,7 @@ export function LightboxMidia({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
+                    className="absolute right-2 top-1/2 z-10 min-h-11 min-w-11 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
                     aria-label="Próxima mídia"
                     onClick={() => irPara(indice + 1)}
                   >

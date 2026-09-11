@@ -99,6 +99,36 @@ describe("HomeScreen", () => {
     expect(mockListar).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
+  // Fase 26 (polish): puxar para atualizar — faltava só aqui e em
+  // `JobsScreen.tsx` (`MessagesScreen.tsx`/`NotificationsScreen.tsx` já
+  // tinham). Mesma técnica de RNTL já usada nos testes daquelas telas:
+  // `fireEvent(lista, "refresh")` não aciona o `RefreshControl` nativo —
+  // chama `onRefresh` direto pela prop.
+  it("puxar para atualizar (RefreshControl) recarrega a primeira página, preservando a lista visível durante a busca", async () => {
+    mockListar.mockResolvedValueOnce(envelope([postagem()], { totalPaginas: 2, total: 11 }));
+    const { getByTestId, findByText } = await renderTela();
+    await findByText("Minha primeira publicação no ACESSO.");
+
+    let resolver: (valor: unknown) => void = () => {};
+    mockListar.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+
+    const lista = getByTestId("feed-lista");
+    await act(async () => {
+      lista.props.refreshControl.props.onRefresh();
+    });
+
+    expect(lista.props.refreshControl.props.refreshing).toBe(true);
+    // A lista ainda mostra o conteúdo anterior enquanto atualiza — nunca troca pra tela cheia de loading.
+    expect(await findByText("Minha primeira publicação no ACESSO.")).toBeTruthy();
+
+    await act(async () => {
+      resolver(envelope([postagem({ conteudo: "Publicação atualizada." })]));
+    });
+
+    expect(await findByText("Publicação atualizada.")).toBeTruthy();
+    expect(getByTestId("feed-lista").props.refreshControl.props.refreshing).toBe(false);
+  });
+
   it("avatar renderiza as iniciais do nome do autor, não uma imagem", async () => {
     mockListar.mockResolvedValue(envelope([postagem()]));
     const { findByText } = await renderTela();

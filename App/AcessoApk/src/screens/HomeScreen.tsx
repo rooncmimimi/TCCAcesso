@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -48,6 +49,13 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const [total, setTotal] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [carregandoInicial, setCarregandoInicial] = useState(true);
+  // Fase 26 (polish): puxar para atualizar — mesmo padrão já usado em
+  // `MessagesScreen.tsx`/`NotificationsScreen.tsx`, faltava só aqui e em
+  // `JobsScreen.tsx`. Estado PRÓPRIO (não reaproveita `carregandoInicial`):
+  // o gesto de "puxar" mostra o indicador nativo do próprio `RefreshControl`,
+  // nunca a tela cheia de carregamento — são dois lugares visuais diferentes
+  // pro mesmo tipo de espera.
+  const [atualizando, setAtualizando] = useState(false);
   const [buscandoProximaPagina, setBuscandoProximaPagina] = useState<AcaoBusca>(null);
   // Guarda de concorrência DE VERDADE — não pode ser o `useState` acima:
   // `onEndReached` pode disparar mais de uma vez seguida (Fase 10) DENTRO do
@@ -116,9 +124,21 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     };
   }, []);
 
-  /** Refaz só a carga inicial (usada pelo "Tentar novamente" de tela cheia e pelo aviso de "novas publicações" — não há nada prévio pra preservar em nenhum dos dois casos). */
-  const recarregarDoInicio = useCallback(async () => {
-    setCarregandoInicial(true);
+  /**
+   * Refaz a primeira página — usada pelo "Tentar novamente" de tela cheia,
+   * pelo aviso de "novas publicações" e agora (Fase 26) por puxar para
+   * atualizar. `comoAtualizacao` escolhe QUAL indicador visual usar (mesma
+   * distinção de `MessagesScreen.tsx`/`NotificationsScreen.tsx`): o gesto de
+   * puxar já mostra o próprio spinner nativo do `RefreshControl`, então não
+   * faz sentido troca a tela inteira por um carregamento de tela cheia por
+   * cima disso.
+   */
+  const recarregarDoInicio = useCallback(async (comoAtualizacao: boolean) => {
+    if (comoAtualizacao) {
+      setAtualizando(true);
+    } else {
+      setCarregandoInicial(true);
+    }
     setErro(null);
     setHaNovasPublicacoes(false);
     try {
@@ -130,7 +150,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     } catch (erroRequisicao) {
       setErro(getFriendlyErrorMessage(erroRequisicao, "Não foi possível carregar o feed."));
     } finally {
-      setCarregandoInicial(false);
+      if (comoAtualizacao) {
+        setAtualizando(false);
+      } else {
+        setCarregandoInicial(false);
+      }
     }
   }, []);
 
@@ -230,19 +254,35 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     [carregandoInicial, pagina, totalPaginas],
   );
 
-  function abrirDetalhe(postagemId: string) {
-    navigation.navigate("PostagemDetail", { postagemId });
-  }
+  // Fase 25 (performance): `useCallback` aqui não é só estilo — é o que
+  // torna o `React.memo` de `PostagemListItem` (abaixo) capaz de pular
+  // linhas que não mudaram. Sem isso, `renderItem` passaria uma função NOVA
+  // pra cada item a cada render do `HomeScreen` (mesmo indiretamente, por
+  // essas serem recriadas), invalidando o memo sempre — o item ganharia o
+  // "objeto" estável de `postagens.map(...)` (já preservado por identidade
+  // desde a Fase 10), mas perderia a estabilidade logo em seguida por causa
+  // dos callbacks. `[navigation]` é a única dependência real das duas
+  // primeiras — a referência do objeto de navegação já é estável durante a
+  // vida da tela (garantia do próprio React Navigation).
+  const abrirDetalhe = useCallback(
+    (postagemId: string) => {
+      navigation.navigate("PostagemDetail", { postagemId });
+    },
+    [navigation],
+  );
 
   function abrirNovaPostagem() {
     navigation.navigate("NovaPostagem");
   }
 
-  function abrirPerfil(usuarioId: string) {
-    navigation.navigate("PublicProfile", { usuarioId });
-  }
+  const abrirPerfil = useCallback(
+    (usuarioId: string) => {
+      navigation.navigate("PublicProfile", { usuarioId });
+    },
+    [navigation],
+  );
 
-  async function curtirNaLista(postagemId: string) {
+  const curtirNaLista = useCallback(async (postagemId: string) => {
     try {
       const { curtido, totalCurtidas } = await FeedService.alternarCurtida(postagemId);
       setPostagens((atual) =>
@@ -258,7 +298,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       // é uma ação crítica (diferente de publicar/comentar, que sempre
       // mostram mensagem de erro ao usuário).
     }
-  }
+    // `setPostagens` é estável por garantia do próprio React (`useState`) — sem outras dependências reais.
+  }, []);
 
   // Fase 10: primeiro carregamento é tela cheia de loading, sem lista nenhuma
   // por baixo — mesmo padrão de `JobsScreen`.
@@ -286,7 +327,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               Não foi possível carregar o feed
             </Text>
             <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void recarregarDoInicio()}>Tentar novamente</Button>
+            <Button onPress={() => void recarregarDoInicio(false)}>Tentar novamente</Button>
           </Card>
         </View>
       </ScreenContainer>
@@ -299,9 +340,25 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         testID="feed-lista"
         data={postagens}
         keyExtractor={(postagem) => postagem.id}
+        // Fase 25 (performance) — itens desta lista são cartões com
+        // possível imagem (mais pesados que uma linha de texto simples);
+        // reduzir quanto fica montado fora da tela custa menos memória sem
+        // afetar o scroll perceptível (valores recomendados pela própria
+        // documentação de performance de listas do React Native, nunca
+        // medidos num aparelho real nesta sessão — ver relatório da fase).
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         contentContainerStyle={{ flexGrow: 1, gap: theme.spacing.sm, paddingVertical: theme.spacing.md }}
         onEndReachedThreshold={0.4}
         onEndReached={() => void buscarProximaPagina("proximaPagina")}
+        refreshControl={
+          <RefreshControl
+            refreshing={atualizando}
+            onRefresh={() => void recarregarDoInicio(true)}
+            colors={[theme.colors.primary.solid]}
+          />
+        }
         ListHeaderComponent={
           <View style={{ gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
             <Text style={[theme.typography.heading, { color: theme.colors.primary.solid }]}>
@@ -323,7 +380,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
             {haNovasPublicacoes ? (
               <Pressable
-                onPress={() => void recarregarDoInicio()}
+                // `true` (não `false`): a lista já está carregada e visível
+                // aqui — o mesmo tratamento de "puxar para atualizar"
+                // (spinner do `RefreshControl`, lista intacta enquanto
+                // busca) encaixa melhor que trocar a tela inteira por um
+                // carregamento de tela cheia por cima do que já tinha.
+                onPress={() => void recarregarDoInicio(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Novas publicações disponíveis. Toque para atualizar o feed."
                 accessibilityLiveRegion="polite"
@@ -358,13 +420,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           </Card>
         }
         renderItem={({ item }) => (
-          <PostagemListItem
-            postagem={item}
-            theme={theme}
-            onPress={() => abrirDetalhe(item.id)}
-            onCurtir={() => curtirNaLista(item.id)}
-            onAbrirPerfil={abrirPerfil}
-          />
+          // `onPress`/`onCurtir` passados DIRETO (não `() => abrirDetalhe(item.id)`)
+          // — a mesma razão de `onAbrirPerfil` já estar assim: uma closure nova
+          // por item a cada render invalidaria o `React.memo` de
+          // `PostagemListItem` mesmo com os handlers já estáveis acima. O
+          // próprio item chama `onPress(postagem.id)`/`onCurtir(postagem.id)`.
+          <PostagemListItem postagem={item} theme={theme} onPress={abrirDetalhe} onCurtir={curtirNaLista} onAbrirPerfil={abrirPerfil} />
         )}
         ListFooterComponent={
           <View style={{ gap: theme.spacing.sm, marginTop: theme.spacing.sm }}>
@@ -418,7 +479,18 @@ function iniciaisDoNome(nome: string | undefined): string {
 /** Função local, não exportada — só `HomeScreen` consome. `src/feed/` fica
  * flat (igual `src/vagas/`), sem subpasta `components/`, mesmo raciocínio de
  * `VagaListItem`. */
-function PostagemListItem({
+/**
+ * `React.memo` (Fase 25, performance): sem isso, curtir UMA publicação
+ * (`setPostagens` trocando só o item afetado por um objeto novo, Fase 10)
+ * ainda re-renderizava TODAS as linhas visíveis — o array `postagens` em si
+ * já é uma referência nova a cada `setState`, e o `FlatList` reavalia
+ * `renderItem` pra cada linha montada nesse momento. Com o memo (e os
+ * handlers estabilizados por `useCallback` em `HomeScreen`, mais
+ * `onPress`/`onCurtir` recebendo o handler direto em vez de uma closure por
+ * item), só a linha cujo objeto `postagem` realmente mudou reprocessa —
+ * as outras têm TODAS as props (`===`) iguais ao render anterior.
+ */
+const PostagemListItem = memo(function PostagemListItem({
   postagem,
   theme,
   onPress,
@@ -427,8 +499,8 @@ function PostagemListItem({
 }: {
   postagem: Postagem;
   theme: Theme;
-  onPress: () => void;
-  onCurtir: () => Promise<void>;
+  onPress: (postagemId: string) => void;
+  onCurtir: (postagemId: string) => Promise<void>;
   onAbrirPerfil: (usuarioId: string) => void;
 }) {
   const autor = postagem.usuario ?? postagem.autor;
@@ -439,7 +511,7 @@ function PostagemListItem({
     if (curtindo) return;
     setCurtindo(true);
     try {
-      await onCurtir();
+      await onCurtir(postagem.id);
     } finally {
       setCurtindo(false);
     }
@@ -448,7 +520,7 @@ function PostagemListItem({
   return (
     <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
       <Pressable
-        onPress={onPress}
+        onPress={() => onPress(postagem.id)}
         accessibilityRole="button"
         accessibilityLabel={`Publicação de ${nomeAutor}`}
         android_ripple={{ color: theme.colors.divider }}
@@ -523,7 +595,7 @@ function PostagemListItem({
       </Pressable>
     </View>
   );
-}
+});
 
 /**
  * Resumo dos anexos no CARTÃO da lista (Fase 20) — só o PRIMEIRO anexo (o
@@ -554,11 +626,17 @@ function AnexoResumo({ postagem, theme }: { postagem: Postagem; theme: Theme }) 
   return (
     <View>
       <Image
-        source={{ uri: primeiro.url }}
+        // `expo-image` (Fase 25), não o `Image` do react-native: a URL
+        // assinada muda a cada busca (Fase 7, `assinarMidiaDasPostagens`),
+        // então cachear pela URL (comportamento padrão de qualquer
+        // componente de imagem) forçaria um novo download toda vez que a
+        // publicação for re-buscada, mesmo sendo o MESMO arquivo — `cacheKey`
+        // fixo no `id` do anexo resolve isso, sem precisar de nada no backend.
+        source={{ uri: primeiro.url, cacheKey: primeiro.id }}
         accessible
         accessibilityLabel={primeiro.descricao || "Imagem anexada à publicação, sem descrição informada."}
         style={{ width: "100%", height: 180, borderRadius: theme.radius.md, backgroundColor: theme.colors.divider }}
-        resizeMode="cover"
+        contentFit="cover"
       />
       {anexos.length > 1 ? (
         <Text style={[theme.typography.caption, { color: theme.colors.textMuted, marginTop: theme.spacing.xs }]}>

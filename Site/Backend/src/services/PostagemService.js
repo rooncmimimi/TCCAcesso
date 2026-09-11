@@ -438,6 +438,156 @@ class PostagemService {
     }
 
     /* ==========================================================
+       LINHA DO TEMPO UNIFICADA DE UM PERFIL (auditoria do Site, item 6)
+    ========================================================== */
+    /**
+     * Publicações próprias + compartilhamentos de um usuário, intercalados
+     * por data (mais recente primeiro) — uma única lista, como o resto do
+     * mercado (LinkedIn, Twitter/X) mostra o perfil, em vez de duas abas
+     * "Publicações"/"Compartilhamentos" desconectadas. Cada item vem com
+     * `tipo: "postagem" | "compartilhamento"`; um compartilhamento carrega
+     * a postagem ORIGINAL (de qualquer autor) em `item.postagem`, decorada
+     * pelo MESMO pipeline (`decorar`) que uma postagem própria — antes,
+     * `CompartilhamentoService.listarPorUsuario` pulava `decorar()` e a
+     * postagem embutida chegava ao Frontend sem `totalCurtidas`/
+     * `curtidoPorMim`/`totalComentarios`, fazendo o `CardPostagem` de um
+     * item compartilhado sempre mostrar "0 curtidas" e o botão de curtir
+     * sempre como "não curtido", mesmo que o próprio solicitante já tivesse
+     * curtido aquela postagem no feed principal.
+     *
+     * Autorização: `garantirAcessoAPostagem({ usuarioId }, solicitante)`
+     * decide o acesso ao PERFIL (dono/admin/seguidor aprovado/perfil
+     * público) uma única vez para a lista inteira — a mesma autoridade que
+     * `findAll({ usuarioId })` já usa para a aba "Publicações". Antes desta
+     * unificação, a aba "Compartilhamentos" (`CompartilhamentoService.
+     * listarPorUsuario`) NUNCA aplicava essa checagem: só verificava
+     * bloqueio e a visibilidade do autor de CADA postagem original, nunca
+     * a privacidade do DONO da aba — dava pra ver os compartilhamentos de
+     * um perfil privado sem segui-lo, só não as publicações próprias dele.
+     * Corrigido ao unificar (uma auditoria de segurança encontrada "de
+     * brinde" ao juntar os dois caminhos num só).
+     *
+     * Paginação: para intercalar corretamente por data sem UNION em SQL
+     * bruto (dois modelos com includes diferentes), busca até
+     * `offset + limite` linhas de CADA fonte (limite superior seguro: no
+     * pior caso, uma página inteira poderia vir de uma só fonte), junta em
+     * memória, ordena por data e recorta a página pedida. Para os tamanhos
+     * de página típicos de um perfil (dezenas, não milhares), o custo é
+     * desprezível — nunca busca a tabela inteira.
+     */
+    async linhaDoTempoDoUsuario(usuarioId, query, solicitante) {
+        await garantirEmpresaAprovadaSeForEmpresa(solicitante);
+        await garantirAcessoAPostagem({ usuarioId }, solicitante);
+
+        const { pagina, limite, offset } = resolverPaginacao(query);
+        const buscaAte = offset + limite;
+
+        const wherePostagensProprias = { ativo: true, usuarioId };
+
+        // Visibilidade do autor ORIGINAL de uma postagem compartilhada —
+        // pode ser qualquer pessoa, não só o dono desta linha do tempo.
+        // Mesma regra de `CompartilhamentoService.listarPorUsuario`.
+        const wherePostagemOriginal = { ativo: true };
+
+        if (solicitante && !ehAdministrador(solicitante)) {
+            const [idsSeguidos, idsBloqueados] = await Promise.all([
+                SeguidorService.idsSeguidos(solicitante.id),
+                BloqueioService.idsRelacionados(solicitante.id)
+            ]);
+
+            wherePostagemOriginal[Op.and] = [
+                {
+                    [Op.or]: [
+                        sequelize.literal(
+                            `EXISTS (SELECT 1 FROM usuarios u WHERE u.id = "postagem"."usuario_id" AND (u.perfil_publico = true OR u.tipo_usuario = 'empresa'))`
+                        ),
+                        {
+                            usuarioId: {
+                                [Op.in]: [...idsSeguidos, solicitante.id]
+                            }
+                        }
+                    ]
+                },
+                ...(idsBloqueados.length
+                    ? [{ usuarioId: { [Op.notIn]: idsBloqueados } }]
+                    : [])
+            ];
+        }
+
+        const [totalPostagens, totalCompartilhamentos, postagensRows, compartilhamentosRows] =
+            await Promise.all([
+                Postagem.count({ where: wherePostagensProprias }),
+                Compartilhamento.count({
+                    where: { usuarioId },
+                    include: [
+                        {
+                            model: Postagem,
+                            as: "postagem",
+                            where: wherePostagemOriginal,
+                            required: true
+                        }
+                    ],
+                    distinct: true
+                }),
+                Postagem.findAll({
+                    where: wherePostagensProprias,
+                    include: [incluirAutor(), incluirAnexos()],
+                    order: [["created_at", "DESC"]],
+                    limit: buscaAte
+                }),
+                Compartilhamento.findAll({
+                    where: { usuarioId },
+                    include: [
+                        {
+                            model: Postagem,
+                            as: "postagem",
+                            where: wherePostagemOriginal,
+                            required: true,
+                            include: [incluirAutor(), incluirAnexos()]
+                        }
+                    ],
+                    order: [["created_at", "DESC"]],
+                    limit: buscaAte
+                })
+            ]);
+
+        const [postagensDecoradas, postagensCompartilhadasDecoradas] = await Promise.all([
+            this.decorar(postagensRows, solicitante),
+            this.decorar(
+                compartilhamentosRows.map((linha) => linha.postagem),
+                solicitante
+            )
+        ]);
+
+        const itensPostagem = postagensDecoradas.map((postagem) => ({
+            tipo: "postagem",
+            id: postagem.id,
+            criadoEm: postagem.created_at,
+            postagem
+        }));
+
+        const itensCompartilhamento = compartilhamentosRows.map((linha, indice) => ({
+            tipo: "compartilhamento",
+            id: linha.id,
+            criadoEm: linha.created_at,
+            comentario: linha.comentario,
+            postagem: postagensCompartilhadasDecoradas[indice]
+        }));
+
+        const unificada = [...itensPostagem, ...itensCompartilhamento]
+            .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))
+            .slice(offset, offset + limite);
+
+        return montarResposta(
+            "itens",
+            unificada,
+            totalPostagens + totalCompartilhamentos,
+            pagina,
+            limite
+        );
+    }
+
+    /* ==========================================================
        DETALHE COM COMENTÁRIOS EM ÁRVORE
     ========================================================== */
     async findById(id, solicitante = null) {

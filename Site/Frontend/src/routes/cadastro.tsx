@@ -6,9 +6,11 @@ import { Accessibility, ArrowRight, Building2, Loader2, Mail, User } from "lucid
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
+import { AuthLayout } from "@/layouts/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -117,8 +119,7 @@ function Cadastro() {
   const [emailPendente, setEmailPendente] = useState<string | null>(null);
 
   return (
-    <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
-      <div className="w-full max-w-lg">
+    <AuthLayout className="max-w-lg">
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
             <Logo />
@@ -190,8 +191,7 @@ function Cadastro() {
             </p>
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }
 
@@ -343,7 +343,7 @@ function FormularioCandidatoCadastro({
       </div>
       <div className="space-y-2">
         <Label htmlFor="senha-cadastro">Senha</Label>
-        <Input id="senha-cadastro" type="password" className="min-h-12" autoComplete="new-password" aria-describedby="senha-dica" aria-invalid={Boolean(errors.senha)} {...register("senha")} />
+        <PasswordInput id="senha-cadastro" className="min-h-12" autoComplete="new-password" aria-describedby="senha-dica" aria-invalid={Boolean(errors.senha)} {...register("senha")} />
         <p id="senha-dica" className="text-sm text-muted-foreground">
           Use ao menos 8 caracteres, com maiúscula, minúscula, número e símbolo.
         </p>
@@ -351,9 +351,8 @@ function FormularioCandidatoCadastro({
       </div>
       <div className="space-y-2">
         <Label htmlFor="confirmar-senha-cadastro">Confirmar senha</Label>
-        <Input
+        <PasswordInput
           id="confirmar-senha-cadastro"
-          type="password"
           className="min-h-12"
           autoComplete="new-password"
           aria-invalid={Boolean(errors.confirmarSenha)}
@@ -559,7 +558,7 @@ function FormularioEmpresaCadastro({
       <SecaoFormulario titulo="Segurança">
         <div className="space-y-2">
           <Label htmlFor="senha-empresa">Senha</Label>
-          <Input id="senha-empresa" type="password" className="min-h-12" autoComplete="new-password" aria-describedby="senha-empresa-dica" aria-invalid={Boolean(errors.senha)} {...register("senha")} />
+          <PasswordInput id="senha-empresa" className="min-h-12" autoComplete="new-password" aria-describedby="senha-empresa-dica" aria-invalid={Boolean(errors.senha)} {...register("senha")} />
           <p id="senha-empresa-dica" className="text-sm text-muted-foreground">
             Use ao menos 8 caracteres, com maiúscula, minúscula, número e símbolo.
           </p>
@@ -567,9 +566,8 @@ function FormularioEmpresaCadastro({
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmar-senha-empresa">Confirmar senha</Label>
-          <Input
+          <PasswordInput
             id="confirmar-senha-empresa"
-            type="password"
             className="min-h-12"
             autoComplete="new-password"
             aria-invalid={Boolean(errors.confirmarSenha)}

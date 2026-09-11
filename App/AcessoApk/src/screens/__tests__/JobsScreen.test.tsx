@@ -73,6 +73,31 @@ describe("JobsScreen", () => {
     expect(mockListar).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
+  // Fase 26 (polish): puxar para atualizar — faltava aqui (e em `HomeScreen.tsx`).
+  it("puxar para atualizar refaz a MESMA página aberta, não pula pra página 1", async () => {
+    mockListar.mockResolvedValueOnce(envelope([vaga()], { pagina: 2, totalPaginas: 2, total: 11 }));
+    const { getByTestId, findByText } = await renderTela();
+    await findByText("Desenvolvedor Front-end");
+
+    let resolver: (valor: unknown) => void = () => {};
+    mockListar.mockReturnValueOnce(new Promise((resolve) => { resolver = resolve; }));
+
+    const lista = getByTestId("vagas-lista");
+    await act(async () => {
+      lista.props.refreshControl.props.onRefresh();
+    });
+
+    expect(lista.props.refreshControl.props.refreshing).toBe(true);
+    expect(mockListar).toHaveBeenLastCalledWith({ page: 2, limit: 10 });
+
+    await act(async () => {
+      resolver(envelope([vaga({ titulo: "Vaga atualizada" })], { pagina: 2, totalPaginas: 2, total: 11 }));
+    });
+
+    expect(await findByText("Vaga atualizada")).toBeTruthy();
+    expect(getByTestId("vagas-lista").props.refreshControl.props.refreshing).toBe(false);
+  });
+
   it("resposta vazia (total=0) mostra o estado vazio, sem paginador", async () => {
     mockListar.mockResolvedValue(envelope([]));
     const { findByText, queryByText } = await renderTela();
@@ -169,5 +194,154 @@ describe("JobsScreen", () => {
     });
 
     expect(mockListar).toHaveBeenCalledTimes(2); // 1 da carga inicial + 1 da página 2 (não 3)
+  });
+
+  // Fase R1 (recomendada): filtros e busca de vagas.
+  describe("filtros e busca (Fase R1)", () => {
+    it("buscar por texto volta pra página 1 com `search`", async () => {
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      const { findByText, getByPlaceholderText, getByRole } = await renderTela();
+      await findByText("Desenvolvedor Front-end");
+
+      await act(async () => {
+        fireEvent.changeText(getByPlaceholderText("Buscar por título, descrição..."), "analista");
+      });
+      mockListar.mockResolvedValueOnce(envelope([vaga({ id: "v2", titulo: "Analista de Dados" })]));
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Buscar" }));
+      });
+
+      expect(mockListar).toHaveBeenLastCalledWith({ page: 1, limit: 10, search: "analista" });
+      expect(await findByText("Analista de Dados")).toBeTruthy();
+    });
+
+    it("botão 'Filtros' sem filtro nenhum não tem selo de contagem", async () => {
+      mockListar.mockResolvedValue(envelope([vaga()]));
+      const { findByText, getByRole } = await renderTela();
+      await findByText("Desenvolvedor Front-end");
+
+      expect(getByRole("button", { name: "Filtros" })).toBeTruthy();
+    });
+
+    it("aplicar cidade + modalidade no modal busca com os dois parâmetros e mostra o selo (2)", async () => {
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      const { findByText, getByRole, getByLabelText, getByPlaceholderText } = await renderTela();
+      await findByText("Desenvolvedor Front-end");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Filtros" }));
+      });
+      await act(async () => {
+        fireEvent.changeText(getByPlaceholderText("Ex.: São Paulo"), "Campinas");
+      });
+      await act(async () => {
+        fireEvent.press(getByLabelText("Remoto"));
+      });
+
+      mockListar.mockResolvedValueOnce(envelope([vaga({ id: "v2", cidade: "Campinas" })]));
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Aplicar filtros" }));
+      });
+
+      expect(mockListar).toHaveBeenLastCalledWith({ page: 1, limit: 10, cidade: "Campinas", modalidade: "Remoto" });
+      expect(await findByText("Filtros (2)")).toBeTruthy();
+    });
+
+    it("selecionar mais de um recurso de acessibilidade envia a lista inteira", async () => {
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      const { findByText, getByRole, getByLabelText } = await renderTela();
+      await findByText("Desenvolvedor Front-end");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Filtros" }));
+      });
+      await act(async () => {
+        fireEvent.press(getByLabelText("Intérprete de Libras"));
+      });
+      await act(async () => {
+        fireEvent.press(getByLabelText("Ambiente físico acessível"));
+      });
+
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Aplicar filtros" }));
+      });
+
+      expect(mockListar).toHaveBeenLastCalledWith({
+        page: 1,
+        limit: 10,
+        recursosAcessibilidade: ["interprete_libras", "ambiente_fisico_acessivel"],
+      });
+    });
+
+    it("'Fechar' descarta o rascunho sem aplicar nada", async () => {
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      const { findByText, getByRole, getByPlaceholderText, queryByPlaceholderText } = await renderTela();
+      await findByText("Desenvolvedor Front-end");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Filtros" }));
+      });
+      await act(async () => {
+        fireEvent.changeText(getByPlaceholderText("Ex.: São Paulo"), "Recife");
+      });
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Fechar filtros" }));
+      });
+
+      expect(queryByPlaceholderText("Ex.: São Paulo")).toBeNull(); // modal fechou
+      expect(mockListar).toHaveBeenCalledTimes(1); // só a carga inicial — nada foi aplicado
+      expect(getByRole("button", { name: "Filtros" })).toBeTruthy(); // sem selo, nada ficou ativo
+    });
+
+    it("'Limpar filtros' zera busca e filtros e refaz a consulta sem nenhum parâmetro extra", async () => {
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      const { findByText, getByRole, getByPlaceholderText } = await renderTela();
+      await findByText("Desenvolvedor Front-end");
+
+      await act(async () => {
+        fireEvent.changeText(getByPlaceholderText("Buscar por título, descrição..."), "algo");
+      });
+      mockListar.mockResolvedValueOnce(envelope([vaga({ titulo: "Filtrado" })]));
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Buscar" }));
+      });
+      await findByText("Filtrado");
+
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Filtros" }));
+      });
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Limpar filtros" }));
+      });
+
+      expect(mockListar).toHaveBeenLastCalledWith({ page: 1, limit: 10 });
+      expect(getByPlaceholderText("Buscar por título, descrição...").props.value).toBe("");
+    });
+
+    it("nenhum resultado com filtro ativo mostra mensagem específica e permite limpar direto do estado vazio", async () => {
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      const { findByText, getByRole, getByPlaceholderText } = await renderTela();
+      await findByText("Desenvolvedor Front-end");
+
+      await act(async () => {
+        fireEvent.changeText(getByPlaceholderText("Buscar por título, descrição..."), "inexistente");
+      });
+      mockListar.mockResolvedValueOnce(envelope([]));
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Buscar" }));
+      });
+
+      expect(await findByText("Nenhuma vaga corresponde à busca ou aos filtros atuais.")).toBeTruthy();
+
+      mockListar.mockResolvedValueOnce(envelope([vaga()]));
+      await act(async () => {
+        fireEvent.press(getByRole("button", { name: "Limpar filtros" }));
+      });
+
+      expect(mockListar).toHaveBeenLastCalledWith({ page: 1, limit: 10 });
+      expect(await findByText("Desenvolvedor Front-end")).toBeTruthy();
+    });
   });
 });

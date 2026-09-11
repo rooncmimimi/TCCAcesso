@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
@@ -169,10 +169,16 @@ export function MessagesScreen({ navigation }: MessagesScreenProps) {
     [carregandoInicial, pagina, totalPaginas],
   );
 
-  function abrirConversa(conversa: Conversa) {
-    const outro = outroParticipante(conversa, user?.id);
-    navigation.navigate("Conversation", { conversaId: conversa.id, nomeOutroParticipante: nomeExibicao(outro) });
-  }
+  // Fase 25 (performance) — `useCallback` + `React.memo` no `ConversaListItem`.
+  // O nome do outro participante já é calculado dentro do item; ele passa
+  // pronto, então este handler só depende de `[navigation]`. Ver a razão
+  // completa em `HomeScreen.tsx`.
+  const abrirConversa = useCallback(
+    (conversaId: string, nomeOutro: string) => {
+      navigation.navigate("Conversation", { conversaId, nomeOutroParticipante: nomeOutro });
+    },
+    [navigation],
+  );
 
   if (carregandoInicial) {
     return (
@@ -210,6 +216,10 @@ export function MessagesScreen({ navigation }: MessagesScreenProps) {
         testID="conversas-lista"
         data={conversas}
         keyExtractor={(conversa) => conversa.id}
+        // Fase 25 (performance) — ver o mesmo ajuste, com a razão completa, em `HomeScreen.tsx`.
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         contentContainerStyle={{ flexGrow: 1, gap: theme.spacing.sm, paddingVertical: theme.spacing.md }}
         onEndReachedThreshold={0.4}
         onEndReached={() => void buscarProximaPagina("proximaPagina")}
@@ -230,7 +240,8 @@ export function MessagesScreen({ navigation }: MessagesScreenProps) {
           </Card>
         }
         renderItem={({ item }) => (
-          <ConversaListItem conversa={item} meuId={user?.id} theme={theme} onPress={() => abrirConversa(item)} />
+          // `onPress` passado DIRETO — o item chama `onPress(conversa.id, nome)`. Ver `HomeScreen.tsx`.
+          <ConversaListItem conversa={item} meuId={user?.id} theme={theme} onPress={abrirConversa} />
         )}
         ListFooterComponent={
           <View style={{ gap: theme.spacing.sm, marginTop: theme.spacing.sm }}>
@@ -267,8 +278,15 @@ export function MessagesScreen({ navigation }: MessagesScreenProps) {
   );
 }
 
-/** Função local, não exportada — só `MessagesScreen` consome (mesmo padrão de `PostagemListItem`/`NotificacaoItem`). */
-function ConversaListItem({
+/**
+ * Função local, não exportada — só `MessagesScreen` consome (mesmo padrão de
+ * `PostagemListItem`/`NotificacaoItem`).
+ *
+ * `React.memo` (Fase 25, performance) — um evento de tempo real
+ * (`mensagem:nova`) recarrega a lista inteira; sem o memo + `onPress`
+ * estável, todas as linhas visíveis reprocessavam. Ver `HomeScreen.tsx`.
+ */
+const ConversaListItem = memo(function ConversaListItem({
   conversa,
   meuId,
   theme,
@@ -277,7 +295,7 @@ function ConversaListItem({
   conversa: Conversa;
   meuId: string | undefined;
   theme: Theme;
-  onPress: () => void;
+  onPress: (conversaId: string, nomeOutro: string) => void;
 }) {
   const outro = outroParticipante(conversa, meuId);
   const nome = nomeExibicao(outro);
@@ -286,7 +304,7 @@ function ConversaListItem({
   return (
     <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
       <Pressable
-        onPress={onPress}
+        onPress={() => onPress(conversa.id, nome)}
         accessibilityRole="button"
         accessibilityLabel={`Conversa com ${nome}${naoLidas > 0 ? `, ${naoLidas} mensagem${naoLidas === 1 ? "" : "s"} não lida${naoLidas === 1 ? "" : "s"}` : ""}`}
         android_ripple={{ color: theme.colors.divider }}
@@ -337,4 +355,4 @@ function ConversaListItem({
       </Pressable>
     </View>
   );
-}
+});

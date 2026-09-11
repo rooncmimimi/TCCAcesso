@@ -63,6 +63,7 @@ export function FotoUploader({
       <input
         ref={inputRef}
         type="file"
+        tabIndex={-1}
         accept="image/png,image/jpeg,image/webp"
         className="sr-only"
         id="upload-foto-perfil"
@@ -72,7 +73,7 @@ export function FotoUploader({
         type="button"
         size="icon"
         variant="secondary"
-        className="absolute -bottom-1 -right-1 size-9 rounded-full border-2 border-card shadow"
+        className="absolute -bottom-1 -right-1 min-h-11 min-w-11 rounded-full border-2 border-card shadow"
         aria-label={rotulo}
         disabled={enviando}
         onClick={() => inputRef.current?.click()}

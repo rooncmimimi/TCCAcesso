@@ -63,6 +63,34 @@ jest.mock("../../moderacao", () => ({
   },
 }));
 
+// Fase 26: "Atividades" deixou de ser placeholder — busca `GET
+// /atividades/minha` de verdade ao montar. Mesmo raciocínio dos mocks acima:
+// o comportamento real da tela já tem sua própria suíte.
+jest.mock("../../atividades", () => ({
+  ...jest.requireActual("../../atividades"),
+  AtividadeService: {
+    minha: jest.fn().mockResolvedValue({
+      ehCandidato: true,
+      candidaturas: { itens: [], total: 0 },
+      vagasFavoritas: { itens: [], total: 0 },
+      seguindo: { pessoas: { itens: [], total: 0 }, empresas: { itens: [], total: 0 } },
+      interacoesFeed: {
+        curtidas: { itens: [], total: 0 },
+        comentarios: { itens: [], total: 0 },
+        compartilhamentos: { itens: [], total: 0 },
+      },
+    }),
+  },
+}));
+
+// Fase R2: "Buscar" é uma tela nova — não busca nada ao montar (só quando o
+// usuário pesquisa), mas o mock mantém o padrão dos demais e evita chamada
+// real caso a suíte evolua.
+jest.mock("../../busca", () => ({
+  ...jest.requireActual("../../busca"),
+  BuscaService: { buscarResumo: jest.fn().mockResolvedValue(null) },
+}));
+
 import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 
@@ -140,12 +168,28 @@ describe("ProfileNavigator", () => {
     expect(await findByText("Personalize sua experiência")).toBeTruthy();
   });
 
-  it("Perfil → Ajuda empilha a tela de Ajuda", async () => {
+  it("Perfil → Ajuda empilha a tela real de Ajuda (Fase 26, não mais o placeholder)", async () => {
     const { getByLabelText, findByText } = await renderProfileStack();
     await act(async () => {
       fireEvent.press(getByLabelText("Ajuda"));
     });
-    expect(await findByText("Aqui ficarão as respostas para as dúvidas mais comuns.")).toBeTruthy();
+    expect(await findByText("Como eu me candidato a uma vaga?")).toBeTruthy();
+  });
+
+  it("Perfil → Atividades empilha a tela real de atividades (Fase 26, não mais o placeholder)", async () => {
+    const { getByLabelText, findByText } = await renderProfileStack();
+    await act(async () => {
+      fireEvent.press(getByLabelText("Atividades"));
+    });
+    expect(await findByText("Você ainda não se candidatou a nenhuma vaga.")).toBeTruthy();
+  });
+
+  it("Perfil → Buscar empilha a tela de busca global (Fase R2)", async () => {
+    const { getByLabelText, findByText } = await renderProfileStack();
+    await act(async () => {
+      fireEvent.press(getByLabelText("Buscar"));
+    });
+    expect(await findByText("Digite um termo para buscar pessoas, empresas, vagas e publicações no ACESSO.")).toBeTruthy();
   });
 
   it("Perfil → Configurações → voltar retorna ao menu do Perfil (não sai do app)", async () => {

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { announceForAccessibility } from "../accessibility";
 import { useAuth } from "../auth";
-import { Button, Card, Divider, Input, ScreenContainer } from "../components/ui";
+import { Button, Card, Divider, Input, ScreenContainer, SpeechButton } from "../components/ui";
 import { FeedService } from "../feed";
 import type { Comentario, FeedComentarioEvento, FeedCurtidaEvento, FeedPostagemEvento, Postagem, PostagemAnexo } from "../feed";
 import type { AppStackParamList } from "../navigation/types";
@@ -81,6 +82,14 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
   const [enviandoResposta, setEnviandoResposta] = useState(false);
   const [erroResponder, setErroResponder] = useState<string | null>(null);
 
+  // Fase R6 — excluir o próprio comentário/resposta (só excluir, sem editar).
+  // `excluindoComentarioId` é só para o rótulo "Excluindo…"; a trava de "uma
+  // exclusão por vez" usa um ref (Fase 25) para não trocar a identidade dos
+  // handlers memoizados a cada início/fim de exclusão.
+  const [excluindoComentarioId, setExcluindoComentarioId] = useState<string | null>(null);
+  const [erroExcluirComentario, setErroExcluirComentario] = useState<string | null>(null);
+  const excluindoComentarioRef = useRef(false);
+
   // Fase 20 — editar/excluir a própria publicação (texto só; anexos não são
   // editáveis por esta ação, ver `FeedService.atualizar`).
   const [editandoPostagem, setEditandoPostagem] = useState(false);
@@ -145,6 +154,23 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
     };
   }, [postagemId, tentativaComentarios]);
 
+  /** Remove um comentário (ou resposta) da lista local pelo `id` — usado tanto
+   * pela exclusão explícita do próprio usuário (Fase R6) quanto pelo evento
+   * `feed:comentario` `removido` de tempo real (Fase 20). Idempotente: rodar
+   * duas vezes com o mesmo `id` (a própria exclusão + o eco do socket) é
+   * inofensivo. */
+  const removerComentarioDoEstado = useCallback((idRemovido: string) => {
+    setComentarios((atual) =>
+      atual
+        .filter((comentario) => comentario.id !== idRemovido)
+        .map((comentario) =>
+          comentario.respostas?.some((resposta) => resposta.id === idRemovido)
+            ? { ...comentario, respostas: comentario.respostas.filter((resposta) => resposta.id !== idRemovido) }
+            : comentario,
+        ),
+    );
+  }, []);
+
   // Tempo real (Fase 20) — escopado a ESTA postagem (`evento.postagemId ===
   // postagemId`/`evento.id === postagemId`), diferente de `HomeScreen.tsx`
   // (que não sabe de antemão quais postagens estão na tela). Contagem de
@@ -166,16 +192,7 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
       if (evento.postagemId !== postagemId) return;
 
       if (evento.removido && evento.comentarioId) {
-        const idRemovido = evento.comentarioId;
-        setComentarios((atual) =>
-          atual
-            .filter((comentario) => comentario.id !== idRemovido)
-            .map((comentario) =>
-              comentario.respostas?.some((resposta) => resposta.id === idRemovido)
-                ? { ...comentario, respostas: comentario.respostas.filter((resposta) => resposta.id !== idRemovido) }
-                : comentario,
-            ),
-        );
+        removerComentarioDoEstado(evento.comentarioId);
         return;
       }
 
@@ -213,7 +230,7 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
       limparComentario();
       limparPostagem();
     };
-  }, [postagemId]);
+  }, [postagemId, removerComentarioDoEstado]);
 
   function tentarNovamentePostagem() {
     setErroPostagem(null);
@@ -227,15 +244,28 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
     setTentativaComentarios((valor) => valor + 1);
   }
 
-  /** Fase 14 — abre o perfil público do autor (da publicação ou de um comentário). */
-  function abrirPerfil(usuarioId: string) {
-    navigation.navigate("PublicProfile", { usuarioId });
-  }
+  /** Fase 14 — abre o perfil público do autor (da publicação ou de um comentário).
+   * Fase 25: `useCallback` para o `React.memo` de `ComentarioItem` funcionar. */
+  const abrirPerfil = useCallback(
+    (usuarioId: string) => {
+      navigation.navigate("PublicProfile", { usuarioId });
+    },
+    [navigation],
+  );
 
   /** Fase 19 — genérico o bastante pra denunciar a publicação OU um comentário, sem duplicar a navegação. */
-  function denunciar(entidadeTipo: "postagem" | "comentario", entidadeId: string, tituloAlvo?: string) {
-    navigation.navigate("Report", { entidadeTipo, entidadeId, tituloAlvo });
-  }
+  const denunciar = useCallback(
+    (entidadeTipo: "postagem" | "comentario", entidadeId: string, tituloAlvo?: string) => {
+      navigation.navigate("Report", { entidadeTipo, entidadeId, tituloAlvo });
+    },
+    [navigation],
+  );
+
+  /** Fase 25 — `onDenunciar` de `ComentarioItem` já pré-fixando `"comentario"`, estável. */
+  const denunciarComentario = useCallback(
+    (comentarioId: string, nomeAutor?: string) => denunciar("comentario", comentarioId, nomeAutor),
+    [denunciar],
+  );
 
   async function alternarCurtida() {
     if (curtindo || !postagem) return;
@@ -265,11 +295,14 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
     }
   }
 
-  function iniciarResposta(comentarioId: string) {
+  // Fase 25 — estável, para `ComentarioItem` memoizado. Qual comentário tem a
+  // caixa de resposta aberta é decidido por `respondendoAEste` (uma prop
+  // booleana por item), não por trocar este handler.
+  const iniciarResposta = useCallback((comentarioId: string) => {
     setRespondendoA(comentarioId);
     setTextoResposta("");
     setErroResponder(null);
-  }
+  }, []);
 
   function cancelarResposta() {
     setRespondendoA(null);
@@ -298,6 +331,36 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
       setEnviandoResposta(false);
     }
   }
+
+  const excluirComentario = useCallback(
+    async (comentarioId: string) => {
+      if (excluindoComentarioRef.current) return;
+      excluindoComentarioRef.current = true;
+      setExcluindoComentarioId(comentarioId);
+      setErroExcluirComentario(null);
+      try {
+        await FeedService.removerComentario(comentarioId);
+        removerComentarioDoEstado(comentarioId);
+        // Lista PERSISTE (a tela não desmonta) — o contador tem
+        // `accessibilityLiveRegion="polite"` e já anuncia a mudança sozinho,
+        // mesma distinção de `comentar()`/`enviarResposta()`.
+      } catch (erroRequisicao) {
+        setErroExcluirComentario(getFriendlyErrorMessage(erroRequisicao, "Não foi possível excluir o comentário agora."));
+      } finally {
+        excluindoComentarioRef.current = false;
+        setExcluindoComentarioId(null);
+      }
+    },
+    [removerComentarioDoEstado],
+  );
+
+  const confirmarExclusaoComentario = useCallback(
+    (comentarioId: string) => {
+      if (excluindoComentarioRef.current) return; // uma exclusão de comentário por vez.
+      confirmarExclusao("Excluir comentário", "Esta ação não pode ser desfeita.", () => void excluirComentario(comentarioId));
+    },
+    [excluirComentario],
+  );
 
   function iniciarEdicaoPostagem() {
     if (!postagem) return;
@@ -398,6 +461,14 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
     0,
   );
 
+  // Texto lido pelo botão "Ouvir em voz alta" (Fase 21) — o texto da
+  // publicação seguido da descrição acessível de cada anexo, na mesma
+  // ordem em que aparecem na tela (a descrição de imagem já é conteúdo
+  // real, não decorativo — faz sentido fazer parte da leitura contínua).
+  const textoParaLeitura = [postagem.conteudo, ...(postagem.anexos ?? []).map((anexo) => anexo.descricao).filter(Boolean)]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: theme.spacing.md, paddingVertical: theme.spacing.md }}>
@@ -484,6 +555,8 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
                   onSalvarDescricao={(descricao) => salvarDescricaoAnexo(anexo.id, descricao)}
                 />
               ))}
+
+              <SpeechButton texto={textoParaLeitura} rotulo="esta publicação" />
             </>
           )}
 
@@ -565,6 +638,16 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
             {`Comentários (${totalComentariosAtual})`}
           </Text>
 
+          {erroExcluirComentario ? (
+            <Text
+              accessibilityRole="alert"
+              accessibilityLiveRegion="assertive"
+              style={[theme.typography.caption, { color: theme.colors.error.solid }]}
+            >
+              {erroExcluirComentario}
+            </Text>
+          ) : null}
+
           {carregandoComentarios ? (
             <ActivityIndicator color={theme.colors.primary.solid} />
           ) : erroComentarios && comentarios.length === 0 ? (
@@ -589,15 +672,22 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
               {comentarios.map((comentario, indice) => (
                 <View key={comentario.id} style={{ gap: theme.spacing.sm }}>
                   {indice > 0 ? <Divider /> : null}
+                  {/* Fase 25 (performance): todos os handlers passados DIRETO (estáveis
+                      por `useCallback`) — o item chama cada um com o id/objeto que
+                      precisa. "Responder" só nos comentários de nível raiz (`onResponder`
+                      não vai para as respostas — 1 nível, Fase 10); qual comentário tem
+                      a caixa de resposta aberta agora é uma prop booleana (`respondendoAEste`),
+                      não uma troca de handler. Ver `HomeScreen.tsx`. */}
                   <ComentarioItem
                     comentario={comentario}
                     theme={theme}
                     meuUsuarioId={user?.id}
-                    // 1 nível de resposta: só comentários de nível raiz oferecem "Responder" (Fase 10) — a prop simplesmente não é passada para as respostas, não há checagem de profundidade em runtime.
-                    // Enquanto a caixa de resposta DESTE comentário já está aberta, o botão "Responder" some (evita duas ações com o mesmo rótulo lidas pelo TalkBack ao mesmo tempo).
-                    onResponder={respondendoA === comentario.id ? undefined : () => iniciarResposta(comentario.id)}
+                    onResponder={iniciarResposta}
+                    respondendoAEste={respondendoA === comentario.id}
                     onAbrirPerfil={abrirPerfil}
-                    onDenunciar={(id, nome) => denunciar("comentario", id, nome)}
+                    onDenunciar={denunciarComentario}
+                    onExcluir={confirmarExclusaoComentario}
+                    excluindo={excluindoComentarioId === comentario.id}
                   />
                   {comentario.respostas && comentario.respostas.length > 0 ? (
                     <View style={{ gap: theme.spacing.sm, paddingLeft: theme.spacing.lg }}>
@@ -608,7 +698,9 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
                           theme={theme}
                           meuUsuarioId={user?.id}
                           onAbrirPerfil={abrirPerfil}
-                          onDenunciar={(id, nome) => denunciar("comentario", id, nome)}
+                          onDenunciar={denunciarComentario}
+                          onExcluir={confirmarExclusaoComentario}
+                          excluindo={excluindoComentarioId === resposta.id}
                         />
                       ))}
                     </View>
@@ -669,6 +761,11 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
         animationType="fade"
         onRequestClose={() => setAnexoAmpliado(null)}
       >
+        {/* Cores fixas de propósito (não `theme.colors.*`): o fundo do
+            lightbox é sempre um véu escuro, claro ou escuro que seja o tema
+            do app — mesmo tipo de exceção já aceita em `Button.tsx`
+            (`ripple: "rgba(255,255,255,0.25)"`), nunca um oversight. Sem
+            problema de contraste (branco sobre preto quase opaco). */}
         <Pressable
           onPress={() => setAnexoAmpliado(null)}
           accessibilityRole="button"
@@ -677,10 +774,13 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
         >
           {anexoAmpliado ? (
             <Image
-              source={{ uri: anexoAmpliado.url }}
+              // `cacheKey` no `id` do anexo (Fase 25) — mesma razão do
+              // resumo no feed (`HomeScreen.tsx`): a URL assinada muda a
+              // cada busca, o `id` não.
+              source={{ uri: anexoAmpliado.url, cacheKey: anexoAmpliado.id }}
               accessible
               accessibilityLabel={anexoAmpliado.descricao || "Imagem ampliada, sem descrição informada."}
-              resizeMode="contain"
+              contentFit="contain"
               style={{ width: "100%", height: "80%" }}
             />
           ) : null}
@@ -805,11 +905,15 @@ function AnexoImagem({
     <View style={{ gap: theme.spacing.xs }}>
       <Pressable onPress={onAmpliar} accessibilityRole="button" accessibilityLabel="Ver imagem ampliada">
         <Image
-          source={{ uri: url }}
+          // `cacheKey` no `id` do anexo (Fase 25), nunca na `url` (que muda
+          // a cada nova assinatura — inclusive quando `aoFalharCarregamento`
+          // troca `url` por uma renovada, o `id` continua sendo o mesmo
+          // arquivo lógico).
+          source={{ uri: url, cacheKey: anexo.id }}
           onError={() => void aoFalharCarregamento()}
           accessible
           accessibilityLabel={anexo.descricao || "Imagem anexada à publicação, sem descrição informada."}
-          resizeMode="cover"
+          contentFit="cover"
           style={{ width: "100%", height: 220, borderRadius: theme.radius.md, backgroundColor: theme.colors.divider }}
         />
       </Pressable>
@@ -857,21 +961,38 @@ function AnexoImagem({
   );
 }
 
-/** Função local, não exportada — só esta tela consome. `onResponder` some para respostas (1 nível — nunca é passada ao renderizar `comentario.respostas`). */
-function ComentarioItem({
+/**
+ * Função local, não exportada — só esta tela consome. `onResponder` não é
+ * passada para as respostas (1 nível — Fase 10); qual comentário está sendo
+ * respondido AGORA vem em `respondendoAEste`, não numa troca de handler.
+ * `onExcluir` só tem efeito nos comentários do próprio usuário (a UI nem
+ * mostra a ação nos demais).
+ *
+ * `React.memo` (Fase 25, performance) — todos os handlers são estáveis
+ * (`useCallback` no pai) e recebem o id/objeto como parâmetro, então
+ * comentar/responder/excluir UM comentário não reprocessa os outros. Ver
+ * `HomeScreen.tsx`.
+ */
+const ComentarioItem = memo(function ComentarioItem({
   comentario,
   theme,
   meuUsuarioId,
   onResponder,
+  respondendoAEste = false,
   onAbrirPerfil,
   onDenunciar,
+  onExcluir,
+  excluindo = false,
 }: {
   comentario: Comentario;
   theme: Theme;
   meuUsuarioId: string | undefined;
-  onResponder?: () => void;
+  onResponder?: (comentarioId: string) => void;
+  respondendoAEste?: boolean;
   onAbrirPerfil: (usuarioId: string) => void;
   onDenunciar: (comentarioId: string, nomeAutor?: string) => void;
+  onExcluir?: (comentarioId: string) => void;
+  excluindo?: boolean;
 }) {
   const autor = comentario.usuario ?? comentario.autor;
   const ehMeuComentario = Boolean(autor?.id) && autor?.id === meuUsuarioId;
@@ -899,9 +1020,12 @@ function ComentarioItem({
           {dataFormatada ? (
             <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>{dataFormatada}</Text>
           ) : null}
-          {onResponder ? (
+          {/* Enquanto a caixa de resposta DESTE comentário já está aberta, o botão
+              "Responder" some (evita duas ações com o mesmo rótulo lidas pelo TalkBack
+              ao mesmo tempo). */}
+          {onResponder && !respondendoAEste ? (
             <Pressable
-              onPress={onResponder}
+              onPress={() => onResponder(comentario.id)}
               accessibilityRole="button"
               accessibilityLabel={`Responder a ${autor?.nome ?? "este comentário"}`}
               hitSlop={8}
@@ -921,8 +1045,22 @@ function ComentarioItem({
               <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>Denunciar</Text>
             </Pressable>
           ) : null}
+          {ehMeuComentario && onExcluir ? (
+            <Pressable
+              onPress={() => onExcluir(comentario.id)}
+              disabled={excluindo}
+              accessibilityRole="button"
+              accessibilityLabel="Excluir meu comentário"
+              accessibilityState={{ disabled: excluindo }}
+              hitSlop={8}
+            >
+              <Text style={[theme.typography.caption, { color: theme.colors.error.solid, fontWeight: "700" }]}>
+                {excluindo ? "Excluindo…" : "Excluir"}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </View>
   );
-}
+});

@@ -2,38 +2,34 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Check, Loader2 } from "lucide-react";
+import { AlertTriangle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
+import { AuthLayout } from "@/layouts/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import authService from "@/services/auth.service";
 import { extrairMensagemErro } from "@/services/api";
 
-const esquema = z
+// Mesmas regras de `configuracoes/senha.tsx` (troca autenticada) — as duas
+// telas reaproveitam a mesma regra do backend (`authValidator.regrasSenha`).
+const regrasSenha = z
+  .string()
+  .min(8, "A senha deve ter entre 8 e 72 caracteres.")
+  .max(72, "A senha deve ter entre 8 e 72 caracteres.")
+  .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
+  .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
+  .regex(/\d/, "A senha deve conter ao menos um número.")
+  .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial.");
+
+/** Mecanismo principal: só a nova senha — o token (do link do e-mail) já identifica a solicitação sozinho. */
+const esquemaToken = z
   .object({
-    email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-    codigo: z
-      .string()
-      .trim()
-      .length(6, "O código deve ter 6 dígitos.")
-      .regex(/^\d{6}$/, "O código deve conter apenas números."),
-    // Mesmas regras de `configuracoes/senha.tsx` (troca autenticada) —
-    // antes esta tela aceitava uma senha mais fraca (sem caractere
-    // especial) do que o resto do app exige, uma divergência silenciosa
-    // entre os dois validators do backend, corrigida junto (ambos agora
-    // reaproveitam a mesma regra em `authValidator.regrasSenha`).
-    novaSenha: z
-      .string()
-      .min(8, "A senha deve ter entre 8 e 72 caracteres.")
-      .max(72, "A senha deve ter entre 8 e 72 caracteres.")
-      .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
-      .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
-      .regex(/\d/, "A senha deve conter ao menos um número.")
-      .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial."),
+    novaSenha: regrasSenha,
     confirmarSenha: z.string().min(1, "Confirme a nova senha."),
   })
   .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
@@ -41,29 +37,183 @@ const esquema = z
     path: ["confirmarSenha"],
   });
 
-type Formulario = z.infer<typeof esquema>;
+/** Fallback: código de 6 dígitos — único mecanismo usado pelo aplicativo mobile (sem deep link). */
+const esquemaCodigo = z
+  .object({
+    email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
+    codigo: z
+      .string()
+      .trim()
+      .length(6, "O código deve ter 6 dígitos.")
+      .regex(/^\d{6}$/, "O código deve conter apenas números."),
+    novaSenha: regrasSenha,
+    confirmarSenha: z.string().min(1, "Confirme a nova senha."),
+  })
+  .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
+    message: "As senhas não coincidem.",
+    path: ["confirmarSenha"],
+  });
+
+type FormularioToken = z.infer<typeof esquemaToken>;
+type FormularioCodigo = z.infer<typeof esquemaCodigo>;
 
 export const Route = createFileRoute("/redefinir-senha")({
   // `z.coerce.string()`, não `z.string()`: o parser de search params do
   // TanStack Router converte um valor 100% numérico na URL para `number`
-  // antes da validação — um código de 6 dígitos é sempre "numérico" na
-  // aparência, então `z.string()` sozinho rejeitava TODO link de
-  // redefinição de senha com "Expected string, received number" (mesmo
-  // bug encontrado e corrigido em `confirmar-email.tsx` na auditoria J2.1
-  // — aqui também quebrava a Opção A/link, silenciosamente, desde antes
-  // do J2).
-  validateSearch: z.object({ email: z.string().optional(), codigo: z.coerce.string().optional() }),
+  // antes da validação — um código de 6 dígitos (ou um token só de dígitos,
+  // em tese) é sempre "numérico" na aparência, então `z.string()` sozinho
+  // rejeitava o link com "Expected string, received number" (mesmo bug
+  // corrigido em `confirmar-email.tsx` na auditoria J2.1).
+  validateSearch: z.object({
+    token: z.coerce.string().optional(),
+    email: z.string().optional(),
+    codigo: z.coerce.string().optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Redefinir senha — ACESSO" },
-      { name: "description", content: "Informe o código recebido por e-mail e defina uma nova senha." },
+      { name: "description", content: "Defina uma nova senha para sua conta ACESSO." },
     ],
   }),
   component: RedefinirSenha,
 });
 
 function RedefinirSenha() {
-  const { email, codigo } = Route.useSearch();
+  const { token, email, codigo } = Route.useSearch();
+
+  // O link do e-mail (mecanismo principal) manda só `?token=`: a tela vira
+  // "só nova senha", sem pedir e-mail nem código de novo. Sem token, cai no
+  // fluxo de fallback (código de 6 dígitos) — o mesmo que já existia, usado
+  // por quem prefere digitar o código à mão ou chegou aqui a partir de
+  // "Já tenho um código" em `/recuperar-senha`.
+  return token ? <FormularioComToken token={token} /> : <FormularioComCodigo emailInicial={email} codigoInicial={codigo} />;
+}
+
+function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthLayout>
+      <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
+        <Logo />
+      </Link>
+      <Card className="shadow-card">
+        <CardContent className="p-6">{children}</CardContent>
+      </Card>
+    </AuthLayout>
+  );
+}
+
+function FormularioComToken({ token }: { token: string }) {
+  const navigate = useNavigate();
+  const [enviando, setEnviando] = useState(false);
+  const [linkInvalido, setLinkInvalido] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormularioToken>({
+    resolver: zodResolver(esquemaToken),
+    defaultValues: { novaSenha: "", confirmarSenha: "" },
+  });
+
+  const aoEnviar = handleSubmit(async (valores) => {
+    setEnviando(true);
+    try {
+      await authService.redefinirSenha({ token, novaSenha: valores.novaSenha });
+      toast.success("Senha redefinida com sucesso! Faça login novamente.");
+      navigate({ to: "/entrar" });
+    } catch (erro) {
+      // Qualquer rejeição do servidor aqui é "link inválido ou expirado"
+      // (é a única forma de o backend recusar este fluxo) — substitui o
+      // formulário por um estado próprio em vez de anexar o erro a um
+      // campo, já que não há mais campo de código/e-mail para apontar.
+      setLinkInvalido(true);
+      toast.error(extrairMensagemErro(erro, "Link inválido ou expirado."));
+    } finally {
+      setEnviando(false);
+    }
+  });
+
+  if (linkInvalido) {
+    return (
+      <Layout>
+        <div role="alert" className="space-y-4 text-center">
+          <AlertTriangle className="mx-auto size-10 text-destructive" aria-hidden="true" />
+          <h1 className="text-2xl font-extrabold">Link inválido ou expirado</h1>
+          <p className="text-sm text-muted-foreground">
+            Este link de redefinição já foi usado, expirou ou é inválido. Solicite um novo link para continuar.
+          </p>
+          <Button asChild className="min-h-12 w-full text-base">
+            <Link to="/recuperar-senha">Solicitar novo link</Link>
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <h1 className="text-2xl font-extrabold">Redefinir senha</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Escolha uma nova senha para sua conta.</p>
+      <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
+        <div className="space-y-2">
+          <Label htmlFor="nova-senha">Nova senha</Label>
+          <PasswordInput
+            id="nova-senha"
+            autoComplete="new-password"
+            className="min-h-12"
+            aria-describedby={errors.novaSenha ? "nova-senha-erro" : "nova-senha-dica"}
+            aria-invalid={Boolean(errors.novaSenha)}
+            {...register("novaSenha")}
+          />
+          {errors.novaSenha ? (
+            <p id="nova-senha-erro" role="alert" className="text-sm font-medium text-destructive">
+              {errors.novaSenha.message}
+            </p>
+          ) : (
+            <p id="nova-senha-dica" className="text-sm text-muted-foreground">
+              Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+          <PasswordInput
+            id="confirmar-senha"
+            autoComplete="new-password"
+            className="min-h-12"
+            aria-invalid={Boolean(errors.confirmarSenha)}
+            aria-describedby={errors.confirmarSenha ? "confirmar-senha-erro" : undefined}
+            {...register("confirmarSenha")}
+          />
+          {errors.confirmarSenha && (
+            <p id="confirmar-senha-erro" role="alert" className="text-sm font-medium text-destructive">
+              {errors.confirmarSenha.message}
+            </p>
+          )}
+        </div>
+        <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
+          {enviando ? (
+            <>
+              <Loader2 className="animate-spin" aria-hidden="true" /> Salvando…
+            </>
+          ) : (
+            <>
+              <Check aria-hidden="true" /> Redefinir senha
+            </>
+          )}
+        </Button>
+      </form>
+      <p className="mt-6 text-sm text-muted-foreground">
+        Lembrou a senha?{" "}
+        <Link to="/entrar" className="font-semibold text-primary underline">
+          Entrar
+        </Link>
+      </p>
+    </Layout>
+  );
+}
+
+function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: string; codigoInicial?: string }) {
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const {
@@ -72,9 +222,14 @@ function RedefinirSenha() {
     setError,
     setFocus,
     formState: { errors },
-  } = useForm<Formulario>({
-    resolver: zodResolver(esquema),
-    defaultValues: { email: email ?? "", codigo: codigo ?? "", novaSenha: "", confirmarSenha: "" },
+  } = useForm<FormularioCodigo>({
+    resolver: zodResolver(esquemaCodigo),
+    defaultValues: {
+      email: emailInicial ?? "",
+      codigo: codigoInicial ?? "",
+      novaSenha: "",
+      confirmarSenha: "",
+    },
   });
 
   const aoEnviar = handleSubmit(async (valores) => {
@@ -103,111 +258,101 @@ function RedefinirSenha() {
   });
 
   return (
-    <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
-      <div className="w-full max-w-md">
-        <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
-          <Logo />
+    <Layout>
+      <h1 className="text-2xl font-extrabold">Redefinir senha</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Prefere usar o link enviado por e-mail? Ele é mais rápido — basta clicar em "Redefinir minha senha" na
+        mensagem que enviamos. Se estiver no aplicativo ACESSO, informe o código de 6 dígitos abaixo.
+      </p>
+      <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            className="min-h-12"
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? "email-erro" : undefined}
+            {...register("email")}
+          />
+          {errors.email && (
+            <p id="email-erro" role="alert" className="text-sm font-medium text-destructive">
+              {errors.email.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="codigo">Código de verificação</Label>
+          <Input
+            id="codigo"
+            inputMode="numeric"
+            maxLength={6}
+            className="min-h-12"
+            aria-invalid={Boolean(errors.codigo)}
+            aria-describedby={errors.codigo ? "codigo-erro" : undefined}
+            {...register("codigo")}
+          />
+          {errors.codigo && (
+            <p id="codigo-erro" role="alert" className="text-sm font-medium text-destructive">
+              {errors.codigo.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="nova-senha">Nova senha</Label>
+          <PasswordInput
+            id="nova-senha"
+            autoComplete="new-password"
+            className="min-h-12"
+            aria-describedby={errors.novaSenha ? "nova-senha-erro" : "nova-senha-dica"}
+            aria-invalid={Boolean(errors.novaSenha)}
+            {...register("novaSenha")}
+          />
+          {errors.novaSenha ? (
+            <p id="nova-senha-erro" role="alert" className="text-sm font-medium text-destructive">
+              {errors.novaSenha.message}
+            </p>
+          ) : (
+            <p id="nova-senha-dica" className="text-sm text-muted-foreground">
+              Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+          <PasswordInput
+            id="confirmar-senha"
+            autoComplete="new-password"
+            className="min-h-12"
+            aria-invalid={Boolean(errors.confirmarSenha)}
+            aria-describedby={errors.confirmarSenha ? "confirmar-senha-erro" : undefined}
+            {...register("confirmarSenha")}
+          />
+          {errors.confirmarSenha && (
+            <p id="confirmar-senha-erro" role="alert" className="text-sm font-medium text-destructive">
+              {errors.confirmarSenha.message}
+            </p>
+          )}
+        </div>
+        <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
+          {enviando ? (
+            <>
+              <Loader2 className="animate-spin" aria-hidden="true" /> Salvando…
+            </>
+          ) : (
+            <>
+              <Check aria-hidden="true" /> Redefinir senha
+            </>
+          )}
+        </Button>
+      </form>
+      <p className="mt-6 text-sm text-muted-foreground">
+        Lembrou a senha?{" "}
+        <Link to="/entrar" className="font-semibold text-primary underline">
+          Entrar
         </Link>
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <h1 className="text-2xl font-extrabold">Redefinir senha</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Informe o código de 6 dígitos enviado ao seu e-mail e escolha uma nova senha.
-            </p>
-            <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className="min-h-12"
-                  aria-invalid={Boolean(errors.email)}
-                  aria-describedby={errors.email ? "email-erro" : undefined}
-                  {...register("email")}
-                />
-                {errors.email && (
-                  <p id="email-erro" role="alert" className="text-sm font-medium text-destructive">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="codigo">Código de verificação</Label>
-                <Input
-                  id="codigo"
-                  inputMode="numeric"
-                  maxLength={6}
-                  className="min-h-12"
-                  aria-invalid={Boolean(errors.codigo)}
-                  aria-describedby={errors.codigo ? "codigo-erro" : undefined}
-                  {...register("codigo")}
-                />
-                {errors.codigo && (
-                  <p id="codigo-erro" role="alert" className="text-sm font-medium text-destructive">
-                    {errors.codigo.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nova-senha">Nova senha</Label>
-                <Input
-                  id="nova-senha"
-                  type="password"
-                  autoComplete="new-password"
-                  className="min-h-12"
-                  aria-describedby={errors.novaSenha ? "nova-senha-erro" : "nova-senha-dica"}
-                  aria-invalid={Boolean(errors.novaSenha)}
-                  {...register("novaSenha")}
-                />
-                {errors.novaSenha ? (
-                  <p id="nova-senha-erro" role="alert" className="text-sm font-medium text-destructive">
-                    {errors.novaSenha.message}
-                  </p>
-                ) : (
-                  <p id="nova-senha-dica" className="text-sm text-muted-foreground">
-                    Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
-                <Input
-                  id="confirmar-senha"
-                  type="password"
-                  autoComplete="new-password"
-                  className="min-h-12"
-                  aria-invalid={Boolean(errors.confirmarSenha)}
-                  aria-describedby={errors.confirmarSenha ? "confirmar-senha-erro" : undefined}
-                  {...register("confirmarSenha")}
-                />
-                {errors.confirmarSenha && (
-                  <p id="confirmar-senha-erro" role="alert" className="text-sm font-medium text-destructive">
-                    {errors.confirmarSenha.message}
-                  </p>
-                )}
-              </div>
-              <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
-                {enviando ? (
-                  <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Salvando…
-                  </>
-                ) : (
-                  <>
-                    <Check aria-hidden="true" /> Redefinir senha
-                  </>
-                )}
-              </Button>
-            </form>
-            <p className="mt-6 text-sm text-muted-foreground">
-              Lembrou a senha?{" "}
-              <Link to="/entrar" className="font-semibold text-primary underline">
-                Entrar
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      </p>
+    </Layout>
   );
 }

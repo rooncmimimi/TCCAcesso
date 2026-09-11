@@ -1,9 +1,12 @@
+import * as Speech from "expo-speech";
 import { Alert, ScrollView, Text, View } from "react-native";
 
 import { useAccessibility } from "../accessibility";
 import { Badge, Button, Card, Divider, Input, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
 import { useTheme } from "../theme";
 import type { Theme } from "../theme";
+
+const FRASE_TESTE = "Este é um exemplo de como o Sistema de Voz vai ler o conteúdo do aplicativo.";
 
 /**
  * Configurações → Acessibilidade (Fase 6). Fala só com `useAccessibility()`
@@ -143,11 +146,22 @@ export function AccessibilityScreen() {
             theme={theme}
           />
 
-          <InfoRow
+          <ToggleRow
             label="Leitura por voz"
-            value="Em preparação — chegará em uma atualização futura do aplicativo."
-            theme={theme}
+            description="Ativa botões de 'Ouvir em voz alta' em vagas e publicações, lendo o conteúdo com a voz do próprio aparelho. É diferente do leitor de tela: continua disponível mesmo se você já usa um."
+            value={preferences.voiceEnabled}
+            onValueChange={() => togglePreference("voiceEnabled")}
           />
+          {preferences.voiceEnabled ? (
+            <Button
+              variant="outline"
+              size="small"
+              onPress={() => Speech.speak(FRASE_TESTE, { language: "pt-BR" })}
+              accessibilityLabel="Testar leitura por voz"
+            >
+              Testar leitura por voz
+            </Button>
+          ) : null}
         </View>
 
         <Divider />
@@ -155,8 +169,17 @@ export function AccessibilityScreen() {
         <View style={{ gap: theme.spacing.lg }}>
           <SectionHeader title="Outras opções" theme={theme} />
 
-          <InfoRow label="Fonte para dislexia" value="Em preparação." theme={theme} />
-          <InfoRow label="Cursor ampliado" value="Não disponível nesta plataforma." theme={theme} />
+          <ToggleRow
+            label="Fonte para dislexia"
+            description="Troca a fonte do aplicativo pela Lexend, desenhada para deixar a leitura mais fácil."
+            value={preferences.dyslexiaFont}
+            onValueChange={() => togglePreference("dyslexiaFont")}
+          />
+
+          {/* Sem controle nenhum de propósito: não existe um "cursor" em
+              interfaces de toque para ampliar — ver `README.md` desta
+              pasta. Um botão aqui sugeriria uma função que não existe. */}
+          <InfoRow label="Cursor ampliado" value="Não se aplica a interfaces por toque." theme={theme} />
         </View>
 
         <Divider />

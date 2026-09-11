@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { memo, useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { Button, Card, ScreenContainer } from "../components/ui";
 import { ModeracaoService } from "../moderacao";
@@ -34,10 +34,12 @@ export function BlockedUsersScreen() {
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [total, setTotal] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
-  const [buscando, setBuscando] = useState<"inicial" | "anterior" | "proxima" | "retry" | null>("inicial");
+  const [buscando, setBuscando] = useState<"inicial" | "anterior" | "proxima" | "retry" | "atualizar" | null>(
+    "inicial",
+  );
   const [primeiroCarregamentoConcluido, setPrimeiroCarregamentoConcluido] = useState(false);
 
-  const buscar = useCallback(async (paginaAlvo: number, acao: "anterior" | "proxima" | "retry") => {
+  const buscar = useCallback(async (paginaAlvo: number, acao: "anterior" | "proxima" | "retry" | "atualizar") => {
     setBuscando(acao);
     setErro(null);
     try {
@@ -81,10 +83,14 @@ export function BlockedUsersScreen() {
     };
   }, []);
 
-  function removerDaLista(usuarioId: string) {
+  // Fase 25 (performance) — `useCallback` + `React.memo` no `ItemBloqueado`
+  // (renderizado via `.map()`, mas o mesmo raciocínio se aplica: cada
+  // paginação/refresh recria o array). `setItens`/`setTotal` são estáveis.
+  // Ver `HomeScreen.tsx`.
+  const removerDaLista = useCallback((usuarioId: string) => {
     setItens((atual) => atual.filter((item) => item.id !== usuarioId));
     setTotal((atual) => Math.max(0, atual - 1));
-  }
+  }, []);
 
   if (!primeiroCarregamentoConcluido) {
     return (
@@ -120,7 +126,22 @@ export function BlockedUsersScreen() {
 
   return (
     <ScreenContainer>
-      <View style={{ flex: 1, gap: theme.spacing.sm, paddingVertical: theme.spacing.md }}>
+      {/* Fase 26 (polish): era um `View` fixo sem `ScrollView` nenhum por
+          baixo — com mais de ~8 bloqueios (o limite é 20 por página), o
+          conteúdo passava da altura da tela e os botões de paginação no
+          fim ficavam inalcançáveis. `ScreenContainer` não rola sozinho (é
+          só `SafeAreaView` + `View`, ver o próprio componente). */}
+      <ScrollView
+        testID="bloqueados-scroll"
+        contentContainerStyle={{ gap: theme.spacing.sm, paddingVertical: theme.spacing.md, flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={buscando === "atualizar"}
+            onRefresh={() => void buscar(pagina, "atualizar")}
+            colors={[theme.colors.primary.solid]}
+          />
+        }
+      >
         {total > 0 ? (
           <Text
             accessibilityLiveRegion="polite"
@@ -138,7 +159,8 @@ export function BlockedUsersScreen() {
           </Card>
         ) : (
           itens.map((item) => (
-            <ItemBloqueado key={item.id} item={item} theme={theme} onDesbloqueado={() => removerDaLista(item.id)} />
+            // `onDesbloqueado` passado DIRETO — o item chama `onDesbloqueado(item.id)`. Ver `HomeScreen.tsx`.
+            <ItemBloqueado key={item.id} item={item} theme={theme} onDesbloqueado={removerDaLista} />
           ))
         )}
 
@@ -164,13 +186,27 @@ export function BlockedUsersScreen() {
             </Button>
           </View>
         ) : null}
-      </View>
+      </ScrollView>
     </ScreenContainer>
   );
 }
 
-/** Função local, não exportada — só `BlockedUsersScreen` consome. */
-function ItemBloqueado({ item, theme, onDesbloqueado }: { item: UsuarioBloqueado; theme: Theme; onDesbloqueado: () => void }) {
+/**
+ * Função local, não exportada — só `BlockedUsersScreen` consome.
+ *
+ * `React.memo` (Fase 25, performance) — mesma razão de `PostagemListItem` em
+ * `HomeScreen.tsx`: com `onDesbloqueado` estável e recebendo o `id` como
+ * parâmetro, desbloquear UM usuário não reprocessa as outras linhas.
+ */
+const ItemBloqueado = memo(function ItemBloqueado({
+  item,
+  theme,
+  onDesbloqueado,
+}: {
+  item: UsuarioBloqueado;
+  theme: Theme;
+  onDesbloqueado: (usuarioId: string) => void;
+}) {
   const [desbloqueando, setDesbloqueando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -180,7 +216,7 @@ function ItemBloqueado({ item, theme, onDesbloqueado }: { item: UsuarioBloqueado
     setErro(null);
     try {
       await ModeracaoService.desbloquear(item.id);
-      onDesbloqueado();
+      onDesbloqueado(item.id);
     } catch (erroRequisicao) {
       setErro(getFriendlyErrorMessage(erroRequisicao, "Não foi possível desbloquear agora."));
       setDesbloqueando(false);
@@ -217,4 +253,4 @@ function ItemBloqueado({ item, theme, onDesbloqueado }: { item: UsuarioBloqueado
       </Button>
     </Card>
   );
-}
+});

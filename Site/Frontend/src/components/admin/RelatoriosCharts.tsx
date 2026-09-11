@@ -2,26 +2,32 @@ import { Bar, BarChart, CartesianGrid, Pie, PieChart, XAxis, Cell } from "rechar
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 import type { CandidaturaPorStatus } from "@/services/admin.service";
 
+// As variáveis `--chart-*` guardam valores `oklch(...)` (ver `styles/globals.css`).
+// Envolvê-las em `hsl(...)` — como estava — gera `hsl(oklch(...))`, CSS inválido:
+// o `fill` do SVG caía no padrão (preto), quase invisível no modo escuro. Aqui
+// a variável é usada direta, sem wrapper.
 const CORES = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
 ];
 
 const configVisaoGeral = {
-  total: { label: "Total", color: "hsl(var(--chart-1))" },
+  total: { label: "Total", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 const configCandidaturas = {
-  total: { label: "Candidaturas", color: "hsl(var(--chart-2))" },
+  total: { label: "Candidaturas", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 type RelatoriosChartsProps = {
@@ -74,12 +80,15 @@ export function RelatoriosCharts({ visaoGeral, candidaturasPorStatus }: Relatori
           ) : (
             <ChartContainer config={configCandidaturas} className="max-h-72 w-full">
               <PieChart>
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
                 <Pie data={dadosCandidaturas} dataKey="total" nameKey="status" innerRadius={50}>
                   {dadosCandidaturas.map((entry, index) => (
                     <Cell key={entry.status} fill={CORES[index % CORES.length]} />
                   ))}
                 </Pie>
+                {/* Legenda visível: o gráfico não pode depender só da cor da fatia
+                    para ser compreendido (WCAG 1.4.1). */}
+                <ChartLegend content={<ChartLegendContent nameKey="status" />} className="flex-wrap gap-x-4 gap-y-1" />
               </PieChart>
             </ChartContainer>
           )}

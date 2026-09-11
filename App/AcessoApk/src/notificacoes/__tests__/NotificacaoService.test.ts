@@ -1,6 +1,6 @@
 /* eslint-disable import/first -- `jest.mock` precisa vir antes dos imports dos módulos que ele substitui. */
 jest.mock("../../services/api/client", () => ({
-  apiClient: { get: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+  apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
 }));
 
 import { apiClient } from "../../services/api/client";
@@ -103,6 +103,37 @@ describe("NotificacaoService", () => {
       (apiClient.delete as jest.Mock).mockRejectedValue(erro);
 
       await expect(NotificacaoService.remover("outro")).rejects.toThrow();
+    });
+  });
+
+  // Fase R5 — push tokens.
+  describe("registrarPushToken", () => {
+    it("faz POST /notificacoes/push-token com token e plataforma", async () => {
+      (apiClient.post as jest.Mock).mockResolvedValue({ data: { sucesso: true, registrado: true } });
+
+      await NotificacaoService.registrarPushToken("ExponentPushToken[abc]", "android");
+
+      expect(apiClient.post).toHaveBeenCalledWith("/notificacoes/push-token", {
+        token: "ExponentPushToken[abc]",
+        plataforma: "android",
+      });
+    });
+
+    it("propaga erro", async () => {
+      (apiClient.post as jest.Mock).mockRejectedValue(new Error("500"));
+      await expect(NotificacaoService.registrarPushToken("t", "ios")).rejects.toThrow();
+    });
+  });
+
+  describe("removerPushToken", () => {
+    it("faz DELETE /notificacoes/push-token com o token no corpo", async () => {
+      (apiClient.delete as jest.Mock).mockResolvedValue({ data: { sucesso: true, removido: true } });
+
+      await NotificacaoService.removerPushToken("ExponentPushToken[abc]");
+
+      expect(apiClient.delete).toHaveBeenCalledWith("/notificacoes/push-token", {
+        data: { token: "ExponentPushToken[abc]" },
+      });
     });
   });
 });

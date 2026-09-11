@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
 import { authService } from "@/services/auth.service";
@@ -94,9 +94,8 @@ export function SecaoContaPerigo() {
                 <Label htmlFor="senha-pausar" className="sr-only">
                   Senha atual
                 </Label>
-                <Input
+                <PasswordInput
                   id="senha-pausar"
-                  type="password"
                   autoComplete="current-password"
                   placeholder="Senha atual"
                   required
@@ -153,9 +152,8 @@ export function SecaoContaPerigo() {
                 <Label htmlFor="senha-excluir" className="sr-only">
                   Senha atual
                 </Label>
-                <Input
+                <PasswordInput
                   id="senha-excluir"
-                  type="password"
                   autoComplete="current-password"
                   placeholder="Senha atual"
                   required

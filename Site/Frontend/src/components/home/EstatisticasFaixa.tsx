@@ -6,8 +6,12 @@ const ITENS: {
   label: string;
   icon: typeof Users;
 }[] = [
-  { chave: "usuarios", label: "usuários cadastrados", icon: Users },
-  { chave: "vagas", label: "vagas publicadas", icon: Briefcase },
+  // Nomes das chaves corrigidos (auditoria do Site, item 7): antes não
+  // batiam com nenhum campo real da API (`usuarios`/`vagas` nunca
+  // existiram na resposta), então só "empresas parceiras" chegava a
+  // aparecer — as outras 3 estatísticas ficavam silenciosamente ocultas.
+  { chave: "candidatos", label: "candidatos cadastrados", icon: Users },
+  { chave: "vagasAbertas", label: "vagas abertas", icon: Briefcase },
   { chave: "empresas", label: "empresas parceiras", icon: Building2 },
   { chave: "candidaturas", label: "candidaturas enviadas", icon: FileCheck2 },
 ];

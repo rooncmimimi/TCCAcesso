@@ -146,9 +146,27 @@ export interface VagaDetalheResposta {
   vaga: Vaga;
 }
 
+/**
+ * `GET /vagas` (`VagaService.findAll`, Site/Backend) — filtros confirmados
+ * por auditoria (Fase R1). A API real também aceita `estado`, `exclusivaPcd`
+ * e `empresaId`, mas esta fase só expõe na UI os filtros pedidos (busca
+ * textual, cidade, modalidade, contrato, público-alvo, recursos de
+ * acessibilidade) — os campos abaixo são exatamente os que `JobsScreen`
+ * usa. `recursosAcessibilidade` é AND (a vaga precisa ter TODOS os
+ * recursos selecionados, não qualquer um deles — `Op.contains` no backend).
+ */
 export interface ListarVagasParametros {
   page?: number;
   limit?: number;
+  /** Busca textual em título, descrição e requisitos (`Op.iLike`, case-insensitive, substring). */
+  search?: string;
+  /** Substring, case-insensitive (`Op.iLike`) — não precisa bater com a cidade inteira. */
+  cidade?: string;
+  modalidade?: ModalidadeVaga;
+  contrato?: ContratoVaga;
+  publicoAlvo?: PublicoAlvoVaga;
+  /** Vaga precisa ter TODOS os recursos da lista (`Op.contains`), não apenas um. */
+  recursosAcessibilidade?: RecursoAcessibilidadeVaga[];
 }
 
 /** `Site/Backend/src/models/Candidatura.js: STATUS_CANDIDATURA`. `"Visualizada"|"EmAnalise"|"Aprovada"|"Rejeitada"` são os únicos que a EMPRESA pode aplicar (`CandidaturaService.STATUS_EMPRESA`); `"Pendente"` é o estado inicial, `"Cancelada"` só o próprio candidato aplica. */

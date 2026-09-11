@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
+import { memo, useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { Button, Card, ScreenContainer } from "../components/ui";
@@ -38,11 +38,13 @@ export function FollowListScreen({ route, navigation }: FollowListScreenProps) {
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [total, setTotal] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
-  const [buscando, setBuscando] = useState<"inicial" | "anterior" | "proxima" | "retry" | null>("inicial");
+  const [buscando, setBuscando] = useState<"inicial" | "anterior" | "proxima" | "retry" | "atualizar" | null>(
+    "inicial",
+  );
   const [primeiroCarregamentoConcluido, setPrimeiroCarregamentoConcluido] = useState(false);
 
   const buscar = useCallback(
-    async (paginaAlvo: number, acao: "anterior" | "proxima" | "retry") => {
+    async (paginaAlvo: number, acao: "anterior" | "proxima" | "retry" | "atualizar") => {
       setBuscando(acao);
       setErro(null);
       try {
@@ -97,9 +99,14 @@ export function FollowListScreen({ route, navigation }: FollowListScreenProps) {
     };
   }, [usuarioId, modo]);
 
-  function abrirPerfil(alvoId: string) {
-    navigation.push("PublicProfile", { usuarioId: alvoId });
-  }
+  // Fase 25 (performance) — `useCallback` + `React.memo` no `ItemUsuario`.
+  // `[navigation]` é estável durante a vida da tela. Ver `HomeScreen.tsx`.
+  const abrirPerfil = useCallback(
+    (alvoId: string) => {
+      navigation.push("PublicProfile", { usuarioId: alvoId });
+    },
+    [navigation],
+  );
 
   if (!primeiroCarregamentoConcluido) {
     return (
@@ -136,9 +143,22 @@ export function FollowListScreen({ route, navigation }: FollowListScreenProps) {
   return (
     <ScreenContainer>
       <FlatList
+        testID="follow-lista"
         data={itens}
         keyExtractor={(item) => item.id}
+        // Fase 25 (performance) — ver o mesmo ajuste, com a razão completa, em `HomeScreen.tsx`.
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         contentContainerStyle={{ flexGrow: 1, gap: theme.spacing.sm, paddingVertical: theme.spacing.md }}
+        // Fase 26 (polish) — mesma razão de `JobsScreen.tsx`: refaz a MESMA página aberta.
+        refreshControl={
+          <RefreshControl
+            refreshing={buscando === "atualizar"}
+            onRefresh={() => void buscar(pagina, "atualizar")}
+            colors={[theme.colors.primary.solid]}
+          />
+        }
         ListHeaderComponent={
           total > 0 ? (
             <Text
@@ -156,7 +176,7 @@ export function FollowListScreen({ route, navigation }: FollowListScreenProps) {
             </Text>
           </Card>
         }
-        renderItem={({ item }) => <ItemUsuario item={item} theme={theme} onPress={() => abrirPerfil(item.id)} />}
+        renderItem={({ item }) => <ItemUsuario item={item} theme={theme} onPress={abrirPerfil} />}
         ListFooterComponent={
           totalPaginas > 1 ? (
             <View style={{ flexDirection: "row", gap: theme.spacing.sm, marginTop: theme.spacing.sm }}>
@@ -186,11 +206,24 @@ export function FollowListScreen({ route, navigation }: FollowListScreenProps) {
   );
 }
 
-function ItemUsuario({ item, theme, onPress }: { item: UsuarioResumoSocial; theme: Theme; onPress: () => void }) {
+/**
+ * `React.memo` (Fase 25, performance) — mesma razão de `PostagemListItem` em
+ * `HomeScreen.tsx`: com o `onPress` estável e recebendo o `id` como
+ * parâmetro, uma troca de página não reprocessa as linhas que não mudaram.
+ */
+const ItemUsuario = memo(function ItemUsuario({
+  item,
+  theme,
+  onPress,
+}: {
+  item: UsuarioResumoSocial;
+  theme: Theme;
+  onPress: (usuarioId: string) => void;
+}) {
   return (
     <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
       <Pressable
-        onPress={onPress}
+        onPress={() => onPress(item.id)}
         accessibilityRole="button"
         accessibilityLabel={`Abrir perfil de ${item.nome}`}
         android_ripple={{ color: theme.colors.divider }}
@@ -216,4 +249,4 @@ function ItemUsuario({ item, theme, onPress }: { item: UsuarioResumoSocial; them
       </Pressable>
     </View>
   );
-}
+});

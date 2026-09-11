@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -48,6 +48,10 @@ export function BloquearUsuarioMenu({
   const navigate = useNavigate();
   const [confirmando, setConfirmando] = useState(false);
   const [denunciando, setDenunciando] = useState(false);
+  // Foco volta pra este botão ao fechar os diálogos abaixo — ver comentário
+  // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
+  // o diálogo que abre.
+  const gatilhoMenuRef = useRef<HTMLButtonElement>(null);
 
   // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
   // `useAutoSpeech` — falar aqui também duplicava (e, no erro, a fala
@@ -69,7 +73,13 @@ export function BloquearUsuarioMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="size-11 shrink-0" aria-label="Mais opções">
+          <Button
+            ref={gatilhoMenuRef}
+            variant="outline"
+            size="icon"
+            className="size-11 shrink-0"
+            aria-label="Mais opções"
+          >
             <MoreVertical aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
@@ -96,11 +106,17 @@ export function BloquearUsuarioMenu({
           entidadeTipo={denunciaEntidadeTipo}
           entidadeId={denunciaEntidadeId}
           nomeExibicao={nome}
+          aoFecharDevolverFoco={() => gatilhoMenuRef.current?.focus()}
         />
       )}
 
       <AlertDialog open={confirmando} onOpenChange={setConfirmando}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          onCloseAutoFocus={(evento) => {
+            evento.preventDefault();
+            gatilhoMenuRef.current?.focus();
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>Bloquear {nome}?</AlertDialogTitle>
             <AlertDialogDescription>

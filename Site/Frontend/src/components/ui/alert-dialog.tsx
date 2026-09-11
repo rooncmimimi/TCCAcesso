@@ -28,19 +28,45 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <AlertDialogPortal>
-    <AlertDialogOverlay />
-    <AlertDialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
-        className,
-      )}
-      {...props}
-    />
-  </AlertDialogPortal>
-));
+>(({ className, onOpenAutoFocus, onCloseAutoFocus, ...props }, ref) => {
+  // Elemento que estava focado ao abrir (em geral o botão que disparou o
+  // diálogo) — guardado explicitamente porque, testado ao vivo neste app, a
+  // devolução de foco automática do Radix não restaura esse elemento de
+  // forma confiável (mesmo problema já documentado e corrigido em
+  // LightboxMidia.tsx). Capturado em `onOpenAutoFocus`, não em render nem em
+  // useEffect: esse componente wrapper fica montado o tempo todo (é
+  // `AlertDialogPrimitive.Content` — controlado por Presence internamente —
+  // quem entra/sai do DOM, não este forwardRef), então um `useRef` só
+  // inicializaria uma vez, na primeira renderização da página. Já
+  // `onOpenAutoFocus` só dispara quando o diálogo realmente abre, e é
+  // chamado ANTES do próprio Radix mover o foco para dentro do diálogo —
+  // por isso `document.activeElement`, lido aqui, ainda é o gatilho real.
+  const gatilhoRef = React.useRef<HTMLElement | null>(null);
+
+  return (
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
+          className,
+        )}
+        onOpenAutoFocus={(event) => {
+          gatilhoRef.current = document.activeElement as HTMLElement | null;
+          onOpenAutoFocus?.(event);
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          if (event.defaultPrevented) return;
+          event.preventDefault();
+          gatilhoRef.current?.focus();
+        }}
+        {...props}
+      />
+    </AlertDialogPortal>
+  );
+});
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

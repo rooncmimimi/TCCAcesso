@@ -122,16 +122,23 @@ describe("PostagemDetailScreen", () => {
     await AsyncStorage.clear();
   });
 
-  it("publicação e comentários carregam de forma independente — os dois aparecem quando ambos têm sucesso", async () => {
-    mockObterPorId.mockResolvedValue(postagem());
-    mockListarComentarios.mockResolvedValue(envelopeComentarios([comentario()]));
-    const { findByText } = await renderTela();
+  it(
+    "publicação e comentários carregam de forma independente — os dois aparecem quando ambos têm sucesso",
+    async () => {
+      mockObterPorId.mockResolvedValue(postagem());
+      mockListarComentarios.mockResolvedValue(envelopeComentarios([comentario()]));
+      const { findByText } = await renderTela();
 
-    expect(await findByText("Minha publicação de teste.")).toBeTruthy();
-    expect(await findByText("Um comentário de teste.")).toBeTruthy();
-    expect(mockObterPorId).toHaveBeenCalledWith("p1");
-    expect(mockListarComentarios).toHaveBeenCalledWith("p1", { page: 1, limit: 50 });
-  });
+      expect(await findByText("Minha publicação de teste.")).toBeTruthy();
+      expect(await findByText("Um comentário de teste.")).toBeTruthy();
+      expect(mockObterPorId).toHaveBeenCalledWith("p1");
+      expect(mockListarComentarios).toHaveBeenCalledWith("p1", { page: 1, limit: 50 });
+    },
+    // Primeiro teste do arquivo: absorve o custo de warm-up do Jest (transform/módulos)
+    // junto com duas esperas assíncronas em sequência — em runners de CI mais lentos
+    // isso passou de 5s por pouco. Só este teste precisa de mais tempo.
+    15000,
+  );
 
   it("falha só nos comentários NÃO esconde a publicação já carregada — mostra erro/retry restrito à seção", async () => {
     mockObterPorId.mockResolvedValue(postagem());

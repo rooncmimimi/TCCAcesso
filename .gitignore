@@ -25,10 +25,6 @@ logs/
 *.log
 npm-debug.log*
 
-# Arquivos gerados
-Frontend/src/routeTree.gen.ts
-Site/Frontend/src/routeTree.gen.ts
-
 # Editores e sistema operacional
 .vscode/
 .idea/

@@ -18,6 +18,12 @@ import { VoiceConsentDialog } from "./VoiceConsentDialog";
 
 const useAccessibilityMock = vi.fn();
 const useSpeechMock = vi.fn();
+const useSessionMock = vi.fn();
+// `vi.mock` é hoisted para o topo do arquivo — um mock cujo factory
+// referencia a mock function diretamente (não por trás de uma arrow lazy
+// como as de cima) precisa que ela também seja declarada via `vi.hoisted`,
+// senão o factory roda antes do `const salvarMock = vi.fn()` existir.
+const { salvarMock } = vi.hoisted(() => ({ salvarMock: vi.fn() }));
 
 vi.mock("@/contexts/AccessibilityContext", () => ({
     useAccessibility: () => useAccessibilityMock(),
@@ -27,8 +33,41 @@ vi.mock("@/contexts/SpeechContext", () => ({
     useSpeech: () => useSpeechMock(),
 }));
 
+// Etapa 6: `decidir()` agora também persiste a escolha na conta (ver
+// VoiceConsentDialog.tsx) — sem este mock, `useSession` lança fora de um
+// `SessionProvider` real.
+vi.mock("@/contexts/SessionContext", () => ({
+    useSession: () => useSessionMock(),
+}));
+
+vi.mock("@/services/acessibilidade.service", async () => {
+    const real = await vi.importActual<typeof import("@/services/acessibilidade.service")>(
+        "@/services/acessibilidade.service",
+    );
+    return { ...real, default: { ...real.default, salvar: salvarMock }, salvar: salvarMock };
+});
+
 function acessibilidadeFake(voiceConsent: boolean | null) {
-    return { hydrated: true, prefs: { voiceConsent } };
+    // Campos mínimos que `prefsParaApi` (chamado por `decidir` quando
+    // logado — Etapa 6) precisa poder ler sem lançar; os testes aqui não
+    // verificam esses valores específicos, só que a chamada acontece.
+    return {
+        hydrated: true,
+        prefs: {
+            voiceConsent,
+            darkMode: false,
+            highContrast: false,
+            dyslexiaFont: false,
+            fontScale: 1,
+            letterSpacing: 0,
+            lineHeight: 1.6,
+            reduceMotion: false,
+            screenReader: false,
+            speechRate: 1,
+            vlibras: true,
+            focusHighlight: true,
+        },
+    };
 }
 
 function speechFake(overrides: Partial<ReturnType<typeof speechFakeBase>> = {}) {
@@ -40,6 +79,8 @@ function speechFakeBase() {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    salvarMock.mockResolvedValue({});
+    useSessionMock.mockReturnValue({ autenticado: false });
 });
 
 // `vitest.config.ts` não usa `globals: true` — sem isto, o cleanup
@@ -96,5 +137,33 @@ describe("VoiceConsentDialog — fonte da verdade é prefs.voiceConsent (Etapa 5
 
         fireEvent.click(screen.getByRole("button", { name: /não, obrigado/i }));
         expect(speech.setChoice).toHaveBeenCalledWith("declined");
+    });
+
+    // Etapa 6: sem isto, a escolha ficava só em localStorage — `consentimentoVoz`
+    // nunca chegava ao backend, e a pessoa era perguntada de novo em outro
+    // dispositivo/navegador (o problema que este diálogo deveria evitar).
+    it("logado: também persiste a escolha na conta via acessibilidadeService.salvar", async () => {
+        useAccessibilityMock.mockReturnValue(acessibilidadeFake(null));
+        useSpeechMock.mockReturnValue(speechFake());
+        useSessionMock.mockReturnValue({ autenticado: true });
+
+        render(<VoiceConsentDialog />);
+        await waitFor(() => expect(screen.getByRole("alertdialog")).toBeInTheDocument(), { timeout: 2000 });
+
+        fireEvent.click(screen.getByRole("button", { name: /sim, ativar leitura/i }));
+        await waitFor(() => expect(salvarMock).toHaveBeenCalledTimes(1));
+        expect(salvarMock.mock.calls[0][0]).toMatchObject({ consentimentoVoz: true, leituraPorVoz: true });
+    });
+
+    it("visitante (não autenticado): não chama acessibilidadeService.salvar", async () => {
+        useAccessibilityMock.mockReturnValue(acessibilidadeFake(null));
+        useSpeechMock.mockReturnValue(speechFake());
+        useSessionMock.mockReturnValue({ autenticado: false });
+
+        render(<VoiceConsentDialog />);
+        await waitFor(() => expect(screen.getByRole("alertdialog")).toBeInTheDocument(), { timeout: 2000 });
+
+        fireEvent.click(screen.getByRole("button", { name: /sim, ativar leitura/i }));
+        expect(salvarMock).not.toHaveBeenCalled();
     });
 });

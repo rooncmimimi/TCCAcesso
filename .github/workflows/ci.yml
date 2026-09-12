@@ -75,7 +75,13 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          # jsdom 30 (usado pelos testes) declara `engines.node` como
+          # "^22.22.2 || ^24.15.0 || >=26.0.0" — Node 20 (usado nos outros
+          # dois jobs, onde não há jsdom) trava em runtime com
+          # "webidl.util.markAsUncloneable is not a function" dentro do
+          # polyfill de fetch/CacheStorage do undici. Só este job precisa
+          # de uma versão mais nova.
+          node-version: 22
           cache: npm
           cache-dependency-path: Site/Frontend/package-lock.json
       - run: npm ci

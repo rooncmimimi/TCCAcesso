@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BuscaService } from "../busca";
 import type { BuscaResumoResposta, TipoBusca } from "../busca";
 import { BuscaResultadoItem } from "../components/BuscaResultadoItem";
-import { Button, Card, Input, ScreenContainer } from "../components/ui";
+import { Button, Card, EmptyState, Input, ScreenContainer } from "../components/ui";
 import type { AppStackParamList, ProfileStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
@@ -103,11 +103,7 @@ export function SearchScreen({ navigation }: SearchScreenProps) {
 
       <ScrollView contentContainerStyle={{ gap: theme.spacing.xl, paddingBottom: theme.spacing.lg, flexGrow: 1 }}>
         {termoPesquisado === null ? (
-          <Card elevation="sm" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              Digite um termo para buscar pessoas, empresas, vagas e publicações no ACESSO.
-            </Text>
-          </Card>
+          <EmptyState description="Digite um termo para buscar pessoas, empresas, vagas e publicações no ACESSO." />
         ) : carregando ? (
           <View style={{ paddingVertical: theme.spacing.xl, alignItems: "center" }}>
             <ActivityIndicator color={theme.colors.primary.solid} size="large" />
@@ -125,12 +121,7 @@ export function SearchScreen({ navigation }: SearchScreenProps) {
             <Button onPress={() => void buscar()}>Tentar novamente</Button>
           </Card>
         ) : resumo && resumo.total === 0 ? (
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhum resultado</Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              {`Nada encontrado para "${termoPesquisado}".`}
-            </Text>
-          </Card>
+          <EmptyState title="Nenhum resultado" description={`Nada encontrado para "${termoPesquisado}".`} />
         ) : resumo ? (
           CATEGORIAS.map((categoria) => (
             <SecaoResultado
@@ -185,7 +176,15 @@ function SecaoResultado({
           {`${titulo} (${total})`}
         </Text>
         {total > 5 ? (
-          <Pressable onPress={onVerMais} accessibilityRole="button" accessibilityLabel={`Ver mais em ${titulo}`}>
+          <Pressable
+            onPress={onVerMais}
+            accessibilityRole="button"
+            accessibilityLabel={`Ver mais em ${titulo}`}
+            // Rodada 3, item 8 — mesmo gap de 48dp já corrigido em
+            // `ActivitiesScreen.tsx`/`LoginScreen.tsx` para um link de texto
+            // sozinho (bodySmall, ~20dp): hitSlop 14 de cada lado.
+            hitSlop={14}
+          >
             <Text style={[theme.typography.bodySmall, { color: theme.colors.primary.solid }]}>Ver mais</Text>
           </Pressable>
         ) : null}

@@ -15,6 +15,8 @@ export interface EmpresaResumo {
   statusAprovacao: StatusAprovacaoEmpresa;
   motivoReprovacao?: string | null;
   motivoSuspensao?: string | null;
+  /** Redesign visual — primeiro lugar do app a mostrar o logo de uma conta empresa fora da tela "Meu perfil" (ver `ProfileMenuScreen.tsx`). */
+  logo?: string | null;
   [chave: string]: unknown;
 }
 

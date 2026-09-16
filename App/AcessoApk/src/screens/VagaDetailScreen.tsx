@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-nati
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuth } from "../auth";
-import { Badge, Button, Card, ScreenContainer, SpeechButton } from "../components/ui";
+import { Badge, Button, Card, ErrorState, LoadingState, ScreenContainer, SpeechButton } from "../components/ui";
 import type { AppStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
@@ -137,33 +137,11 @@ export function VagaDetailScreen({ route, navigation }: VagaDetailScreenProps) {
   }
 
   if (!primeiroCarregamentoConcluido) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && !vaga) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar esta vaga
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
-    );
+    return <ErrorState title="Não foi possível carregar esta vaga" message={erro} onRetry={tentarNovamente} />;
   }
 
   // Nunca deveria acontecer (as duas condições acima cobrem loading/erro),
@@ -202,6 +180,11 @@ export function VagaDetailScreen({ route, navigation }: VagaDetailScreenProps) {
               onPress={() => navigation.navigate("PublicProfile", { usuarioId: usuarioIdEmpresa })}
               accessibilityRole="button"
               accessibilityLabel={`Ver perfil de ${empresa}`}
+              // Rodada 3, item 8 — nome da empresa sozinho (`body`, ~24dp de
+              // altura) abaixo dos 48dp do app; 12 de cada lado fecha a
+              // conta (mesmo raciocínio de `LoginScreen.tsx`, ajustado para
+              // o `lineHeight` maior do token `body`).
+              hitSlop={12}
             >
               <Text style={[theme.typography.body, { color: theme.colors.primary.solid }]}>{empresa}</Text>
             </Pressable>

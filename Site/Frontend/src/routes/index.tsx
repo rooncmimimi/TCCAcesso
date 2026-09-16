@@ -19,7 +19,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VoiceConsentDialog } from "@/components/accessibility/VoiceConsentDialog";
-import { EstatisticasFaixa } from "@/components/home/EstatisticasFaixa";
 import { VagaDestaqueCard } from "@/components/home/VagaDestaqueCard";
 import { EmpresaParceiraCard } from "@/components/home/EmpresaParceiraCard";
 import { publicoService } from "@/services/publico.service";
@@ -181,16 +180,6 @@ function Home() {
                 </Link>
               </Button>
             </div>
-
-            {isLoading ? (
-              <div className="mt-10 grid grid-cols-2 gap-4 border-t border-border pt-6 sm:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : (
-              <EstatisticasFaixa estatisticas={data?.estatisticas} />
-            )}
           </div>
 
           <Card className="relative z-10 overflow-hidden border-border shadow-card">

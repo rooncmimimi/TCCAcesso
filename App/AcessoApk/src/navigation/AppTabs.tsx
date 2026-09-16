@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useEffect, useState, type ComponentProps } from "react";
+import { View } from "react-native";
 
 import { ProfileNavigator } from "./ProfileNavigator";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -71,6 +72,18 @@ export function AppTabs() {
       });
   }
 
+  // Mesmo raciocínio de `AppNavigator.tsx`/`ProfileNavigator.tsx` (Rodada 3,
+  // item 13): o rótulo da tab bar é renderizado internamente por
+  // `@react-navigation/bottom-tabs` com sua própria fonte padrão da
+  // plataforma (`fonts.regular`/`fonts.medium` do pacote, não
+  // `theme.typography`) — sem isto, seria mais um lugar onde a preferência
+  // `dyslexiaFont` fica sem efeito. Só `fontFamily`, mesmo motivo das outras
+  // duas correções: a tab bar tem altura fixa, escalar tamanho/altura de
+  // linha aqui não foi validado em dispositivo real.
+  const tabBarLabelStyle = theme.typography.label.fontFamily
+    ? { fontFamily: theme.typography.label.fontFamily }
+    : undefined;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -78,9 +91,46 @@ export function AppTabs() {
         tabBarActiveTintColor: theme.colors.primary.solid,
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border },
+        tabBarLabelStyle,
         tabBarIcon: ({ color, size, focused }) => {
           const nomes = ICONES[route.name];
-          return <Ionicons name={focused ? nomes.ativo : nomes.inativo} size={size} color={color} />;
+          // Indicador visual da aba ativa (redesign visual, item 11) — além
+          // da troca de ícone preenchido/contorno e cor que já existia, uma
+          // "cápsula" sutil atrás do ícone (mesmo tom de `primary.soft` já
+          // usado em badges/chips no resto do app, nunca uma cor nova).
+          // Sem animação de propósito: é uma troca binária de fundo, não um
+          // movimento — nada aqui para `reduceMotion` precisar desligar.
+          //
+          // Bloco 9 (auditoria de contraste pós-redesign) — achado real: o
+          // ícone ativo usava `color` (= `tabBarActiveTintColor` =
+          // `primary.solid`), pensado para ficar sobre a superfície lisa da
+          // tab bar. Sobre a NOVA cápsula `primary.soft`, essa combinação
+          // mede só 2.66:1 no tema claro (abaixo do mínimo de 3:1 do WCAG
+          // 1.4.11 para componentes gráficos) — a cápsula é fundo `soft`,
+          // então o ícone sobre ela precisa do par certo, `onSoft` (o mesmo
+          // token que `Badge`/`Avatar` já usam sobre `soft`, verificado
+          // ≥4.5:1 nos 4 temas por `contrast.test.ts`). O rótulo de texto
+          // (`tabBarActiveTintColor`) continua com `primary.solid`, sem
+          // mudança — ele fica sobre a superfície lisa da tab bar, não sobre
+          // a cápsula.
+          return (
+            <View
+              style={{
+                width: size + theme.spacing.md,
+                height: size + theme.spacing.xs,
+                borderRadius: theme.radius.pill,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: focused ? theme.colors.primary.soft : "transparent",
+              }}
+            >
+              <Ionicons
+                name={focused ? nomes.ativo : nomes.inativo}
+                size={size}
+                color={focused ? theme.colors.primary.onSoft : color}
+              />
+            </View>
+          );
         },
       })}
     >

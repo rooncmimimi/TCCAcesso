@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuth } from "../auth";
-import { Badge, Button, Card, Divider, ScreenContainer } from "../components/ui";
+import { Avatar, Badge, Button, Card, Divider, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import { EmpresaService } from "../empresas";
 import type { EmpresaResumo } from "../empresas";
 import { ConversaService } from "../mensagens";
@@ -18,15 +18,6 @@ import { useTheme } from "../theme";
 import type { Theme } from "../theme";
 
 type PublicProfileScreenProps = NativeStackScreenProps<AppStackParamList, "PublicProfile">;
-
-/** Mesmo cálculo de `HomeScreen.tsx`/`PostagemDetailScreen.tsx` — duplicado de propósito (sem componente/util compartilhado só para isto). */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
 
 /**
  * Perfil público de terceiros (Fase 14) — candidato ou empresa, resolvido a
@@ -213,33 +204,11 @@ export function PublicProfileScreen({ route, navigation }: PublicProfileScreenPr
   }
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && !basico) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar este perfil
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
-    );
+    return <ErrorState title="Não foi possível carregar este perfil" message={erro} onRetry={tentarNovamente} />;
   }
 
   if (!basico) return null;
@@ -248,20 +217,11 @@ export function PublicProfileScreen({ route, navigation }: PublicProfileScreenPr
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: theme.spacing.lg, paddingVertical: theme.spacing.lg }}>
         <Card elevation="sm" style={{ gap: theme.spacing.sm, alignItems: "center" }}>
-          <View
-            style={{
-              width: theme.sizes.avatarLarge,
-              height: theme.sizes.avatarLarge,
-              borderRadius: theme.sizes.avatarLarge / 2,
-              backgroundColor: theme.colors.primary.soft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={[theme.typography.heading, { color: theme.colors.primary.onSoft }]}>
-              {iniciaisDoNome(empresa?.nomeFantasia ?? empresa?.razaoSocial ?? basico.nome)}
-            </Text>
-          </View>
+          <Avatar
+            nome={empresa?.nomeFantasia ?? empresa?.razaoSocial ?? basico.nome}
+            fotoUrl={candidato?.usuario?.fotoPerfil ?? empresa?.logo ?? basico.fotoPerfil}
+            size="large"
+          />
           <Text style={[theme.typography.heading, { color: theme.colors.textPrimary }]} accessibilityRole="header">
             {empresa?.nomeFantasia ?? empresa?.razaoSocial ?? basico.nome}
           </Text>
@@ -280,6 +240,10 @@ export function PublicProfileScreen({ route, navigation }: PublicProfileScreenPr
                 onPress={() => abrirListaSeguidores("seguidores")}
                 accessibilityRole="button"
                 accessibilityLabel={`${resumoRelacao?.totalSeguidores ?? 0} seguidores`}
+                // Rodada 3, item 8 — número (`label`) + rótulo (`caption`)
+                // empilhados somam ~36dp, abaixo dos 48dp do app; 6 de cada
+                // lado fecha a conta sem mudar o layout visual.
+                hitSlop={6}
               >
                 <Text style={[theme.typography.label, { color: theme.colors.textPrimary, textAlign: "center" }]}>
                   {resumoRelacao?.totalSeguidores ?? 0}
@@ -290,6 +254,8 @@ export function PublicProfileScreen({ route, navigation }: PublicProfileScreenPr
                 onPress={() => abrirListaSeguidores("seguindo")}
                 accessibilityRole="button"
                 accessibilityLabel={`Seguindo ${resumoRelacao?.totalSeguindo ?? 0}`}
+                // Rodada 3, item 8 — mesmo gap de 48dp corrigido acima para "Seguidores".
+                hitSlop={6}
               >
                 <Text style={[theme.typography.label, { color: theme.colors.textPrimary, textAlign: "center" }]}>
                   {resumoRelacao?.totalSeguindo ?? 0}
@@ -539,12 +505,24 @@ function CandidatoDetalhes({ candidato, theme }: { candidato: Candidato; theme: 
             </Text>
           ) : null}
           {candidato.linkedin ? (
-            <Pressable onPress={() => abrirLink(String(candidato.linkedin))} accessibilityRole="link" accessibilityLabel="Abrir LinkedIn">
+            // Rodada 3, item 8 — link de texto sozinho (bodySmall, ~20dp)
+            // abaixo dos 48dp do app; mesmo cálculo de `LoginScreen.tsx`.
+            <Pressable
+              onPress={() => abrirLink(String(candidato.linkedin))}
+              accessibilityRole="link"
+              accessibilityLabel="Abrir LinkedIn"
+              hitSlop={14}
+            >
               <Text style={[theme.typography.bodySmall, { color: theme.colors.primary.solid }]}>LinkedIn</Text>
             </Pressable>
           ) : null}
           {candidato.github ? (
-            <Pressable onPress={() => abrirLink(String(candidato.github))} accessibilityRole="link" accessibilityLabel="Abrir GitHub">
+            <Pressable
+              onPress={() => abrirLink(String(candidato.github))}
+              accessibilityRole="link"
+              accessibilityLabel="Abrir GitHub"
+              hitSlop={14}
+            >
               <Text style={[theme.typography.bodySmall, { color: theme.colors.primary.solid }]}>GitHub</Text>
             </Pressable>
           ) : null}
@@ -622,7 +600,14 @@ function EmpresaDetalhes({ empresa, theme }: { empresa: EmpresaResumo; theme: Th
         </Text>
       ) : null}
       {empresa.site ? (
-        <Pressable onPress={() => abrirLink(String(empresa.site))} accessibilityRole="link" accessibilityLabel="Abrir site da empresa">
+        // Rodada 3, item 8 — mesmo gap de 48dp corrigido acima para
+        // LinkedIn/GitHub (link de texto sozinho, bodySmall).
+        <Pressable
+          onPress={() => abrirLink(String(empresa.site))}
+          accessibilityRole="link"
+          accessibilityLabel="Abrir site da empresa"
+          hitSlop={14}
+        >
           <Text style={[theme.typography.bodySmall, { color: theme.colors.primary.solid }]}>{empresa.site}</Text>
         </Pressable>
       ) : null}

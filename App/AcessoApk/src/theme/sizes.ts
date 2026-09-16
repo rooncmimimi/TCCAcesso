@@ -10,6 +10,9 @@ export const sizes = {
   avatarSmall: 28,
   avatarMedium: 40,
   avatarLarge: 64,
+  /** Cabeçalho de perfil (redesign visual) — mesma escala conceitual do
+   * `size-24` (96px) que o Site usa por padrão em `FotoUploader.tsx`. */
+  avatarXLarge: 96,
   buttonHeight: 48,
   inputHeight: 48,
 } as const;

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Avatar, Button, Card, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import type { AppStackParamList, ProfileStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { SeguidorService } from "../seguidores";
@@ -17,15 +17,6 @@ type DiscoverScreenProps = CompositeScreenProps<
   NativeStackScreenProps<ProfileStackParamList, "Discover">,
   NativeStackScreenProps<AppStackParamList>
 >;
-
-/** Mesmo cálculo de `PublicProfileScreen.tsx` — duplicado de propósito. */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
 
 /**
  * Descobrir (Fase 14) — sugestões explicáveis de pessoas e empresas para
@@ -148,33 +139,11 @@ export function DiscoverScreen({ navigation }: DiscoverScreenProps) {
   }
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && pessoas.length === 0 && empresas.length === 0) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar sugestões
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
-    );
+    return <ErrorState title="Não foi possível carregar sugestões" message={erro} onRetry={tentarNovamente} />;
   }
 
   return (
@@ -196,6 +165,7 @@ export function DiscoverScreen({ navigation }: DiscoverScreenProps) {
                   key={pessoa.id}
                   theme={theme}
                   nome={pessoa.nome}
+                  fotoUrl={pessoa.fotoPerfil}
                   subtitulo={pessoa.titulo}
                   motivo={pessoa.motivo}
                   onPress={() => abrirPerfil(pessoa.id)}
@@ -253,6 +223,7 @@ export function DiscoverScreen({ navigation }: DiscoverScreenProps) {
                   key={empresa.id}
                   theme={theme}
                   nome={empresa.nomeFantasia ?? empresa.razaoSocial}
+                  fotoUrl={empresa.logo}
                   subtitulo={empresa.setor}
                   motivo={empresa.motivo}
                   onPress={() => abrirPerfil(empresa.usuarioId)}
@@ -280,6 +251,7 @@ export function DiscoverScreen({ navigation }: DiscoverScreenProps) {
 function SugestaoCard({
   theme,
   nome,
+  fotoUrl,
   subtitulo,
   motivo,
   onPress,
@@ -287,6 +259,7 @@ function SugestaoCard({
 }: {
   theme: Theme;
   nome: string;
+  fotoUrl?: string | null;
   subtitulo?: string | null;
   motivo: string;
   onPress: () => void;
@@ -299,20 +272,12 @@ function SugestaoCard({
         accessibilityRole="button"
         accessibilityLabel={`Abrir perfil de ${nome}`}
         style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, flex: 1 }}
+        // Rodada 3, item 8 — altura vem só do avatar (`avatarMedium`, 40dp),
+        // abaixo dos 48dp do app; 4 de cada lado fecha a conta sem mudar o
+        // layout visual (o `Card` ao redor já reserva espaço de sobra).
+        hitSlop={4}
       >
-        <View
-          accessible={false}
-          style={{
-            width: theme.sizes.avatarMedium,
-            height: theme.sizes.avatarMedium,
-            borderRadius: theme.sizes.avatarMedium / 2,
-            backgroundColor: theme.colors.primary.soft,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(nome)}</Text>
-        </View>
+        <Avatar nome={nome} fotoUrl={fotoUrl} size="medium" />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
             {nome}

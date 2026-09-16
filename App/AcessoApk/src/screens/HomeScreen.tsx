@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
@@ -6,7 +7,7 @@ import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuth } from "../auth";
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Avatar, Button, Card, EmptyState, ErrorState, LoadingState, ScreenContainer, ScreenHeader } from "../components/ui";
 import { FeedService } from "../feed";
 import type { FeedComentarioEvento, FeedCurtidaEvento, FeedPostagemEvento, Postagem } from "../feed";
 import type { AppStackParamList, AppTabParamList } from "../navigation/types";
@@ -14,6 +15,7 @@ import { getFriendlyErrorMessage } from "../services/api/errors";
 import { ouvirEvento } from "../services/socket/socketClient";
 import { useTheme } from "../theme";
 import type { Theme } from "../theme";
+import { formatarTempoRelativo } from "../utils/tempoRelativo";
 
 const LIMITE_POR_PAGINA = 10;
 
@@ -304,33 +306,17 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   // Fase 10: primeiro carregamento é tela cheia de loading, sem lista nenhuma
   // por baixo — mesmo padrão de `JobsScreen`.
   if (carregandoInicial) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   // Erro logo no primeiro carregamento (nunca chegou a ter nenhuma publicação) — tela cheia de erro, diferente do erro de uma página seguinte (abaixo).
   if (erro && postagens.length === 0) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar o feed
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void recarregarDoInicio(false)}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title="Não foi possível carregar o feed"
+        message={erro}
+        onRetry={() => void recarregarDoInicio(false)}
+      />
     );
   }
 
@@ -361,9 +347,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         }
         ListHeaderComponent={
           <View style={{ gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
-            <Text style={[theme.typography.heading, { color: theme.colors.primary.solid }]}>
-              Olá, {user?.nome ?? "tudo bem"}!
-            </Text>
+            <ScreenHeader title={`Olá, ${user?.nome ?? "tudo bem"}!`} tone="brand" />
             <Pressable
               onPress={abrirNovaPostagem}
               accessibilityRole="button"
@@ -410,14 +394,10 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
         }
         ListEmptyComponent={
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
-              Nenhuma publicação ainda
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              Seja a primeira pessoa a publicar algo no feed do ACESSO.
-            </Text>
-          </Card>
+          <EmptyState
+            title="Nenhuma publicação ainda"
+            description="Seja a primeira pessoa a publicar algo no feed do ACESSO."
+          />
         }
         renderItem={({ item }) => (
           // `onPress`/`onCurtir` passados DIRETO (não `() => abrirDetalhe(item.id)`)
@@ -465,17 +445,6 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   );
 }
 
-/** Iniciais de um nome — 1 ou 2 letras (primeiro nome + último, quando há
- * mais de um). Mesmo cálculo simples que qualquer avatar-por-iniciais usa;
- * não existe componente de avatar pronto no app ainda (Fase 10, sem foto real). */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
-
 /** Função local, não exportada — só `HomeScreen` consome. `src/feed/` fica
  * flat (igual `src/vagas/`), sem subpasta `components/`, mesmo raciocínio de
  * `VagaListItem`. */
@@ -517,45 +486,43 @@ const PostagemListItem = memo(function PostagemListItem({
     }
   }
 
+  const tempo = formatarTempoRelativo(postagem.created_at);
+
   return (
     <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
       <Pressable
         onPress={() => onPress(postagem.id)}
         accessibilityRole="button"
-        accessibilityLabel={`Publicação de ${nomeAutor}`}
+        accessibilityLabel={`Publicação de ${nomeAutor}${tempo ? `, ${tempo}` : ""}`}
         android_ripple={{ color: theme.colors.divider }}
       >
-        <Card elevation="sm" style={{ gap: theme.spacing.sm }}>
-          {/* Nested Pressable dentro do card inteiro (mesma técnica já usada
-              pelo botão de curtir): tocar no autor abre o perfil dele, sem
-              abrir o detalhe da publicação — o sistema de resposta do RN já
-              garante que só o Pressable mais interno recebe o toque. */}
-          <Pressable
-            onPress={() => autor?.id && onAbrirPerfil(autor.id)}
-            accessibilityRole="button"
-            accessibilityLabel={`Ver perfil de ${nomeAutor}`}
-            disabled={!autor?.id}
-            style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}
-          >
-            <View
-              accessible={false}
-              style={{
-                width: theme.sizes.avatarMedium,
-                height: theme.sizes.avatarMedium,
-                borderRadius: theme.sizes.avatarMedium / 2,
-                backgroundColor: theme.colors.primary.soft,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+        <Card elevation="sm" style={{ gap: theme.spacing.sm, padding: theme.spacing.md }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
+            {/* Nested Pressable dentro do card inteiro (mesma técnica já usada
+                pelo botão de curtir): tocar no autor abre o perfil dele, sem
+                abrir o detalhe da publicação — o sistema de resposta do RN já
+                garante que só o Pressable mais interno recebe o toque. */}
+            <Pressable
+              onPress={() => autor?.id && onAbrirPerfil(autor.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver perfil de ${nomeAutor}`}
+              disabled={!autor?.id}
+              style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, flex: 1, minWidth: 0 }}
+              // Rodada 3, item 8 — mesmo gap de 48dp corrigido em
+              // `DiscoverScreen.tsx` (avatar de 40dp como área de toque).
+              hitSlop={4}
             >
-              <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>
-                {iniciaisDoNome(autor?.nome)}
-              </Text>
-            </View>
-            <Text style={[theme.typography.label, { color: theme.colors.textPrimary }]} numberOfLines={1}>
-              {nomeAutor}
-            </Text>
-          </Pressable>
+              <Avatar nome={autor?.nome} fotoUrl={autor?.fotoPerfil} size="medium" />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[theme.typography.label, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+                  {nomeAutor}
+                </Text>
+                {tempo ? (
+                  <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>{tempo}</Text>
+                ) : null}
+              </View>
+            </Pressable>
+          </View>
 
           {postagem.conteudo ? (
             <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={6}>
@@ -565,31 +532,84 @@ const PostagemListItem = memo(function PostagemListItem({
 
           <AnexoResumo postagem={postagem} theme={theme} />
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "stretch",
+              gap: theme.spacing.sm,
+              marginTop: theme.spacing.xs,
+              paddingTop: theme.spacing.sm,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.divider,
+            }}
+          >
             <Pressable
               onPress={() => void tocarCurtir()}
               disabled={curtindo}
               accessibilityRole="button"
               accessibilityLabel={postagem.curtidoPorMim ? "Descurtir" : "Curtir"}
               accessibilityState={{ selected: postagem.curtidoPorMim, disabled: curtindo }}
-              hitSlop={10}
-              style={{ minHeight: theme.sizes.touchTarget, flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: theme.sizes.touchTarget,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: theme.spacing.xs,
+                borderRadius: theme.radius.md,
+                backgroundColor: postagem.curtidoPorMim ? theme.colors.primary.soft : pressed ? theme.colors.divider : "transparent",
+              })}
             >
+              {/* Bloco 9 (auditoria de contraste pós-redesign) — mesmo achado
+                  do ícone ativo em `AppTabs.tsx`: sobre o fundo `soft` deste
+                  pill, o ícone precisa de `onSoft` (o par certo, já usado no
+                  texto "Curtido" logo abaixo), não `solid` — `solid` sobre
+                  `soft` mede só 2.66:1 no tema claro, abaixo do mínimo de
+                  3:1 do WCAG 1.4.11 para componentes gráficos. */}
+              <Ionicons
+                name={postagem.curtidoPorMim ? "heart" : "heart-outline"}
+                size={theme.sizes.iconMedium}
+                color={postagem.curtidoPorMim ? theme.colors.primary.onSoft : theme.colors.textSecondary}
+              />
               <Text
                 style={[
                   theme.typography.bodySmall,
-                  { color: postagem.curtidoPorMim ? theme.colors.primary.solid : theme.colors.textSecondary },
+                  {
+                    fontWeight: postagem.curtidoPorMim ? "700" : "400",
+                    color: postagem.curtidoPorMim ? theme.colors.primary.onSoft : theme.colors.textSecondary,
+                  },
                 ]}
               >
                 {postagem.curtidoPorMim ? "Curtido" : "Curtir"}
                 {postagem.totalCurtidas > 0 ? ` · ${postagem.totalCurtidas}` : ""}
               </Text>
             </Pressable>
-            <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>
-              {postagem.totalComentarios > 0
-                ? `${postagem.totalComentarios} comentário${postagem.totalComentarios === 1 ? "" : "s"}`
-                : "Comentar"}
-            </Text>
+            <Pressable
+              onPress={() => onPress(postagem.id)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                postagem.totalComentarios > 0
+                  ? `Abrir comentários. ${postagem.totalComentarios} comentário${postagem.totalComentarios === 1 ? "" : "s"}.`
+                  : "Comentar"
+              }
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: theme.sizes.touchTarget,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: theme.spacing.xs,
+                borderRadius: theme.radius.md,
+                backgroundColor: pressed ? theme.colors.divider : "transparent",
+              })}
+            >
+              <Ionicons name="chatbubble-outline" size={theme.sizes.iconMedium} color={theme.colors.textSecondary} />
+              <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>
+                {postagem.totalComentarios > 0
+                  ? `${postagem.totalComentarios} coment${postagem.totalComentarios === 1 ? "ário" : "ários"}`
+                  : "Comentar"}
+              </Text>
+            </Pressable>
           </View>
         </Card>
       </Pressable>

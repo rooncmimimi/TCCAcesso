@@ -4,6 +4,7 @@ import { useColorScheme } from "react-native";
 
 import { useAccessibility } from "../accessibility";
 import { buildAccessibleTheme } from "./accessibleTheme";
+import { BRAND_FONT_ASSETS } from "./brandFont";
 import { DYSLEXIA_FONT_ASSETS } from "./dyslexiaFont";
 import type { Theme, ThemeMode } from "./themes";
 
@@ -30,22 +31,26 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const { preferences, effectiveReduceMotion } = useAccessibility();
-  // Carrega os 5 pesos da Lexend usados por `dyslexiaFont` (Rodada 2) uma
-  // única vez, aqui — não condicionado à preferência estar ativa, porque
-  // `useFonts` precisa ser chamado sempre do mesmo jeito (regra dos hooks)
-  // e os arquivos são locais (empacotados no app, não baixados), então não
-  // há custo de rede em carregar mesmo sem a preferência ligada. Enquanto
-  // `dyslexiaFontLoaded` ainda é `false` (só nos primeiros instantes depois
-  // de abrir o app), `buildAccessibleTheme` ignora a preferência com
-  // segurança — ver o comentário lá.
-  const [dyslexiaFontLoaded] = useFonts(DYSLEXIA_FONT_ASSETS);
+  // Uma única chamada a `useFonts` para os dois conjuntos (regra dos hooks:
+  // sempre a mesma quantidade/ordem de chamadas) — Lexend (`dyslexiaFont`,
+  // Rodada 2) e Manrope/Plus Jakarta Sans (fontes da marca, redesign
+  // visual). Nenhum dos dois depende de rede (arquivos locais, empacotados
+  // no app), então carregar os dois sempre não tem custo de conexão; o
+  // único custo é o tamanho do pacote (~900KB somados), aceito pelo mesmo
+  // motivo já registrado para a Lexend. Enquanto `fontsLoaded` ainda é
+  // `false` (só nos primeiros instantes de abrir o app), `buildAccessibleTheme`
+  // ignora as duas preferências com segurança — ver o comentário lá.
+  const [fontsLoaded] = useFonts({ ...DYSLEXIA_FONT_ASSETS, ...BRAND_FONT_ASSETS });
 
   const mode: ThemeMode =
     preferences.themeMode === "system" ? (systemScheme === "dark" ? "dark" : "light") : preferences.themeMode;
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme: buildAccessibleTheme(mode, preferences, effectiveReduceMotion, dyslexiaFontLoaded), mode }),
-    [mode, preferences, effectiveReduceMotion, dyslexiaFontLoaded],
+    () => ({
+      theme: buildAccessibleTheme(mode, preferences, effectiveReduceMotion, fontsLoaded, fontsLoaded),
+      mode,
+    }),
+    [mode, preferences, effectiveReduceMotion, fontsLoaded],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

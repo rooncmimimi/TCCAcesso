@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useState } from "react";
 import { Linking, Text, View } from "react-native";
@@ -146,9 +147,13 @@ export function CurriculoSecao({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <Text accessibilityRole="header" style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
-        Currículo
-      </Text>
+      {/* Mesmo padrão de ícone + título de `SectionHeader` em `MyProfileScreen.tsx` — duplicado aqui de propósito, sem componente compartilhado entre os dois arquivos (mesmo raciocínio de `iniciaisDoNome`/`formatarData`). */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
+        <Ionicons name="document-text-outline" size={theme.sizes.iconSmall} color={theme.colors.textSecondary} />
+        <Text accessibilityRole="header" style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
+          Currículo
+        </Text>
+      </View>
 
       <Card elevation="sm" style={{ gap: theme.spacing.sm }}>
         {candidato.curriculoNome ? (

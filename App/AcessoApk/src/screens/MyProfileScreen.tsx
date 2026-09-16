@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState, type ComponentProps } from "react";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 
 import { useAuth } from "../auth";
-import { Button, Card, Input, ScreenContainer, ToggleRow } from "../components/ui";
+import { Avatar, Button, Card, ErrorState, Input, LoadingState, ScreenContainer, ToggleRow } from "../components/ui";
 import { CurriculoSecao } from "./CurriculoSecao";
 import { EmpresaProfileScreen } from "./EmpresaProfileScreen";
 import type {
@@ -113,33 +114,11 @@ function CandidatoProfileScreen() {
   }
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && !candidato) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar seu perfil
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
-    );
+    return <ErrorState title="Não foi possível carregar seu perfil" message={erro} onRetry={tentarNovamente} />;
   }
 
   if (!candidato) return null;
@@ -147,6 +126,8 @@ function CandidatoProfileScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: theme.spacing.xl, paddingVertical: theme.spacing.lg }}>
+        <PerfilHeader candidato={candidato} theme={theme} />
+
         <DadosPessoaisSecao candidato={candidato} theme={theme} onAtualizado={setCandidato} />
 
         <CurriculoSecao candidato={candidato} onAtualizado={setCandidato} />
@@ -167,11 +148,66 @@ function CandidatoProfileScreen() {
   );
 }
 
-function SectionHeader({ title, theme }: { title: string; theme: Theme }) {
+/**
+ * Cabeçalho visual do perfil (redesign, item 9: "o perfil precisa parecer um
+ * verdadeiro perfil profissional" — antes desta fase, nome/cargo/localização
+ * eram só a primeira linha de texto dentro do card de "Dados pessoais",
+ * indistinguível do resto da lista de campos). Só exibição — nenhum estado
+ * próprio, nenhum campo editável aqui (editar continua em "Dados pessoais",
+ * mais abaixo); por isso nome/cargo/bio saem do card de "Dados pessoais" (ver
+ * `DadosPessoaisSecao`) para não aparecerem duplicados na tela.
+ */
+function PerfilHeader({ candidato, theme }: { candidato: Candidato; theme: Theme }) {
+  const usuario = candidato.usuario;
+  const localizacao = [candidato.cidade, candidato.estado].filter(Boolean).join(" - ");
+
   return (
-    <Text accessibilityRole="header" style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
-      {title}
-    </Text>
+    <Card elevation="sm" style={{ gap: theme.spacing.sm, alignItems: "center" }}>
+      <Avatar nome={usuario?.nome} fotoUrl={usuario?.fotoPerfil} size="xlarge" />
+      <View style={{ alignItems: "center", gap: 2 }}>
+        <Text
+          accessibilityRole="header"
+          style={[theme.typography.heading, { color: theme.colors.textPrimary, textAlign: "center" }]}
+        >
+          {usuario?.nome}
+        </Text>
+        {candidato.tituloProfissional ? (
+          <Text style={[theme.typography.body, { color: theme.colors.textSecondary, textAlign: "center" }]}>
+            {candidato.tituloProfissional}
+          </Text>
+        ) : null}
+        {localizacao ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+            <Ionicons name="location-outline" size={theme.sizes.iconSmall} color={theme.colors.textMuted} />
+            <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>{localizacao}</Text>
+          </View>
+        ) : null}
+      </View>
+      {candidato.biografia ? (
+        <Text style={[theme.typography.body, { color: theme.colors.textSecondary, textAlign: "center" }]}>
+          {candidato.biografia}
+        </Text>
+      ) : null}
+    </Card>
+  );
+}
+
+function SectionHeader({
+  title,
+  theme,
+  icon,
+}: {
+  title: string;
+  theme: Theme;
+  icon?: ComponentProps<typeof Ionicons>["name"];
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
+      {icon ? <Ionicons name={icon} size={theme.sizes.iconSmall} color={theme.colors.textSecondary} /> : null}
+      <Text accessibilityRole="header" style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
+        {title}
+      </Text>
+    </View>
   );
 }
 
@@ -335,25 +371,16 @@ function DadosPessoaisSecao({
   if (!editando) {
     return (
       <View style={{ gap: theme.spacing.sm }}>
-        <SectionHeader title="Dados pessoais" theme={theme} />
+        <SectionHeader title="Dados pessoais" theme={theme} icon="call-outline" />
         <Card elevation="sm" style={{ gap: theme.spacing.xs }}>
-          <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>{usuario?.nome}</Text>
-          {tituloProfissional ? (
-            <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>
-              {tituloProfissional}
-            </Text>
-          ) : null}
-          <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>{usuario?.email}</Text>
+          {/* Nome, cargo, localização e biografia já aparecem no cabeçalho
+              visual do perfil (`PerfilHeader`, logo acima) — repeti-los aqui
+              duplicaria a mesma informação duas vezes na mesma tela. Este
+              card foca no que o cabeçalho não mostra: contato e o campo
+              livre de acessibilidade. */}
+          <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>{usuario?.email}</Text>
           {telefone ? (
-            <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>{telefone}</Text>
-          ) : null}
-          {cidade || estado ? (
-            <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>
-              {[cidade, estado].filter(Boolean).join(" - ")}
-            </Text>
-          ) : null}
-          {biografia ? (
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{biografia}</Text>
+            <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>{telefone}</Text>
           ) : null}
           {necessidadesAcessibilidade ? (
             <View style={{ gap: 2 }}>
@@ -375,7 +402,7 @@ function DadosPessoaisSecao({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Editar dados pessoais" theme={theme} />
+      <SectionHeader title="Editar dados pessoais" theme={theme} icon="call-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md }}>
         <Input label="Nome" value={nome} onChangeText={setNome} editable={!salvando} />
         <Input label="Telefone" value={telefone} onChangeText={setTelefone} keyboardType="phone-pad" editable={!salvando} />
@@ -452,7 +479,7 @@ function SecaoExperiencias({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Experiência profissional" theme={theme} />
+      <SectionHeader title="Experiência profissional" theme={theme} icon="briefcase-outline" />
 
       {itens.length === 0 ? (
         <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>
@@ -632,7 +659,7 @@ function SecaoFormacoes({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Formação acadêmica" theme={theme} />
+      <SectionHeader title="Formação acadêmica" theme={theme} icon="school-outline" />
 
       {itens.length === 0 ? (
         <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>
@@ -807,7 +834,7 @@ function SecaoCertificados({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Certificados" theme={theme} />
+      <SectionHeader title="Certificados" theme={theme} icon="ribbon-outline" />
 
       {itens.length === 0 ? (
         <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>
@@ -967,7 +994,7 @@ function SecaoHabilidades({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Habilidades" theme={theme} />
+      <SectionHeader title="Habilidades" theme={theme} icon="star-outline" />
 
       {itens.length === 0 ? (
         <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>
@@ -1186,7 +1213,7 @@ function SecaoDeficiencias({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Deficiências" theme={theme} />
+      <SectionHeader title="Deficiências" theme={theme} icon="accessibility-outline" />
       <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>
         Marcar suas deficiências ajuda o ACESSO a te mostrar vagas com os recursos de acessibilidade certos para
         você.

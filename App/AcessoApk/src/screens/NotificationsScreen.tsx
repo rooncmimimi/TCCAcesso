@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { NotificacaoService } from "../notificacoes";
 import type { Notificacao } from "../notificacoes";
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Avatar, Button, Card, EmptyState, ErrorState, LoadingState, ScreenContainer, ScreenHeader } from "../components/ui";
 import type { AppStackParamList, AppTabParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { SeguidorService } from "../seguidores";
@@ -249,37 +249,22 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
   const existeNaoLida = notificacoes.some((notificacao) => !notificacao.lida);
 
   if (carregandoInicial) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && notificacoes.length === 0) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar suas notificações
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void recarregarDoInicio(false)}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title="Não foi possível carregar suas notificações"
+        message={erro}
+        onRetry={() => void recarregarDoInicio(false)}
+      />
     );
   }
 
   return (
     <ScreenContainer>
+      <ScreenHeader title="Notificações" style={{ marginBottom: theme.spacing.sm }} />
       <FlatList
         testID="notificacoes-lista"
         data={notificacoes}
@@ -309,12 +294,10 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
           ) : null
         }
         ListEmptyComponent={
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhuma notificação ainda</Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              Curtidas, comentários, novos seguidores e outras novidades vão aparecer aqui.
-            </Text>
-          </Card>
+          <EmptyState
+            title="Nenhuma notificação ainda"
+            description="Curtidas, comentários, novos seguidores e outras novidades vão aparecer aqui."
+          />
         }
         renderItem={({ item }) => (
           // Handlers passados DIRETO (estáveis por `useCallback`) — o item chama
@@ -363,17 +346,6 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
   );
 }
 
-/** Iniciais de um nome — mesma duplicação local já usada em `HomeScreen`/
- * `PostagemDetailScreen`/`PublicProfileScreen`/`DiscoverScreen`/
- * `FollowListScreen` (não existe componente de avatar compartilhado ainda). */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
-
 function formatarData(valor: string): string {
   const data = new Date(valor);
   if (Number.isNaN(data.getTime())) return "";
@@ -412,7 +384,6 @@ const NotificacaoItem = memo(function NotificacaoItem({
   const [erroAcao, setErroAcao] = useState<string | null>(null);
 
   const solicitacaoPendente = notificacao.subtipo === "solicitacao_seguimento";
-  const nomeAtor = notificacao.ator?.nome;
 
   async function tocarAceitar() {
     if (resolvendo) return;
@@ -469,21 +440,28 @@ const NotificacaoItem = memo(function NotificacaoItem({
           }}
         >
           <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
-            <View
-              accessible={false}
-              style={{
-                width: theme.sizes.avatarSmall,
-                height: theme.sizes.avatarSmall,
-                borderRadius: theme.sizes.avatarSmall / 2,
-                backgroundColor: theme.colors.primary.soft,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={[theme.typography.caption, { color: theme.colors.primary.onSoft }]}>
-                {nomeAtor ? iniciaisDoNome(nomeAtor) : "🔔"}
-              </Text>
-            </View>
+            {notificacao.ator ? (
+              <Avatar nome={notificacao.ator.nome} fotoUrl={notificacao.ator.fotoPerfil} size="small" />
+            ) : (
+              // Aviso do sistema, sem ator — `Avatar` sempre cai para
+              // iniciais ("?"), o que aqui apagaria a distinção visual
+              // entre "isto é de uma pessoa" e "isto é um aviso do
+              // sistema". Mantido à parte de propósito, não uma duplicação
+              // esquecida.
+              <View
+                accessible={false}
+                style={{
+                  width: theme.sizes.avatarSmall,
+                  height: theme.sizes.avatarSmall,
+                  borderRadius: theme.sizes.avatarSmall / 2,
+                  backgroundColor: theme.colors.primary.soft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={[theme.typography.caption, { color: theme.colors.primary.onSoft }]}>🔔</Text>
+              </View>
+            )}
             <View style={{ flex: 1, gap: 2 }}>
               <Text
                 style={[theme.typography.label, { color: theme.colors.textPrimary, fontWeight: notificacao.lida ? "400" : "700" }]}

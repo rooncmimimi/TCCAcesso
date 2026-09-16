@@ -98,6 +98,16 @@ describe("MessagesScreen", () => {
     expect(mockListar).toHaveBeenCalledWith({ page: 1, limit: 20 });
   });
 
+  // Redesign visual, item 12 — antes desta rodada, a tela ia direto pra
+  // lista sem nenhum título de página (diferente do Feed, que já tinha
+  // "Olá, Nome!").
+  it("mostra o título 'Mensagens' no topo da tela", async () => {
+    mockListar.mockResolvedValue(envelope([]));
+    const { findByText } = await renderTela();
+
+    expect(await findByText("Mensagens")).toBeTruthy();
+  });
+
   it("quando EU sou usuarioB, mostra usuarioA como o outro participante (nunca presume qual campo é 'o outro')", async () => {
     mockListar.mockResolvedValue(
       envelope([

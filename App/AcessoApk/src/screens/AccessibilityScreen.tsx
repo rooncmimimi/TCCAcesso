@@ -2,7 +2,7 @@ import * as Speech from "expo-speech";
 import { Alert, ScrollView, Text, View } from "react-native";
 
 import { useAccessibility } from "../accessibility";
-import { Badge, Button, Card, Divider, Input, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
+import { Avatar, Badge, Button, Card, Divider, Input, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
 import { useTheme } from "../theme";
 import type { Theme } from "../theme";
 
@@ -192,7 +192,19 @@ export function AccessibilityScreen() {
           </Text>
 
           <Card elevation="md" style={{ gap: theme.spacing.md }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Título de exemplo</Text>
+            {/* Avatar de exemplo (redesign visual) — mesmo componente usado em
+                Feed/Vagas/Perfil, para a prévia também mostrar como a
+                composição "avatar + texto" reage às preferências escolhidas
+                acima, não só texto solto. Nome fictício, nunca o do usuário
+                real (mesmo espírito de "Título de exemplo"/"Campo de
+                exemplo", já usados aqui). */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
+              <Avatar nome="Exemplo de Usuário" size="medium" />
+              <View style={{ flex: 1 }}>
+                <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Título de exemplo</Text>
+                <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>Legenda de exemplo</Text>
+              </View>
+            </View>
             <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
               Este texto demonstra como ficará a leitura no aplicativo, incluindo o espaçamento entre letras e entre
               linhas escolhido acima.

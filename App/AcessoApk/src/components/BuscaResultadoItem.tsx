@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 
-import { Badge, Card } from "./ui";
+import { Avatar, Badge, Card } from "./ui";
 import type { EmpresaResultadoBusca, TipoBusca, UsuarioResultadoBusca } from "../busca";
 import type { Postagem } from "../feed";
 import type { Theme } from "../theme";
@@ -8,15 +8,6 @@ import { MODALIDADE_LABEL, PUBLICO_ALVO_LABEL } from "../vagas";
 import type { Vaga } from "../vagas";
 
 export type ResultadoBusca = UsuarioResultadoBusca | EmpresaResultadoBusca | Vaga | Postagem;
-
-/** Mesmo cálculo de `PublicProfileScreen.tsx`/`FollowListScreen.tsx` — duplicado de propósito. */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
 
 /** Mesmo padrão de `PostagemDetailScreen.tsx`/`ActivitiesScreen.tsx` — duplicado de propósito. */
 function formatarData(valor: string | null | undefined): string | null {
@@ -59,6 +50,7 @@ export function BuscaResultadoItem({
       <ItemLinha
         theme={theme}
         titulo={usuario.nome}
+        fotoUrl={usuario.fotoPerfil}
         subtitulo={subtitulo || null}
         rotulo={`Abrir perfil de ${usuario.nome}`}
         onPress={() => onAbrirUsuario(usuario.id)}
@@ -74,6 +66,7 @@ export function BuscaResultadoItem({
       <ItemLinha
         theme={theme}
         titulo={nome}
+        fotoUrl={empresa.logo}
         subtitulo={subtitulo || null}
         rotulo={`Abrir perfil de ${nome}`}
         onPress={() => onAbrirUsuario(empresa.usuarioId)}
@@ -145,12 +138,14 @@ export function BuscaResultadoItem({
 function ItemLinha({
   theme,
   titulo,
+  fotoUrl,
   subtitulo,
   rotulo,
   onPress,
 }: {
   theme: Theme;
   titulo: string;
+  fotoUrl?: string | null;
   subtitulo: string | null;
   rotulo: string;
   onPress: () => void;
@@ -165,19 +160,7 @@ function ItemLinha({
         style={{ minHeight: theme.sizes.touchTarget }}
       >
         <Card elevation="sm" style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
-          <View
-            accessible={false}
-            style={{
-              width: theme.sizes.avatarMedium,
-              height: theme.sizes.avatarMedium,
-              borderRadius: theme.sizes.avatarMedium / 2,
-              backgroundColor: theme.colors.primary.soft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(titulo)}</Text>
-          </View>
+          <Avatar nome={titulo} fotoUrl={fotoUrl} size="medium" />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
               {titulo}

@@ -42,109 +42,52 @@ export function AppNavigator() {
     : undefined;
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Tabs" component={AppTabs} />
-      <Stack.Screen
-        name="VagaDetail"
-        component={VagaDetailScreen}
-        options={{
-          headerShown: true,
-          title: "Detalhe da vaga",
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="NovaPostagem"
-        component={NovaPostagemScreen}
-        options={{
-          headerShown: true,
-          title: "Nova publicação",
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="PostagemDetail"
-        component={PostagemDetailScreen}
-        options={{
-          headerShown: true,
-          title: "Publicação",
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="PublicProfile"
-        component={PublicProfileScreen}
-        options={{
-          headerShown: true,
-          title: "Perfil",
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
-        }}
-      />
+    // `screenOptions` centraliza o estilo do header (mesmo padrão que
+    // `ProfileNavigator.tsx` já usava) — as 7 telas empilhadas abaixo
+    // repetiam as MESMAS 4 propriedades (`headerStyle`/`headerTintColor`/
+    // `headerTitleStyle`/`headerShadowVisible`) uma a uma; cada `<Stack.
+    // Screen>` agora só declara o que é de fato diferente entre elas
+    // (`title`, às vezes calculado a partir de `route.params`). `Tabs`
+    // continua sem header — só sobrescreve `headerShown: false` no seu
+    // próprio `options`.
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.surface },
+        headerTintColor: theme.colors.textPrimary,
+        headerTitleStyle,
+        headerShadowVisible: false,
+      }}
+    >
+      <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="VagaDetail" component={VagaDetailScreen} options={{ title: "Detalhe da vaga" }} />
+      <Stack.Screen name="NovaPostagem" component={NovaPostagemScreen} options={{ title: "Nova publicação" }} />
+      <Stack.Screen name="PostagemDetail" component={PostagemDetailScreen} options={{ title: "Publicação" }} />
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: "Perfil" }} />
       <Stack.Screen
         name="FollowList"
         component={FollowListScreen}
         options={({ route }) => ({
-          headerShown: true,
           title:
             route.params.modo === "seguidores"
               ? `Seguidores${route.params.nomeUsuario ? ` de ${route.params.nomeUsuario}` : ""}`
               : `Seguindo${route.params.nomeUsuario ? ` — ${route.params.nomeUsuario}` : ""}`,
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
         })}
       />
       <Stack.Screen
         name="Conversation"
         component={ConversationScreen}
         options={({ route }) => ({
-          headerShown: true,
           // Título inicial vem do param (Fase 17) — a própria tela troca
           // via `navigation.setOptions` se precisar, mesmo mecanismo do
           // header nativo, sem duplicar a lógica de título aqui.
           title: route.params.nomeOutroParticipante || "Conversa",
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
         })}
       />
-      <Stack.Screen
-        name="Report"
-        component={ReportScreen}
-        options={{
-          headerShown: true,
-          title: "Denunciar",
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
-        }}
-      />
+      <Stack.Screen name="Report" component={ReportScreen} options={{ title: "Denunciar" }} />
       <Stack.Screen
         name="SearchResults"
         component={SearchResultsScreen}
-        options={({ route }) => ({
-          headerShown: true,
-          title: TITULO_TIPO_BUSCA[route.params.tipo],
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerTitleStyle,
-          headerShadowVisible: false,
-        })}
+        options={({ route }) => ({ title: TITULO_TIPO_BUSCA[route.params.tipo] })}
       />
     </Stack.Navigator>
   );

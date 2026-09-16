@@ -4,6 +4,7 @@ import type {
   LetterSpacingKey,
   LineHeightScaleKey,
 } from "../accessibility/accessibilityTypes";
+import { BRAND_FONT_FAMILY_BY_VARIANT } from "./brandFont";
 import { darkHighContrastColors, lightHighContrastColors } from "./colors";
 import { DYSLEXIA_FONT_FAMILY_BY_WEIGHT } from "./dyslexiaFont";
 import { themes, type Theme, type ThemeMode } from "./themes";
@@ -53,6 +54,7 @@ const LINE_HEIGHT_MULTIPLIER: Record<LineHeightScaleKey, number> = {
 function scaleTypography(
   preferences: AccessibilityPreferences,
   dyslexiaFontActive: boolean,
+  brandFontLoaded: boolean,
 ): Record<TypographyVariant, TypographyToken> {
   const fontFactor = FONT_SCALE_MULTIPLIER[preferences.fontScale];
   const letterFactor = LETTER_SPACING_FACTOR[preferences.letterSpacing];
@@ -65,15 +67,20 @@ function scaleTypography(
     const fontSize = Math.round(token.fontSize! * fontFactor);
     const lineHeight = Math.round(token.lineHeight! * fontFactor * lineFactor);
     const letterSpacing = Math.round(fontSize * letterFactor * 10) / 10;
-    // Cada variante de tipografia usa um `fontWeight` diferente (ver
-    // `typography.ts`) — uma fonte carregada via `expo-font` só respeita o
-    // peso EXATO do arquivo carregado, então o `fontFamily` certo depende
-    // do `fontWeight` do próprio token, nunca um valor único fixo para
-    // todas as variantes. Se o peso não estiver no mapa (não deveria
-    // acontecer — `dyslexiaFont.ts` cobre todos os pesos usados aqui),
-    // fica sem `fontFamily`: cai na fonte padrão da plataforma em vez de
-    // quebrar.
-    const fontFamily = dyslexiaFontActive ? DYSLEXIA_FONT_FAMILY_BY_WEIGHT[String(token.fontWeight)] : undefined;
+    // Prioridade: dislexia > marca > padrão da plataforma. `dyslexiaFont` é
+    // uma preferência de acessibilidade explícita — quando ativa, vence a
+    // fonte de identidade visual (mesma lógica que já existia). Fora isso,
+    // o redesign visual (unificação com o Site) usa as fontes da marca por
+    // padrão, com a mesma rede de segurança já usada para a Lexend: se os
+    // arquivos ainda não carregaram (`brandFontLoaded`/`dyslexiaFontLoaded`
+    // falso nos primeiros instantes do app) ou o peso não está mapeado,
+    // fica sem `fontFamily` — cai na fonte padrão da plataforma em vez de
+    // quebrar, e o React re-renderiza sozinho assim que `useFonts()` resolve.
+    const fontFamily = dyslexiaFontActive
+      ? DYSLEXIA_FONT_FAMILY_BY_WEIGHT[String(token.fontWeight)]
+      : brandFontLoaded
+        ? BRAND_FONT_FAMILY_BY_VARIANT[chave]
+        : undefined;
 
     resultado[chave] = { ...token, fontSize, lineHeight, letterSpacing, ...(fontFamily ? { fontFamily } : {}) };
   }
@@ -105,6 +112,7 @@ export function buildAccessibleTheme(
   preferences: AccessibilityPreferences,
   effectiveReduceMotion: boolean,
   dyslexiaFontLoaded = false,
+  brandFontLoaded = false,
 ): Theme {
   const base = themes[mode];
 
@@ -119,7 +127,7 @@ export function buildAccessibleTheme(
   return {
     ...base,
     colors,
-    typography: scaleTypography(preferences, dyslexiaFontActive),
+    typography: scaleTypography(preferences, dyslexiaFontActive, brandFontLoaded),
     a11y: {
       highContrast: preferences.highContrast,
       reduceMotion: effectiveReduceMotion,

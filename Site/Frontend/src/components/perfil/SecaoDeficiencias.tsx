@@ -159,7 +159,13 @@ export function SecaoDeficiencias({
                   <button
                     type="button"
                     aria-label={`Remover ${d.nome}`}
-                    className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    // Chip compacto (Badge min-h-9) não comporta um alvo de
+                    // 44px sem ficar maior que o próprio chip — a margem
+                    // negativa expande a área de toque real (mín. 24px, piso
+                    // absoluto da WCAG 2.5.8) sem aumentar o espaço ocupado
+                    // no layout, diferente do padrão min-h-11/min-w-11 usado
+                    // nos botões de remover independentes do resto do site.
+                    className="-m-1.5 rounded-full p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => remover.mutate(d.id)}
                     disabled={remover.isPending}
                   >

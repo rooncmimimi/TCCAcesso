@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { announceForAccessibility } from "../accessibility";
 import { useAuth } from "../auth";
-import { Button, Card, Divider, Input, ScreenContainer, SpeechButton } from "../components/ui";
+import { Avatar, Button, Card, Divider, ErrorState, Input, LoadingState, ScreenContainer, SpeechButton } from "../components/ui";
 import { FeedService } from "../feed";
 import type { Comentario, FeedComentarioEvento, FeedCurtidaEvento, FeedPostagemEvento, Postagem, PostagemAnexo } from "../feed";
 import type { AppStackParamList } from "../navigation/types";
@@ -18,17 +18,6 @@ const LIMITE_COMENTARIOS = 50;
 
 type PostagemDetailScreenProps = NativeStackScreenProps<AppStackParamList, "PostagemDetail">;
 
-/** Mesmo cálculo de `HomeScreen.tsx` — duplicado aqui de propósito (`src/feed/`
- * fica flat, sem componente/util compartilhado só para isto, mesmo raciocínio
- * de `VagaListItem` ser local a `JobsScreen`). */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
-
 /** Sem biblioteca de data nova (mesmo padrão de `VagaDetailScreen.tsx`) — `Intl.DateTimeFormat` nativo já resolve. */
 function formatarData(valor: string | null | undefined): string | null {
   if (!valor) return null;
@@ -37,7 +26,7 @@ function formatarData(valor: string | null | undefined): string | null {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(data);
 }
 
-/** Mesmo padrão de confirmação de exclusão já usado em `JobApplicantsScreen.tsx` (Fase 18) — duplicado aqui de propósito, mesmo raciocínio de `iniciaisDoNome`/`formatarData` acima. */
+/** Mesmo padrão de confirmação de exclusão já usado em `JobApplicantsScreen.tsx` (Fase 18) — duplicado aqui de propósito, mesmo raciocínio de `formatarData` acima. */
 function confirmarExclusao(titulo: string, mensagem: string, aoConfirmar: () => void) {
   Alert.alert(titulo, mensagem, [
     { text: "Cancelar", style: "cancel" },
@@ -421,32 +410,12 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
   }
 
   if (carregandoPostagem) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erroPostagem && !postagem) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar esta publicação
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erroPostagem}</Text>
-            <Button onPress={tentarNovamentePostagem}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState title="Não foi possível carregar esta publicação" message={erroPostagem} onRetry={tentarNovamentePostagem} />
     );
   }
 
@@ -498,8 +467,11 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
               accessibilityRole="button"
               accessibilityLabel={`Ver perfil de ${autor?.nome ?? "Usuário do ACESSO"}`}
               style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, flex: 1 }}
+              // Rodada 3, item 8 — mesmo gap de 48dp corrigido em
+              // `DiscoverScreen.tsx` (avatar de 40dp como área de toque).
+              hitSlop={4}
             >
-              <Avatar nome={autor?.nome} theme={theme} />
+              <Avatar nome={autor?.nome} fotoUrl={autor?.fotoPerfil} size="medium" />
               <View style={{ flex: 1 }}>
                 <Text style={[theme.typography.label, { color: theme.colors.textPrimary }]}>
                   {autor?.nome ?? "Usuário do ACESSO"}
@@ -795,25 +767,6 @@ export function PostagemDetailScreen({ route, navigation }: PostagemDetailScreen
   );
 }
 
-/** Mesmo círculo com iniciais de `HomeScreen.tsx` — local a este arquivo pelo mesmo motivo (`src/feed/` sem componente/util compartilhado). */
-function Avatar({ nome, theme }: { nome: string | undefined; theme: Theme }) {
-  return (
-    <View
-      accessible={false}
-      style={{
-        width: theme.sizes.avatarMedium,
-        height: theme.sizes.avatarMedium,
-        borderRadius: theme.sizes.avatarMedium / 2,
-        backgroundColor: theme.colors.primary.soft,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(nome)}</Text>
-    </View>
-  );
-}
-
 /**
  * Um anexo de imagem no detalhe (Fase 20) — a peça central de acessibilidade
  * desta fase: SEMPRE tem `accessibilityLabel` (a descrição real, ou um aviso
@@ -948,7 +901,13 @@ function AnexoImagem({
               onPress={iniciarEdicao}
               accessibilityRole="button"
               accessibilityLabel="Editar descrição da imagem"
-              hitSlop={8}
+              // Rodada 3, item 8 — texto `caption` (~16dp de altura) precisa
+              // de +16 em cima/embaixo pra fechar os 48dp do app (8 não
+              // bastava). Só vertical (não `left`/`right`): a largura do
+              // texto já basta, e expandir os lados invadiria o botão vizinho
+              // no mesmo padrão do grupo "Responder"/"Denunciar"/"Excluir"
+              // abaixo (só 8dp de `gap` entre eles).
+              hitSlop={{ top: 16, bottom: 16, left: 0, right: 0 }}
             >
               <Text style={[theme.typography.caption, { color: theme.colors.primary.solid, fontWeight: "700" }]}>
                 Editar
@@ -1008,8 +967,15 @@ const ComentarioItem = memo(function ComentarioItem({
         disabled={!autor?.id}
         accessibilityRole="button"
         accessibilityLabel={`Ver perfil de ${autor?.nome ?? "Usuário do ACESSO"}`}
+        // Rodada 3, item 8 — avatar sozinho (`avatarMedium`, 40dp) abaixo dos
+        // 48dp do app; 4 de cada lado fecha a conta sem mudar o layout visual.
+        hitSlop={4}
       >
-        <Avatar nome={autor?.nome} theme={theme} />
+        {/* `size="medium"` (não "small"): o `hitSlop={4}` logo acima foi
+            calibrado pra fechar 48dp a partir de um avatar de 40dp — um
+            avatar menor aqui reabriria o alvo de toque insuficiente já
+            corrigido (Rodada 3, item 8). */}
+        <Avatar nome={autor?.nome} fotoUrl={autor?.fotoPerfil} size="medium" />
       </Pressable>
       <View style={{ flex: 1, gap: theme.spacing.xs }}>
         <Text style={[theme.typography.label, { color: theme.colors.textPrimary }]}>
@@ -1028,7 +994,11 @@ const ComentarioItem = memo(function ComentarioItem({
               onPress={() => onResponder(comentario.id)}
               accessibilityRole="button"
               accessibilityLabel={`Responder a ${autor?.nome ?? "este comentário"}`}
-              hitSlop={8}
+              // Rodada 3, item 8 — mesmo ajuste do botão "Editar" acima. Só
+              // vertical: "Responder" pode aparecer lado a lado com
+              // "Denunciar"/"Excluir" com só 8dp de `gap` — expandir
+              // `left`/`right` também faria as áreas de toque se sobreporem.
+              hitSlop={{ top: 16, bottom: 16, left: 0, right: 0 }}
             >
               <Text style={[theme.typography.caption, { color: theme.colors.primary.solid, fontWeight: "700" }]}>
                 Responder
@@ -1040,7 +1010,9 @@ const ComentarioItem = memo(function ComentarioItem({
               onPress={() => onDenunciar(comentario.id, autor?.nome)}
               accessibilityRole="button"
               accessibilityLabel={`Denunciar comentário de ${autor?.nome ?? "este usuário"}`}
-              hitSlop={8}
+              // Rodada 3, item 8 — mesmo ajuste do botão "Editar" acima; só
+              // vertical, mesmo motivo do "Responder" (vizinho a 8dp de gap).
+              hitSlop={{ top: 16, bottom: 16, left: 0, right: 0 }}
             >
               <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>Denunciar</Text>
             </Pressable>
@@ -1052,7 +1024,9 @@ const ComentarioItem = memo(function ComentarioItem({
               accessibilityRole="button"
               accessibilityLabel="Excluir meu comentário"
               accessibilityState={{ disabled: excluindo }}
-              hitSlop={8}
+              // Rodada 3, item 8 — mesmo ajuste do botão "Editar" acima; só
+              // vertical, mesmo motivo do "Responder" (vizinho a 8dp de gap).
+              hitSlop={{ top: 16, bottom: 16, left: 0, right: 0 }}
             >
               <Text style={[theme.typography.caption, { color: theme.colors.error.solid, fontWeight: "700" }]}>
                 {excluindo ? "Excluindo…" : "Excluir"}

@@ -30,6 +30,16 @@ jest.mock("../../auth", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+// Redesign visual, item 10 — o ramo de empresa (`EmpresaProfileScreen`) ganhou
+// atalhos que usam `useNavigation()` (mesmo padrão de `SettingsScreen.tsx`);
+// o ramo de candidato desta tela não navega, mas como os dois ramos vivem no
+// mesmo componente (`MyProfileScreen`), o `NavigationContainer` real precisa
+// envolver a tela sempre, não só no describe de roteamento.
+jest.mock("@react-navigation/native", () => ({
+  ...jest.requireActual("@react-navigation/native"),
+  useNavigation: () => ({ navigate: jest.fn() }),
+}));
+
 // Fase 18: `MyProfileScreen` passou a rotear por `tipoUsuario` — quando é
 // candidato (todo teste deste arquivo, exceto o describe de roteamento), a
 // tela real de empresa nunca deveria ser tocada; mockado só para os testes
@@ -68,6 +78,7 @@ jest.mock("../../perfil", () => ({
   },
 }));
 
+import { NavigationContainer } from "@react-navigation/native";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 
@@ -103,7 +114,9 @@ async function renderTela() {
   const utils = await render(
     <AccessibilityProvider>
       <ThemeProvider>
-        <MyProfileScreen />
+        <NavigationContainer>
+          <MyProfileScreen />
+        </NavigationContainer>
       </ThemeProvider>
     </AccessibilityProvider>,
   );

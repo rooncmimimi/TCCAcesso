@@ -129,11 +129,42 @@ describe("HomeScreen", () => {
     expect(getByTestId("feed-lista").props.refreshControl.props.refreshing).toBe(false);
   });
 
-  it("avatar renderiza as iniciais do nome do autor, não uma imagem", async () => {
+  it("sem foto de perfil (fotoPerfil null), o avatar renderiza as iniciais do nome do autor", async () => {
     mockListar.mockResolvedValue(envelope([postagem()]));
     const { findByText } = await renderTela();
 
     expect(await findByText("BS")).toBeTruthy();
+  });
+
+  // Redesign visual, item 19: `Avatar` (componente único, ver
+  // `components/ui/Avatar.tsx`) agora renderiza a foto real quando
+  // `fotoPerfil` existe — antes disso, TODO avatar do app era sempre
+  // iniciais, mesmo com foto disponível na API.
+  it("com foto de perfil, o avatar renderiza a imagem em vez das iniciais", async () => {
+    mockListar.mockResolvedValue(
+      envelope([
+        postagem({
+          usuario: { id: "u1", nome: "Beatriz Souza", fotoPerfil: "https://exemplo.com/foto.jpg", tipoUsuario: "candidato" },
+        }),
+      ]),
+    );
+    const { findByText, queryByText } = await renderTela();
+
+    // A publicação em si ainda aparece normalmente...
+    expect(await findByText("Minha primeira publicação no ACESSO.")).toBeTruthy();
+    // ...mas as iniciais nunca renderizam: com `fotoPerfil` presente, o
+    // `Avatar` (ver `components/ui/Avatar.tsx`) sempre tenta a imagem
+    // primeiro, e só cai para iniciais se ela falhar ao carregar.
+    expect(queryByText("BS")).toBeNull();
+  });
+
+  // Redesign visual, item 4 — cabeçalho da publicação precisa mostrar
+  // "quando" (tempo relativo), não só quem publicou.
+  it("mostra o tempo relativo da publicação abaixo do nome do autor", async () => {
+    mockListar.mockResolvedValue(envelope([postagem({ created_at: new Date().toISOString() })]));
+    const { findByText } = await renderTela();
+
+    expect(await findByText("agora")).toBeTruthy();
   });
 
   it("resposta vazia (total=0) mostra o estado vazio", async () => {
@@ -147,7 +178,11 @@ describe("HomeScreen", () => {
     mockListar.mockResolvedValue(envelope([postagem()]));
     const { getByRole } = await renderTela();
 
-    const item = await waitFor(() => getByRole("button", { name: "Publicação de Beatriz Souza" }));
+    // Regex, não string exata: o rótulo agora inclui o tempo relativo da
+    // publicação (redesign visual, item 4) — o texto exato depende de
+    // fuso horário/data atual do ambiente de teste, então só o prefixo
+    // (autor) é estável o bastante para fixar aqui.
+    const item = await waitFor(() => getByRole("button", { name: /^Publicação de Beatriz Souza/ }));
     await act(async () => {
       fireEvent.press(item);
     });

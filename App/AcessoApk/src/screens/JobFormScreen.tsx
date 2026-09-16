@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { Button, Card, Input, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
+import { Button, Card, ErrorState, Input, LoadingState, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
 import type { ProfileStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
@@ -82,32 +82,12 @@ export function JobFormScreen({ route, navigation }: JobFormScreenProps) {
   }
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erroCarregamento && !vagaOriginal) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar esta vaga
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erroCarregamento}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState title="Não foi possível carregar esta vaga" message={erroCarregamento} onRetry={tentarNovamente} />
     );
   }
 

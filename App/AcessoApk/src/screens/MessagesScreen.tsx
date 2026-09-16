@@ -5,7 +5,7 @@ import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuth } from "../auth";
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Avatar, Button, Card, EmptyState, ErrorState, LoadingState, ScreenContainer, ScreenHeader } from "../components/ui";
 import { ConversaService } from "../mensagens";
 import type { Conversa, ParticipanteConversa } from "../mensagens";
 import type { AppStackParamList, AppTabParamList } from "../navigation/types";
@@ -23,18 +23,15 @@ type MessagesScreenProps = CompositeScreenProps<
   NativeStackScreenProps<AppStackParamList>
 >;
 
-/** Iniciais de um nome — mesma duplicação local já usada em outras telas (`HomeScreen`, `NotificationsScreen` etc.). */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
-
 function nomeExibicao(participante: ParticipanteConversa | null): string {
   if (!participante) return "Usuário removido";
   return participante.empresa?.nomeFantasia ?? participante.empresa?.razaoSocial ?? participante.nome;
+}
+
+/** Mesmo raciocínio de `nomeExibicao` acima: empresa mostra o logo, não a foto pessoal de quem administra a conta. */
+function fotoExibicao(participante: ParticipanteConversa | null): string | null {
+  if (!participante) return null;
+  return participante.empresa?.logo ?? participante.fotoPerfil;
 }
 
 /** Quem é o OUTRO participante, do ponto de vista de `meuId` — nunca presume qual campo (`usuarioA`/`usuarioB`) é "o outro". */
@@ -181,37 +178,22 @@ export function MessagesScreen({ navigation }: MessagesScreenProps) {
   );
 
   if (carregandoInicial) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && conversas.length === 0) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar suas conversas
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void recarregarDoInicio(false)}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title="Não foi possível carregar suas conversas"
+        message={erro}
+        onRetry={() => void recarregarDoInicio(false)}
+      />
     );
   }
 
   return (
     <ScreenContainer>
+      <ScreenHeader title="Mensagens" style={{ marginBottom: theme.spacing.sm }} />
       <FlatList
         testID="conversas-lista"
         data={conversas}
@@ -232,12 +214,10 @@ export function MessagesScreen({ navigation }: MessagesScreenProps) {
           />
         }
         ListEmptyComponent={
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhuma conversa ainda</Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              Suas conversas com outras pessoas e empresas do ACESSO vão aparecer aqui.
-            </Text>
-          </Card>
+          <EmptyState
+            title="Nenhuma conversa ainda"
+            description="Suas conversas com outras pessoas e empresas do ACESSO vão aparecer aqui."
+          />
         }
         renderItem={({ item }) => (
           // `onPress` passado DIRETO — o item chama `onPress(conversa.id, nome)`. Ver `HomeScreen.tsx`.
@@ -299,6 +279,7 @@ const ConversaListItem = memo(function ConversaListItem({
 }) {
   const outro = outroParticipante(conversa, meuId);
   const nome = nomeExibicao(outro);
+  const foto = fotoExibicao(outro);
   const naoLidas = conversa.mensagensNaoLidas;
 
   return (
@@ -310,19 +291,7 @@ const ConversaListItem = memo(function ConversaListItem({
         android_ripple={{ color: theme.colors.divider }}
       >
         <Card elevation="sm" style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
-          <View
-            accessible={false}
-            style={{
-              width: theme.sizes.avatarMedium,
-              height: theme.sizes.avatarMedium,
-              borderRadius: theme.sizes.avatarMedium / 2,
-              backgroundColor: theme.colors.primary.soft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(nome)}</Text>
-          </View>
+          <Avatar nome={nome} fotoUrl={foto} size="medium" />
           <View style={{ flex: 1, gap: 2 }}>
             <Text
               style={[theme.typography.body, { color: theme.colors.textPrimary, fontWeight: naoLidas > 0 ? "700" : "400" }]}

@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Avatar, Button, Card, EmptyState, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import type { AppStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { SeguidorService } from "../seguidores";
@@ -13,15 +13,6 @@ import type { Theme } from "../theme";
 const LIMITE_POR_PAGINA = 20;
 
 type FollowListScreenProps = NativeStackScreenProps<AppStackParamList, "FollowList">;
-
-/** Mesmo cálculo de `PublicProfileScreen.tsx` — duplicado de propósito. */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
 
 /**
  * Lista de seguidores/seguindo de um usuário (Fase 14) — paginação clássica
@@ -109,34 +100,19 @@ export function FollowListScreen({ route, navigation }: FollowListScreenProps) {
   );
 
   if (!primeiroCarregamentoConcluido) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && itens.length === 0) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              {modo === "seguidores" ? "Não foi possível carregar os seguidores" : "Não foi possível carregar quem esta pessoa segue"}
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void buscar(1, "retry")} loading={buscando === "retry"} disabled={buscando !== null}>
-              Tentar novamente
-            </Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title={
+          modo === "seguidores" ? "Não foi possível carregar os seguidores" : "Não foi possível carregar quem esta pessoa segue"
+        }
+        message={erro}
+        onRetry={() => void buscar(1, "retry")}
+        retrying={buscando === "retry"}
+      />
     );
   }
 
@@ -170,11 +146,9 @@ export function FollowListScreen({ route, navigation }: FollowListScreenProps) {
           ) : null
         }
         ListEmptyComponent={
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              {modo === "seguidores" ? "Ninguém segue este perfil ainda." : "Este perfil ainda não segue ninguém."}
-            </Text>
-          </Card>
+          <EmptyState
+            description={modo === "seguidores" ? "Ninguém segue este perfil ainda." : "Este perfil ainda não segue ninguém."}
+          />
         }
         renderItem={({ item }) => <ItemUsuario item={item} theme={theme} onPress={abrirPerfil} />}
         ListFooterComponent={
@@ -229,19 +203,7 @@ const ItemUsuario = memo(function ItemUsuario({
         android_ripple={{ color: theme.colors.divider }}
       >
         <Card elevation="sm" style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
-          <View
-            accessible={false}
-            style={{
-              width: theme.sizes.avatarMedium,
-              height: theme.sizes.avatarMedium,
-              borderRadius: theme.sizes.avatarMedium / 2,
-              backgroundColor: theme.colors.primary.soft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(item.nome)}</Text>
-          </View>
+          <Avatar nome={item.nome} fotoUrl={item.fotoPerfil} size="medium" />
           <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
             {item.nome}
           </Text>

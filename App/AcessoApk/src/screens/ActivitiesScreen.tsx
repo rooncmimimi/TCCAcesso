@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -14,7 +14,7 @@ import type {
   PostagemResumoAtividade,
 } from "../atividades";
 import { useAuth } from "../auth";
-import { Badge, Button, Card, ScreenContainer } from "../components/ui";
+import { Avatar, Badge, Card, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import type { BadgeVariant } from "../components/ui";
 import type { AppStackParamList, ProfileStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
@@ -37,15 +37,6 @@ const VARIANTE_STATUS_CANDIDATURA: Record<StatusCandidatura, BadgeVariant> = {
   Rejeitada: "error",
   Cancelada: "neutral",
 };
-
-/** Mesmo cálculo de `PublicProfileScreen.tsx`/`FollowListScreen.tsx` — duplicado de propósito. */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
 
 /** Mesmo padrão de `PostagemDetailScreen.tsx`/`VagaDetailScreen.tsx` — duplicado de propósito. */
 function formatarData(valor: string | null | undefined): string | null {
@@ -138,32 +129,12 @@ export function ActivitiesScreen({ navigation }: ActivitiesScreenProps) {
   }
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && !atividade) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar sua atividade
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void carregar(false)}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState title="Não foi possível carregar sua atividade" message={erro} onRetry={() => void carregar(false)} />
     );
   }
 
@@ -307,7 +278,16 @@ function Secao({
           {total > 0 ? `${titulo} (${total})` : titulo}
         </Text>
         {verTudo ? (
-          <Pressable onPress={verTudo} accessibilityRole="button" accessibilityLabel={`Ver tudo em ${titulo}`}>
+          <Pressable
+            onPress={verTudo}
+            accessibilityRole="button"
+            accessibilityLabel={`Ver tudo em ${titulo}`}
+            // Rodada 3, item 8 — texto sozinho (bodySmall, ~20dp de altura)
+            // ficava abaixo dos 48dp do app; mesmo cálculo já usado em
+            // "Esqueci minha senha"/"Criar conta" (`LoginScreen.tsx`): 14 de
+            // cada lado fecha a conta em 48dp sem mudar o layout visual.
+            hitSlop={14}
+          >
             <Text style={[theme.typography.bodySmall, { color: theme.colors.primary.solid }]}>Ver tudo</Text>
           </Pressable>
         ) : null}
@@ -383,19 +363,7 @@ function ItemPessoa({ pessoa, theme, onPress }: { pessoa: PessoaSeguidaAtividade
         style={{ minHeight: theme.sizes.touchTarget }}
       >
         <Card elevation="sm" style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
-          <View
-            accessible={false}
-            style={{
-              width: theme.sizes.avatarMedium,
-              height: theme.sizes.avatarMedium,
-              borderRadius: theme.sizes.avatarMedium / 2,
-              backgroundColor: theme.colors.primary.soft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(pessoa.nome)}</Text>
-          </View>
+          <Avatar nome={pessoa.nome} fotoUrl={pessoa.fotoPerfil} size="medium" />
           <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
             {pessoa.nome}
           </Text>
@@ -417,19 +385,7 @@ function ItemEmpresaSeguida({ item, theme, onPress }: { item: EmpresaSeguidaAtiv
         style={{ minHeight: theme.sizes.touchTarget }}
       >
         <Card elevation="sm" style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
-          <View
-            accessible={false}
-            style={{
-              width: theme.sizes.avatarMedium,
-              height: theme.sizes.avatarMedium,
-              borderRadius: theme.sizes.avatarMedium / 2,
-              backgroundColor: theme.colors.primary.soft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(nome)}</Text>
-          </View>
+          <Avatar nome={nome} fotoUrl={item.empresa.logo} size="medium" />
           <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
             {nome}
           </Text>

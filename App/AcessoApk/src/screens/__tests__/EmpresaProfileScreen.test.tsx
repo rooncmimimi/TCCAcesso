@@ -10,6 +10,18 @@ jest.mock("../../empresas", () => ({
   },
 }));
 
+// Redesign visual, item 10 — "Minhas vagas"/"Atividades" usam `useNavigation()`
+// (mesmo padrão de `SettingsScreen.tsx`/"Usuários bloqueados"): mantém o
+// resto do módulo real (`requireActual`), só troca `useNavigation` por um
+// mock controlável; o `NavigationContainer` real continua envolvendo a tela
+// no `renderTela` abaixo.
+const mockNavigate = jest.fn();
+jest.mock("@react-navigation/native", () => ({
+  ...jest.requireActual("@react-navigation/native"),
+  useNavigation: () => ({ navigate: mockNavigate }),
+}));
+
+import { NavigationContainer } from "@react-navigation/native";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import { AccessibilityProvider } from "../../accessibility";
@@ -38,7 +50,9 @@ async function renderTela() {
   const utils = await render(
     <AccessibilityProvider>
       <ThemeProvider>
-        <EmpresaProfileScreen />
+        <NavigationContainer>
+          <EmpresaProfileScreen />
+        </NavigationContainer>
       </ThemeProvider>
     </AccessibilityProvider>,
   );
@@ -49,6 +63,28 @@ async function renderTela() {
 describe("EmpresaProfileScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  // Redesign visual, item 10 — antes desta fase, o perfil de empresa não
+  // tinha identidade visual nenhuma (só o formulário) nem atalho para as
+  // telas de "Minhas Vagas"/"Atividades" (que já existiam no menu do Perfil).
+  it("mostra o cabeçalho visual (nome, setor, localização) e atalhos para Minhas vagas/Atividades", async () => {
+    mockMeuPerfil.mockResolvedValue(empresaBase());
+    const { findByText, getByRole } = await renderTela();
+
+    expect(await findByText("ACME")).toBeTruthy();
+    expect(await findByText("Tecnologia")).toBeTruthy();
+    expect(await findByText("São Paulo - SP")).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(getByRole("button", { name: "Minhas vagas" }));
+    });
+    expect(mockNavigate).toHaveBeenCalledWith("MyJobs");
+
+    await act(async () => {
+      fireEvent.press(getByRole("button", { name: "Atividades" }));
+    });
+    expect(mockNavigate).toHaveBeenCalledWith("Activities");
   });
 
   it("mostra loading e depois o formulário preenchido, quando aprovada", async () => {

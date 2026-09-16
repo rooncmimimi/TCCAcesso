@@ -1,14 +1,28 @@
 import { memo, useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Modal, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { Badge, Button, Card, Input, ScreenContainer, SegmentedControl } from "../components/ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  Input,
+  LoadingState,
+  ScreenContainer,
+  ScreenHeader,
+  SegmentedControl,
+} from "../components/ui";
 import type { AppStackParamList, AppTabParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
 import type { Theme } from "../theme";
+import { formatarTempoRelativo } from "../utils/tempoRelativo";
 import {
   CONTRATO_LABEL,
   MODALIDADE_LABEL,
@@ -239,42 +253,26 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
   // Fase 9, item 9: primeiro carregamento é tela cheia de loading, sem lista
   // nenhuma por baixo — só acontece uma vez, antes de `primeiroCarregamentoConcluido`.
   if (!primeiroCarregamentoConcluido) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   // Erro logo no primeiro carregamento (nunca chegou a ter nenhuma vaga) —
   // tela cheia de erro, diferente do erro de uma troca de página/filtro (abaixo).
   if (erro && vagas.length === 0 && !algumFiltroAtivo) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar as vagas
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void buscar(1, "retry", filtros, textoBusca)} loading={buscando === "retry"} disabled={buscando !== null}>
-              Tentar novamente
-            </Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title="Não foi possível carregar as vagas"
+        message={erro}
+        onRetry={() => void buscar(1, "retry", filtros, textoBusca)}
+        retrying={buscando === "retry"}
+      />
     );
   }
 
   return (
     <ScreenContainer>
-      <View style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-end", marginBottom: theme.spacing.sm }}>
+      <ScreenHeader title="Vagas" subtitle={total > 0 ? `${total} oportunidade${total === 1 ? "" : "s"} encontrada${total === 1 ? "" : "s"}` : undefined} />
+      <View style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-end", marginTop: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
         <View style={{ flex: 1 }}>
           <Input
             value={textoBusca}
@@ -340,19 +338,15 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
         }
         ListEmptyComponent={
           buscando === "filtro" ? null : (
-            <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-              <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhuma vaga encontrada</Text>
-              <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-                {algumFiltroAtivo
+            <EmptyState
+              title="Nenhuma vaga encontrada"
+              description={
+                algumFiltroAtivo
                   ? "Nenhuma vaga corresponde à busca ou aos filtros atuais."
-                  : "Ainda não há vagas abertas no momento. Volte mais tarde."}
-              </Text>
-              {algumFiltroAtivo ? (
-                <Button variant="outline" size="small" onPress={limparFiltros}>
-                  Limpar filtros
-                </Button>
-              ) : null}
-            </Card>
+                  : "Ainda não há vagas abertas no momento. Volte mais tarde."
+              }
+              action={algumFiltroAtivo ? { label: "Limpar filtros", onPress: limparFiltros } : undefined}
+            />
           )
         }
         renderItem={({ item }) => (
@@ -417,7 +411,14 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
                 <Text accessibilityRole="header" style={[theme.typography.heading, { color: theme.colors.textPrimary }]}>
                   Filtrar vagas
                 </Text>
-                <Pressable onPress={() => setModalFiltrosAberto(false)} accessibilityRole="button" accessibilityLabel="Fechar filtros" hitSlop={10}>
+                <Pressable
+                  onPress={() => setModalFiltrosAberto(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fechar filtros"
+                  // Rodada 3, item 8 — texto `button` (~22dp de altura) com
+                  // hitSlop 10 fechava só 42dp; 13 de cada lado chega aos 48dp do app.
+                  hitSlop={13}
+                >
                   <Text style={[theme.typography.button, { color: theme.colors.primary.solid }]}>Fechar</Text>
                 </Pressable>
               </View>
@@ -527,6 +528,19 @@ export function JobsScreen({ navigation }: JobsScreenProps) {
  * recebendo o `id` como parâmetro em vez de uma closure por item, só a
  * linha cujo objeto `vaga` mudou reprocessa numa troca de página/filtro.
  */
+/**
+ * `salario` é `DECIMAL(10,2)` no Postgres — chega como string no JSON
+ * (`"3500.00"`), não `number`. Nunca formatar direto; se não der pra
+ * converter, omite o campo em vez de mostrar "R$ NaN" (mesmo padrão/mesma
+ * duplicação de propósito de `VagaDetailScreen.tsx`).
+ */
+function formatarSalario(valor: Vaga["salario"]): string | null {
+  if (valor === null || valor === undefined || valor === "") return null;
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return null;
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numero);
+}
+
 const VagaListItem = memo(function VagaListItem({
   vaga,
   theme,
@@ -541,13 +555,28 @@ const VagaListItem = memo(function VagaListItem({
   const modalidade = MODALIDADE_LABEL[vaga.modalidade] ?? vaga.modalidade;
   const publicoAlvoLabel =
     vaga.publicoAlvo && vaga.publicoAlvo !== "geral" ? PUBLICO_ALVO_LABEL[vaga.publicoAlvo] : null;
+  const salarioFormatado = formatarSalario(vaga.salario);
+  const tempo = formatarTempoRelativo(vaga.dataPublicacao);
+  // Até 2 (mesmo limite do Site, `VagaCard.tsx`) — o resto fica só no
+  // detalhe. "outro" nunca aparece aqui: é o valor "não descrito" do
+  // catálogo, não um recurso real para destacar num card.
+  const recursos = (vaga.recursosAcessibilidade ?? []).filter((r) => r !== "outro").slice(0, 2);
 
   // Fase 9, item 17: o item inteiro precisa ser UMA unidade compreensível
   // pro leitor de tela, não uma pilha de `Text` separados — por isso o
   // `Pressable` externo recebe `accessibilityRole`/`accessibilityLabel`
   // próprios (o RN já une os filhos visuais num nó só quando o pai é
   // acessível com role definida) em vez de confiar só na leitura visual.
-  const rotulo = [vaga.titulo, empresa, local || null, modalidade, publicoAlvoLabel].filter(Boolean).join(", ");
+  const rotulo = [
+    vaga.titulo,
+    empresa,
+    local || null,
+    modalidade,
+    salarioFormatado,
+    publicoAlvoLabel,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     // `overflow:"hidden"` + `borderRadius` no wrapper (não no Pressable) é o
@@ -559,19 +588,75 @@ const VagaListItem = memo(function VagaListItem({
         accessibilityRole="button"
         accessibilityLabel={rotulo}
         android_ripple={{ color: theme.colors.divider }}
-        style={{ minHeight: theme.sizes.touchTarget }}
       >
-        <Card elevation="sm" style={{ gap: theme.spacing.xs }}>
-          <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]} numberOfLines={2}>
-            {vaga.titulo}
+        <Card elevation="sm" style={{ gap: theme.spacing.sm, padding: theme.spacing.md }}>
+          <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
+            {/* Sem logo real na API de listagem (`EmpresaResumoVaga` só traz
+                nome/verificação) — iniciais da empresa como "logo" provisório,
+                mesmo tratamento visual que qualquer pessoa sem foto já recebe
+                (`Avatar`), nunca um espaço vazio. */}
+            <Avatar nome={empresa} size="medium" />
+            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+              <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]} numberOfLines={2}>
+                {vaga.titulo}
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+                  {empresa}
+                </Text>
+                {vaga.empresa?.empresaVerificada ? (
+                  <Ionicons name="checkmark-circle" size={14} color={theme.colors.primary.solid} accessibilityLabel="Empresa verificada" />
+                ) : null}
+              </View>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Ionicons name="location-outline" size={theme.sizes.iconSmall} color={theme.colors.textMuted} />
+            <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>
+              {local ? `${local} · ${modalidade}` : modalidade}
+            </Text>
+          </View>
+
+          {salarioFormatado ? (
+            <Text style={[theme.typography.label, { color: theme.colors.success.onSoft }]}>{salarioFormatado}</Text>
+          ) : null}
+
+          <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]} numberOfLines={2}>
+            {vaga.descricao}
           </Text>
-          <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]} numberOfLines={1}>
-            {empresa}
-          </Text>
-          <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>
-            {local ? `${local} · ${modalidade}` : modalidade}
-          </Text>
-          {publicoAlvoLabel ? <Badge variant="info">{publicoAlvoLabel}</Badge> : null}
+
+          {publicoAlvoLabel || recursos.length > 0 || tempo ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, flexWrap: "wrap" }}>
+              {publicoAlvoLabel ? <Badge variant="info">{publicoAlvoLabel}</Badge> : null}
+              {recursos.map((recurso) => (
+                <Badge key={recurso} variant="neutral">
+                  {RECURSO_ACESSIBILIDADE_LABEL[recurso]}
+                </Badge>
+              ))}
+              {tempo ? (
+                <Text style={[theme.typography.caption, { color: theme.colors.textMuted, marginLeft: "auto" }]}>
+                  {tempo}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* Puramente visual (item 7 do redesign: "o botão principal deve
+              ser claramente identificável") — a NAVEGAÇÃO real já é o
+              `Pressable` do card inteiro, com um `accessibilityLabel`
+              completo (título, empresa, local, modalidade, salário). Um
+              segundo elemento com role="button" aqui duplicaria a mesma
+              parada para quem usa TalkBack/VoiceOver (dois anúncios pro
+              mesmo destino) — escondido da árvore de acessibilidade
+              (`importantForAccessibility="no-hide-descendants"`), nunca do
+              toque real: continua clicável normalmente para quem usa mouse/
+              toque direto, só não vira um segundo alvo de foco/leitura. */}
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Button size="small" onPress={() => onPress(vaga.id)}>
+              Ver vaga
+            </Button>
+          </View>
         </Card>
       </Pressable>
     </View>

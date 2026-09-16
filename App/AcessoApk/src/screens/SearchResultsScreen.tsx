@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, RefreshControl, Text, View } from "react-native";
+import { FlatList, RefreshControl, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { BuscaService } from "../busca";
 import type { TipoBusca } from "../busca";
 import type { ResultadoBusca } from "../components/BuscaResultadoItem";
 import { BuscaResultadoItem } from "../components/BuscaResultadoItem";
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Button, EmptyState, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import type { AppStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
 import { useTheme } from "../theme";
@@ -124,34 +124,17 @@ export function SearchResultsScreen({ route, navigation }: SearchResultsScreenPr
   }
 
   if (!primeiroCarregamentoConcluido) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && itens.length === 0) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar os resultados
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void buscar(1, "retry")} loading={buscando === "retry"} disabled={buscando !== null}>
-              Tentar novamente
-            </Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title="Não foi possível carregar os resultados"
+        message={erro}
+        onRetry={() => void buscar(1, "retry")}
+        retrying={buscando === "retry"}
+      />
     );
   }
 
@@ -180,12 +163,10 @@ export function SearchResultsScreen({ route, navigation }: SearchResultsScreenPr
           ) : null
         }
         ListEmptyComponent={
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhum resultado</Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              {`Nenhum resultado em "${TITULO_TIPO_BUSCA[tipo].toLowerCase()}" para "${termo}".`}
-            </Text>
-          </Card>
+          <EmptyState
+            title="Nenhum resultado"
+            description={`Nenhum resultado em "${TITULO_TIPO_BUSCA[tipo].toLowerCase()}" para "${termo}".`}
+          />
         }
         renderItem={({ item }) => (
           <BuscaResultadoItem

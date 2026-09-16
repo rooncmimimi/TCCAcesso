@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "rea
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { Badge, Button, Card, ScreenContainer, SegmentedControl } from "../components/ui";
+import { Avatar, Badge, Button, Card, EmptyState, ErrorState, LoadingState, ScreenContainer, SegmentedControl } from "../components/ui";
 import type { BadgeVariant } from "../components/ui";
 import type { AppStackParamList, ProfileStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
@@ -38,14 +38,6 @@ const VARIANTE_STATUS_CANDIDATURA: Record<StatusCandidatura, BadgeVariant> = {
   Rejeitada: "error",
   Cancelada: "neutral",
 };
-
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
 
 function confirmarExclusao(titulo: string, mensagem: string, aoConfirmar: () => void) {
   Alert.alert(titulo, mensagem, [
@@ -157,33 +149,11 @@ export function JobApplicantsScreen({ route, navigation }: JobApplicantsScreenPr
   }, []);
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && !vaga) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar esta vaga
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
-    );
+    return <ErrorState title="Não foi possível carregar esta vaga" message={erro} onRetry={tentarNovamente} />;
   }
 
   if (!vaga) return null;
@@ -272,11 +242,7 @@ export function JobApplicantsScreen({ route, navigation }: JobApplicantsScreenPr
             Candidaturas ({candidaturas.length})
           </Text>
           {candidaturas.length === 0 ? (
-            <Card elevation="sm" style={{ gap: theme.spacing.xs }}>
-              <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-                Ninguém se candidatou a esta vaga ainda.
-              </Text>
-            </Card>
+            <EmptyState description="Ninguém se candidatou a esta vaga ainda." />
           ) : (
             // Handlers passados DIRETO (estáveis por `useCallback`) — o item chama
             // `onAtualizada(candidatura.id, atualizada)`. Ver `HomeScreen.tsx`.
@@ -342,20 +308,11 @@ const CandidaturaItem = memo(function CandidaturaItem({
         accessibilityLabel={`Ver perfil de ${usuario?.nome ?? "candidato"}`}
         disabled={!usuario?.id}
         style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}
+        // Rodada 3, item 8 — mesmo gap de 48dp corrigido em `DiscoverScreen.tsx`
+        // para a mesma técnica (avatar de 40dp como área de toque).
+        hitSlop={4}
       >
-        <View
-          accessible={false}
-          style={{
-            width: theme.sizes.avatarMedium,
-            height: theme.sizes.avatarMedium,
-            borderRadius: theme.sizes.avatarMedium / 2,
-            backgroundColor: theme.colors.primary.soft,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(usuario?.nome)}</Text>
-        </View>
+        <Avatar nome={usuario?.nome} fotoUrl={usuario?.fotoPerfil} size="medium" />
         <View style={{ flex: 1 }}>
           <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
             {usuario?.nome ?? "Candidato"}

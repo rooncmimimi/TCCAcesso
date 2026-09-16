@@ -73,6 +73,24 @@ describe("JobsScreen", () => {
     expect(mockListar).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
+  // Redesign visual, item 12 — mesmo gap de título de página já corrigido
+  // em `MessagesScreen`/`NotificationsScreen`; aqui o título vem com um
+  // subtítulo (contagem), então também cobre o singular.
+  it("mostra o título 'Vagas' com a contagem no singular", async () => {
+    mockListar.mockResolvedValue(envelope([vaga()]));
+    const { findByText } = await renderTela();
+
+    expect(await findByText("Vagas")).toBeTruthy();
+    expect(await findByText("1 oportunidade encontrada")).toBeTruthy();
+  });
+
+  it("com mais de uma vaga, a contagem do título vai para o plural", async () => {
+    mockListar.mockResolvedValue(envelope([vaga({ id: "v1" }), vaga({ id: "v2", titulo: "Analista" })]));
+    const { findByText } = await renderTela();
+
+    expect(await findByText("2 oportunidades encontradas")).toBeTruthy();
+  });
+
   // Fase 26 (polish): puxar para atualizar — faltava aqui (e em `HomeScreen.tsx`).
   it("puxar para atualizar refaz a MESMA página aberta, não pula pra página 1", async () => {
     mockListar.mockResolvedValueOnce(envelope([vaga()], { pagina: 2, totalPaginas: 2, total: 11 }));

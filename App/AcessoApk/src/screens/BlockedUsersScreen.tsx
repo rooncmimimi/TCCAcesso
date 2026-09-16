@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
 
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Avatar, Button, Card, EmptyState, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import { ModeracaoService } from "../moderacao";
 import type { UsuarioBloqueado } from "../moderacao";
 import { getFriendlyErrorMessage } from "../services/api/errors";
@@ -9,15 +9,6 @@ import { useTheme } from "../theme";
 import type { Theme } from "../theme";
 
 const LIMITE_POR_PAGINA = 20;
-
-/** Mesmo cálculo de outras telas — duplicado de propósito. */
-function iniciaisDoNome(nome: string | undefined): string {
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0]?.charAt(0) ?? "";
-  const ultima = partes.length > 1 ? partes[partes.length - 1]?.charAt(0) ?? "" : "";
-  const iniciais = (primeira + ultima).toUpperCase();
-  return iniciais || "?";
-}
 
 /**
  * Usuários bloqueados (Fase 19) — paginação clássica (mesmo padrão de
@@ -93,34 +84,17 @@ export function BlockedUsersScreen() {
   }, []);
 
   if (!primeiroCarregamentoConcluido) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && itens.length === 0) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar seus bloqueios
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void buscar(1, "retry")} loading={buscando === "retry"} disabled={buscando !== null}>
-              Tentar novamente
-            </Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title="Não foi possível carregar seus bloqueios"
+        message={erro}
+        onRetry={() => void buscar(1, "retry")}
+        retrying={buscando === "retry"}
+      />
     );
   }
 
@@ -152,11 +126,7 @@ export function BlockedUsersScreen() {
         ) : null}
 
         {itens.length === 0 ? (
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              Você não bloqueou ninguém ainda.
-            </Text>
-          </Card>
+          <EmptyState description="Você não bloqueou ninguém ainda." />
         ) : (
           itens.map((item) => (
             // `onDesbloqueado` passado DIRETO — o item chama `onDesbloqueado(item.id)`. Ver `HomeScreen.tsx`.
@@ -225,19 +195,7 @@ const ItemBloqueado = memo(function ItemBloqueado({
 
   return (
     <Card elevation="sm" style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
-      <View
-        accessible={false}
-        style={{
-          width: theme.sizes.avatarMedium,
-          height: theme.sizes.avatarMedium,
-          borderRadius: theme.sizes.avatarMedium / 2,
-          backgroundColor: theme.colors.primary.soft,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text style={[theme.typography.label, { color: theme.colors.primary.onSoft }]}>{iniciaisDoNome(item.nome)}</Text>
-      </View>
+      <Avatar nome={item.nome} fotoUrl={item.fotoPerfil} size="medium" />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
           {item.nome}

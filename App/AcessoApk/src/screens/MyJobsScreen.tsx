@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { Badge, Button, Card, ScreenContainer } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import type { BadgeVariant } from "../components/ui";
 import type { ProfileStackParamList } from "../navigation/types";
 import { getFriendlyErrorMessage } from "../services/api/errors";
@@ -103,34 +103,17 @@ export function MyJobsScreen({ navigation }: MyJobsScreenProps) {
   );
 
   if (!primeiroCarregamentoConcluido) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && vagas.length === 0) {
     return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar suas vagas
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={() => void buscar(1, "retry")} loading={buscando === "retry"} disabled={buscando !== null}>
-              Tentar novamente
-            </Button>
-          </Card>
-        </View>
-      </ScreenContainer>
+      <ErrorState
+        title="Não foi possível carregar suas vagas"
+        message={erro}
+        onRetry={() => void buscar(1, "retry")}
+        retrying={buscando === "retry"}
+      />
     );
   }
 
@@ -159,12 +142,10 @@ export function MyJobsScreen({ navigation }: MyJobsScreenProps) {
         ) : null}
 
         {vagas.length === 0 ? (
-          <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>Nenhuma vaga publicada ainda</Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>
-              Toque em Nova vaga para publicar a primeira oportunidade da sua empresa.
-            </Text>
-          </Card>
+          <EmptyState
+            title="Nenhuma vaga publicada ainda"
+            description="Toque em Nova vaga para publicar a primeira oportunidade da sua empresa."
+          />
         ) : (
           // `onPress` passado DIRETO — o item chama `onPress(vaga.id, vaga.titulo)`. Ver `HomeScreen.tsx`.
           vagas.map((vaga) => <MinhaVagaItem key={vaga.id} vaga={vaga} theme={theme} onPress={abrirCandidaturas} />)

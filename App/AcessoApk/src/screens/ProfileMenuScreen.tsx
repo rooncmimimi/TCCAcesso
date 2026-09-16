@@ -3,7 +3,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { useAuth } from "../auth";
-import { Button, Card, Divider, ScreenContainer } from "../components/ui";
+import { Avatar, Button, Card, Divider, ScreenContainer } from "../components/ui";
 import type { ProfileStackParamList } from "../navigation/types";
 import { useTheme } from "../theme";
 
@@ -48,11 +48,18 @@ export function ProfileMenuScreen() {
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={{ gap: theme.spacing.lg, paddingVertical: theme.spacing.lg }}>
-        <Card elevation="md" style={{ gap: theme.spacing.xs }}>
-          <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
-            {user?.nome ?? "Seu perfil"}
-          </Text>
-          <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>{user?.email}</Text>
+        <Card elevation="md" style={{ flexDirection: "row", gap: theme.spacing.md, alignItems: "center" }}>
+          {/* Redesign visual, item 11 — mesmo `Avatar` usado no resto do app
+              (Feed, Vagas, Meu perfil): sem foto própria disponível aqui (só
+              `AuthUser`, não o `Candidato` completo), mas o logo já existe
+              para conta empresa (`user.empresa.logo`) — mostrado quando há. */}
+          <Avatar nome={user?.nome} fotoUrl={user?.tipoUsuario === "empresa" ? user.empresa?.logo : undefined} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
+              {user?.nome ?? "Seu perfil"}
+            </Text>
+            <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>{user?.email}</Text>
+          </View>
         </Card>
 
         <Card style={{ padding: 0, overflow: "hidden" }}>

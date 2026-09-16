@@ -1,13 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as LocalAuthentication from "expo-local-authentication";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { useEffect, useState, type ComponentProps } from "react";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { useAccessibility } from "../accessibility";
 import { AuthService, useAuth } from "../auth";
 import type { SessaoAtiva } from "../auth";
-import { Button, Card, Input, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
+import { Button, Card, ErrorState, Input, LoadingState, ScreenContainer, SegmentedControl, ToggleRow } from "../components/ui";
 import type { PreferenciaMensagens, PreferenciasNotificacao } from "../configuracoes";
 import { ConfiguracoesService } from "../configuracoes";
 import type { ProfileStackParamList } from "../navigation/types";
@@ -38,11 +39,23 @@ function formatarData(valor: string | null | undefined): string | null {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(data);
 }
 
-function SectionHeader({ title, theme }: { title: string; theme: Theme }) {
+/** Mesmo padrão de `SectionHeader` em `MyProfileScreen.tsx` (ícone + título) — duplicado aqui de propósito, sem componente compartilhado entre os dois arquivos (mesmo raciocínio de `iniciaisDoNome`/`formatarData`). */
+function SectionHeader({
+  title,
+  theme,
+  icon,
+}: {
+  title: string;
+  theme: Theme;
+  icon?: ComponentProps<typeof Ionicons>["name"];
+}) {
   return (
-    <Text accessibilityRole="header" style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
-      {title}
-    </Text>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
+      {icon ? <Ionicons name={icon} size={theme.sizes.iconSmall} color={theme.colors.textSecondary} /> : null}
+      <Text accessibilityRole="header" style={[theme.typography.title, { color: theme.colors.textPrimary }]}>
+        {title}
+      </Text>
+    </View>
   );
 }
 
@@ -108,33 +121,11 @@ export function SettingsScreen() {
   }
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && sessoes.length === 0 && !prefsNotificacao) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar suas configurações
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
-    );
+    return <ErrorState title="Não foi possível carregar suas configurações" message={erro} onRetry={tentarNovamente} />;
   }
 
   return (
@@ -195,7 +186,7 @@ function SecaoPrivacidade({ theme }: { theme: Theme }) {
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Privacidade" theme={theme} />
+      <SectionHeader title="Privacidade" theme={theme} icon="lock-closed-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md }}>
         <ToggleRow
           label="Perfil público"
@@ -249,7 +240,7 @@ function SecaoNotificacoes({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Notificações" theme={theme} />
+      <SectionHeader title="Notificações" theme={theme} icon="notifications-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md }}>
         <ToggleRow
           label="Vagas e candidaturas"
@@ -309,7 +300,7 @@ function SecaoSenha({ theme }: { theme: Theme }) {
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Alterar senha" theme={theme} />
+      <SectionHeader title="Alterar senha" theme={theme} icon="key-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md }}>
         <Input label="Senha atual" value={senhaAtual} onChangeText={setSenhaAtual} secureTextEntry editable={!salvando} />
         <Input
@@ -390,7 +381,7 @@ function SecaoEmail({ theme }: { theme: Theme }) {
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="E-mail" theme={theme} />
+      <SectionHeader title="E-mail" theme={theme} icon="mail-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md }}>
         <Text style={[theme.typography.bodySmall, { color: theme.colors.textMuted }]}>E-mail atual: {user?.email}</Text>
 
@@ -476,7 +467,7 @@ function SecaoSessoes({
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Sessões ativas" theme={theme} />
+      <SectionHeader title="Sessões ativas" theme={theme} icon="phone-portrait-outline" />
       <View style={{ gap: theme.spacing.sm }}>
         {sessoes.map((sessao) => (
           <Card key={sessao.id} elevation="sm" style={{ gap: theme.spacing.xs }}>
@@ -555,7 +546,7 @@ function SecaoExportarDados({ theme }: { theme: Theme }) {
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Seus dados" theme={theme} />
+      <SectionHeader title="Seus dados" theme={theme} icon="download-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md }}>
         <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]}>
           Baixe uma cópia dos dados que o ACESSO guarda sobre você: dados da conta, perfil e preferências.
@@ -618,7 +609,7 @@ function SecaoBiometria({ theme }: { theme: Theme }) {
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Segurança do aparelho" theme={theme} />
+      <SectionHeader title="Segurança do aparelho" theme={theme} icon="finger-print-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md }}>
         {disponivelNoAparelho ? (
           <ToggleRow
@@ -694,7 +685,7 @@ function SecaoZonaDePerigo({ theme }: { theme: Theme }) {
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionHeader title="Zona de perigo" theme={theme} />
+      <SectionHeader title="Zona de perigo" theme={theme} icon="warning-outline" />
       <Card elevation="sm" style={{ gap: theme.spacing.md, borderColor: theme.colors.error.solid }}>
         <View style={{ gap: theme.spacing.xs }}>
           <Text style={[theme.typography.label, { color: theme.colors.textPrimary }]}>Pausar conta</Text>

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useAuth } from "../auth";
-import { Button, Card, ScreenContainer } from "../components/ui";
+import { Button, ErrorState, LoadingState, ScreenContainer } from "../components/ui";
 import { ConversaService } from "../mensagens";
 import type { Mensagem, MensagemDigitandoEvento, MensagemLidaEvento, MensagemNovaEvento } from "../mensagens";
 import type { AppStackParamList } from "../navigation/types";
@@ -161,33 +161,11 @@ export function ConversationScreen({ route, navigation }: ConversationScreenProp
   }
 
   if (carregando) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color={theme.colors.primary.solid} size="large" />
-        </View>
-      </ScreenContainer>
-    );
+    return <LoadingState />;
   }
 
   if (erro && mensagens.length === 0) {
-    return (
-      <ScreenContainer>
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Card elevation="md" style={{ gap: theme.spacing.sm }}>
-            <Text
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              style={[theme.typography.title, { color: theme.colors.textPrimary }]}
-            >
-              Não foi possível carregar esta conversa
-            </Text>
-            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>{erro}</Text>
-            <Button onPress={tentarNovamente}>Tentar novamente</Button>
-          </Card>
-        </View>
-      </ScreenContainer>
-    );
+    return <ErrorState title="Não foi possível carregar esta conversa" message={erro} onRetry={tentarNovamente} />;
   }
 
   const ultimaMinha = [...mensagens].reverse().find((mensagem) => mensagem.remetenteId === user?.id);

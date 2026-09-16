@@ -95,6 +95,14 @@ describe("NotificationsScreen", () => {
     expect(mockListar).toHaveBeenCalledWith({ page: 1, limit: 15 });
   });
 
+  // Redesign visual, item 12 — mesmo gap de título de página já corrigido em `MessagesScreen`/`JobsScreen`.
+  it("mostra o título 'Notificações' no topo da tela", async () => {
+    mockListar.mockResolvedValue(envelope([]));
+    const { findByText } = await renderTela();
+
+    expect(await findByText("Notificações")).toBeTruthy();
+  });
+
   it("avatar do ator renderiza as iniciais; sem ator, mostra o sino", async () => {
     mockListar.mockResolvedValue(
       envelope([notificacao(), notificacao({ id: "n2", ator: null, atorId: null, titulo: "Senha alterada", entidadeTipo: null })]),

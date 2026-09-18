@@ -2,9 +2,9 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
 import { empresasService } from "@/services/empresas.service";
 import { PerfilPessoal } from "@/components/perfil/PerfilPessoal";
@@ -27,21 +27,21 @@ export const Route = createFileRoute("/perfil/$usuarioId")({
 /**
  * Perfil de outra pessoa/empresa, aberto ao clicar em uma foto/nome no feed.
  * Como o autor de uma postagem só carrega o `usuarioId`, esta rota resolve
- * se é um perfil de candidato ou de empresa antes de escolher o componente —
+ * se é um perfil de candidato ou de empresa antes de escolher o componente:
  * ambas as consultas (`perfil-publico-candidato` / `perfil-publico-empresa`)
  * usam a mesma chave que `PerfilPessoal`/`PerfilEmpresa` já usam sozinhas,
  * então a resolução aqui não gera uma segunda busca de rede.
  *
  * Terceiro fallback (`usuarioGenerico`): usuários sem registro de candidato
- * nem de empresa — hoje, só administradores. `PerfilPessoal` já sabe exibir
+ * nem de empresa; hoje, só administradores. `PerfilPessoal` já sabe exibir
  * esse caso (é o mesmo componente usado quando um administrador vê o
  * próprio perfil), então reaproveitamos ele em vez de criar um componente novo.
  */
 function PerfilDeTerceiro() {
   const { usuarioId } = Route.useParams();
-  const { user } = useSession();
+  const { usuario } = useSessao();
 
-  const souEu = usuarioId === user?.id;
+  const souEu = usuarioId === usuario?.id;
 
   const candidato = useQuery({
     queryKey: ["perfil-publico-candidato", usuarioId],
@@ -83,19 +83,19 @@ function PerfilDeTerceiro() {
 
   if (candidato.isError && empresa.isError && usuarioGenerico.isError) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
           Este perfil não está disponível.
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
         <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil…
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

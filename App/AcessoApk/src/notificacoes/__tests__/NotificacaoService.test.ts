@@ -1,15 +1,15 @@
 /* eslint-disable import/first -- `jest.mock` precisa vir antes dos imports dos módulos que ele substitui. */
-jest.mock("../../services/api/client", () => ({
-  apiClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+jest.mock("../../services/api/cliente", () => ({
+  clienteApi: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
 }));
 
-import { apiClient } from "../../services/api/client";
+import { clienteApi } from "../../services/api/cliente";
 import { NotificacaoService } from "../NotificacaoService";
 
 const notificacaoExemplo = {
   id: "n1",
   usuarioId: "u1",
-  tipo: "Feed",
+  tipo: "feed",
   titulo: "Nova curtida na sua publicação",
   descricao: "Ana curtiu sua publicação.",
   lida: false,
@@ -18,8 +18,8 @@ const notificacaoExemplo = {
   entidadeId: "p1",
   atorId: "u2",
   ator: { id: "u2", nome: "Ana", fotoPerfil: null },
-  created_at: "2026-01-01T00:00:00.000Z",
-  updated_at: "2026-01-01T00:00:00.000Z",
+  criadoEm: "2026-01-01T00:00:00.000Z",
+  atualizadoEm: "2026-01-01T00:00:00.000Z",
 };
 
 describe("NotificacaoService", () => {
@@ -30,32 +30,32 @@ describe("NotificacaoService", () => {
   describe("listar", () => {
     it("chama GET /notificacoes com os parâmetros de página e devolve o envelope intacto", async () => {
       const envelope = { sucesso: true, total: 1, pagina: 1, limite: 10, totalPaginas: 1, notificacoes: [notificacaoExemplo] };
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: envelope });
+      (clienteApi.get as jest.Mock).mockResolvedValue({ data: envelope });
 
       const resposta = await NotificacaoService.listar({ page: 1, limit: 10 });
 
-      expect(apiClient.get).toHaveBeenCalledWith("/notificacoes", { params: { page: 1, limit: 10 } });
+      expect(clienteApi.get).toHaveBeenCalledWith("/notificacoes", { params: { page: 1, limit: 10 } });
       expect(resposta).toEqual(envelope);
     });
 
     it("sem parâmetros, chama GET /notificacoes com params vazio", async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({
+      (clienteApi.get as jest.Mock).mockResolvedValue({
         data: { sucesso: true, total: 0, pagina: 1, limite: 10, totalPaginas: 0, notificacoes: [] },
       });
 
       await NotificacaoService.listar();
 
-      expect(apiClient.get).toHaveBeenCalledWith("/notificacoes", { params: {} });
+      expect(clienteApi.get).toHaveBeenCalledWith("/notificacoes", { params: {} });
     });
   });
 
   describe("contarNaoLidas", () => {
     it("chama GET /notificacoes/nao-lidas e devolve só o número", async () => {
-      (apiClient.get as jest.Mock).mockResolvedValue({ data: { sucesso: true, naoLidas: 3 } });
+      (clienteApi.get as jest.Mock).mockResolvedValue({ data: { sucesso: true, naoLidas: 3 } });
 
       const total = await NotificacaoService.contarNaoLidas();
 
-      expect(apiClient.get).toHaveBeenCalledWith("/notificacoes/nao-lidas");
+      expect(clienteApi.get).toHaveBeenCalledWith("/notificacoes/nao-lidas");
       expect(total).toBe(3);
     });
   });
@@ -63,17 +63,17 @@ describe("NotificacaoService", () => {
   describe("marcarComoLida", () => {
     it("chama PATCH /notificacoes/:id/lida e devolve a notificação atualizada", async () => {
       const lida = { ...notificacaoExemplo, lida: true };
-      (apiClient.patch as jest.Mock).mockResolvedValue({ data: { sucesso: true, notificacao: lida } });
+      (clienteApi.patch as jest.Mock).mockResolvedValue({ data: { sucesso: true, notificacao: lida } });
 
       const resultado = await NotificacaoService.marcarComoLida("n1");
 
-      expect(apiClient.patch).toHaveBeenCalledWith("/notificacoes/n1/lida");
+      expect(clienteApi.patch).toHaveBeenCalledWith("/notificacoes/n1/lida");
       expect(resultado).toEqual(lida);
     });
 
     it("propaga erro (ex.: notificação de outro usuário → 404)", async () => {
       const erro = Object.assign(new Error("404"), { isAxiosError: true });
-      (apiClient.patch as jest.Mock).mockRejectedValue(erro);
+      (clienteApi.patch as jest.Mock).mockRejectedValue(erro);
 
       await expect(NotificacaoService.marcarComoLida("outro")).rejects.toThrow();
     });
@@ -81,57 +81,56 @@ describe("NotificacaoService", () => {
 
   describe("marcarTodasComoLidas", () => {
     it("chama PATCH /notificacoes/lidas sem corpo", async () => {
-      (apiClient.patch as jest.Mock).mockResolvedValue({ data: { sucesso: true, mensagem: "ok" } });
+      (clienteApi.patch as jest.Mock).mockResolvedValue({ data: { sucesso: true, mensagem: "ok" } });
 
       await NotificacaoService.marcarTodasComoLidas();
 
-      expect(apiClient.patch).toHaveBeenCalledWith("/notificacoes/lidas");
+      expect(clienteApi.patch).toHaveBeenCalledWith("/notificacoes/lidas");
     });
   });
 
   describe("remover", () => {
     it("chama DELETE /notificacoes/:id", async () => {
-      (apiClient.delete as jest.Mock).mockResolvedValue({ data: { sucesso: true, mensagem: "ok" } });
+      (clienteApi.delete as jest.Mock).mockResolvedValue({ data: { sucesso: true, mensagem: "ok" } });
 
       await NotificacaoService.remover("n1");
 
-      expect(apiClient.delete).toHaveBeenCalledWith("/notificacoes/n1");
+      expect(clienteApi.delete).toHaveBeenCalledWith("/notificacoes/n1");
     });
 
     it("propaga erro", async () => {
       const erro = Object.assign(new Error("404"), { isAxiosError: true });
-      (apiClient.delete as jest.Mock).mockRejectedValue(erro);
+      (clienteApi.delete as jest.Mock).mockRejectedValue(erro);
 
       await expect(NotificacaoService.remover("outro")).rejects.toThrow();
     });
   });
 
-  // Fase R5 — push tokens.
   describe("registrarPushToken", () => {
     it("faz POST /notificacoes/push-token com token e plataforma", async () => {
-      (apiClient.post as jest.Mock).mockResolvedValue({ data: { sucesso: true, registrado: true } });
+      (clienteApi.post as jest.Mock).mockResolvedValue({ data: { sucesso: true, registrado: true } });
 
       await NotificacaoService.registrarPushToken("ExponentPushToken[abc]", "android");
 
-      expect(apiClient.post).toHaveBeenCalledWith("/notificacoes/push-token", {
+      expect(clienteApi.post).toHaveBeenCalledWith("/notificacoes/push-token", {
         token: "ExponentPushToken[abc]",
         plataforma: "android",
       });
     });
 
     it("propaga erro", async () => {
-      (apiClient.post as jest.Mock).mockRejectedValue(new Error("500"));
+      (clienteApi.post as jest.Mock).mockRejectedValue(new Error("500"));
       await expect(NotificacaoService.registrarPushToken("t", "ios")).rejects.toThrow();
     });
   });
 
   describe("removerPushToken", () => {
     it("faz DELETE /notificacoes/push-token com o token no corpo", async () => {
-      (apiClient.delete as jest.Mock).mockResolvedValue({ data: { sucesso: true, removido: true } });
+      (clienteApi.delete as jest.Mock).mockResolvedValue({ data: { sucesso: true, removido: true } });
 
       await NotificacaoService.removerPushToken("ExponentPushToken[abc]");
 
-      expect(apiClient.delete).toHaveBeenCalledWith("/notificacoes/push-token", {
+      expect(clienteApi.delete).toHaveBeenCalledWith("/notificacoes/push-token", {
         data: { token: "ExponentPushToken[abc]" },
       });
     });

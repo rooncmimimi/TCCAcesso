@@ -1,18 +1,13 @@
 /**
- * Tipos do contrato real de perfil do candidato (Site/Backend), conforme
- * auditoria da Fase 12. Nomes de campo em português são LITERAIS ao que a
- * API envia/espera (`models/Candidato.js`, `PerfilCandidatoService.js`,
- * `CandidatoService.js`) — não são estilo, são o contrato.
+ * Tipos do perfil do candidato, com os nomes de campo da API (`models/Candidato.js`,
+ * `PerfilCandidatoService.js`, `CandidatoService.js`).
  *
- * `experiencia`/`habilidades` (texto livre) aparecem em
- * `validarAtualizacaoCandidato`/`CAMPOS_EDITAVEIS` do backend, mas NÃO são
- * colunas do model `Candidato` — são campos mortos, superados pelas tabelas
- * estruturadas `CandidatoExperiencia`/`CandidatoHabilidade` abaixo. Não têm
- * tipo nem tela aqui de propósito (replicar um campo morto criaria uma
- * "funcionalidade" que nunca persiste nada).
+ * `experiencia` e `habilidades` em texto livre aparecem no validator e em `CAMPOS_EDITAVEIS` do
+ * backend, mas não são colunas de `Candidato`; foram substituídos pelas tabelas
+ * `CandidatoExperiencia` e `CandidatoHabilidade`. Por isso não têm tipo nem tela aqui.
  */
 
-/** Só os campos de `Usuario` relevantes ao perfil do candidato — o mesmo índice de campos não mapeados que `AuthUser` já usa. */
+/** Só os campos de `Usuario` relevantes ao perfil do candidato: o mesmo índice de campos não mapeados que `UsuarioAutenticado` já usa. */
 export interface UsuarioResumoPerfil {
   id: string;
   nome: string;
@@ -25,7 +20,7 @@ export interface UsuarioResumoPerfil {
   [chave: string]: unknown;
 }
 
-/** `GET /deficiencias` — catálogo público, mantido pela administração. */
+/** `GET /deficiencias`: catálogo público, mantido pela administração. */
 export interface Deficiencia {
   id: string;
   nome: string;
@@ -34,21 +29,17 @@ export interface Deficiencia {
 }
 
 /**
- * Uma deficiência já vinculada ao candidato — o Sequelize devolve os dados
- * da tabela de junção (`candidato_deficiencias`) sob a chave
- * `CandidatoDeficiencia` (nome do model da junção, não um alias customizado
- * — confirmado em `models/index.js`: `through: CandidatoDeficiencia` sem
- * `as` próprio).
+ * Deficiência vinculada ao candidato. O Sequelize devolve os dados da tabela de junção na chave
+ * `CandidatoDeficiencia`, nome do model da junção, porque a associação em `models/index.js` não
+ * define um `as`.
  */
 export interface DeficienciaVinculada extends Deficiencia {
   CandidatoDeficiencia?: { observacoes?: string | null };
 }
 
 /**
- * `Candidato` completo (`GET /candidatos/me`). `curriculo`/`curriculoNome`/
- * `curriculoAtualizadoEm` existem no contrato mas pertencem à Fase 13
- * (Currículo) — só lidos aqui para mostrar um resumo, nunca editados nesta
- * fase.
+ * `Candidato` completo (`GET /candidatos/me`). Os campos de currículo só são lidos aqui para
+ * mostrar o resumo; o envio fica em `PerfilService.uploadCurriculo`.
  */
 export interface Candidato {
   id: string;
@@ -77,10 +68,8 @@ export interface Candidato {
 }
 
 /**
- * Campos que `PUT /candidatos/:id` de fato persiste — lista extraída de
- * `CandidatoService.CAMPOS_EDITAVEIS` no backend (a fonte real, não o
- * validator sozinho: o validator tem `experiencia`/`habilidades`, que o
- * service aceitaria mas o MODEL não tem como coluna — nunca persistem).
+ * Campos que `PUT /candidatos/:id` realmente grava: `CandidatoService.CAMPOS_EDITAVEIS`, sem
+ * `experiencia` e `habilidades`, que não têm coluna.
  */
 export interface DadosPessoaisCandidato {
   cpf?: string | null;
@@ -100,7 +89,10 @@ export interface DadosPessoaisCandidato {
   pretensaoSalarial?: string | null;
 }
 
-/** `PUT /usuarios/:id` — só os campos que esta fase edita (nunca `email`/`senha`/`tipoUsuario`/`ativo`, rejeitados pelo próprio backend por mass assignment). */
+/**
+ * `PUT /usuarios/:id`: campos editados pelo app. O backend recusa `email`, `senha`, `tipoUsuario` e
+ * `ativo` nesta rota (`usuarioValidator.js`) e só grava nome, telefone, foto e capa.
+ */
 export interface DadosPessoaisUsuario {
   nome?: string;
   telefone?: string | null;
@@ -122,12 +114,9 @@ export interface Experiencia {
 }
 
 /**
- * Payload de criar/atualizar — interface EXPLÍCITA, não `Omit<Experiencia,
- * ...>`. `Experiencia` tem `[chave: string]: unknown` (escape hatch para
- * ler campos extras que o backend manda); `Omit`/`Pick` sobre um tipo com
- * índice de string colapsam `keyof` para `string`, e o resultado perde a
- * obrigatoriedade de `cargo`/`empresa`/`dataInicio` (`{}` passaria a
- * type-check sem erro nenhum). Corrigido — cada campo é escrito à mão.
+ * Corpo de criar e atualizar, declarado campo a campo em vez de `Omit<Experiencia, ...>`. Como
+ * `Experiencia` tem o índice `[chave: string]: unknown`, o `Omit` perderia a obrigatoriedade de
+ * `cargo`, `empresa` e `dataInicio`, e até `{}` passaria na checagem de tipos.
  */
 export interface ExperienciaDados {
   cargo: string;
@@ -154,7 +143,7 @@ export interface Formacao {
   [chave: string]: unknown;
 }
 
-/** Mesmo motivo de `ExperienciaDados` — interface explícita, não `Omit`. */
+/** Mesmo motivo de `ExperienciaDados`: interface explícita, não `Omit`. */
 export interface FormacaoDados {
   instituicao: string;
   curso: string;
@@ -177,7 +166,7 @@ export interface Certificado {
   [chave: string]: unknown;
 }
 
-/** Mesmo motivo de `ExperienciaDados` — interface explícita, não `Omit`. */
+/** Mesmo motivo de `ExperienciaDados`: interface explícita, não `Omit`. */
 export interface CertificadoDados {
   titulo: string;
   instituicao?: string;
@@ -195,13 +184,16 @@ export interface Habilidade {
   [chave: string]: unknown;
 }
 
-/** Mesmo motivo de `ExperienciaDados` — interface explícita, não `Omit`. */
+/** Mesmo motivo de `ExperienciaDados`: interface explícita, não `Omit`. */
 export interface HabilidadeDados {
   nome: string;
   nivel?: string;
 }
 
-/** Os 4 recursos de `GET/POST/PUT/DELETE /perfil/:recurso[/:id]` — literal ao `param("recurso").isIn([...])` do backend. */
+/**
+ * Os 4 recursos de `/perfil/:recurso` (`GET` e `POST`) e `/perfil/:recurso/:id` (`PUT` e `DELETE`),
+ * os mesmos de `param("recurso").isIn([...])` no backend.
+ */
 export type RecursoPerfil = "experiencias" | "formacoes" | "certificados" | "habilidades";
 
 export interface ListaRegistrosResposta<T> {
@@ -224,14 +216,14 @@ export interface UsuarioAtualizadoResposta {
   usuario: UsuarioResumoPerfil;
 }
 
-/** `GET /deficiencias` — catálogo completo, sem paginação (confirmado em `DeficienciaController.index`/`DeficienciaService.findAll`). */
+/** `GET /deficiencias`: catálogo completo, sem paginação. */
 export interface ListaDeficienciasResposta {
   sucesso: true;
   deficiencias: Deficiencia[];
 }
 
 /**
- * `POST /candidatos/:id/deficiencias` — devolve a linha da tabela de
+ * `POST /candidatos/:id/deficiencias`: devolve a linha da tabela de
  * junção (`candidato_deficiencias`), não a `Deficiencia` em si.
  * Idempotente no backend (`findOrCreate`): vincular de novo com
  * `observacoes` diferentes apenas atualiza, nunca duplica.
@@ -249,19 +241,15 @@ export interface VincularDeficienciaResposta {
 }
 
 /**
- * Currículo (Fase 13). `PATCH /candidatos/:id/curriculo` (upload real) e
- * `POST /candidatos/:id/curriculo/importar` (extrai um RASCUNHO, nunca
- * grava nada) aceitam PDF/DOC/DOCX, campo multipart `"curriculo"`
- * (confirmado em `middlewares/uploadMiddleware.js`/`candidatoRoutes.js`).
+ * Currículo: `PATCH /candidatos/:id/curriculo` grava o arquivo e
+ * `POST /candidatos/:id/curriculo/importar` só extrai um rascunho. Os dois aceitam PDF, DOC e DOCX
+ * no campo multipart `curriculo`.
  *
- * NÃO EXISTE endpoint para excluir o currículo — só substituir por um novo
- * (o backend já limpa o arquivo antigo do Storage ao substituir) ou deixar
- * como está. Confirmado por auditoria completa de `candidatoRoutes.js`:
- * não há nenhuma rota `DELETE .../curriculo`. Registrado como pendência
- * (ver relatório da Fase 13) — não inventado workaround nenhum aqui.
+ * Não há rota para excluir o currículo: só dá para substituí-lo por outro (o backend apaga o
+ * arquivo antigo do Storage).
  */
 
-/** Formato que `expo-document-picker` devolve em `result.assets[0]` — tipado aqui só com os campos que `PerfilService` usa. */
+/** Formato que `expo-document-picker` devolve em `result.assets[0]`: tipado aqui só com os campos que `PerfilService` usa. */
 export interface ArquivoSelecionado {
   uri: string;
   name: string;
@@ -275,7 +263,10 @@ export interface CurriculoUrlResposta {
   nomeArquivo: string | null;
 }
 
-/** `POST /candidatos/:id/curriculo/importar` — extração por palavras-chave (sem IA), literal a `utils/parsearCurriculo.js`. */
+/**
+ * `POST /candidatos/:id/curriculo/importar`: extração por palavras-chave, sem IA, feita por
+ * `utils/parsearCurriculo.js` no backend.
+ */
 export interface RascunhoCurriculoExperiencia {
   cargo: string;
   empresa: string;
@@ -302,7 +293,7 @@ export interface RascunhoCurriculo {
   experiencias: RascunhoCurriculoExperiencia[];
   formacoes: RascunhoCurriculoFormacao[];
   habilidades: string[];
-  /** Mensagem fixa do backend — sempre mostrada junto do rascunho, nunca omitida. */
+  /** Mensagem fixa do backend, sempre mostrada junto do rascunho, nunca omitida. */
   aviso: string;
 }
 

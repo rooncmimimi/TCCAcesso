@@ -1,7 +1,11 @@
 import AcessibilidadeService from "../services/AcessibilidadeService.js";
 
+/**
+ * Preferências de acessibilidade do usuário autenticado: `GET` e `PUT /acessibilidade`, e
+ * `POST /acessibilidade/reset`, que volta aos valores padrão.
+ */
 class AcessibilidadeController {
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
             const preferencias = await AcessibilidadeService.obter(req.user.id);
 
@@ -11,7 +15,7 @@ class AcessibilidadeController {
         }
     }
 
-    async update(req, res, next) {
+    async atualizar(req, res, next) {
         try {
             const preferencias = await AcessibilidadeService.atualizar(
                 req.user.id,
@@ -24,7 +28,7 @@ class AcessibilidadeController {
         }
     }
 
-    async reset(req, res, next) {
+    async restaurar(req, res, next) {
         try {
             const preferencias = await AcessibilidadeService.restaurarPadrao(
                 req.user.id

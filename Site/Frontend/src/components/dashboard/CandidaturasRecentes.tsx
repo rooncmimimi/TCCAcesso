@@ -25,12 +25,9 @@ export function CandidaturasRecentes() {
   const [pagina, setPagina] = useState(1);
   const queryClient = useQueryClient();
 
-  // Mesmo prefixo de key usado em `/vaga/$vagaId` (`["candidaturas", "minhas"]`)
-  // para o mesmo recurso (`candidaturasService.minhas()`) — antes eram duas
-  // chaves diferentes ("candidaturas-minhas" aqui, ["candidaturas","minhas"]
-  // lá) para o mesmo dado, exigindo invalidar as duas manualmente toda vez
-  // (Fase 9, Bloco 6). Com o mesmo prefixo, invalidar ["candidaturas","minhas"]
-  // já cobre esta query também, mesmo com `pagina` como terceiro elemento.
+  // Mesmo prefixo de chave de `/vaga/$vagaId` (`["candidaturas", "minhas"]`) para o mesmo recurso
+  // (`candidaturasService.minhas()`): invalidar esse prefixo atualiza as duas telas, mesmo com a
+  // página como terceiro elemento.
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["candidaturas", "minhas", pagina],
     queryFn: () => candidaturasService.minhas({ page: pagina, limit: 5 }),
@@ -76,14 +73,14 @@ export function CandidaturasRecentes() {
               {data.dados.map((candidatura: Candidatura) => (
                 <li key={candidatura.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{candidatura.vaga?.titulo ?? "Vaga"}</p>
+                    <p className="truncate font-semibold">{candidatura.vaga?.titulo ?? "vaga"}</p>
                     <p className="truncate text-sm text-muted-foreground">
                       {candidatura.vaga?.empresa?.nomeFantasia ?? candidatura.vaga?.empresa?.razaoSocial ?? "Empresa"}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <StatusBadge status={candidatura.status} />
-                    {candidatura.status !== "Cancelada" && candidatura.status !== "Rejeitada" ? (
+                    {candidatura.status !== "cancelada" && candidatura.status !== "rejeitada" ? (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

@@ -1,16 +1,10 @@
 /**
- * Tipos do contrato real de "Minha atividade" (Site/Backend), conforme
- * auditoria da Fase 26 — `AtividadeController`/`AtividadeService.minha`
- * (`GET /atividades/minha`). Nomes de campo em português são LITERAIS ao que
- * a API envia — não são estilo, são o contrato.
+ * Tipos de "Minha atividade" (`GET /atividade/minha` no backend). O backend junta numa única
+ * leitura candidaturas, favoritos, seguidos, curtidas, comentários e compartilhamentos; não há
+ * histórico próprio nem paginação.
  *
- * O endpoint agrega dados que já existem em outras tabelas (candidaturas,
- * favoritos, seguidores, curtidas, comentários, compartilhamentos) numa
- * única leitura de resumo — não é histórico próprio, não tem paginação, e é
- * estritamente escopado ao usuário autenticado (`req.user`, nunca um
- * parâmetro de rota): estruturalmente impossível ler a atividade de outro
- * usuário por aqui. Cada categoria vem como uma PRÉVIA de até 5 itens
- * (`LIMITE_PREVIA` no backend) + a contagem total real.
+ * Cada categoria traz uma prévia de até 5 itens e o total real. O escopo vem sempre da sessão
+ * (`req.user`), então esta rota não permite ler a atividade de outra pessoa.
  */
 
 import type { StatusCandidatura } from "../vagas";
@@ -22,13 +16,9 @@ export interface ListaComTotal<T> {
 }
 
 /**
- * A `empresa` embutida em vaga/vaga-favorita/empresa-seguida — o backend
- * seleciona `ATRIBUTOS_EMPRESA_RESUMO = ["id", "usuarioId", "nomeFantasia",
- * "razaoSocial", "logo", "empresaVerificada"]` (`AtividadeService.js`), um
- * `usuarioId` FLAT no próprio objeto — diferente de `EmpresaResumoVaga`
- * (`src/vagas/types.ts`), cujo `usuario?: {id,...}` aninhado é específico do
- * embed de `VagaService.js` em `GET /vagas/:id`. Não são o mesmo formato,
- * por isso um tipo próprio aqui em vez de reaproveitar aquele.
+ * Empresa resumida dentro de vagas, favoritos e empresas seguidas (`ATRIBUTOS_EMPRESA_RESUMO` em
+ * `AtividadeService.js`). Traz `usuarioId` direto no objeto, enquanto `EmpresaResumoVaga` aninha
+ * `usuario`; por isso o tipo próprio.
  */
 export interface EmpresaResumoAtividade {
   id: string;
@@ -40,7 +30,7 @@ export interface EmpresaResumoAtividade {
   [chave: string]: unknown;
 }
 
-/** A `Vaga` embutida em candidatura/favorito — o backend só seleciona `id`/`titulo` (`AtividadeService.js: attributes: ["id", "titulo"]`), mais a `empresa` aninhada acima. */
+/** A `Vaga` embutida em candidatura/favorito: o backend só seleciona `id`/`titulo` (`AtividadeService.js: attributes: ["id", "titulo"]`), mais a `empresa` aninhada acima. */
 export interface VagaResumoAtividade {
   id: string;
   titulo: string;
@@ -48,7 +38,7 @@ export interface VagaResumoAtividade {
   [chave: string]: unknown;
 }
 
-/** `Site/Backend/src/models/Candidatura.js` — sem `attributes` restrito no `findAll`, então o registro inteiro vem, mas esta tela só usa os campos abaixo. */
+/** `Site/Backend/src/models/Candidatura.js`: sem `attributes` restrito no `findAll`, então o registro inteiro vem, mas esta tela só usa os campos abaixo. */
 export interface CandidaturaAtividade {
   id: string;
   status: StatusCandidatura;
@@ -63,7 +53,7 @@ export interface FavoritoVagaAtividade {
   [chave: string]: unknown;
 }
 
-/** O usuário seguido — mesma allowlist `ATRIBUTOS_PERFIL_RESUMO` do backend (`id, nome, fotoPerfil, tipoUsuario`), equivalente a `UsuarioResumoSocial` de `src/seguidores/types.ts` sem `capaPerfil`. */
+/** O usuário seguido: mesma allowlist `ATRIBUTOS_PERFIL_RESUMO` do backend (`id, nome, fotoPerfil, tipoUsuario`), equivalente a `UsuarioResumoSocial` de `src/seguidores/types.ts` sem `capaPerfil`. */
 export interface PessoaSeguidaAtividade {
   id: string;
   nome: string;
@@ -72,19 +62,19 @@ export interface PessoaSeguidaAtividade {
   [chave: string]: unknown;
 }
 
-/** `Site/Backend/src/models/EmpresaSeguida.js` — registro inteiro + `empresa` aninhada. */
+/** `Site/Backend/src/models/EmpresaSeguida.js`: registro inteiro + `empresa` aninhada. */
 export interface EmpresaSeguidaAtividade {
   id: string;
   empresa: EmpresaResumoAtividade;
   [chave: string]: unknown;
 }
 
-/** A `Postagem` embutida em curtida/comentário/compartilhamento — só `id, conteudo, usuarioId, created_at` (`ATRIBUTOS_POSTAGEM_RESUMO` no backend). */
+/** A `Postagem` embutida em curtida/comentário/compartilhamento: só `id, conteudo, usuarioId, criadoEm` (`ATRIBUTOS_POSTAGEM_RESUMO` no backend). */
 export interface PostagemResumoAtividade {
   id: string;
   conteudo: string | null;
   usuarioId: string;
-  created_at: string;
+  criadoEm: string;
   [chave: string]: unknown;
 }
 
@@ -94,7 +84,7 @@ export interface CurtidaAtividade {
   [chave: string]: unknown;
 }
 
-/** `Site/Backend/src/models/Comentario.js` — registro inteiro (inclui `comentario`, o texto). */
+/** `Site/Backend/src/models/Comentario.js`: registro inteiro (inclui `comentario`, o texto). */
 export interface ComentarioAtividade {
   id: string;
   comentario: string;
@@ -108,9 +98,12 @@ export interface CompartilhamentoAtividade {
   [chave: string]: unknown;
 }
 
-/** `GET /atividades/minha` desembrulhado (sem `sucesso`) — o que `AtividadeService.minha` de fato devolve. */
+/**
+ * Resposta de `GET /atividade/minha` no backend, desembrulhada (sem `sucesso`): o que
+ * `AtividadeService.minha` devolve.
+ */
 export interface MinhaAtividade {
-  /** `false` para conta de empresa — nesse caso `candidaturas`/`vagasFavoritas` vêm sempre vazias (o backend nem consulta), então a tela nem mostra essas duas seções. */
+  /** `false` para conta de empresa: nesse caso `candidaturas`/`vagasFavoritas` vêm sempre vazias (o backend nem consulta), então a tela nem mostra essas duas seções. */
   ehCandidato: boolean;
   candidaturas: ListaComTotal<CandidaturaAtividade>;
   vagasFavoritas: ListaComTotal<FavoritoVagaAtividade>;

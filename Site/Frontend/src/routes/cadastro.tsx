@@ -6,7 +6,7 @@ import { Accessibility, ArrowRight, Building2, Loader2, Mail, User } from "lucid
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
-import { AuthLayout } from "@/layouts/AuthLayout";
+import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,14 +15,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
-import { useSession } from "@/contexts/SessionContext";
-import authService from "@/services/auth.service";
+import { useSessao } from "@/hooks/useSessao";
+import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { cn } from "@/lib/utils";
 import { formatarCnpj, formatarCpf, somenteDigitos } from "@/lib/mascaras";
 import type { PorteEmpresa } from "@/types";
 
-const PORTES: PorteEmpresa[] = ["MEI", "Micro", "Pequena", "Media", "Grande"];
+const PORTES: PorteEmpresa[] = ["mei", "micro", "pequena", "media", "grande"];
 
 const regraSenha = z
   .string()
@@ -119,7 +119,7 @@ function Cadastro() {
   const [emailPendente, setEmailPendente] = useState<string | null>(null);
 
   return (
-    <AuthLayout className="max-w-lg">
+    <AutenticacaoLayout className="max-w-lg">
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
             <Logo />
@@ -191,14 +191,14 @@ function Cadastro() {
             </p>
           </CardContent>
         </Card>
-    </AuthLayout>
+    </AutenticacaoLayout>
   );
 }
 
 /**
- * Tela mostrada no lugar do formulário depois que o cadastro é criado com
- * confirmação de e-mail pendente (Brevo configurado) — não há sessão
- * ativa ainda, só a opção de reenviar o e-mail caso não chegue.
+ * Mostrada no lugar do formulário quando o cadastro é criado com confirmação de e-mail pendente
+ * (provedor de e-mail, a Brevo, configurado no backend): ainda não há sessão, só a opção de
+ * reenviar o e-mail.
  */
 function ConfirmeSeuEmail({ email }: { email: string }) {
   const [enviando, setEnviando] = useState(false);
@@ -208,7 +208,7 @@ function ConfirmeSeuEmail({ email }: { email: string }) {
   async function reenviar() {
     setEnviando(true);
     try {
-      await authService.reenviarConfirmacaoCadastro(email);
+      await autenticacaoService.reenviarConfirmacaoCadastro(email);
       setReenviado(true);
       toast.success("Um novo e-mail de confirmação foi enviado.");
     } catch (erro) {
@@ -271,7 +271,7 @@ function FormularioCandidatoCadastro({
 }: {
   onPendenteVerificacao: (email: string) => void;
 }) {
-  const { registrarCandidato } = useSession();
+  const { registrarCandidato } = useSessao();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const {
@@ -387,7 +387,7 @@ function FormularioEmpresaCadastro({
 }: {
   onPendenteVerificacao: (email: string) => void;
 }) {
-  const { registrarEmpresa } = useSession();
+  const { registrarEmpresa } = useSessao();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [porte, setPorte] = useState("");

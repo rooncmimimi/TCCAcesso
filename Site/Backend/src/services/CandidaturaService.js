@@ -1,4 +1,4 @@
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import {
     Candidatura,
     Vaga,
@@ -6,37 +6,41 @@ import {
     Candidato,
     Usuario
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import {
     ehAdministrador,
     garantirDono,
     garantirEmpresaAprovada,
     garantirVagaDisponivelParaCandidatura
-} from "../utils/authorization.js";
+} from "../utils/autorizacao.js";
 import { STATUS_CANDIDATURA } from "../models/Candidatura.js";
 import NotificacaoService from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
 
 /** Status que somente a empresa dona da vaga pode aplicar. */
-const STATUS_EMPRESA = ["Visualizada", "EmAnalise", "Aprovada", "Rejeitada"];
+const STATUS_EMPRESA = ["visualizada", "em_analise", "aprovada", "rejeitada"];
 
-/** Texto por extenso de cada status — usado nas notificações. */
+/** Texto por extenso de cada status: usado nas notificações. */
 const ROTULO_STATUS_CANDIDATURA = {
-    Pendente: "Pendente",
-    Visualizada: "Visualizada",
-    EmAnalise: "Em análise",
-    Aprovada: "Aprovada",
-    Rejeitada: "Rejeitada",
-    Cancelada: "Cancelada"
+    pendente: "Pendente",
+    visualizada: "Visualizada",
+    em_analise: "Em análise",
+    aprovada: "Aprovada",
+    rejeitada: "Rejeitada",
+    cancelada: "Cancelada"
 };
 
+/**
+ * Candidaturas a vagas: o candidato se candidata e cancela; a empresa dona da vaga lista as
+ * candidaturas e muda o status (`STATUS_EMPRESA`), o que também notifica o candidato.
+ */
 class CandidaturaService {
     async candidatoDoUsuario(usuarioId) {
         const candidato = await Candidato.findOne({ where: { usuarioId } });
 
         if (!candidato) {
-            throw ApiError.forbidden(
+            throw ErroApi.acessoNegado(
                 "Apenas candidatos com perfil podem se candidatar."
             );
         }
@@ -48,16 +52,14 @@ class CandidaturaService {
         const empresa = await Empresa.findOne({ where: { usuarioId } });
 
         if (!empresa) {
-            throw ApiError.forbidden("Perfil de empresa não encontrado.");
+            throw ErroApi.acessoNegado("Perfil de empresa não encontrado.");
         }
 
         return empresa;
     }
 
-    /* ==========================================================
-       CANDIDATAR-SE
-    ========================================================== */
-    async create(vagaId, mensagem, solicitante) {
+    /* Candidatar-se */
+    async criar(vagaId, mensagem, solicitante) {
         const candidato = await this.candidatoDoUsuario(solicitante.id);
         const transaction = await sequelize.transaction();
 
@@ -68,34 +70,31 @@ class CandidaturaService {
             });
 
             if (!vaga) {
-                throw ApiError.notFound("Vaga não encontrada.");
+                throw ErroApi.naoEncontrado("Vaga não encontrada.");
             }
 
-            // Fase 9: empresa suspensa/reprovada/pendente não pode receber
-            // NOVAS candidaturas, mesmo que a vaga em si ainda esteja com
-            // status "Aberta" (suspender a empresa não altera o status de
-            // cada vaga uma a uma) — checagem por terceiro, nunca a mensagem
-            // usada quando é a própria empresa agindo.
+            // Empresa suspensa, reprovada ou pendente não recebe candidaturas novas, mesmo com a
+            // vaga ainda "aberta" (suspender a empresa não muda o status de cada vaga). É a
+            // checagem feita para terceiros, com mensagem diferente da usada quando a própria
+            // empresa age.
             garantirVagaDisponivelParaCandidatura(vaga.empresa);
 
-            // Fase 9 (Bloco 2): bloqueio candidato↔empresa, em qualquer
-            // sentido — reaproveita o MESMO `UsuarioBloqueio` já usado para
-            // usuário↔usuário (a empresa não é uma entidade separada,
-            // seu bloqueio é o do próprio `Usuario` dela). Mensagem
-            // genérica, nunca revela que o motivo é bloqueio.
+            // Bloqueio entre candidato e empresa, em qualquer sentido, com o mesmo
+            // `UsuarioBloqueado` de usuário para usuário (o bloqueio da empresa é o do `Usuario`
+            // dela). A mensagem é genérica e não revela que o motivo é bloqueio.
             if (
                 await BloqueioService.estaBloqueadoEntre(
                     solicitante.id,
                     vaga.empresa.usuarioId
                 )
             ) {
-                throw ApiError.forbidden(
+                throw ErroApi.acessoNegado(
                     "Não é possível se candidatar a esta vaga."
                 );
             }
 
-            if (vaga.status !== "Aberta") {
-                throw ApiError.badRequest(
+            if (vaga.status !== "aberta") {
+                throw ErroApi.requisicaoInvalida(
                     "Esta vaga não está aberta para candidaturas."
                 );
             }
@@ -106,7 +105,7 @@ class CandidaturaService {
             });
 
             if (jaExiste) {
-                throw ApiError.conflict("Você já se candidatou a esta vaga.");
+                throw ErroApi.conflito("Você já se candidatou a esta vaga.");
             }
 
             const candidatura = await Candidatura.create(
@@ -114,8 +113,7 @@ class CandidaturaService {
                     vagaId,
                     candidatoId: candidato.id,
                     mensagem: mensagem || null,
-                    status: "Pendente",
-                    dataCandidatura: new Date()
+                    status: "pendente"
                 },
                 { transaction }
             );
@@ -123,7 +121,7 @@ class CandidaturaService {
             const notificacao = await NotificacaoService.criar(
                 {
                     usuarioId: vaga.empresa.usuarioId,
-                    tipo: "Candidatura",
+                    tipo: "candidatura",
                     titulo: "Nova candidatura recebida",
                     descricao: `${solicitante.nome} se candidatou à vaga "${vaga.titulo}".`,
                     subtipo: "candidatura_recebida",
@@ -150,9 +148,7 @@ class CandidaturaService {
         }
     }
 
-    /* ==========================================================
-       MINHAS CANDIDATURAS (candidato)
-    ========================================================== */
+    /* Minhas candidaturas (candidato) */
     async listarDoCandidato(solicitante, query) {
         const candidato = await this.candidatoDoUsuario(solicitante.id);
         const { pagina, limite, offset } = resolverPaginacao(query);
@@ -181,22 +177,20 @@ class CandidaturaService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["data_candidatura", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("candidaturas", rows, count, pagina, limite);
     }
 
-    /* ==========================================================
-       CANDIDATURAS DE UMA VAGA (empresa dona)
-    ========================================================== */
+    /* Candidaturas de uma vaga (empresa dona) */
     async listarDaVaga(vagaId, solicitante, query) {
         const vaga = await Vaga.findByPk(vagaId, {
             include: [{ model: Empresa, as: "empresa" }]
         });
 
         if (!vaga) {
-            throw ApiError.notFound("Vaga não encontrada.");
+            throw ErroApi.naoEncontrado("Vaga não encontrada.");
         }
 
         garantirDono(
@@ -232,16 +226,14 @@ class CandidaturaService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["data_candidatura", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("candidaturas", rows, count, pagina, limite);
     }
 
-    /* ==========================================================
-       DETALHE (candidato dono, empresa dona ou admin)
-    ========================================================== */
-    async findById(id, solicitante) {
+    /* Detalhe (candidato dono, empresa dona ou administrador) */
+    async buscarPorId(id, solicitante) {
         const candidatura = await Candidatura.findByPk(id, {
             include: [
                 {
@@ -264,7 +256,7 @@ class CandidaturaService {
         });
 
         if (!candidatura) {
-            throw ApiError.notFound("Candidatura não encontrada.");
+            throw ErroApi.naoEncontrado("Candidatura não encontrada.");
         }
 
         const ehDonoCandidato =
@@ -273,18 +265,16 @@ class CandidaturaService {
             candidatura.vaga?.empresa?.usuarioId === solicitante.id;
 
         if (!ehAdministrador(solicitante) && !ehDonoCandidato && !ehDonoEmpresa) {
-            throw ApiError.forbidden("Acesso negado a esta candidatura.");
+            throw ErroApi.acessoNegado("Acesso negado a esta candidatura.");
         }
 
         return candidatura;
     }
 
-    /* ==========================================================
-       ATUALIZAR STATUS (empresa dona)
-    ========================================================== */
+    /* Atualizar status (empresa dona) */
     async atualizarStatus(id, status, solicitante) {
         if (!STATUS_CANDIDATURA.includes(status)) {
-            throw ApiError.badRequest("Status de candidatura inválido.");
+            throw ErroApi.requisicaoInvalida("Status de candidatura inválido.");
         }
 
         const transaction = await sequelize.transaction();
@@ -303,7 +293,7 @@ class CandidaturaService {
             });
 
             if (!candidatura) {
-                throw ApiError.notFound("Candidatura não encontrada.");
+                throw ErroApi.naoEncontrado("Candidatura não encontrada.");
             }
 
             garantirDono(
@@ -315,7 +305,7 @@ class CandidaturaService {
             garantirEmpresaAprovada(candidatura.vaga.empresa, solicitante);
 
             if (!STATUS_EMPRESA.includes(status) && !ehAdministrador(solicitante)) {
-                throw ApiError.badRequest(
+                throw ErroApi.requisicaoInvalida(
                     "A empresa não pode aplicar este status."
                 );
             }
@@ -325,7 +315,7 @@ class CandidaturaService {
             const notificacao = await NotificacaoService.criar(
                 {
                     usuarioId: candidatura.candidato.usuarioId,
-                    tipo: "Candidatura",
+                    tipo: "candidatura",
                     titulo: "Sua candidatura foi atualizada",
                     descricao: `Sua candidatura para a vaga "${candidatura.vaga.titulo}" foi atualizada para ${ROTULO_STATUS_CANDIDATURA[status] ?? status}.`,
                     subtipo: "candidatura_atualizada",
@@ -352,16 +342,14 @@ class CandidaturaService {
         }
     }
 
-    /* ==========================================================
-       CANCELAR (candidato dono)
-    ========================================================== */
+    /* Cancelar (candidato dono) */
     async cancelar(id, solicitante) {
         const candidatura = await Candidatura.findByPk(id, {
             include: [{ model: Candidato, as: "candidato" }]
         });
 
         if (!candidatura) {
-            throw ApiError.notFound("Candidatura não encontrada.");
+            throw ErroApi.naoEncontrado("Candidatura não encontrada.");
         }
 
         garantirDono(
@@ -370,7 +358,7 @@ class CandidaturaService {
             "Você só pode cancelar as suas próprias candidaturas."
         );
 
-        candidatura.status = "Cancelada";
+        candidatura.status = "cancelada";
         await candidatura.save();
 
         return candidatura;

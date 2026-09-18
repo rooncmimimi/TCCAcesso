@@ -1,12 +1,11 @@
-# Testes E2E (Maestro) — Fase 23
+# Testes E2E (Maestro)
 
 ## Status honesto antes de tudo
 
-Estes fluxos foram escritos **e nunca executados**. Este ambiente de
-desenvolvimento não tem SDK Android nem emulador (mesma limitação já
-registrada em todas as fases anteriores desta sessão) — não existe como
-instalar o Maestro CLI, gerar uma build do app e rodar `maestro test` aqui
-para confirmar que passam.
+Estes fluxos foram escritos **e nunca executados**. O ambiente em que foram
+escritos não tinha SDK Android nem emulador, então não houve como instalar o
+Maestro CLI, gerar uma build do app e rodar `maestro test` para confirmar
+que passam.
 
 O que FOI feito com cuidado: cada rótulo (`tapOn`, `assertVisible`) usado
 abaixo foi conferido contra o `accessibilityLabel`/texto real do componente
@@ -14,8 +13,8 @@ correspondente no código-fonte no momento em que este arquivo foi escrito —
 nunca inventado ou "chutado" de memória. Ainda assim, sem uma execução real,
 não há garantia de que:
 
-- o app realmente compila/instala numa build de teste (isso é a Fase 24 —
-  `eas.json`/CI, ainda não implementada);
+- o app compila e instala numa build de teste (existem `eas.json` e o
+  workflow `eas-build.yml`, mas os fluxos não rodam no CI);
 - o tempo de carregamento de cada tela é suficiente para o Maestro encontrar
   o elemento (nenhum `extendedWaitUntil`/timeout foi ajustado contra um app
   de verdade);
@@ -49,8 +48,8 @@ maestro test .maestro/flows --env ACESSO_TEST_EMAIL="teste@exemplo.com" --env AC
 
 ## Por que os fluxos usam uma conta já existente (`env`), em vez de se cadastrarem sozinhos
 
-Toda a disciplina desta sessão até aqui foi: dado de teste é sempre
-descartável, e sempre limpo até o fim (residual verificado por SQL cru, não
+A regra para dados de teste neste projeto é: são sempre descartáveis e
+sempre limpos até o fim (residual verificado por SQL cru, não
 só por um log de sucesso). Um fluxo de Maestro só interage pela UI — não tem
 como fazer essa varredura de resíduo. Cadastrar uma conta nova a cada
 execução deixaria um `Usuario`/`Candidato` real (e, se o e-mail de
@@ -65,7 +64,7 @@ provisionada por quem for rodar.
 O fluxo `02_feed_publicar_e_curtir.yaml` é a exceção parcial: ele CRIA uma
 publicação (não existe outro jeito de testar "curtir" sem conteúdo), mas
 **exclui a própria publicação no final**, usando a ação real de "Excluir
-publicação" da tela (Fase 20) — o fluxo é responsável por não deixar rastro,
+publicação" da tela — o fluxo é responsável por não deixar rastro,
 mesmo sem acesso a SQL.
 
 ## Fluxos disponíveis

@@ -1,8 +1,9 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: conversas
+ * Tabela `conversas`: uma conversa privada entre dois usuários. O par fica sempre em ordem canônica
+ * (`usuarioAId < usuarioBId`), então cada dupla tem uma única conversa.
  */
 const Conversa = sequelize.define(
     "Conversa",
@@ -13,55 +14,29 @@ const Conversa = sequelize.define(
             primaryKey: true
         },
 
-        // Fase 8 (migration 0040, pendente de execução): nullable —
-        // quando um participante exclui a conta, o banco põe este campo
-        // em NULL (ON DELETE SET NULL) em vez de apagar a conversa
-        // inteira (CASCADE, comportamento anterior). O outro participante
-        // continua vendo o histórico; ver `ConversaService.enviarMensagem`
-        // para o bloqueio de novas mensagens e
-        // `components/mensagens/utils.ts` para o texto "Usuário removido"
-        // no frontend. Até a migration rodar, a coluna no banco ainda é
-        // NOT NULL — este campo só passa a aceitar `null` de verdade
-        // depois da 0040.
+        // Fica nulo quando aquele participante exclui a conta: o histórico continua visível para o
+        // outro lado, só não aceita mensagem nova (veja `ConversaService.enviarMensagem` e, no Site,
+        // `components/mensagens/utils.ts`, que mostra "Usuário removido").
         usuarioAId: {
-            field: "usuario_a_id",
-            type: DataTypes.UUID,
-            allowNull: true
+            type: DataTypes.UUID
         },
 
         usuarioBId: {
-            field: "usuario_b_id",
-            type: DataTypes.UUID,
-            allowNull: true
+            type: DataTypes.UUID
         },
 
-        ultimaMensagem: {
-            field: "ultima_mensagem",
-            type: DataTypes.DATE
-        }
-,
-
+        // Atualizados a cada mensagem, na mesma transação do envio: ordenam a lista de conversas e
+        // dão a prévia mostrada nela.
         ultimaMensagemEm: {
-            field: "ultima_mensagem_em",
             type: DataTypes.DATE
         },
 
         ultimaMensagemPrevia: {
-            field: "ultima_mensagem_previa",
             type: DataTypes.STRING(180)
         }
     },
     {
-        tableName: "conversas",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-        indexes: [
-            {
-                unique: true,
-                fields: ["usuario_a_id", "usuario_b_id"]
-            }
-        ]
+        tableName: "conversas"
     }
 );
 

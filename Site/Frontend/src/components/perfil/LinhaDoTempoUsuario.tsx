@@ -1,17 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Repeat2 } from "lucide-react";
 import postagensService from "@/services/postagens.service";
-import { CardPostagem } from "@/components/feed/CardPostagem";
+import { PostagemCard } from "@/components/feed/PostagemCard";
 import { extrairMensagemErro } from "@/services/api";
-import { formatarData } from "@/utils/format";
+import { formatarData } from "@/utils/formatacao";
 
 /**
- * Linha do tempo de um perfil (próprio ou de terceiro): publicações
- * próprias e compartilhamentos numa lista só, intercalados por data — como
- * o resto do mercado mostra o perfil (LinkedIn, Twitter/X), em vez das
- * duas abas "Publicações"/"Compartilhamentos" desconectadas de antes
- * (auditoria do Site, item 6). Substitui `PostagensUsuario` +
- * `CompartilhamentosUsuario` (removidos — sem mais nenhum uso).
+ * Linha do tempo de um perfil, próprio ou de outra pessoa: publicações e compartilhamentos numa
+ * lista só, intercalados por data.
  */
 export function LinhaDoTempoUsuario({ usuarioId }: { usuarioId: string }) {
   const { data, isLoading, isError, error } = useQuery({
@@ -53,7 +49,7 @@ export function LinhaDoTempoUsuario({ usuarioId }: { usuarioId: string }) {
           {item.tipo === "compartilhamento" && item.comentario ? (
             <p className="mb-2 text-sm">{item.comentario}</p>
           ) : null}
-          {item.postagem ? <CardPostagem postagem={item.postagem} /> : null}
+          {item.postagem ? <PostagemCard postagem={item.postagem} /> : null}
         </li>
       ))}
     </ul>

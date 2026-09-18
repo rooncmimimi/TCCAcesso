@@ -53,12 +53,12 @@ jest.mock("expo-sharing", () => ({
   shareAsync: (...a: unknown[]) => mockShareAsync(...a),
 }));
 
-import type { AuthUser } from "../../auth";
-import { DEFAULT_ACCESSIBILITY_PREFERENCES } from "../../accessibility";
+import type { UsuarioAutenticado } from "../../autenticacao";
+import { PREFERENCIAS_ACESSIBILIDADE_PADRAO } from "../../acessibilidade";
 import { coletarMeusDados, exportarECompartilhar } from "../exportarDados";
 
-const usuarioCandidato: AuthUser = { id: "u1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato" };
-const usuarioEmpresa: AuthUser = { id: "u2", nome: "ACME", email: "acme@exemplo.com", tipoUsuario: "empresa" };
+const usuarioCandidato: UsuarioAutenticado = { id: "u1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato" };
+const usuarioEmpresa: UsuarioAutenticado = { id: "u2", nome: "ACME", email: "acme@exemplo.com", tipoUsuario: "empresa" };
 
 describe("coletarMeusDados", () => {
   beforeEach(() => {
@@ -73,7 +73,7 @@ describe("coletarMeusDados", () => {
     mockListarCertificados.mockResolvedValue([{ id: "cert1" }]);
     mockListarHabilidades.mockResolvedValue([{ id: "h1" }]);
 
-    const dados = await coletarMeusDados(usuarioCandidato, DEFAULT_ACCESSIBILITY_PREFERENCES);
+    const dados = await coletarMeusDados(usuarioCandidato, PREFERENCIAS_ACESSIBILIDADE_PADRAO);
 
     expect(dados.conta).toEqual(usuarioCandidato);
     expect(dados.candidato).toEqual({ id: "c1", usuarioId: "u1" });
@@ -82,14 +82,14 @@ describe("coletarMeusDados", () => {
     expect(dados.certificados).toEqual([{ id: "cert1" }]);
     expect(dados.habilidades).toEqual([{ id: "h1" }]);
     expect(dados.empresa).toBeUndefined();
-    expect(dados.preferenciasAcessibilidade).toEqual(DEFAULT_ACCESSIBILITY_PREFERENCES);
+    expect(dados.preferenciasAcessibilidade).toEqual(PREFERENCIAS_ACESSIBILIDADE_PADRAO);
     expect(mockMeuPerfilEmpresa).not.toHaveBeenCalled();
   });
 
   it("empresa: busca só o perfil de empresa, nunca dados de candidato", async () => {
     mockMeuPerfilEmpresa.mockResolvedValue({ id: "emp1", razaoSocial: "ACME Ltda" });
 
-    const dados = await coletarMeusDados(usuarioEmpresa, DEFAULT_ACCESSIBILITY_PREFERENCES);
+    const dados = await coletarMeusDados(usuarioEmpresa, PREFERENCIAS_ACESSIBILIDADE_PADRAO);
 
     expect(dados.empresa).toEqual({ id: "emp1", razaoSocial: "ACME Ltda" });
     expect(dados.candidato).toBeUndefined();
@@ -99,7 +99,7 @@ describe("coletarMeusDados", () => {
   it("sempre inclui preferências de notificação e um horário de geração", async () => {
     mockMeuPerfilEmpresa.mockResolvedValue({ id: "emp1" });
 
-    const dados = await coletarMeusDados(usuarioEmpresa, DEFAULT_ACCESSIBILITY_PREFERENCES);
+    const dados = await coletarMeusDados(usuarioEmpresa, PREFERENCIAS_ACESSIBILIDADE_PADRAO);
 
     expect(dados.preferenciasNotificacao).toEqual(
       expect.objectContaining({ vagasCandidaturas: true }),
@@ -118,7 +118,7 @@ describe("exportarECompartilhar", () => {
     const dados = {
       geradoEm: "2026-01-01T00:00:00.000Z",
       conta: { id: "u1" },
-      preferenciasAcessibilidade: DEFAULT_ACCESSIBILITY_PREFERENCES,
+      preferenciasAcessibilidade: PREFERENCIAS_ACESSIBILIDADE_PADRAO,
     };
 
     await exportarECompartilhar(dados);
@@ -133,7 +133,7 @@ describe("exportarECompartilhar", () => {
 
   it("sem compartilhamento disponível no aparelho, lança um erro amigável e nunca escreve o arquivo", async () => {
     mockIsAvailableAsync.mockResolvedValue(false);
-    const dados = { geradoEm: "x", conta: {}, preferenciasAcessibilidade: DEFAULT_ACCESSIBILITY_PREFERENCES };
+    const dados = { geradoEm: "x", conta: {}, preferenciasAcessibilidade: PREFERENCIAS_ACESSIBILIDADE_PADRAO };
 
     await expect(exportarECompartilhar(dados)).rejects.toThrow(
       "O compartilhamento de arquivos não está disponível neste aparelho.",

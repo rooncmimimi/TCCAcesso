@@ -4,22 +4,15 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { urlArquivo } from "@/services/uploads.service";
+import { urlArquivo } from "@/utils/arquivos";
 import postagensService from "@/services/postagens.service";
 import { extrairMensagemErro } from "@/services/api";
 import type { AnexoPostagem } from "@/types";
 
 /**
- * Visualização ampliada de imagem/vídeo — Fase 7. Substitui o antigo
- * `<a target="_blank">` (abria o arquivo em nova guia, direto na URL do
- * Storage): agora a mídia abre num modal na mesma página, usando a URL
- * de exibição que a API já entrega assinada (nenhuma requisição extra
- * só pra abrir). Construído sobre o `Dialog` (Radix) já usado em outros
- * lugares do app — foco/Esc/devolução de foco já vêm prontos dali.
- *
- * O botão "Baixar" SEMPRE busca uma URL nova na hora do clique (nunca
- * reaproveita a URL de exibição já carregada) — o backend reautoriza do
- * zero a cada download.
+ * Imagem ou vídeo ampliado num modal na mesma página, com a URL de exibição que a API já entrega
+ * assinada (sem requisição extra). Usa o `Dialog` do Radix, que já cuida de foco e Esc. "Baixar"
+ * sempre busca uma URL nova no clique, porque o backend reautoriza cada download.
  */
 export function LightboxMidia({
   aberto,
@@ -83,15 +76,9 @@ export function LightboxMidia({
     }
   }
 
-  // O `Dialog` é renderizado SEMPRE (mesmo sem `item`) — nunca desmontado
-  // condicionalmente pelo componente pai (`GaleriaAnexos`). Correção
-  // (Fase 9, Bloco J3): desmontar `<LightboxMidia>` inteiro no mesmo
-  // instante em que `onOpenChange(false)` dispara competia com a própria
-  // devolução de foco do Radix — que só devolve o foco a quem abriu o
-  // diálogo (aqui, o botão "Ampliar imagem") quando o `Dialog` fecha de
-  // forma controlada, sem ser desmontado por fora ao mesmo tempo. Com o
-  // componente sempre montado, o Radix controla sozinho a transição de
-  // abertura/fechamento e a devolução de foco volta a funcionar.
+  // O `Dialog` é renderizado sempre, mesmo sem `item`, e o `GaleriaAnexos` nunca o desmonta.
+  // Desmontar o componente no mesmo instante do `onOpenChange(false)` atrapalharia a transição de
+  // fechamento do Radix e a volta do foco para o botão que abriu o lightbox.
   return (
     <Dialog open={aberto} onOpenChange={onOpenChange}>
       <DialogContent
@@ -99,10 +86,8 @@ export function LightboxMidia({
         onKeyDown={aoTeclar}
         onCloseAutoFocus={(evento) => {
           if (!aoFecharDevolverFoco) return;
-          // Assume o controle explícito da devolução de foco (testado ao
-          // vivo: o comportamento padrão do Radix não moveu o foco de
-          // volta pro botão que abriu o Lightbox neste app — o foco caía
-          // no <body>, perdendo a posição de quem navega por teclado/voz).
+          // Devolve o foco explicitamente: o comportamento padrão do Radix deixava o foco no
+          // `<body>`, e quem navega por teclado ou voz perdia a posição.
           evento.preventDefault();
           aoFecharDevolverFoco();
         }}

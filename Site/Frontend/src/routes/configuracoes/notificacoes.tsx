@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Bell, Loader2 } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -71,7 +71,7 @@ function PreferenciasNotificacaoPagina() {
   });
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -125,6 +125,6 @@ function PreferenciasNotificacaoPagina() {
           )}
         </CardContent>
       </Card>
-    </AppShell>
+    </EstruturaApp>
   );
 }

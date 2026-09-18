@@ -1,8 +1,8 @@
 import { Router } from "express";
 import ConversaController from "../controllers/ConversaController.js";
 import MensagemController from "../controllers/MensagemController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarAberturaConversa,
@@ -11,15 +11,15 @@ import {
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
-router.get("/", ConversaController.index);
+router.get("/", ConversaController.listar);
 
 router.post(
     "/",
     validarAberturaConversa,
-    validationMiddleware,
-    ConversaController.store
+    validacaoMiddleware,
+    ConversaController.criar
 );
 
 router.get("/nao-lidas", ConversaController.naoLidas);
@@ -27,35 +27,35 @@ router.get("/nao-lidas", ConversaController.naoLidas);
 router.get(
     "/pode-iniciar/:usuarioId",
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     ConversaController.podeIniciar
 );
 
 router.get(
     "/:id",
     validarUuidParam("id"),
-    validationMiddleware,
-    ConversaController.show
+    validacaoMiddleware,
+    ConversaController.obter
 );
 
 router.get(
     "/:conversaId/mensagens",
     validarUuidParam("conversaId"),
-    validationMiddleware,
-    MensagemController.index
+    validacaoMiddleware,
+    MensagemController.listar
 );
 
 router.post(
     "/:conversaId/mensagens",
     validarEnvioMensagem,
-    validationMiddleware,
-    MensagemController.store
+    validacaoMiddleware,
+    MensagemController.criar
 );
 
 router.patch(
     "/:conversaId/mensagens/lidas",
     validarUuidParam("conversaId"),
-    validationMiddleware,
+    validacaoMiddleware,
     MensagemController.marcarComoLidas
 );
 

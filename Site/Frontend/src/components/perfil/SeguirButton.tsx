@@ -17,9 +17,8 @@ interface Estado {
 }
 
 /**
- * Estados do botão (Fase 3) — usuário/candidato tem 5 estados (perfil
- * público vs. privado); empresa continua o binário original (sem conceito
- * de solicitação/aprovação).
+ * Estados do botão: usuário e candidato têm 5 estados (perfil público ou privado); empresa só tem
+ * seguir e deixar de seguir, sem solicitação.
  */
 function resolverEstado(resumo: ResumoSeguidores | undefined, tipo: "usuario" | "empresa"): Estado {
   const seguindo = Boolean(resumo?.seguindoEsteUsuario);
@@ -59,7 +58,7 @@ export function SeguirButton({
   alvoId: string;
   tipo: "usuario" | "empresa";
   chaveResumo: readonly unknown[];
-  /** Classes extras de layout (ex.: `w-full` em cartões) — nunca substitui as classes de estado do botão. */
+  /** Classes extras de layout (ex.: `w-full` em cartões); nunca substitui as classes de estado do botão. */
   className?: string;
 }) {
   const queryClient = useQueryClient();
@@ -94,7 +93,7 @@ export function SeguirButton({
         }
 
         if (acaoExecutada === "solicitar") {
-          // Otimista só marca "pendente" — se o backend seguir direto (perfil
+          // Otimista só marca "pendente": se o backend seguir direto (perfil
           // virou público entre um clique e outro), `onSuccess` corrige.
           return { ...atual, solicitacaoPendente: true };
         }
@@ -142,12 +141,10 @@ export function SeguirButton({
     },
   });
 
-  // Bloqueio (Fase 9, Bloco 5): nunca oferece uma ação de seguir que o
-  // backend recusaria de qualquer forma. `/descobrir` já exclui pessoas
-  // bloqueadas na origem (nunca chega aqui bloqueado); notificações antigas
-  // ("Seguir de volta" de alguém bloqueado depois de já ter seguido) são o
-  // caso real — em vez de mostrar um botão fadado a 403, não mostra nada.
-  // Depois de `useMutation` (nunca antes de um Hook — ordem fixa sempre).
+  // Com bloqueio, nenhuma ação de seguir é oferecida, porque o backend a recusaria. `/descobrir` já
+  // exclui pessoas bloqueadas; o caso real são notificações antigas ("Seguir de volta" de alguém
+  // bloqueado depois). Fica depois do `useMutation`, porque um hook nunca pode vir depois de um
+  // retorno antecipado.
   if (tipo === "usuario" && resumo?.bloqueado) {
     return null;
   }

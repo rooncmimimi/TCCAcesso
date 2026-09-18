@@ -3,10 +3,7 @@ import { createRouter } from "@tanstack/react-router";
 
 import { routeTree } from "./routeTree.gen";
 
-/**
- * Instância única do QueryClient da aplicação.
- * Fica fora do componente para não ser recriada a cada render.
- */
+/** QueryClient único do Site, criado fora do componente para não ser recriado a cada render. */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

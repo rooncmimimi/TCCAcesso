@@ -21,7 +21,7 @@ import {
 } from "@/components/dashboard/constantesVaga";
 import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga } from "@/types";
 
-export interface FiltrosVagasState {
+export interface FiltrosVagasEstado {
   busca: string;
   modalidade: string;
   cidade: string;
@@ -29,7 +29,7 @@ export interface FiltrosVagasState {
   recursosAcessibilidade: RecursoAcessibilidadeVaga[];
 }
 
-const MODALIDADES = ["Presencial", "Hibrido", "Remoto"] as const;
+const MODALIDADES = ["presencial", "hibrido", "remoto"] as const;
 
 /** Formulário de busca e filtros da listagem pública de vagas. */
 export function FiltrosVagas({
@@ -37,8 +37,8 @@ export function FiltrosVagas({
   aoMudar,
   aoBuscar,
 }: {
-  valor: FiltrosVagasState;
-  aoMudar: (proximo: FiltrosVagasState) => void;
+  valor: FiltrosVagasEstado;
+  aoMudar: (proximo: FiltrosVagasEstado) => void;
   aoBuscar: () => void;
 }) {
   return (
@@ -104,9 +104,8 @@ export function FiltrosVagas({
           </div>
 
           <div>
-            {/* Único controle de público — "exclusiva PCD" já é uma das
-                opções desta lista (junto de 50+ e PCD+50+), então não
-                existe mais um checkbox separado e sobreposto para isso. */}
+            {/* Único controle de público: "exclusiva PCD" já é uma das opções da lista (junto
+                de 50+ e PCD+50+), então não há checkbox separado. */}
             <Label htmlFor="filtro-publico" className="text-sm font-bold">
               Público da vaga
             </Label>

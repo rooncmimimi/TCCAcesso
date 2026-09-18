@@ -32,21 +32,13 @@ import denunciaService, {
 const MOTIVOS = Object.keys(MOTIVO_ROTULO) as MotivoDenuncia[];
 
 /**
- * Diálogo genérico de denúncia, reutilizado nos pontos de entrada
- * (postagem, comentário, usuário, empresa, vaga, mensagem).
+ * Diálogo genérico de denúncia, usado para postagem, comentário, usuário, empresa, vaga e mensagem.
+ * Não repete regras do backend (autodenúncia, duplicidade, existência da entidade, participação na
+ * conversa): só mostra a mensagem de erro validada pelo `DenunciaService`.
  *
- * O frontend não repete regras que já são do backend (autodenúncia,
- * duplicidade, existência da entidade, participação na conversa) — só
- * exibe a mensagem de erro que o DenunciaService já valida.
- *
- * Item 4 da auditoria do Site: depois de denunciar, se `autorUsuarioId` foi
- * informado, oferece bloquear o autor na mesma hora — sem isso, quem
- * denuncia uma postagem/comentário/mensagem de um estranho não tinha
- * NENHUM atalho para também bloquear essa pessoa (a única forma era abrir
- * o perfil dela à parte e usar o menu "•••", que já tem sua própria opção
- * de bloquear — por isso `autorUsuarioId` é opcional: quem já tem esse
- * menu ao lado, como `BloquearUsuarioMenu`, pode preferir não repetir a
- * oferta aqui).
+ * Depois de denunciar, se `autorUsuarioId` foi informado, oferece bloquear o autor na hora. É
+ * opcional porque telas que já têm o próprio controle de bloqueio, como o `BloquearUsuarioMenu`,
+ * não precisam repetir a oferta.
  */
 export function DenunciarDialog({
   open,
@@ -63,28 +55,28 @@ export function DenunciarDialog({
   entidadeTipo: EntidadeDenunciaTipo;
   entidadeId: string;
   nomeExibicao?: string;
-  /** Id do AUTOR do conteúdo denunciado (não necessariamente igual a `entidadeId` — ex.: denunciar uma postagem informa o id da postagem, mas quem seria bloqueado é o autor dela). Omitir quando não houver como bloquear (ex.: já existe outro controle de bloqueio na mesma tela). */
+  /**
+   * Id do autor do conteúdo denunciado, que não é necessariamente igual a `entidadeId`: ao
+   * denunciar uma postagem, `entidadeId` é o id da postagem, mas quem seria bloqueado é o autor
+   * dela. Omita quando não houver como bloquear (por exemplo, quando a tela já tem outro controle
+   * de bloqueio).
+   */
   autorUsuarioId?: string;
-  /** Nome do autor a exibir na oferta de bloqueio, quando é DIFERENTE do nome da entidade denunciada (ex.: denunciar uma vaga mostra o título da vaga em `nomeExibicao`, mas quem seria bloqueado é a empresa). Se omitido, usa `nomeExibicao`. */
+  /** Nome do autor a exibir na oferta de bloqueio, quando é diferente do nome da entidade denunciada (ex.: denunciar uma vaga mostra o título da vaga em `nomeExibicao`, mas quem seria bloqueado é a empresa). Se omitido, usa `nomeExibicao`. */
   autorNomeExibicao?: string;
   /**
-   * Chamado ao fechar, no lugar da devolução de foco automática do Radix.
-   * Necessário quando este diálogo é aberto a partir de um item de
-   * DropdownMenu (denúncia de mensagem/postagem/vaga): testado ao vivo, o
-   * fechamento do menu e a abertura deste diálogo competem pelo foco no
-   * mesmo instante, e o item de menu já está desmontado quando o diálogo
-   * fecha — sem isso, o foco cai para o `<body>` em vez de voltar pro
-   * controle que o usuário realmente abriu (ex.: o botão "Mais opções").
-   * Quando abordagem for um botão direto (sem menu no meio), pode omitir —
-   * o fallback genérico do `DialogContent` já cobre esse caso.
+   * Chamado ao fechar, no lugar da devolução automática de foco do Radix. É necessário quando o
+   * diálogo abre a partir de um item de `DropdownMenu`: o menu fechando e o diálogo abrindo
+   * disputam o foco, e o item já está desmontado quando o diálogo fecha, então o foco cairia no
+   * `<body>`. Com um botão direto, sem menu no meio, pode ser omitido.
    */
   aoFecharDevolverFoco?: () => void;
 }) {
   const nomeParaBloqueio = autorNomeExibicao ?? nomeExibicao;
   const [motivo, setMotivo] = useState<MotivoDenuncia | "">("");
   const [descricao, setDescricao] = useState("");
-  // Preenchido só depois de denunciar com sucesso — troca o conteúdo do
-  // MESMO diálogo para a oferta de bloqueio, em vez de empilhar um segundo
+  // Preenchido só depois de denunciar com sucesso: troca o conteúdo do
+  // mesmo diálogo para a oferta de bloqueio, em vez de empilhar um segundo
   // modal por cima do primeiro.
   const [oferecendoBloqueio, setOferecendoBloqueio] = useState(false);
 
@@ -104,8 +96,7 @@ export function DenunciarDialog({
         descricao: descricao.trim() || undefined,
       }),
     onSuccess: () => {
-      // Fase 9, Bloco 7: os toasts já são lidos automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      // Os toasts já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("Denúncia enviada. Nossa equipe vai analisar.");
       if (autorUsuarioId) {
         setOferecendoBloqueio(true);

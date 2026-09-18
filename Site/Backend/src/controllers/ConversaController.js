@@ -1,7 +1,11 @@
 import ConversaService from "../services/ConversaService.js";
 
+/**
+ * Conversas do chat (`/conversas`): lista, abertura, total de não lidas e a consulta
+ * `pode-iniciar`. As mensagens ficam no `MensagemController`.
+ */
 class ConversaController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const dados = await ConversaService.listar(req.user, req.query);
 
@@ -11,7 +15,7 @@ class ConversaController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
             const conversa = await ConversaService.abrir(req.body, req.user);
 
@@ -21,9 +25,9 @@ class ConversaController {
         }
     }
 
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
-            const conversa = await ConversaService.findById(
+            const conversa = await ConversaService.buscarPorId(
                 req.params.id,
                 req.user
             );
@@ -45,9 +49,9 @@ class ConversaController {
     }
 
     /**
-     * Consulta (nunca lança 4xx) usada pelo frontend para decidir o
-     * estado do botão "Mandar mensagem" ANTES do clique — mesma função
-     * central que `abrir()` usa para de fato autorizar a criação.
+     * Consulta, sem lançar 4xx, usada pelos clientes para decidir o estado do botão "Enviar
+     * mensagem" antes do clique. Usa a mesma função central que `abrir()` usa para autorizar a
+     * criação.
      */
     async podeIniciar(req, res, next) {
         try {

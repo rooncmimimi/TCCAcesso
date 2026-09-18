@@ -1,7 +1,11 @@
 import MensagemService from "../services/MensagemService.js";
 
+/**
+ * Mensagens de uma conversa (`/conversas/:conversaId/mensagens`). A checagem de participante fica
+ * no `ConversaService`.
+ */
 class MensagemController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const dados = await MensagemService.listar(
                 req.params.conversaId,
@@ -15,7 +19,7 @@ class MensagemController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
             const mensagem = await MensagemService.enviar(
                 req.params.conversaId,

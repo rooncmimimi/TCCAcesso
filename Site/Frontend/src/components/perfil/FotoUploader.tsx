@@ -3,10 +3,10 @@ import { Camera, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { extrairMensagemErro } from "@/services/api";
-import { urlArquivo } from "@/services/uploads.service";
+import { urlArquivo } from "@/utils/arquivos";
 import { toast } from "sonner";
 
-// Mesmo limite padrão do backend (MAX_UPLOAD_BYTES, ver src/config/env.js) —
+// Mesmo limite padrão do backend (MAX_UPLOAD_BYTES, ver src/config/env.js):
 // checar aqui evita que o usuário espere o upload todo só pra descobrir,
 // no fim, que o arquivo é grande demais.
 const TAMANHO_MAXIMO_BYTES = 5 * 1024 * 1024;

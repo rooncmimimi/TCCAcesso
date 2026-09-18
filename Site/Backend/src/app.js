@@ -6,16 +6,16 @@ import path from "node:path";
 
 import env from "./config/env.js";
 import routes from "./routes/index.js";
-import errorMiddleware from "./middlewares/errorMiddleware.js";
-import { apiLimiter } from "./middlewares/rateLimitMiddleware.js";
-import ApiError from "./utils/ApiError.js";
+import erroMiddleware from "./middlewares/erroMiddleware.js";
+import { limiteApi } from "./middlewares/limiteRequisicoesMiddleware.js";
+import ErroApi from "./utils/ErroApi.js";
 
 const app = express();
 
 // Necessário para o rate limit funcionar corretamente atrás de proxy.
 app.set("trust proxy", 1);
 
-/* ---------- Segurança ---------- */
+/* Segurança */
 app.use(
     helmet({
         crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -36,14 +36,14 @@ app.use(
     })
 );
 
-/* ---------- Parsers ---------- */
+/* Parsers */
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-/* ---------- Logs ---------- */
+/* Logs */
 app.use(morgan(env.isProducao ? "combined" : "dev"));
 
-/* ---------- Arquivos enviados ---------- */
+/* Arquivos enviados */
 app.use(
     "/uploads",
     express.static(path.resolve(process.cwd(), env.security.uploadDir), {
@@ -53,7 +53,7 @@ app.use(
     })
 );
 
-/* ---------- Health Check Render ---------- */
+/* Health check (Render) */
 app.get("/healthz", (req, res) => {
     res.status(200).json({
         status: "ok",
@@ -62,15 +62,15 @@ app.get("/healthz", (req, res) => {
     });
 });
 
-/* ---------- API ---------- */
-app.use("/api", apiLimiter, routes);
+/* API */
+app.use("/api", limiteApi, routes);
 
-/* ---------- 404 ---------- */
+/* 404 */
 app.use((req, res, next) => {
-    next(ApiError.notFound("Rota não encontrada."));
+    next(ErroApi.naoEncontrado("Rota não encontrada."));
 });
 
-/* ---------- Erros ---------- */
-app.use(errorMiddleware);
+/* Erros */
+app.use(erroMiddleware);
 
 export default app;

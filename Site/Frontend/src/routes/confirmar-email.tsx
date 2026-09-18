@@ -6,19 +6,18 @@ import { CheckCircle2, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
-import { AuthLayout } from "@/layouts/AuthLayout";
+import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import authService from "@/services/auth.service";
+import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 
 const esquema = z.object({
   email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-  // 6 dígitos — mesmo tamanho gerado por `gerarCodigoNumerico(6)` no
-  // backend (authService.enviarCodigoConfirmacaoCadastro); nunca assumir
-  // um tamanho diferente do que o backend realmente usa.
+  // 6 dígitos, o mesmo tamanho gerado por `gerarCodigoNumerico(6)` no backend
+  // (`AutenticacaoService.enviarCodigoConfirmacaoCadastro`).
   codigo: z
     .string()
     .trim()
@@ -29,14 +28,10 @@ const esquema = z.object({
 type Formulario = z.infer<typeof esquema>;
 
 export const Route = createFileRoute("/confirmar-email")({
-  // `z.coerce.string()`, não `z.string()`: o parser de search params do
-  // TanStack Router converte um valor 100% numérico na URL (ex.:
-  // "?codigo=123456") para o tipo `number` antes da validação — um
-  // código de 6 dígitos é sempre "numérico" na aparência, então
-  // `z.string()` sozinho rejeitava TODO link de confirmação com
-  // "Expected string, received number", quebrando a Opção A (link do
-  // e-mail) por completo. `.optional()` continua funcionando normal
-  // quando o parâmetro nem existe.
+  // `z.coerce.string()`, e não `z.string()`: o parser de search params do TanStack Router converte
+  // um valor só com dígitos (como `?codigo=123456`) em `number` antes da validação, e `z.string()`
+  // recusaria todo link de confirmação. `.optional()` continua valendo quando o parâmetro não
+  // existe.
   validateSearch: z.object({
     email: z.string().optional(),
     codigo: z.coerce.string().optional(),
@@ -53,12 +48,9 @@ export const Route = createFileRoute("/confirmar-email")({
 type Estado = "confirmando-link" | "formulario" | "sucesso";
 
 /**
- * Duas formas independentes de confirmar o e-mail, as mesmas prometidas
- * pelo próprio e-mail (templateConfirmacaoCadastro): clicar no botão do
- * e-mail (chega aqui com `email`+`codigo` já na URL, confirma sozinho ao
- * montar) OU digitar o código de 6 dígitos manualmente neste formulário
- * — antes só a primeira opção existia de verdade nesta tela; a segunda
- * era prometida no e-mail mas não tinha campo nenhum pra usá-la.
+ * Duas formas de confirmar o e-mail, as mesmas oferecidas no próprio e-mail
+ * (`modeloConfirmacaoCadastro`): clicar no botão, que chega com `email` e `codigo` na URL e
+ * confirma sozinho ao montar, ou digitar o código de 6 dígitos neste formulário.
  */
 function ConfirmarEmail() {
   const { email, codigo } = Route.useSearch();
@@ -84,7 +76,7 @@ function ConfirmarEmail() {
   const confirmar = handleSubmit(async (valores) => {
     setConfirmando(true);
     try {
-      await authService.confirmarCadastro(valores.email, valores.codigo);
+      await autenticacaoService.confirmarCadastro(valores.email, valores.codigo);
       setEstado("sucesso");
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível confirmar seu e-mail.");
@@ -97,8 +89,7 @@ function ConfirmarEmail() {
     }
   });
 
-  // Opção A (link do e-mail): confirma sozinho, uma única vez, só quando
-  // os dois parâmetros já chegam prontos na URL.
+  // Link do e-mail: confirma sozinho, uma única vez, quando os dois parâmetros chegam na URL.
   useEffect(() => {
     if (!email || !codigo || tentouAutoConfirmar.current) return;
     tentouAutoConfirmar.current = true;
@@ -115,7 +106,7 @@ function ConfirmarEmail() {
     if (!emailAtual) return;
     setReenviando(true);
     try {
-      await authService.reenviarConfirmacaoCadastro(emailAtual);
+      await autenticacaoService.reenviarConfirmacaoCadastro(emailAtual);
       setReenviado(true);
       toast.success("Um novo código de confirmação foi enviado.");
     } catch (erro) {
@@ -126,7 +117,7 @@ function ConfirmarEmail() {
   }
 
   return (
-    <AuthLayout>
+    <AutenticacaoLayout>
         <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
           <Logo />
         </Link>
@@ -250,6 +241,6 @@ function ConfirmarEmail() {
             )}
           </CardContent>
         </Card>
-    </AuthLayout>
+    </AutenticacaoLayout>
   );
 }

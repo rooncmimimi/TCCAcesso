@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import authRoutes from "./authRoutes.js";
+import authRoutes from "./autenticacaoRoutes.js";
 import usuarioRoutes from "./usuarioRoutes.js";
 import candidatoRoutes from "./candidatoRoutes.js";
 import empresaRoutes from "./empresaRoutes.js";
@@ -16,7 +16,6 @@ import perfilRoutes from "./perfilRoutes.js";
 import acessibilidadeRoutes from "./acessibilidadeRoutes.js";
 import compartilhamentoRoutes from "./compartilhamentoRoutes.js";
 import chatbotRoutes from "./chatbotRoutes.js";
-import uploadRoutes from "./uploadRoutes.js";
 import buscaRoutes from "./buscaRoutes.js";
 import seguidorRoutes from "./seguidorRoutes.js";
 import adminRoutes from "./adminRoutes.js";
@@ -46,7 +45,6 @@ router.use("/perfil", perfilRoutes);
 router.use("/acessibilidade", acessibilidadeRoutes);
 router.use("/compartilhamentos", compartilhamentoRoutes);
 router.use("/chatbot", chatbotRoutes);
-router.use("/uploads", uploadRoutes);
 router.use("/busca", buscaRoutes);
 router.use("/seguir", seguidorRoutes);
 router.use("/admin", adminRoutes);

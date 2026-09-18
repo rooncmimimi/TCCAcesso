@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import {
     Usuario,
     Postagem,
@@ -9,10 +9,10 @@ import {
     Mensagem,
     Denuncia
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import NotificacaoService from "./NotificacaoService.js";
-import AdminAuditService from "./AdminAuditService.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import AdminUsuarioService from "./AdminUsuarioService.js";
 import AdminConteudoService from "./AdminConteudoService.js";
 import AdminEmpresaService from "./AdminEmpresaService.js";
@@ -20,13 +20,13 @@ import ConversaService from "./ConversaService.js";
 
 const INCLUDE_PARTES = [
     { model: Usuario, as: "denunciante", attributes: ["id", "nome", "email"] },
-    { model: Usuario, as: "adminResponsavel", attributes: ["id", "nome"] }
+    { model: Usuario, as: "administradorResponsavel", attributes: ["id", "nome"] }
 ];
 
 /**
  * Ação de moderação automática aceita ao resolver uma denúncia, por
  * entidade_tipo. "mensagem" não tem entrada aqui de propósito: não
- * existe mecanismo de remoção de mensagem individual no schema — uma
+ * existe mecanismo de remoção de mensagem individual no schema; uma
  * denúncia de mensagem só pode ser resolvida/rejeitada/arquivada sem
  * ação, com o contexto consultável via obterContextoMensagem().
  */
@@ -39,25 +39,20 @@ const ACAO_MODERACAO_POR_TIPO = {
 };
 
 /**
- * Denúncias — tabela única polimórfica (migration 0020).
- *
- * Resolver uma denúncia pode, opcionalmente, disparar a ação de
- * moderação real correspondente — sempre reaproveitando os métodos já
- * existentes dos services administrativos de domínio (AdminUsuarioService/
- * AdminConteudoService/AdminEmpresaService — nunca duplicando a lógica,
- * nunca pulando a proteção ADMIN->ADMIN). A ação executa ANTES da denúncia
- * ser marcada como resolvida: se a ação falhar, a denúncia permanece
- * intocada (nunca fica "parcialmente resolvida").
+ * Denúncias: tabela única polimórfica. Resolver uma denúncia pode disparar,
+ * opcionalmente, a ação de moderação correspondente, sempre pelos métodos que já existem nos
+ * services administrativos de cada domínio (`AdminUsuarioService`, `AdminConteudoService`,
+ * `AdminEmpresaService`), sem duplicar lógica e sem pular a proteção que impede ação administrativa
+ * contra outro administrador. A ação roda antes de a denúncia ser marcada como resolvida: se
+ * falhar, a denúncia fica intocada, nunca parcialmente resolvida.
  */
 class DenunciaService {
-    /* ==========================================================
-       VALIDAÇÃO DA ENTIDADE DENUNCIADA
-    ========================================================== */
+    /* Validação da entidade denunciada */
 
     /**
      * Confirma que a entidade denunciada existe e retorna o dono dela
      * (para a checagem de autodenúncia). Para mensagens, também garante
-     * que o denunciante é participante da conversa — ninguém pode
+     * que o denunciante é participante da conversa: ninguém pode
      * denunciar uma mensagem de uma conversa que não é sua.
      */
     async resolverEntidadeDenunciada(entidadeTipo, entidadeId, denunciante) {
@@ -67,7 +62,7 @@ class DenunciaService {
                     attributes: ["id"]
                 });
                 if (!usuario) {
-                    throw ApiError.notFound("Usuário não encontrado.");
+                    throw ErroApi.naoEncontrado("Usuário não encontrado.");
                 }
                 return { donoId: usuario.id };
             }
@@ -77,7 +72,7 @@ class DenunciaService {
                     attributes: ["id", "usuarioId"]
                 });
                 if (!postagem) {
-                    throw ApiError.notFound("Postagem não encontrada.");
+                    throw ErroApi.naoEncontrado("Postagem não encontrada.");
                 }
                 return { donoId: postagem.usuarioId };
             }
@@ -87,7 +82,7 @@ class DenunciaService {
                     attributes: ["id", "usuarioId"]
                 });
                 if (!comentario) {
-                    throw ApiError.notFound("Comentário não encontrado.");
+                    throw ErroApi.naoEncontrado("Comentário não encontrado.");
                 }
                 return { donoId: comentario.usuarioId };
             }
@@ -100,7 +95,7 @@ class DenunciaService {
                     ]
                 });
                 if (!vaga) {
-                    throw ApiError.notFound("Vaga não encontrada.");
+                    throw ErroApi.naoEncontrado("Vaga não encontrada.");
                 }
                 return { donoId: vaga.empresa?.usuarioId ?? null };
             }
@@ -110,7 +105,7 @@ class DenunciaService {
                     attributes: ["id", "usuarioId"]
                 });
                 if (!empresa) {
-                    throw ApiError.notFound("Empresa não encontrada.");
+                    throw ErroApi.naoEncontrado("Empresa não encontrada.");
                 }
                 return { donoId: empresa.usuarioId };
             }
@@ -120,7 +115,7 @@ class DenunciaService {
                     attributes: ["id", "conversaId", "remetenteId"]
                 });
                 if (!mensagem) {
-                    throw ApiError.notFound("Mensagem não encontrada.");
+                    throw ErroApi.naoEncontrado("Mensagem não encontrada.");
                 }
 
                 const conversa = await ConversaService.carregarConversa(
@@ -132,13 +127,11 @@ class DenunciaService {
             }
 
             default:
-                throw ApiError.badRequest("Tipo de entidade inválido.");
+                throw ErroApi.requisicaoInvalida("Tipo de entidade inválido.");
         }
     }
 
-    /* ==========================================================
-       CRIAÇÃO (qualquer usuário autenticado)
-    ========================================================== */
+    /* Criação (qualquer usuário autenticado) */
     async criar({ entidadeTipo, entidadeId, motivo, descricao }, denunciante) {
         const { donoId } = await this.resolverEntidadeDenunciada(
             entidadeTipo,
@@ -147,7 +140,7 @@ class DenunciaService {
         );
 
         if (donoId && String(donoId) === String(denunciante.id)) {
-            throw ApiError.badRequest(
+            throw ErroApi.requisicaoInvalida(
                 "Você não pode denunciar seu próprio conteúdo."
             );
         }
@@ -162,7 +155,7 @@ class DenunciaService {
             });
         } catch (erro) {
             if (erro.name === "SequelizeUniqueConstraintError") {
-                throw ApiError.conflict(
+                throw ErroApi.conflito(
                     "Você já denunciou isso e a denúncia ainda está em análise."
                 );
             }
@@ -170,9 +163,7 @@ class DenunciaService {
         }
     }
 
-    /* ==========================================================
-       FILA ADMINISTRATIVA
-    ========================================================== */
+    /* Fila administrativa */
     async listar(query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
@@ -187,17 +178,16 @@ class DenunciaService {
             include: INCLUDE_PARTES,
             limit: limite,
             offset,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("denuncias", rows, count, pagina, limite);
     }
 
     /**
-     * Prévia mínima da entidade denunciada, só para dar contexto ao admin
-     * na tela de detalhe. Mensagens nunca retornam conteúdo aqui — o
-     * acesso ao conteúdo de uma mensagem denunciada é restrito ao fluxo
-     * específico da Fase G, não a este endpoint genérico.
+     * Prévia mínima da entidade denunciada, só para dar contexto ao administrador na tela de
+     * detalhe. Mensagens nunca trazem conteúdo aqui: o conteúdo de uma mensagem denunciada só é
+     * acessível por `obterContextoMensagem`.
      */
     async carregarPreviaEntidade(entidadeTipo, entidadeId) {
         switch (entidadeTipo) {
@@ -249,7 +239,7 @@ class DenunciaService {
         });
 
         if (!denuncia) {
-            throw ApiError.notFound("Denúncia não encontrada.");
+            throw ErroApi.naoEncontrado("Denúncia não encontrada.");
         }
 
         const previaEntidade = await this.carregarPreviaEntidade(
@@ -260,12 +250,10 @@ class DenunciaService {
         return { ...denuncia.toJSON(), previaEntidade };
     }
 
-    /* ==========================================================
-       TRANSIÇÕES DE STATUS
-    ========================================================== */
+    /* Transições de status */
     garantirTransitavel(denuncia) {
         if (!["pendente", "em_analise"].includes(denuncia.status)) {
-            throw ApiError.conflict(
+            throw ErroApi.conflito(
                 "Esta denúncia já foi encerrada e não pode ser alterada."
             );
         }
@@ -275,23 +263,23 @@ class DenunciaService {
         const denuncia = await Denuncia.findByPk(id);
 
         if (!denuncia) {
-            throw ApiError.notFound("Denúncia não encontrada.");
+            throw ErroApi.naoEncontrado("Denúncia não encontrada.");
         }
 
         this.garantirTransitavel(denuncia);
 
         await denuncia.update({
             status: "em_analise",
-            adminResponsavelId: solicitante.id
+            administradorResponsavelId: solicitante.id
         });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "ASSIGN_REPORT",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: "atribuir_denuncia",
             entidadeTipo: "denuncia",
             entidadeId: denuncia.id,
             descricao: `Denúncia atribuída a ${solicitante.nome}.`,
-            metadata: {
+            metadados: {
                 entidadeDenunciada: {
                     tipo: denuncia.entidadeTipo,
                     id: denuncia.entidadeId
@@ -305,17 +293,16 @@ class DenunciaService {
     }
 
     /**
-     * Executa a ação de moderação real correspondente à denúncia,
-     * reaproveitando o método já existente do service administrativo do
-     * domínio certo — nunca duplica a lógica de bloqueio/remoção/suspensão
-     * nem a proteção ADMIN->ADMIN (ela já vive dentro de cada método
-     * reaproveitado).
+     * Executa a ação de moderação correspondente à denúncia com o método que já existe no service
+     * administrativo do domínio certo, sem duplicar a lógica de bloqueio, remoção ou suspensão nem
+     * a proteção contra ação administrativa em outro administrador, que já fica dentro de cada
+     * método reaproveitado.
      */
     async executarAcaoModeracao(denuncia, acao, observacao, solicitante, contexto) {
         const acaoEsperada = ACAO_MODERACAO_POR_TIPO[denuncia.entidadeTipo];
 
         if (!acaoEsperada || acaoEsperada !== acao) {
-            throw ApiError.badRequest(
+            throw ErroApi.requisicaoInvalida(
                 `Ação "${acao}" não é válida para denúncias do tipo "${denuncia.entidadeTipo}".`
             );
         }
@@ -365,7 +352,7 @@ class DenunciaService {
                 break;
 
             default:
-                throw ApiError.badRequest(
+                throw ErroApi.requisicaoInvalida(
                     "Esta denúncia não aceita uma ação automática de moderação."
                 );
         }
@@ -382,18 +369,18 @@ class DenunciaService {
     ) {
         await denuncia.update({
             status: novoStatus,
-            observacaoAdmin: observacao || null,
+            observacaoAdministrador: observacao || null,
             resolvidoEm: new Date(),
-            adminResponsavelId: denuncia.adminResponsavelId ?? solicitante.id
+            administradorResponsavelId: denuncia.administradorResponsavelId ?? solicitante.id
         });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
             acao: acaoAuditoria,
             entidadeTipo: "denuncia",
             entidadeId: denuncia.id,
             descricao: `Denúncia marcada como ${novoStatus}.`,
-            metadata: {
+            metadados: {
                 entidadeDenunciada: {
                     tipo: denuncia.entidadeTipo,
                     id: denuncia.entidadeId
@@ -405,17 +392,15 @@ class DenunciaService {
             userAgent: contexto.userAgent
         });
 
-        // Sem `denuncianteId` (Fase 5, migration 0036): o denunciante
-        // excluiu a própria conta — a denúncia continua existindo e
-        // pode ser resolvida normalmente, só não há mais ninguém pra
-        // notificar sobre o desfecho.
+        // Sem `denuncianteId`, quem denunciou excluiu a própria conta: a denúncia
+        // continua existindo e pode ser resolvida, só não há ninguém para avisar do desfecho.
         if (
             (novoStatus === "resolvida" || novoStatus === "rejeitada") &&
             denuncia.denuncianteId
         ) {
             await NotificacaoService.criar({
                 usuarioId: denuncia.denuncianteId,
-                tipo: "Moderacao",
+                tipo: "moderacao",
                 titulo: "Denúncia analisada",
                 descricao:
                     novoStatus === "resolvida"
@@ -432,7 +417,7 @@ class DenunciaService {
         const denuncia = await Denuncia.findByPk(id);
 
         if (!denuncia) {
-            throw ApiError.notFound("Denúncia não encontrada.");
+            throw ErroApi.naoEncontrado("Denúncia não encontrada.");
         }
 
         this.garantirTransitavel(denuncia);
@@ -450,7 +435,7 @@ class DenunciaService {
         return this.finalizar(
             denuncia,
             "resolvida",
-            "RESOLVE_REPORT",
+            "resolver_denuncia",
             observacao,
             solicitante,
             contexto,
@@ -462,7 +447,7 @@ class DenunciaService {
         const denuncia = await Denuncia.findByPk(id);
 
         if (!denuncia) {
-            throw ApiError.notFound("Denúncia não encontrada.");
+            throw ErroApi.naoEncontrado("Denúncia não encontrada.");
         }
 
         this.garantirTransitavel(denuncia);
@@ -470,7 +455,7 @@ class DenunciaService {
         return this.finalizar(
             denuncia,
             "rejeitada",
-            "REJECT_REPORT",
+            "rejeitar_denuncia",
             observacao,
             solicitante,
             contexto
@@ -481,7 +466,7 @@ class DenunciaService {
         const denuncia = await Denuncia.findByPk(id);
 
         if (!denuncia) {
-            throw ApiError.notFound("Denúncia não encontrada.");
+            throw ErroApi.naoEncontrado("Denúncia não encontrada.");
         }
 
         this.garantirTransitavel(denuncia);
@@ -489,38 +474,36 @@ class DenunciaService {
         return this.finalizar(
             denuncia,
             "arquivada",
-            "ARCHIVE_REPORT",
+            "arquivar_denuncia",
             observacao,
             solicitante,
             contexto
         );
     }
 
-    /* ==========================================================
-       CONTEXTO DE MENSAGEM (só para denúncias de mensagem)
-    ========================================================== */
+    /* Contexto de mensagem (só para denúncias de mensagem) */
 
     /**
      * Retorna a mensagem denunciada + até 3 mensagens antes e até 3
      * depois, na mesma conversa. Só funciona para denúncias com
-     * entidade_tipo === "mensagem" — verificado ANTES de tocar em
+     * entidade_tipo === "mensagem": verificado antes de tocar em
      * qualquer conteúdo. Todo acesso gera um log VIEW_REPORTED_MESSAGE,
      * mesmo que o admin não tome nenhuma ação depois: ler o conteúdo de
      * uma conversa privada é, em si, uma ação sensível.
      *
-     * Este é o ÚNICO caminho de acesso a conteúdo de mensagem no painel
-     * administrativo — não existe (e não deve existir) um endpoint de
+     * Este é o único caminho de acesso a conteúdo de mensagem no painel
+     * administrativo: não existe (e não deve existir) um endpoint de
      * busca livre de mensagens/conversas.
      */
     async obterContextoMensagem(id, solicitante, contexto = {}) {
         const denuncia = await Denuncia.findByPk(id);
 
         if (!denuncia) {
-            throw ApiError.notFound("Denúncia não encontrada.");
+            throw ErroApi.naoEncontrado("Denúncia não encontrada.");
         }
 
         if (denuncia.entidadeTipo !== "mensagem") {
-            throw ApiError.badRequest(
+            throw ErroApi.requisicaoInvalida(
                 "Esta denúncia não é sobre uma mensagem."
             );
         }
@@ -528,46 +511,39 @@ class DenunciaService {
         const mensagem = await Mensagem.findByPk(denuncia.entidadeId);
 
         if (!mensagem) {
-            throw ApiError.notFound("Mensagem denunciada não encontrada.");
+            throw ErroApi.naoEncontrado("Mensagem denunciada não encontrada.");
         }
 
-        // Comparação feita inteiramente dentro do Postgres (subquery pelo
-        // próprio id, nunca por um valor de data que passou por JS): a
-        // coluna created_at de "mensagens" é TIMESTAMP WITHOUT TIME ZONE,
-        // e o driver pg interpreta esse tipo usando o fuso horário local
-        // do processo Node ao converter para Date — em produção o servidor
-        // roda em UTC, mas localmente (fuso diferente de UTC) isso desloca
-        // o valor e quebra qualquer comparação feita com esse Date em JS.
-        const referenciaCreatedAt = sequelize.literal(
-            `(SELECT created_at FROM mensagens WHERE id = ${sequelize.escape(mensagem.id)})`
-        );
+        // `criado_em` é `timestamptz`, então a data da mensagem denunciada pode ir e voltar como
+        // `Date` sem deslocamento de fuso: o Postgres compara os dois no mesmo instante absoluto.
+        const referencia = mensagem.criadoEm;
 
         const [antes, depois] = await Promise.all([
             Mensagem.findAll({
                 where: {
                     conversaId: mensagem.conversaId,
-                    created_at: { [Op.lt]: referenciaCreatedAt }
+                    criadoEm: { [Op.lt]: referencia }
                 },
-                order: [["created_at", "DESC"]],
+                order: [["criadoEm", "DESC"]],
                 limit: 3
             }),
             Mensagem.findAll({
                 where: {
                     conversaId: mensagem.conversaId,
-                    created_at: { [Op.gt]: referenciaCreatedAt }
+                    criadoEm: { [Op.gt]: referencia }
                 },
-                order: [["created_at", "ASC"]],
+                order: [["criadoEm", "ASC"]],
                 limit: 3
             })
         ]);
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "VIEW_REPORTED_MESSAGE",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: "visualizar_mensagem_denunciada",
             entidadeTipo: "denuncia",
             entidadeId: denuncia.id,
             descricao: "Contexto de mensagem denunciada consultado.",
-            metadata: {
+            metadados: {
                 mensagemId: mensagem.id,
                 conversaId: mensagem.conversaId
             },

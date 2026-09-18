@@ -9,8 +9,8 @@ import {
     EmpresaSeguida,
     FavoritoVaga
 } from "../models/index.js";
-import sequelize from "../config/database.js";
-import { garantirEmpresaAprovadaSeForEmpresa } from "../utils/authorization.js";
+import sequelize from "../config/bancoDeDados.js";
+import { garantirEmpresaAprovadaSeForEmpresa } from "../utils/autorizacao.js";
 
 /**
  * Métricas agregadas.
@@ -18,7 +18,7 @@ import { garantirEmpresaAprovadaSeForEmpresa } from "../utils/authorization.js";
  * - dashboard da empresa / candidato: escopado ao próprio perfil.
  */
 class DashboardService {
-    async admin() {
+    async administrador() {
         const [
             totalUsuarios,
             totalCandidatos,
@@ -32,7 +32,7 @@ class DashboardService {
             Candidato.count(),
             Empresa.count(),
             Vaga.count(),
-            Vaga.count({ where: { status: "Aberta" } }),
+            Vaga.count({ where: { status: "aberta" } }),
             Candidatura.count(),
             Postagem.count({ where: { ativo: true } })
         ]);
@@ -88,7 +88,7 @@ class DashboardService {
                     : 0,
                 vagaIds.length
                     ? Candidatura.count({
-                          where: { vagaId: vagaIds, status: "Pendente" }
+                          where: { vagaId: vagaIds, status: "pendente" }
                       })
                     : 0,
                 Postagem.count({ where: { usuarioId, ativo: true } }),
@@ -97,7 +97,7 @@ class DashboardService {
 
         return {
             vagas: vagas.length,
-            vagasAbertas: vagas.filter((vaga) => vaga.status === "Aberta").length,
+            vagasAbertas: vagas.filter((vaga) => vaga.status === "aberta").length,
             candidaturas: totalCandidaturas,
             candidaturasPendentes,
             postagens: totalPostagens,
@@ -125,11 +125,11 @@ class DashboardService {
                 Candidatura.count({
                     where: {
                         candidatoId: candidato.id,
-                        status: ["Pendente", "Visualizada", "EmAnalise"]
+                        status: ["pendente", "visualizada", "em_analise"]
                     }
                 }),
                 Candidatura.count({
-                    where: { candidatoId: candidato.id, status: "Aprovada" }
+                    where: { candidatoId: candidato.id, status: "aprovada" }
                 }),
                 FavoritoVaga.count({ where: { candidatoId: candidato.id } }),
                 Postagem.count({ where: { usuarioId, ativo: true } }),

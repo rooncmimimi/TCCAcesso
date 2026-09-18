@@ -5,8 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import type { Conversa, Mensagem } from "@/lib/api-types";
-import { initials } from "@/lib/session";
+import type { Conversa, Mensagem } from "@/lib/tiposApi";
+import { iniciaisDoNome } from "@/utils/formatacao";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { BolhaMensagem } from "./BolhaMensagem";
 import { fotoParticipante, nomeParticipante, participanteOposto } from "./utils";
@@ -41,11 +41,9 @@ export function JanelaConversa({
   const contato = participanteOposto(conversa, usuarioId);
   const nome = nomeParticipante(contato);
   const foto = fotoParticipante(contato);
-  // Fase 8: `contato` só é `undefined` quando o outro participante excluiu
-  // a conta (backend devolve `usuarioA`/`usuarioB` como `null`) — o
-  // histórico continua visível, só a composição de novas mensagens é
-  // bloqueada, com o mesmo texto usado pelo backend (defesa em
-  // profundidade: mesmo que este aviso falhe, o envio é recusado lá).
+  // `contato` só é `undefined` quando o outro participante excluiu a conta (o backend devolve
+  // `usuarioA`/`usuarioB` como `null`). O histórico continua visível e só o envio fica bloqueado,
+  // com o mesmo texto do backend, que também recusa o envio.
   const semParticipante = !contato;
   const avisoSemParticipante =
     "Esta conversa não permite novas mensagens porque o outro usuário foi removido.";
@@ -54,7 +52,7 @@ export function JanelaConversa({
     fimRef.current?.scrollIntoView({ block: "end" });
   }, [mensagens.length, contatoDigitando]);
 
-  function handleEnviar(e: FormEvent) {
+  function enviarMensagem(e: FormEvent) {
     e.preventDefault();
     const conteudo = texto.trim();
     if (!conteudo || enviando) return;
@@ -73,7 +71,7 @@ export function JanelaConversa({
           <Avatar className="size-10">
             {foto && <AvatarImage src={foto} alt="" />}
             <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-              {initials(nome)}
+              {iniciaisDoNome(nome)}
             </AvatarFallback>
           </Avatar>
         </LinkAutor>
@@ -130,7 +128,7 @@ export function JanelaConversa({
           {avisoSemParticipante}
         </p>
       ) : (
-        <form onSubmit={handleEnviar} className="flex items-end gap-2 border-t border-border p-3">
+        <form onSubmit={enviarMensagem} className="flex items-end gap-2 border-t border-border p-3">
           <label htmlFor="mensagem-texto" className="sr-only">
             Escreva uma mensagem
           </label>
@@ -144,7 +142,7 @@ export function JanelaConversa({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleEnviar(e);
+                enviarMensagem(e);
               }
             }}
             placeholder="Escreva uma mensagem…"

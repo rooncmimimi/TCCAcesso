@@ -5,8 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Conversa } from "@/lib/api-types";
-import { initials } from "@/lib/session";
+import type { Conversa } from "@/lib/tiposApi";
+import { iniciaisDoNome } from "@/utils/formatacao";
 import { cn } from "@/lib/utils";
 import { fotoParticipante, formatarDataRelativa, nomeParticipante, participanteOposto } from "./utils";
 
@@ -110,7 +110,7 @@ export function ListaConversas({
                     <Avatar className="size-11 shrink-0">
                       {foto && <AvatarImage src={foto} alt="" />}
                       <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-                        {initials(nome)}
+                        {iniciaisDoNome(nome)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
@@ -120,7 +120,7 @@ export function ListaConversas({
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-xs text-muted-foreground">{formatarDataRelativa(conversa.updated_at)}</p>
+                      <p className="text-xs text-muted-foreground">{formatarDataRelativa(conversa.atualizadoEm)}</p>
                       {naoLidas > 0 && (
                         <Badge className="mt-1" aria-label={`${naoLidas} mensagens não lidas`}>
                           {naoLidas}

@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { announceForAccessibility } from "../accessibility/announce";
+import { anunciarParaLeitorDeTela } from "../acessibilidade/anunciar";
 import { capturarErro } from "./sentry";
 
 interface ErrorBoundaryState {
@@ -9,23 +9,16 @@ interface ErrorBoundaryState {
 }
 
 /**
- * Rede de segurança global (Fase 25) — sem isto, qualquer erro de
- * renderização não tratado em QUALQUER tela derrubava o app inteiro (tela
- * vermelha em desenvolvimento, tela em branco/crash em produção), sem
- * nenhum relato de onde/por quê. Fica no topo de `App.tsx`, FORA de todos
- * os outros provedores (`SafeAreaProvider`/`AccessibilityProvider`/
- * `ThemeProvider`/...) de propósito: precisa continuar funcionando mesmo
- * se o erro acontecer DENTRO de um desses provedores.
+ * Rede de segurança para erros de renderização: sem ela, um erro não tratado em qualquer tela
+ * derrubaria o app inteiro sem registro. Mostra uma tela com a opção de tentar de novo e envia o
+ * erro ao Sentry.
  *
- * Por isso é a ÚNICA tela do app que NUNCA usa `useTheme()`/`ScreenContainer`/
- * qualquer componente de `components/ui` — todos dependem de contexto que
- * pode ser exatamente o que quebrou. Cores e espaçamento são fixos aqui, de
- * propósito, não um oversight.
+ * Fica fora de todos os providers em `App.tsx` para continuar funcionando quando o erro vem de um
+ * deles. Pelo mesmo motivo não usa `useTema()` nem componentes de `components/ui`, e as cores são
+ * fixas.
  *
- * Componente de CLASSE, não função — é a única forma que o React oferece
- * hoje para um "error boundary" (`componentDidCatch`/
- * `getDerivedStateFromError` não têm equivalente em hook), exceção
- * deliberada ao resto do app (só componentes de função).
+ * É um componente de classe porque o React só oferece error boundary por `componentDidCatch` e
+ * `getDerivedStateFromError`, sem equivalente em hook.
  */
 export class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
   state: ErrorBoundaryState = { temErro: false };
@@ -37,16 +30,10 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBound
   componentDidCatch(erro: Error, info: ErrorInfo): void {
     capturarErro(erro, { componentStack: info.componentStack ?? undefined });
 
-    // `componentDidCatch` só é chamado quando um filho de fato lança (nunca
-    // de novo só por causa de um re-render da própria tela de erro) — por
-    // isso o anúncio acontece exatamente uma vez por erro capturado, nunca
-    // em loop. Mesmo padrão de "um mecanismo por evento" do
-    // `LoginScreen.tsx` (`announceForAccessibility` para uma troca de tela
-    // inteira, já que o Card antigo desmonta e um novo monta — não há um nó
-    // estável para um `accessibilityLiveRegion`). Mensagem sem termos
-    // técnicos/stack trace de propósito: quem ouve isso é a pessoa usando o
-    // app, não um desenvolvedor.
-    announceForAccessibility("Ocorreu um erro inesperado. Você pode tentar novamente.");
+    // `componentDidCatch` só roda quando um filho lança, então o anúncio acontece uma vez por erro.
+    // Usa `anunciarParaLeitorDeTela` porque a tela inteira é trocada e não há um nó estável para
+    // `accessibilityLiveRegion`. A mensagem evita termos técnicos: quem ouve é quem usa o app.
+    anunciarParaLeitorDeTela("Ocorreu um erro inesperado. Você pode tentar novamente.");
   }
 
   reiniciar = (): void => {
@@ -80,9 +67,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBound
   }
 }
 
-// Cores fixas (não `theme.colors.*`) — ver comentário acima: este
-// componente precisa funcionar mesmo se o `ThemeProvider` for a origem do
-// erro. Paleta neutra simples, legível em qualquer aparelho.
+// Cores fixas, e não `tema.colors`, porque o erro pode ter vindo do próprio `TemaProvider`.
 const estilos = StyleSheet.create({
   container: {
     flex: 1,

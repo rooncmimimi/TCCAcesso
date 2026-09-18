@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: usuarios_seguidos (migration 0014)
+ * Tabela: usuarios_seguidos
  * Rede de seguidores entre usuários da plataforma.
  */
 const UsuarioSeguido = sequelize.define(
@@ -13,21 +13,17 @@ const UsuarioSeguido = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-        seguidorId: {
-            field: "seguidor_id",
+        seguidorId: {
             type: DataTypes.UUID,
             allowNull: false
         },
-        seguidoId: {
-            field: "seguido_id",
+        seguidoId: {
             type: DataTypes.UUID,
             allowNull: false
         }
     },
     {
-        tableName: "usuarios_seguidos",
-        timestamps: true,
-        createdAt: "created_at",
+        tableName: "usuarios_seguidos",
         updatedAt: false,
         indexes: [
             {

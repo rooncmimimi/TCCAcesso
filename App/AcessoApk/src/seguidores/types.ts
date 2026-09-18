@@ -1,19 +1,12 @@
 /**
- * Tipos do contrato real de rede de conexões (Site/Backend), conforme
- * auditoria da Fase 14 — `SeguidorController`/`SeguidorService`,
- * `UsuarioController.perfilPublico`, `PerfilCandidatoController`. Nomes de
- * campo em português são literais ao que a API envia.
+ * Tipos da rede de conexões (seguir pessoas e empresas).
  *
- * IMPORTANTE (achado da auditoria): não existe endpoint para LISTAR
- * solicitações de seguimento pendentes recebidas — só agir sobre uma
- * (`aceitar`/`recusar` por `solicitacaoId`), que só chega ao usuário via
- * notificação (`subtipo: "solicitacao_seguimento"`, `entidadeId` = o
- * `solicitacaoId`). `aceitarSolicitacao`/`recusarSolicitacao` abaixo já
- * estão prontos para quando a Fase 16 (Notificações) existir — sem UI de
- * entrada própria nesta fase, porque não haveria de onde chamá-los.
+ * A API não lista as solicitações de seguir recebidas: elas chegam por notificação
+ * (`entidadeTipo: "solicitacao_seguimento"`, com o `solicitacaoId` em `entidadeId`), e é na tela de
+ * notificações que a pessoa aceita ou recusa.
  */
 
-/** `GET /perfil/usuario/:usuarioId` — dados públicos mínimos de QUALQUER usuário, usado para decidir se o perfil é de candidato/empresa/administrador antes de buscar os dados completos. */
+/** `GET /perfil/usuario/:usuarioId`: dados públicos mínimos de qualquer usuário, usado para decidir se o perfil é de candidato/empresa/administrador antes de buscar os dados completos. */
 export interface UsuarioPublicoBasico {
   id: string;
   nome: string;
@@ -29,7 +22,7 @@ export interface UsuarioPublicoBasicoResposta {
   usuario: UsuarioPublicoBasico;
 }
 
-/** Resumo de usuário nas listas de seguidores/seguindo/sugestões — mesma allowlist `PERFIL_PUBLICO` do backend. */
+/** Resumo de usuário nas listas de seguidores/seguindo/sugestões: mesma allowlist `PERFIL_PUBLICO` do backend. */
 export interface UsuarioResumoSocial {
   id: string;
   nome: string;
@@ -39,14 +32,14 @@ export interface UsuarioResumoSocial {
   [chave: string]: unknown;
 }
 
-/** `POST /seguir/usuarios/:usuarioId` — toggle; 403 se o perfil for privado (o app precisa checar `resumo().perfilPublico` antes de decidir entre isto e `solicitarSeguir`). */
+/** `POST /seguir/usuarios/:usuarioId`: toggle; 403 se o perfil for privado (o app precisa checar `resumo().perfilPublico` antes de decidir entre isto e `solicitarSeguir`). */
 export interface AlternarSeguirResposta {
   sucesso: true;
   seguindo: boolean;
   totalSeguidores: number;
 }
 
-/** `POST /seguir/solicitacoes/:destinatarioId` — se o alvo virou público entre o clique e a chamada, o backend já segue direto (`solicitacaoCriada:false`) em vez de deixar uma solicitação inútil pendurada. */
+/** `POST /seguir/solicitacoes/:destinatarioId`: se o alvo virou público entre o clique e a chamada, o backend já segue direto (`solicitacaoCriada:false`) em vez de deixar uma solicitação inútil pendurada. */
 export interface SolicitarSeguirResposta {
   sucesso: true;
   seguindo?: boolean;
@@ -55,7 +48,7 @@ export interface SolicitarSeguirResposta {
   solicitacaoPendente?: boolean;
 }
 
-/** `GET /seguir/resumo/:usuarioId` — todo o estado de relação com um usuário numa chamada só. */
+/** `GET /seguir/resumo/:usuarioId`: todo o estado de relação com um usuário numa chamada só. */
 export interface ResumoSeguidores {
   sucesso: true;
   totalSeguidores: number;
@@ -74,13 +67,13 @@ export interface ResumoEmpresaSeguidores {
   seguindoEstaEmpresa: boolean;
 }
 
-/** `ResumoSeguidores` desembrulhado (sem `sucesso`) — o que `SeguidorService.resumo` de fato devolve. */
+/** `ResumoSeguidores` desembrulhado (sem `sucesso`): o que `SeguidorService.resumo` de fato devolve. */
 export type ResumoRelacao = Omit<ResumoSeguidores, "sucesso">;
 
-/** `ResumoEmpresaSeguidores` desembrulhado — o que `SeguidorService.resumoEmpresa` devolve. */
+/** `ResumoEmpresaSeguidores` desembrulhado: o que `SeguidorService.resumoEmpresa` devolve. */
 export type ResumoRelacaoEmpresa = Omit<ResumoEmpresaSeguidores, "sucesso">;
 
-/** `GET /seguir/seguidores/:usuarioId` e `GET /seguir/seguindo/:usuarioId` — paginados, mesmo envelope de `montarResposta`. */
+/** `GET /seguir/seguidores/:usuarioId` e `GET /seguir/seguindo/:usuarioId`: paginados, mesmo envelope de `montarResposta`. */
 export interface ListaSeguidoresResposta {
   sucesso: true;
   total: number;
@@ -104,7 +97,7 @@ export interface ListarPaginaParametros {
   limit?: number;
 }
 
-/** `GET /seguir/sugestoes` — sugestões explicáveis; nunca baseadas em deficiência/diagnóstico (confirmado por auditoria do backend). */
+/** `GET /seguir/sugestoes`: sugestões com o motivo explicado; nunca usam deficiência. */
 export interface SugestaoPessoa {
   id: string;
   nome: string;

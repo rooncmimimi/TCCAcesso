@@ -1,33 +1,35 @@
 import { Op } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import {
     Usuario,
     Candidato,
     Empresa,
     Administrador
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
-import AdminAuditService from "./AdminAuditService.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirDono, garantirAlvoDeAcaoAdministrativa } from "../utils/autorizacao.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import BloqueioService from "./BloqueioService.js";
 import AdminUsuarioService from "./AdminUsuarioService.js";
 
+/**
+ * Conta de usuário: consulta, dados públicos mínimos, edição, ativação e exclusão (que delega para
+ * `AdminUsuarioService`).
+ */
 class UsuarioService {
     async buscarPorId(id) {
         const usuario = await Usuario.findByPk(id);
 
         if (!usuario) {
-            throw ApiError.notFound("Usuário não encontrado.");
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
         return usuario;
     }
 
-    /* ==========================================================
-       LISTAR (somente administrador)
-    ========================================================== */
-    async findAll(query) {
+    /* Listar (somente administrador) */
+    async listar(query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
         const { nome, email, tipoUsuario, ativo } = query;
 
@@ -53,16 +55,14 @@ class UsuarioService {
             where,
             offset,
             limit: limite,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("usuarios", rows, count, pagina, limite);
     }
 
-    /* ==========================================================
-       BUSCAR POR ID
-    ========================================================== */
-    async findById(id, solicitante) {
+    /* Buscar por id */
+    async buscarRegistroCompleto(id, solicitante) {
         const usuario = await Usuario.findByPk(id, {
             include: [
                 { model: Candidato, as: "candidato" },
@@ -72,28 +72,23 @@ class UsuarioService {
         });
 
         if (!usuario) {
-            throw ApiError.notFound("Usuário não encontrado.");
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
-        // Este endpoint retorna o registro completo (e-mail, telefone, CPF
-        // via candidato, CNPJ via empresa) — só o dono ou um administrador
-        // pode receber esses dados. Nenhum caller do frontend usa esta rota
-        // hoje; a checagem existe para fechar o acesso direto via API.
+        // Esta rota devolve o registro completo (e-mail, telefone, CPF via candidato, CNPJ via
+        // empresa), então só o dono ou um administrador recebe esses dados, mesmo sem nenhum
+        // cliente usando a rota.
         garantirDono(solicitante, usuario.id);
 
         return usuario;
     }
 
-    /* ==========================================================
-       PERFIL PÚBLICO BÁSICO (qualquer usuário autenticado)
-
-       Fallback usado pela rota de perfil quando o alvo não tem registro
-       em Candidato nem Empresa (hoje, só administradores) — retorna
-       apenas o necessário para montar o cabeçalho do perfil público.
-       Nunca inclui e-mail/telefone/documentos. Reaproveita a mesma
-       checagem de bloqueio/privacidade usada pelo perfil de candidato e
-       de empresa, sem duplicar a regra.
-    ========================================================== */
+    /*
+     * Perfil público básico (qualquer usuário autenticado). Usado pela rota de perfil quando o alvo
+     * não tem registro de candidato nem de empresa (administradores): devolve só o necessário para
+     * o cabeçalho do perfil, nunca e-mail, telefone ou documentos, com a mesma checagem de bloqueio
+     * e privacidade dos perfis de candidato e empresa.
+     */
     async perfilPublicoBasico(id, solicitante) {
         const usuario = await Usuario.findByPk(id, {
             attributes: [
@@ -109,7 +104,7 @@ class UsuarioService {
         });
 
         if (!usuario || !usuario.ativo) {
-            throw ApiError.notFound("Usuário não encontrado.");
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
         await BloqueioService.garantirNaoBloqueado(usuario, solicitante);
@@ -123,27 +118,24 @@ class UsuarioService {
         };
     }
 
-    /* ==========================================================
-       ATUALIZAR (dono ou administrador)
-
-       Campos sensíveis (email, senhaHash, tipoUsuario, ativo)
-       não são atualizáveis por esta rota — evita escalonamento
-       de privilégio via mass assignment (OWASP A01/A08).
-    ========================================================== */
-    async update(id, data, solicitante) {
+    /*
+     * Atualizar (dono ou administrador). Campos sensíveis (email, senhaHash, tipoUsuario, ativo)
+     * não podem ser alterados por esta rota, contra escalonamento de privilégio por mass assignment
+     * (OWASP A01/A08).
+     */
+    async atualizar(id, data, solicitante) {
         const transaction = await sequelize.transaction();
 
         try {
             const usuario = await Usuario.findByPk(id, { transaction });
 
             if (!usuario) {
-                throw ApiError.notFound("Usuário não encontrado.");
+                throw ErroApi.naoEncontrado("Usuário não encontrado.");
             }
 
             garantirDono(solicitante, usuario.id);
 
-            // "!== undefined" (em vez de "??") permite limpar telefone/foto/capa
-            // enviando null explicitamente — "??" nunca deixava isso acontecer.
+            // "!== undefined" (em vez de "??") permite limpar telefone, foto e capa enviando null.
             await usuario.update(
                 {
                     nome: data.nome ?? usuario.nome,
@@ -163,14 +155,13 @@ class UsuarioService {
         }
     }
 
-    /* ==========================================================
-       ATIVAR / DESATIVAR (administrador)
-       Rotas já restritas a administrador (rbacMiddleware); ainda assim
-       aplicamos a mesma proteção ADMIN->ADMIN / auto-ação que os services
-       administrativos usam (`garantirAlvoDeAcaoAdministrativa`, em
-       utils/authorization.js) — nunca confie só na rota.
-    ========================================================== */
-    async setAtivo(id, ativo, solicitante, contexto = {}) {
+    /*
+     * Ativar e desativar (administrador). As rotas já são restritas a administrador
+     * (`exigirTipoUsuarioMiddleware`), mas o serviço aplica a mesma proteção contra agir sobre a
+     * própria conta ou sobre outro administrador (`garantirAlvoDeAcaoAdministrativa`, em
+     * `utils/autorizacao.js`), sem confiar só na rota.
+     */
+    async definirAtivo(id, ativo, solicitante, contexto = {}) {
         const usuario = await this.buscarPorId(id);
 
         garantirAlvoDeAcaoAdministrativa(usuario, solicitante, {
@@ -187,15 +178,15 @@ class UsuarioService {
         usuario.ativo = ativo;
         await usuario.save();
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: ativo ? "ATIVAR_USUARIO" : "DESATIVAR_USUARIO",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: ativo ? "ativar_usuario" : "desativar_usuario",
             entidadeTipo: "usuario",
             entidadeId: usuario.id,
             descricao: ativo
                 ? `Usuário ${usuario.nome} (${usuario.email}) foi reativado.`
                 : `Usuário ${usuario.nome} (${usuario.email}) foi desativado.`,
-            metadata: { before: estadoAnterior, after: { ativo } },
+            metadados: { antes: estadoAnterior, depois: { ativo } },
             ip: contexto.ip,
             userAgent: contexto.userAgent
         });
@@ -203,27 +194,21 @@ class UsuarioService {
         return usuario;
     }
 
-    async activate(id, solicitante, contexto = {}) {
-        return this.setAtivo(id, true, solicitante, contexto);
+    async ativar(id, solicitante, contexto = {}) {
+        return this.definirAtivo(id, true, solicitante, contexto);
     }
 
-    async deactivate(id, solicitante, contexto = {}) {
-        return this.setAtivo(id, false, solicitante, contexto);
+    async desativar(id, solicitante, contexto = {}) {
+        return this.definirAtivo(id, false, solicitante, contexto);
     }
 
-    /* ==========================================================
-       EXCLUIR (administrador)
-
-       Fase 5: delega para `AdminUsuarioService.removerUsuario` — antes, este
-       método tinha sua própria implementação, incompleta e divergente
-       da exclusão feita pelo painel admin (sem limpeza do Storage, sem
-       arquivar denúncias pendentes contra a conta, log de auditoria
-       fora da transação de exclusão). Esta rota não tem hoje nenhum
-       caller no frontend (o painel usa `/admin/usuarios/:id`), mas
-       continua ativa e alcançável via API — precisa produzir exatamente
-       o mesmo resultado que a exclusão administrativa "oficial".
-    ========================================================== */
-    async delete(id, solicitante, contexto = {}) {
+    /*
+     * Excluir (administrador). Delega para `AdminUsuarioService.removerUsuario`, para ter
+     * exatamente o mesmo resultado da exclusão pelo painel (limpeza do Storage, arquivamento de
+     * denúncias pendentes e log de auditoria na mesma transação). O painel usa
+     * `/admin/usuarios/:id`, mas esta rota continua ativa pela API.
+     */
+    async excluir(id, solicitante, contexto = {}) {
         return AdminUsuarioService.removerUsuario(id, {}, solicitante, contexto);
     }
 }

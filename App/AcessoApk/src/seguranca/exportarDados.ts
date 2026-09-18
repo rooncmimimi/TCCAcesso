@@ -1,26 +1,22 @@
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
-import type { AccessibilityPreferences } from "../accessibility";
-import type { AuthUser } from "../auth";
+import type { PreferenciasAcessibilidade } from "../acessibilidade";
+import type { UsuarioAutenticado } from "../autenticacao";
 import { ConfiguracoesService } from "../configuracoes";
 import { EmpresaService } from "../empresas";
 import { PerfilService } from "../perfil";
 import type { DadosExportados } from "./types";
 
 /**
- * Fase 22 (LGPD/portabilidade de dados) — monta um retrato dos dados que o
- * ACESSO guarda sobre o usuário, usando SÓ endpoints "meus dados" que já
- * existem e o usuário já tem permissão de ler (nenhuma rota nova no
- * backend). Escopo desta fase, de propósito: conta + perfil (candidato OU
- * empresa) + preferências. NÃO inclui o histórico de publicações,
- * comentários, curtidas ou mensagens — são coleções sem limite que
- * exigiriam paginação em massa; registrado como uma exportação futura
- * separada, não fabricado aqui.
+ * Monta um retrato dos dados que o ACESSO guarda sobre o usuário (portabilidade prevista na LGPD),
+ * usando só rotas de "meus dados" que já existem. Inclui conta, perfil de candidato ou de empresa e
+ * preferências. Publicações, comentários, curtidas e mensagens ficam de fora: são coleções sem
+ * limite que exigiriam paginar tudo.
  */
 export async function coletarMeusDados(
-  usuario: AuthUser,
-  preferenciasAcessibilidade: AccessibilityPreferences,
+  usuario: UsuarioAutenticado,
+  preferenciasAcessibilidade: PreferenciasAcessibilidade,
 ): Promise<DadosExportados> {
   const dados: DadosExportados = {
     geradoEm: new Date().toISOString(),
@@ -65,11 +61,8 @@ export async function coletarMeusDados(
 }
 
 /**
- * Escreve os dados coletados num arquivo JSON temporário (`Paths.cache`,
- * API nova de `expo-file-system` na SDK 57 — `FileSystem.writeAsStringAsync`
- * está descontinuada) e abre a folha de compartilhamento nativa, deixando o
- * PRÓPRIO usuário escolher onde salvar (Arquivos, e-mail, Drive etc.) —
- * nunca o app decide um destino sozinho.
+ * Grava os dados num JSON temporário (`Paths.cache`, da API nova do `expo-file-system`) e abre o
+ * compartilhamento nativo, para a própria pessoa escolher onde salvar.
  */
 export async function exportarECompartilhar(dados: DadosExportados): Promise<void> {
   const disponivel = await Sharing.isAvailableAsync();

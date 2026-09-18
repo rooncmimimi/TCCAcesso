@@ -1,23 +1,23 @@
 import PostagemService from "../services/PostagemService.js";
 import SugestaoDescricaoService from "../services/SugestaoDescricaoService.js";
-import ApiError from "../utils/ApiError.js";
+import ErroApi from "../utils/ErroApi.js";
+import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
-const contextoDa = (req) => ({
-    ip: req.ip,
-    userAgent: req.headers["user-agent"]
-});
-
+/**
+ * Postagens (`/postagens`): feed, linha do tempo de um perfil, criação, edição e exclusão, anexos
+ * (descrição, URL assinada e download) e sugestão de descrição por IA.
+ */
 class PostagemController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
-            const dados = await PostagemService.findAll(req.query, req.user);
+            const dados = await PostagemService.listar(req.query, req.user);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
         }
     }
 
-    /** Linha do tempo unificada (publicações + compartilhamentos) de um perfil — auditoria do Site, item 6. */
+    /** Linha do tempo de um perfil: publicações e compartilhamentos intercalados por data. */
     async linhaDoTempoDoUsuario(req, res, next) {
         try {
             const dados = await PostagemService.linhaDoTempoDoUsuario(
@@ -31,9 +31,9 @@ class PostagemController {
         }
     }
 
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
-            const postagem = await PostagemService.findById(
+            const postagem = await PostagemService.buscarPorId(
                 req.params.id,
                 req.user
             );
@@ -43,9 +43,9 @@ class PostagemController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
-            const postagem = await PostagemService.create(
+            const postagem = await PostagemService.criar(
                 req.body,
                 req.user,
                 req.files || []
@@ -56,9 +56,9 @@ class PostagemController {
         }
     }
 
-    async update(req, res, next) {
+    async atualizar(req, res, next) {
         try {
-            const postagem = await PostagemService.update(
+            const postagem = await PostagemService.atualizar(
                 req.params.id,
                 req.body,
                 req.user
@@ -84,15 +84,15 @@ class PostagemController {
     }
 
     /**
-     * Sugestão de descrição por IA — nunca grava nada, só devolve texto
+     * Sugestão de descrição por IA: nunca grava nada, só devolve texto
      * sugerido para o usuário revisar. Falha do provedor de IA vira um erro
-     * comum (tratado pelo errorMiddleware); o frontend trata isso como
+     * comum (tratado pelo erroMiddleware); o frontend trata isso como
      * "sugestão indisponível agora", nunca como impedimento para publicar.
      */
     async sugerirDescricaoAnexo(req, res, next) {
         try {
             if (!req.file) {
-                throw ApiError.badRequest("Envie uma imagem para gerar a sugestão.");
+                throw ErroApi.requisicaoInvalida("Envie uma imagem para gerar a sugestão.");
             }
 
             const descricao = await SugestaoDescricaoService.sugerir(
@@ -106,7 +106,7 @@ class PostagemController {
         }
     }
 
-    /** Fase 7 — URL de exibição inline de um anexo (lightbox/vídeo). */
+    /** URL de exibição inline de um anexo (lightbox ou vídeo). */
     async urlAnexo(req, res, next) {
         try {
             const resultado = await PostagemService.gerarUrlAnexo(
@@ -120,8 +120,8 @@ class PostagemController {
         }
     }
 
-    /** Fase 7 — mesma autorização, URL com download forçado. */
-    async downloadAnexo(req, res, next) {
+    /** Mesma autorização, com download forçado. */
+    async baixarAnexo(req, res, next) {
         try {
             const resultado = await PostagemService.gerarUrlAnexo(
                 req.params.id,
@@ -135,12 +135,12 @@ class PostagemController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
-            const dados = await PostagemService.delete(
+            const dados = await PostagemService.excluir(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {

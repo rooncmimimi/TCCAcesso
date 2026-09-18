@@ -1,4 +1,4 @@
-import api from "./api";
+import clienteApi from "./api";
 import type { Candidatura, PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "@/types";
 
 /** Parâmetros aceitos pela listagem paginada de vagas (`GET /vagas`). */
@@ -12,7 +12,7 @@ export interface FiltroVagas {
   contrato?: string;
   exclusivaPcd?: boolean;
   publicoAlvo?: PublicoAlvoVaga;
-  /** Enviado como string separada por vírgula — o backend usa `Op.contains` (índice GIN). */
+  /** Enviado como string separada por vírgula: o backend usa `Op.contains` (índice GIN). */
   recursosAcessibilidade?: RecursoAcessibilidadeVaga[];
   status?: string;
   empresaId?: string;
@@ -33,7 +33,7 @@ export interface EstatisticasVaga {
   [chave: string]: unknown;
 }
 
-function normalizar(data: Record<string, unknown>, params: FiltroVagas): ListaVagas {
+function normalizarListaVagas(data: Record<string, unknown>, params: FiltroVagas): ListaVagas {
   const vagas = (Array.isArray(data?.vagas) ? data.vagas : []) as Vaga[];
   return {
     vagas,
@@ -44,7 +44,7 @@ function normalizar(data: Record<string, unknown>, params: FiltroVagas): ListaVa
   };
 }
 
-/** Serviço de vagas — espelha exatamente as rotas `/vagas` do backend. */
+/** Serviço de vagas: espelha exatamente as rotas `/vagas` do backend. */
 export const vagasService = {
   async listar(filtro: FiltroVagas = {}): Promise<ListaVagas> {
     const params: Record<string, unknown> = { ...filtro };
@@ -54,48 +54,48 @@ export const vagasService = {
     } else {
       delete params.recursosAcessibilidade;
     }
-    const { data } = await api.get<Record<string, unknown>>("/vagas", { params });
-    return normalizar(data, filtro);
+    const { data } = await clienteApi.get<Record<string, unknown>>("/vagas", { params });
+    return normalizarListaVagas(data, filtro);
   },
 
   /** Vagas publicadas pela empresa autenticada. */
   async minhas(filtro: FiltroVagas = {}): Promise<ListaVagas> {
-    const { data } = await api.get<Record<string, unknown>>("/vagas/minhas", { params: filtro });
-    return normalizar(data, filtro);
+    const { data } = await clienteApi.get<Record<string, unknown>>("/vagas/minhas", { params: filtro });
+    return normalizarListaVagas(data, filtro);
   },
 
   async detalhar(id: string): Promise<Vaga> {
-    const { data } = await api.get<{ vaga: Vaga }>(`/vagas/${id}`);
+    const { data } = await clienteApi.get<{ vaga: Vaga }>(`/vagas/${id}`);
     return data.vaga;
   },
 
   async criar(payload: Record<string, unknown>): Promise<Vaga> {
-    const { data } = await api.post<{ vaga: Vaga }>("/vagas", payload);
+    const { data } = await clienteApi.post<{ vaga: Vaga }>("/vagas", payload);
     return data.vaga;
   },
 
   async atualizar(id: string, payload: Record<string, unknown>): Promise<Vaga> {
-    const { data } = await api.put<{ vaga: Vaga }>(`/vagas/${id}`, payload);
+    const { data } = await clienteApi.put<{ vaga: Vaga }>(`/vagas/${id}`, payload);
     return data.vaga;
   },
 
   async alterarStatus(id: string, status: string): Promise<Vaga> {
-    const { data } = await api.patch<{ vaga: Vaga }>(`/vagas/${id}/status`, { status });
+    const { data } = await clienteApi.patch<{ vaga: Vaga }>(`/vagas/${id}/status`, { status });
     return data.vaga;
   },
 
   async remover(id: string): Promise<void> {
-    await api.delete(`/vagas/${id}`);
+    await clienteApi.delete(`/vagas/${id}`);
   },
 
   async estatisticas(id: string): Promise<EstatisticasVaga> {
-    const { data } = await api.get<Record<string, unknown>>(`/vagas/${id}/estatisticas`);
+    const { data } = await clienteApi.get<Record<string, unknown>>(`/vagas/${id}/estatisticas`);
     return data as EstatisticasVaga;
   },
 
   /** Candidata o usuário autenticado (`POST /vagas/:vagaId/candidaturas`). */
   async candidatar(vagaId: string, mensagem?: string): Promise<Candidatura> {
-    const { data } = await api.post<{ candidatura: Candidatura }>(
+    const { data } = await clienteApi.post<{ candidatura: Candidatura }>(
       `/vagas/${vagaId}/candidaturas`,
       { mensagem: mensagem ?? null },
     );
@@ -104,7 +104,7 @@ export const vagasService = {
 
   /** Alterna a vaga na lista de favoritos do candidato. */
   async favoritar(vagaId: string): Promise<{ favoritada: boolean }> {
-    const { data } = await api.post<{ favoritada?: boolean; favorito?: boolean }>(
+    const { data } = await clienteApi.post<{ favoritada?: boolean; favorito?: boolean }>(
       `/vagas/${vagaId}/favoritar`,
     );
     return { favoritada: Boolean(data.favoritada ?? data.favorito) };

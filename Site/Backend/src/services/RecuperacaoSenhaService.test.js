@@ -1,17 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
- * `RecuperacaoSenhaService` (Auditoria do Site — item 1).
- *
- * Nenhum destes testes toca o banco real: `Usuario`/`CodigoRecuperacaoSenha`
- * e os serviços colaboradores (e-mail, refresh token, aviso de senha
- * alterada) são mockados — igual ao padrão de `PostagemService.test.js`.
- * `../utils/tokens.js` (hash/geração) NÃO é mockado de propósito: o que
- * este arquivo protege é justamente que os dois segredos (token opaco e
- * código de 6 dígitos) são gerados, hasheados e comparados de verdade.
+ * `RecuperacaoSenhaService` sem banco real: `Usuario`, `CodigoRecuperacaoSenha` e os serviços
+ * colaboradores (e-mail, refresh token, aviso de senha alterada) são mockados, como em
+ * `PostagemService.test.js`. `../utils/tokens.js` não é mockado de propósito: os testes garantem
+ * que os dois segredos (token opaco e código de 6 dígitos) são gerados, transformados em hash e
+ * comparados de verdade.
  */
 
-vi.mock("../config/database.js", () => ({
+vi.mock("../config/bancoDeDados.js", () => ({
     default: {
         transaction: vi.fn(async () => ({
             commit: vi.fn(),
@@ -36,10 +33,10 @@ vi.mock("../models/index.js", () => ({
 }));
 
 vi.mock("../utils/bcrypt.js", () => ({
-    hashPassword: vi.fn(async (senha) => `hash:${senha}`)
+    gerarHashSenha: vi.fn(async (senha) => `hash:${senha}`)
 }));
 
-vi.mock("./RefreshTokenService.js", () => ({
+vi.mock("./SessaoService.js", () => ({
     default: { revogarTodos: vi.fn() }
 }));
 
@@ -47,23 +44,28 @@ vi.mock("./EmailService.js", () => ({
     default: { disponivel: vi.fn(() => false), enviar: vi.fn() }
 }));
 
-vi.mock("./authService.js", () => ({
+vi.mock("./NotificacaoPushService.js", () => ({
+    default: { removerTodosDoUsuario: vi.fn() }
+}));
+
+vi.mock("./AutenticacaoService.js", () => ({
     default: { avisarSenhaAlterada: vi.fn() }
 }));
 
-vi.mock("../utils/emailTemplates.js", () => ({
-    templateRecuperacaoSenha: vi.fn(() => ({ assunto: "a", html: "h", texto: "t" }))
+vi.mock("../utils/modelosEmail.js", () => ({
+    modeloRecuperacaoSenha: vi.fn(() => ({ assunto: "a", html: "h", texto: "t" }))
 }));
 
-vi.mock("../utils/frontendUrl.js", () => ({
+vi.mock("../utils/urlFrontend.js", () => ({
     montarUrlFrontend: vi.fn((caminho, params) => `https://acesso.exemplo${caminho}?${new URLSearchParams(params).toString()}`)
 }));
 
 const { Usuario, CodigoRecuperacaoSenha } = await import("../models/index.js");
-const { default: RefreshTokenService } = await import("./RefreshTokenService.js");
-const { default: authService } = await import("./authService.js");
+const { default: SessaoService } = await import("./SessaoService.js");
+const { default: NotificacaoPushService } = await import("./NotificacaoPushService.js");
+const { default: AutenticacaoService } = await import("./AutenticacaoService.js");
 const { default: EmailService } = await import("./EmailService.js");
-const { montarUrlFrontend } = await import("../utils/frontendUrl.js");
+const { montarUrlFrontend } = await import("../utils/urlFrontend.js");
 const { hashToken } = await import("../utils/tokens.js");
 const { default: RecuperacaoSenhaService } = await import("./RecuperacaoSenhaService.js");
 
@@ -109,7 +111,7 @@ describe("RecuperacaoSenhaService.solicitar", () => {
         expect(dadosCriados.usuarioId).toBe(USUARIO.id);
         expect(dadosCriados.codigoHash).toEqual(expect.any(String));
         expect(dadosCriados.tokenHash).toEqual(expect.any(String));
-        // Dois segredos independentes — nunca o mesmo valor hasheado duas vezes.
+        // Dois segredos independentes, nunca o mesmo valor hasheado duas vezes.
         expect(dadosCriados.codigoHash).not.toBe(dadosCriados.tokenHash);
         expect(dadosCriados.codigoHash).toHaveLength(64); // SHA-256 em hex
         expect(dadosCriados.tokenHash).toHaveLength(64);
@@ -153,8 +155,9 @@ describe("RecuperacaoSenhaService.redefinir — mecanismo principal (token)", ()
             { utilizadoEm: expect.any(Date) },
             expect.objectContaining({ transaction: expect.anything() })
         );
-        expect(RefreshTokenService.revogarTodos).toHaveBeenCalledWith(USUARIO.id);
-        expect(authService.avisarSenhaAlterada).toHaveBeenCalledWith(USUARIO);
+        expect(SessaoService.revogarTodos).toHaveBeenCalledWith(USUARIO.id);
+        expect(NotificacaoPushService.removerTodosDoUsuario).toHaveBeenCalledWith(USUARIO.id);
+        expect(AutenticacaoService.avisarSenhaAlterada).toHaveBeenCalledWith(USUARIO);
         expect(resultado.mensagem).toMatch(/redefinida com sucesso/i);
     });
 
@@ -165,7 +168,7 @@ describe("RecuperacaoSenhaService.redefinir — mecanismo principal (token)", ()
             RecuperacaoSenhaService.redefinir({ token: "token-invalido", novaSenha: "Senha!Forte1" })
         ).rejects.toMatchObject({ statusCode: 400 });
 
-        expect(RefreshTokenService.revogarTodos).not.toHaveBeenCalled();
+        expect(SessaoService.revogarTodos).not.toHaveBeenCalled();
     });
 
     it("token aponta para usuário que não existe mais: erro genérico, não quebra", async () => {
@@ -179,8 +182,8 @@ describe("RecuperacaoSenhaService.redefinir — mecanismo principal (token)", ()
 
     it("não tem limite de tentativas por chamada (o espaço de busca do token torna isso irrelevante)", async () => {
         // Nenhuma verificação de `tentativas` deve acontecer no fluxo por
-        // token — mesmo um `registro` com `tentativas` alto (herdado da
-        // MESMA linha, se um dia o código tiver sido tentado antes) não pode
+        // token: mesmo um `registro` com `tentativas` alto (herdado da
+        // mesma linha, se um dia o código tiver sido tentado antes) não pode
         // bloquear o token, que é um segredo totalmente diferente.
         const registro = { usuarioId: USUARIO.id, tentativas: 999, update: vi.fn() };
         CodigoRecuperacaoSenha.findOne.mockResolvedValue(registro);
@@ -206,7 +209,8 @@ describe("RecuperacaoSenhaService.redefinir — fallback (código de 6 dígitos,
 
         expect(resultado.mensagem).toMatch(/redefinida com sucesso/i);
         expect(registro.update).toHaveBeenCalledWith({ utilizadoEm: expect.any(Date) }, expect.anything());
-        expect(RefreshTokenService.revogarTodos).toHaveBeenCalledWith(USUARIO.id);
+        expect(SessaoService.revogarTodos).toHaveBeenCalledWith(USUARIO.id);
+        expect(NotificacaoPushService.removerTodosDoUsuario).toHaveBeenCalledWith(USUARIO.id);
     });
 
     it("código incorreto: incrementa tentativas e não altera a senha", async () => {
@@ -219,7 +223,7 @@ describe("RecuperacaoSenhaService.redefinir — fallback (código de 6 dígitos,
         ).rejects.toMatchObject({ statusCode: 400 });
 
         expect(registro.increment).toHaveBeenCalledWith("tentativas");
-        expect(RefreshTokenService.revogarTodos).not.toHaveBeenCalled();
+        expect(SessaoService.revogarTodos).not.toHaveBeenCalled();
     });
 
     it("tentativas esgotadas: marca a linha como usada e recusa mesmo com o código certo", async () => {

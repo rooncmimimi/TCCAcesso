@@ -1,9 +1,7 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
-/**
- * Tabela: administradores
- */
+/** Tabela `administradores`: dados extras de uma conta com `tipoUsuario` administrador. */
 const Administrador = sequelize.define(
     "Administrador",
     {
@@ -14,7 +12,6 @@ const Administrador = sequelize.define(
         },
 
         usuarioId: {
-            field: "usuario_id",
             type: DataTypes.UUID,
             allowNull: false,
             unique: true
@@ -27,10 +24,7 @@ const Administrador = sequelize.define(
         }
     },
     {
-        tableName: "administradores",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "administradores"
     }
 );
 

@@ -2,19 +2,17 @@ import { Router } from "express";
 import PostagemController from "../controllers/PostagemController.js";
 import ComentarioController from "../controllers/ComentarioController.js";
 import CurtidaController from "../controllers/CurtidaController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { uploadAnexos, uploadImagem, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
-import { sugestaoDescricaoLimiter } from "../middlewares/rateLimitMiddleware.js";
+import { limiteSugestaoDescricao } from "../middlewares/limiteRequisicoesMiddleware.js";
 
-// Anexos de postagem vão para `postagens/<usuarioId>/<uuid>.ext`. O
-// postagemId ainda não existe neste ponto (a postagem é criada depois,
-// na mesma requisição), então agrupamos por autor.
+// Anexos de postagem vão para `postagens/<usuarioId>/<uuid>.ext`. O `postagemId` ainda não existe
+// aqui (a postagem é criada depois, na mesma requisição), então o agrupamento é por autor.
 //
-// `privado: true` (Fase 7): todo anexo novo vai para o bucket PRIVADO,
-// sem exceção — a autorização de exibição (garantirAcessoAPostagem) é
-// sempre checada antes de gerar uma URL assinada, nunca inferida da
-// privacidade do autor no momento do upload (que pode mudar depois).
+// `privado: true`: todo anexo novo vai para o bucket privado. A exibição sempre passa por
+// `garantirAcessoAPostagem` antes de gerar a URL assinada, em vez de depender da privacidade do
+// autor no momento do upload, que pode mudar.
 const processarAnexosPostagem = criarProcessadorArmazenamento({
     pasta: (req) => `postagens/${req.user.id}`,
     privado: true
@@ -29,26 +27,25 @@ import { validarCriacaoComentario } from "../validators/comentarioValidator.js";
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
-router.get("/", PostagemController.index);
+router.get("/", PostagemController.listar);
 
-// Linha do tempo unificada de um perfil (publicações + compartilhamentos,
-// intercalados por data) — auditoria do Site, item 6. Antes de `/:id" para
-// deixar claro que não colide (4 segmentos aqui contra 1 em `/:id`), mesmo
-// o Express já resolvendo isso sozinho pela contagem de segmentos.
+// Linha do tempo de um perfil (publicações e compartilhamentos intercalados por data). Fica antes
+// de `/:id` para deixar claro que não colide, embora o Express já distinga pela quantidade de
+// segmentos.
 router.get(
     "/usuario/:usuarioId/linha-do-tempo",
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     PostagemController.linhaDoTempoDoUsuario
 );
 
 router.get(
     "/:id",
     validarUuidParam("id"),
-    validationMiddleware,
-    PostagemController.show
+    validacaoMiddleware,
+    PostagemController.obter
 );
 
 router.post(
@@ -56,17 +53,17 @@ router.post(
     uploadAnexos.array("arquivos", 4),
     processarAnexosPostagem,
     validarCriacaoPostagem,
-    validationMiddleware,
-    PostagemController.store
+    validacaoMiddleware,
+    PostagemController.criar
 );
 
-// Sugestão de descrição por IA (OpenRouter) — stateless, nunca grava nada.
+// Sugestão de descrição por IA (OpenRouter): stateless, nunca grava nada.
 // Imagem enviada só para gerar o texto sugerido; a foto em si nunca é
 // salva aqui (a publicação/edição de anexo continua sendo os fluxos já
 // existentes, que exigem confirmação explícita do usuário).
 router.post(
     "/anexos/sugerir-descricao",
-    sugestaoDescricaoLimiter,
+    limiteSugestaoDescricao,
     uploadImagem.single("imagem"),
     PostagemController.sugerirDescricaoAnexo
 );
@@ -74,81 +71,80 @@ router.post(
 router.put(
     "/:id",
     validarAtualizacaoPostagem,
-    validationMiddleware,
-    PostagemController.update
+    validacaoMiddleware,
+    PostagemController.atualizar
 );
 
 router.delete(
     "/:id",
     validarUuidParam("id"),
-    validationMiddleware,
-    PostagemController.destroy
+    validacaoMiddleware,
+    PostagemController.excluir
 );
 
-// Edita só a descrição acessível de um anexo já publicado — nunca o
-// arquivo em si. Reaproveita a mesma autorização de dono de `update`.
+// Edita só a descrição acessível de um anexo já publicado, nunca o arquivo em si, com a mesma
+// autorização de dono de `atualizar`.
 router.patch(
     "/:id/anexos/:anexoId",
     validarUuidParam("id"),
     validarUuidParam("anexoId"),
     validarDescricaoAnexo,
-    validationMiddleware,
+    validacaoMiddleware,
     PostagemController.atualizarDescricaoAnexo
 );
 
-// Fase 7: única forma de obter uma URL utilizável de um anexo — sempre
-// gerada sob demanda, depois de `garantirAcessoAPostagem` aprovar (nunca
-// uma URL pública fixa). `postagemId` + `anexoId` juntos (não só o
-// anexoId) fecham o caminho de IDOR "trocar o anexoId por um de outra
-// postagem": só resolve se o anexo pertencer À POSTAGEM informada.
+// Única forma de obter uma URL utilizável de um anexo: gerada sob demanda depois de
+// `garantirAcessoAPostagem` aprovar, nunca uma URL pública fixa. Pedir `postagemId` e `anexoId`
+// juntos fecha o IDOR de trocar o `anexoId` pelo de outra postagem: só resolve se o anexo pertencer
+// à postagem informada.
 router.get(
     "/:id/anexos/:anexoId/url",
     validarUuidParam("id"),
     validarUuidParam("anexoId"),
-    validationMiddleware,
+    validacaoMiddleware,
     PostagemController.urlAnexo
 );
 
 // Mesma autorização do endpoint acima, mas gera uma URL assinada com
 // `Content-Disposition: attachment` (força download em vez de exibição
-// inline) — reautorizada do zero a cada clique, nunca reaproveita uma
+// inline); reautorizada do zero a cada clique, nunca reaproveita uma
 // URL de exibição já emitida antes.
 router.get(
     "/:id/anexos/:anexoId/download",
     validarUuidParam("id"),
     validarUuidParam("anexoId"),
-    validationMiddleware,
-    PostagemController.downloadAnexo
+    validacaoMiddleware,
+    PostagemController.baixarAnexo
 );
 
-/* ---------- Comentários ---------- */
+/* Comentários */
 router.get(
     "/:postagemId/comentarios",
     validarUuidParam("postagemId"),
-    validationMiddleware,
-    ComentarioController.index
+    validacaoMiddleware,
+    ComentarioController.listar
 );
 
 router.post(
     "/:postagemId/comentarios",
     validarCriacaoComentario,
-    validationMiddleware,
-    ComentarioController.store
+    validacaoMiddleware,
+    ComentarioController.criar
 );
 
-/* ---------- Curtidas ---------- */
+/* Curtidas */
 router.get(
     "/:postagemId/curtidas",
     validarUuidParam("postagemId"),
-    validationMiddleware,
-    CurtidaController.index
+    validacaoMiddleware,
+    CurtidaController.listar
 );
 
 router.post(
     "/:postagemId/curtidas",
     validarUuidParam("postagemId"),
-    validationMiddleware,
-    CurtidaController.toggle
+    validacaoMiddleware,
+    CurtidaController.alternar
 );
 
 export default router;

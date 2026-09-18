@@ -1,9 +1,13 @@
 import CandidaturaService from "../services/CandidaturaService.js";
 
+/**
+ * Candidaturas. Candidatar-se e a lista da empresa ficam em `/vagas/:vagaId/candidaturas`; as
+ * minhas, o detalhe, o status e o cancelamento, em `/candidaturas`.
+ */
 class CandidaturaController {
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
-            const candidatura = await CandidaturaService.create(
+            const candidatura = await CandidaturaService.criar(
                 req.params.vagaId,
                 req.body.mensagem,
                 req.user
@@ -42,9 +46,9 @@ class CandidaturaController {
         }
     }
 
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
-            const candidatura = await CandidaturaService.findById(
+            const candidatura = await CandidaturaService.buscarPorId(
                 req.params.id,
                 req.user
             );

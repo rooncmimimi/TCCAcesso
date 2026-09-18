@@ -1,8 +1,6 @@
-import api from "./api";
+import clienteApi from "./api";
 
-/* ==========================================================
-   Tipos devolvidos pelas rotas /denuncias e /admin/denuncias
-   ========================================================== */
+/* Tipos devolvidos pelas rotas /denuncias e /admin/denuncias */
 
 export type EntidadeDenunciaTipo =
   | "postagem"
@@ -52,12 +50,12 @@ export interface Denuncia {
   motivo: MotivoDenuncia;
   descricao: string | null;
   status: StatusDenuncia;
-  adminResponsavelId: string | null;
-  observacaoAdmin: string | null;
+  administradorResponsavelId: string | null;
+  observacaoAdministrador: string | null;
   resolvidoEm: string | null;
-  created_at: string;
+  criadoEm: string;
   denunciante?: { id: string; nome: string; email: string };
-  adminResponsavel?: { id: string; nome: string } | null;
+  administradorResponsavel?: { id: string; nome: string } | null;
   previaEntidade?: Record<string, unknown> | null;
 }
 
@@ -66,7 +64,7 @@ export interface MensagemContexto {
   conversaId: string;
   remetenteId: string;
   conteudo: string;
-  created_at: string;
+  criadoEm: string;
 }
 
 interface Envelope {
@@ -80,7 +78,7 @@ async function listar<T>(
   chave: string,
   params: Record<string, unknown>,
 ): Promise<Envelope & Paginacao & { itens: T[] }> {
-  const { data } = await api.get<Envelope>(url, { params });
+  const { data } = await clienteApi.get<Envelope>(url, { params });
   const itens = (Array.isArray(data?.[chave]) ? data[chave] : []) as T[];
 
   return {
@@ -94,22 +92,18 @@ async function listar<T>(
   };
 }
 
-/* ==========================================================
-   Criação (qualquer usuário autenticado)
-   ========================================================== */
+/* Criação (qualquer usuário autenticado) */
 export async function criarDenuncia(payload: {
   entidadeTipo: EntidadeDenunciaTipo;
   entidadeId: string;
   motivo: MotivoDenuncia;
   descricao?: string;
 }): Promise<Denuncia> {
-  const { data } = await api.post<{ denuncia: Denuncia }>("/denuncias", payload);
+  const { data } = await clienteApi.post<{ denuncia: Denuncia }>("/denuncias", payload);
   return data.denuncia;
 }
 
-/* ==========================================================
-   Painel administrativo
-   ========================================================== */
+/* Painel administrativo */
 export async function listarDenuncias(
   params: {
     page?: number;
@@ -125,12 +119,12 @@ export async function listarDenuncias(
 }
 
 export async function obterDenuncia(id: string): Promise<Denuncia> {
-  const { data } = await api.get<{ denuncia: Denuncia }>(`/admin/denuncias/${id}`);
+  const { data } = await clienteApi.get<{ denuncia: Denuncia }>(`/admin/denuncias/${id}`);
   return data.denuncia;
 }
 
 export async function atribuirDenuncia(id: string): Promise<Denuncia> {
-  const { data } = await api.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/atribuir`);
+  const { data } = await clienteApi.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/atribuir`);
   return data.denuncia;
 }
 
@@ -138,30 +132,31 @@ export async function resolverDenuncia(
   id: string,
   payload: { observacao?: string; acao?: string },
 ): Promise<Denuncia> {
-  const { data } = await api.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/resolver`, payload);
+  const { data } = await clienteApi.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/resolver`, payload);
   return data.denuncia;
 }
 
 export async function rejeitarDenuncia(id: string, observacao?: string): Promise<Denuncia> {
-  const { data } = await api.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/rejeitar`, {
+  const { data } = await clienteApi.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/rejeitar`, {
     observacao,
   });
   return data.denuncia;
 }
 
 export async function arquivarDenuncia(id: string, observacao?: string): Promise<Denuncia> {
-  const { data } = await api.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/arquivar`, {
+  const { data } = await clienteApi.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/arquivar`, {
     observacao,
   });
   return data.denuncia;
 }
 
+/** Mensagens antes e depois da mensagem denunciada, para a moderação entender a conversa. */
 export async function obterContextoMensagem(id: string): Promise<{
   mensagemDenunciada: MensagemContexto;
   antes: MensagemContexto[];
   depois: MensagemContexto[];
 }> {
-  const { data } = await api.get<{
+  const { data } = await clienteApi.get<{
     mensagemDenunciada: MensagemContexto;
     antes: MensagemContexto[];
     depois: MensagemContexto[];

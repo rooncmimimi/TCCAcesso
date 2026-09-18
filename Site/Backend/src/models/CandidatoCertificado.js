@@ -1,9 +1,7 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
-/**
- * Tabela: candidato_certificados (migration 0004)
- */
+/** Tabela `candidato_certificados`: certificados informados pelo candidato. */
 const CandidatoCertificado = sequelize.define(
     "CandidatoCertificado",
     {
@@ -12,39 +10,35 @@ const CandidatoCertificado = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+
         candidatoId: {
-            field: "candidato_id",
             type: DataTypes.UUID,
             allowNull: false
         },
+
         titulo: {
             type: DataTypes.STRING(180),
             allowNull: false
         },
+
         instituicao: {
             type: DataTypes.STRING(180)
         },
+
         emitidoEm: {
-            field: "emitido_em",
             type: DataTypes.DATEONLY
         },
+
         expiraEm: {
-            field: "expira_em",
             type: DataTypes.DATEONLY
         },
+
         credencialUrl: {
-            field: "credencial_url",
             type: DataTypes.STRING(500)
-        },
-        arquivo: {
-            type: DataTypes.TEXT
         }
     },
     {
-        tableName: "candidato_certificados",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "candidato_certificados"
     }
 );
 

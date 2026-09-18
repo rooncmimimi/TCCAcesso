@@ -17,25 +17,25 @@ import type {
 } from "@/types";
 
 /** Espelham exatamente os ENUMs validados pelo backend (`Site/Backend/src/validators/vagaValidator.js`). */
-export const MODALIDADES: ModalidadeVaga[] = ["Presencial", "Hibrido", "Remoto"];
-export const CONTRATOS: ContratoVaga[] = ["CLT", "PJ", "Estagio", "JovemAprendiz", "Temporario"];
-export const STATUS_VAGA: StatusVaga[] = ["Aberta", "Pausada", "Encerrada"];
+export const MODALIDADES: ModalidadeVaga[] = ["presencial", "hibrido", "remoto"];
+export const CONTRATOS: ContratoVaga[] = ["clt", "pj", "estagio", "jovem_aprendiz", "temporario"];
+export const STATUS_VAGA: StatusVaga[] = ["aberta", "pausada", "encerrada"];
 
 export const ROTULO_CONTRATO: Record<ContratoVaga, string> = {
-  CLT: "CLT",
-  PJ: "PJ",
-  Estagio: "Estágio",
-  JovemAprendiz: "Jovem aprendiz",
-  Temporario: "Temporário",
+  clt: "CLT",
+  pj: "PJ",
+  estagio: "Estágio",
+  jovem_aprendiz: "Jovem aprendiz",
+  temporario: "Temporário",
 };
 
 export const ROTULO_STATUS_VAGA: Record<StatusVaga, string> = {
-  Aberta: "Aberta",
-  Pausada: "Arquivada",
-  Encerrada: "Encerrada",
+  aberta: "Aberta",
+  pausada: "Arquivada",
+  encerrada: "Encerrada",
 };
 
-/** Público-alvo da vaga — coexiste com `exclusivaPcd` (migration 0027). */
+/** Público-alvo da vaga: é o único campo que define se ela é exclusiva para PCD. */
 export const PUBLICO_ALVO: PublicoAlvoVaga[] = ["geral", "pcd", "cinquenta_mais", "pcd_cinquenta_mais"];
 
 export const ROTULO_PUBLICO_ALVO: Record<PublicoAlvoVaga, string> = {
@@ -54,7 +54,7 @@ export const ROTULO_PUBLICO_ALVO_CURTO: Record<PublicoAlvoVaga, string> = {
 };
 
 /**
- * Recursos de acessibilidade da vaga — lista fechada (não texto livre).
+ * Recursos de acessibilidade da vaga: lista fechada (não texto livre).
  * Espelha `RECURSOS_ACESSIBILIDADE` de `Site/Backend/src/validators/vagaValidator.js`.
  */
 export const RECURSOS_ACESSIBILIDADE: RecursoAcessibilidadeVaga[] = [

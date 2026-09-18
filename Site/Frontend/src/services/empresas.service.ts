@@ -1,4 +1,4 @@
-import api from "./api";
+import clienteApi from "./api";
 import { buscarPaginado, type Paginado } from "./http";
 import type { Empresa, ResumoSeguidores, SugestaoEmpresa, SugestaoPerfil, Vaga } from "@/types";
 
@@ -9,28 +9,28 @@ export const empresasService = {
   },
 
   async parceiras(): Promise<Empresa[]> {
-    const { data } = await api.get<{ empresas: Empresa[] }>("/empresas/parceiras");
+    const { data } = await clienteApi.get<{ empresas: Empresa[] }>("/empresas/parceiras");
     return data.empresas ?? [];
   },
 
   async minhaEmpresa(): Promise<Empresa> {
-    const { data } = await api.get<{ empresa: Empresa }>("/empresas/me");
+    const { data } = await clienteApi.get<{ empresa: Empresa }>("/empresas/me");
     return data.empresa;
   },
 
   async detalhar(id: string): Promise<Empresa> {
-    const { data } = await api.get<{ empresa: Empresa }>(`/empresas/${id}`);
+    const { data } = await clienteApi.get<{ empresa: Empresa }>(`/empresas/${id}`);
     return data.empresa;
   },
 
-  /** Perfil público da empresa por usuarioId — usado para abrir o perfil a partir do feed. */
+  /** Perfil público da empresa por usuarioId: usado para abrir o perfil a partir do feed. */
   async porUsuario(usuarioId: string): Promise<Empresa> {
-    const { data } = await api.get<{ empresa: Empresa }>(`/empresas/usuario/${usuarioId}`);
+    const { data } = await clienteApi.get<{ empresa: Empresa }>(`/empresas/usuario/${usuarioId}`);
     return data.empresa;
   },
 
   async atualizar(id: string, payload: Record<string, unknown>): Promise<Empresa> {
-    const { data } = await api.put<{ empresa: Empresa }>(`/empresas/${id}`, payload);
+    const { data } = await clienteApi.put<{ empresa: Empresa }>(`/empresas/${id}`, payload);
     return data.empresa;
   },
 
@@ -38,7 +38,7 @@ export const empresasService = {
     const form = new FormData();
     form.append("logo", arquivo);
 
-    const { data } = await api.patch<{ empresa: Empresa }>(`/empresas/${id}/logo`, form, {
+    const { data } = await clienteApi.patch<{ empresa: Empresa }>(`/empresas/${id}/logo`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.empresa;
@@ -48,45 +48,45 @@ export const empresasService = {
     const form = new FormData();
     form.append("capa", arquivo);
 
-    const { data } = await api.patch<{ empresa: Empresa }>(`/empresas/${id}/capa`, form, {
+    const { data } = await clienteApi.patch<{ empresa: Empresa }>(`/empresas/${id}/capa`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.empresa;
   },
 
   async vagasDaEmpresa(
-    params: { page?: number; limit?: number; status?: "Aberta" | "Pausada" | "Encerrada" } = {},
+    params: { page?: number; limit?: number; status?: "aberta" | "pausada" | "encerrada" } = {},
   ): Promise<Paginado<Vaga>> {
     return buscarPaginado<Vaga>("/vagas/minhas", "vagas", params);
   },
 
   async seguindo(): Promise<Empresa[]> {
-    const { data } = await api.get<{ empresas: Empresa[] }>("/empresas/seguindo");
+    const { data } = await clienteApi.get<{ empresas: Empresa[] }>("/empresas/seguindo");
     return data.empresas ?? [];
   },
 };
 
 /** Seguir usuários e empresas. */
 export const seguidoresService = {
-  /** Pessoas para seguir — cada sugestão vem com um `motivo` explicável (cidade, área, interações, conexões em comum). */
+  /** Pessoas para seguir: cada sugestão vem com um `motivo` explicável (cidade, área, interações, conexões em comum). */
   async sugestoes(limit = 8): Promise<SugestaoPerfil[]> {
-    const { data } = await api.get<{ sugestoes: SugestaoPerfil[] }>("/seguir/sugestoes", { params: { limit } });
+    const { data } = await clienteApi.get<{ sugestoes: SugestaoPerfil[] }>("/seguir/sugestoes", { params: { limit } });
     return data.sugestoes ?? [];
   },
 
-  /** Empresas para seguir — só relevante para candidatos; sempre traz `motivo`. */
+  /** Empresas para seguir: só relevante para candidatos; sempre traz `motivo`. */
   async sugestoesEmpresas(limit = 8): Promise<SugestaoEmpresa[]> {
-    const { data } = await api.get<{ sugestoes: SugestaoEmpresa[] }>("/seguir/sugestoes/empresas", { params: { limit } });
+    const { data } = await clienteApi.get<{ sugestoes: SugestaoEmpresa[] }>("/seguir/sugestoes/empresas", { params: { limit } });
     return data.sugestoes ?? [];
   },
 
   async alternarUsuario(usuarioId: string): Promise<{ seguindo: boolean }> {
-    const { data } = await api.post<{ seguindo: boolean }>(`/seguir/usuarios/${usuarioId}`);
+    const { data } = await clienteApi.post<{ seguindo: boolean }>(`/seguir/usuarios/${usuarioId}`);
     return { seguindo: Boolean(data.seguindo) };
   },
 
   async alternarEmpresa(empresaId: string): Promise<{ seguindo: boolean }> {
-    const { data } = await api.post<{ seguindo: boolean }>(`/seguir/empresas/${empresaId}`);
+    const { data } = await clienteApi.post<{ seguindo: boolean }>(`/seguir/empresas/${empresaId}`);
     return { seguindo: Boolean(data.seguindo) };
   },
 
@@ -99,7 +99,7 @@ export const seguidoresService = {
   },
 
   async resumo(usuarioId: string): Promise<ResumoSeguidores> {
-    const { data } = await api.get<ResumoSeguidores & { sucesso: boolean }>(`/seguir/resumo/${usuarioId}`);
+    const { data } = await clienteApi.get<ResumoSeguidores & { sucesso: boolean }>(`/seguir/resumo/${usuarioId}`);
     return {
       totalSeguidores: data.totalSeguidores ?? 0,
       totalSeguindo: data.totalSeguindo ?? 0,
@@ -112,14 +112,14 @@ export const seguidoresService = {
   },
 
   /**
-   * "Seguir" um perfil privado — cria uma solicitação em vez de seguir na
+   * "Seguir" um perfil privado: cria uma solicitação em vez de seguir na
    * hora. Se o alvo for público (perfil mudou entre um clique e outro), o
    * backend segue direto e devolve `solicitacaoCriada: false`.
    */
   async solicitar(
     destinatarioId: string,
   ): Promise<{ seguindo: boolean; solicitacaoCriada: boolean; solicitacaoPendente: boolean }> {
-    const { data } = await api.post<{
+    const { data } = await clienteApi.post<{
       seguindo?: boolean;
       solicitacaoCriada?: boolean;
       solicitacaoPendente?: boolean;
@@ -134,22 +134,22 @@ export const seguidoresService = {
 
   /** Desiste da própria solicitação pendente (botão "Solicitação enviada"). */
   async cancelarSolicitacao(destinatarioId: string): Promise<void> {
-    await api.delete(`/seguir/solicitacoes/${destinatarioId}`);
+    await clienteApi.delete(`/seguir/solicitacoes/${destinatarioId}`);
   },
 
-  /** Aceita uma solicitação recebida — vira seguidor; não segue de volta automaticamente. */
+  /** Aceita uma solicitação recebida: vira seguidor; não segue de volta automaticamente. */
   async aceitarSolicitacao(solicitacaoId: string): Promise<void> {
-    await api.post(`/seguir/solicitacoes/${solicitacaoId}/aceitar`);
+    await clienteApi.post(`/seguir/solicitacoes/${solicitacaoId}/aceitar`);
   },
 
-  /** Recusa uma solicitação recebida — nenhum vínculo é criado. */
+  /** Recusa uma solicitação recebida: nenhum vínculo é criado. */
   async recusarSolicitacao(solicitacaoId: string): Promise<void> {
-    await api.post(`/seguir/solicitacoes/${solicitacaoId}/recusar`);
+    await clienteApi.post(`/seguir/solicitacoes/${solicitacaoId}/recusar`);
   },
 
   /** Mesmo formato de `ResumoSeguidores` para reaproveitar o `SeguirButton` também em empresas. */
   async resumoEmpresa(empresaId: string): Promise<ResumoSeguidores> {
-    const { data } = await api.get<{ totalSeguidores: number; seguindoEstaEmpresa: boolean }>(
+    const { data } = await clienteApi.get<{ totalSeguidores: number; seguindoEstaEmpresa: boolean }>(
       `/seguir/resumo/empresas/${empresaId}`,
     );
     return {

@@ -1,10 +1,10 @@
 import DenunciaService from "../services/DenunciaService.js";
+import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
-const contextoDa = (req) => ({
-    ip: req.ip,
-    userAgent: req.headers["user-agent"]
-});
-
+/**
+ * Denúncias: `POST /denuncias` para qualquer usuário autenticado e a fila de moderação em
+ * `/admin/denuncias`.
+ */
 class DenunciaController {
     async criar(req, res, next) {
         try {
@@ -38,7 +38,7 @@ class DenunciaController {
             const contexto = await DenunciaService.obterContextoMensagem(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...contexto });
         } catch (erro) {
@@ -51,7 +51,7 @@ class DenunciaController {
             const denuncia = await DenunciaService.atribuir(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, denuncia });
         } catch (erro) {
@@ -65,7 +65,7 @@ class DenunciaController {
                 req.params.id,
                 req.body,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, denuncia });
         } catch (erro) {
@@ -79,7 +79,7 @@ class DenunciaController {
                 req.params.id,
                 req.body,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, denuncia });
         } catch (erro) {
@@ -93,7 +93,7 @@ class DenunciaController {
                 req.params.id,
                 req.body,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, denuncia });
         } catch (erro) {

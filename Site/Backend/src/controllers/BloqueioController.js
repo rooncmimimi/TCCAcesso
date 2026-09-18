@@ -1,5 +1,9 @@
 import BloqueioService from "../services/BloqueioService.js";
 
+/**
+ * Bloqueios e privacidade do perfil, montados em `/usuarios`: `/usuarios/bloqueados`,
+ * `/usuarios/privacidade` e `/usuarios/:usuarioId/bloquear`.
+ */
 class BloqueioController {
     async listar(req, res, next) {
         try {

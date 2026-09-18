@@ -1,10 +1,9 @@
 export * from "./api";
-export { default as api } from "./api";
+export { default as clienteApi } from "./api";
 export * from "./http";
-export { default as authService } from "./auth.service";
+export { default as autenticacaoService } from "./autenticacao.service";
 export { default as vagasService } from "./vagas.service";
 export { default as postagensService } from "./postagens.service";
-export { default as uploadsService, urlArquivo } from "./uploads.service";
 export { default as perfilService } from "./perfil.service";
 export { default as empresasService, seguidoresService } from "./empresas.service";
 export { default as mensagensService } from "./mensagens.service";

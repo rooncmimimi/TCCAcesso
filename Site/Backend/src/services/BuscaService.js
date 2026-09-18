@@ -8,9 +8,9 @@ import {
     Postagem,
     PostagemAnexo
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao } from "../utils/pagination.js";
-import { ehAdministrador } from "../utils/authorization.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao } from "../utils/paginacao.js";
+import { ehAdministrador } from "../utils/autorizacao.js";
 import BloqueioService from "./BloqueioService.js";
 import SeguidorService from "./SeguidorService.js";
 import { assinarMidiaDasPostagens } from "./PostagemService.js";
@@ -30,7 +30,7 @@ class BuscaService {
         const texto = String(termo || "").trim();
 
         if (texto.length < 2) {
-            throw ApiError.badRequest(
+            throw ErroApi.requisicaoInvalida(
                 "Informe ao menos 2 caracteres para pesquisar."
             );
         }
@@ -40,7 +40,7 @@ class BuscaService {
 
     /**
      * Remove acentos e caixa alta, replicando em JS a mesma normalização do
-     * `acesso_normalizar()` do Postgres (lower + unaccent) — necessário para
+     * `acesso_normalizar()` do Postgres (lower + unaccent): necessário para
      * o termo digitado casar com o valor já normalizado pela função no lado
      * da coluna, permitindo que os índices GIN trigram existentes sejam
      * usados (ver migrations 0002/0003/0013).
@@ -119,10 +119,10 @@ class BuscaService {
     async buscarVagas(termo, limite, offset) {
         const { rows, count } = await Vaga.findAndCountAll({
             where: {
-                status: "Aberta",
+                status: "aberta",
                 oculta: false,
-                // Fase 9: vaga de empresa suspensa/reprovada/pendente não
-                // aparece na busca — mesmo filtro de VagaService.findAll.
+                // Vaga de empresa suspensa, reprovada ou pendente não aparece na busca, com o mesmo
+                // filtro de `VagaService.listar`.
                 "$empresa.status_aprovacao$": "aprovada",
                 [Op.or]: [
                     this.like("Vaga.titulo", termo),
@@ -140,18 +140,16 @@ class BuscaService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return { total: count, itens: rows };
     }
 
     /**
-     * `solicitante` (Fase 3): postagens de autor com perfil privado só
-     * entram no resultado se o solicitante for o próprio autor, admin, ou
-     * já seguidor aprovado — mesmo filtro usado no feed geral
-     * (`PostagemService.findAll`), pra busca não virar um jeito alternativo
-     * de contornar a privacidade.
+     * Postagens de autor com perfil privado só entram no resultado para o próprio autor,
+     * administradores ou seguidores aprovados, com o mesmo filtro do feed
+     * (`PostagemService.listar`), para a busca não virar um jeito de contornar a privacidade.
      */
     async buscarPostagens(termo, limite, offset, solicitante) {
         const where = {
@@ -162,8 +160,8 @@ class BuscaService {
         if (solicitante && !ehAdministrador(solicitante)) {
             const [idsSeguidos, idsBloqueados] = await Promise.all([
                 SeguidorService.idsSeguidos(solicitante.id),
-                // Fase 9 (Bloco 2): mesma exclusão de PostagemService.findAll
-                // — busca nunca é um jeito alternativo de contornar bloqueio.
+                // Mesma exclusão de `PostagemService.listar`: a busca nunca é um jeito de contornar
+                // bloqueio.
                 BloqueioService.idsRelacionados(solicitante.id)
             ]);
 
@@ -190,25 +188,23 @@ class BuscaService {
                     as: "usuario",
                     attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
                 },
-                // Fase 7: sem isso, `assinarMidiaDasPostagens` não acha o
-                // anexo correspondente a `imagem` e resolve a privacidade
-                // errado (público), quebrando a URL de qualquer postagem
-                // enviada depois desta fase.
+                // Sem os anexos aqui, `assinarMidiaDasPostagens` não teria o que assinar e as
+                // postagens com mídia viriam com o caminho cru, que não abre o arquivo.
                 {
                     model: PostagemAnexo,
                     as: "anexos",
-                    attributes: ["id", "url", "privado"],
+                    attributes: ["id", "url"],
                     separate: true
                 }
             ],
             limit: limite,
             offset,
             distinct: true,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
-        // Fase 7: já filtrado acima (equivalente a garantirAcessoAPostagem)
-        // — resolve a URL de exibição só depois, nunca antes.
+        // O acesso já foi filtrado acima (equivalente a `garantirAcessoAPostagem`); só então as
+        // URLs de exibição são resolvidas.
         const planas = rows.map((linha) => linha.toJSON());
 
         await assinarMidiaDasPostagens(planas);

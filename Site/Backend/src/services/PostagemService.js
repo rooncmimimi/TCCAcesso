@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import env from "../config/env.js";
 import {
     Postagem,
@@ -11,37 +11,34 @@ import {
     Compartilhamento,
     UsuarioSeguido
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, garantirEmpresaAprovadaSeForEmpresa, ehAdministrador } from "../utils/authorization.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirDono, garantirEmpresaAprovadaSeForEmpresa, ehAdministrador } from "../utils/autorizacao.js";
 import NotificacaoService from "./NotificacaoService.js";
-import AdminAuditService from "./AdminAuditService.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import SeguidorService from "./SeguidorService.js";
 import BloqueioService from "./BloqueioService.js";
-import UploadService from "./UploadService.js";
+import ArmazenamentoService from "./ArmazenamentoService.js";
 import { emitirFeed } from "../realtime/socket.js";
 import { urlPublica, tipoDoArquivo } from "../middlewares/uploadMiddleware.js";
-import { resolverUrlExibicao, gerarUrlAssinada, gerarUrlsAssinadas } from "../utils/supabaseStorage.js";
+import { gerarUrlAssinada, gerarUrlsAssinadas } from "../utils/supabaseStorage.js";
+import { incluirAutor } from "../utils/inclusoes.js";
 
 /**
- * Etapa 4 (auditoria de robustez do upload) — compensação explícita:
- * Supabase Storage e PostgreSQL não compartilham uma transaction, então
- * uma falha em `Postagem.create`/`PostagemAnexo.bulkCreate` DEPOIS que
- * `processarAnexosPostagem` (uploadMiddleware.js) já enviou os anexos ao
- * Storage deixaria esses arquivos órfãos — nenhuma linha no banco chega a
- * referenciá-los, já que a transaction inteira foi desfeita. Só é chamada
- * quando `arquivos` não está vazio; percorre exatamente os arquivos desta
- * requisição (nunca de outra postagem/usuário). Reaproveita
- * `UploadService.removerArquivoFisico`, o mesmo mecanismo já usado em
- * troca de foto/capa/logo/currículo — não um segundo mecanismo de limpeza.
- * Best-effort: uma falha ao limpar nunca substitui o erro original.
+ * Compensação explícita: o Supabase Storage e o PostgreSQL não compartilham transação, então, se
+ * `Postagem.create` ou `PostagemAnexo.bulkCreate` falharem depois que `processarAnexosPostagem`
+ * (`uploadMiddleware.js`) enviou os anexos, esses arquivos ficariam órfãos, sem linha no banco.
+ *
+ * Só roda quando há `arquivos` e percorre exatamente os desta requisição. Usa
+ * `ArmazenamentoService.removerArquivoFisico`, o mesmo mecanismo da troca de foto, capa, logo e currículo.
+ * Uma falha na limpeza nunca substitui o erro original.
  */
 async function limparAnexosDaOperacao(arquivos) {
     if (!arquivos || arquivos.length === 0) return;
 
     const resultados = await Promise.allSettled(
         arquivos.map((arquivo) =>
-            UploadService.removerArquivoFisico(urlPublica(arquivo), { privado: true })
+            ArmazenamentoService.removerArquivoFisico(urlPublica(arquivo), { privado: true })
         )
     );
 
@@ -63,23 +60,19 @@ async function limparAnexosDaOperacao(arquivos) {
 }
 
 /**
- * Autor da postagem inclui `perfilPublico`/`tipoUsuario` só para a
- * checagem de acesso a conteúdo privado (Fase 3) — nunca exposto na
- * resposta (o `attributes` de `incluirAutor()` já limita o que sai).
- * Escopo: só usuário/candidato — empresa mantém o comportamento de
- * sempre visível (seguidor de empresa é outra tabela, `EmpresaSeguida`,
- * sem conceito de solicitação/aprovação nesta fase).
+ * O autor inclui `perfilPublico` e `tipoUsuario` só para a checagem de acesso a conteúdo privado;
+ * esses campos não saem na resposta (o `attributes` de `incluirAutor()` limita o que sai). Vale só
+ * para usuário e candidato: postagens de empresa ficam sempre visíveis, porque seguir empresa é
+ * outra tabela (`EmpresaSeguida`), sem solicitação nem aprovação.
  */
 export async function garantirAcessoAPostagem(postagem, solicitante) {
     const usuarioId = postagem.usuarioId;
 
-    // Fase 9 (Bloco 2): bloqueio tem prioridade sobre QUALQUER outra regra
-    // de visibilidade — mesmo autor público ou empresa (que abaixo saem
-    // sem mais checagem nenhuma) continua indisponível para quem tem
-    // bloqueio com ele, nos dois sentidos. Administrador nunca é afetado
-    // por bloqueio (mesma convenção de `BloqueioService.garantirNaoBloqueado`).
-    // Mensagem genérica de propósito — nunca revela que o motivo é bloqueio,
-    // mesmo padrão já usado em `BloqueioService`.
+    // Bloqueio tem prioridade sobre qualquer outra regra de visibilidade: mesmo autor público ou
+    // empresa, que abaixo passam sem outra checagem, fica indisponível para quem tem bloqueio com
+    // ele, em qualquer sentido. Administrador não é afetado por bloqueio, como em
+    // `BloqueioService.garantirNaoBloqueado`. A mensagem é genérica e não revela que o motivo é
+    // bloqueio.
     if (
         solicitante &&
         String(solicitante.id) !== String(usuarioId) &&
@@ -91,7 +84,7 @@ export async function garantirAcessoAPostagem(postagem, solicitante) {
         );
 
         if (bloqueado) {
-            throw ApiError.forbidden("Esta publicação não está disponível.");
+            throw ErroApi.acessoNegado("Esta publicação não está disponível.");
         }
     }
 
@@ -106,31 +99,25 @@ export async function garantirAcessoAPostagem(postagem, solicitante) {
     const autorizado = await SeguidorService.podeVerConteudoPrivado(usuarioId, solicitante);
 
     if (!autorizado) {
-        throw ApiError.forbidden(
+        throw ErroApi.acessoNegado(
             "Este perfil é privado. Siga para ver as publicações."
         );
     }
 }
 
 /**
- * Fase 7 — substitui os CAMINHOS crus de `imagem`/`anexos[].url` por URLs
- * de exibição, SEMPRE depois de `garantirAcessoAPostagem` (ou o filtro
- * SQL equivalente de `findAll`) já ter aprovado cada postagem recebida
- * aqui — nunca chamar isto antes da autorização. Reaproveitada por todo
- * lugar que serializa postagem pra fora (`PostagemService.decorar`,
- * `CompartilhamentoService`, `BuscaService`, `PublicoService.home`) —
- * nunca duplicar esta lógica.
+ * Troca os caminhos crus de `anexos[].url` por URLs assinadas, sempre depois de
+ * `garantirAcessoAPostagem` (ou do filtro SQL equivalente do `findAll`) aprovar cada postagem;
+ * nunca chame antes da autorização. É usada por todo lugar que serializa postagens
+ * (`PostagemService.decorar`, `CompartilhamentoService`, `BuscaService`,
+ * `PublicoService.paginaInicial`).
  *
- * Anexo com `privado=false` (legado, ou caminho `/uploads/`/URL completa
- * antiga) resolve de graça via `resolverUrlExibicao` (bucket público,
- * sem chamada de rede). Anexo com `privado=true` (todo upload novo desde
- * a Fase 7) exige URL assinada — geradas em LOTE, agrupadas por TTL, no
- * máximo 2 chamadas ao Supabase por página inteira (uma pra autores
- * público/empresa — TTL longo, outra pra autores privados — TTL curto),
- * nunca uma chamada por imagem.
+ * Todo anexo fica no bucket privado, então a URL é sempre assinada. As assinaturas saem em lote,
+ * agrupadas por validade: no máximo 2 chamadas ao Supabase por página (autores públicos e empresas
+ * com validade longa, autores privados com validade curta), nunca uma por imagem.
  *
- * Muta e devolve a MESMA lista recebida (objetos já "planos", pós
- * `.toJSON()` — nunca instâncias do Sequelize).
+ * Altera e devolve a mesma lista recebida (objetos já planos, depois de `.toJSON()`, nunca
+ * instâncias do Sequelize).
  */
 export async function assinarMidiaDasPostagens(postagensPlanas) {
     const lista = Array.isArray(postagensPlanas) ? postagensPlanas : [postagensPlanas];
@@ -159,7 +146,7 @@ export async function assinarMidiaDasPostagens(postagensPlanas) {
             : env.storage.signedUrlExpiresSeconds;
     };
 
-    // Agrupa por TTL (não por postagem/anexo) — uma chamada em lote por
+    // Agrupa por TTL (não por postagem/anexo): uma chamada em lote por
     // grupo, independente de quantas postagens/anexos existirem na página.
     const grupos = new Map();
 
@@ -177,34 +164,12 @@ export async function assinarMidiaDasPostagens(postagensPlanas) {
         const ttl = ttlDoAutor(postagem.usuarioId);
         const anexos = Array.isArray(postagem.anexos) ? postagem.anexos : [];
 
-        // `imagem` (campo legado) nunca tem privacidade própria — é
-        // sempre uma cópia do caminho de um anexo já existente (mesmo
-        // array de arquivos, mesma requisição, nunca editado depois — ver
-        // migration 0039). Resolve pelo anexo cujo caminho bate.
-        if (postagem.imagem) {
-            const anexoCorrespondente = anexos.find(
-                (anexo) => anexo.url === postagem.imagem
-            );
-
-            if (anexoCorrespondente?.privado) {
-                registrarParaAssinar(postagem.imagem, ttl, (url) => {
-                    postagem.imagem = url;
-                });
-            } else {
-                postagem.imagem = resolverUrlExibicao(postagem.imagem);
-            }
-        }
-
         for (const anexo of anexos) {
             if (!anexo.url) continue;
 
-            if (anexo.privado) {
-                registrarParaAssinar(anexo.url, ttl, (url) => {
-                    anexo.url = url;
-                });
-            } else {
-                anexo.url = resolverUrlExibicao(anexo.url);
-            }
+            registrarParaAssinar(anexo.url, ttl, (url) => {
+                anexo.url = url;
+            });
         }
     }
 
@@ -222,18 +187,6 @@ export async function assinarMidiaDasPostagens(postagensPlanas) {
     return lista;
 }
 
-/**
- * O Sequelize muta os objetos de `include` (grava associação/alias neles),
- * portanto o MESMO objeto não pode ser reutilizado em níveis diferentes de
- * aninhamento — isso gerava SQL inválido ("missing FROM-clause entry").
- * Por isso cada include é criado por uma fábrica que devolve um objeto novo.
- */
-const incluirAutor = () => ({
-    model: Usuario,
-    as: "usuario",
-    attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
-});
-
 const incluirAnexos = () => ({
     model: PostagemAnexo,
     as: "anexos",
@@ -241,18 +194,22 @@ const incluirAnexos = () => ({
     order: [["ordem", "ASC"]]
 });
 
+/**
+ * Postagens do feed: listagem com as regras de visibilidade (perfil privado, bloqueio, empresa não
+ * aprovada), linha do tempo, criação com anexos, edição, exclusão, curtidas e comentários.
+ */
 class PostagemService {
     async buscarAtiva(id, transaction, solicitante) {
         const postagem = await Postagem.findByPk(id, { transaction });
 
         if (!postagem || !postagem.ativo) {
-            throw ApiError.notFound("Postagem não encontrada.");
+            throw ErroApi.naoEncontrado("Postagem não encontrada.");
         }
 
         if (solicitante !== undefined) {
             // Ponto único usado por editar, remover, curtir, comentar e
-            // gerar URL de anexo — empresa pendente/reprovada/suspensa não
-            // interage com NENHUMA postagem por nenhuma dessas vias, sem
+            // gerar URL de anexo: empresa pendente/reprovada/suspensa não
+            // interage com nenhuma postagem por nenhuma dessas vias, sem
             // duplicar a checagem em cada método.
             await garantirEmpresaAprovadaSeForEmpresa(solicitante);
             await garantirAcessoAPostagem(postagem, solicitante);
@@ -328,18 +285,15 @@ class PostagemService {
             };
         });
 
-        // Fase 7: chamado por ÚLTIMO, depois que toda postagem já passou
-        // pela autorização (garantirAcessoAPostagem ou o filtro SQL de
-        // findAll) — nunca antes.
+        // Chamada por último, depois que toda postagem passou pela autorização
+        // (`garantirAcessoAPostagem` ou o filtro SQL do `findAll`).
         return assinarMidiaDasPostagens(decoradas);
     }
 
-    /* ==========================================================
-       FEED (autenticado) — prioriza quem o usuário segue
-    ========================================================== */
-    async findAll(query, solicitante) {
+    /* Feed (autenticado): prioriza quem o usuário segue */
+    async listar(query, solicitante) {
         // Empresa pendente/reprovada/suspensa não acessa o feed (nem o
-        // geral, nem a aba "Publicações" de outro perfil) — mesma
+        // geral, nem a aba "Publicações" de outro perfil), pela mesma
         // autoridade central de `garantirEmpresaAprovada`, nunca uma
         // segunda regra. Nunca afeta candidato/administrador.
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
@@ -349,10 +303,9 @@ class PostagemService {
         const where = { ativo: true };
 
         if (query.usuarioId) {
-            // Aba "Publicações" de um perfil específico (Fase 3): se o autor
-            // for privado e o solicitante não tiver acesso (dono, admin ou
-            // seguidor aprovado), a lista inteira é negada — nunca filtrada
-            // em silêncio, pra mensagem "este perfil é privado" aparecer.
+            // Publicações de um perfil específico: se o autor for privado e o solicitante não tiver
+            // acesso (dono, administrador ou seguidor aprovado), a lista inteira é negada, e não
+            // filtrada em silêncio, para a mensagem "este perfil é privado" aparecer.
             await garantirAcessoAPostagem(
                 { usuarioId: query.usuarioId },
                 solicitante
@@ -375,12 +328,10 @@ class PostagemService {
             };
         }
 
-        // Feed geral/misto (sem filtro por autor nem por "seguindo"): uma
-        // postagem de autor com perfil privado só entra se o solicitante já
-        // for seguidor aprovado (ou o próprio autor) — filtrado no SQL, não
-        // confia no cliente para esconder. Empresa nunca é filtrada (fora
-        // do escopo da Fase 3); admin sempre vê tudo (convenção já usada em
-        // outros services).
+        // Feed geral (sem filtro por autor nem por "seguindo"): postagem de autor com perfil
+        // privado só entra se o solicitante for o autor ou seguidor aprovado, com o filtro no SQL,
+        // sem confiar no cliente para esconder. Postagens de empresa não são filtradas aqui, porque
+        // seguir empresa não tem aprovação; administrador sempre vê tudo.
         if (
             !query.usuarioId &&
             query.escopo !== "seguindo" &&
@@ -389,13 +340,10 @@ class PostagemService {
         ) {
             const [idsSeguidos, idsBloqueados] = await Promise.all([
                 SeguidorService.idsSeguidos(solicitante.id),
-                // Fase 9 (Bloco 2): feed geral nunca lista postagem de quem
-                // tem bloqueio com o solicitante, em nenhum sentido — sem
-                // isso, autor de perfil público (o caso comum, que sai sem
-                // checagem nenhuma logo abaixo) continuava aparecendo pra
-                // quem bloqueou/foi bloqueado por ele. Mesmo helper já
-                // usado por BuscaService/UsuarioService pra excluir de
-                // listas sociais.
+                // O feed geral nunca lista postagem de quem tem bloqueio com o solicitante, em
+                // qualquer sentido, inclusive de autor público, que abaixo passa sem outra
+                // checagem. É o mesmo helper usado para excluir pessoas bloqueadas das listas
+                // sociais.
                 BloqueioService.idsRelacionados(solicitante.id)
             ]);
 
@@ -429,7 +377,7 @@ class PostagemService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         const postagens = await this.decorar(rows, solicitante);
@@ -437,43 +385,23 @@ class PostagemService {
         return montarResposta("postagens", postagens, count, pagina, limite);
     }
 
-    /* ==========================================================
-       LINHA DO TEMPO UNIFICADA DE UM PERFIL (auditoria do Site, item 6)
-    ========================================================== */
+    /* Linha do tempo de um perfil */
     /**
-     * Publicações próprias + compartilhamentos de um usuário, intercalados
-     * por data (mais recente primeiro) — uma única lista, como o resto do
-     * mercado (LinkedIn, Twitter/X) mostra o perfil, em vez de duas abas
-     * "Publicações"/"Compartilhamentos" desconectadas. Cada item vem com
-     * `tipo: "postagem" | "compartilhamento"`; um compartilhamento carrega
-     * a postagem ORIGINAL (de qualquer autor) em `item.postagem`, decorada
-     * pelo MESMO pipeline (`decorar`) que uma postagem própria — antes,
-     * `CompartilhamentoService.listarPorUsuario` pulava `decorar()` e a
-     * postagem embutida chegava ao Frontend sem `totalCurtidas`/
-     * `curtidoPorMim`/`totalComentarios`, fazendo o `CardPostagem` de um
-     * item compartilhado sempre mostrar "0 curtidas" e o botão de curtir
-     * sempre como "não curtido", mesmo que o próprio solicitante já tivesse
-     * curtido aquela postagem no feed principal.
+     * Publicações próprias e compartilhamentos de um usuário, intercalados por data (mais recente
+     * primeiro), numa única lista. Cada item traz `tipo: "postagem" | "compartilhamento"`; um
+     * compartilhamento traz a postagem original (de qualquer autor) em `item.postagem`, decorada
+     * pelo mesmo `decorar` de uma postagem própria, para mostrar curtidas, comentários e
+     * `curtidoPorMim` corretos.
      *
-     * Autorização: `garantirAcessoAPostagem({ usuarioId }, solicitante)`
-     * decide o acesso ao PERFIL (dono/admin/seguidor aprovado/perfil
-     * público) uma única vez para a lista inteira — a mesma autoridade que
-     * `findAll({ usuarioId })` já usa para a aba "Publicações". Antes desta
-     * unificação, a aba "Compartilhamentos" (`CompartilhamentoService.
-     * listarPorUsuario`) NUNCA aplicava essa checagem: só verificava
-     * bloqueio e a visibilidade do autor de CADA postagem original, nunca
-     * a privacidade do DONO da aba — dava pra ver os compartilhamentos de
-     * um perfil privado sem segui-lo, só não as publicações próprias dele.
-     * Corrigido ao unificar (uma auditoria de segurança encontrada "de
-     * brinde" ao juntar os dois caminhos num só).
+     * Autorização: `garantirAcessoAPostagem({ usuarioId }, solicitante)` decide uma vez o acesso ao
+     * perfil (dono, administrador, seguidor aprovado ou perfil público) para a lista inteira, a
+     * mesma regra das publicações do perfil. Assim, os compartilhamentos de um perfil privado ficam
+     * protegidos como as publicações próprias.
      *
-     * Paginação: para intercalar corretamente por data sem UNION em SQL
-     * bruto (dois modelos com includes diferentes), busca até
-     * `offset + limite` linhas de CADA fonte (limite superior seguro: no
-     * pior caso, uma página inteira poderia vir de uma só fonte), junta em
-     * memória, ordena por data e recorta a página pedida. Para os tamanhos
-     * de página típicos de um perfil (dezenas, não milhares), o custo é
-     * desprezível — nunca busca a tabela inteira.
+     * Paginação: para intercalar por data sem UNION em SQL bruto (dois models com includes
+     * diferentes), busca até `offset + limite` linhas de cada fonte (no pior caso a página inteira
+     * vem de uma só), junta em memória, ordena e recorta a página. Para os tamanhos de página de um
+     * perfil o custo é pequeno, e a tabela nunca é lida inteira.
      */
     async linhaDoTempoDoUsuario(usuarioId, query, solicitante) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
@@ -484,7 +412,7 @@ class PostagemService {
 
         const wherePostagensProprias = { ativo: true, usuarioId };
 
-        // Visibilidade do autor ORIGINAL de uma postagem compartilhada —
+        // Visibilidade do autor original de uma postagem compartilhada:
         // pode ser qualquer pessoa, não só o dono desta linha do tempo.
         // Mesma regra de `CompartilhamentoService.listarPorUsuario`.
         const wherePostagemOriginal = { ativo: true };
@@ -532,7 +460,7 @@ class PostagemService {
                 Postagem.findAll({
                     where: wherePostagensProprias,
                     include: [incluirAutor(), incluirAnexos()],
-                    order: [["created_at", "DESC"]],
+                    order: [["criadoEm", "DESC"]],
                     limit: buscaAte
                 }),
                 Compartilhamento.findAll({
@@ -546,7 +474,7 @@ class PostagemService {
                             include: [incluirAutor(), incluirAnexos()]
                         }
                     ],
-                    order: [["created_at", "DESC"]],
+                    order: [["criadoEm", "DESC"]],
                     limit: buscaAte
                 })
             ]);
@@ -562,14 +490,14 @@ class PostagemService {
         const itensPostagem = postagensDecoradas.map((postagem) => ({
             tipo: "postagem",
             id: postagem.id,
-            criadoEm: postagem.created_at,
+            criadoEm: postagem.criadoEm,
             postagem
         }));
 
         const itensCompartilhamento = compartilhamentosRows.map((linha, indice) => ({
             tipo: "compartilhamento",
             id: linha.id,
-            criadoEm: linha.created_at,
+            criadoEm: linha.criadoEm,
             comentario: linha.comentario,
             postagem: postagensCompartilhadasDecoradas[indice]
         }));
@@ -587,10 +515,8 @@ class PostagemService {
         );
     }
 
-    /* ==========================================================
-       DETALHE COM COMENTÁRIOS EM ÁRVORE
-    ========================================================== */
-    async findById(id, solicitante = null) {
+    /* Detalhe com comentários em árvore */
+    async buscarPorId(id, solicitante = null) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
         const postagem = await Postagem.findOne({
@@ -615,11 +541,11 @@ class PostagemService {
                     ]
                 }
             ],
-            order: [[{ model: Comentario, as: "comentarios" }, "created_at", "ASC"]]
+            order: [[{ model: Comentario, as: "comentarios" }, "criadoEm", "ASC"]]
         });
 
         if (!postagem) {
-            throw ApiError.notFound("Postagem não encontrada.");
+            throw ErroApi.naoEncontrado("Postagem não encontrada.");
         }
 
         await garantirAcessoAPostagem(postagem, solicitante);
@@ -634,9 +560,9 @@ class PostagemService {
      * uma por posição de arquivo). Nunca confia no formato do cliente:
      * qualquer coisa que não seja um array de strings vira lista vazia
      * silenciosamente (a publicação nunca falha por causa de descrição
-     * malformada — o pior caso é o anexo nascer sem descrição).
+     * malformada; o pior caso é o anexo nascer sem descrição).
      */
-    parseDescricoesAnexos(bruto) {
+    interpretarDescricoesAnexos(bruto) {
         if (!bruto) return [];
 
         try {
@@ -652,14 +578,12 @@ class PostagemService {
         }
     }
 
-    /* ==========================================================
-       CRIAR (texto + até 4 anexos)
-    ========================================================== */
-    async create(data, solicitante, arquivos = []) {
+    /* Criar (texto e até 4 anexos) */
+    async criar(data, solicitante, arquivos = []) {
         const conteudo = String(data.conteudo || "").trim();
 
         if (!conteudo && arquivos.length === 0) {
-            throw ApiError.badRequest(
+            throw ErroApi.requisicaoInvalida(
                 "Escreva algo ou anexe um arquivo para publicar."
             );
         }
@@ -671,34 +595,25 @@ class PostagemService {
         let postagem;
 
         try {
-            const primeiraImagem = arquivos.find(
-                (arquivo) => tipoDoArquivo(arquivo) === "imagem"
-            );
-
             postagem = await Postagem.create(
                 {
                     usuarioId: solicitante.id,
                     conteudo,
-                    imagem: primeiraImagem ? urlPublica(primeiraImagem) : null,
                     publica: data.publica === undefined ? true : Boolean(data.publica)
                 },
                 { transaction }
             );
 
             if (arquivos.length > 0) {
-                const descricoes = this.parseDescricoesAnexos(data.descricoesAnexos);
+                const descricoes = this.interpretarDescricoesAnexos(data.descricoesAnexos);
 
                 await PostagemAnexo.bulkCreate(
                     arquivos.map((arquivo, indice) => ({
                         postagemId: postagem.id,
                         tipo: tipoDoArquivo(arquivo),
                         url: urlPublica(arquivo),
-                        // Fase 7: todo anexo novo nasce no bucket privado —
-                        // reflete o que `processarAnexosPostagem` (rota)
-                        // já faz de verdade no Storage (privado: true).
-                        privado: true,
                         nomeOriginal: arquivo.originalname?.slice(0, 255),
-                        mimeType: arquivo.mimetype,
+                        tipoMime: arquivo.mimetype,
                         tamanhoBytes: arquivo.size,
                         ordem: indice,
                         descricao: descricoes[indice] || null
@@ -716,10 +631,10 @@ class PostagemService {
 
         // Fora da transação: uma falha aqui não pode disparar rollback
         // de uma transação já confirmada.
-        const criada = await this.findById(postagem.id, solicitante);
+        const criada = await this.buscarPorId(postagem.id, solicitante);
 
-        // Nunca inclua o objeto de domínio completo aqui — ver o comentário
-        // de segurança em `realtime/socket.js` sobre `emitirFeed`. O cliente
+        // Nunca inclua o objeto de domínio completo aqui (ver o comentário
+        // de segurança em `realtime/socket.js` sobre `emitirFeed`). O cliente
         // revalida via REST, que já aplica `garantirAcessoAPostagem`.
         emitirFeed("feed:postagem", { id: criada.id, criada: true });
 
@@ -728,10 +643,8 @@ class PostagemService {
 
 
 
-    /* ==========================================================
-       ATUALIZAR (autor ou admin)
-    ========================================================== */
-    async update(id, data, solicitante) {
+    /* Atualizar (autor ou administrador) */
+    async atualizar(id, data, solicitante) {
         const postagem = await this.buscarAtiva(id, undefined, solicitante);
 
         garantirDono(solicitante, postagem.usuarioId);
@@ -745,19 +658,17 @@ class PostagemService {
             editadoEm: new Date()
         });
 
-        const atualizada = await this.findById(id, solicitante);
+        const atualizada = await this.buscarPorId(id, solicitante);
 
-        // Nunca inclua o objeto de domínio completo aqui — mesma regra de
-        // `create()` acima.
+        // Nunca inclua o objeto de domínio completo aqui, pela mesma regra de `criar()` acima.
         emitirFeed("feed:postagem", { id: atualizada.id, atualizada: true });
 
         return atualizada;
     }
 
     /**
-     * Edita SÓ a descrição acessível de um anexo já publicado — nunca o
-     * arquivo em si (trocar a imagem/vídeo exigiria um novo upload, fora
-     * do escopo desta ação). Mesma autorização de dono que `update`.
+     * Edita só a descrição acessível de um anexo já publicado, nunca o arquivo (trocar a mídia
+     * exigiria novo upload). Mesma autorização de dono de `atualizar`.
      */
     async atualizarDescricaoAnexo(postagemId, anexoId, descricao, solicitante) {
         const postagem = await this.buscarAtiva(postagemId, undefined, solicitante);
@@ -769,30 +680,27 @@ class PostagemService {
         });
 
         if (!anexo) {
-            throw ApiError.notFound("Anexo não encontrado nesta publicação.");
+            throw ErroApi.naoEncontrado("Anexo não encontrado nesta publicação.");
         }
 
         const descricaoLimpa = descricao == null ? null : String(descricao).trim().slice(0, 500) || null;
 
         await anexo.update({ descricao: descricaoLimpa });
 
-        const atualizada = await this.findById(postagemId, solicitante);
+        const atualizada = await this.buscarPorId(postagemId, solicitante);
 
-        // Nunca inclua o objeto de domínio completo aqui — mesma regra de
-        // `create()` acima.
+        // Nunca inclua o objeto de domínio completo aqui, pela mesma regra de `criar()` acima.
         emitirFeed("feed:postagem", { id: atualizada.id, atualizada: true });
 
         return atualizada;
     }
 
     /**
-     * Fase 7 — única forma de obter uma URL utilizável de um anexo
-     * específico (exibição inline OU download). Reautoriza do ZERO via
-     * `garantirAcessoAPostagem` a cada chamada — nunca reaproveita uma
-     * URL/aprovação anterior. `anexoId` é sempre resolvido escopado por
-     * `postagemId` junto (nunca `findByPk(anexoId)` sozinho) — fecha o
-     * IDOR de trocar o `anexoId` por um de outra publicação enquanto
-     * mantém um `postagemId` autorizado na URL.
+     * Única forma de obter uma URL utilizável de um anexo específico (exibição inline ou download).
+     * Reautoriza do zero com `garantirAcessoAPostagem` a cada chamada, sem reaproveitar URL ou
+     * aprovação anterior. O `anexoId` é sempre buscado junto do `postagemId` (nunca
+     * `findByPk(anexoId)` sozinho), o que fecha o IDOR de trocar o `anexoId` pelo de outra
+     * publicação mantendo um `postagemId` autorizado.
      */
     async gerarUrlAnexo(postagemId, anexoId, solicitante, { baixar = false } = {}) {
         const postagem = await this.buscarAtiva(postagemId, undefined, solicitante);
@@ -802,13 +710,7 @@ class PostagemService {
         });
 
         if (!anexo) {
-            throw ApiError.notFound("Anexo não encontrado nesta publicação.");
-        }
-
-        // Anexo legado (bucket público, `privado=false`) — resolve de
-        // graça, sem assinatura (não há o que expirar).
-        if (!anexo.privado) {
-            return { url: resolverUrlExibicao(anexo.url), expiraEm: null };
+            throw ErroApi.naoEncontrado("Anexo não encontrado nesta publicação.");
         }
 
         const autor = await Usuario.findByPk(postagem.usuarioId, {
@@ -817,7 +719,7 @@ class PostagemService {
         const publico = !autor || autor.tipoUsuario === "empresa" || autor.perfilPublico;
 
         // Download é sempre de curta duração, mesmo pra autor
-        // público/empresa — é uma ação pontual, não uma URL embutida
+        // público/empresa: é uma ação pontual, não uma URL embutida
         // numa página que fica aberta por horas.
         const validade = baixar
             ? env.storage.signedUrlExpiresSeconds
@@ -833,16 +735,14 @@ class PostagemService {
         const resultado = await gerarUrlAssinada(anexo.url, opcoes);
 
         if (!resultado) {
-            throw ApiError.notFound("Não foi possível gerar acesso a este arquivo.");
+            throw ErroApi.naoEncontrado("Não foi possível gerar acesso a este arquivo.");
         }
 
         return { url: resultado.url, expiraEm: resultado.expiraEm };
     }
 
-    /* ==========================================================
-       REMOVER (soft delete via coluna "ativo")
-    ========================================================== */
-    async delete(id, solicitante, contexto = {}) {
+    /* Remover (exclusão lógica pela coluna "ativo") */
+    async excluir(id, solicitante, contexto = {}) {
         const postagem = await this.buscarAtiva(id, undefined, solicitante);
 
         garantirDono(solicitante, postagem.usuarioId);
@@ -859,21 +759,21 @@ class PostagemService {
         if (ehModeracao) {
             await NotificacaoService.criar({
                 usuarioId: postagem.usuarioId,
-                tipo: "Feed",
+                tipo: "feed",
                 titulo: "Publicação removida",
                 descricao: "Sua publicação foi removida pela moderação por violar as diretrizes da comunidade.",
                 subtipo: "postagem_removida_moderacao"
             });
 
-            await AdminAuditService.log({
-                adminId: solicitante.id,
-                acao: "REMOVER_POSTAGEM",
+            await AdminAuditoriaService.registrar({
+                administradorId: solicitante.id,
+                acao: "remover_postagem",
                 entidadeTipo: "postagem",
                 entidadeId: postagem.id,
                 descricao: "Postagem removida pela moderação.",
-                metadata: {
-                    before: { ativo: true },
-                    after: { ativo: false },
+                metadados: {
+                    antes: { ativo: true },
+                    depois: { ativo: false },
                     autorId: postagem.usuarioId
                 },
                 ip: contexto.ip,
@@ -884,9 +784,7 @@ class PostagemService {
         return { mensagem: "Postagem removida com sucesso." };
     }
 
-    /* ==========================================================
-       CURTIR / DESCURTIR (toggle idempotente)
-    ========================================================== */
+    /* Curtir e descurtir (alternância idempotente) */
     async alternarCurtida(id, solicitante) {
         const postagem = await this.buscarAtiva(id, undefined, solicitante);
 
@@ -905,7 +803,7 @@ class PostagemService {
             if (String(postagem.usuarioId) !== String(solicitante.id)) {
                 await NotificacaoService.criar({
                     usuarioId: postagem.usuarioId,
-                    tipo: "Feed",
+                    tipo: "feed",
                     titulo: "Nova curtida na sua publicação",
                     descricao: `${solicitante.nome} curtiu sua publicação.`,
                     subtipo: "curtida_postagem",
@@ -926,9 +824,7 @@ class PostagemService {
         return { curtido: !existente, totalCurtidas: total };
     }
 
-    /* ==========================================================
-       COMENTÁRIOS
-    ========================================================== */
+    /* Comentários */
     async comentar(id, comentario, solicitante, comentarioPaiId = null) {
         const postagem = await this.buscarAtiva(id, undefined, solicitante);
         let pai = null;
@@ -937,7 +833,7 @@ class PostagemService {
             pai = await Comentario.findByPk(comentarioPaiId);
 
             if (!pai || !pai.ativo || String(pai.postagemId) !== String(id)) {
-                throw ApiError.notFound("Comentário respondido não encontrado.");
+                throw ErroApi.naoEncontrado("Comentário respondido não encontrado.");
             }
         }
 
@@ -953,7 +849,7 @@ class PostagemService {
         if (String(postagem.usuarioId) !== String(solicitante.id)) {
             await NotificacaoService.criar({
                 usuarioId: postagem.usuarioId,
-                tipo: "Feed",
+                tipo: "feed",
                 titulo: "Novo comentário na sua publicação",
                 descricao: `${solicitante.nome} comentou: ${previa}`,
                 subtipo: "comentario_postagem",
@@ -964,7 +860,7 @@ class PostagemService {
         }
 
         // Resposta a um comentário: avisa o autor do comentário-pai
-        // também, à parte do dono da postagem — exceto se for a mesma
+        // também, à parte do dono da postagem, exceto se for a mesma
         // pessoa (já notificada acima) ou a própria pessoa respondendo
         // ao próprio comentário (não faz sentido se auto-notificar).
         if (
@@ -974,7 +870,7 @@ class PostagemService {
         ) {
             await NotificacaoService.criar({
                 usuarioId: pai.usuarioId,
-                tipo: "Feed",
+                tipo: "feed",
                 titulo: "Responderam ao seu comentário",
                 descricao: `${solicitante.nome} respondeu ao seu comentário: ${previa}`,
                 subtipo: "resposta_comentario",
@@ -992,9 +888,8 @@ class PostagemService {
             include: [incluirAutor()]
         });
 
-        // Nunca inclua o comentário completo aqui (autor + texto) — mesma
-        // regra de `create()`/`update()` acima: o cliente já ignora este
-        // campo hoje e revalida `["comentarios", postagemId]` via REST.
+        // Nunca inclua o comentário completo aqui (autor e texto), pela mesma regra de `criar()` e
+        // `atualizar()`; o cliente revalida `["comentarios", postagemId]` pela API.
         emitirFeed("feed:comentario", {
             postagemId: id,
             totalComentarios: total
@@ -1007,7 +902,7 @@ class PostagemService {
         const comentario = await Comentario.findByPk(comentarioId);
 
         if (!comentario || !comentario.ativo) {
-            throw ApiError.notFound("Comentário não encontrado.");
+            throw ErroApi.naoEncontrado("Comentário não encontrado.");
         }
 
         garantirDono(solicitante, comentario.usuarioId);
@@ -1029,15 +924,15 @@ class PostagemService {
         });
 
         if (ehModeracao) {
-            await AdminAuditService.log({
-                adminId: solicitante.id,
-                acao: "REMOVER_COMENTARIO",
+            await AdminAuditoriaService.registrar({
+                administradorId: solicitante.id,
+                acao: "remover_comentario",
                 entidadeTipo: "comentario",
                 entidadeId: comentario.id,
                 descricao: "Comentário removido pela moderação.",
-                metadata: {
-                    before: { ativo: true },
-                    after: { ativo: false },
+                metadados: {
+                    antes: { ativo: true },
+                    depois: { ativo: false },
                     autorId: comentario.usuarioId
                 },
                 ip: contexto.ip,

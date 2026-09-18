@@ -1,13 +1,13 @@
 import { Router } from "express";
 
 import SeguidorController from "../controllers/SeguidorController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
 router.get("/sugestoes", SeguidorController.sugestoes);
 router.get("/sugestoes/empresas", SeguidorController.sugestoesEmpresas);
@@ -15,72 +15,72 @@ router.get("/sugestoes/empresas", SeguidorController.sugestoesEmpresas);
 router.post(
     "/usuarios/:usuarioId",
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.seguirUsuario
 );
 
 router.post(
     "/empresas/:empresaId",
     validarUuidParam("empresaId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.seguirEmpresa
 );
 
 router.get(
     "/seguidores/:usuarioId",
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.seguidores
 );
 
 router.get(
     "/seguindo/:usuarioId",
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.seguindo
 );
 
 router.get(
     "/resumo/:usuarioId",
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.resumo
 );
 
 router.get(
     "/resumo/empresas/:empresaId",
     validarUuidParam("empresaId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.resumoEmpresa
 );
 
-/* ---------- Solicitações de seguimento (perfil privado) — Fase 3 ---------- */
+/* Solicitações de seguir (perfil privado) */
 
 router.post(
     "/solicitacoes/:destinatarioId",
     validarUuidParam("destinatarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.solicitarSeguir
 );
 
 router.delete(
     "/solicitacoes/:destinatarioId",
     validarUuidParam("destinatarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.cancelarSolicitacao
 );
 
 router.post(
     "/solicitacoes/:solicitacaoId/aceitar",
     validarUuidParam("solicitacaoId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.aceitarSolicitacao
 );
 
 router.post(
     "/solicitacoes/:solicitacaoId/recusar",
     validarUuidParam("solicitacaoId"),
-    validationMiddleware,
+    validacaoMiddleware,
     SeguidorController.recusarSolicitacao
 );
 

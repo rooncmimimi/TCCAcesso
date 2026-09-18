@@ -7,9 +7,10 @@ export const validarPreferenciasNotificacao = [
     body("redeSeguidores").optional().isBoolean().withMessage("Valor inválido.")
 ];
 
-/** Fase R5 — registro de Expo push token. O formato exato do token
- * (`ExponentPushToken[...]`) é checado no service (`Expo.isExpoPushToken`);
- * aqui só o básico de presença/tipo. */
+/**
+ * Registro de Expo push token. O formato exato (`ExponentPushToken[...]`) é conferido no serviço
+ * (`Expo.isExpoPushToken`); aqui só a presença e o tipo.
+ */
 export const validarRegistroPushToken = [
     body("token").isString().withMessage("Token inválido.").bail().trim().notEmpty().withMessage("Token obrigatório."),
     body("plataforma").isIn(["android", "ios"]).withMessage("Plataforma inválida.")

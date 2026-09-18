@@ -19,7 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
-import { useSession, initials } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
+import { iniciaisDoNome } from "@/utils/formatacao";
 import { CapaUploader } from "./CapaUploader";
 import { FotoUploader } from "./FotoUploader";
 import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
@@ -36,7 +37,7 @@ export function EditarPerfilDialog({
   const [aberto, setAberto] = useState(false);
   const [cidade, setCidade] = useState(candidato?.cidade ?? "");
   const [estado, setEstado] = useState(candidato?.estado ?? "");
-  const { user, update } = useSession();
+  const { usuario, atualizar } = useSessao();
   const queryClient = useQueryClient();
 
   // Reabrir o diálogo sempre reflete os dados mais recentes do candidato.
@@ -51,7 +52,7 @@ export function EditarPerfilDialog({
     mutationFn: async (dados: FormData) => {
       const texto = (chave: string) => String(dados.get(chave) ?? "").trim();
 
-      const usuarioAtualizado = await perfilService.atualizarUsuario(user!.id, {
+      const usuarioAtualizado = await perfilService.atualizarUsuario(usuario!.id, {
         nome: texto("nome"),
         telefone: texto("telefone") || null,
       });
@@ -76,10 +77,9 @@ export function EditarPerfilDialog({
       return usuarioAtualizado;
     },
     onSuccess: (usuarioAtualizado) => {
-      update({ nome: usuarioAtualizado.nome, telefone: usuarioAtualizado.telefone });
+      atualizar({ nome: usuarioAtualizado.nome, telefone: usuarioAtualizado.telefone });
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
-      // Fase 9, Bloco 7: os toasts já são lidos automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("Perfil atualizado.");
       setAberto(false);
     },
@@ -87,9 +87,9 @@ export function EditarPerfilDialog({
   });
 
   const removerBanner = useMutation({
-    mutationFn: () => perfilService.atualizarUsuario(user!.id, { capaPerfil: null }),
+    mutationFn: () => perfilService.atualizarUsuario(usuario!.id, { capaPerfil: null }),
     onSuccess: (usuarioAtualizado) => {
-      update({ capaPerfil: usuarioAtualizado.capaPerfil });
+      atualizar({ capaPerfil: usuarioAtualizado.capaPerfil });
       toast.success("Banner removido.");
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
@@ -100,7 +100,7 @@ export function EditarPerfilDialog({
     salvar.mutate(new FormData(evento.currentTarget));
   }
 
-  if (!user) return null;
+  if (!usuario) return null;
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
@@ -116,15 +116,15 @@ export function EditarPerfilDialog({
             <p className="mb-2 text-sm font-medium">Banner</p>
             <div className="overflow-hidden rounded-lg border">
               <CapaUploader
-                capaUrl={user.capaPerfil}
+                capaUrl={usuario.capaPerfil}
                 onEnviar={async (arquivo) => {
-                  const atualizado = await perfilService.atualizarCapa(user.id, arquivo);
-                  update({ capaPerfil: atualizado.capaPerfil });
+                  const atualizado = await perfilService.atualizarCapa(usuario.id, arquivo);
+                  atualizar({ capaPerfil: atualizado.capaPerfil });
                 }}
               />
             </div>
             <DicaDimensaoImagem tipo="banner" />
-            {user.capaPerfil ? (
+            {usuario.capaPerfil ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -141,12 +141,12 @@ export function EditarPerfilDialog({
           <div>
             <p className="mb-2 text-sm font-medium">Foto de perfil</p>
             <FotoUploader
-              nome={user.nome}
-              fotoUrl={user.fotoPerfil}
-              fallback={initials(user.nome)}
+              nome={usuario.nome}
+              fotoUrl={usuario.fotoPerfil}
+              fallback={iniciaisDoNome(usuario.nome)}
               onEnviar={async (arquivo) => {
-                const atualizado = await perfilService.atualizarFoto(user.id, arquivo);
-                update({ fotoPerfil: atualizado.fotoPerfil });
+                const atualizado = await perfilService.atualizarFoto(usuario.id, arquivo);
+                atualizar({ fotoPerfil: atualizado.fotoPerfil });
               }}
             />
             <DicaDimensaoImagem tipo="foto" />
@@ -156,12 +156,12 @@ export function EditarPerfilDialog({
         <form onSubmit={enviar} className="space-y-4 border-t pt-4">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" name="nome" required minLength={3} maxLength={150} defaultValue={user?.nome ?? ""} />
+            <Input id="nome" name="nome" required minLength={3} maxLength={150} defaultValue={usuario?.nome ?? ""} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="telefone">Telefone</Label>
-            <Input id="telefone" name="telefone" maxLength={20} defaultValue={user?.telefone ?? ""} />
+            <Input id="telefone" name="telefone" maxLength={20} defaultValue={usuario?.telefone ?? ""} />
           </div>
 
           {candidato ? (

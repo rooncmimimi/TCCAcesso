@@ -1,6 +1,6 @@
-import api from "./api";
+import clienteApi from "./api";
 import { buscarPaginado, type Paginado } from "./http";
-import type { ComentarioCompleto, CompartilhamentoCompleto, ItemLinhaDoTempo, PostagemCompleta } from "@/types";
+import type { ComentarioCompleto, ItemLinhaDoTempo, PostagemCompleta } from "@/types";
 
 export interface FiltroFeed {
   page?: number;
@@ -25,11 +25,7 @@ export const postagensService = {
     return buscarPaginado<PostagemCompleta>("/postagens", "postagens", filtro);
   },
 
-  /**
-   * Linha do tempo unificada de um perfil: publicações + compartilhamentos
-   * intercalados por data (auditoria do Site, item 6) — substitui as duas
-   * abas separadas "Publicações"/"Compartilhamentos".
-   */
+  /** Linha do tempo de um perfil: publicações e compartilhamentos intercalados por data. */
   async listarLinhaDoTempo(
     usuarioId: string,
     params: { page?: number; limit?: number } = {},
@@ -42,7 +38,7 @@ export const postagensService = {
   },
 
   async detalhar(id: string): Promise<PostagemCompleta> {
-    const { data } = await api.get<{ postagem: PostagemCompleta }>(`/postagens/${id}`);
+    const { data } = await clienteApi.get<{ postagem: PostagemCompleta }>(`/postagens/${id}`);
     return data.postagem;
   },
 
@@ -50,38 +46,38 @@ export const postagensService = {
     const form = new FormData();
     form.append("conteudo", conteudo);
     form.append("publica", String(publica));
-    // O campo precisa se chamar "arquivos" — é o nome que o Multer espera
+    // O campo precisa se chamar "arquivos": é o nome que o Multer espera
     // em `uploadAnexos.array("arquivos", 4)` (Site/Backend/src/routes/postagemRoutes.js).
     anexos.slice(0, 4).forEach((arquivo) => form.append("arquivos", arquivo));
-    // Multipart não tem tipo array nativo — vai como JSON, uma posição por
-    // anexo (mesmo índice); `PostagemService.parseDescricoesAnexos` no
-    // backend faz o parse e nunca deixa isso quebrar a publicação.
+    // Multipart não tem array nativo, então as descrições vão como JSON, uma por anexo, no mesmo
+    // índice. O backend (`PostagemService.interpretarDescricoesAnexos`) faz o parse sem deixar um
+    // valor inválido quebrar a publicação.
     if (descricoesAnexos.some((d) => d.trim())) {
       form.append("descricoesAnexos", JSON.stringify(descricoesAnexos.slice(0, 4)));
     }
 
-    const { data } = await api.post<{ postagem: PostagemCompleta }>("/postagens", form, {
+    const { data } = await clienteApi.post<{ postagem: PostagemCompleta }>("/postagens", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.postagem;
   },
 
   async atualizar(id: string, payload: { conteudo?: string; publica?: boolean }): Promise<PostagemCompleta> {
-    const { data } = await api.put<{ postagem: PostagemCompleta }>(`/postagens/${id}`, payload);
+    const { data } = await clienteApi.put<{ postagem: PostagemCompleta }>(`/postagens/${id}`, payload);
     return data.postagem;
   },
 
   async remover(id: string): Promise<void> {
-    await api.delete(`/postagens/${id}`);
+    await clienteApi.delete(`/postagens/${id}`);
   },
 
-  /** Edita só a descrição acessível de um anexo já publicado — nunca o arquivo em si. */
+  /** Edita só a descrição acessível de um anexo já publicado, nunca o arquivo em si. */
   async atualizarDescricaoAnexo(
     postagemId: string,
     anexoId: string,
     descricao: string,
   ): Promise<PostagemCompleta> {
-    const { data } = await api.patch<{ postagem: PostagemCompleta }>(
+    const { data } = await clienteApi.patch<{ postagem: PostagemCompleta }>(
       `/postagens/${postagemId}/anexos/${anexoId}`,
       { descricao: descricao.trim() || null },
     );
@@ -89,20 +85,19 @@ export const postagensService = {
   },
 
   /**
-   * Fase 7 — URL de download de um anexo, gerada sob demanda a cada
-   * clique (nunca reaproveita a URL de exibição já carregada na tela).
-   * O backend reautoriza do zero e devolve uma URL de curta duração com
-   * download forçado (`Content-Disposition: attachment`).
+   * URL de download de um anexo, gerada a cada clique (nunca reaproveita a URL de exibição da
+   * tela). O backend reautoriza do zero e devolve uma URL curta com download forçado
+   * (`Content-Disposition: attachment`).
    */
   async urlDownloadAnexo(postagemId: string, anexoId: string): Promise<string> {
-    const { data } = await api.get<{ url: string }>(
+    const { data } = await clienteApi.get<{ url: string }>(
       `/postagens/${postagemId}/anexos/${anexoId}/download`,
     );
     return data.url;
   },
 
   /**
-   * Sugestão de descrição por IA (OpenRouter) — nunca salva nada sozinha,
+   * Sugestão de descrição por IA (OpenRouter): nunca salva nada sozinha,
    * só devolve um texto para o usuário revisar. A imagem só é enviada
    * quando esta função é chamada (nunca automaticamente).
    */
@@ -110,15 +105,15 @@ export const postagensService = {
     const form = new FormData();
     form.append("imagem", imagem, imagem instanceof File ? imagem.name : "imagem.png");
 
-    const { data } = await api.post<{ descricao: string }>("/postagens/anexos/sugerir-descricao", form, {
+    const { data } = await clienteApi.post<{ descricao: string }>("/postagens/anexos/sugerir-descricao", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.descricao;
   },
 
-  /* ---------------- Curtidas ---------------- */
+  /* Curtidas */
   async alternarCurtida(postagemId: string): Promise<{ curtido: boolean; totalCurtidas: number }> {
-    const { data } = await api.post<{ curtido: boolean; totalCurtidas: number }>(
+    const { data } = await clienteApi.post<{ curtido: boolean; totalCurtidas: number }>(
       `/postagens/${postagemId}/curtidas`,
     );
     return { curtido: Boolean(data.curtido), totalCurtidas: Number(data.totalCurtidas ?? 0) };
@@ -128,7 +123,7 @@ export const postagensService = {
     return buscarPaginado("/postagens/" + postagemId + "/curtidas", "curtidas", params);
   },
 
-  /* ---------------- Comentários ---------------- */
+  /* Comentários */
   async listarComentarios(
     postagemId: string,
     params: { page?: number; limit?: number } = {},
@@ -145,7 +140,7 @@ export const postagensService = {
     comentario: string,
     comentarioPaiId?: string | null,
   ): Promise<ComentarioCompleto> {
-    const { data } = await api.post<{ comentario: ComentarioCompleto }>(
+    const { data } = await clienteApi.post<{ comentario: ComentarioCompleto }>(
       `/postagens/${postagemId}/comentarios`,
       { comentario, comentarioPaiId: comentarioPaiId ?? null },
     );
@@ -153,12 +148,12 @@ export const postagensService = {
   },
 
   async removerComentario(comentarioId: string): Promise<void> {
-    await api.delete(`/comentarios/${comentarioId}`);
+    await clienteApi.delete(`/comentarios/${comentarioId}`);
   },
 
-  /* ---------------- Compartilhamentos ---------------- */
+  /* Compartilhamentos */
   async compartilhar(postagemId: string, comentario?: string) {
-    const { data } = await api.post(`/compartilhamentos/postagem/${postagemId}`, {
+    const { data } = await clienteApi.post(`/compartilhamentos/postagem/${postagemId}`, {
       comentario: comentario ?? null,
     });
     return data;
@@ -168,20 +163,9 @@ export const postagensService = {
     return buscarPaginado(`/compartilhamentos/postagem/${postagemId}`, "compartilhamentos", params);
   },
 
-  /** Compartilhamentos feitos por um usuário — aba "Compartilhamentos" do perfil. */
-  async listarCompartilhamentosDoUsuario(
-    usuarioId: string,
-    params: { page?: number; limit?: number } = {},
-  ): Promise<Paginado<CompartilhamentoCompleto>> {
-    return buscarPaginado<CompartilhamentoCompleto>(
-      `/compartilhamentos/usuario/${usuarioId}`,
-      "compartilhamentos",
-      params,
-    );
-  },
 
   async removerCompartilhamento(id: string): Promise<void> {
-    await api.delete(`/compartilhamentos/${id}`);
+    await clienteApi.delete(`/compartilhamentos/${id}`);
   },
 };
 

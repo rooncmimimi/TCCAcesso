@@ -1,9 +1,7 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
-/**
- * Tabela: vagas
- */
+/** Tabela `vagas`: as vagas publicadas pelas empresas. */
 const Vaga = sequelize.define(
     "Vaga",
     {
@@ -14,7 +12,6 @@ const Vaga = sequelize.define(
         },
 
         empresaId: {
-            field: "empresa_id",
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -42,17 +39,11 @@ const Vaga = sequelize.define(
         },
 
         modalidade: {
-            type: DataTypes.ENUM("Presencial", "Hibrido", "Remoto")
+            type: DataTypes.ENUM("presencial", "hibrido", "remoto")
         },
 
         contrato: {
-            type: DataTypes.ENUM(
-                "CLT",
-                "PJ",
-                "Estagio",
-                "JovemAprendiz",
-                "Temporario"
-            )
+            type: DataTypes.ENUM("clt", "pj", "estagio", "jovem_aprendiz", "temporario")
         },
 
         cidade: {
@@ -64,43 +55,31 @@ const Vaga = sequelize.define(
         },
 
         cargaHoraria: {
-            field: "carga_horaria",
             type: DataTypes.STRING(50)
         },
 
-        exclusivaPcd: {
-            field: "exclusiva_pcd",
-            type: DataTypes.BOOLEAN,
+        // Quem a vaga procura. É a única fonte para "exclusiva para PCD": o filtro `exclusivaPcd`
+        // da API vira `publicoAlvo IN ('pcd', 'pcd_cinquenta_mais')`.
+        publicoAlvo: {
+            type: DataTypes.ENUM("geral", "pcd", "cinquenta_mais", "pcd_cinquenta_mais"),
             allowNull: false,
-            defaultValue: true
+            defaultValue: "geral"
         },
 
         acessibilidade: {
             type: DataTypes.TEXT
         },
 
-        status: {
-            type: DataTypes.ENUM("Aberta", "Pausada", "Encerrada"),
-            allowNull: false,
-            defaultValue: "Aberta"
-        },
-
-        dataPublicacao: {
-            field: "data_publicacao",
-            type: DataTypes.DATE
-        },
-
-        dataEncerramento: {
-            field: "data_encerramento",
-            type: DataTypes.DATEONLY
-        }
-,
-
         recursosAcessibilidade: {
-            field: "recursos_acessibilidade",
             type: DataTypes.ARRAY(DataTypes.TEXT),
-            allowNull: true,
+            allowNull: false,
             defaultValue: []
+        },
+
+        status: {
+            type: DataTypes.ENUM("aberta", "pausada", "encerrada"),
+            allowNull: false,
+            defaultValue: "aberta"
         },
 
         oculta: {
@@ -109,20 +88,12 @@ const Vaga = sequelize.define(
             defaultValue: false
         },
 
-        // ENUM publico_alvo_vaga (migration 0027). Coexiste com
-        // exclusivaPcd por compatibilidade — não remover exclusivaPcd.
-        publicoAlvo: {
-            field: "publico_alvo",
-            type: DataTypes.ENUM("geral", "pcd", "cinquenta_mais", "pcd_cinquenta_mais"),
-            allowNull: false,
-            defaultValue: "geral"
+        dataEncerramento: {
+            type: DataTypes.DATEONLY
         }
     },
     {
-        tableName: "vagas",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "vagas"
     }
 );
 

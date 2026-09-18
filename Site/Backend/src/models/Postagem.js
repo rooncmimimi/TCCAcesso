@@ -1,9 +1,7 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
-/**
- * Tabela: postagens
- */
+/** Tabela `postagens`: as publicações do feed. */
 const Postagem = sequelize.define(
     "Postagem",
     {
@@ -12,46 +10,38 @@ const Postagem = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+
         usuarioId: {
-            field: "usuario_id",
             type: DataTypes.UUID,
             allowNull: false
         },
+
         conteudo: {
             type: DataTypes.TEXT,
             allowNull: false
         },
-        // Cópia do caminho do primeiro anexo de imagem (ver
-        // PostagemService.create) — campo legado, mantido por
-        // compatibilidade. Fase 7: sem getter automático (mesmo motivo de
-        // PostagemAnexo.url) — resolver a URL de exibição é sempre um
-        // passo explícito do service, depois da autorização. A
-        // privacidade deste caminho nunca é rastreada aqui: é sempre
-        // igual à do anexo cujo `url` bate com este valor (mesmo array de
-        // arquivos, mesma requisição — nunca diverge, ver PostagemService).
-        imagem: {
-            type: DataTypes.TEXT
-        },
-        ativo: {
-            type: DataTypes.BOOLEAN,
-            allowNull: false,
-            defaultValue: true
-        },
+
+        // Visível para quem ainda não entrou na conta, na página inicial pública.
         publica: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: true
         },
+
+        // Exclusão lógica: a publicação removida some das listas, mas continua no banco para as
+        // denúncias e o log de moderação.
+        ativo: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true
+        },
+
         editadoEm: {
-            field: "editado_em",
             type: DataTypes.DATE
         }
     },
     {
-        tableName: "postagens",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "postagens"
     }
 );
 

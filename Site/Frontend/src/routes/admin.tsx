@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-import { AppShell } from "@/layouts/AppShell";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
+import { NavegacaoAdmin } from "@/components/admin/NavegacaoAdmin";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 
 export const Route = createFileRoute("/admin")({
@@ -11,12 +11,12 @@ export const Route = createFileRoute("/admin")({
 function LayoutAdmin() {
   return (
     <GuardaAcesso tipos={["administrador"]}>
-      <AppShell>
-        <AdminNav />
+      <EstruturaApp>
+        <NavegacaoAdmin />
         <div className="mt-6">
           <Outlet />
         </div>
-      </AppShell>
+      </EstruturaApp>
     </GuardaAcesso>
   );
 }

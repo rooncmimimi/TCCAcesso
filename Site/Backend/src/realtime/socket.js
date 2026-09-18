@@ -1,17 +1,19 @@
 import { Server } from "socket.io";
 
 import env from "../config/env.js";
-import { verifyToken } from "../utils/jwt.js";
-import { Usuario } from "../models/index.js";
+import { verificarJwt, tokenAnteriorATrocaDeSenha } from "../utils/jwt.js";
+import { Usuario, Conversa } from "../models/index.js";
 
 /**
  * Camada de tempo real (Socket.IO).
  *
  * Segurança:
- * - handshake exige um access token JWT válido (mesmo segredo da API);
- * - o usuário é recarregado do banco (bloqueado/desativado não conecta);
- * - cada usuário entra apenas na sua própria sala privada;
- * - nenhum dado sensível é emitido em broadcast global.
+ * - o handshake exige um access token JWT válido (mesmo segredo da API), emitido depois da última
+ *   troca de senha da conta;
+ * - o usuário é recarregado do banco (bloqueado ou desativado não conecta);
+ * - cada usuário entra na própria sala privada (`usuario:<id>`) e só nas salas das conversas de que
+ *   participa, conferidas no banco a cada `conversa:entrar`;
+ * - nenhum dado sensível é emitido em broadcast global (veja `emitirFeed`).
  */
 
 let io = null;
@@ -19,6 +21,36 @@ let io = null;
 export const salaUsuario = (usuarioId) => `usuario:${usuarioId}`;
 export const salaConversa = (conversaId) => `conversa:${conversaId}`;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Só quem é um dos dois participantes entra na sala da conversa. Exportada para o teste de
+ * autorização (`socket.test.js`) cobrir id inválido, conversa inexistente e não participante sem
+ * precisar subir um servidor.
+ */
+export async function participaDaConversa(conversaId, usuarioId) {
+    if (typeof conversaId !== "string" || !UUID.test(conversaId)) {
+        return false;
+    }
+
+    const conversa = await Conversa.findByPk(conversaId, {
+        attributes: ["usuarioAId", "usuarioBId"]
+    });
+
+    if (!conversa) {
+        return false;
+    }
+
+    return (
+        String(conversa.usuarioAId) === String(usuarioId) ||
+        String(conversa.usuarioBId) === String(usuarioId)
+    );
+}
+
+/**
+ * Cria o servidor Socket.IO sobre o servidor HTTP, autentica o handshake e registra os eventos de
+ * sala e de digitação.
+ */
 export const iniciarSocket = (httpServer) => {
     io = new Server(httpServer, {
         cors: {
@@ -41,20 +73,36 @@ export const iniciarSocket = (httpServer) => {
                 return next(new Error("Token não informado."));
             }
 
-            const payload = verifyToken(token);
+            const payload = verificarJwt(token);
 
             const usuario = await Usuario.findByPk(payload.id, {
-                attributes: ["id", "nome", "tipoUsuario", "ativo", "bloqueado", "motivoBloqueio"]
+                attributes: [
+                    "id",
+                    "nome",
+                    "tipoUsuario",
+                    "ativo",
+                    "bloqueado",
+                    "motivoBloqueio",
+                    "senhaAlteradaEm"
+                ]
             });
 
             if (!usuario) {
                 return next(new Error("Sessão inválida."));
             }
 
-            // Fase 9 (Bloco 3): mesma distinção do REST — bloqueio
-            // administrativo é identificável (`err.data.codigo`) para o
-            // cliente parar de tentar reconectar, em vez de insistir até
-            // esgotar as tentativas automáticas do socket.io-client.
+            // Mesma regra do `autenticacaoMiddleware`: token emitido antes da última troca de senha
+            // não vale mais, então trocar a senha derruba também as conexões de tempo real. Vai com
+            // `codigo`, como o bloqueio, para o cliente encerrar a sessão em vez de reconectar com
+            // um token que nunca mais vai ser aceito.
+            if (tokenAnteriorATrocaDeSenha(payload, usuario)) {
+                const erro = new Error("Sua senha foi alterada. Entre novamente.");
+                erro.data = { codigo: "SENHA_ALTERADA" };
+                return next(erro);
+            }
+
+            // Mesma distinção do REST: o bloqueio administrativo tem `err.data.codigo`, para o
+            // cliente parar de reconectar em vez de insistir até esgotar as tentativas automáticas.
             if (usuario.bloqueado) {
                 const erro = new Error(
                     usuario.motivoBloqueio
@@ -86,9 +134,23 @@ export const iniciarSocket = (httpServer) => {
 
         socket.join(salaUsuario(id));
 
-        socket.on("conversa:entrar", (conversaId) => {
-            if (typeof conversaId === "string" && conversaId.length <= 64) {
+        // A sala de uma conversa entrega o conteúdo das mensagens, então participar dela é conferido
+        // aqui, no servidor, e não no cliente. Quem não participa nunca entra, mesmo sabendo o id.
+        // `confirmar` é opcional: quando o cliente manda uma função de retorno, ela recebe o
+        // resultado.
+        socket.on("conversa:entrar", async (conversaId, confirmar) => {
+            const permitido = await participaDaConversa(conversaId, id);
+
+            if (permitido) {
                 socket.join(salaConversa(conversaId));
+            }
+
+            if (typeof confirmar === "function") {
+                confirmar(
+                    permitido
+                        ? { permitido: true }
+                        : { permitido: false, mensagem: "Conversa não disponível." }
+                );
             }
         });
 
@@ -98,10 +160,12 @@ export const iniciarSocket = (httpServer) => {
             }
         });
 
+        // Só repassa "digitando" para uma sala em que este socket já entrou, ou seja, para uma
+        // conversa que já passou pela checagem de participante.
         socket.on("mensagem:digitando", (dados) => {
             const conversaId = dados?.conversaId;
 
-            if (typeof conversaId !== "string") {
+            if (typeof conversaId !== "string" || !socket.rooms.has(salaConversa(conversaId))) {
                 return;
             }
 
@@ -118,6 +182,7 @@ export const iniciarSocket = (httpServer) => {
 
 export const obterIo = () => io;
 
+/** Emite só para a sala privada do usuário. Antes de `iniciarSocket` (como nos testes) não faz nada. */
 export const emitirParaUsuario = (usuarioId, evento, dados) => {
     if (!io || !usuarioId) {
         return;
@@ -135,13 +200,11 @@ export const emitirParaConversa = (conversaId, evento, dados) => {
 };
 
 /**
- * Eventos públicos do feed — `io.emit`, sem sala, chega a TODO cliente
- * conectado, independente de seguir o autor, ter bloqueio ou o perfil ser
- * privado. Por isso `dados` nunca pode carregar um objeto de domínio
- * completo (postagem, comentário) nem qualquer URL — assinada ou não — de
- * anexo: qualquer um desses contornaria a autorização que o REST aplica
- * (`garantirAcessoAPostagem`). Envie só `{ id, <flag> }`; quem recebe
- * revalida via REST, que decide o que cada um pode realmente ver.
+ * Eventos públicos do feed: `io.emit`, sem sala, chega a todo cliente conectado, independente de
+ * seguir o autor, ter bloqueio ou o perfil ser privado. Por isso `dados` nunca pode carregar um
+ * objeto de domínio completo (postagem, comentário) nem URL de anexo, assinada ou não: qualquer um
+ * deles contornaria a autorização que a API REST aplica (`garantirAcessoAPostagem`). Envie só
+ * `{ id, <marcador> }`; quem recebe busca de novo pela API, que decide o que cada um pode ver.
  */
 export const emitirFeed = (evento, dados) => {
     if (!io) {

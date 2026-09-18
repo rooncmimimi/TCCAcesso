@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, RotateCcw, Save, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPanel";
-import { useAccessibility } from "@/contexts/AccessibilityContext";
-import { useSpeech } from "@/contexts/SpeechContext";
-import { useSession } from "@/contexts/SessionContext";
-import acessibilidadeService, { prefsDaApi, prefsParaApi } from "@/services/acessibilidade.service";
+import { PainelAcessibilidade } from "@/components/acessibilidade/PainelAcessibilidade";
+import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { useVoz } from "@/hooks/useVoz";
+import { useSessao } from "@/hooks/useSessao";
+import acessibilidadeService, { preferenciasDaApi, preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 
 export const Route = createFileRoute("/configuracoes/acessibilidade")({
@@ -25,13 +25,13 @@ export const Route = createFileRoute("/configuracoes/acessibilidade")({
       { property: "og:description", content: "Personalize a acessibilidade e veja as mudanças na hora." },
     ],
   }),
-  component: ConfigAcessibilidade,
+  component: ConfiguracoesAcessibilidade,
 });
 
-function ConfigAcessibilidade() {
-  const { draft, set, save, discard, reset, dirty } = useAccessibility();
-  const { clearChoice } = useSpeech();
-  const { user, autenticado } = useSession();
+function ConfiguracoesAcessibilidade() {
+  const { rascunho, definir, salvar, descartar, restaurar, alterado } = useAcessibilidade();
+  const { limparEscolha } = useVoz();
+  const { usuario, autenticado } = useSessao();
   const [salvando, setSalvando] = useState(false);
   const [restaurando, setRestaurando] = useState(false);
 
@@ -42,10 +42,10 @@ function ConfigAcessibilidade() {
       .obter()
       .then((prefs) => {
         if (!ativo) return;
-        const parcial = prefsDaApi(prefs);
+        const parcial = preferenciasDaApi(prefs);
         (Object.keys(parcial) as (keyof typeof parcial)[]).forEach((chave) => {
           const valor = parcial[chave];
-          if (valor !== undefined) set(chave, valor as never);
+          if (valor !== undefined) definir(chave, valor as never);
         });
       })
       .catch(() => undefined);
@@ -57,19 +57,19 @@ function ConfigAcessibilidade() {
   }, [autenticado]);
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Configurações de acessibilidade</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">
         Todas as mudanças aparecem imediatamente na tela. Teste à vontade e salve quando estiver do
         seu jeito.{" "}
-        {user
+        {usuario
           ? "Ao salvar, as preferências ficam vinculadas à sua conta."
           : "Sem login, as preferências ficam salvas neste dispositivo."}
       </p>
 
       <Card className="mt-6 shadow-card">
         <CardContent className="p-5 sm:p-6">
-          <AccessibilityPanel />
+          <PainelAcessibilidade />
         </CardContent>
       </Card>
 
@@ -78,11 +78,11 @@ function ConfigAcessibilidade() {
           className="min-h-12 text-base"
           disabled={salvando}
           onClick={async () => {
-            save();
+            salvar();
             if (autenticado) {
               setSalvando(true);
               try {
-                await acessibilidadeService.salvar(prefsParaApi(draft));
+                await acessibilidadeService.salvar(preferenciasParaApi(rascunho));
 
                 toast.success("Preferências de acessibilidade salvas na sua conta.");
               } catch (erro) {
@@ -101,8 +101,8 @@ function ConfigAcessibilidade() {
         <Button
           variant="outline"
           className="min-h-12 text-base"
-          disabled={!dirty}
-          onClick={() => discard()}
+          disabled={!alterado}
+          onClick={() => descartar()}
         >
           <Undo2 aria-hidden="true" /> Descartar alterações
         </Button>
@@ -111,8 +111,8 @@ function ConfigAcessibilidade() {
           className="min-h-12 text-base"
           disabled={restaurando}
           onClick={async () => {
-            reset();
-            clearChoice();
+            restaurar();
+            limparEscolha();
             if (autenticado) {
               setRestaurando(true);
               try {
@@ -130,6 +130,6 @@ function ConfigAcessibilidade() {
           Redefinir tudo
         </Button>
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

@@ -1,7 +1,11 @@
 import InteracaoService from "../services/InteracaoService.js";
 
+/**
+ * Vagas favoritas e empresas seguidas pelo candidato, em rotas de outros recursos:
+ * `POST /vagas/:vagaId/favoritar`, `GET /dashboard/favoritos` e `GET /empresas/seguindo`.
+ */
 class InteracaoController {
-    async toggleFavorito(req, res, next) {
+    async alternarFavorito(req, res, next) {
         try {
             const resultado = await InteracaoService.alternarFavorito(
                 req.params.vagaId,

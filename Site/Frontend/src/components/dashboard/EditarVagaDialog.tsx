@@ -34,7 +34,7 @@ import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "@/types";
 
 /**
  * Edição de uma vaga já publicada (PUT /vagas/:id). Mesmos campos e limites
- * do formulário de criação — o backend já valida posse e aprovação da
+ * do formulário de criação: o backend já valida posse e aprovação da
  * empresa (`garantirDono` + `garantirEmpresaAprovada`).
  */
 export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: ReactNode }) {
@@ -63,8 +63,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
   const salvar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => vagasService.atualizar(vaga.id, payload),
     onSuccess: () => {
-      // Fase 9, Bloco 7: o toast já é lido automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("Vaga atualizada com sucesso.");
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
@@ -91,9 +90,6 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
       estado: texto("estado").toUpperCase() || null,
       cargaHoraria: texto("cargaHoraria") || null,
       acessibilidade: texto("acessibilidade") || null,
-      // exclusivaPcd é derivado do público-alvo para manter compatibilidade
-      // com o campo antigo, sem expor dois controles equivalentes ao usuário.
-      exclusivaPcd: publicoAlvo === "pcd" || publicoAlvo === "pcd_cinquenta_mais",
       publicoAlvo,
       recursosAcessibilidade,
     });
@@ -167,7 +163,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               <select
                 id={`contrato-${vaga.id}`}
                 name="contrato"
-                defaultValue={vaga.contrato ?? "CLT"}
+                defaultValue={vaga.contrato ?? "clt"}
                 className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 {CONTRATOS.map((c) => (

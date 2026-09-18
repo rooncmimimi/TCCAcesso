@@ -1,22 +1,22 @@
 import { Router } from "express";
 import AcessibilidadeController from "../controllers/AcessibilidadeController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarPreferencias } from "../validators/acessibilidadeValidator.js";
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
-router.get("/", AcessibilidadeController.show);
+router.get("/", AcessibilidadeController.obter);
 
 router.put(
     "/",
     validarPreferencias,
-    validationMiddleware,
-    AcessibilidadeController.update
+    validacaoMiddleware,
+    AcessibilidadeController.atualizar
 );
 
-router.post("/reset", AcessibilidadeController.reset);
+router.post("/reset", AcessibilidadeController.restaurar);
 
 export default router;

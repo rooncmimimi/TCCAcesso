@@ -7,13 +7,11 @@ import { extrairMensagemErro } from "@/services/api";
 import { toast } from "sonner";
 
 /**
- * Abre (ou reabre) a conversa com o usuário deste perfil e vai direto para
- * ela — consulta antes se é permitido (Fase 4), pra nunca simplesmente
- * esconder o botão sem explicação: quando não permitido, ele continua
- * visível e focável (`aria-disabled`, não `disabled` nativo — leitor de
- * tela ainda anuncia o motivo), com o motivo em texto visível ao lado,
- * nunca só por cor ou só num tooltip. A autorização de verdade é sempre
- * do backend; esta consulta só decide o que mostrar.
+ * Abre (ou reabre) a conversa com o usuário deste perfil. Antes, consulta se é permitido, para
+ * nunca esconder o botão sem explicação: sem permissão, ele continua visível e focável
+ * (`aria-disabled`, e não `disabled`, para o leitor de tela anunciar), com o motivo em texto ao
+ * lado, e não só por cor ou tooltip. A autorização real é do backend; esta consulta só decide o que
+ * mostrar.
  */
 export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
   const navigate = useNavigate();
@@ -41,10 +39,8 @@ export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
     );
   }
 
-  // Falha ao consultar (rede, etc.): não trava a ação — cai de volta pro
-  // comportamento anterior à Fase 4 (backend segue sendo a autoridade real
-  // no clique, então isso nunca é uma brecha de segurança, só um degrade
-  // de UX numa falha de rede pontual).
+  // Se a consulta falhar (rede etc.), a ação não trava: o backend continua decidindo no clique,
+  // então isto só afeta a interface, nunca a segurança.
   const permitido = consulta.isError ? true : consulta.data?.permitido !== false;
   const motivo = consulta.data?.motivo;
 

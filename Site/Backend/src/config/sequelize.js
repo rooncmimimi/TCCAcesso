@@ -1,4 +1,4 @@
-import sequelize from "./database.js";
+import sequelize from "./bancoDeDados.js";
 
 /**
  * Autentica a conexão com o banco durante o boot da aplicação.

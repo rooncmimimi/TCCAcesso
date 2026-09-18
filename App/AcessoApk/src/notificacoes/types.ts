@@ -1,33 +1,25 @@
 /**
- * Tipos do contrato real de notificações (Site/Backend), conforme auditoria
- * da Fase 16 — `notificacaoRoutes.js`, `NotificacaoController`,
- * `NotificacaoService`, model `Notificacao`. Nomes de campo em português são
- * literais ao que a API envia.
+ * Tipos de notificações.
  *
- * IMPORTANTE (achado da auditoria): `entidadeTipo`/`entidadeId`/`atorId` só
- * existem a partir da migration 0033 — uma notificação antiga não tem esses
- * campos (`null`), e a tela precisa continuar mostrando o texto congelado em
- * `titulo`/`descricao` normalmente, só sem link/avatar. Os valores reais de
- * `entidadeTipo` observados no backend (`grep` em todo `NotificacaoService
- * .criar(...)`): `"usuario"`, `"postagem"`, `"vaga"`, `"solicitacao_seguimento"`,
- * `"conversa"`, `"empresa"`, `"denuncia"` — só os 4 primeiros têm uma tela
- * correspondente neste app hoje (`PublicProfile`, `PostagemDetail`,
- * `VagaDetail`, e o caso especial de aceitar/recusar solicitação); os
- * demais (conversa — Fase 17 ainda não existe; empresa/denúncia — não há
- * tela de terceiros para eles neste app) só marcam como lida ao tocar, sem
- * navegar para lugar nenhum inventado.
+ * `entidadeTipo`, `entidadeId` e `atorId` podem vir `null` (notificação sem alvo, ou gravada antes
+ * de esses campos existirem); nesse caso a tela mostra só `titulo` e `descricao`, sem link nem
+ * avatar.
+ *
+ * O backend usa `entidadeTipo` com os valores `usuario`, `postagem`, `vaga`,
+ * `solicitacao_seguimento`, `conversa`, `comentario`, `empresa` e `denuncia`. A tela abre o
+ * conteúdo nos quatro primeiros; nos demais, tocar só marca como lida.
  */
 
-export type TipoNotificacao = "Sistema" | "Mensagem" | "Vaga" | "Candidatura" | "Feed" | "Moderacao";
+export type TipoNotificacao = "sistema" | "mensagem" | "vaga" | "candidatura" | "feed" | "moderacao";
 
-/** Quem praticou a ação (curtiu, comentou, seguiu, solicitou seguir...) — sempre id/nome/foto, nunca dado privado (mesma allowlist do backend). `null` quando a notificação não tem ator (avisos do sistema). */
+/** Quem praticou a ação (curtiu, comentou, seguiu, solicitou seguir...): sempre id/nome/foto, nunca dado privado (mesma allowlist do backend). `null` quando a notificação não tem ator (avisos do sistema). */
 export interface AtorNotificacao {
   id: string;
   nome: string;
   fotoPerfil: string | null;
 }
 
-/** Serialização padrão do Sequelize para o model `Notificacao` — `created_at`/`updated_at` são os nomes REAIS do atributo (o model renomeia explicitamente, não é só a coluna do banco). */
+/** Serialização padrão do Sequelize para o model `Notificacao`: `criadoEm`/`atualizadoEm` são os nomes reais do atributo (o model renomeia explicitamente, não é só a coluna do banco). */
 export interface Notificacao {
   id: string;
   usuarioId: string;
@@ -40,8 +32,8 @@ export interface Notificacao {
   entidadeId: string | null;
   atorId: string | null;
   ator: AtorNotificacao | null;
-  created_at: string;
-  updated_at: string;
+  criadoEm: string;
+  atualizadoEm: string;
   [chave: string]: unknown;
 }
 
@@ -50,7 +42,7 @@ export interface ListarNotificacoesParametros {
   limit?: number;
 }
 
-/** `GET /notificacoes` — mesmo envelope de paginação de `/postagens`/`/vagas` (`montarResposta`). */
+/** `GET /notificacoes`: mesmo envelope de paginação de `/postagens`/`/vagas` (`montarResposta`). */
 export interface ListaNotificacoesResposta {
   sucesso: true;
   total: number;
@@ -72,16 +64,16 @@ export interface MarcarComoLidaResposta {
   notificacao: Notificacao;
 }
 
-/** Plataformas aceitas por `POST /notificacoes/push-token` (Fase R5) — o backend valida `isIn(["android","ios"])`. */
+/** Plataformas aceitas por `POST /notificacoes/push-token` (o backend valida com `isIn(["android", "ios"])`). */
 export type PlataformaPush = "android" | "ios";
 
-/** `POST /notificacoes/push-token` — 200 em sucesso. */
+/** `POST /notificacoes/push-token`: 200 em sucesso. */
 export interface RegistrarPushTokenResposta {
   sucesso: true;
   registrado: true;
 }
 
-/** `DELETE /notificacoes/push-token` — 200 em sucesso; idempotente. */
+/** `DELETE /notificacoes/push-token`: 200 em sucesso; idempotente. */
 export interface RemoverPushTokenResposta {
   sucesso: true;
   removido: true;

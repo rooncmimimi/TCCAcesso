@@ -42,10 +42,10 @@ pré-requisitos (conta Expo, `eas init`, segredo `EXPO_TOKEN`) antes de rodar
 ## Arquitetura
 
 `Screen → Service → API`: cada domínio (`src/feed/`, `src/vagas/`,
-`src/auth/` etc.) é um módulo flat com `types.ts` + `<Domínio>Service.ts` +
-`index.ts`, espelhando o contrato real do `Site/Backend` (nunca inventado —
-toda auditoria de rota/controller/validator acontece antes de qualquer
-código). Preferências locais (`src/accessibility/`, `src/seguranca/`) usam
+`src/autenticacao/` etc.) é um módulo flat com `types.ts` + `<Domínio>Service.ts` +
+`index.ts`, espelhando o contrato real do `Site/Backend` (conferido nas
+rotas, controllers e validators do backend, nunca presumido). Preferências
+locais (`src/acessibilidade/`, `src/seguranca/`) usam
 `AsyncStorage`; a sessão (tokens) usa `expo-secure-store`
-(`src/storage/secureStorage.ts`) — nunca o mesmo mecanismo para as duas
+(`src/armazenamento/armazenamentoSeguro.ts`) — nunca o mesmo mecanismo para as duas
 coisas.

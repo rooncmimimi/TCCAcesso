@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Lock } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { SecaoSessoes } from "@/components/configuracoes/SecaoSessoes";
 
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/configuracoes/seguranca")({
 
 function Seguranca() {
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -42,6 +42,6 @@ function Seguranca() {
       <div className="mt-6 space-y-4">
         <SecaoSessoes />
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

@@ -59,12 +59,9 @@ class AcessibilidadeService {
             espacamentoTexto: false,
             reduzirAnimacoes: false,
             leituraPorVoz: false,
-            // Fase 9, Bloco 8: redefinir volta ao estado "nunca perguntado"
-            // — a pergunta de consentimento deve reaparecer, exatamente como
-            // `AccessibilityContext.reset()` já faz no frontend (remove
-            // `VOICE_CHOICE_KEY` do localStorage). Migration 0042 (executada)
-            // relaxou a coluna para NULL-ável; antes disso, escrever `null`
-            // aqui violaria a constraint NOT NULL ainda vigente.
+            // Redefinir volta ao estado "nunca perguntado", para a pergunta de consentimento
+            // reaparecer, como o `restaurar()` do `AcessibilidadeProvider` faz no Site (remove
+            // `CHAVE_ESCOLHA_VOZ` do localStorage). A coluna aceita NULL.
             consentimentoVoz: null,
             velocidadeVoz: 1.0,
             linguagemSimplificada: false,

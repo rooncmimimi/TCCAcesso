@@ -19,12 +19,12 @@ import {
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
-import { authService } from "@/services/auth.service";
-import { useSession } from "@/contexts/SessionContext";
+import { autenticacaoService } from "@/services/autenticacao.service";
+import { useSessao } from "@/hooks/useSessao";
 
-/** Pausar/excluir conta — ambas destrutivas, ambas exigem senha atual e confirmação explícita. */
+/** Pausar/excluir conta: ambas destrutivas, ambas exigem senha atual e confirmação explícita. */
 export function SecaoContaPerigo() {
-  const { signOut } = useSession();
+  const { sair } = useSessao();
   const navigate = useNavigate();
   const [abertoPausar, setAbertoPausar] = useState(false);
   const [abertoExcluir, setAbertoExcluir] = useState(false);
@@ -32,20 +32,20 @@ export function SecaoContaPerigo() {
   const [senhaExcluir, setSenhaExcluir] = useState("");
 
   const pausar = useMutation({
-    mutationFn: () => authService.pausarConta(senhaPausar),
+    mutationFn: () => autenticacaoService.pausarConta(senhaPausar),
     onSuccess: async () => {
       toast.success("Conta pausada. Você pode reativá-la a qualquer momento fazendo login novamente.");
-      await signOut();
+      await sair();
       void navigate({ to: "/entrar" });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível pausar a conta.")),
   });
 
   const excluir = useMutation({
-    mutationFn: () => authService.excluirConta(senhaExcluir),
+    mutationFn: () => autenticacaoService.excluirConta(senhaExcluir),
     onSuccess: async () => {
       toast.success("Conta excluída. Sentiremos sua falta.");
-      await signOut();
+      await sair();
       void navigate({ to: "/" });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a conta.")),

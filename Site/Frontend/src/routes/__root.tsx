@@ -7,9 +7,10 @@ import {
   HeadContent,
 } from "@tanstack/react-router";
 
-import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
-import { SpeechProvider, useAutoSpeech } from "@/contexts/SpeechContext";
-import { SessionProvider } from "@/contexts/SessionContext";
+import { AcessibilidadeProvider } from "@/contexts/AcessibilidadeProvider";
+import { VozProvider } from "@/contexts/VozProvider";
+import { useLeituraAutomatica } from "@/hooks/useLeituraAutomatica";
+import { SessaoProvider } from "@/contexts/SessaoProvider";
 import { VLibras } from "@/components/VLibras";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -88,18 +89,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: RootComponent,
+  component: ComponenteRaiz,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
 
 function AppFrame() {
-  useAutoSpeech();
+  useLeituraAutomatica();
 
   return (
     <>
       <HeadContent />
-      {/* As rotas filhas são renderizadas aqui. */}
       <Outlet />
       <VLibras />
       <Toaster />
@@ -107,18 +107,18 @@ function AppFrame() {
   );
 }
 
-function RootComponent() {
+function ComponenteRaiz() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AccessibilityProvider>
-        <SpeechProvider>
-          <SessionProvider>
+      <AcessibilidadeProvider>
+        <VozProvider>
+          <SessaoProvider>
             <AppFrame />
-          </SessionProvider>
-        </SpeechProvider>
-      </AccessibilityProvider>
+          </SessaoProvider>
+        </VozProvider>
+      </AcessibilidadeProvider>
     </QueryClientProvider>
   );
 }

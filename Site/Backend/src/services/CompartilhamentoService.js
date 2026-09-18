@@ -1,48 +1,35 @@
 import { Op } from "sequelize";
 
-import sequelize from "../config/database.js";
-import {
-    Compartilhamento,
-    Postagem,
-    PostagemAnexo,
-    Usuario
-} from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, garantirEmpresaAprovadaSeForEmpresa, ehAdministrador } from "../utils/authorization.js";
+import sequelize from "../config/bancoDeDados.js";
+import { Compartilhamento, Postagem, PostagemAnexo } from "../models/index.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirDono, garantirEmpresaAprovadaSeForEmpresa, ehAdministrador } from "../utils/autorizacao.js";
 import { garantirAcessoAPostagem, assinarMidiaDasPostagens } from "./PostagemService.js";
 import SeguidorService from "./SeguidorService.js";
 import NotificacaoService from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
-
-// Fábrica: o Sequelize muta objetos de include, então cada uso precisa de um novo objeto.
-const incluirAutor = () => ({
-    model: Usuario,
-    as: "usuario",
-    attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
-});
+import { incluirAutor } from "../utils/inclusoes.js";
 
 /**
  * Compartilhamento de postagens do feed.
  */
 class CompartilhamentoService {
     /**
-     * `solicitante` é opcional só por compatibilidade com chamadas internas
-     * que não precisam da checagem (nenhuma hoje) — todo caller de fora
-     * deste arquivo deve sempre passar o usuário autenticado (Fase 3): sem
-     * isso, dava pra compartilhar/listar compartilhamentos de uma postagem
-     * de perfil privado sem nunca ter seguido o autor.
+     * `solicitante` é opcional só para chamadas internas que não precisam da checagem. Toda chamada
+     * de fora deste arquivo deve passar o usuário autenticado; sem ele, daria para listar ou
+     * compartilhar postagens de perfil privado sem seguir o autor.
      */
     async buscarPostagemAtiva(postagemId, solicitante) {
         const postagem = await Postagem.findByPk(postagemId);
 
         if (!postagem || !postagem.ativo) {
-            throw ApiError.notFound("Postagem não encontrada.");
+            throw ErroApi.naoEncontrado("Postagem não encontrada.");
         }
 
         if (solicitante !== undefined) {
             // Empresa pendente/reprovada/suspensa não lista nem cria
-            // compartilhamento em nenhuma postagem — mesma autoridade de
+            // compartilhamento em nenhuma postagem: mesma autoridade de
             // `PostagemService.buscarAtiva`, sem duplicar a regra.
             await garantirEmpresaAprovadaSeForEmpresa(solicitante);
             await garantirAcessoAPostagem(postagem, solicitante);
@@ -61,7 +48,7 @@ class CompartilhamentoService {
             include: [incluirAutor()],
             limit: limite,
             offset,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta(
@@ -74,21 +61,13 @@ class CompartilhamentoService {
     }
 
     /**
-     * Compartilhamentos feitos por um usuário — usado na aba
-     * "Compartilhamentos" do perfil. As postagens compartilhadas podem ser
-     * de QUALQUER autor; se o autor original for privado e o solicitante
-     * não tiver acesso (dono/admin/seguidor aprovado), o compartilhamento é
-     * excluído da lista — nunca vaza o conteúdo da postagem original só
-     * porque alguém a compartilhou (Fase 3).
+     * Compartilhamentos feitos por um usuário (`GET /compartilhamentos/usuario/:usuarioId`). As
+     * postagens compartilhadas podem ser de qualquer autor: se o autor original for privado e o
+     * solicitante não tiver acesso (dono, administrador ou seguidor aprovado), o item sai da lista,
+     * para não vazar a postagem só porque alguém a compartilhou.
      *
-     * Correção (auditoria de segurança, achado A1): faltava aqui a mesma
-     * checagem de bloqueio que TODO outro acesso a conteúdo/perfil social já
-     * aplica (`garantirAcessoAPostagem`, `PostagemService.findAll`,
-     * `BloqueioService.garantirVisibilidadePerfil`) — um bloqueio entre o
-     * solicitante e o DONO da aba (quem compartilhou) não impedia ver esta
-     * lista, e o autor ORIGINAL de uma postagem compartilhada também não
-     * era excluído por bloqueio. Reaproveita a mesma autoridade central
-     * (`BloqueioService`) em vez de uma segunda implementação da regra.
+     * O bloqueio segue a mesma autoridade central dos demais acessos sociais (`BloqueioService`):
+     * vale tanto entre o solicitante e quem compartilhou quanto com o autor original.
      */
     async listarPorUsuario(usuarioId, query, solicitante) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
@@ -96,7 +75,7 @@ class CompartilhamentoService {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         // Bloqueio entre o solicitante e o dono da aba tem prioridade sobre
-        // qualquer outra regra de visibilidade — mesmo padrão/mensagem
+        // qualquer outra regra de visibilidade, com o mesmo padrão/mensagem
         // genérica de `garantirVisibilidadePerfil`. Dono/admin sempre passam
         // (checagem interna do próprio `garantirNaoBloqueado`); no-op se
         // `solicitante` não vier (chamada interna sem usuário autenticado).
@@ -107,8 +86,8 @@ class CompartilhamentoService {
         if (solicitante && !ehAdministrador(solicitante)) {
             const [idsSeguidos, idsBloqueados] = await Promise.all([
                 SeguidorService.idsSeguidos(solicitante.id),
-                // Mesmo filtro usado por `PostagemService.findAll`: exclui
-                // também postagens cujo autor ORIGINAL (não só quem
+                // Mesmo filtro usado por `PostagemService.listar`: exclui
+                // também postagens cujo autor original (não só quem
                 // compartilhou) tem bloqueio com o solicitante.
                 BloqueioService.idsRelacionados(solicitante.id)
             ]);
@@ -116,7 +95,7 @@ class CompartilhamentoService {
             // `$postagem.usuario.perfil_publico$` (dois níveis de associação
             // a partir de Compartilhamento) gera SQL inválido no COUNT
             // automático do `findAndCountAll` (o JOIN de "usuario" não
-            // existe ainda no ponto em que a condição é aplicada) — um
+            // existe ainda no ponto em que a condição é aplicada): um
             // `EXISTS` correlacionado evita depender desse caminho
             // multi-nível e funciona igual no SELECT e no COUNT.
             wherePostagem[Op.and] = [
@@ -155,12 +134,12 @@ class CompartilhamentoService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
-        // Fase 7: já filtrado pelo `wherePostagem` acima (equivalente ao
-        // `garantirAcessoAPostagem`) — só agora, com o acesso já decidido,
-        // resolve URL de exibição dos anexos da postagem original.
+        // O acesso já foi filtrado pelo `wherePostagem` acima (equivalente a
+        // `garantirAcessoAPostagem`); só então as URLs dos anexos da postagem original são
+        // resolvidas.
         const planas = rows.map((linha) => linha.toJSON());
         const postagensDasLinhas = planas.map((linha) => linha.postagem).filter(Boolean);
 
@@ -187,7 +166,7 @@ class CompartilhamentoService {
         if (String(postagem.usuarioId) !== String(solicitante.id)) {
             await NotificacaoService.criar({
                 usuarioId: postagem.usuarioId,
-                tipo: "Feed",
+                tipo: "feed",
                 titulo: "Sua publicação foi compartilhada",
                 descricao: `${solicitante.nome} compartilhou sua publicação.`,
                 subtipo: "compartilhamento_postagem",
@@ -208,7 +187,7 @@ class CompartilhamentoService {
         const registro = await Compartilhamento.findByPk(id);
 
         if (!registro) {
-            throw ApiError.notFound("Compartilhamento não encontrado.");
+            throw ErroApi.naoEncontrado("Compartilhamento não encontrado.");
         }
 
         garantirDono(solicitante, registro.usuarioId);

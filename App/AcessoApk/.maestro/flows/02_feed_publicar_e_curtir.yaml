@@ -3,15 +3,13 @@ name: Login → publica um texto no feed → curte → exclui a própria publica
 tags:
   - smoke
 ---
-# Cria conteúdo PRÓPRIO em vez de depender do feed já ter alguma publicação
-# (uma conta de teste nova normalmente está vazia) — e EXCLUI no final: um
-# fluxo de UI não tem como fazer a varredura de resíduo por SQL que os
-# scripts de verificação ao vivo desta sessão sempre fizeram, então a
-# limpeza aqui tem que ser a própria ação "Excluir publicação" da tela
-# (Fase 20), não pode depender de ninguém limpar depois manualmente.
-# Rótulos conferidos em `HomeScreen.tsx`/`NovaPostagemScreen.tsx`/
-# `PostagemDetailScreen.tsx` antes de escrever este fluxo. NÃO EXECUTADO
-# neste ambiente (sem SDK Android/emulador) — ver README.md desta pasta.
+# Cria a própria publicação, em vez de depender de o feed já ter conteúdo (uma
+# conta de teste nova costuma estar vazia), e a exclui no final pela ação
+# "Excluir publicação" da tela: um fluxo de interface não consegue limpar
+# resíduos direto no banco, então a limpeza não pode depender de ninguém.
+# Rótulos de `FeedScreen.tsx`, `NovaPostagemScreen.tsx` e
+# `DetalhePostagemScreen.tsx`. Ainda não executado em emulador ou aparelho:
+# ver o README.md desta pasta.
 - runFlow: 00_login.yaml
 - tapOn: "Criar nova publicação"
 - tapOn: "Texto da publicação"

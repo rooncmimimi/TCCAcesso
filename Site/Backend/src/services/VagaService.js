@@ -1,10 +1,10 @@
 import { Op } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import { Vaga, Empresa, Usuario, Candidatura } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, garantirEmpresaAprovada, ehAdministrador } from "../utils/authorization.js";
-import AdminAuditService from "./AdminAuditService.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirDono, garantirEmpresaAprovada, ehAdministrador } from "../utils/autorizacao.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
 
 const CAMPOS_EDITAVEIS = [
     "titulo",
@@ -17,7 +17,6 @@ const CAMPOS_EDITAVEIS = [
     "cidade",
     "estado",
     "cargaHoraria",
-    "exclusivaPcd",
     "acessibilidade",
     "recursosAcessibilidade",
     "publicoAlvo",
@@ -25,6 +24,10 @@ const CAMPOS_EDITAVEIS = [
     "dataEncerramento"
 ];
 
+/**
+ * Vagas: listagem e detalhe públicos (vaga de empresa não aprovada não aparece), gestão pela
+ * empresa dona e moderação pelo administrador, que fica registrada no log de auditoria.
+ */
 class VagaService {
     filtrarCampos(data) {
         return CAMPOS_EDITAVEIS.reduce((acc, campo) => {
@@ -42,7 +45,7 @@ class VagaService {
         const empresa = await Empresa.findOne({ where: { usuarioId } });
 
         if (!empresa) {
-            throw ApiError.forbidden(
+            throw ErroApi.acessoNegado(
                 "Apenas empresas com perfil completo podem gerenciar vagas."
             );
         }
@@ -57,16 +60,14 @@ class VagaService {
         });
 
         if (!vaga) {
-            throw ApiError.notFound("Vaga não encontrada.");
+            throw ErroApi.naoEncontrado("Vaga não encontrada.");
         }
 
         return vaga;
     }
 
-    /* ==========================================================
-       LISTAR (público) — apenas vagas abertas por padrão
-    ========================================================== */
-    async findAll(query) {
+    /* Listar (público): só vagas abertas, por padrão */
+    async listar(query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
         const {
             search,
@@ -82,11 +83,10 @@ class VagaService {
         } = query;
 
         const where = {
-            status: status || "Aberta",
-            // Fase 9: vaga de empresa suspensa/reprovada/pendente some dos
-            // fluxos públicos (listagem geral) — mesmo padrão já usado em
-            // PostagemService/PublicoService (`'$associacao.coluna$'`) para
-            // filtrar pela tabela associada sem uma segunda consulta.
+            status: status || "aberta",
+            // Vaga de empresa suspensa, reprovada ou pendente some da listagem pública. Filtra pela
+            // tabela associada (`'$associacao.coluna$'`) sem uma segunda consulta, como
+            // `PostagemService` e `PublicoService`.
             "$empresa.status_aprovacao$": "aprovada"
         };
 
@@ -110,8 +110,12 @@ class VagaService {
             where.contrato = contrato;
         }
 
-        if (exclusivaPcd !== undefined) {
-            where.exclusivaPcd = exclusivaPcd === "true" || exclusivaPcd === true;
+        // O filtro `exclusivaPcd` da API é uma forma abreviada de pedir os dois públicos-alvo que
+        // incluem PCD; o banco guarda só `publicoAlvo`.
+        if (exclusivaPcd === "true" || exclusivaPcd === true) {
+            where.publicoAlvo = { [Op.in]: ["pcd", "pcd_cinquenta_mais"] };
+        } else if (exclusivaPcd === "false" || exclusivaPcd === false) {
+            where.publicoAlvo = { [Op.notIn]: ["pcd", "pcd_cinquenta_mais"] };
         }
 
         if (publicoAlvo) {
@@ -119,8 +123,8 @@ class VagaService {
         }
 
         if (recursosAcessibilidade) {
-            // Aceita tanto `?recursosAcessibilidade=a,b` (querystring) quanto
-            // um array já resolvido — usa o índice GIN da migration 0013.
+            // Aceita tanto `?recursosAcessibilidade=a,b` (querystring) quanto um array já
+            // resolvido. Usa o índice GIN `idx_vagas_recursos_acessibilidade`.
             const lista = Array.isArray(recursosAcessibilidade)
                 ? recursosAcessibilidade
                 : String(recursosAcessibilidade).split(",").filter(Boolean);
@@ -158,18 +162,17 @@ class VagaService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["data_publicacao", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("vagas", rows, count, pagina, limite);
     }
 
-    /* ==========================================================
-       BUSCAR POR ID (público — rota sem authMiddleware, `solicitante` só
-       existe quando um token válido acompanha a requisição, via
-       `authOpcionalMiddleware`)
-    ========================================================== */
-    async findById(id, solicitante) {
+    /*
+     * Buscar por id (público). A rota não exige autenticação; `solicitante` só existe quando um
+     * token válido acompanha a requisição (`autenticacaoOpcionalMiddleware`).
+     */
+    async buscarPorId(id, solicitante) {
         const vaga = await Vaga.findByPk(id, {
             include: [
                 {
@@ -187,34 +190,31 @@ class VagaService {
         });
 
         if (!vaga) {
-            throw ApiError.notFound("Vaga não encontrada.");
+            throw ErroApi.naoEncontrado("Vaga não encontrada.");
         }
 
-        // Fase 9: vaga de empresa não aprovada não existe para o público
-        // em geral — mesmo tratamento de "não encontrada" da listagem
-        // (nunca revela a um estranho que a vaga existe mas está
-        // suspensa). A própria empresa dona e o administrador continuam
-        // enxergando (acesso de somente leitura ao próprio histórico,
-        // consistente com `/vagas/minhas`, que nunca filtrou por status).
+        // Vaga de empresa não aprovada não existe para o público: recebe o mesmo "não encontrada"
+        // da listagem, sem revelar a um estranho que a vaga existe e está suspensa. A empresa dona
+        // e o administrador continuam vendo, em modo leitura, como em `/vagas/minhas`, que nunca
+        // filtrou por status.
         const ehDonoOuAdmin =
             solicitante &&
             (String(vaga.empresa.usuarioId) === String(solicitante.id) ||
                 ehAdministrador(solicitante));
 
         if (vaga.empresa.statusAprovacao !== "aprovada" && !ehDonoOuAdmin) {
-            throw ApiError.notFound("Vaga não encontrada.");
+            throw ErroApi.naoEncontrado("Vaga não encontrada.");
         }
 
         return vaga;
     }
 
-    /* ==========================================================
-       VAGAS DA EMPRESA AUTENTICADA
-       Inclui `totalCandidaturas` por vaga (uma única consulta agregada,
-       não N+1) — usado pelo painel de gestão para mostrar quantas
-       candidaturas cada vaga recebeu sem precisar de outra chamada.
-    ========================================================== */
-    async findByEmpresaAutenticada(solicitante, query) {
+    /*
+     * Vagas da empresa autenticada. Inclui `totalCandidaturas` por vaga numa única consulta
+     * agregada (sem N+1), para o painel de gestão mostrar as candidaturas de cada vaga sem outra
+     * chamada.
+     */
+    async buscarPorEmpresaAutenticada(solicitante, query) {
         const empresa = await this.empresaDoUsuario(solicitante.id);
 
         garantirEmpresaAprovada(empresa, solicitante);
@@ -231,7 +231,7 @@ class VagaService {
             where,
             limit: limite,
             offset,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         const vagaIds = rows.map((vaga) => vaga.id);
@@ -259,10 +259,8 @@ class VagaService {
         return montarResposta("vagas", vagasComContagem, count, pagina, limite);
     }
 
-    /* ==========================================================
-       CRIAR (empresa dona)
-    ========================================================== */
-    async create(data, solicitante) {
+    /* Criar (empresa dona) */
+    async criar(data, solicitante) {
         const empresa = await this.empresaDoUsuario(solicitante.id);
 
         garantirEmpresaAprovada(empresa, solicitante);
@@ -270,17 +268,14 @@ class VagaService {
         const vaga = await Vaga.create({
             ...this.filtrarCampos(data),
             empresaId: empresa.id,
-            dataPublicacao: new Date(),
-            status: data.status || "Aberta"
+            status: data.status || "aberta"
         });
 
-        return this.findById(vaga.id);
+        return this.buscarPorId(vaga.id);
     }
 
-    /* ==========================================================
-       ATUALIZAR (empresa dona ou administrador)
-    ========================================================== */
-    async update(id, data, solicitante) {
+    /* Atualizar (empresa dona ou administrador) */
+    async atualizar(id, data, solicitante) {
         const transaction = await sequelize.transaction();
 
         try {
@@ -292,16 +287,14 @@ class VagaService {
             await vaga.update(this.filtrarCampos(data), { transaction });
             await transaction.commit();
 
-            return this.findById(id);
+            return this.buscarPorId(id);
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
     }
 
-    /* ==========================================================
-       ALTERAR STATUS
-    ========================================================== */
+    /* Alterar status */
     async alterarStatus(id, status, solicitante, contexto = {}) {
         const vaga = await this.buscarVagaComEmpresa(id);
 
@@ -317,15 +310,15 @@ class VagaService {
         await vaga.save();
 
         if (ehModeracao) {
-            await AdminAuditService.log({
-                adminId: solicitante.id,
-                acao: "ALTERAR_STATUS_VAGA",
+            await AdminAuditoriaService.registrar({
+                administradorId: solicitante.id,
+                acao: "alterar_status_vaga",
                 entidadeTipo: "vaga",
                 entidadeId: vaga.id,
                 descricao: `Status da vaga "${vaga.titulo}" alterado para ${status} pela moderação.`,
-                metadata: {
-                    before: { status: statusAnterior },
-                    after: { status }
+                metadados: {
+                    antes: { status: statusAnterior },
+                    depois: { status }
                 },
                 ip: contexto.ip,
                 userAgent: contexto.userAgent
@@ -335,10 +328,8 @@ class VagaService {
         return vaga;
     }
 
-    /* ==========================================================
-       REMOVER (empresa dona ou administrador)
-    ========================================================== */
-    async delete(id, solicitante, contexto = {}) {
+    /* Remover (empresa dona ou administrador) */
+    async excluir(id, solicitante, contexto = {}) {
         const transaction = await sequelize.transaction();
         let vagaRemovida;
         let ehModeracao = false;
@@ -362,13 +353,13 @@ class VagaService {
         }
 
         if (ehModeracao) {
-            await AdminAuditService.log({
-                adminId: solicitante.id,
-                acao: "EXCLUIR_VAGA",
+            await AdminAuditoriaService.registrar({
+                administradorId: solicitante.id,
+                acao: "excluir_vaga",
                 entidadeTipo: "vaga",
                 entidadeId: vagaRemovida.id,
                 descricao: `Vaga "${vagaRemovida.titulo}" removida pela moderação.`,
-                metadata: { vaga: vagaRemovida },
+                metadados: { vaga: vagaRemovida },
                 ip: contexto.ip,
                 userAgent: contexto.userAgent
             });
@@ -377,9 +368,7 @@ class VagaService {
         return { mensagem: "Vaga removida com sucesso." };
     }
 
-    /* ==========================================================
-       ESTATÍSTICAS DA VAGA (empresa dona)
-    ========================================================== */
+    /* Estatísticas da vaga (empresa dona) */
     async estatisticas(id, solicitante) {
         const vaga = await this.buscarVagaComEmpresa(id);
 

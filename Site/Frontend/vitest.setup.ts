@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 
-// jsdom não implementa ResizeObserver (não faz layout de verdade) — vários
+// jsdom não implementa ResizeObserver (não faz layout de verdade), mas vários
 // componentes Radix UI (Select, Popover...) o usam para posicionamento.
 // Sem isso, qualquer teste que renderize um desses componentes quebra com
 // "ResizeObserver is not defined", mesmo sem o teste depender de medição de

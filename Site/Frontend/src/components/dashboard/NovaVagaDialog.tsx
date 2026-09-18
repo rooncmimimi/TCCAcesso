@@ -81,9 +81,6 @@ export function NovaVagaDialog() {
       estado: texto("estado").toUpperCase() || null,
       cargaHoraria: texto("cargaHoraria") || null,
       acessibilidade: texto("acessibilidade") || null,
-      // exclusivaPcd é derivado do público-alvo para manter compatibilidade
-      // com o campo antigo, sem expor dois controles equivalentes ao usuário.
-      exclusivaPcd: publicoAlvo === "pcd" || publicoAlvo === "pcd_cinquenta_mais",
       publicoAlvo,
       recursosAcessibilidade,
     });
@@ -140,7 +137,7 @@ export function NovaVagaDialog() {
               <select
                 id="modalidade"
                 name="modalidade"
-                defaultValue="Presencial"
+                defaultValue="presencial"
                 className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 {MODALIDADES.map((m) => (
@@ -155,7 +152,7 @@ export function NovaVagaDialog() {
               <select
                 id="contrato"
                 name="contrato"
-                defaultValue="CLT"
+                defaultValue="clt"
                 className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 {CONTRATOS.map((c) => (

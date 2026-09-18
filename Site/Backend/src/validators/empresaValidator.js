@@ -17,7 +17,7 @@ export const validarAtualizacaoEmpresa = [
 
     body("porte")
         .optional({ values: "falsy" })
-        .isIn(["MEI", "Micro", "Pequena", "Media", "Grande"])
+        .isIn(["mei", "micro", "pequena", "media", "grande"])
         .withMessage("Porte inválido."),
 
     body("site")

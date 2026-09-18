@@ -1,5 +1,5 @@
 import { body } from "express-validator";
-import { regrasSenha } from "./authValidator.js";
+import { regrasSenha } from "./autenticacaoValidator.js";
 
 /** Validações de sessão (refresh) e recuperação de senha. */
 
@@ -19,9 +19,9 @@ export const validarEsqueciSenha = [
 ];
 
 /**
- * Redefinição de senha: aceita DOIS formatos de corpo, mutuamente exclusivos.
- * - `{ token, novaSenha }` — mecanismo principal (link do e-mail, token opaco).
- * - `{ email, codigo, novaSenha }` — fallback (usado pelo app mobile, sem deep link).
+ * Redefinição de senha: aceita dois formatos de corpo, mutuamente exclusivos.
+ * - `{ token, novaSenha }`: mecanismo principal (link do e-mail, token opaco).
+ * - `{ email, codigo, novaSenha }`: fallback (usado pelo app mobile, sem deep link).
  * A presença de `token` no corpo decide qual conjunto de campos é exigido.
  */
 export const validarRedefinirSenha = [
@@ -47,7 +47,7 @@ export const validarRedefinirSenha = [
     regrasSenha("novaSenha")
 ];
 
-/** Confirmação de e-mail de cadastro (rotas públicas — antes do login). */
+/** Confirmação de e-mail de cadastro (rotas públicas, antes do login). */
 
 export const validarConfirmarCadastro = [
     body("email").trim().isEmail().withMessage("Informe um endereço de e-mail válido."),
@@ -67,7 +67,7 @@ export const validarReenviarConfirmacaoCadastro = [
 ];
 
 /**
- * Senha atual e código de verificação de 6 dígitos — genéricos, reaproveitados
+ * Senha atual e código de verificação de 6 dígitos: genéricos, reaproveitados
  * por mais de uma rota (pausar/excluir conta, confirmar troca de e-mail).
  */
 

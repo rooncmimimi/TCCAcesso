@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import {
     Conversa,
     Mensagem,
@@ -9,20 +9,23 @@ import {
     UsuarioSeguido,
     EmpresaSeguida
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import {
     emitirParaConversa,
     emitirParaUsuario
 } from "../realtime/socket.js";
 import NotificacaoService from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
-import { garantirEmpresaAprovadaSeForEmpresa } from "../utils/authorization.js";
+import { garantirEmpresaAprovadaSeForEmpresa } from "../utils/autorizacao.js";
 
-// Prévia curta da mensagem na notificação — nunca o texto inteiro (pode
+// Prévia curta da mensagem na notificação, nunca o texto inteiro (pode
 // ter milhares de caracteres) nem dado sensível além do que a própria
 // mensagem já é.
 const TAMANHO_PREVIA_MENSAGEM = 120;
+
+// Prévia guardada em `conversas.ultima_mensagem_previa`, do tamanho da coluna.
+const TAMANHO_PREVIA_CONVERSA = 180;
 
 const ATRIBUTOS_PARTICIPANTE = ["id", "nome", "fotoPerfil", "tipoUsuario"];
 
@@ -56,13 +59,10 @@ const INCLUDE_PARTICIPANTES = [
 ];
 
 /**
- * Chat 1:1 entre quaisquer dois usuários autenticados (candidato, empresa
- * ou administrador) — qualquer usuário pode conversar com qualquer outro,
- * respeitando bloqueios existentes.
- *
- * Toda leitura/escrita valida se o usuário autenticado é um dos dois
- * participantes da conversa (proteção contra IDOR — OWASP A01). Ser
- * administrador NÃO concede acesso a conversas das quais não participa.
+ * Chat 1:1 entre dois usuários autenticados quaisquer (candidato, empresa ou administrador),
+ * respeitando bloqueios e a preferência de mensagens do destinatário (`podeIniciarConversa`). Toda
+ * leitura e escrita confere se o usuário autenticado é um dos dois participantes (proteção contra
+ * IDOR, OWASP A01). Ser administrador não dá acesso a conversas das quais não participa.
  */
 class ConversaService {
     async carregarConversa(id, transaction) {
@@ -72,7 +72,7 @@ class ConversaService {
         });
 
         if (!conversa) {
-            throw ApiError.notFound("Conversa não encontrada.");
+            throw ErroApi.naoEncontrado("Conversa não encontrada.");
         }
 
         return conversa;
@@ -82,28 +82,22 @@ class ConversaService {
         const usuarios = [conversa.usuarioAId, conversa.usuarioBId];
 
         if (!usuarios.includes(solicitante.id)) {
-            throw ApiError.forbidden("Você não participa desta conversa.");
+            throw ErroApi.acessoNegado("Você não participa desta conversa.");
         }
     }
 
-    /* ==========================================================
-       PRIVACIDADE DE MENSAGENS (Fase 4) — autoridade central
-       ==========================================================
-       Única função que decide se `remetenteId` pode INICIAR uma conversa
-       nova com `destinatarioId`. Nunca lança erro — sempre devolve
-       `{ permitido, motivo?, codigo? }`, para ser reaproveitada tanto por
-       `abrir()` (que lança o erro de fato) quanto pelo endpoint de
-       consulta usado pelo frontend para decidir o estado do botão
-       "Mandar mensagem" ANTES do clique. Nenhum outro lugar do código
-       deve reimplementar esta regra.
-
-       `perfilPublico` NUNCA entra nesta conta: a configuração escolhida
-       pelo usuário já é a fonte da regra em qualquer um dos dois casos
-       (aprovado explicitamente), e `usuarios_seguidos` já representa
-       "seguidor aprovado" nos dois cenários — perfil público (seguir é
-       imediato) ou privado (só existe linha ali depois de uma solicitação
-       aceita, Fase 3) — então checar essa tabela já é suficiente.
-    ========================================================== */
+    /*
+     * Privacidade de mensagens: autoridade central.
+     *
+     * Única função que decide se `remetenteId` pode iniciar uma conversa nova com `destinatarioId`.
+     * Nunca lança erro: devolve `{ permitido, motivo?, codigo? }`, para ser usada por `abrir()`
+     * (que lança o erro) e pela consulta que os clientes fazem para decidir o estado do botão
+     * "Enviar mensagem" antes do clique. Nenhum outro lugar deve reimplementar esta regra.
+     *
+     * `perfilPublico` não entra nesta conta: a preferência escolhida pelo usuário já é a regra, e
+     * `usuarios_seguidos` representa seguidor aprovado nos dois casos (em perfil público, seguir é
+     * imediato; em privado, a linha só existe depois da solicitação aceita).
+     */
     async podeIniciarConversa(remetenteId, destinatarioId) {
         if (String(remetenteId) === String(destinatarioId)) {
             return {
@@ -136,10 +130,8 @@ class ConversaService {
             };
         }
 
-        // Bloqueio tem prioridade máxima — checado antes de qualquer
-        // configuração de preferência, nas duas direções, sem revelar
-        // qual dos dois bloqueou o outro (mesma mensagem genérica que já
-        // existia aqui antes da Fase 4).
+        // Bloqueio tem prioridade máxima: é checado antes da preferência, nos dois sentidos, sem
+        // revelar quem bloqueou quem.
         if (
             await BloqueioService.estaBloqueadoEntre(
                 remetenteId,
@@ -247,13 +239,13 @@ class ConversaService {
     }
 
     /**
-     * "`seguidorId` segue `seguidoId`?" — igual a
-     * `SeguidorService.podeVerConteudoPrivado`, mas para os DOIS tipos de
+     * "`seguidorId` segue `seguidoId`?": igual a
+     * `SeguidorService.podeVerConteudoPrivado`, mas para os dois tipos de
      * seguimento que existem no projeto: usuário↔usuário
      * (`usuarios_seguidos`) e candidato↔empresa (`empresas_seguidas`,
      * chave por `candidatoId`/`empresaId`, não por `usuarioId`). Quando
      * quem é seguido (`seguidoTipoUsuario`) é uma empresa, resolve os
-     * registros de Candidato/Empresa antes de checar a tabela certa —
+     * registros de Candidato/Empresa antes de checar a tabela certa:
      * sem isso, a opção "Apenas seguidores"/"Apenas pessoas que você
      * segue" nunca funcionaria corretamente para uma conta de empresa.
      */
@@ -288,16 +280,14 @@ class ConversaService {
         return Boolean(vinculo);
     }
 
-    /* ==========================================================
-       ABRIR / RECUPERAR CONVERSA
-    ========================================================== */
+    /* Abrir ou recuperar conversa */
     async abrir({ usuarioId }, solicitante) {
-        // Empresa pendente/reprovada/suspensa não usa mensagens — nem para
+        // Empresa pendente/reprovada/suspensa não usa mensagens: nem para
         // iniciar, nem para reabrir uma conversa já existente.
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
         if (String(usuarioId) === String(solicitante.id)) {
-            throw ApiError.badRequest(
+            throw ErroApi.requisicaoInvalida(
                 "Você não pode iniciar uma conversa consigo mesmo."
             );
         }
@@ -307,15 +297,14 @@ class ConversaService {
         });
 
         if (!alvo || !alvo.ativo || alvo.bloqueado) {
-            throw ApiError.notFound("Usuário não encontrado.");
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
-        // Bloqueio sempre se aplica, inclusive para reabrir uma conversa
-        // já existente — comportamento inalterado desde antes da Fase 4.
+        // Bloqueio sempre se aplica, inclusive para reabrir uma conversa existente.
         if (
             await BloqueioService.estaBloqueadoEntre(solicitante.id, usuarioId)
         ) {
-            throw ApiError.forbidden("Não é possível iniciar esta conversa.");
+            throw ErroApi.acessoNegado("Não é possível iniciar esta conversa.");
         }
 
         const [usuarioAId, usuarioBId] = [
@@ -323,9 +312,8 @@ class ConversaService {
             String(usuarioId).toLowerCase()
         ].sort();
 
-        // Conversa já existente: nunca reavalia a preferência de
-        // mensagens — uma mudança de configuração feita pelo destinatário
-        // depois de a conversa já existir não a afeta (Fase 4).
+        // Conversa existente não reavalia a preferência de mensagens: uma mudança de configuração
+        // feita depois pelo destinatário não a afeta.
         const existente = await Conversa.findOne({
             where: { usuarioAId, usuarioBId }
         });
@@ -334,8 +322,8 @@ class ConversaService {
             return this.carregarConversa(existente.id);
         }
 
-        // Só uma conversa NOVA passa pela checagem de preferência —
-        // reaproveita a MESMA função usada pelo endpoint de consulta do
+        // Só uma conversa nova passa pela checagem de preferência:
+        // reaproveita a mesma função usada pelo endpoint de consulta do
         // frontend (`GET /conversas/pode-iniciar/:usuarioId`), nunca
         // duplica a regra em outro lugar.
         const autorizacao = await this.podeIniciarConversa(
@@ -344,20 +332,19 @@ class ConversaService {
         );
 
         if (!autorizacao.permitido) {
-            throw new ApiError(autorizacao.codigo, autorizacao.motivo);
+            throw new ErroApi(autorizacao.codigo, autorizacao.motivo);
         }
 
+        // Conversa recém-criada entra no topo da lista mesmo sem mensagem nenhuma.
         const [conversa] = await Conversa.findOrCreate({
             where: { usuarioAId, usuarioBId },
-            defaults: { ultimaMensagem: new Date() }
+            defaults: { ultimaMensagemEm: new Date() }
         });
 
         return this.carregarConversa(conversa.id);
     }
 
-    /* ==========================================================
-       LISTAR CONVERSAS DO USUÁRIO
-    ========================================================== */
+    /* Listar conversas do usuário */
     async listar(solicitante, query) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
@@ -374,7 +361,7 @@ class ConversaService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["ultima_mensagem", "DESC NULLS LAST"]]
+            order: [["ultimaMensagemEm", "DESC NULLS LAST"]]
         });
 
         const idsConversas = rows.map((conversa) => conversa.id);
@@ -388,12 +375,9 @@ class ConversaService {
                   where: {
                       conversaId: { [Op.in]: idsConversas },
                       lida: false,
-                      // Fase 8: `remetenteId` pode ser `null` (remetente
-                      // excluiu a conta) — `<> solicitante.id` sozinho
-                      // NUNCA é verdadeiro para NULL (semântica de 3
-                      // valores do SQL), então sem o `OR` explícito essas
-                      // mensagens ficariam de fora da contagem de não
-                      // lidas para sempre, mesmo nunca marcadas como lidas.
+                      // `remetenteId` pode ser `null` (remetente excluiu a conta), e
+                      // `<> solicitante.id` nunca é verdadeiro para NULL na lógica de três valores
+                      // do SQL; sem o `OR`, essas mensagens nunca contariam como não lidas.
                       [Op.or]: [
                           { remetenteId: { [Op.ne]: solicitante.id } },
                           { remetenteId: null }
@@ -416,16 +400,13 @@ class ConversaService {
         return montarResposta("conversas", comContagem, count, pagina, limite);
     }
 
-    /* ==========================================================
-       TOTAL DE MENSAGENS NÃO LIDAS (para o badge do cabeçalho)
-    ========================================================== */
+    /* Total de mensagens não lidas (selo do cabeçalho) */
     async contarNaoLidas(solicitante) {
         const total = await Mensagem.count({
             where: {
                 lida: false,
-                // Fase 8: mesmo cuidado de `listar()` — `remetenteId` nulo
-                // (remetente removido) precisa continuar contando como
-                // "não lida".
+                // Mesmo cuidado de `listar()`: mensagem de remetente removido (`remetenteId` nulo)
+                // continua contando como não lida.
                 [Op.or]: [
                     { remetenteId: { [Op.ne]: solicitante.id } },
                     { remetenteId: null }
@@ -449,10 +430,8 @@ class ConversaService {
         return { naoLidas: total };
     }
 
-    /* ==========================================================
-       DETALHE
-    ========================================================== */
-    async findById(id, solicitante) {
+    /* Detalhe */
+    async buscarPorId(id, solicitante) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
         const conversa = await this.carregarConversa(id);
@@ -462,9 +441,7 @@ class ConversaService {
         return conversa;
     }
 
-    /* ==========================================================
-       MENSAGENS DA CONVERSA
-    ========================================================== */
+    /* Mensagens da conversa */
     async listarMensagens(id, solicitante, query) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
@@ -485,15 +462,13 @@ class ConversaService {
             ],
             limit: limite,
             offset,
-            order: [["created_at", "ASC"]]
+            order: [["criadoEm", "ASC"]]
         });
 
         return montarResposta("mensagens", rows, count, pagina, limite);
     }
 
-    /* ==========================================================
-       ENVIAR MENSAGEM
-    ========================================================== */
+    /* Enviar mensagem */
     async enviarMensagem(id, conteudo, solicitante) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
@@ -504,18 +479,16 @@ class ConversaService {
 
             this.garantirParticipante(conversa, solicitante);
 
-            // Fase 8: um dos dois participantes excluiu a conta — o
-            // histórico continua visível (por isso `carregarConversa` não
-            // lança 404 aqui), mas a conversa vira somente-leitura. Checa
-            // ANTES do bloqueio abaixo para nunca chamar
-            // `estaBloqueadoEntre` com um id nulo.
+            // Um dos participantes excluiu a conta: o histórico continua visível (por isso
+            // `carregarConversa` não lança 404), mas a conversa fica somente leitura. É checado
+            // antes do bloqueio abaixo para nunca chamar `estaBloqueadoEntre` com id nulo.
             if (!conversa.usuarioAId || !conversa.usuarioBId) {
-                throw ApiError.forbidden(
+                throw ErroApi.acessoNegado(
                     "Esta conversa não permite novas mensagens porque o outro usuário foi removido."
                 );
             }
 
-            // Bloqueio pode ter acontecido DEPOIS da conversa já existir —
+            // Bloqueio pode ter acontecido depois da conversa já existir:
             // uma conversa ativa também deve parar de funcionar.
             if (
                 await BloqueioService.estaBloqueadoEntre(
@@ -523,7 +496,7 @@ class ConversaService {
                     conversa.usuarioBId
                 )
             ) {
-                throw ApiError.forbidden(
+                throw ErroApi.acessoNegado(
                     "Não é possível enviar mensagens nesta conversa."
                 );
             }
@@ -537,8 +510,13 @@ class ConversaService {
                 { transaction }
             );
 
+            // A lista de conversas ordena por `ultimaMensagemEm` e mostra `ultimaMensagemPrevia`;
+            // os dois são gravados aqui, na mesma transação do envio.
             await conversa.update(
-                { ultimaMensagem: new Date() },
+                {
+                    ultimaMensagemEm: mensagem.criadoEm,
+                    ultimaMensagemPrevia: conteudo.slice(0, TAMANHO_PREVIA_CONVERSA)
+                },
                 { transaction }
             );
 
@@ -555,7 +533,7 @@ class ConversaService {
             const notificacao = await NotificacaoService.criar(
                 {
                     usuarioId: destinatarioId,
-                    tipo: "Mensagem",
+                    tipo: "mensagem",
                     titulo: "Nova mensagem recebida",
                     descricao: `${solicitante.nome}: ${previa}`,
                     subtipo: "mensagem_nova",
@@ -597,9 +575,7 @@ class ConversaService {
         }
     }
 
-    /* ==========================================================
-       MARCAR MENSAGENS COMO LIDAS
-    ========================================================== */
+    /* Marcar mensagens como lidas */
     async marcarComoLidas(id, solicitante) {
         await garantirEmpresaAprovadaSeForEmpresa(solicitante);
 
@@ -613,9 +589,8 @@ class ConversaService {
                 where: {
                     conversaId: id,
                     lida: false,
-                    // Fase 8: sem o `OR`, uma mensagem de remetente já
-                    // removido (remetenteId nulo) nunca seria marcada como
-                    // lida — ficaria "não lida" para sempre.
+                    // Sem o `OR`, uma mensagem de remetente removido (`remetenteId` nulo) nunca
+                    // seria marcada como lida.
                     [Op.or]: [
                         { remetenteId: { [Op.ne]: solicitante.id } },
                         { remetenteId: null }

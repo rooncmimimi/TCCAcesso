@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: chatbot_conversas (migration 0012)
+ * Tabela: chatbot_conversas
  */
 const ChatbotConversa = sequelize.define(
     "ChatbotConversa",
@@ -12,8 +12,7 @@ const ChatbotConversa = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-        usuarioId: {
-            field: "usuario_id",
+        usuarioId: {
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -22,10 +21,7 @@ const ChatbotConversa = sequelize.define(
         }
     },
     {
-        tableName: "chatbot_conversas",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "chatbot_conversas",
     }
 );
 

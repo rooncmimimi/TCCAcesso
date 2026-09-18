@@ -1,7 +1,11 @@
 import CurtidaService from "../services/CurtidaService.js";
 
+/**
+ * Curtidas de uma postagem (`/postagens/:postagemId/curtidas`); o `POST` alterna entre curtir e
+ * descurtir.
+ */
 class CurtidaController {
-    async toggle(req, res, next) {
+    async alternar(req, res, next) {
         try {
             const resultado = await CurtidaService.alternar(
                 req.params.postagemId,
@@ -14,7 +18,7 @@ class CurtidaController {
         }
     }
 
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const curtidas = await CurtidaService.listarPorPostagem(
                 req.params.postagemId,

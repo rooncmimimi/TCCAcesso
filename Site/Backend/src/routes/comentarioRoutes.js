@@ -1,19 +1,19 @@
 import { Router } from "express";
 import ComentarioController from "../controllers/ComentarioController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
-// Remoção de comentário (autor ou administrador — verificado no Service).
+// Remoção de comentário (autor ou administrador, verificado no Service).
 router.delete(
     "/:id",
     validarUuidParam("id"),
-    validationMiddleware,
-    ComentarioController.destroy
+    validacaoMiddleware,
+    ComentarioController.excluir
 );
 
 export default router;

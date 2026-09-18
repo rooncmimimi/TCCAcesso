@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { empresasService } from "@/services/empresas.service";
 import { NovaVagaDialog } from "@/components/dashboard/NovaVagaDialog";
-import { CardVagaEmpresa } from "@/components/dashboard/CardVagaEmpresa";
+import { VagaEmpresaCard } from "@/components/dashboard/VagaEmpresaCard";
 import { ROTULO_STATUS_VAGA } from "@/components/dashboard/constantesVaga";
 import type { StatusVaga, Vaga } from "@/types";
 
@@ -48,9 +48,9 @@ function ListaVagasPorStatus({
 
   if (!data || data.dados.length === 0) {
     const mensagem: Record<StatusVaga, string> = {
-      Aberta: "Você ainda não tem vagas ativas. Publique a primeira acima.",
-      Pausada: "Nenhuma vaga arquivada por aqui.",
-      Encerrada: "Nenhuma vaga encerrada por aqui.",
+      aberta: "Você ainda não tem vagas ativas. Publique a primeira acima.",
+      pausada: "Nenhuma vaga arquivada por aqui.",
+      encerrada: "Nenhuma vaga encerrada por aqui.",
     };
     return <p className="py-6 text-sm text-muted-foreground">{mensagem[status]}</p>;
   }
@@ -60,7 +60,7 @@ function ListaVagasPorStatus({
       <ul className="space-y-3">
         {data.dados.map((vaga) => (
           <li key={vaga.id}>
-            <CardVagaEmpresa vaga={vaga} selecionada={vagaSelecionada === vaga.id} onVerCandidaturas={onSelecionar} />
+            <VagaEmpresaCard vaga={vaga} selecionada={vagaSelecionada === vaga.id} onVerCandidaturas={onSelecionar} />
           </li>
         ))}
       </ul>
@@ -100,20 +100,20 @@ export function MinhasVagas({
         <CardTitle className="text-lg">Minhas vagas</CardTitle>
         <NovaVagaDialog />
       </CardHeader>
-      <Tabs defaultValue="Aberta" className="px-6 pb-6">
+      <Tabs defaultValue="aberta" className="px-6 pb-6">
         <TabsList>
-          <TabsTrigger value="Aberta">{ROTULO_STATUS_VAGA.Aberta}</TabsTrigger>
-          <TabsTrigger value="Pausada">{ROTULO_STATUS_VAGA.Pausada}</TabsTrigger>
-          <TabsTrigger value="Encerrada">{ROTULO_STATUS_VAGA.Encerrada}</TabsTrigger>
+          <TabsTrigger value="aberta">{ROTULO_STATUS_VAGA.aberta}</TabsTrigger>
+          <TabsTrigger value="pausada">{ROTULO_STATUS_VAGA.pausada}</TabsTrigger>
+          <TabsTrigger value="encerrada">{ROTULO_STATUS_VAGA.encerrada}</TabsTrigger>
         </TabsList>
-        <TabsContent value="Aberta">
-          <ListaVagasPorStatus status="Aberta" vagaSelecionada={vagaSelecionada} onSelecionar={onSelecionar} />
+        <TabsContent value="aberta">
+          <ListaVagasPorStatus status="aberta" vagaSelecionada={vagaSelecionada} onSelecionar={onSelecionar} />
         </TabsContent>
-        <TabsContent value="Pausada">
-          <ListaVagasPorStatus status="Pausada" vagaSelecionada={vagaSelecionada} onSelecionar={onSelecionar} />
+        <TabsContent value="pausada">
+          <ListaVagasPorStatus status="pausada" vagaSelecionada={vagaSelecionada} onSelecionar={onSelecionar} />
         </TabsContent>
-        <TabsContent value="Encerrada">
-          <ListaVagasPorStatus status="Encerrada" vagaSelecionada={vagaSelecionada} onSelecionar={onSelecionar} />
+        <TabsContent value="encerrada">
+          <ListaVagasPorStatus status="encerrada" vagaSelecionada={vagaSelecionada} onSelecionar={onSelecionar} />
         </TabsContent>
       </Tabs>
     </Card>

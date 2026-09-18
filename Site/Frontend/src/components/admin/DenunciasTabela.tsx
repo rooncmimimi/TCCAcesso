@@ -67,11 +67,12 @@ const TIPO_ROTULO: Record<EntidadeDenunciaTipo, string> = {
   postagem: "Postagem",
   comentario: "Comentário",
   usuario: "Usuário",
-  mensagem: "Mensagem",
-  vaga: "Vaga",
+  mensagem: "mensagem",
+  vaga: "vaga",
   empresa: "Empresa",
 };
 
+/** Fila de denúncias, com filtros por status e tipo e link para o detalhe de cada uma. */
 export function DenunciasTabela() {
   const [pagina, setPagina] = useState(1);
   const [status, setStatus] = useState<(typeof STATUS_OPCOES)[number]>("todos");
@@ -178,7 +179,7 @@ export function DenunciasTabela() {
                     </StatusBadge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(denuncia.created_at).toLocaleDateString("pt-BR")}
+                    {new Date(denuncia.criadoEm).toLocaleDateString("pt-BR")}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild size="sm" variant="outline">

@@ -3,14 +3,12 @@ name: Login → navega pelas abas principais → Configurações → Sair
 tags:
   - smoke
 ---
-# Percurso mínimo de fumaça: login real, visita as 5 abas principais (mesmos
-# rótulos de acessibilidade de `navigation/AppTabs.tsx`), entra em
-# Configurações (Perfil → Configurações, `ProfileMenuScreen.tsx`) e volta, e
-# sai da conta pelo botão "Sair da conta" que fica DIRETO no menu do Perfil
-# (não dentro de Configurações — conferido em `ProfileMenuScreen.tsx` antes
-# de escrever este fluxo, para não presumir a hierarquia errada). NÃO
-# EXECUTADO neste ambiente (sem SDK Android/emulador) — ver README.md desta
-# pasta antes de rodar de verdade.
+# Teste de fumaça: login real, visita às abas principais (rótulos de
+# acessibilidade de `navigation/AbasNavigator.tsx`), ida e volta em
+# Configurações (Perfil → Configurações, `MenuPerfilScreen.tsx`) e saída pelo
+# botão "Sair da conta", que fica direto no menu do Perfil, e não dentro de
+# Configurações. Ainda não executado em emulador ou aparelho: ver o README.md
+# desta pasta antes de rodar.
 - runFlow: 00_login.yaml
 - tapOn: "Vagas"
 - assertVisible: "Vagas"

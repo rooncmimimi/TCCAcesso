@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import { criarHooksCampoCifrado } from "../utils/campoCifrado.js";
 
 const hooksCpf = criarHooksCampoCifrado({
@@ -9,14 +9,12 @@ const hooksCpf = criarHooksCampoCifrado({
 });
 
 /**
- * Tabela: candidatos
+ * Tabela `candidatos`: o perfil de candidato de uma conta.
  *
- * `curriculo` guarda a referência estável (caminho) no bucket PRIVADO —
- * de propósito, SEM getter automático de URL: currículo nunca deve virar
- * uma URL pública (getPublicUrl), só uma URL assinada e temporária,
- * gerada sob demanda e já autorizada (ver `CandidatoService.gerarUrlCurriculo`
- * e `GET /candidatos/:id/curriculo`). Nunca serializar este campo cru numa
- * resposta genérica de candidato — ver `utils/candidatoPrivacidade.js`.
+ * `curriculo` guarda o caminho no bucket privado e, de propósito, não tem getter de URL: currículo
+ * nunca vira URL pública, só URL assinada e temporária, gerada sob demanda depois da autorização
+ * (`CandidatoService.gerarUrlCurriculo` e `GET /candidatos/:id/curriculo`). Nunca serialize este
+ * campo cru numa resposta genérica de candidato (veja `utils/candidatoPrivacidade.js`).
  */
 const Candidato = sequelize.define(
     "Candidato",
@@ -28,19 +26,14 @@ const Candidato = sequelize.define(
         },
 
         usuarioId: {
-            field: "usuario_id",
             type: DataTypes.UUID,
             allowNull: false,
             unique: true
         },
 
-        // A coluna em texto puro foi removida do banco (migration 0031) —
-        // este é um campo VIRTUAL agora, nunca persistido diretamente. Os
-        // hooks de `campoCifrado.js` cifram/decifram por baixo dos panos em
-        // `cpfCifrado`/`cpfHash`, então todo código que já lia/escrevia
-        // `candidato.cpf` continua funcionando sem nenhuma mudança. A
-        // unicidade é garantida pelo índice único em `cpf_hash`, não mais
-        // por uma constraint nesta coluna (que não existe mais no banco).
+        // Campo virtual: o banco só tem `cpf_cifrado` e `cpf_hash`. Os hooks de `campoCifrado.js`
+        // cifram e decifram por baixo dos panos, então o resto do código continua lendo e gravando
+        // `candidato.cpf` como texto. A unicidade vem do índice sobre o hash.
         cpf: {
             type: DataTypes.VIRTUAL(DataTypes.STRING(11)),
             validate: {
@@ -49,23 +42,24 @@ const Candidato = sequelize.define(
         },
 
         cpfCifrado: {
-            field: "cpf_cifrado",
             type: DataTypes.TEXT
         },
 
         cpfHash: {
-            field: "cpf_hash",
             type: DataTypes.STRING(64),
             unique: true
         },
 
         dataNascimento: {
-            field: "data_nascimento",
             type: DataTypes.DATEONLY
         },
 
         genero: {
             type: DataTypes.STRING(40)
+        },
+
+        tituloProfissional: {
+            type: DataTypes.STRING(150)
         },
 
         biografia: {
@@ -76,8 +70,20 @@ const Candidato = sequelize.define(
             type: DataTypes.STRING(120)
         },
 
+        necessidadesAcessibilidade: {
+            type: DataTypes.TEXT
+        },
+
         curriculo: {
             type: DataTypes.TEXT
+        },
+
+        curriculoNome: {
+            type: DataTypes.STRING(255)
+        },
+
+        curriculoAtualizadoEm: {
+            type: DataTypes.DATE
         },
 
         linkedin: {
@@ -109,36 +115,11 @@ const Candidato = sequelize.define(
         },
 
         pretensaoSalarial: {
-            field: "pretensao_salarial",
             type: DataTypes.DECIMAL(10, 2)
-        }
-,
-
-        tituloProfissional: {
-            field: "titulo_profissional",
-            type: DataTypes.STRING(150)
-        },
-
-        necessidadesAcessibilidade: {
-            field: "necessidades_acessibilidade",
-            type: DataTypes.TEXT
-        },
-
-        curriculoNome: {
-            field: "curriculo_nome",
-            type: DataTypes.STRING(255)
-        },
-
-        curriculoAtualizadoEm: {
-            field: "curriculo_atualizado_em",
-            type: DataTypes.DATE
         }
     },
     {
         tableName: "candidatos",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at",
         hooks: {
             beforeSave: hooksCpf.beforeSave,
             afterSave: hooksCpf.afterSave,

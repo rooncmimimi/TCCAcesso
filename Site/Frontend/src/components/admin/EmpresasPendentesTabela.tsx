@@ -44,6 +44,7 @@ const ROTULO: Record<EmpresaAdmin["statusAprovacao"], string> = {
   suspensa: "Suspensa",
 };
 
+/** Empresas cadastradas, com aprovar, reprovar, suspender, reativar e o selo de empresa verificada. */
 export function EmpresasPendentesTabela() {
   const queryClient = useQueryClient();
   const [pagina, setPagina] = useState(1);

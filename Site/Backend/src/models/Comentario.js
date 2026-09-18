@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
  * Tabela: comentarios
@@ -13,14 +13,12 @@ const Comentario = sequelize.define(
             primaryKey: true
         },
 
-        postagemId: {
-            field: "postagem_id",
+        postagemId: {
             type: DataTypes.UUID,
             allowNull: false
         },
 
-        usuarioId: {
-            field: "usuario_id",
+        usuarioId: {
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -31,13 +29,11 @@ const Comentario = sequelize.define(
         }
 ,
 
-        comentarioPaiId: {
-            field: "comentario_pai_id",
+        comentarioPaiId: {
             type: DataTypes.UUID
         },
 
-        editadoEm: {
-            field: "editado_em",
+        editadoEm: {
             type: DataTypes.DATE
         },
 
@@ -48,10 +44,7 @@ const Comentario = sequelize.define(
         }
     },
     {
-        tableName: "comentarios",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "comentarios",
     }
 );
 

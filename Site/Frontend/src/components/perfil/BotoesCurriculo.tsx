@@ -7,20 +7,13 @@ import { perfilService } from "@/services/perfil.service";
 import { extrairMensagemErro } from "@/services/api";
 
 /**
- * Botões "Visualizar currículo" / "Baixar currículo" (Fase 9, Bloco 4) —
- * reaproveitados no próprio perfil, no perfil de terceiro (empresa com
- * candidatura ou administrador, já autorizados pelo backend) e na lista
- * de candidaturas recebidas pela empresa (`CandidaturasDaVaga`).
+ * Botões "Visualizar currículo" e "Baixar currículo", usados no próprio perfil, no perfil de outra
+ * pessoa (empresa com candidatura ou administrador) e nas candidaturas recebidas
+ * (`CandidaturasDaVaga`). Só aparecem quando há `nomeArquivo`: o backend omite o campo tanto sem
+ * currículo quanto sem autorização, e o componente pai só verifica se o dado existe.
  *
- * Nunca deve ser renderizado quando não há `nomeArquivo` conhecido — o
- * backend já decide isso (campo vem `undefined` tanto para "sem
- * currículo" quanto para "sem autorização"; o componente pai só verifica
- * a presença do dado, nunca reimplementa a regra de quem pode ver).
- *
- * Cada clique busca uma URL assinada NOVA na hora — nunca cacheia nem
- * reaproveita a mesma URL entre "visualizar" e "baixar" (mesmo princípio
- * já usado em `LightboxMidia`, Fase 7): o backend reautoriza do zero a
- * cada chamada.
+ * Cada clique busca uma URL assinada nova, sem reaproveitar a de "visualizar" em "baixar", porque o
+ * backend reautoriza cada chamada.
  */
 export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
   const [visualizando, setVisualizando] = useState(false);
@@ -29,7 +22,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
   async function visualizar() {
     if (visualizando) return;
 
-    // A aba precisa abrir de forma SÍNCRONA, no mesmo tick do clique —
+    // A aba precisa abrir de forma síncrona, no mesmo tick do clique:
     // se só abrir depois do `await` abaixo, navegadores tratam como
     // pop-up não solicitado e bloqueiam. Abre em branco primeiro, e só
     // depois aponta para a URL assinada já autorizada.
@@ -41,7 +34,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
       if (aba) {
         aba.location.href = url;
       } else {
-        // Pop-up bloqueado mesmo assim (raro) — tenta de novo diretamente;
+        // Pop-up bloqueado mesmo assim (raro): tenta de novo diretamente;
         // se o navegador bloquear também, o usuário já tem a mensagem de
         // erro padrão do próprio navegador para pop-ups.
         window.open(url, "_blank", "noopener");

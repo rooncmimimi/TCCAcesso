@@ -1,16 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ComposerPostagem } from "@/components/feed/ComposerPostagem";
-import { CardPostagem } from "@/components/feed/CardPostagem";
+import { FormularioPostagem } from "@/components/feed/FormularioPostagem";
+import { PostagemCard } from "@/components/feed/PostagemCard";
 import { SugestoesResumo } from "@/components/feed/SugestoesResumo";
 import { useFeedInfinito, useFeedTempoReal } from "@/components/feed/hooks";
-import { urlArquivo } from "@/services/uploads.service";
-import { initials, useSession } from "@/contexts/SessionContext";
+import { urlArquivo } from "@/utils/arquivos";
+import { iniciaisDoNome } from "@/utils/formatacao";
+import { useSessao } from "@/hooks/useSessao";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 
 export const Route = createFileRoute("/feed")({
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/feed")({
 });
 
 function Feed() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
   useFeedTempoReal();
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeedInfinito({
     limit: 10,
@@ -42,7 +43,7 @@ function Feed() {
   const postagens = data?.pages.flatMap((pagina) => pagina.dados) ?? [];
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="sr-only">Feed da comunidade ACESSO</h1>
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
 
@@ -50,13 +51,13 @@ function Feed() {
           <Card className="shadow-card">
             <CardContent className="p-5 text-center">
               <Avatar className="mx-auto size-16">
-                <AvatarImage src={urlArquivo(user?.fotoPerfil)} alt="" />
+                <AvatarImage src={urlArquivo(usuario?.fotoPerfil)} alt="" />
                 <AvatarFallback className="bg-primary-soft text-lg font-bold text-primary">
-                  {initials(user?.nome ?? "Visitante")}
+                  {iniciaisDoNome(usuario?.nome ?? "Visitante")}
                 </AvatarFallback>
               </Avatar>
-              <h2 className="mt-3 truncate font-bold">{user?.nome ?? "Visitante"}</h2>
-              <p className="text-sm text-muted-foreground">{user?.titulo ?? "Entre para personalizar"}</p>
+              <h2 className="mt-3 truncate font-bold">{usuario?.nome ?? "Visitante"}</h2>
+              <p className="text-sm text-muted-foreground">{usuario?.titulo ?? "Entre para personalizar"}</p>
               <Button asChild variant="secondary" className="mt-4 min-h-11 w-full">
                 <Link to="/perfil">Ver meu perfil</Link>
               </Button>
@@ -67,7 +68,7 @@ function Feed() {
         </aside>
 
         <div className="space-y-4">
-          <ComposerPostagem />
+          <FormularioPostagem />
 
           {isLoading && (
             <div className="space-y-4" aria-label="Carregando publicações">
@@ -97,7 +98,7 @@ function Feed() {
             <ul className="space-y-4">
               {postagens.map((postagem) => (
                 <li key={postagem.id}>
-                  <CardPostagem postagem={postagem} />
+                  <PostagemCard postagem={postagem} />
                 </li>
               ))}
             </ul>
@@ -117,6 +118,6 @@ function Feed() {
           )}
         </div>
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

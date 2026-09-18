@@ -5,12 +5,12 @@ import { toast } from "sonner";
 import { MessagesSquare } from "lucide-react";
 import { z } from "zod";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Card } from "@/components/ui/card";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { ListaConversas } from "@/components/mensagens/ListaConversas";
 import { JanelaConversa } from "@/components/mensagens/JanelaConversa";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import mensagensService from "@/services/mensagens.service";
 import { extrairMensagemErro } from "@/services/api";
 import {
@@ -19,7 +19,7 @@ import {
   ouvirEvento,
   sairDaConversa,
 } from "@/services/socket";
-import type { Conversa, Mensagem } from "@/lib/api-types";
+import type { Conversa, Mensagem } from "@/lib/tiposApi";
 
 export const Route = createFileRoute("/mensagens")({
   validateSearch: z.object({ conversaId: z.string().uuid().optional() }),
@@ -49,10 +49,10 @@ function PaginaMensagens() {
 }
 
 function Mensagens() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
   const { conversaId } = Route.useSearch();
   const queryClient = useQueryClient();
-  const usuarioId = user?.id ?? null;
+  const usuarioId = usuario?.id ?? null;
 
   const [selecionadaId, setSelecionadaId] = useState<string | null>(conversaId ?? null);
   const [contatoDigitando, setContatoDigitando] = useState(false);
@@ -78,7 +78,7 @@ function Mensagens() {
   });
 
   const mensagens = [...(mensagensQuery.data?.dados ?? [])].sort((a, b) =>
-    String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")),
+    String(a.criadoEm ?? "").localeCompare(String(b.criadoEm ?? "")),
   );
 
   /* Entra na sala da conversa e marca as mensagens como lidas. */
@@ -147,7 +147,7 @@ function Mensagens() {
   }
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Mensagens</h1>
       <p className="mt-2 text-muted-foreground">
         Conversas em tempo real com empresas e candidatos.
@@ -195,6 +195,6 @@ function Mensagens() {
           )}
         </div>
       </Card>
-    </AppShell>
+    </EstruturaApp>
   );
 }

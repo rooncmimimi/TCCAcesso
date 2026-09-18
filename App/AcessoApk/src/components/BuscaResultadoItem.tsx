@@ -1,42 +1,31 @@
 import { Pressable, Text, View } from "react-native";
 
-import { Avatar, Badge, Card } from "./ui";
+import { Avatar, Etiqueta, Cartao } from "./ui";
 import type { EmpresaResultadoBusca, TipoBusca, UsuarioResultadoBusca } from "../busca";
 import type { Postagem } from "../feed";
-import type { Theme } from "../theme";
-import { MODALIDADE_LABEL, PUBLICO_ALVO_LABEL } from "../vagas";
+import type { Tema } from "../tema";
+import { ROTULOS_MODALIDADE, ROTULOS_PUBLICO_ALVO } from "../vagas";
 import type { Vaga } from "../vagas";
+import { formatarDataPorExtenso } from "../utils/formatacao";
 
 export type ResultadoBusca = UsuarioResultadoBusca | EmpresaResultadoBusca | Vaga | Postagem;
 
-/** Mesmo padrão de `PostagemDetailScreen.tsx`/`ActivitiesScreen.tsx` — duplicado de propósito. */
-function formatarData(valor: string | null | undefined): string | null {
-  if (!valor) return null;
-  const data = new Date(valor);
-  if (Number.isNaN(data.getTime())) return null;
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(data);
-}
-
 /**
- * Um item de resultado de busca global (Fase R2, recomendada), qualquer que
- * seja a categoria — mora em `src/components/` (não duplicado por tela,
- * como a maioria dos itens de lista deste app) porque tem DOIS
- * consumidores de verdade: `SearchScreen` (prévia agrupada, até 5 por
- * categoria) e `SearchResultsScreen` ("ver mais" de uma categoria,
- * paginação completa) — a mesma duplicação que o roteiro de polimento
- * (Fase 26) pede para evitar quando é REAL, não só teórica.
+ * Item de resultado da busca global, para qualquer categoria. Fica em `components/` porque é usado
+ * por duas telas: `BuscaScreen` (prévia agrupada) e `ResultadosBuscaScreen` (lista completa de uma
+ * categoria).
  */
 export function BuscaResultadoItem({
   tipo,
   item,
-  theme,
+  tema,
   onAbrirUsuario,
   onAbrirVaga,
   onAbrirPostagem,
 }: {
   tipo: TipoBusca;
   item: ResultadoBusca;
-  theme: Theme;
+  tema: Tema;
   onAbrirUsuario: (usuarioId: string) => void;
   onAbrirVaga: (vagaId: string) => void;
   onAbrirPostagem: (postagemId: string) => void;
@@ -48,7 +37,7 @@ export function BuscaResultadoItem({
       .join(" · ");
     return (
       <ItemLinha
-        theme={theme}
+        tema={tema}
         titulo={usuario.nome}
         fotoUrl={usuario.fotoPerfil}
         subtitulo={subtitulo || null}
@@ -64,7 +53,7 @@ export function BuscaResultadoItem({
     const subtitulo = [empresa.setor, [empresa.cidade, empresa.estado].filter(Boolean).join(" - ")].filter(Boolean).join(" · ");
     return (
       <ItemLinha
-        theme={theme}
+        tema={tema}
         titulo={nome}
         fotoUrl={empresa.logo}
         subtitulo={subtitulo || null}
@@ -78,72 +67,72 @@ export function BuscaResultadoItem({
     const vaga = item as Vaga;
     const empresaNome = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa não informada";
     const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
-    const modalidade = MODALIDADE_LABEL[vaga.modalidade] ?? vaga.modalidade;
-    const publicoAlvoLabel = vaga.publicoAlvo && vaga.publicoAlvo !== "geral" ? PUBLICO_ALVO_LABEL[vaga.publicoAlvo] : null;
+    const modalidade = ROTULOS_MODALIDADE[vaga.modalidade] ?? vaga.modalidade;
+    const publicoAlvoLabel = vaga.publicoAlvo && vaga.publicoAlvo !== "geral" ? ROTULOS_PUBLICO_ALVO[vaga.publicoAlvo] : null;
     return (
-      <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
+      <View style={{ borderRadius: tema.radius.lg, overflow: "hidden" }}>
         <Pressable
           onPress={() => onAbrirVaga(vaga.id)}
           accessibilityRole="button"
           accessibilityLabel={[vaga.titulo, empresaNome, local || null, modalidade, publicoAlvoLabel].filter(Boolean).join(", ")}
-          android_ripple={{ color: theme.colors.divider }}
-          style={{ minHeight: theme.sizes.touchTarget }}
+          android_ripple={{ color: tema.colors.divider }}
+          style={{ minHeight: tema.sizes.touchTarget }}
         >
-          <Card elevation="sm" style={{ gap: theme.spacing.xs }}>
-            <Text style={[theme.typography.title, { color: theme.colors.textPrimary }]} numberOfLines={2}>
+          <Cartao elevacao="sm" style={{ gap: tema.spacing.xs }}>
+            <Text style={[tema.typography.title, { color: tema.colors.textPrimary }]} numberOfLines={2}>
               {vaga.titulo}
             </Text>
-            <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+            <Text style={[tema.typography.bodySmall, { color: tema.colors.textSecondary }]} numberOfLines={1}>
               {empresaNome}
             </Text>
-            <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>{local ? `${local} · ${modalidade}` : modalidade}</Text>
-            {publicoAlvoLabel ? <Badge variant="info">{publicoAlvoLabel}</Badge> : null}
-          </Card>
+            <Text style={[tema.typography.caption, { color: tema.colors.textMuted }]}>{local ? `${local} · ${modalidade}` : modalidade}</Text>
+            {publicoAlvoLabel ? <Etiqueta variant="info">{publicoAlvoLabel}</Etiqueta> : null}
+          </Cartao>
         </Pressable>
       </View>
     );
   }
 
-  // "postagens": `usuario`/`autor` coexistem no contrato real (mesma defesa de `src/feed/types.ts`).
+  // O autor pode vir em `usuario` ou `autor` (ver `feed/types.ts`).
   const postagem = item as Postagem;
   const autor = postagem.usuario ?? postagem.autor;
-  const data = formatarData(postagem.created_at);
+  const data = formatarDataPorExtenso(postagem.criadoEm);
   const texto = postagem.conteudo?.trim() || "Publicação sem texto";
   return (
-    <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
+    <View style={{ borderRadius: tema.radius.lg, overflow: "hidden" }}>
       <Pressable
         onPress={() => onAbrirPostagem(postagem.id)}
         accessibilityRole="button"
         accessibilityLabel={`Publicação de ${autor?.nome ?? "alguém"}: ${texto}`}
-        android_ripple={{ color: theme.colors.divider }}
-        style={{ minHeight: theme.sizes.touchTarget }}
+        android_ripple={{ color: tema.colors.divider }}
+        style={{ minHeight: tema.sizes.touchTarget }}
       >
-        <Card elevation="sm" style={{ gap: 2 }}>
+        <Cartao elevacao="sm" style={{ gap: 2 }}>
           {autor?.nome ? (
-            <Text style={[theme.typography.bodySmall, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+            <Text style={[tema.typography.bodySmall, { color: tema.colors.textSecondary }]} numberOfLines={1}>
               {autor.nome}
             </Text>
           ) : null}
-          <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={2}>
+          <Text style={[tema.typography.body, { color: tema.colors.textPrimary }]} numberOfLines={2}>
             {texto}
           </Text>
-          {data ? <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>{data}</Text> : null}
-        </Card>
+          {data ? <Text style={[tema.typography.caption, { color: tema.colors.textMuted }]}>{data}</Text> : null}
+        </Cartao>
       </Pressable>
     </View>
   );
 }
 
-/** Item simples de linha (avatar com iniciais + título + subtítulo opcional) — usuários e empresas têm o mesmo formato visual. */
+/** Linha simples (avatar, título e subtítulo opcional), com o mesmo formato para usuários e empresas. */
 function ItemLinha({
-  theme,
+  tema,
   titulo,
   fotoUrl,
   subtitulo,
   rotulo,
   onPress,
 }: {
-  theme: Theme;
+  tema: Tema;
   titulo: string;
   fotoUrl?: string | null;
   subtitulo: string | null;
@@ -151,27 +140,27 @@ function ItemLinha({
   onPress: () => void;
 }) {
   return (
-    <View style={{ borderRadius: theme.radius.lg, overflow: "hidden" }}>
+    <View style={{ borderRadius: tema.radius.lg, overflow: "hidden" }}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={rotulo}
-        android_ripple={{ color: theme.colors.divider }}
-        style={{ minHeight: theme.sizes.touchTarget }}
+        android_ripple={{ color: tema.colors.divider }}
+        style={{ minHeight: tema.sizes.touchTarget }}
       >
-        <Card elevation="sm" style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
+        <Cartao elevacao="sm" style={{ flexDirection: "row", alignItems: "center", gap: tema.spacing.sm }}>
           <Avatar nome={titulo} fotoUrl={fotoUrl} size="medium" />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+            <Text style={[tema.typography.body, { color: tema.colors.textPrimary }]} numberOfLines={1}>
               {titulo}
             </Text>
             {subtitulo ? (
-              <Text style={[theme.typography.caption, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+              <Text style={[tema.typography.caption, { color: tema.colors.textSecondary }]} numberOfLines={1}>
                 {subtitulo}
               </Text>
             ) : null}
           </View>
-        </Card>
+        </Cartao>
       </Pressable>
     </View>
   );

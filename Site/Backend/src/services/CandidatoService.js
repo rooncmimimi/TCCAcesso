@@ -1,14 +1,14 @@
 import { Op } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import {
     Candidato,
     Usuario,
     Deficiencia,
     CandidatoDeficiencia
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, ehAdministrador } from "../utils/authorization.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirDono, ehAdministrador } from "../utils/autorizacao.js";
 import {
     podeVerDadosPrivados,
     aplicarPrivacidadeCandidato
@@ -17,17 +17,17 @@ import { gerarUrlAssinada } from "../utils/supabaseStorage.js";
 import { hashToken } from "../utils/tokens.js";
 import { extrairTextoDocumento } from "../utils/extrairTextoDocumento.js";
 import { parsearCurriculo } from "../utils/parsearCurriculo.js";
-import AdminAuditService from "./AdminAuditService.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
 
 /**
  * Campos que o próprio candidato pode atualizar via PUT /candidatos/:id.
  *
- * `curriculo` é DELIBERADAMENTE excluído daqui: só pode ser definido pelo
+ * `curriculo` é deliberadamente excluído daqui: só pode ser definido pelo
  * upload dedicado (`PATCH /candidatos/:id/curriculo` → `atualizarCurriculo`
  * abaixo), depois de passar por validação de assinatura e ir para o bucket
  * privado. Aceitar `curriculo` neste PUT genérico permitiria o cliente
  * gravar qualquer texto arbitrário no campo, contornando toda a validação
- * de upload — nunca confiar em valor de arquivo vindo direto do corpo da
+ * de upload: nunca confiar em valor de arquivo vindo direto do corpo da
  * requisição.
  */
 const CAMPOS_EDITAVEIS = [
@@ -50,6 +50,11 @@ const CAMPOS_EDITAVEIS = [
     "necessidadesAcessibilidade"
 ];
 
+/**
+ * Perfil de candidato: dados, currículo (URL assinada, envio e importação) e deficiências
+ * vinculadas. Campos privados só saem para quem `podeVerDadosPrivados` autoriza
+ * (`candidatoPrivacidade.js`).
+ */
 class CandidatoService {
     filtrarCampos(data) {
         return CAMPOS_EDITAVEIS.reduce((acc, campo) => {
@@ -60,10 +65,8 @@ class CandidatoService {
         }, {});
     }
 
-    /* ==========================================================
-       LISTAR (empresa / administrador)
-    ========================================================== */
-    async findAll(query) {
+    /* Listar (empresa ou administrador) */
+    async listar(query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
         const { nome, cidade, estado, deficienciaId } = query;
 
@@ -104,19 +107,17 @@ class CandidatoService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("candidatos", rows, count, pagina, limite);
     }
 
-    /* ==========================================================
-       BUSCAR POR ID
-       (correção de IDOR — nunca devolve CPF/telefone/endereço/currículo/
-       necessidades de acessibilidade para quem não é dono, empresa com
-       candidatura legítima ou administrador)
-    ========================================================== */
-    async findById(id, solicitante = null) {
+    /*
+     * Buscar por id. Contra IDOR: nunca devolve CPF, telefone, endereço, currículo ou necessidades
+     * de acessibilidade a quem não é dono, empresa com candidatura legítima ou administrador.
+     */
+    async buscarPorId(id, solicitante = null) {
         const candidato = await Candidato.findByPk(id, {
             include: [
                 { model: Usuario, as: "usuario" },
@@ -129,7 +130,7 @@ class CandidatoService {
         });
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         const autorizado = await podeVerDadosPrivados(candidato, solicitante);
@@ -137,38 +138,33 @@ class CandidatoService {
         return aplicarPrivacidadeCandidato(candidato, autorizado);
     }
 
-    /* ==========================================================
-       URL ASSINADA DO CURRÍCULO (bucket privado)
-       Único caminho pelo qual o valor de `curriculo` vira uma URL
-       utilizável — nunca por serialização direta do model. Repete a
-       mesma verificação de autorização de `findById` (dono, empresa com
-       candidatura legítima, ou administrador) antes de gerar a URL.
-    ========================================================== */
+    /*
+     * URL assinada do currículo (bucket privado). É o único caminho pelo qual `curriculo` vira uma
+     * URL utilizável, nunca pela serialização do model. Repete a verificação de `buscarPorId`
+     * (dono, empresa com candidatura legítima ou administrador) antes de gerar a URL.
+     */
     /**
-     * `baixar` (Fase 9, Bloco 4): mesma opção já usada por
-     * `PostagemService.gerarUrlAnexo` — quando true, força
-     * `Content-Disposition: attachment` na URL assinada (download real,
-     * não abertura inline). Reautoriza do zero a cada chamada, nunca
-     * reaproveita uma URL já emitida — mesmo princípio de currículo desde
-     * sempre e de mídia de postagem desde a Fase 7.
+     * `baixar`: como em `PostagemService.gerarUrlAnexo`, força `Content-Disposition: attachment` na
+     * URL assinada (download, e não exibição inline). Reautoriza do zero a cada chamada, sem
+     * reaproveitar URL já emitida.
      */
     async gerarUrlCurriculo(id, solicitante, { baixar } = {}) {
         const candidato = await Candidato.findByPk(id);
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         const autorizado = await podeVerDadosPrivados(candidato, solicitante);
 
         if (!autorizado) {
-            throw ApiError.forbidden(
+            throw ErroApi.acessoNegado(
                 "Você não tem permissão para acessar este currículo."
             );
         }
 
         if (!candidato.curriculo) {
-            throw ApiError.notFound("Este candidato ainda não enviou um currículo.");
+            throw ErroApi.naoEncontrado("Este candidato ainda não enviou um currículo.");
         }
 
         const assinatura = await gerarUrlAssinada(candidato.curriculo, {
@@ -182,15 +178,14 @@ class CandidatoService {
         };
     }
 
-    /* ==========================================================
-       DEFINIR CURRÍCULO (só a partir do upload dedicado — nunca do PUT
-       genérico, ver comentário em CAMPOS_EDITAVEIS)
-    ========================================================== */
+    /*
+     * Definir currículo: só pelo upload dedicado, nunca pelo PUT genérico (ver `CAMPOS_EDITAVEIS`).
+     */
     async atualizarCurriculo(id, { caminho, nomeOriginal }, solicitante) {
         const candidato = await Candidato.findByPk(id);
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         garantirDono(solicitante, candidato.usuarioId);
@@ -201,21 +196,20 @@ class CandidatoService {
             curriculoAtualizadoEm: new Date()
         });
 
-        return this.findById(id, solicitante);
+        return this.buscarPorId(id, solicitante);
     }
 
-    /* ==========================================================
-       IMPORTAR DADOS DO CURRÍCULO (rascunho — nunca grava nada sozinho)
-       Extrai texto do arquivo (sem IA) e devolve um rascunho para revisão.
-       O arquivo em si NÃO é salvo como currículo aqui — isso continua sendo
-       uma ação separada e explícita (PATCH /candidatos/:id/curriculo), para
-       nunca reescrever o currículo oficial sem o usuário confirmar.
-    ========================================================== */
+    /*
+     * Importar dados do currículo: extrai o texto do arquivo (sem IA) e devolve um rascunho para
+     * revisão, sem gravar nada. O arquivo não vira o currículo oficial aqui; isso é uma ação
+     * separada (`PATCH /candidatos/:id/curriculo`), para o currículo nunca ser trocado sem
+     * confirmação.
+     */
     async importarCurriculo(id, { buffer, mimetype }, solicitante) {
         const candidato = await Candidato.findByPk(id);
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         garantirDono(solicitante, candidato.usuarioId);
@@ -224,10 +218,8 @@ class CandidatoService {
         return parsearCurriculo(texto);
     }
 
-    /* ==========================================================
-       BUSCAR PELO USUÁRIO AUTENTICADO
-    ========================================================== */
-    async findByUsuario(usuarioId) {
+    /* Buscar pelo usuário autenticado */
+    async buscarPorUsuario(usuarioId) {
         const candidato = await Candidato.findOne({
             where: { usuarioId },
             include: [
@@ -241,23 +233,21 @@ class CandidatoService {
         });
 
         if (!candidato) {
-            throw ApiError.notFound("Perfil de candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Perfil de candidato não encontrado.");
         }
 
         return candidato;
     }
 
-    /* ==========================================================
-       ATUALIZAR (dono ou administrador)
-    ========================================================== */
-    async update(id, data, solicitante) {
+    /* Atualizar (dono ou administrador) */
+    async atualizar(id, data, solicitante) {
         const transaction = await sequelize.transaction();
 
         try {
             const candidato = await Candidato.findByPk(id, { transaction });
 
             if (!candidato) {
-                throw ApiError.notFound("Candidato não encontrado.");
+                throw ErroApi.naoEncontrado("Candidato não encontrado.");
             }
 
             garantirDono(solicitante, candidato.usuarioId);
@@ -274,28 +264,26 @@ class CandidatoService {
                 });
 
                 if (cpfExiste) {
-                    throw ApiError.conflict("Este CPF já está cadastrado.");
+                    throw ErroApi.conflito("Este CPF já está cadastrado.");
                 }
             }
 
             await candidato.update(dados, { transaction });
             await transaction.commit();
 
-            return this.findById(id, solicitante);
+            return this.buscarPorId(id, solicitante);
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
     }
 
-    /* ==========================================================
-       DEFICIÊNCIAS DO CANDIDATO
-    ========================================================== */
+    /* Deficiências do candidato */
     async vincularDeficiencia(candidatoId, deficienciaId, observacoes, solicitante) {
         const candidato = await Candidato.findByPk(candidatoId);
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         garantirDono(solicitante, candidato.usuarioId);
@@ -303,7 +291,7 @@ class CandidatoService {
         const deficiencia = await Deficiencia.findByPk(deficienciaId);
 
         if (!deficiencia) {
-            throw ApiError.notFound("Deficiência não encontrada.");
+            throw ErroApi.naoEncontrado("Deficiência não encontrada.");
         }
 
         const [vinculo, criado] = await CandidatoDeficiencia.findOrCreate({
@@ -322,7 +310,7 @@ class CandidatoService {
         const candidato = await Candidato.findByPk(candidatoId);
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         garantirDono(solicitante, candidato.usuarioId);
@@ -332,21 +320,19 @@ class CandidatoService {
         });
 
         if (removidos === 0) {
-            throw ApiError.notFound("Vínculo não encontrado.");
+            throw ErroApi.naoEncontrado("Vínculo não encontrado.");
         }
 
         return { mensagem: "Deficiência desvinculada com sucesso." };
     }
 
-    /* ==========================================================
-       REMOVER (administrador)
-       Rota já restrita a administrador (verificado aqui também, na
-       própria service) — não há caminho de "dono", auditoria sempre
-       registrada.
-    ========================================================== */
-    async remove(id, solicitante, contexto = {}) {
+    /*
+     * Remover (administrador). A rota já é restrita a administrador, e o serviço confere de novo;
+     * como não há caminho de dono, a auditoria é sempre registrada.
+     */
+    async remover(id, solicitante, contexto = {}) {
         if (!ehAdministrador(solicitante)) {
-            throw ApiError.forbidden("Apenas administradores podem remover candidatos.");
+            throw ErroApi.acessoNegado("Apenas administradores podem remover candidatos.");
         }
 
         const transaction = await sequelize.transaction();
@@ -356,7 +342,7 @@ class CandidatoService {
             const candidato = await Candidato.findByPk(id, { transaction });
 
             if (!candidato) {
-                throw ApiError.notFound("Candidato não encontrado.");
+                throw ErroApi.naoEncontrado("Candidato não encontrado.");
             }
 
             candidatoRemovido = { id: candidato.id, usuarioId: candidato.usuarioId };
@@ -368,13 +354,13 @@ class CandidatoService {
             throw erro;
         }
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "EXCLUIR_CANDIDATO",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: "excluir_candidato",
             entidadeTipo: "usuario",
             entidadeId: candidatoRemovido.usuarioId,
             descricao: "Perfil de candidato removido.",
-            metadata: { candidato: candidatoRemovido },
+            metadados: { candidato: candidatoRemovido },
             ip: contexto.ip,
             userAgent: contexto.userAgent
         });

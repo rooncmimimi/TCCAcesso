@@ -6,17 +6,17 @@ import { AlertTriangle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
-import { AuthLayout } from "@/layouts/AuthLayout";
+import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import authService from "@/services/auth.service";
+import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 
-// Mesmas regras de `configuracoes/senha.tsx` (troca autenticada) — as duas
-// telas reaproveitam a mesma regra do backend (`authValidator.regrasSenha`).
+// Mesmas regras de `configuracoes/senha.tsx`: as duas telas seguem a regra do backend
+// (`regrasSenha` em `autenticacaoValidator.js`).
 const regrasSenha = z
   .string()
   .min(8, "A senha deve ter entre 8 e 72 caracteres.")
@@ -26,7 +26,7 @@ const regrasSenha = z
   .regex(/\d/, "A senha deve conter ao menos um número.")
   .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial.");
 
-/** Mecanismo principal: só a nova senha — o token (do link do e-mail) já identifica a solicitação sozinho. */
+/** Mecanismo principal: só a nova senha; o token (do link do e-mail) já identifica a solicitação sozinho. */
 const esquemaToken = z
   .object({
     novaSenha: regrasSenha,
@@ -37,7 +37,7 @@ const esquemaToken = z
     path: ["confirmarSenha"],
   });
 
-/** Fallback: código de 6 dígitos — único mecanismo usado pelo aplicativo mobile (sem deep link). */
+/** Fallback: código de 6 dígitos, único mecanismo usado pelo aplicativo mobile (sem deep link). */
 const esquemaCodigo = z
   .object({
     email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
@@ -58,12 +58,9 @@ type FormularioToken = z.infer<typeof esquemaToken>;
 type FormularioCodigo = z.infer<typeof esquemaCodigo>;
 
 export const Route = createFileRoute("/redefinir-senha")({
-  // `z.coerce.string()`, não `z.string()`: o parser de search params do
-  // TanStack Router converte um valor 100% numérico na URL para `number`
-  // antes da validação — um código de 6 dígitos (ou um token só de dígitos,
-  // em tese) é sempre "numérico" na aparência, então `z.string()` sozinho
-  // rejeitava o link com "Expected string, received number" (mesmo bug
-  // corrigido em `confirmar-email.tsx` na auditoria J2.1).
+  // `z.coerce.string()`, e não `z.string()`: o parser de search params do TanStack Router converte
+  // um valor só com dígitos em `number` antes da validação, e um código de 6 dígitos sempre tem
+  // essa aparência (ver `confirmar-email.tsx`).
   validateSearch: z.object({
     token: z.coerce.string().optional(),
     email: z.string().optional(),
@@ -81,24 +78,22 @@ export const Route = createFileRoute("/redefinir-senha")({
 function RedefinirSenha() {
   const { token, email, codigo } = Route.useSearch();
 
-  // O link do e-mail (mecanismo principal) manda só `?token=`: a tela vira
-  // "só nova senha", sem pedir e-mail nem código de novo. Sem token, cai no
-  // fluxo de fallback (código de 6 dígitos) — o mesmo que já existia, usado
-  // por quem prefere digitar o código à mão ou chegou aqui a partir de
-  // "Já tenho um código" em `/recuperar-senha`.
+  // O link do e-mail manda só `?token=`, e a tela pede apenas a nova senha. Sem token, vale o
+  // código de 6 dígitos, para quem prefere digitar o código ou chegou por "Já tenho um código" em
+  // `/recuperar-senha`.
   return token ? <FormularioComToken token={token} /> : <FormularioComCodigo emailInicial={email} codigoInicial={codigo} />;
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthLayout>
+    <AutenticacaoLayout>
       <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
         <Logo />
       </Link>
       <Card className="shadow-card">
         <CardContent className="p-6">{children}</CardContent>
       </Card>
-    </AuthLayout>
+    </AutenticacaoLayout>
   );
 }
 
@@ -118,12 +113,12 @@ function FormularioComToken({ token }: { token: string }) {
   const aoEnviar = handleSubmit(async (valores) => {
     setEnviando(true);
     try {
-      await authService.redefinirSenha({ token, novaSenha: valores.novaSenha });
+      await autenticacaoService.redefinirSenha({ token, novaSenha: valores.novaSenha });
       toast.success("Senha redefinida com sucesso! Faça login novamente.");
       navigate({ to: "/entrar" });
     } catch (erro) {
       // Qualquer rejeição do servidor aqui é "link inválido ou expirado"
-      // (é a única forma de o backend recusar este fluxo) — substitui o
+      // (é a única forma de o backend recusar este fluxo): substitui o
       // formulário por um estado próprio em vez de anexar o erro a um
       // campo, já que não há mais campo de código/e-mail para apontar.
       setLinkInvalido(true);
@@ -235,7 +230,7 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
   const aoEnviar = handleSubmit(async (valores) => {
     setEnviando(true);
     try {
-      await authService.redefinirSenha({
+      await autenticacaoService.redefinirSenha({
         email: valores.email,
         codigo: valores.codigo,
         novaSenha: valores.novaSenha,
@@ -244,10 +239,10 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
       navigate({ to: "/entrar" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível redefinir a senha.");
-      // Anexa a mensagem ao campo do código (causa mais comum de rejeição
-      // — código incorreto/expirado/já usado) e move o foco pra lá, pra
+      // Anexa a mensagem ao campo do código (causa mais comum de rejeição:
+      // código incorreto/expirado/já usado) e move o foco pra lá, pra
       // quem usa teclado ou o leitor de voz não precisar procurar onde
-      // corrigir; o toast (lido automaticamente por `useAutoSpeech`)
+      // corrigir; o toast (lido automaticamente por `useLeituraAutomatica`)
       // continua cobrindo qualquer outra causa (ex.: limite de tentativas).
       setError("codigo", { message: mensagem });
       setFocus("codigo");

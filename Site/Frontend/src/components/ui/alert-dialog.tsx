@@ -29,18 +29,11 @@ const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
 >(({ className, onOpenAutoFocus, onCloseAutoFocus, ...props }, ref) => {
-  // Elemento que estava focado ao abrir (em geral o botão que disparou o
-  // diálogo) — guardado explicitamente porque, testado ao vivo neste app, a
-  // devolução de foco automática do Radix não restaura esse elemento de
-  // forma confiável (mesmo problema já documentado e corrigido em
-  // LightboxMidia.tsx). Capturado em `onOpenAutoFocus`, não em render nem em
-  // useEffect: esse componente wrapper fica montado o tempo todo (é
-  // `AlertDialogPrimitive.Content` — controlado por Presence internamente —
-  // quem entra/sai do DOM, não este forwardRef), então um `useRef` só
-  // inicializaria uma vez, na primeira renderização da página. Já
-  // `onOpenAutoFocus` só dispara quando o diálogo realmente abre, e é
-  // chamado ANTES do próprio Radix mover o foco para dentro do diálogo —
-  // por isso `document.activeElement`, lido aqui, ainda é o gatilho real.
+  // Elemento focado ao abrir (em geral o botão que disparou o diálogo), guardado para devolver o
+  // foco ao fechar, porque a devolução automática do Radix não o restaura de forma confiável aqui.
+  // É capturado em `onOpenAutoFocus`, que só dispara quando o diálogo abre e antes de o Radix mover
+  // o foco, então `document.activeElement` ainda é o gatilho. Este wrapper fica montado o tempo
+  // todo, e um valor lido no render ficaria preso à primeira renderização.
   const gatilhoRef = React.useRef<HTMLElement | null>(null);
 
   return (

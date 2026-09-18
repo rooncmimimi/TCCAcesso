@@ -9,19 +9,13 @@ type EmpresaStatus = {
 };
 
 /**
- * Conteúdo (ícone + heading + texto) exibido no lugar do painel/perfil
- * enquanto a empresa não está aprovada — cobre os 3 estados que impedem o
- * acesso normal (`pendente`, `reprovada`, `suspensa`). O heading recebe
- * foco ao montar para ser lido automaticamente pelo sistema de voz
- * existente (`useAutoSpeech` reage a `focusin` + `data-speak`), nunca uma
- * chamada manual a `speak()`.
+ * Aviso exibido no lugar do painel ou do perfil enquanto a empresa não está aprovada (pendente,
+ * reprovada ou suspensa). O título recebe foco ao montar e é lido pelo `useLeituraAutomatica` (que
+ * reage a `focusin` e `data-speak`).
  *
- * `acoes` é um slot opcional (ex.: "Sair da conta", "Verificar novamente")
- * — quem usa este componente decide quais ações fazem sentido no contexto
- * (a tela dedicada de `AppShell` usa as duas; os usos pontuais em
- * `PerfilEmpresa`/`dashboard/empresa`, mantidos como redundância
- * defensiva, não precisam repetir "Sair da conta" porque o cabeçalho ali
- * já tem essa opção).
+ * `acoes` é um espaço opcional para botões como "Sair da conta" e "Verificar novamente": a
+ * `TelaStatusEmpresa` usa os dois, e os usos em `PerfilEmpresa` e no dashboard da empresa dispensam
+ * "Sair da conta", que já está no cabeçalho.
  */
 export function AvisoAprovacaoEmpresa({
   empresa,

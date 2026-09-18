@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
  * Tabela: deficiencias
@@ -24,10 +24,7 @@ const Deficiencia = sequelize.define(
         }
     },
     {
-        tableName: "deficiencias",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "deficiencias",
     }
 );
 

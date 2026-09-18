@@ -6,7 +6,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { formatarDataHora } from "@/utils/format";
+import { formatarDataHora } from "@/utils/formatacao";
 import type { LogAdmin } from "@/services/admin.service";
 
 const ROTULOS_SNAPSHOT: Record<string, string> = {
@@ -37,11 +37,9 @@ function formatarValorSnapshot(chave: string, valor: unknown): string {
 }
 
 /**
- * Detalhe de um registro de `admin_audit_logs` (Fase 8) — tudo aqui vem do
- * que a listagem já carregou (`metadata` não é restrito na API), sem
- * endpoint dedicado. Um log antigo sem `metadata.snapshot` (formato
- * anterior à Fase 8) continua mostrando o que existir, sem forçar o
- * formato novo nem inventar dado que não foi registrado.
+ * Detalhe de um registro de auditoria, montado com o que a listagem já trouxe (a API envia
+ * `metadados` inteiro), sem rota própria. Um registro sem `metadados.retrato` mostra o que existir,
+ * sem inventar o que não foi guardado.
  */
 export function DetalheLogSheet({
   log,
@@ -52,7 +50,7 @@ export function DetalheLogSheet({
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
 }) {
-  const snapshot = (log?.metadata?.snapshot ?? null) as Record<string, unknown> | null;
+  const retrato = (log?.metadados?.retrato ?? null) as Record<string, unknown> | null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -61,13 +59,13 @@ export function DetalheLogSheet({
           <>
             <SheetHeader>
               <SheetTitle className="font-mono text-base">{log.acao}</SheetTitle>
-              <SheetDescription>{formatarDataHora(log.created_at)}</SheetDescription>
+              <SheetDescription>{formatarDataHora(log.criadoEm)}</SheetDescription>
             </SheetHeader>
 
             <div className="mt-4 space-y-4 text-sm">
               <div className="flex flex-wrap gap-2">
                 {log.entidadeTipo && <Badge variant="outline">{log.entidadeTipo}</Badge>}
-                <Badge variant="secondary">Admin: {log.admin?.nome ?? "Conta removida"}</Badge>
+                <Badge variant="secondary">Admin: {log.administrador?.nome ?? "Conta removida"}</Badge>
               </div>
 
               <div>
@@ -75,13 +73,13 @@ export function DetalheLogSheet({
                 <p>{log.descricao ?? "Sem descrição registrada."}</p>
               </div>
 
-              {snapshot && (
+              {retrato && (
                 <div>
                   <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">
                     Registro no momento da ação
                   </h3>
                   <dl className="space-y-1.5 rounded-lg border border-border p-3">
-                    {Object.entries(snapshot)
+                    {Object.entries(retrato)
                       .filter(([chave]) => chave !== "conteudo")
                       .map(([chave, valor]) => (
                         <div key={chave} className="flex justify-between gap-3">
@@ -90,9 +88,9 @@ export function DetalheLogSheet({
                         </div>
                       ))}
                   </dl>
-                  {typeof snapshot.conteudo === "string" && snapshot.conteudo && (
+                  {typeof retrato.conteudo === "string" && retrato.conteudo && (
                     <blockquote className="mt-2 border-l-2 border-border pl-3 text-muted-foreground">
-                      “{snapshot.conteudo}”
+                      “{retrato.conteudo}”
                     </blockquote>
                   )}
                 </div>
@@ -105,13 +103,13 @@ export function DetalheLogSheet({
                 </p>
               </div>
 
-              {log.metadata && (
+              {log.metadados && (
                 <details className="rounded-lg border border-border p-3">
                   <summary className="cursor-pointer text-xs font-bold uppercase text-muted-foreground">
                     Dados brutos registrados
                   </summary>
                   <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs">
-                    {JSON.stringify(log.metadata, null, 2)}
+                    {JSON.stringify(log.metadados, null, 2)}
                   </pre>
                 </details>
               )}

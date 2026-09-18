@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import {
     Usuario,
     Candidato,
@@ -13,9 +13,9 @@ import {
     SolicitacaoSeguimento,
     Notificacao
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { ehAdministrador } from "../utils/authorization.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { ehAdministrador } from "../utils/autorizacao.js";
 import NotificacaoService from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
 
@@ -43,7 +43,7 @@ const ATRIBUTOS_EMPRESA_SUGESTAO = [
 /**
  * Rede de conexões: seguir usuários e empresas.
  *
- * O seguidor é SEMPRE o usuário autenticado — nunca vem do corpo da
+ * O seguidor é sempre o usuário autenticado: nunca vem do corpo da
  * requisição (proteção contra IDOR / OWASP A01).
  */
 class SeguidorService {
@@ -53,24 +53,22 @@ class SeguidorService {
         });
 
         if (!usuario || !usuario.ativo || usuario.bloqueado) {
-            throw ApiError.notFound("Usuário não encontrado.");
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
         return usuario;
     }
 
-    /* ==========================================================
-       SEGUIR / DEIXAR DE SEGUIR USUÁRIO
-    ========================================================== */
+    /* Seguir e deixar de seguir usuário */
     async alternarUsuario(seguidoId, solicitante) {
         if (String(seguidoId) === String(solicitante.id)) {
-            throw ApiError.badRequest("Você não pode seguir a si mesmo.");
+            throw ErroApi.requisicaoInvalida("Você não pode seguir a si mesmo.");
         }
 
         const seguido = await this.garantirUsuarioAtivo(seguidoId);
 
         if (await BloqueioService.estaBloqueadoEntre(solicitante.id, seguidoId)) {
-            throw ApiError.forbidden("Você não pode seguir este usuário.");
+            throw ErroApi.acessoNegado("Você não pode seguir este usuário.");
         }
 
         const existente = await UsuarioSeguido.findOne({
@@ -88,12 +86,11 @@ class SeguidorService {
             };
         }
 
-        // Perfil privado nunca é seguido diretamente por esta rota — o
-        // cliente precisa passar pela solicitação (`solicitar`). Isso vale
-        // mesmo que o frontend "erre" e chame esta rota por engano: o
-        // backend nunca confia só na escolha do cliente (Fase 3).
+        // Perfil privado nunca é seguido diretamente por esta rota: o cliente precisa passar pela
+        // solicitação (`solicitar`). Vale mesmo que o cliente chame esta rota por engano, porque o
+        // backend não confia só na escolha dele.
         if (!seguido.perfilPublico) {
-            throw ApiError.forbidden(
+            throw ErroApi.acessoNegado(
                 "Este perfil é privado. Envie uma solicitação para seguir."
             );
         }
@@ -105,7 +102,7 @@ class SeguidorService {
 
         await NotificacaoService.criar({
             usuarioId: seguido.id,
-            tipo: "Sistema",
+            tipo: "sistema",
             titulo: "Você tem um novo seguidor",
             descricao: `${solicitante.nome} começou a seguir você.`,
             subtipo: "novo_seguidor_usuario",
@@ -120,14 +117,12 @@ class SeguidorService {
         };
     }
 
-    /* ==========================================================
-       SEGUIR / DEIXAR DE SEGUIR EMPRESA
-    ========================================================== */
+    /* Seguir e deixar de seguir empresa */
     async alternarEmpresa(empresaId, solicitante) {
         const empresa = await Empresa.findByPk(empresaId);
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         if (
@@ -136,7 +131,7 @@ class SeguidorService {
                 empresa.usuarioId
             )
         ) {
-            throw ApiError.forbidden("Você não pode seguir esta empresa.");
+            throw ErroApi.acessoNegado("Você não pode seguir esta empresa.");
         }
 
         const candidato = await Candidato.findOne({
@@ -144,7 +139,7 @@ class SeguidorService {
         });
 
         if (!candidato) {
-            throw ApiError.forbidden(
+            throw ErroApi.acessoNegado(
                 "Apenas candidatos podem seguir empresas."
             );
         }
@@ -171,7 +166,7 @@ class SeguidorService {
 
         await NotificacaoService.criar({
             usuarioId: empresa.usuarioId,
-            tipo: "Sistema",
+            tipo: "sistema",
             titulo: "Novo seguidor",
             descricao: `${solicitante.nome} começou a seguir sua empresa.`,
             subtipo: "novo_seguidor_empresa",
@@ -186,15 +181,13 @@ class SeguidorService {
         };
     }
 
-    /* ==========================================================
-       SOLICITAÇÕES DE SEGUIMENTO (perfil privado) — Fase 3
-    ========================================================== */
+    /* Solicitações de seguir (perfil privado) */
 
     /**
      * Autorização de conteúdo: dono/admin sempre veem; qualquer outro
      * usuário só se já for seguidor aprovado (`usuarios_seguidos`).
      * Reaproveitado por todo lugar que precisa decidir se mostra as
-     * publicações de alguém — nunca duplicar esta lógica em outro service.
+     * publicações de alguém. Nunca duplicar esta lógica em outro service.
      */
     async podeVerConteudoPrivado(usuarioAlvoId, solicitante) {
         if (!solicitante) return false;
@@ -211,21 +204,21 @@ class SeguidorService {
     }
 
     /**
-     * "Seguir" um perfil PRIVADO — cria uma solicitação pendente em vez de
+     * "Seguir" um perfil privado: cria uma solicitação pendente em vez de
      * seguir na hora. Se o alvo for público (cliente chamou a rota errada,
      * ou o perfil mudou de privado pra público entre um clique e outro),
-     * segue direto por robustez — nunca deixa uma solicitação inútil
+     * segue direto por robustez: nunca deixa uma solicitação inútil
      * pendurada contra um perfil que nem precisa mais de aprovação.
      */
     async solicitar(destinatarioId, solicitante) {
         if (String(destinatarioId) === String(solicitante.id)) {
-            throw ApiError.badRequest("Você não pode solicitar seguir a si mesmo.");
+            throw ErroApi.requisicaoInvalida("Você não pode solicitar seguir a si mesmo.");
         }
 
         const destinatario = await this.garantirUsuarioAtivo(destinatarioId);
 
         if (await BloqueioService.estaBloqueadoEntre(solicitante.id, destinatarioId)) {
-            throw ApiError.forbidden("Você não pode seguir este usuário.");
+            throw ErroApi.acessoNegado("Você não pode seguir este usuário.");
         }
 
         if (destinatario.perfilPublico) {
@@ -237,7 +230,7 @@ class SeguidorService {
         });
 
         if (jaSegue) {
-            throw ApiError.conflict("Você já segue este usuário.");
+            throw ErroApi.conflito("Você já segue este usuário.");
         }
 
         let solicitacao;
@@ -249,7 +242,7 @@ class SeguidorService {
             });
         } catch (erro) {
             if (erro.name === "SequelizeUniqueConstraintError") {
-                throw ApiError.conflict(
+                throw ErroApi.conflito(
                     "Você já tem uma solicitação pendente para este usuário."
                 );
             }
@@ -258,7 +251,7 @@ class SeguidorService {
 
         await NotificacaoService.criar({
             usuarioId: destinatarioId,
-            tipo: "Sistema",
+            tipo: "sistema",
             titulo: "Nova solicitação para seguir você",
             descricao: `${solicitante.nome} solicitou seguir você.`,
             subtipo: "solicitacao_seguimento",
@@ -270,7 +263,7 @@ class SeguidorService {
         return { seguindo: false, solicitacaoCriada: true, solicitacaoPendente: true };
     }
 
-    /** Desiste da própria solicitação pendente — idempotente. */
+    /** Desiste da própria solicitação pendente, idempotente. */
     async cancelarSolicitacao(destinatarioId, solicitante) {
         await SolicitacaoSeguimento.destroy({
             where: {
@@ -284,19 +277,15 @@ class SeguidorService {
     }
 
     /**
-     * Aceitar/recusar — mesma técnica de `RefreshTokenService.rotacionar`
-     * (transação + `SELECT ... FOR UPDATE`): garante que duas tentativas
-     * concorrentes sobre a MESMA solicitação (aceitar duas vezes, aceitar
-     * e recusar ao mesmo tempo, ou o solicitante cancelando enquanto o
-     * destinatário decide) nunca processam a mesma linha duas vezes — a
-     * segunda sempre encontra a linha já apagada pela primeira e recebe um
-     * 404 limpo, nunca um estado inconsistente.
+     * Aceitar e recusar usam a técnica de `SessaoService.rotacionar` (transação e
+     * `SELECT ... FOR UPDATE`): duas tentativas simultâneas sobre a mesma solicitação (aceitar duas
+     * vezes, aceitar e recusar juntos, ou o solicitante cancelando enquanto o destinatário decide)
+     * nunca processam a mesma linha duas vezes; a segunda encontra a linha já apagada e recebe um
+     * 404 limpo.
      *
-     * A linha é SEMPRE apagada ao final (aceita ou recusada) — decisão
-     * explicada no plano: uma solicitação resolvida não tem valor de
-     * histórico (o que importa, o seguimento em si, já fica em
-     * `usuarios_seguidos`), e apagar resolve de graça "não processar a
-     * mesma solicitação duas vezes".
+     * A linha é sempre apagada no final, aceita ou recusada: uma solicitação resolvida não tem
+     * valor de histórico (o seguimento fica em `usuarios_seguidos`), e apagar também impede
+     * processar a mesma solicitação duas vezes.
      */
     async _resolverSolicitacao(solicitacaoId, solicitante, aceitar) {
         const transaction = await sequelize.transaction();
@@ -313,7 +302,7 @@ class SeguidorService {
             });
 
             if (!solicitacao) {
-                throw ApiError.notFound("Solicitação não encontrada ou já processada.");
+                throw ErroApi.naoEncontrado("Solicitação não encontrada ou já processada.");
             }
 
             let notificacaoAceite = null;
@@ -331,16 +320,14 @@ class SeguidorService {
                     transaction
                 });
 
-                // Avisa quem pediu para seguir que foi aprovado (Fase 9,
-                // Bloco 5 — gap encontrado na auditoria: só o destinatário
-                // era notificado da solicitação, o solicitante nunca sabia
-                // o resultado). Mesmo padrão de `ConversaService.enviarMensagem`:
-                // cria dentro da transação, só emite em tempo real depois do
-                // commit (nunca anuncia algo que pode sofrer rollback).
+                // Avisa quem pediu para seguir que o pedido foi aceito. Como em
+                // `ConversaService.enviarMensagem`, a notificação é criada dentro da transação e só
+                // é emitida em tempo real depois do commit, para nunca anunciar algo que pode
+                // sofrer rollback.
                 notificacaoAceite = await NotificacaoService.criar(
                     {
                         usuarioId: solicitacao.solicitanteId,
-                        tipo: "Sistema",
+                        tipo: "sistema",
                         titulo: "Solicitação para seguir aceita",
                         descricao: `${solicitante.nome} aceitou sua solicitação para seguir.`,
                         subtipo: "solicitacao_seguimento_aceita",
@@ -355,7 +342,7 @@ class SeguidorService {
             await solicitacao.destroy({ transaction });
 
             // A notificação original ("fulano solicitou seguir você") deixa
-            // de aparecer como pendente/acionável — mesmo padrão de "marcar
+            // de aparecer como pendente/acionável, com o mesmo padrão de "marcar
             // como lida" já usado no resto do app, sem inventar um estado novo.
             await Notificacao.update(
                 { lida: true },
@@ -394,9 +381,7 @@ class SeguidorService {
         return this._resolverSolicitacao(solicitacaoId, solicitante, false);
     }
 
-    /* ==========================================================
-       LISTAGENS
-    ========================================================== */
+    /* Listagens */
     async listarSeguidores(usuarioId, query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
@@ -411,7 +396,7 @@ class SeguidorService {
             ],
             limit: limite,
             offset,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta(
@@ -437,7 +422,7 @@ class SeguidorService {
             ],
             limit: limite,
             offset,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta(
@@ -450,19 +435,14 @@ class SeguidorService {
     }
 
     /**
-     * Contadores + estado do usuário autenticado em relação ao perfil.
+     * Contadores e estado do usuário autenticado em relação ao perfil. `perfilPublico`,
+     * `elesSeguemVoce`, `solicitacaoPendente` e `bloqueado` são campos adicionais: quem lê só
+     * `seguindoEsteUsuario` e os contadores não é afetado.
      *
-     * `perfilPublico`/`elesSeguemVoce`/`solicitacaoPendente` (Fase 3) são
-     * aditivos — quem já lia só `seguindoEsteUsuario`/os contadores
-     * continua funcionando exatamente como antes.
-     *
-     * `bloqueado` (Fase 9, Bloco 5) também é aditivo — necessário para que
-     * `SeguirButton` consiga se auto-esconder em superfícies que não têm
-     * nenhum outro gate de bloqueio antes de chegar ao botão (`/descobrir`
-     * já exclui bloqueados na origem; "Seguir de volta" em notificações,
-     * não — a notificação pode ser antiga, de antes de um bloqueio
-     * posterior). Reaproveita `BloqueioService.estaBloqueadoEntre`
-     * (bidirecional) — nunca reimplementa a checagem aqui.
+     * `bloqueado` permite ao `SeguirButton` se esconder onde não há outra barreira antes dele
+     * (`/descobrir` já exclui bloqueados; "Seguir de volta" nas notificações não, porque a
+     * notificação pode ser anterior ao bloqueio). Usa `BloqueioService.estaBloqueadoEntre`, que
+     * verifica os dois sentidos.
      */
     async resumo(usuarioId, solicitante) {
         const [alvo, seguidores, seguindo, relacao, elesSeguemVoce, solicitacaoPendente, bloqueado] = await Promise.all([
@@ -514,7 +494,7 @@ class SeguidorService {
         });
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         let candidato = null;
@@ -540,7 +520,7 @@ class SeguidorService {
         };
     }
 
-    /** IDs seguidos pelo usuário — usado para priorizar o feed. */
+    /** IDs seguidos pelo usuário: usado para priorizar o feed. */
     async idsSeguidos(usuarioId) {
         const vinculos = await UsuarioSeguido.findAll({
             where: { seguidorId: usuarioId },
@@ -550,14 +530,12 @@ class SeguidorService {
         return vinculos.map((item) => item.seguidoId);
     }
 
-    /* ==========================================================
-       DESCOBERTA — PESSOAS
-       Sugestões explicáveis (cada resultado traz um `motivo` em texto
-       simples) baseadas apenas em sinais não sensíveis: cidade, título/área
-       profissional, interação pública no feed (curtidas em comum) e
-       conexões em comum. NUNCA usa deficiência, diagnóstico ou qualquer
-       dado de saúde como critério — esses campos nem são consultados aqui.
-    ========================================================== */
+    /*
+     * Descoberta: pessoas. Sugestões com motivo em texto simples, baseadas só em sinais não
+     * sensíveis: cidade, título ou área profissional, curtidas em comum no feed e conexões em
+     * comum. Nunca usa deficiência, diagnóstico ou qualquer dado de saúde, que nem são consultados
+     * aqui.
+     */
     async sugestoesPessoas(solicitante, limite = 8) {
         const limiteFinal = Math.min(Number(limite) || 8, 20);
 
@@ -581,7 +559,7 @@ class SeguidorService {
             candidatosPontuados.set(usuario.id, atual);
         };
 
-        // "Pessoas" precisa ser só candidatos — empresa e administrador nunca
+        // "Pessoas" precisa ser só candidatos: empresa e administrador nunca
         // entram aqui (empresa tem sua própria seção em sugestoesEmpresas).
         const filtroBase = {
             ativo: true,
@@ -684,7 +662,7 @@ class SeguidorService {
                     { model: Candidato, as: "candidato", required: false, attributes: ["tituloProfissional"] }
                 ],
                 limit: limiteFinal - resultado.length,
-                order: [["created_at", "DESC"]]
+                order: [["criadoEm", "DESC"]]
             });
             recentes.forEach((usuario) => pontuar(usuario, 0, "Novo no ACESSO"));
             resultado = [...candidatosPontuados.values()].sort((a, b) => b.pontos - a.pontos);
@@ -701,22 +679,18 @@ class SeguidorService {
     }
 
     /**
-     * `sugestoesPessoas` sem chamador direto: a rota GET /seguir/sugestoes
-     * (consumida por SugestoesResumo.tsx e descobrir.tsx) chama
-     * `sugestoesPessoas` direto pelo controller (SeguidorController.sugestoes),
-     * nunca por aqui. Continua existindo por não ter motivo concreto para
-     * remover ainda.
+     * Sem chamador: a rota GET /seguir/sugestoes usa `sugestoesPessoas` direto, pelo
+     * `SeguidorController.sugestoes`.
      */
     async sugestoes(solicitante, limite = 5) {
         return this.sugestoesPessoas(solicitante, limite);
     }
 
-    /* ==========================================================
-       DESCOBERTA — EMPRESAS
-       Só faz sentido para candidatos (só eles seguem empresas). Critérios:
-       empresas donas de vagas já favoritadas, mesmo setor de empresas de
-       interesse e mesma cidade do candidato — nunca deficiência/diagnóstico.
-    ========================================================== */
+    /*
+     * Descoberta: empresas. Só para candidatos, os únicos que seguem empresas. Critérios: empresas
+     * donas de vagas favoritadas, mesmo setor das empresas de interesse e mesma cidade do
+     * candidato; nunca deficiência ou diagnóstico.
+     */
     async sugestoesEmpresas(solicitante, limite = 8) {
         const limiteFinal = Math.min(Number(limite) || 8, 20);
 
@@ -788,7 +762,7 @@ class SeguidorService {
                 attributes: ATRIBUTOS_EMPRESA_SUGESTAO,
                 order: [
                     ["empresaVerificada", "DESC"],
-                    ["created_at", "DESC"]
+                    ["criadoEm", "DESC"]
                 ],
                 limit: limiteFinal - resultado.length
             });

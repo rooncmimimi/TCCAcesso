@@ -1,4 +1,4 @@
-import api from "./api";
+import clienteApi from "./api";
 import { buscarPaginado, type Paginado } from "./http";
 import type { Notificacao, PreferenciasNotificacao } from "@/types";
 
@@ -9,29 +9,29 @@ export const notificacoesService = {
   },
 
   async contarNaoLidas(): Promise<number> {
-    const { data } = await api.get<{ total?: number; naoLidas?: number }>("/notificacoes/nao-lidas");
+    const { data } = await clienteApi.get<{ total?: number; naoLidas?: number }>("/notificacoes/nao-lidas");
     return Number(data.total ?? data.naoLidas ?? 0);
   },
 
   async marcarComoLida(id: string): Promise<void> {
-    await api.patch(`/notificacoes/${id}/lida`);
+    await clienteApi.patch(`/notificacoes/${id}/lida`);
   },
 
   async marcarTodas(): Promise<void> {
-    await api.patch("/notificacoes/lidas");
+    await clienteApi.patch("/notificacoes/lidas");
   },
 
   async remover(id: string): Promise<void> {
-    await api.delete(`/notificacoes/${id}`);
+    await clienteApi.delete(`/notificacoes/${id}`);
   },
 
   async obterPreferencias(): Promise<PreferenciasNotificacao> {
-    const { data } = await api.get<{ preferencias: PreferenciasNotificacao }>("/notificacoes/preferencias");
+    const { data } = await clienteApi.get<{ preferencias: PreferenciasNotificacao }>("/notificacoes/preferencias");
     return data.preferencias;
   },
 
   async atualizarPreferencias(payload: Partial<PreferenciasNotificacao>): Promise<PreferenciasNotificacao> {
-    const { data } = await api.put<{ preferencias: PreferenciasNotificacao }>(
+    const { data } = await clienteApi.put<{ preferencias: PreferenciasNotificacao }>(
       "/notificacoes/preferencias",
       payload,
     );

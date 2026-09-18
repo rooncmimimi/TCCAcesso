@@ -1,4 +1,4 @@
-import { apiClient } from "../services/api/client";
+import { clienteApi } from "../services/api/cliente";
 import type {
   BloquearResposta,
   CriarDenunciaDados,
@@ -8,35 +8,32 @@ import type {
   ListarBloqueadosParametros,
 } from "./types";
 
-/**
- * Única camada que conhece os endpoints reais de bloqueio
- * (`Site/Backend/src/routes/usuarioRoutes.js`) e denúncia
- * (`Site/Backend/src/routes/denunciaRoutes.js`), confirmado por auditoria.
- * Nenhum método trata 401 por conta própria (interceptor do `apiClient` já
- * cuida disso).
- */
+/** Bloqueio de usuários e envio de denúncias. */
 export const ModeracaoService = {
   /** `GET /usuarios/bloqueados`. */
   async listarBloqueados(parametros: ListarBloqueadosParametros = {}): Promise<ListaBloqueadosResposta> {
-    const { data } = await apiClient.get<ListaBloqueadosResposta>("/usuarios/bloqueados", { params: parametros });
+    const { data } = await clienteApi.get<ListaBloqueadosResposta>("/usuarios/bloqueados", { params: parametros });
     return data;
   },
 
-  /** `POST /usuarios/:usuarioId/bloquear` — idempotente (`findOrCreate` no backend); já desfaz seguir/ser seguido nos dois sentidos. */
+  /** `POST /usuarios/:usuarioId/bloquear`: idempotente (`findOrCreate` no backend); já desfaz seguir/ser seguido nos dois sentidos. */
   async bloquear(usuarioId: string): Promise<boolean> {
-    const { data } = await apiClient.post<BloquearResposta>(`/usuarios/${usuarioId}/bloquear`);
+    const { data } = await clienteApi.post<BloquearResposta>(`/usuarios/${usuarioId}/bloquear`);
     return data.bloqueado;
   },
 
-  /** `DELETE /usuarios/:usuarioId/bloquear` — remove só o MEU bloqueio sobre esse usuário (se ele me bloqueou também, isso não desfaz o bloqueio dele). */
+  /**
+   * `DELETE /usuarios/:usuarioId/bloquear`: remove só o meu bloqueio sobre esse usuário (se a outra
+   * pessoa também me bloqueou, o bloqueio dela continua).
+   */
   async desbloquear(usuarioId: string): Promise<boolean> {
-    const { data } = await apiClient.delete<BloquearResposta>(`/usuarios/${usuarioId}/bloquear`);
+    const { data } = await clienteApi.delete<BloquearResposta>(`/usuarios/${usuarioId}/bloquear`);
     return data.bloqueado;
   },
 
-  /** `POST /denuncias` — 409 se já existe uma denúncia sua para a mesma entidade ainda em análise (tratado pelo chamador via `getFriendlyErrorMessage`). */
+  /** `POST /denuncias`: 409 se já existe uma denúncia sua para a mesma entidade ainda em análise (tratado pelo chamador via `extrairMensagemErro`). */
   async denunciar(dados: CriarDenunciaDados): Promise<Denuncia> {
-    const { data } = await apiClient.post<CriarDenunciaResposta>("/denuncias", dados);
+    const { data } = await clienteApi.post<CriarDenunciaResposta>("/denuncias", dados);
     return data.denuncia;
   },
 };

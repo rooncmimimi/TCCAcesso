@@ -18,11 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { VoiceConsentDialog } from "@/components/accessibility/VoiceConsentDialog";
-import { VagaDestaqueCard } from "@/components/home/VagaDestaqueCard";
-import { EmpresaParceiraCard } from "@/components/home/EmpresaParceiraCard";
+import { ConsentimentoVozDialog } from "@/components/acessibilidade/ConsentimentoVozDialog";
+import { VagaDestaqueCard } from "@/components/inicio/VagaDestaqueCard";
+import { EmpresaParceiraCard } from "@/components/inicio/EmpresaParceiraCard";
 import { publicoService } from "@/services/publico.service";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,11 +40,11 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  component: Home,
+  component: Inicio,
 });
 
 // Cada recurso do card "Recursos ativos nesta página" tem sua própria cor de
-// identidade (não um token único) — detalhe visual específico desta seção.
+// identidade (não um token único): detalhe visual específico desta seção.
 const RECURSOS_ATIVOS = [
   { icon: Headphones, texto: "Leitura por voz pronta para ativar", classeCor: "bg-[#21A848] text-white" },
   { icon: Languages, texto: "VLibras disponível no canto da tela", classeCor: "bg-[#FAD905] text-[#050407]" },
@@ -79,8 +79,8 @@ const recursos = [
   },
 ];
 
-function Home() {
-  const { hydrated, autenticado } = useSession();
+function Inicio() {
+  const { inicializado, autenticado } = useSessao();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["publico", "home"],
     queryFn: () => publicoService.home(),
@@ -90,17 +90,17 @@ function Home() {
   const vagasDestaque = data?.vagasDestaque ?? [];
   const empresasParceiras = data?.empresasParceiras ?? [];
 
-  // Quem já está autenticado não deve ver a Home de visitante (com
-  // "Entrar"/"Criar conta") — o destino natural é o Feed, igual a quem
-  // acabou de fazer login. Só decide depois de `hydrated` para não
-  // piscar a Home antes de a sessão salva ser lida.
-  if (hydrated && autenticado) {
+  // Quem já está autenticado não deve ver a Inicio de visitante (com
+  // "Entrar"/"Criar conta"): o destino natural é o Feed, igual a quem
+  // acabou de fazer login. Só decide depois de `inicializado` para não
+  // piscar a Inicio antes de a sessão salva ser lida.
+  if (inicializado && autenticado) {
     return <Navigate to="/feed" />;
   }
 
   return (
     <div className="min-h-dvh bg-background">
-      <VoiceConsentDialog />
+      <ConsentimentoVozDialog />
       <a
         href="#conteudo"
         className="sr-only-focusable absolute left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
@@ -142,7 +142,7 @@ function Home() {
       </header>
 
       <main id="conteudo" tabIndex={-1}>
-        {/* Hero — wrapper de largura total só pra conter o raio decorativo:
+        {/* Hero; wrapper de largura total só pra conter o raio decorativo:
             a section em si é centralizada (max-w-6xl), então não sobra
             margem lateral dentro dela pra ele vazar sem cruzar o texto. */}
         <div className="relative overflow-hidden">
@@ -210,7 +210,6 @@ function Home() {
           </section>
         </div>
 
-        {/* Recursos */}
         <section aria-labelledby="recursos" className="border-y border-border bg-card">
           <div className="mx-auto max-w-6xl px-4 py-14">
             <h2 id="recursos" className="text-3xl font-extrabold">
@@ -240,7 +239,6 @@ function Home() {
           </div>
         </section>
 
-        {/* Vagas em destaque */}
         <section aria-labelledby="vagas-destaque" className="mx-auto max-w-6xl px-4 py-14">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
             <div className="min-w-0">
@@ -281,7 +279,6 @@ function Home() {
           )}
         </section>
 
-        {/* Empresas parceiras */}
         {!isLoading && empresasParceiras.length > 0 && (
           <section aria-labelledby="parceiras" className="border-t border-border bg-card">
             <div className="mx-auto max-w-6xl px-4 py-14">
@@ -299,7 +296,7 @@ function Home() {
           </section>
         )}
 
-        {/* CTA final */}
+        {/* Chamada final para criar conta */}
         <section className="mx-auto max-w-6xl px-4 py-16">
           <Card className="border-none bg-primary text-primary-foreground shadow-card">
             <CardContent className="grid items-center gap-6 p-8 md:grid-cols-[minmax(0,1fr)_auto]">

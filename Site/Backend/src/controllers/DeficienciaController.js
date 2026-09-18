@@ -1,9 +1,10 @@
 import DeficienciaService from "../services/DeficienciaService.js";
 
+/** Catálogo de deficiências (`/deficiencias`); criar, editar e excluir são só do administrador. */
 class DeficienciaController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
-            const deficiencias = await DeficienciaService.findAll();
+            const deficiencias = await DeficienciaService.listar();
 
             return res.status(200).json({ sucesso: true, deficiencias });
         } catch (erro) {
@@ -11,9 +12,9 @@ class DeficienciaController {
         }
     }
 
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
-            const deficiencia = await DeficienciaService.findById(req.params.id);
+            const deficiencia = await DeficienciaService.buscarPorId(req.params.id);
 
             return res.status(200).json({ sucesso: true, deficiencia });
         } catch (erro) {
@@ -21,9 +22,9 @@ class DeficienciaController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
-            const deficiencia = await DeficienciaService.create(req.body);
+            const deficiencia = await DeficienciaService.criar(req.body);
 
             return res.status(201).json({ sucesso: true, deficiencia });
         } catch (erro) {
@@ -31,9 +32,9 @@ class DeficienciaController {
         }
     }
 
-    async update(req, res, next) {
+    async atualizar(req, res, next) {
         try {
-            const deficiencia = await DeficienciaService.update(
+            const deficiencia = await DeficienciaService.atualizar(
                 req.params.id,
                 req.body
             );
@@ -44,9 +45,9 @@ class DeficienciaController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
-            const resultado = await DeficienciaService.delete(req.params.id);
+            const resultado = await DeficienciaService.excluir(req.params.id);
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

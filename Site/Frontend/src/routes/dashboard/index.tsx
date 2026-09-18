@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { AppShell } from "@/layouts/AppShell";
-import { useSession } from "@/contexts/SessionContext";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
+import { useSessao } from "@/hooks/useSessao";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({
@@ -15,11 +15,11 @@ export const Route = createFileRoute("/dashboard/")({
 
 /** Encaminha o usuário autenticado ao painel correspondente ao seu tipo de conta. */
 function RedirecionarDashboard() {
-  const { user, hydrated, autenticado } = useSession();
+  const { usuario, inicializado, autenticado } = useSessao();
 
-  if (!hydrated) {
+  if (!inicializado) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div
           role="status"
           aria-live="polite"
@@ -28,23 +28,23 @@ function RedirecionarDashboard() {
           <Loader2 className="size-8 animate-spin" aria-hidden="true" />
           <p>Carregando sua sessão…</p>
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
-  if (!autenticado || !user) {
+  if (!autenticado || !usuario) {
     return <Navigate to="/entrar" />;
   }
 
-  if (user.tipo === "candidato") {
+  if (usuario.tipo === "candidato") {
     return <Navigate to="/dashboard/candidato" />;
   }
 
-  if (user.tipo === "empresa") {
+  if (usuario.tipo === "empresa") {
     return <Navigate to="/dashboard/empresa" />;
   }
 
-  if (user.tipo === "administrador") {
+  if (usuario.tipo === "administrador") {
     return <Navigate to="/admin" />;
   }
 

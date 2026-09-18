@@ -1,41 +1,41 @@
 import { Router } from "express";
 import CandidaturaController from "../controllers/CandidaturaController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import rbacMiddleware from "../middlewares/rbacMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import { validarStatusCandidatura } from "../validators/candidaturaValidator.js";
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
 router.get(
     "/minhas",
-    rbacMiddleware("candidato"),
+    exigirTipoUsuarioMiddleware("candidato"),
     CandidaturaController.minhas
 );
 
 router.get(
     "/:id",
     validarUuidParam("id"),
-    validationMiddleware,
-    CandidaturaController.show
+    validacaoMiddleware,
+    CandidaturaController.obter
 );
 
 router.patch(
     "/:id/status",
-    rbacMiddleware("empresa", "administrador"),
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
     validarStatusCandidatura,
-    validationMiddleware,
+    validacaoMiddleware,
     CandidaturaController.atualizarStatus
 );
 
 router.patch(
     "/:id/cancelar",
-    rbacMiddleware("candidato", "administrador"),
+    exigirTipoUsuarioMiddleware("candidato", "administrador"),
     validarUuidParam("id"),
-    validationMiddleware,
+    validacaoMiddleware,
     CandidaturaController.cancelar
 );
 

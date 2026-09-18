@@ -17,11 +17,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { extrairMensagemErro } from "@/services/api";
-import { authService } from "@/services/auth.service";
+import { autenticacaoService } from "@/services/autenticacao.service";
 
 const CHAVE_SESSOES = ["seguranca", "sessoes"] as const;
 
-function formatarData(iso: string): string {
+function formatarDataHoraCurta(iso: string): string {
   try {
     return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
   } catch {
@@ -62,13 +62,13 @@ export function SecaoSessoes() {
 
   const { data: sessoes, isLoading, isError, refetch } = useQuery({
     queryKey: CHAVE_SESSOES,
-    queryFn: () => authService.listarSessoes(),
+    queryFn: () => autenticacaoService.listarSessoes(),
   });
 
   const atualizar = () => queryClient.invalidateQueries({ queryKey: CHAVE_SESSOES });
 
   const encerrar = useMutation({
-    mutationFn: (id: string) => authService.encerrarSessao(id),
+    mutationFn: (id: string) => autenticacaoService.encerrarSessao(id),
     onSuccess: () => {
       toast.success("Sessão encerrada.");
       void atualizar();
@@ -77,7 +77,7 @@ export function SecaoSessoes() {
   });
 
   const encerrarOutras = useMutation({
-    mutationFn: () => authService.encerrarOutrasSessoes(),
+    mutationFn: () => autenticacaoService.encerrarOutrasSessoes(),
     onSuccess: () => {
       toast.success("As outras sessões foram encerradas.");
       void atualizar();
@@ -148,7 +148,7 @@ export function SecaoSessoes() {
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Ativa desde {formatarData(sessao.criadoEm)}
+                    Ativa desde {formatarDataHoraCurta(sessao.criadoEm)}
                     {sessao.ip ? ` · IP ${sessao.ip}` : ""}
                   </p>
                 </div>

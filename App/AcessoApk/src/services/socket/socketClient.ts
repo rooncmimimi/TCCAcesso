@@ -1,32 +1,35 @@
 import { io, type Socket } from "socket.io-client";
 
 import { API_URL } from "../../config/env";
-import { getAccessToken, notifySessionEnded } from "../api/client";
+import { obterAccessToken, notificarFimSessao, type MotivoFimSessao } from "../api/cliente";
 
-/** URL do servidor Socket.IO — mesmo host do Express, sem o sufixo `/api` (mesma derivação de `Site/Frontend/src/services/socket.ts`). */
+/**
+ * URL do Socket.IO: o mesmo host da API, sem o sufixo `/api` (mesma regra de
+ * `Site/Frontend/src/services/socket.ts`).
+ */
 export const SOCKET_URL = API_URL.replace(/\/api\/?$/, "");
 
-/** Mesmo `codigo` usado pelo backend REST (`authMiddleware`) e pelo handshake do socket (`realtime/socket.js`) para marcar rejeição por bloqueio administrativo. */
-const CODIGO_CONTA_BLOQUEADA = "CONTA_BLOQUEADA";
+/**
+ * Motivos de recusa do handshake que não adianta tentar de novo, com o mesmo `codigo` que o backend
+ * usa no REST (`autenticacaoMiddleware.js`) e no socket (`realtime/socket.js`).
+ */
+const FIM_DE_SESSAO_POR_CODIGO: Record<string, MotivoFimSessao> = {
+  CONTA_BLOQUEADA: "bloqueada",
+  SENHA_ALTERADA: "senha_alterada",
+};
 
 let socket: Socket | null = null;
 
 /**
- * Conecta (uma única vez, reaproveitando a mesma instância) ao Socket.IO
- * usando o access token JWT em memória. Espelha `Site/Frontend/src/services
- * /socket.ts` (mesma API real do backend) — a única adaptação para React
- * Native é `transports: ["websocket"]` sozinho: o `WebSocket` nativo do RN
- * é suportado de fábrica, e o transporte de long-polling do
- * `socket.io-client` depende de APIs de XHR que se comportam de forma
- * inconsistente no runtime do React Native (achado documentado em várias
- * issues do próprio `socket.io-client` para RN) — sem necessidade de manter
- * os dois quando só um já é confiável aqui.
+ * Conecta ao Socket.IO com o token de acesso em memória, reaproveitando a mesma instância. Segue o
+ * cliente do Site (`Site/Frontend/src/services/socket.ts`) com uma diferença: só o transporte
+ * `websocket`, porque o React Native tem `WebSocket` nativo e o long-polling do `socket.io-client`
+ * depende de XHR, que não é confiável no RN.
  *
- * Toda tela continua funcionando via REST caso a conexão de socket falhe —
- * o socket só COMPLEMENTA (tempo real), nunca é a única fonte de dado.
+ * O socket só complementa: todas as telas continuam funcionando pela API REST se a conexão falhar.
  */
 export function conectarSocket(): Socket | null {
-  const token = getAccessToken();
+  const token = obterAccessToken();
   if (!token) return null;
 
   if (socket?.connected) return socket;
@@ -40,31 +43,25 @@ export function conectarSocket(): Socket | null {
       autoConnect: true,
     });
 
-    // O access token do handshake inicial acima nunca era atualizado sozinho
-    // — com a validade curta do token (~30min, ver `services/api/client.ts`),
-    // uma reconexão automática do próprio socket.io-client (rede caiu,
-    // servidor reiniciou) reenviaria esse MESMO token já expirado, o
-    // handshake falharia, e o socket ficaria sem conectar silenciosamente.
-    // Relê o token atual antes de CADA tentativa de reconexão — mesmo
-    // mecanismo de reconexão do socket.io-client, só garantindo que carregue
-    // o token mais recente (mesma correção já aplicada no site).
+    // O token do handshake não se atualiza sozinho. Como o token de acesso dura pouco (30 minutos
+    // por padrão no backend), uma reconexão automática (rede caiu, servidor reiniciou) reenviaria
+    // um token vencido e o socket não voltaria. Por isso o token é relido antes de cada tentativa,
+    // como no Site.
     socket.io.on("reconnect_attempt", () => {
-      const tokenAtual = getAccessToken();
+      const tokenAtual = obterAccessToken();
       if (socket && tokenAtual) {
         socket.auth = { token: tokenAtual };
       }
     });
 
-    // Bloqueio administrativo rejeita o handshake com um `codigo`
-    // identificável (`realtime/socket.js`) — nesse caso não faz sentido
-    // deixar o socket.io-client insistir nas próximas tentativas
-    // automáticas; desconecta na hora e reaproveita o MESMO encerramento de
-    // sessão que o REST já usa (`registerSessionEndedListener`), em vez de
-    // uma segunda implementação só para o socket.
+    // Conta bloqueada ou senha trocada: o handshake é recusado com um `codigo` próprio e nenhuma
+    // tentativa nova vai ser aceita. Não adianta deixar o `socket.io-client` insistir: desconecta
+    // na hora e usa o mesmo encerramento de sessão do REST.
     socket.on("connect_error", (erro: Error & { data?: { codigo?: string } }) => {
-      if (erro.data?.codigo === CODIGO_CONTA_BLOQUEADA) {
+      const motivo = erro.data?.codigo ? FIM_DE_SESSAO_POR_CODIGO[erro.data.codigo] : undefined;
+      if (motivo) {
         socket?.disconnect();
-        notifySessionEnded("blocked");
+        notificarFimSessao(motivo);
       }
     });
   } else {
@@ -79,7 +76,7 @@ export function obterSocket(): Socket | null {
   return socket;
 }
 
-/** Chamado no logout/fim de sessão — nunca deixa uma conexão autenticada da sessão anterior viva. */
+/** Chamado no logout/fim de sessão, nunca deixa uma conexão autenticada da sessão anterior viva. */
 export function desconectarSocket(): void {
   socket?.disconnect();
   socket = null;

@@ -1,30 +1,18 @@
 import { Candidato } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { garantirDono } from "../utils/authorization.js";
+import ErroApi from "../utils/ErroApi.js";
+import { garantirDono } from "../utils/autorizacao.js";
 
 /**
- * Autoriza (dono do próprio `:id` ou administrador) ANTES de qualquer
- * upload ir para o Storage — mesmo princípio já usado em
- * `garantirEmpresaAprovadaMiddleware.js` para logo/capa de empresa
- * (achado da auditoria do J1, corrigido ali; J1.1 fecha o mesmo problema
- * aqui, em `usuarioRoutes.js`/`candidatoRoutes.js`).
- *
- * Antes desta correção, a autorização só acontecia dentro do
- * Controller/Service (`UsuarioService.update`/`CandidatoService.
- * atualizarCurriculo`, ambos via `garantirDono` — nenhuma implementação
- * nova da regra, só adiantada pra antes do upload) — ou seja, DEPOIS que
- * `upload.single`/`criarProcessadorArmazenamento` já tinham enviado o
- * arquivo pro Supabase Storage. Um usuário autenticado enviando um
- * arquivo para o `:id` de OUTRO usuário recebia 403 corretamente (o
- * banco nunca era alterado), mas o arquivo físico já tinha sido criado
- * na pasta do outro usuário no Storage — o upload nunca deveria ter
- * acontecido.
+ * Autoriza (dono do próprio `:id` ou administrador) antes de qualquer upload ir para o Storage,
+ * como o `garantirEmpresaAprovadaMiddleware.js`. A regra é a mesma `garantirDono` que
+ * `UsuarioService.atualizar` e `CandidatoService.atualizarCurriculo` aplicam depois; aqui ela só
+ * vem antes. Sem isso, quem enviasse um arquivo para o `:id` de outro usuário receberia 403, mas o
+ * arquivo já estaria criado na pasta dele no Storage.
  */
 
 /**
- * Uso em `usuarioRoutes.js` (foto/capa de perfil): `:id` da rota já É o
- * `usuarioId` diretamente — `garantirDono` só compara strings, nenhuma
- * consulta ao banco é necessária aqui.
+ * Uso em `usuarioRoutes.js` (foto e capa de perfil): o `:id` da rota já é o `usuarioId`, então
+ * `garantirDono` só compara strings, sem consulta ao banco.
  */
 export const garantirDonoDeUsuario = (req, res, next) => {
     try {
@@ -37,7 +25,7 @@ export const garantirDonoDeUsuario = (req, res, next) => {
 
 /**
  * Uso em `candidatoRoutes.js` (currículo): `:id` da rota é o PK da
- * tabela `candidatos`, não o `usuarioId` diretamente — resolve o
+ * tabela `candidatos`, não o `usuarioId` diretamente; resolve o
  * `usuarioId` dono desse registro antes de aplicar a mesma
  * `garantirDono` (idêntica à que `CandidatoService.atualizarCurriculo`
  * já usa).
@@ -49,7 +37,7 @@ export const garantirDonoDeCandidato = async (req, res, next) => {
         });
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         garantirDono(req.user, candidato.usuarioId);

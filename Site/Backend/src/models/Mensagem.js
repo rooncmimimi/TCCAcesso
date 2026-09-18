@@ -1,9 +1,7 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
-/**
- * Tabela: mensagens
- */
+/** Tabela `mensagens`: as mensagens de uma conversa. */
 const Mensagem = sequelize.define(
     "Mensagem",
     {
@@ -14,20 +12,14 @@ const Mensagem = sequelize.define(
         },
 
         conversaId: {
-            field: "conversa_id",
             type: DataTypes.UUID,
             allowNull: false
         },
 
-        // Fase 8 (migration 0040, pendente de execução): nullable — ver
-        // comentário equivalente em `models/Conversa.js`. Uma mensagem
-        // cujo remetente excluiu a conta permanece visível (histórico
-        // preservado), só com o remetente resolvido como "Usuário
-        // removido" no frontend.
+        // Fica nulo quando quem enviou exclui a conta: a mensagem continua visível, com o remetente
+        // exibido como "Usuário removido".
         remetenteId: {
-            field: "remetente_id",
-            type: DataTypes.UUID,
-            allowNull: true
+            type: DataTypes.UUID
         },
 
         conteudo: {
@@ -40,18 +32,9 @@ const Mensagem = sequelize.define(
             allowNull: false,
             defaultValue: false
         }
-,
-
-        lidaEm: {
-            field: "lida_em",
-            type: DataTypes.DATE
-        }
     },
     {
-        tableName: "mensagens",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "mensagens"
     }
 );
 

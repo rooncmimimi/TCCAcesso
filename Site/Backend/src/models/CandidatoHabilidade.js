@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: candidato_habilidades (migration 0004)
+ * Tabela: candidato_habilidades
  */
 const CandidatoHabilidade = sequelize.define(
     "CandidatoHabilidade",
@@ -12,8 +12,7 @@ const CandidatoHabilidade = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-        candidatoId: {
-            field: "candidato_id",
+        candidatoId: {
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -26,10 +25,7 @@ const CandidatoHabilidade = sequelize.define(
         }
     },
     {
-        tableName: "candidato_habilidades",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "candidato_habilidades",
     }
 );
 

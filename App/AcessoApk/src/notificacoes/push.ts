@@ -7,7 +7,7 @@ import { capturarErro } from "../observabilidade";
 
 const CANAL_ANDROID = "default";
 
-/** Alvo carregado no `data` de um push — montado pelo backend em `NotificacaoService.emitirNotificacaoCriada` (Fase R5). */
+/** Alvo carregado no `data` de um push, montado pelo backend em `NotificacaoService.emitirNotificacaoCriada`. */
 export interface DadosPush {
   notificacaoId?: string;
   entidadeTipo?: string | null;
@@ -15,15 +15,9 @@ export interface DadosPush {
 }
 
 /**
- * Push nativo NÃO existe no Expo Go desde o SDK 53 — e mais: só `import`ar
- * `expo-notifications` dentro do Expo Go no Android já DERRUBA o app (o
- * módulo tem um efeito colateral no load que registra um listener nativo
- * que não existe lá, e ele lança em vez de só avisar).
- *
- * Por isso o módulo é carregado SOB DEMANDA (`require`), e só fora do Expo
- * Go. No Expo Go tudo aqui vira no-op silencioso — o que não muda nada na
- * prática, porque push nativo não funcionaria lá de qualquer forma. Em dev
- * build / build de produção o `require` carrega o módulo normalmente.
+ * Push nativo não funciona no Expo Go desde o SDK 53, e só importar `expo-notifications` lá já
+ * derruba o app no Android. Por isso o módulo é carregado sob demanda (`require`) e só fora do Expo
+ * Go; dentro dele, tudo aqui vira no-op.
  */
 const EXPO_GO = isRunningInExpoGo();
 
@@ -42,13 +36,12 @@ function obterNotifications(): ModuloNotifications | null {
 function plataformaAtual(): PlataformaPush | null {
   if (Platform.OS === "android") return "android";
   if (Platform.OS === "ios") return "ios";
-  return null; // web/outros — push nativo não se aplica
+  return null; // web/outros: push nativo não se aplica
 }
 
 /**
- * Chamado UMA vez no boot do app (`App.tsx`) — define como um push aparece
- * enquanto o app está aberto. Sem isto, o push chegado com o app em
- * primeiro plano seria engolido silenciosamente. No-op no Expo Go.
+ * Chamado uma vez ao abrir o app (`App.tsx`): define como um push aparece com o app em primeiro
+ * plano, caso em que seria descartado sem isso. No-op no Expo Go.
  */
 export function configurarNotificacoesPush(): void {
   const Notifications = obterNotifications();
@@ -73,14 +66,11 @@ async function garantirCanalAndroid(Notifications: ModuloNotifications): Promise
 }
 
 /**
- * Pede permissão (uma vez — não insiste se o usuário recusar), pega o Expo
- * push token e registra no backend. Chamado quando uma sessão fica ativa
- * (login / restauração ao abrir), a partir do `AuthProvider`.
+ * Pede permissão uma vez (sem insistir se a pessoa recusar), obtém o Expo push token e registra no
+ * backend. Chamado pelo `AutenticacaoProvider` quando há sessão ativa.
  *
- * FAIL-SOFT em tudo: Expo Go, permissão negada, rodando em emulador, `eas
- * init` não feito (sem `projectId`), rede fora do ar — nada disso trava o
- * app. As notificações em tempo real (Socket.IO, com o app aberto)
- * continuam funcionando sem depender disto.
+ * Nenhuma falha trava o app: Expo Go, permissão negada, emulador, projeto sem `eas init` ou rede
+ * fora do ar. As notificações em tempo real pelo Socket.IO continuam funcionando sem o push.
  */
 export async function registrarDispositivoParaPush(): Promise<void> {
   const Notifications = obterNotifications();
@@ -99,9 +89,9 @@ export async function registrarDispositivoParaPush(): Promise<void> {
     }
     if (status !== "granted") return;
 
-    // Sem argumento: `expo-notifications` resolve o `projectId` sozinho a
-    // partir de `expoConfig.extra.eas.projectId` (preenchido por `eas
-    // init`). Se não houver, lança — e o catch abaixo trata como fail-soft.
+    // Sem argumento: `expo-notifications` resolve o `projectId` sozinho a partir de
+    // `expoConfig.extra.eas.projectId` (preenchido por `eas init`). Se não houver, lança, e o
+    // catch abaixo trata como fail-soft.
     const { data: token } = await Notifications.getExpoPushTokenAsync();
     await NotificacaoService.registrarPushToken(token, plataforma);
   } catch (erro) {
@@ -110,7 +100,7 @@ export async function registrarDispositivoParaPush(): Promise<void> {
 }
 
 /**
- * Remove o token deste dispositivo no backend — chamado no logout, para
+ * Remove o token deste dispositivo no backend: chamado no logout, para
  * este aparelho parar de receber push da conta que saiu. Fail-soft (se o
  * token não puder ser recuperado, o backend acaba limpando sozinho quando
  * um envio bate em `DeviceNotRegistered`). No-op no Expo Go.

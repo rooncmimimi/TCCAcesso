@@ -1,19 +1,19 @@
 import { Router } from "express";
 import { body, param } from "express-validator";
 import ChatbotController from "../controllers/ChatbotController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
-router.get("/conversas", ChatbotController.index);
+router.get("/conversas", ChatbotController.listar);
 
 router.get(
     "/conversas/:conversaId/mensagens",
     param("conversaId").isUUID().withMessage("Conversa inválida."),
-    validationMiddleware,
+    validacaoMiddleware,
     ChatbotController.mensagens
 );
 
@@ -27,15 +27,15 @@ router.post(
         .trim()
         .isLength({ min: 1, max: 1000 })
         .withMessage("A mensagem deve ter entre 1 e 1000 caracteres."),
-    validationMiddleware,
-    ChatbotController.store
+    validacaoMiddleware,
+    ChatbotController.criar
 );
 
 router.delete(
     "/conversas/:conversaId",
     param("conversaId").isUUID().withMessage("Conversa inválida."),
-    validationMiddleware,
-    ChatbotController.destroy
+    validacaoMiddleware,
+    ChatbotController.excluir
 );
 
 export default router;

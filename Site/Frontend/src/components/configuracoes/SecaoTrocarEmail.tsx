@@ -19,12 +19,12 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { extrairMensagemErro } from "@/services/api";
-import { authService } from "@/services/auth.service";
-import { useSession } from "@/contexts/SessionContext";
+import { autenticacaoService } from "@/services/autenticacao.service";
+import { useSessao } from "@/hooks/useSessao";
 
 /** Troca de e-mail: senha atual + novo e-mail, depois confirma com o código enviado ao novo endereço. */
 export function SecaoTrocarEmail() {
-  const { user, update } = useSession();
+  const { usuario, atualizar } = useSessao();
   const [aberto, setAberto] = useState(false);
   const [etapa, setEtapa] = useState<"pedido" | "confirmar">("pedido");
   const [senhaAtual, setSenhaAtual] = useState("");
@@ -39,7 +39,7 @@ export function SecaoTrocarEmail() {
   }
 
   const solicitar = useMutation({
-    mutationFn: () => authService.solicitarTrocaEmail(senhaAtual, novoEmail),
+    mutationFn: () => autenticacaoService.solicitarTrocaEmail(senhaAtual, novoEmail),
     onSuccess: () => {
       toast.success("Código enviado para o novo e-mail.");
       setEtapa("confirmar");
@@ -48,11 +48,10 @@ export function SecaoTrocarEmail() {
   });
 
   const confirmar = useMutation({
-    mutationFn: () => authService.confirmarTrocaEmail(codigo),
+    mutationFn: () => autenticacaoService.confirmarTrocaEmail(codigo),
     onSuccess: (usuarioAtualizado) => {
-      update({ email: usuarioAtualizado.email });
-      // Fase 9, Bloco 7: o toast já é lido automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      atualizar({ email: usuarioAtualizado.email });
+      // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("E-mail atualizado com sucesso.");
       setAberto(false);
       reiniciar();
@@ -70,7 +69,7 @@ export function SecaoTrocarEmail() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          E-mail atual: <span className="font-medium text-foreground">{user?.email}</span>
+          E-mail atual: <span className="font-medium text-foreground">{usuario?.email}</span>
         </p>
 
         <Dialog

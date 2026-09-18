@@ -1,23 +1,21 @@
 /**
- * Tipos do contrato real de vagas do backend (Site/Backend), conforme
- * auditoria da Fase 9. Nomes de campo em português são LITERAIS ao que a API
- * envia (`models/Vaga.js`, `VagaController.js`, `CandidaturaController.js`,
- * `InteracaoController.js`) — não são estilo, são o contrato.
+ * Tipos de vagas e candidaturas, com os nomes de campo da API (`models/Vaga.js`,
+ * `models/Candidatura.js`).
  */
 
-/** `Site/Backend/src/models/Vaga.js` — `modalidade` ENUM. */
-export type ModalidadeVaga = "Presencial" | "Hibrido" | "Remoto";
+/** `Site/Backend/src/models/Vaga.js`: `modalidade` ENUM. */
+export type ModalidadeVaga = "presencial" | "hibrido" | "remoto";
 
-/** `Site/Backend/src/models/Vaga.js` — `contrato` ENUM. */
-export type ContratoVaga = "CLT" | "PJ" | "Estagio" | "JovemAprendiz" | "Temporario";
+/** `Site/Backend/src/models/Vaga.js`: `contrato` ENUM. */
+export type ContratoVaga = "clt" | "pj" | "estagio" | "jovem_aprendiz" | "temporario";
 
-/** `Site/Backend/src/models/Vaga.js` — `status` ENUM. */
-export type StatusVaga = "Aberta" | "Pausada" | "Encerrada";
+/** `Site/Backend/src/models/Vaga.js`: `status` ENUM. */
+export type StatusVaga = "aberta" | "pausada" | "encerrada";
 
-/** `Site/Backend/src/models/Vaga.js` — `publico_alvo` ENUM. */
+/** `Site/Backend/src/models/Vaga.js`: `publico_alvo` ENUM. */
 export type PublicoAlvoVaga = "geral" | "pcd" | "cinquenta_mais" | "pcd_cinquenta_mais";
 
-/** `Site/Backend/src/models/Vaga.js` — `recursos_acessibilidade` (TEXT[]). */
+/** `Site/Backend/src/models/Vaga.js`: `recursos_acessibilidade` (TEXT[]). */
 export type RecursoAcessibilidadeVaga =
   | "interprete_libras"
   | "tecnologia_assistiva"
@@ -28,35 +26,25 @@ export type RecursoAcessibilidadeVaga =
   | "ferramentas_digitais_acessiveis"
   | "outro";
 
-/**
- * O objeto `empresa` embutido em `Vaga` — só os campos que esta fase usa
- * (mesmo índice de campos não mapeados que `EmpresaResumo` já tem em
- * `src/auth/types.ts`, mesmo motivo).
- */
+/** Empresa embutida em `Vaga`. Só os campos usados pelo app têm nome; o restante fica no índice. */
 export interface EmpresaResumoVaga {
   id: string;
   nomeFantasia?: string;
   razaoSocial?: string;
   empresaVerificada?: boolean;
   /**
-   * Só vem embutido em `GET /vagas/:id` (detalhe) — confirmado por
-   * auditoria da Fase 14 em `VagaService.js`; a LISTAGEM (`GET /vagas`) não
-   * inclui isto. É o que permite navegar da vaga até o perfil público da
-   * empresa (`PublicProfileScreen` recebe `usuarioId`, não `empresaId`).
+   * Só vem no detalhe (`GET /vagas/:id`), não na listagem. Serve para abrir o perfil público da
+   * empresa, que é aberto pelo `usuarioId`.
    */
   usuario?: { id: string; nome: string; fotoPerfil?: string | null };
   [chave: string]: unknown;
 }
 
 /**
- * Tipado só com os campos que esta fase usa — o backend envia mais campos,
- * e eles continuam disponíveis em tempo de execução (índice `[chave:
- * string]`), só não são nomeados aqui até uma tela futura precisar deles.
+ * Só os campos usados pelo app têm nome; o restante fica no índice.
  *
- * `salario` é `DECIMAL(10,2)` no Postgres — Sequelize normalmente serializa
- * isso como STRING no JSON (ex.: `"3500.00"`), não como `number`. Nunca
- * presuma um dos dois: sempre `Number(vaga.salario)` + `Number.isFinite`
- * antes de formatar.
+ * `salario` é `DECIMAL(10,2)` no banco e o Sequelize costuma serializá-lo como string
+ * (`"3500.00"`). Converta com `Number` e confira `Number.isFinite` antes de formatar.
  */
 export interface Vaga {
   id: string;
@@ -70,18 +58,18 @@ export interface Vaga {
   modalidade: ModalidadeVaga;
   contrato?: ContratoVaga;
   salario?: number | string | null;
-  exclusivaPcd?: boolean;
   publicoAlvo?: PublicoAlvoVaga;
   recursosAcessibilidade?: RecursoAcessibilidadeVaga[] | null;
   acessibilidade?: string | null;
   status: StatusVaga;
-  dataPublicacao?: string | null;
+  /** Momento em que a vaga foi criada, que é o que as telas mostram como data de publicação. */
+  criadoEm: string;
   dataEncerramento?: string | null;
   empresa?: EmpresaResumoVaga;
   [chave: string]: unknown;
 }
 
-/** `GET /vagas` — paginação clássica por página (não cursor/infinite). */
+/** `GET /vagas`: paginação clássica por página (não cursor/infinite). */
 export interface ListaVagasResposta {
   sucesso: true;
   total: number;
@@ -92,13 +80,10 @@ export interface ListaVagasResposta {
 }
 
 /**
- * Payload de `POST /vagas` (todos obrigatórios) e `PUT /vagas/:id` (todos
- * opcionais — o backend faz atualização parcial de verdade aqui, diferente
- * do perfil de candidato/empresa) — `vagaValidator.js: camposVaga`.
- *
- * IMPORTANTE (achado da Fase 12, reaplicado): interface EXPLÍCITA, nunca
- * `Omit<Vaga, ...>` — `Vaga` tem índice `[chave: string]: unknown`, que
- * colapsaria `keyof` e destruiria a checagem de campo obrigatório.
+ * Corpo de `POST /vagas` (campos obrigatórios) e de `PUT /vagas/:id` (todos opcionais, porque o
+ * backend aceita atualização parcial), conforme `camposVaga` em `vagaValidator.js`. Declarado campo
+ * a campo: um `Omit` sobre `Vaga`, que tem o índice `[chave: string]`, perderia a checagem dos
+ * campos obrigatórios.
  */
 export interface VagaDados {
   titulo?: string;
@@ -111,7 +96,6 @@ export interface VagaDados {
   cidade?: string;
   estado?: string;
   cargaHoraria?: string;
-  exclusivaPcd?: boolean;
   publicoAlvo?: PublicoAlvoVaga;
   recursosAcessibilidade?: RecursoAcessibilidadeVaga[];
   acessibilidade?: string;
@@ -126,7 +110,7 @@ export interface MinhasVagasParametros {
   status?: StatusVaga;
 }
 
-/** `GET /vagas/minhas` — cada vaga ganha `totalCandidaturas` (uma consulta agregada no backend, não N+1). */
+/** `GET /vagas/minhas`: cada vaga ganha `totalCandidaturas` (uma consulta agregada no backend, não N+1). */
 export interface VagaComContagem extends Vaga {
   totalCandidaturas: number;
 }
@@ -147,32 +131,33 @@ export interface VagaDetalheResposta {
 }
 
 /**
- * `GET /vagas` (`VagaService.findAll`, Site/Backend) — filtros confirmados
- * por auditoria (Fase R1). A API real também aceita `estado`, `exclusivaPcd`
- * e `empresaId`, mas esta fase só expõe na UI os filtros pedidos (busca
- * textual, cidade, modalidade, contrato, público-alvo, recursos de
- * acessibilidade) — os campos abaixo são exatamente os que `JobsScreen`
- * usa. `recursosAcessibilidade` é AND (a vaga precisa ter TODOS os
- * recursos selecionados, não qualquer um deles — `Op.contains` no backend).
+ * Filtros de `GET /vagas` usados pela `VagasScreen`. A API também aceita `estado`, `empresaId` e
+ * `exclusivaPcd` (atalho para os dois públicos-alvo que incluem PCD), que o app não usa: aqui o
+ * filtro é o próprio `publicoAlvo`. Em `recursosAcessibilidade`, a vaga precisa ter todos os
+ * recursos marcados (`Op.contains`), não apenas um.
  */
 export interface ListarVagasParametros {
   page?: number;
   limit?: number;
   /** Busca textual em título, descrição e requisitos (`Op.iLike`, case-insensitive, substring). */
   search?: string;
-  /** Substring, case-insensitive (`Op.iLike`) — não precisa bater com a cidade inteira. */
+  /** Substring, case-insensitive (`Op.iLike`): não precisa bater com a cidade inteira. */
   cidade?: string;
   modalidade?: ModalidadeVaga;
   contrato?: ContratoVaga;
   publicoAlvo?: PublicoAlvoVaga;
-  /** Vaga precisa ter TODOS os recursos da lista (`Op.contains`), não apenas um. */
+  /** Vaga precisa ter todos os recursos da lista (`Op.contains`), não apenas um. */
   recursosAcessibilidade?: RecursoAcessibilidadeVaga[];
 }
 
-/** `Site/Backend/src/models/Candidatura.js: STATUS_CANDIDATURA`. `"Visualizada"|"EmAnalise"|"Aprovada"|"Rejeitada"` são os únicos que a EMPRESA pode aplicar (`CandidaturaService.STATUS_EMPRESA`); `"Pendente"` é o estado inicial, `"Cancelada"` só o próprio candidato aplica. */
-export type StatusCandidatura = "Pendente" | "Visualizada" | "EmAnalise" | "Aprovada" | "Rejeitada" | "Cancelada";
+/**
+ * `STATUS_CANDIDATURA` de `models/Candidatura.js`. A empresa só aplica `visualizada`, `em_analise`,
+ * `aprovada` e `rejeitada` (`STATUS_EMPRESA` em `CandidaturaService.js`); `pendente` é o estado
+ * inicial e `cancelada` só o próprio candidato aplica.
+ */
+export type StatusCandidatura = "pendente" | "visualizada" | "em_analise" | "aprovada" | "rejeitada" | "cancelada";
 
-/** Resumo do candidato dono da candidatura — só embutido quando a EMPRESA lista/vê candidaturas (`GET /vagas/:vagaId/candidaturas`, `CandidaturaService.listarDaVaga`), nunca do lado do próprio candidato. */
+/** Resumo do candidato dono da candidatura: só embutido quando a empresa lista/vê candidaturas (`GET /vagas/:vagaId/candidaturas`, `CandidaturaService.listarDaVaga`), nunca do lado do próprio candidato. */
 export interface CandidatoResumoCandidatura {
   id: string;
   usuarioId: string;
@@ -181,9 +166,8 @@ export interface CandidatoResumoCandidatura {
 }
 
 /**
- * Campos usados por esta fase — `Site/Backend/src/models/Candidatura.js`
- * tem mais (`dataCandidatura` etc.) que continuam disponíveis via índice.
- * `candidato` só vem preenchido na visão da empresa (Fase 18).
+ * Só os campos usados pelo app têm nome (`models/Candidatura.js` tem outros, como `criadoEm`, a
+ * data da candidatura). `candidato` só vem preenchido na visão da empresa.
  */
 export interface Candidatura {
   id: string;
@@ -194,7 +178,7 @@ export interface Candidatura {
   [chave: string]: unknown;
 }
 
-/** `POST /vagas/:vagaId/candidaturas` — 201 em sucesso, 409 se já candidatado (erro tratado pelo chamador). */
+/** `POST /vagas/:vagaId/candidaturas`: 201 em sucesso, 409 se já candidatado (erro tratado pelo chamador). */
 export interface CandidatarSeResposta {
   sucesso: true;
   candidatura: Candidatura;
@@ -206,7 +190,10 @@ export interface ListarCandidaturasParametros {
   status?: StatusCandidatura;
 }
 
-/** `GET /vagas/:vagaId/candidaturas` — empresa dona ou administrador (`rbacMiddleware("empresa","administrador")`). */
+/**
+ * `GET /vagas/:vagaId/candidaturas`: empresa dona da vaga ou administrador
+ * (`exigirTipoUsuarioMiddleware("empresa", "administrador")`).
+ */
 export interface ListaCandidaturasResposta {
   sucesso: true;
   total: number;
@@ -222,21 +209,21 @@ export interface AtualizarStatusCandidaturaResposta {
   candidatura: Candidatura;
 }
 
-/** Rótulos legíveis dos status de candidatura — mesma razão dos rótulos de vaga abaixo (códigos do backend não são texto pronto para tela). */
-export const STATUS_CANDIDATURA_LABEL: Record<StatusCandidatura, string> = {
-  Pendente: "Pendente",
-  Visualizada: "Visualizada",
-  EmAnalise: "Em análise",
-  Aprovada: "Aprovada",
-  Rejeitada: "Rejeitada",
-  Cancelada: "Cancelada",
+/** Rótulos legíveis dos status de candidatura: mesma razão dos rótulos de vaga abaixo (códigos do backend não são texto pronto para tela). */
+export const ROTULOS_STATUS_CANDIDATURA: Record<StatusCandidatura, string> = {
+  pendente: "Pendente",
+  visualizada: "Visualizada",
+  em_analise: "Em análise",
+  aprovada: "Aprovada",
+  rejeitada: "Rejeitada",
+  cancelada: "Cancelada",
 };
 
 /**
- * `POST /vagas/:vagaId/favoritar` — toggle idempotente. O backend NUNCA
+ * `POST /vagas/:vagaId/favoritar`: toggle idempotente. O backend nunca
  * informa, em `GET /vagas` nem em `GET /vagas/:id`, se a vaga já estava
- * favoritada antes — só esta chamada devolve o estado real, e só depois de
- * alternar. Ver comentário em `VagaDetailScreen.tsx` sobre a consequência
+ * favoritada antes; só esta chamada devolve o estado real, e só depois de
+ * alternar. Ver comentário em `DetalheVagaScreen.tsx` sobre a consequência
  * disso no estado inicial do botão.
  */
 export interface FavoritarVagaResposta {
@@ -245,33 +232,33 @@ export interface FavoritarVagaResposta {
 }
 
 /**
- * Rótulos legíveis para os ENUMs acima — os valores do backend são códigos
+ * Rótulos legíveis para os ENUMs acima: os valores do backend são códigos
  * (`Hibrido`, `pcd_cinquenta_mais`, `interprete_libras`...), não texto pronto
  * pra tela nem para leitor de tela. Vivem aqui (não num arquivo à parte) por
  * serem pequenos e fortemente acoplados aos tipos que descrevem.
  */
-export const MODALIDADE_LABEL: Record<ModalidadeVaga, string> = {
-  Presencial: "Presencial",
-  Hibrido: "Híbrido",
-  Remoto: "Remoto",
+export const ROTULOS_MODALIDADE: Record<ModalidadeVaga, string> = {
+  presencial: "Presencial",
+  hibrido: "Híbrido",
+  remoto: "Remoto",
 };
 
-export const CONTRATO_LABEL: Record<ContratoVaga, string> = {
-  CLT: "CLT",
-  PJ: "PJ",
-  Estagio: "Estágio",
-  JovemAprendiz: "Jovem Aprendiz",
-  Temporario: "Temporário",
+export const ROTULOS_CONTRATO: Record<ContratoVaga, string> = {
+  clt: "CLT",
+  pj: "PJ",
+  estagio: "Estágio",
+  jovem_aprendiz: "Jovem Aprendiz",
+  temporario: "Temporário",
 };
 
-export const PUBLICO_ALVO_LABEL: Record<PublicoAlvoVaga, string> = {
+export const ROTULOS_PUBLICO_ALVO: Record<PublicoAlvoVaga, string> = {
   geral: "Geral",
   pcd: "Pessoas com deficiência",
   cinquenta_mais: "50 anos ou mais",
   pcd_cinquenta_mais: "Pessoas com deficiência e 50 anos ou mais",
 };
 
-export const RECURSO_ACESSIBILIDADE_LABEL: Record<RecursoAcessibilidadeVaga, string> = {
+export const ROTULOS_RECURSO_ACESSIBILIDADE: Record<RecursoAcessibilidadeVaga, string> = {
   interprete_libras: "Intérprete de Libras",
   tecnologia_assistiva: "Tecnologia assistiva",
   ambiente_fisico_acessivel: "Ambiente físico acessível",
@@ -282,8 +269,8 @@ export const RECURSO_ACESSIBILIDADE_LABEL: Record<RecursoAcessibilidadeVaga, str
   outro: "Outro recurso de acessibilidade",
 };
 
-export const STATUS_VAGA_LABEL: Record<StatusVaga, string> = {
-  Aberta: "Aberta",
-  Pausada: "Pausada",
-  Encerrada: "Encerrada",
+export const ROTULOS_STATUS_VAGA: Record<StatusVaga, string> = {
+  aberta: "Aberta",
+  pausada: "Pausada",
+  encerrada: "Encerrada",
 };

@@ -2,31 +2,30 @@ import * as LocalAuthentication from "expo-local-authentication";
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
 
-import { getBloqueioBiometricoAtivo } from "./segurancaStorage";
+import { obterBloqueioBiometricoAtivo } from "./armazenamentoSeguranca";
 
 export interface EstadoBloqueioBiometrico {
-  /** Só `true` durante a leitura inicial (hardware + preferência) — nunca depois disso. */
+  /** Só `true` durante a leitura inicial (hardware + preferência), nunca depois disso. */
   carregando: boolean;
-  /** Aparelho tem sensor E já tem biometria cadastrada no sistema — condição para o toggle em `SettingsScreen.tsx` poder ligar. */
+  /**
+   * Aparelho com sensor e biometria cadastrada no sistema; sem isso, a opção em Configurações
+   * (`SecaoBiometria`) não pode ser ligada.
+   */
   disponivelNoAparelho: boolean;
   ativo: boolean;
   /**
-   * `true` quando o `RootNavigator` deve mostrar `BiometricLockScreen` em
-   * vez do app. Nunca `true` se o hardware não está disponível (hardware
-   * indisponível nunca deixa ninguém trancado pra fora, mesmo que a
-   * preferência salva tenha ficado `true` de um cadastro biométrico
-   * removido depois nas configurações do sistema).
+   * `true` quando o `RaizNavigator` deve mostrar a tela de desbloqueio em vez do app. Nunca fica
+   * `true` sem biometria disponível, para ninguém ficar trancado fora se a biometria for removida
+   * do aparelho depois de ativar a opção.
    */
   precisaDesbloquear: boolean;
   desbloquear: () => Promise<LocalAuthentication.LocalAuthenticationResult>;
 }
 
 /**
- * "Bloqueio por biometria" (Fase 22) — trava o CONTEÚDO do app (não cria
- * nenhuma credencial nova, nem chama o backend) atrás de Face ID/impressão
- * digital, além da própria sessão já autenticada. `autenticado` vem de
- * `useAuth().status === "authenticated"`: sem sessão, não há o que
- * proteger, então o hook nunca exige desbloqueio.
+ * Bloqueio por biometria: esconde o conteúdo do app atrás de Face ID ou impressão digital, além da
+ * sessão já autenticada. Não cria credencial nem chama o backend. Sem sessão (`autenticado` falso)
+ * não há o que proteger, então nunca pede desbloqueio.
  */
 export function useBloqueioBiometrico(autenticado: boolean): EstadoBloqueioBiometrico {
   const [carregando, setCarregando] = useState(true);
@@ -41,7 +40,7 @@ export function useBloqueioBiometrico(autenticado: boolean): EstadoBloqueioBiome
       const [hardware, matriculado, preferenciaAtiva] = await Promise.all([
         LocalAuthentication.hasHardwareAsync(),
         LocalAuthentication.isEnrolledAsync(),
-        getBloqueioBiometricoAtivo(),
+        obterBloqueioBiometricoAtivo(),
       ]);
       if (!vivo) return;
       setDisponivelNoAparelho(hardware && matriculado);
@@ -55,11 +54,9 @@ export function useBloqueioBiometrico(autenticado: boolean): EstadoBloqueioBiome
     };
   }, []);
 
-  // Volta a exigir desbloqueio quando o app sai para segundo plano — não só
-  // na abertura fria. Sem isso, alguém que pegasse o aparelho já
-  // desbloqueado pelo sistema (biometria do PRÓPRIO Android/iOS) veria o
-  // ACESSO continuar aberto sem nenhuma proteção extra depois de um
-  // alt-tab, esvaziando o sentido do recurso.
+  // Volta a pedir desbloqueio quando o app vai para segundo plano, e não só ao abrir. Sem isso,
+  // quem pegasse o aparelho já desbloqueado veria o ACESSO aberto depois de uma simples troca de
+  // app.
   useEffect(() => {
     const assinatura = AppState.addEventListener("change", (proximoEstado) => {
       if (proximoEstado === "background") setDesbloqueado(false);

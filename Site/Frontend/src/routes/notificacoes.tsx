@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,11 +30,11 @@ import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { SeguirButton } from "@/components/perfil/SeguirButton";
 import notificacoesService from "@/services/notificacoes.service";
 import { seguidoresService } from "@/services/empresas.service";
-import { urlArquivo } from "@/services/uploads.service";
-import { initials } from "@/contexts/SessionContext";
+import { urlArquivo } from "@/utils/arquivos";
+import { iniciaisDoNome } from "@/utils/formatacao";
 import { extrairMensagemErro } from "@/services/api";
 import { ouvirEvento } from "@/services/socket";
-import { formatarTempoRelativo } from "@/utils/format";
+import { formatarTempoRelativo } from "@/utils/formatacao";
 import { cn } from "@/lib/utils";
 import type { Notificacao } from "@/types";
 
@@ -57,9 +57,8 @@ export const Route = createFileRoute("/notificacoes")({
 });
 
 /**
- * Ícone por `subtipo` (granular, migration 0033) — notificações antigas
- * (criadas antes da migration) não têm `subtipo`, então caem no fallback
- * por `tipo`, que sempre existiu.
+ * Ícone por `subtipo`, que é mais específico que `tipo`. Notificação sem `subtipo` cai no ícone do
+ * `tipo`.
  */
 const ICONE_POR_SUBTIPO: Record<string, LucideIcon> = {
   curtida_postagem: Heart,
@@ -103,7 +102,7 @@ function iconeDe(n: Notificacao): LucideIcon {
   return ICONE_POR_TIPO[n.tipo] ?? Bell;
 }
 
-/** Rota já existente para o conteúdo relacionado — `null` quando não há destino aplicável. */
+/** Rota já existente para o conteúdo relacionado; `null` quando não há destino aplicável. */
 function destinoDe(n: Notificacao): { to: string; params?: Record<string, string>; search?: Record<string, string> } | null {
   if (!n.entidadeTipo || !n.entidadeId) return null;
 
@@ -117,8 +116,8 @@ function destinoDe(n: Notificacao): { to: string; params?: Record<string, string
     case "usuario":
       return { to: "/perfil/$usuarioId", params: { usuarioId: n.entidadeId } };
     case "solicitacao_seguimento":
-      // Aqui `entidadeId` é o id da SOLICITAÇÃO (usado por Aceitar/Recusar),
-      // não de um perfil — o destino usa o autor da ação (`ator`) em vez dele.
+      // Aqui `entidadeId` é o id da solicitação (usado por Aceitar/Recusar),
+      // não de um perfil: o destino usa o autor da ação (`ator`) em vez dele.
       return n.ator?.id
         ? { to: "/perfil/$usuarioId", params: { usuarioId: n.ator.id } }
         : null;
@@ -137,7 +136,7 @@ function PaginaNotificacoes() {
 
 function Notificacoes() {
   const queryClient = useQueryClient();
-  // Idem para Aceitar/Recusar solicitação — guarda o resultado por
+  // Idem para Aceitar/Recusar solicitação: guarda o resultado por
   // `entidadeId` (id da solicitação) pra nunca reprocessar a mesma.
   const [solicitacoesProcessadas, setSolicitacoesProcessadas] = useState<
     Map<string, "aceita" | "recusada">
@@ -155,7 +154,7 @@ function Notificacoes() {
   }, [queryClient]);
 
   const invalidar = () => {
-    // Prefixo compartilhado com o contador do sino (AppHeader) — uma
+    // Prefixo compartilhado com o contador do sino (CabecalhoApp): uma
     // única invalidação atualiza a lista e o contador juntos.
     void queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
   };
@@ -194,7 +193,7 @@ function Notificacoes() {
     onError: (erro) => {
       toast.error(extrairMensagemErro(erro, "Não foi possível aceitar a solicitação."));
       // 404 aqui normalmente significa que a solicitação já foi processada
-      // (corrida com outra aba, ou o solicitante cancelou) — atualiza a
+      // (corrida com outra aba, ou o solicitante cancelou): atualiza a
       // lista pra tirar os botões de uma solicitação que não existe mais.
       invalidar();
     },
@@ -221,7 +220,7 @@ function Notificacoes() {
   const naoLidas = notificacoes.filter((n) => !n.lida).length;
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold">Notificações</h1>
@@ -274,7 +273,7 @@ function Notificacoes() {
           {notificacoes.map((n) => {
             const Icon = iconeDe(n);
             const destino = destinoDe(n);
-            const tempo = formatarTempoRelativo(n.created_at);
+            const tempo = formatarTempoRelativo(n.criadoEm);
             const estadoLida = n.lida ? "lida" : "não lida";
             const resultadoSolicitacao = n.entidadeId
               ? solicitacoesProcessadas.get(n.entidadeId)
@@ -287,7 +286,7 @@ function Notificacoes() {
                   <Avatar className="size-10 shrink-0">
                     {n.ator.fotoPerfil && <AvatarImage src={urlArquivo(n.ator.fotoPerfil)} alt="" />}
                     <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-                      {initials(n.ator.nome)}
+                      {iniciaisDoNome(n.ator.nome)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (
@@ -396,22 +395,16 @@ function Notificacoes() {
           })}
         </ul>
       )}
-    </AppShell>
+    </EstruturaApp>
   );
 }
 
 /**
- * "Seguir de volta" (Fase 9, Bloco 5) — extraído em componente próprio
- * porque cada notificação precisa do PRÓPRIO resumo de seguidores (Hooks
- * não podem ser chamados dentro do `.map()` do componente pai). Busca o
- * resumo na MESMA chave de cache que o perfil e `/descobrir` usam e
- * delega inteiramente a `SeguirButton` — nunca reimplementa perfil
- * privado/solicitação/bloqueio/já-seguindo aqui. Isso também corrige, de
- * graça, um bug latente do botão antigo: ele usava um toggle
- * (`alternarUsuario`) controlado só por estado local da sessão — reabrir
- * a página perdia esse estado e um clique num "Seguir de volta" já
- * seguido de fato DESSEGUIA. `SeguirButton` sempre reflete o estado real
- * do servidor, nunca um toggle cego.
+ * "Seguir de volta" fica num componente próprio porque cada notificação precisa do próprio resumo
+ * de seguidores, e hooks não podem ser chamados dentro do `.map()` do pai. Usa a mesma chave de
+ * cache do perfil e de `/descobrir` e delega tudo ao `SeguirButton`, que reflete o estado real do
+ * servidor (perfil privado, solicitação, bloqueio, já seguindo), em vez de um alternador com estado
+ * local que poderia deixar de seguir sem querer.
  */
 function BotaoSeguirDeVolta({ usuarioId }: { usuarioId: string }) {
   useQuery({

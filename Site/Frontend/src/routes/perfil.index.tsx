@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import { PerfilPessoal } from "@/components/perfil/PerfilPessoal";
 import { PerfilEmpresa } from "@/components/perfil/PerfilEmpresa";
 
@@ -26,9 +26,9 @@ export const Route = createFileRoute("/perfil/")({
  * formação, publicações). Nunca mistura os dois conceitos na mesma tela.
  */
 function Perfil() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
 
-  if (user?.tipo === "empresa") {
+  if (usuario?.tipo === "empresa") {
     return <PerfilEmpresa />;
   }
 

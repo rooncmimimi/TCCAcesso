@@ -10,9 +10,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { initials, useSession } from "@/contexts/SessionContext";
+import { iniciaisDoNome } from "@/utils/formatacao";
+import { useSessao } from "@/hooks/useSessao";
 import { seguidoresService } from "@/services/empresas.service";
-import { urlArquivo } from "@/services/uploads.service";
+import { urlArquivo } from "@/utils/arquivos";
 import type { SugestaoPerfil } from "@/types";
 
 /** Lista de seguidores/seguindo de um usuário, aberta a partir dos contadores do perfil. */
@@ -28,7 +29,7 @@ export function ListaSeguidoresDialog({
   children: React.ReactNode;
 }) {
   const [aberto, setAberto] = useState(false);
-  const { user } = useSession();
+  const { usuario } = useSessao();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["perfil-lista", modo, usuarioId],
@@ -67,15 +68,15 @@ export function ListaSeguidoresDialog({
             {data.dados.map((pessoa: SugestaoPerfil) => (
               <li key={pessoa.id}>
                 <Link
-                  to={pessoa.id === user?.id ? "/perfil" : "/perfil/$usuarioId"}
-                  params={pessoa.id === user?.id ? undefined : { usuarioId: pessoa.id }}
+                  to={pessoa.id === usuario?.id ? "/perfil" : "/perfil/$usuarioId"}
+                  params={pessoa.id === usuario?.id ? undefined : { usuarioId: pessoa.id }}
                   className="flex items-center gap-3 rounded-lg py-3 hover:bg-secondary focus-visible:bg-secondary"
                   onClick={() => setAberto(false)}
                 >
                   <Avatar className="size-10 shrink-0">
                     <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />
                     <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-                      {initials(pessoa.nome)}
+                      {iniciaisDoNome(pessoa.nome)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">

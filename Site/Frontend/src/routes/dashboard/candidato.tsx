@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bookmark, Briefcase, FileText, Loader2, Users } from "lucide-react";
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
-import { MetricCard } from "@/components/dashboard/MetricCard";
+import { MetricaCard } from "@/components/dashboard/MetricaCard";
 import { CandidaturasRecentes } from "@/components/dashboard/CandidaturasRecentes";
 import { VagasFavoritas } from "@/components/dashboard/VagasFavoritas";
 import { dashboardService } from "@/services/dashboard.service";
@@ -38,7 +38,7 @@ function PainelCandidato() {
     .join(", ");
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Meu painel</h1>
       <p className="mt-2 text-muted-foreground">
         Acompanhe suas candidaturas, vagas favoritas e sua presença na comunidade.
@@ -58,10 +58,10 @@ function PainelCandidato() {
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard titulo="Candidaturas" valor={data?.candidaturas ?? 0} icon={FileText} />
-            <MetricCard titulo="Vagas favoritas" valor={data?.vagasFavoritas ?? 0} icon={Bookmark} />
-            <MetricCard titulo="Publicações" valor={data?.postagens ?? 0} icon={Briefcase} />
-            <MetricCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
+            <MetricaCard titulo="Candidaturas" valor={data?.candidaturas ?? 0} icon={FileText} />
+            <MetricaCard titulo="Vagas favoritas" valor={data?.vagasFavoritas ?? 0} icon={Bookmark} />
+            <MetricaCard titulo="Publicações" valor={data?.postagens ?? 0} icon={Briefcase} />
+            <MetricaCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
           </div>
 
           {resumoTextual ? (
@@ -76,6 +76,6 @@ function PainelCandidato() {
         <CandidaturasRecentes />
         <VagasFavoritas />
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

@@ -2,16 +2,12 @@ import crypto from "node:crypto";
 import env from "../config/env.js";
 
 /**
- * Criptografia simétrica (AES-256-GCM) para dados que precisam ser
- * recuperados em texto puro pela aplicação — diferente de senha (bcrypt,
- * uma via) ou de tokens/códigos (SHA-256, só comparação).
- *
- * Uso atual: CPF/CNPJ (ver `campoCifrado.js`), que precisam ser lidos de
- * volta em texto puro pela aplicação — por isso não podem ser um hash.
- *
- * A chave é derivada do `JWT_SECRET` (já validado com 32+ caracteres no
- * boot da aplicação — ver `config/env.js`) via SHA-256, evitando adicionar
- * mais uma variável de ambiente obrigatória só para isso.
+ * Criptografia simétrica (AES-256-GCM) para dados que a aplicação precisa ler de volta em texto
+ * puro, ao contrário de senha (bcrypt, só ida) e de tokens e códigos (SHA-256, só comparação). Hoje
+ * só CPF e CNPJ usam (`campoCifrado.js`): eles precisam ser lidos de volta, por isso não podem ser
+ * um hash. A chave é derivada do `JWT_SECRET` com SHA-256 (o segredo já é validado com 32
+ * caracteres ou mais na inicialização, em `config/env.js`), para não exigir mais uma variável de
+ * ambiente só para isso.
  */
 
 const CHAVE = crypto.createHash("sha256").update(env.jwt.secret).digest();

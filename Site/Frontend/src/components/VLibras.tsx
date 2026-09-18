@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 
 declare global {
   interface Window {
@@ -12,21 +12,18 @@ const SCRIPT_ID = "vlibras-plugin-script";
 const PLUGIN_URL = "https://vlibras.gov.br/app";
 
 /**
- * Widget oficial VLibras (Governo Federal).
- *
- * Detalhes importantes da integração em SPA:
- * - o plugin oficial só monta a interface dentro de `window.onload`; como o
- *   script é injetado depois que a página já carregou, disparamos um evento
- *   `load` manualmente após a construção do Widget;
- * - componentes Radix (diálogos/menus) aplicam `aria-hidden` nos filhos diretos
- *   do body, o que escondia o botão do VLibras — um observer remove esse
- *   atributo do container.
+ * Widget oficial do VLibras (Governo Federal). Detalhes da integração numa SPA:
+ * - o plugin oficial só monta a interface dentro de `window.onload`; como o script é injetado
+ *   depois que a página já carregou, um evento `load` é disparado manualmente depois de criar o
+ *   widget;
+ * - componentes Radix (diálogos e menus) aplicam `aria-hidden` nos filhos diretos do body, o que
+ *   esconderia o botão do VLibras, então um observer remove esse atributo do container.
  */
 export function VLibras() {
-  const { prefs, hydrated } = useAccessibility();
+  const { preferencias, inicializado } = useAcessibilidade();
 
   useEffect(() => {
-    if (!hydrated || !prefs.vlibras) return;
+    if (!inicializado || !preferencias.vlibras) return;
     if (document.getElementById(CONTAINER_ID)) return;
 
     const container = document.createElement("div");
@@ -74,13 +71,13 @@ export function VLibras() {
     document.body.appendChild(script);
 
     return () => observer.disconnect();
-  }, [hydrated, prefs.vlibras]);
+  }, [inicializado, preferencias.vlibras]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!inicializado) return;
     const el = document.getElementById(CONTAINER_ID);
-    if (el) el.style.display = prefs.vlibras ? "" : "none";
-  }, [prefs.vlibras, hydrated]);
+    if (el) el.style.display = preferencias.vlibras ? "" : "none";
+  }, [preferencias.vlibras, inicializado]);
 
   return null;
 }

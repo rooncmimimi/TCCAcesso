@@ -4,13 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 
 /**
- * Protege o lado frontend da correção de segurança da Etapa 1: depois que o
- * backend parou de incluir o objeto completo da postagem no evento
- * `feed:postagem` (ver `PostagemService.test.js`), este hook não pode mais
- * gravar conteúdo arbitrário recebido do broadcast diretamente no cache do
- * React Query — só pode sinalizar e deixar o REST (que aplica autorização)
- * repovoar o cache. Uma regressão como `setQueryData(key, dados.postagem)`
- * faz o primeiro teste abaixo falhar.
+ * O evento `feed:postagem` traz só o `id` e um marcador, nunca a postagem (ver
+ * `PostagemService.test.js` no backend). Este hook não pode gravar no cache do React Query o que
+ * chega pelo broadcast: só sinaliza e deixa a API REST, que aplica a autorização, repovoar o cache.
+ * Uma regressão como `setQueryData(key, dados.postagem)` faz o primeiro teste abaixo falhar.
  */
 
 const { handlers } = vi.hoisted(() => ({
@@ -47,16 +44,14 @@ describe("useFeedTempoReal", () => {
     });
 
     it("postagem atualizada: invalida as queries certas e nunca escreve conteúdo do broadcast no cache", () => {
-        // Arrange
         const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
         const setQueriesDataSpy = vi.spyOn(queryClient, "setQueriesData");
         const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
         renderHook(() => useFeedTempoReal(), { wrapper: criarWrapper(queryClient) });
 
-        // Act — mesmo payload que o backend corrigido emite: só id + flag, sem `postagem`
+        // Mesmo payload que o backend emite: só id e marcador, sem `postagem`.
         dispararEvento("feed:postagem", { id: "postagem-123", atualizada: true });
 
-        // Assert
         expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["postagens"] });
         expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["postagem", "postagem-123"] });
         expect(setQueryDataSpy).not.toHaveBeenCalled();
@@ -64,26 +59,20 @@ describe("useFeedTempoReal", () => {
     });
 
     it("nova postagem: só marca o feed como desatualizado, sem interromper quem já está lendo", () => {
-        // Arrange
         const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
         renderHook(() => useFeedTempoReal(), { wrapper: criarWrapper(queryClient) });
 
-        // Act
         dispararEvento("feed:postagem", { id: "postagem-999", criada: true });
 
-        // Assert
         expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["postagens"], refetchType: "none" });
     });
 
     it("postagem removida: limpa o cache só pelo id recebido", () => {
-        // Arrange
         const removeSpy = vi.spyOn(queryClient, "removeQueries");
         renderHook(() => useFeedTempoReal(), { wrapper: criarWrapper(queryClient) });
 
-        // Act
         dispararEvento("feed:postagem", { id: "postagem-1", removida: true });
 
-        // Assert
         expect(removeSpy).toHaveBeenCalledWith({ queryKey: ["postagem", "postagem-1"] });
     });
 });

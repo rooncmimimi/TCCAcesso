@@ -5,17 +5,17 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Definição do design system.
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * O bloco @theme inline liga as variáveis CSS às classes utilitárias do
+ * Tailwind (por exemplo, --color-primary -> bg-primary, text-primary).
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
+ * Os blocos :root e .dark definem os valores reais das cores, sempre em
+ * oklch.
  *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Para adicionar uma cor semântica:
+ * 1. Crie a variável em :root (valor claro) e em .dark (valor escuro).
+ * 2. Registre-a em @theme inline como --color-<nome>: var(--<nome>).
  */
 
 @theme inline {
@@ -143,9 +143,7 @@
   }
 }
 
-/* ==========================================================================
-   ACESSO — identidade visual
-   ========================================================================== */
+/* ACESSO: identidade visual */
 
 :root {
   --radius: 0.875rem;
@@ -157,19 +155,13 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.03 258);
 
-  /* Identidade ACESSO (verde/vermelho/amarelo/azul) — `oklch(from <hex> l c h)`
-     (sintaxe de cor relativa do CSS) em vez de converter hex→oklch à mão; o
-     navegador calcula o valor exato a partir do hex oficial da marca.
-     Auditoria de acessibilidade (Rodada 3, contraste): `#21a848` (o verde
-     "vivo" da marca) com `primary-foreground` branco media 3.11:1 — abaixo
-     do mínimo AA de 4.5:1 pra texto normal (WCAG 1.4.3), então TODO botão
-     primário do site (Entrar, Publicar, Candidatar-se, Salvar...) tinha
-     texto ilegível pra baixa visão. `--primary` passa a usar o mesmo verde
-     "forte" que `--primary-strong` já definia (mas nunca era usado em
-     lugar nenhum) — mesma matiz da marca, só mais escuro: 5.03:1 com texto
-     branco. `--primary-soft` (fundo claro atrás de `text-primary`, usado
-     em iniciais de avatar e ícones de badge) também clareado — a
-     combinação antiga só alcançava 2.66:1. */
+  /* Cores da marca (verde, vermelho, amarelo, azul) com `oklch(from <hex> l c h)`,
+     a sintaxe de cor relativa do CSS: o navegador calcula o valor exato a
+     partir do hex oficial, sem conversão à mão.
+     `--primary` usa o verde mais escuro da marca (#178035), que mede 5,03:1
+     com texto branco; o verde vivo (#21a848) mediria só 3,11:1, abaixo dos
+     4,5:1 do WCAG 1.4.3, em todos os botões primários. `--primary-soft` é o
+     fundo claro atrás de `text-primary` (iniciais de avatar, ícones de badge). */
   --primary: oklch(from #178035 l c h);
   --primary-foreground: oklch(from #ffffff l c h);
   --primary-soft: oklch(from #eefaf1 l c h);
@@ -191,24 +183,21 @@
   --warning: oklch(from #fad905 l c h);
   --warning-foreground: oklch(from #050407 l c h);
 
-  /* `#eb1b25` com texto branco media 4.45:1 — abaixo do mínimo AA de
-     4.5:1 por uma margem pequena, mas real (botões destrutivos: excluir
-     conta, bloquear, excluir publicação). `#d5131c` (mesmo vermelho da
-     marca, um pouco mais escuro) alcança 5.33:1. */
+  /* `#d5131c`, um vermelho da marca um pouco mais escuro, mede 5,33:1 com
+     texto branco nos botões destrutivos (excluir conta, bloquear, excluir
+     publicação); `#eb1b25` ficaria em 4,45:1, abaixo dos 4,5:1 exigidos. */
   --destructive: oklch(from #d5131c l c h);
   --destructive-foreground: oklch(0.99 0.005 250);
 
   --border: oklch(0.91 0.01 255);
   --input: oklch(0.91 0.01 255);
-  /* Mesmo verde escurecido de `--primary` acima — o contorno de foco fica
-     mais visível de brinde (era 3.11:1 contra branco, passa a 5.03:1). */
+  /* Mesmo verde de `--primary`: o contorno de foco mede 5,03:1 contra o branco. */
   --ring: oklch(from #178035 l c h);
 
-  /* Paleta de gráficos ACESSO (auditoria do Site). `--chart-1` é o verde da
-     marca — usado nos gráficos de barra dos relatórios; `2..5` são hues
-     distintos e legíveis no modo claro para o gráfico de pizza. Antes estas
-     variáveis só existiam nos blocos shadcn de fábrica (mais acima) e os
-     componentes as envolviam em `hsl()`, gerando cor inválida (preto). */
+  /* Paleta dos gráficos. `--chart-1` é o verde da marca, usado nas barras
+     dos relatórios; `--chart-2` a `--chart-5` são tons distintos e legíveis
+     no modo claro para o gráfico de pizza. Os valores são oklch, então os
+     componentes usam a variável direto, sem envolver em `hsl()`. */
   --chart-1: oklch(from #21a848 l c h);
   --chart-2: oklch(from #0a98e7 l c h);
   --chart-3: oklch(0.62 0.16 55);
@@ -241,10 +230,9 @@
   --popover: oklch(0.235 0.025 260);
   --popover-foreground: oklch(0.97 0.005 250);
 
-  /* Mesma técnica do claro, só fixando `L` (luminosidade) por modo — mesmo
-     padrão que este arquivo já usava pro azul antigo (compare `L 0.49`
-     claro vs `L 0.72` escuro): mantém a cor da marca reconhecível, só mais
-     clara no escuro pra manter contraste. */
+  /* Mesma técnica do tema claro, fixando só a luminosidade (`L`) por modo:
+     a cor da marca continua reconhecível, mais clara no escuro para manter
+     o contraste. */
   --primary: oklch(from #21a848 0.72 c h);
   --primary-foreground: oklch(from #21a848 0.17 c h);
   --primary-soft: oklch(from #21a848 0.3 c h);
@@ -260,15 +248,10 @@
   --warning: oklch(from #fad905 l c h);
   --warning-foreground: oklch(from #050407 l c h);
 
-  /* Auditoria de acessibilidade (Rodada 3, contraste): este bloco nunca
-     redefinia `--destructive`/`--destructive-foreground` — sem override,
-     o modo escuro caía nos valores de fábrica do shadcn (bloco .dark
-     genérico, acima), um vermelho fora da marca que media só 2,76:1
-     contra o texto quase-branco (bem abaixo do mínimo AA de 4,5:1). Todo
-     botão destrutivo (Excluir conta, Bloquear, Excluir publicação) ficava
-     praticamente ilegível pra baixa visão no escuro. Corrigido seguindo o
-     MESMO padrão que `--primary` já usa neste bloco (fundo mais claro +
-     texto escuro, em vez de fundo escuro + texto claro): 4,82:1. */
+  /* `--destructive` precisa ser redefinido aqui: sem isso, o modo escuro
+     herdaria o vermelho genérico do bloco .dark de fábrica do shadcn, que
+     mede só 2,76:1 com texto quase branco. Segue o padrão de `--primary`
+     neste bloco (fundo mais claro e texto escuro) e mede 4,82:1. */
   --destructive: oklch(from #eb1b25 0.62 c h);
   --destructive-foreground: oklch(0.16 0 0);
 
@@ -353,8 +336,8 @@
   text-shadow: none !important;
 }
 
-/* Alto contraste remove ruído visual decorativo (mesmo espírito de
-   `--shadow-card: none` acima) — o raio da Home é só identidade visual. */
+/* Alto contraste tira enfeites visuais (como `--shadow-card: none` acima);
+   o raio da página inicial é só identidade visual. */
 .a11y-contrast .raio-decorativo-home {
   display: none;
 }
@@ -427,22 +410,20 @@
  *
  * Overlays Radix (Select, Dialog, AlertDialog, DropdownMenu, Popover...)
  * usam o componente Presence para decidir quando desmontar o conteúdo
- * fechado do DOM. A lógica real do Presence (@radix-ui/react-presence):
- * se o `animationName` computado do elemento for "none", ele desmonta
- * IMEDIATAMENTE, de forma síncrona; caso contrário, ele ESPERA o evento
- * `animationend`/`animationcancel` disparar antes de desmontar.
+ * fechado do DOM. A lógica do Presence (@radix-ui/react-presence): se o
+ * `animationName` computado do elemento for "none", ele desmonta na hora,
+ * de forma síncrona; caso contrário, espera o evento
+ * `animationend`/`animationcancel` antes de desmontar.
  *
- * Reduzir apenas a DURAÇÃO da animação (mesmo para algo pequeno como
- * 1ms) não é suficiente e ainda é arriscado: o elemento continua tendo
- * um `animationName` diferente de "none", então o Presence continua
- * dependendo do evento `animationend` disparar — e, na prática, o
- * Chromium não dispara esse evento de forma confiável para animações
- * com duração menor que um frame de renderização, deixando o Presence
- * esperando para sempre. O overlay "fechado" fica então preso no DOM
- * com pointer-events: auto, bloqueando cliques em elementos por baixo
- * (foi assim que o problema apareceu originalmente no Select).
+ * Reduzir só a duração da animação (mesmo para algo pequeno como 1ms)
+ * não basta e ainda é arriscado: o elemento continua com um
+ * `animationName` diferente de "none", então o Presence continua
+ * dependendo do `animationend`, e o Chromium não dispara esse evento de
+ * forma confiável para animações mais curtas que um frame. O Presence
+ * fica esperando para sempre, e o overlay "fechado" continua no DOM com
+ * pointer-events: auto, bloqueando cliques nos elementos por baixo.
  *
- * A correção correta é fazer `animationName` computar como "none"
+ * Por isso `animationName` precisa computar como "none"
  * quando o movimento deve ser reduzido, para o Presence cair no caminho
  * síncrono e nunca depender de um evento. `data-state` é o atributo que
  * o próprio Radix usa em todo elemento com estado aberto/fechado (não é

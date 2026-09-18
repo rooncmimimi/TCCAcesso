@@ -1,10 +1,13 @@
 import { io, type Socket } from "socket.io-client";
-import { API_BASE_URL, dispararSessaoExpirada, getAccessToken } from "./api";
+import { API_BASE_URL, dispararSessaoExpirada, obterAccessToken } from "./api";
 
 /** URL do servidor Socket.IO (mesmo host do Express, sem o sufixo `/api`). */
 export const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
-/** Mesmo `codigo` usado pelo backend REST (authMiddleware/realtime/socket.js) para marcar rejeição por bloqueio administrativo. */
+/**
+ * Mesmo `codigo` que o backend usa no REST (`autenticacaoMiddleware.js`) e no handshake do socket
+ * (`realtime/socket.js`) quando a conta está bloqueada.
+ */
 const CODIGO_CONTA_BLOQUEADA = "CONTA_BLOQUEADA";
 
 let socket: Socket | null = null;
@@ -16,7 +19,7 @@ let socket: Socket | null = null;
 export function conectarSocket(): Socket | null {
   if (typeof window === "undefined") return null;
 
-  const token = getAccessToken();
+  const token = obterAccessToken();
   if (!token) return null;
 
   if (socket?.connected) return socket;
@@ -30,35 +33,20 @@ export function conectarSocket(): Socket | null {
       autoConnect: true,
     });
 
-    // O access token some no handshake inicial acima e nunca mais era
-    // atualizado sozinho — com a validade de 1 dia isso quase nunca
-    // aparecia, mas com a validade reduzida (item 8, ~30min) uma
-    // reconexão automática do próprio socket.io-client (rede caiu,
-    // servidor reiniciou, etc.) reenviava esse MESMO token já expirado,
-    // o handshake falhava (`connect_error` sem o `codigo` de bloqueio, que
-    // é o único caso que o listener abaixo trata) e o socket ficava sem
-    // conectar silenciosamente até a próxima chamada explícita de
-    // `conectarSocket()` (troca de rota, F5) — mensagens/notificações em
-    // tempo real paravam de chegar mesmo com a sessão REST perfeitamente
-    // válida (o interceptor de `api.ts` renova o access token sozinho,
-    // mas o socket não sabia disso). Relê o token atual do localStorage
-    // antes de CADA tentativa de reconexão automática — mesmo mecanismo
-    // de reconexão do socket.io-client já existente, só garantindo que ele
-    // sempre carregue o token mais recente, nunca o do handshake original.
+    // O token do handshake não se atualiza sozinho. Como o access token dura pouco (30 minutos por
+    // padrão no backend), uma reconexão automática (rede caiu, servidor reiniciou) reenviaria um
+    // token vencido, o handshake falharia e o tempo real pararia em silêncio, mesmo com a sessão
+    // REST válida. Por isso o token é relido do localStorage antes de cada tentativa de reconexão.
     socket.io.on("reconnect_attempt", () => {
-      const tokenAtual = getAccessToken();
+      const tokenAtual = obterAccessToken();
       if (socket && tokenAtual) {
         socket.auth = { token: tokenAtual };
       }
     });
 
-    // Fase 9: bloqueio administrativo rejeita o handshake com um `codigo`
-    // identificável (ver realtime/socket.js) — nesse caso específico não
-    // faz sentido deixar o socket.io-client insistir nas próximas
-    // tentativas automáticas (a conta continua bloqueada, vai falhar de
-    // novo); desconecta na hora e reaproveita o MESMO encerramento de
-    // sessão do REST (services/api.ts), em vez de uma segunda
-    // implementação só para o socket.
+    // Com a conta bloqueada, o handshake é recusado com um `codigo` próprio (ver
+    // `realtime/socket.js`). Não adianta o `socket.io-client` insistir: desconecta na hora e usa o
+    // mesmo encerramento de sessão do REST (`api.ts`).
     socket.on("connect_error", (erro: Error & { data?: { codigo?: string } }) => {
       if (erro.data?.codigo === CODIGO_CONTA_BLOQUEADA) {
         socket?.disconnect();
@@ -93,6 +81,7 @@ export function ouvirEvento<T = unknown>(evento: string, handler: (dados: T) => 
   };
 }
 
+/** O servidor só coloca o socket na sala se a conta participar da conversa. */
 export function entrarNaConversa(conversaId: string): void {
   conectarSocket()?.emit("conversa:entrar", conversaId);
 }

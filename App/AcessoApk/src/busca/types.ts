@@ -1,21 +1,13 @@
 /**
- * Tipos do contrato real de busca global (Site/Backend), conforme auditoria
- * da Fase R2 — `BuscaController`/`BuscaService` (`GET /busca`, auth
- * obrigatória). Nomes de campo em português são LITERAIS ao que a API
- * envia — não são estilo, são o contrato.
+ * Tipos da busca global (`GET /busca`).
  *
- * `q` precisa ter pelo menos 2 caracteres — o backend recusa com 400
- * (`ApiError.badRequest`) abaixo disso; o app nunca chega a mandar uma
- * busca menor que essa (ver `SearchScreen.tsx`), pra não gerar um erro
- * "esperado" toda vez que o usuário ainda está digitando a primeira letra.
+ * O backend recusa termos com menos de 2 caracteres; a `BuscaScreen` nem envia essas buscas, para
+ * não gerar erro enquanto a pessoa ainda digita.
  *
- * IMPORTANTE (achado da auditoria): o modo `tipo=tudo` (resumo) e o modo com
- * `tipo` específico são estruturalmente DIFERENTES, não a mesma resposta com
- * mais/menos itens — o resumo nunca tem `totalPaginas` (não é paginação de
- * verdade, é um recorte de até 5 itens por categoria) e agrupa os 4 totais
- * em `totais`, enquanto um tipo específico devolve `total`/`totalPaginas`
- * reais daquela categoria isolada. Por isso são dois tipos de resposta
- * distintos abaixo, não um só com campos opcionais.
+ * O resumo (`tipo=tudo`) e a busca de um tipo têm formatos diferentes: o resumo traz até 5 itens
+ * por categoria e os totais em `totais`, sem paginação; um tipo específico traz `total` e
+ * `totalPaginas` daquela categoria. Por isso são dois tipos de resposta, e não um só com campos
+ * opcionais.
  */
 
 import type { Postagem } from "../feed";
@@ -23,7 +15,7 @@ import type { Vaga } from "../vagas";
 
 export type TipoBusca = "usuarios" | "empresas" | "vagas" | "postagens";
 
-/** `Site/Backend/src/models/Candidato.js` — só embutido quando o usuário é candidato (`include` com `required: false`). */
+/** `Site/Backend/src/models/Candidato.js`: só embutido quando o usuário é candidato (`include` com `required: false`). */
 export interface CandidatoResumoBusca {
   id: string;
   tituloProfissional?: string | null;
@@ -32,7 +24,7 @@ export interface CandidatoResumoBusca {
   [chave: string]: unknown;
 }
 
-/** Nunca inclui administrador — o próprio backend exclui (`tipoUsuario: {[Op.ne]: "administrador"}`). */
+/** Nunca inclui administrador: o próprio backend exclui (`tipoUsuario: {[Op.ne]: "administrador"}`). */
 export interface UsuarioResultadoBusca {
   id: string;
   nome: string;
@@ -85,7 +77,7 @@ export interface BuscaEmpresasResposta {
   resultados: { empresas: EmpresaResultadoBusca[] };
 }
 
-/** `GET /busca?tipo=vagas` — mesmo `Vaga` de `src/vagas/types.ts` (o backend não restringe atributos aqui, é o mesmo model). */
+/** `GET /busca?tipo=vagas`: mesmo `Vaga` de `src/vagas/types.ts` (o backend não restringe atributos aqui, é o mesmo model). */
 export interface BuscaVagasResposta {
   sucesso: true;
   termo: string;
@@ -97,7 +89,7 @@ export interface BuscaVagasResposta {
   resultados: { vagas: Vaga[] };
 }
 
-/** `GET /busca?tipo=postagens` — mesmo `Postagem` de `src/feed/types.ts` (mesmo processamento de mídia/assinatura de URL do feed normal). */
+/** `GET /busca?tipo=postagens`: mesmo `Postagem` de `src/feed/types.ts` (mesmo processamento de mídia/assinatura de URL do feed normal). */
 export interface BuscaPostagensResposta {
   sucesso: true;
   termo: string;
@@ -110,10 +102,8 @@ export interface BuscaPostagensResposta {
 }
 
 /**
- * `GET /busca?tipo=tudo` (ou sem `tipo`) — resumo agrupado, até 5 itens por
- * categoria (`LIMITE_PREVIA` equivalente no backend: `Math.min(limite, 5)`).
- * SEM `totalPaginas` de propósito (ver nota acima) — usar `totais` pra saber
- * se vale mostrar "Ver mais" de cada categoria.
+ * `GET /busca?tipo=tudo` (ou sem `tipo`): até 5 itens por categoria. Não tem `totalPaginas`; use
+ * `totais` para decidir se mostra "Ver mais" em cada categoria.
  */
 export interface BuscaResumoResposta {
   sucesso: true;

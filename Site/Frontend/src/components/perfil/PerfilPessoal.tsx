@@ -12,18 +12,19 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { initials, useSession } from "@/contexts/SessionContext";
-import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { iniciaisDoNome } from "@/utils/formatacao";
+import { useSessao } from "@/hooks/useSessao";
+import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import { seguidoresService } from "@/services/empresas.service";
-import { urlArquivo } from "@/services/uploads.service";
-import { formatarData } from "@/utils/format";
+import { urlArquivo } from "@/utils/arquivos";
+import { formatarData } from "@/utils/formatacao";
 import { EditarPerfilDialog } from "./EditarPerfilDialog";
 import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
@@ -48,16 +49,16 @@ const TIPOS_CURRICULO_ACEITOS = [
  * Com `usuarioId` de outra pessoa: modo leitura, com botão de seguir no lugar de editar.
  */
 export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
-  const { user } = useSession();
-  const { prefs } = useAccessibility();
+  const { usuario } = useSessao();
+  const { preferencias } = useAcessibilidade();
 
-  const proprioPerfil = !usuarioId || usuarioId === user?.id;
-  const alvoId = proprioPerfil ? user?.id : usuarioId;
+  const proprioPerfil = !usuarioId || usuarioId === usuario?.id;
+  const alvoId = proprioPerfil ? usuario?.id : usuarioId;
 
   const { data: meuCandidato, isLoading: carregandoMeuCandidato } = useQuery({
     queryKey: ["meu-candidato"],
     queryFn: () => perfilService.meuCandidato(),
-    enabled: proprioPerfil && user?.tipo === "candidato",
+    enabled: proprioPerfil && usuario?.tipo === "candidato",
   });
 
   const { data: candidatoAlheio, isLoading: carregandoCandidatoAlheio, isError: erroCandidatoAlheio } = useQuery({
@@ -67,8 +68,8 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     retry: false,
   });
 
-  // Fallback para usuários sem registro de candidato (hoje, administradores)
-  // — só é consultado depois que a tentativa de candidato falha, e usa a
+  // Fallback para usuários sem registro de candidato (hoje, administradores):
+  // só é consultado depois que a tentativa de candidato falha, e usa a
   // mesma chave de query que a rota `/perfil/$usuarioId` já usa, então não
   // gera uma segunda busca de rede quando ela também precisou desse dado.
   const {
@@ -113,11 +114,11 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
 
   if (!proprioPerfil && erroCandidatoAlheio && erroUsuarioGenerico) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
           Este perfil não está disponível.
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
@@ -126,42 +127,40 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     (carregandoCandidatoAlheio || (erroCandidatoAlheio && carregandoUsuarioGenerico))
   ) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil…
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   const candidato = proprioPerfil ? meuCandidato : candidatoAlheio;
-  const ehCandidato = proprioPerfil ? user?.tipo === "candidato" : Boolean(candidatoAlheio);
+  const ehCandidato = proprioPerfil ? usuario?.tipo === "candidato" : Boolean(candidatoAlheio);
   const carregandoCandidato = proprioPerfil && carregandoMeuCandidato;
 
-  const nome = proprioPerfil ? user!.nome : candidato?.usuario?.nome ?? usuarioGenerico?.nome ?? "Usuário";
+  const nome = proprioPerfil ? usuario!.nome : candidato?.usuario?.nome ?? usuarioGenerico?.nome ?? "Usuário";
   const fotoPerfil = proprioPerfil
-    ? user!.fotoPerfil
+    ? usuario!.fotoPerfil
     : candidato?.usuario?.fotoPerfil ?? usuarioGenerico?.fotoPerfil;
   const capaPerfil = proprioPerfil
-    ? user!.capaPerfil
+    ? usuario!.capaPerfil
     : candidato?.usuario?.capaPerfil ?? usuarioGenerico?.capaPerfil;
 
-  // "Navegação por teclado" removida desta lista (auditoria de
-  // acessibilidade, Rodada 3): era um controle sem efeito real nenhum em
-  // Configurações (ver AccessibilityPanel.tsx) — o site já é 100% operável
-  // por teclado por padrão, não é uma preferência que se liga, então exibir
-  // isso como um "recurso ativado" desta pessoa não comunicava nada real.
+  // "Navegação por teclado" não aparece nesta lista: o Site já é operável por teclado para todos,
+  // então mostrar isso como recurso ativado da pessoa não diria nada (ver
+  // `PainelAcessibilidade.tsx`).
   const chipsAcessibilidade = proprioPerfil
     ? [
-        { ativo: prefs.screenReader, icon: Ear, label: "Leitura por voz" },
-        { ativo: prefs.vlibras, icon: Accessibility, label: "Libras (VLibras)" },
-        { ativo: prefs.highContrast, icon: Contrast, label: "Alto contraste" },
-        { ativo: prefs.dyslexiaFont, icon: Sparkles, label: "Fonte para dislexia" },
+        { ativo: preferencias.screenReader, icon: Ear, label: "Leitura por voz" },
+        { ativo: preferencias.vlibras, icon: Accessibility, label: "Libras (VLibras)" },
+        { ativo: preferencias.highContrast, icon: Contrast, label: "Alto contraste" },
+        { ativo: preferencias.dyslexiaFont, icon: Sparkles, label: "Fonte para dislexia" },
       ].filter((c) => c.ativo)
     : [];
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Card className="overflow-hidden shadow-card">
         <div
           aria-hidden="true"
@@ -173,7 +172,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
             <Avatar className="size-24 border-4 border-card">
               <AvatarImage src={urlArquivo(fotoPerfil)} alt="" />
               <AvatarFallback className="bg-primary-soft text-2xl font-bold text-primary">
-                {initials(nome)}
+                {iniciaisDoNome(nome)}
               </AvatarFallback>
             </Avatar>
 
@@ -336,7 +335,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
               {!proprioPerfil && candidato.curriculoNome ? (
                 // Só chega aqui quando o backend já decidiu que este
                 // visitante pode ver dados privados do candidato (empresa
-                // com candidatura legítima ou administrador) — para
+                // com candidatura legítima ou administrador): para
                 // qualquer outra pessoa, `curriculoNome` já vem ausente
                 // na resposta (ver `aplicarPrivacidadeCandidato` no
                 // backend), então esta seção simplesmente não aparece,
@@ -386,13 +385,12 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
 
       <Card className="mt-4 shadow-card">
         <CardContent className="p-5 sm:p-6">
-          {/* Uma linha do tempo só (publicações + compartilhamentos
-              intercalados por data), não mais duas abas desconectadas —
-              auditoria do Site, item 6. */}
+          {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
+              data. */}
           <h2 className="mb-4 text-lg font-bold">Publicações</h2>
           <LinhaDoTempoUsuario usuarioId={alvoId} />
         </CardContent>
       </Card>
-    </AppShell>
+    </EstruturaApp>
   );
 }

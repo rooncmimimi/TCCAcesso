@@ -1,7 +1,7 @@
 import { Router } from "express";
 import NotificacaoController from "../controllers/NotificacaoController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarPreferenciasNotificacao,
@@ -11,9 +11,9 @@ import {
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
-router.get("/", NotificacaoController.index);
+router.get("/", NotificacaoController.listar);
 router.get("/nao-lidas", NotificacaoController.naoLidas);
 router.patch("/lidas", NotificacaoController.marcarTodas);
 
@@ -21,37 +21,37 @@ router.get("/preferencias", NotificacaoController.obterPreferencias);
 router.put(
     "/preferencias",
     validarPreferenciasNotificacao,
-    validationMiddleware,
+    validacaoMiddleware,
     NotificacaoController.atualizarPreferencias
 );
 
-// Fase R5 — push tokens. Rotas com caminho fixo, ANTES de `/:id` (senão
-// `validarUuidParam("id")` recusaria "push-token" como UUID inválido).
+// Push tokens. Rotas com caminho fixo ficam antes de `/:id`, senão `validarUuidParam("id")`
+// recusaria "push-token" como UUID inválido.
 router.post(
     "/push-token",
     validarRegistroPushToken,
-    validationMiddleware,
+    validacaoMiddleware,
     NotificacaoController.registrarPushToken
 );
 router.delete(
     "/push-token",
     validarRemocaoPushToken,
-    validationMiddleware,
+    validacaoMiddleware,
     NotificacaoController.removerPushToken
 );
 
 router.patch(
     "/:id/lida",
     validarUuidParam("id"),
-    validationMiddleware,
+    validacaoMiddleware,
     NotificacaoController.marcarComoLida
 );
 
 router.delete(
     "/:id",
     validarUuidParam("id"),
-    validationMiddleware,
-    NotificacaoController.destroy
+    validacaoMiddleware,
+    NotificacaoController.excluir
 );
 
 export default router;

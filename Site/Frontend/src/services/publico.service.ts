@@ -1,8 +1,8 @@
 import axios from "axios";
-import api, { API_BASE_URL } from "./api";
+import clienteApi, { API_BASE_URL } from "./api";
 import type { HomePublica, Vaga } from "@/types";
 
-/** Cliente sem token — usado nas páginas públicas (home e "Sobre nós"). */
+/** Cliente sem token: usado nas páginas públicas (home e "Sobre nós"). */
 const publico = axios.create({ baseURL: API_BASE_URL, timeout: 20_000 });
 
 export const publicoService = {
@@ -74,7 +74,7 @@ export interface ResultadoBuscaGlobal {
 /** Busca global (usuários, empresas, vagas e publicações). */
 export const buscaService = {
   async global(termo: string, params: { tipo?: string; limit?: number } = {}): Promise<ResultadoBuscaGlobal> {
-    const { data } = await api.get<ResultadoBuscaGlobal>("/busca", {
+    const { data } = await clienteApi.get<ResultadoBuscaGlobal>("/busca", {
       params: { q: termo, busca: termo, ...params },
     });
     return data;

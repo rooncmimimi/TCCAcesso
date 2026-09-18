@@ -3,26 +3,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BadgeCheck, Building2, Compass, Loader2, MapPin, UserPlus, Users } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { SeguirButton } from "@/components/perfil/SeguirButton";
-import { initials, useSession } from "@/contexts/SessionContext";
-import { urlArquivo } from "@/services/uploads.service";
+import { iniciaisDoNome } from "@/utils/formatacao";
+import { useSessao } from "@/hooks/useSessao";
+import { urlArquivo } from "@/utils/arquivos";
 import { seguidoresService } from "@/services/empresas.service";
 import { extrairMensagemErro } from "@/services/api";
 import type { SugestaoEmpresa, SugestaoPerfil } from "@/types";
 
 /**
- * Mesma chave de query usada pelo perfil (`PerfilPessoal.tsx`) para o
- * resumo de seguidores de um usuário — chave COMPARTILHADA de propósito:
- * `SeguirButton` só lê o cache (nunca busca sozinho), então usar a mesma
- * chave aqui garante uma única interpretação do estado de relacionamento
- * em todo o app (perfil, notificações e `/descobrir` nunca divergem), e
- * ainda aproveita o cache já quente se o usuário passou por um desses
- * lugares antes (Fase 9, Bloco 5).
+ * Mesma chave de query do perfil (`PerfilPessoal.tsx`) para o resumo de seguidores, de propósito: o
+ * `SeguirButton` só lê o cache, então a chave compartilhada garante o mesmo estado de
+ * relacionamento no perfil, nas notificações e em `/descobrir`, e aproveita o cache se a pessoa já
+ * passou por um desses lugares.
  */
 const chaveResumoUsuario = (usuarioId: string) => ["perfil-resumo-seguidores", usuarioId] as const;
 
@@ -47,8 +45,8 @@ export const Route = createFileRoute("/descobrir")({
 });
 
 function Descobrir() {
-  const { user } = useSession();
-  const ehCandidato = user?.tipo === "candidato";
+  const { usuario } = useSessao();
+  const ehCandidato = usuario?.tipo === "candidato";
 
   const pessoas = useQuery({
     queryKey: CHAVE_PESSOAS,
@@ -62,7 +60,7 @@ function Descobrir() {
   });
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <div className="flex items-center gap-2">
         <Compass className="size-7 text-primary" aria-hidden="true" />
         <h1 className="text-3xl font-extrabold">Descobrir</h1>
@@ -119,7 +117,7 @@ function Descobrir() {
           </div>
         </section>
       )}
-    </AppShell>
+    </EstruturaApp>
   );
 }
 
@@ -147,12 +145,10 @@ function EstadoVazio({ texto }: { texto: string }) {
 }
 
 function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
-  // Popula a MESMA chave de cache que `SeguirButton` lê — é essa busca que
-  // faz o botão saber se o perfil é público/privado, se já segue, se tem
-  // solicitação pendente ou se está bloqueado, sem duplicar nenhuma dessas
-  // regras aqui (Fase 9, Bloco 5). `sugestoesPessoas` já nunca sugere
-  // alguém bloqueado nem alguém que a pessoa já segue — só falta o estado
-  // de privacidade/solicitação, que só o resumo individual traz hoje.
+  // Preenche a chave de cache que o `SeguirButton` lê: é esta busca que diz se o perfil é público
+  // ou privado, se já é seguido, se há solicitação pendente ou bloqueio. `sugestoesPessoas` já
+  // exclui bloqueados e quem a pessoa segue; falta só o estado de privacidade e solicitação, que só
+  // o resumo individual traz.
   useQuery({
     queryKey: chaveResumoUsuario(pessoa.id),
     queryFn: () => seguidoresService.resumo(pessoa.id),
@@ -165,7 +161,7 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
           <Avatar className="size-16">
             <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-lg font-bold text-primary">
-              {initials(pessoa.nome)}
+              {iniciaisDoNome(pessoa.nome)}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -215,7 +211,7 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
           <Avatar className="size-16 rounded-md">
             <AvatarImage src={urlArquivo(empresa.logo)} alt="" />
             <AvatarFallback className="rounded-md bg-primary-soft text-lg font-bold text-primary">
-              {initials(nome)}
+              {iniciaisDoNome(nome)}
             </AvatarFallback>
           </Avatar>
         </Link>

@@ -1,8 +1,11 @@
 import NotificacaoService from "../services/NotificacaoService.js";
-import PushTokenService from "../services/PushTokenService.js";
+import NotificacaoPushService from "../services/NotificacaoPushService.js";
 
+/**
+ * Notificações do usuário (`/notificacoes`), preferências de notificação e o token de push do app.
+ */
 class NotificacaoController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const dados = await NotificacaoService.listar(req.user, req.query);
 
@@ -47,7 +50,7 @@ class NotificacaoController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
             const resultado = await NotificacaoService.remover(
                 req.params.id,
@@ -60,10 +63,10 @@ class NotificacaoController {
         }
     }
 
-    /** Fase R5 — registra/reaponta o Expo push token do dispositivo atual. */
+    /** Registra ou atualiza o Expo push token do aparelho atual. */
     async registrarPushToken(req, res, next) {
         try {
-            const resultado = await PushTokenService.registrar(
+            const resultado = await NotificacaoPushService.registrar(
                 req.user.id,
                 req.body.token,
                 req.body.plataforma
@@ -75,10 +78,10 @@ class NotificacaoController {
         }
     }
 
-    /** Fase R5 — remove o token no logout do app (idempotente). */
+    /** Remove o token ao sair da conta no app (idempotente). */
     async removerPushToken(req, res, next) {
         try {
-            const resultado = await PushTokenService.remover(req.body.token);
+            const resultado = await NotificacaoPushService.remover(req.body.token);
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

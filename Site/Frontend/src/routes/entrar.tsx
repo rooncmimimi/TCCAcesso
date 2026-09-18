@@ -6,14 +6,14 @@ import { Accessibility, ArrowLeft, ArrowRight, Loader2, Mail, PauseCircle } from
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
-import { AuthLayout } from "@/layouts/AuthLayout";
+import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { useSession } from "@/contexts/SessionContext";
-import authService from "@/services/auth.service";
+import { useSessao } from "@/hooks/useSessao";
+import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 
 const esquemaLogin = z.object({
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/entrar")({
 });
 
 function Entrar() {
-  const { login } = useSession();
+  const { entrar } = useSessao();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [contaPausadaPendente, setContaPausadaPendente] = useState<{ email: string; senha: string } | null>(null);
@@ -45,13 +45,9 @@ function Entrar() {
   const [reenviado, setReenviado] = useState(false);
   const tituloPausadaRef = useRef<HTMLHeadingElement>(null);
   const tituloNaoVerificadoRef = useRef<HTMLHeadingElement>(null);
-  // Guarda SÍNCRONA contra envio duplicado (auditoria do Site, item 10):
-  // `enviando` (estado do React) só reflete no atributo `disabled` do botão
-  // depois de um novo render — um clique duplo rápido o bastante passa
-  // pelos dois cliques ANTES de o botão desabilitar de verdade, disparando
-  // duas chamadas a `/auth/login` (confirmado por reprodução real, ver
-  // relatório da auditoria). Uma `ref` muda de valor na hora, sem esperar
-  // re-render, então o segundo clique é barrado de verdade.
+  // Trava contra envio duplicado. `enviando` só desabilita o botão depois de um novo render, e um
+  // clique duplo rápido passaria antes disso, chamando `/auth/login` duas vezes. A ref muda na
+  // hora, então o segundo clique é barrado.
   const enviandoRef = useRef(false);
 
   const {
@@ -81,7 +77,7 @@ function Entrar() {
     enviandoRef.current = true;
     setEnviando(true);
     try {
-      const resultado = await login(valores);
+      const resultado = await entrar(valores);
       if ("contaPausada" in resultado) {
         setContaPausadaPendente(valores);
         return;
@@ -91,18 +87,13 @@ function Entrar() {
         return;
       }
       toast.success("Login realizado com sucesso!");
-      // Administrador vai direto para o painel administrativo — antes
-      // caía em `/feed` como qualquer outro usuário, sem nenhum sinal de
-      // que o login (que funcionou) levava a algum lugar diferente. Isso é
-      // o que a auditoria do item 10 confirmou como a causa real de "o
-      // login parece falhar": some administradores, ao não ver o próprio
-      // painel aparecer, presumiam erro e tentavam de novo.
+      // Administrador vai direto ao painel administrativo; indo para `/feed` como os demais,
+      // parecia que o login não tinha funcionado.
       navigate({ to: resultado.tipo === "administrador" ? "/admin" : "/feed" });
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível entrar. Verifique seus dados.");
       setError("senha", { message: mensagem });
-      // Fase 9, Bloco 7: o toast já é lido automaticamente por
-      // `useAutoSpeech` (MutationObserver) — falar aqui também duplicava.
+      // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.error(mensagem);
     } finally {
       enviandoRef.current = false;
@@ -114,7 +105,7 @@ function Entrar() {
     if (!emailNaoVerificado) return;
     setReenviando(true);
     try {
-      await authService.reenviarConfirmacaoCadastro(emailNaoVerificado);
+      await autenticacaoService.reenviarConfirmacaoCadastro(emailNaoVerificado);
       setReenviado(true);
       toast.success("Um novo e-mail de confirmação foi enviado.");
     } catch (erro) {
@@ -128,10 +119,10 @@ function Entrar() {
     if (!contaPausadaPendente) return;
     setEnviando(true);
     try {
-      const resultado = await login({ ...contaPausadaPendente, confirmarReativacao: true });
+      const resultado = await entrar({ ...contaPausadaPendente, confirmarReativacao: true });
       if ("contaPausada" in resultado) return;
-      // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
+      // leitura.
       toast.success("Conta reativada. Bem-vindo de volta!");
       navigate({ to: "/feed" });
     } catch (erro) {
@@ -143,7 +134,7 @@ function Entrar() {
   }
 
   return (
-    <AuthLayout>
+    <AutenticacaoLayout>
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
             <Logo />
@@ -326,6 +317,6 @@ function Entrar() {
             )}
           </CardContent>
         </Card>
-    </AuthLayout>
+    </AutenticacaoLayout>
   );
 }

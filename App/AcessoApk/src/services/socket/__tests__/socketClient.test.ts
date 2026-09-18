@@ -6,11 +6,11 @@ jest.mock("socket.io-client", () => ({
 }));
 
 const mockGetAccessToken = jest.fn();
-const mockNotifySessionEnded = jest.fn();
+const mockNotificarFimSessao = jest.fn();
 
-jest.mock("../../api/client", () => ({
-  getAccessToken: () => mockGetAccessToken(),
-  notifySessionEnded: (...args: unknown[]) => mockNotifySessionEnded(...args),
+jest.mock("../../api/cliente", () => ({
+  obterAccessToken: () => mockGetAccessToken(),
+  notificarFimSessao: (...args: unknown[]) => mockNotificarFimSessao(...args),
 }));
 
 import {
@@ -24,7 +24,7 @@ import {
   SOCKET_URL,
 } from "../socketClient";
 
-/** Fake mínimo de `Socket` — só a superfície que `socketClient.ts` realmente usa. */
+/** Fake mínimo de `Socket`: só a superfície que `socketClient.ts` realmente usa. */
 function criarSocketFalso() {
   const handlers = new Map<string, ((...args: unknown[]) => void)[]>();
   const ioHandlers = new Map<string, ((...args: unknown[]) => void)[]>();
@@ -113,7 +113,7 @@ describe("socketClient", () => {
       socketFalso.__disparar("connect_error", Object.assign(new Error("bloqueado"), { data: { codigo: "CONTA_BLOQUEADA" } }));
 
       expect(socketFalso.disconnect).toHaveBeenCalled();
-      expect(mockNotifySessionEnded).toHaveBeenCalledWith("blocked");
+      expect(mockNotificarFimSessao).toHaveBeenCalledWith("bloqueada");
     });
 
     it("connect_error sem código de bloqueio não desconecta nem notifica (deixa o socket.io-client tentar de novo sozinho)", () => {
@@ -124,7 +124,7 @@ describe("socketClient", () => {
       socketFalso.__disparar("connect_error", new Error("rede instável"));
 
       expect(socketFalso.disconnect).not.toHaveBeenCalled();
-      expect(mockNotifySessionEnded).not.toHaveBeenCalled();
+      expect(mockNotificarFimSessao).not.toHaveBeenCalled();
     });
   });
 

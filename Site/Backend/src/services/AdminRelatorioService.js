@@ -11,9 +11,9 @@ import {
 } from "../models/index.js";
 
 /**
- * Painel administrativo — métricas agregadas para o dashboard de
+ * Painel administrativo: métricas agregadas para o dashboard de
  * relatórios. Somente leitura: nenhuma autorização própria além de
- * `authMiddleware`/`rbacMiddleware("administrador")`, já aplicados na rota.
+ * `autenticacaoMiddleware`/`exigirTipoUsuarioMiddleware("administrador")`, já aplicados na rota.
  */
 class AdminRelatorioService {
     async relatorios() {
@@ -33,7 +33,7 @@ class AdminRelatorioService {
             Usuario.count({ where: { tipoUsuario: "empresa" } }),
             Empresa.count({ where: { statusAprovacao: "pendente" } }),
             Vaga.count(),
-            Vaga.count({ where: { status: "Aberta" } }),
+            Vaga.count({ where: { status: "aberta" } }),
             Candidatura.count(),
             Postagem.count({ where: { ativo: true } }),
             Usuario.count({ where: { bloqueado: true } })
@@ -46,11 +46,11 @@ class AdminRelatorioService {
 
         const cadastrosPorMes = await Usuario.findAll({
             attributes: [
-                [fn("TO_CHAR", col("created_at"), "YYYY-MM"), "mes"],
+                [fn("TO_CHAR", col("criado_em"), "YYYY-MM"), "mes"],
                 [fn("COUNT", col("id")), "total"]
             ],
             where: {
-                created_at: {
+                criadoEm: {
                     [Op.gte]: literal("NOW() - INTERVAL '12 months'")
                 }
             },
@@ -77,7 +77,7 @@ class AdminRelatorioService {
         });
 
         const taxaContratacao = await Candidatura.count({
-            where: { status: "Aprovada" }
+            where: { status: "aprovada" }
         });
 
         return {

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Check, CheckCheck, MoreVertical } from "lucide-react";
-import type { Mensagem } from "@/lib/api-types";
+import type { Mensagem } from "@/lib/tiposApi";
 import { cn } from "@/lib/utils";
 import { formatarHora } from "./utils";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,9 @@ import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 
 export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propria: boolean }) {
   const [denunciando, setDenunciando] = useState(false);
-  // Foco volta pra este botão ao fechar o DenunciarDialog — ver comentário
+  // Foco volta pra este botão ao fechar o DenunciarDialog (ver comentário
   // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
-  // o diálogo que abre.
+  // o diálogo que abre).
   const gatilhoRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -59,7 +59,7 @@ export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propr
             propria ? "text-primary-foreground/80" : "text-muted-foreground",
           )}
         >
-          <span>{formatarHora(mensagem.created_at)}</span>
+          <span>{formatarHora(mensagem.criadoEm)}</span>
           {propria &&
             (mensagem.lida ? (
               <CheckCheck aria-label="Mensagem lida" className="size-3.5" />

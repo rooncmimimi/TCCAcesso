@@ -1,7 +1,8 @@
 import ChatbotService from "../services/ChatbotService.js";
 
+/** Conversas com o chatbot da Central de Ajuda (`/chatbot`). */
 class ChatbotController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const dados = await ChatbotService.listarConversas(
                 req.user,
@@ -28,7 +29,7 @@ class ChatbotController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
             const dados = await ChatbotService.enviar(req.body, req.user);
 
@@ -38,7 +39,7 @@ class ChatbotController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
             const resultado = await ChatbotService.remover(
                 req.params.conversaId,

@@ -1,7 +1,7 @@
 /** Perfis de usuário suportados pela plataforma. */
 export type TipoUsuario = "candidato" | "empresa" | "administrador";
 
-/** Quem pode iniciar uma nova conversa com o usuário (Fase 4). */
+/** Quem pode iniciar uma nova conversa com o usuário. */
 export type PreferenciaMensagens =
   | "todos"
   | "seguidores"
@@ -22,7 +22,6 @@ export interface Usuario {
   capaPerfil?: string | null;
   telefone?: string | null;
   criadoEm?: string;
-  created_at?: string;
   ultimoLogin?: string | null;
   pausadoPeloUsuario?: boolean;
   perfilPublico?: boolean;
@@ -30,13 +29,13 @@ export interface Usuario {
   preferenciaMensagens?: PreferenciaMensagens;
   /**
    * Só vem preenchido quando `tipo === "empresa"` (login/cadastro e
-   * `/auth/me` já retornam esta associação) — usado para decidir se a
-   * empresa está aprovada antes de liberar o app (ver `AppShell`).
+   * `/auth/me` já retornam esta associação); usado para decidir se a
+   * empresa está aprovada antes de liberar o app (ver `EstruturaApp`).
    */
   empresa?: Empresa;
 }
 
-/** Usuário bloqueado — item da lista em Configurações → Privacidade. */
+/** Usuário bloqueado: item da lista em Configurações → Privacidade. */
 export interface UsuarioBloqueado {
   id: string;
   nome: string;
@@ -75,7 +74,7 @@ export interface Candidato {
 }
 
 /**
- * Espelha `POST /candidatos/:id/curriculo/importar` — rascunho extraído do
+ * Espelha `POST /candidatos/:id/curriculo/importar`: rascunho extraído do
  * arquivo (sem IA), nunca gravado sozinho. Nunca traz CPF, de propósito.
  */
 export interface RascunhoExperiencia {
@@ -137,7 +136,6 @@ export interface Certificado {
   emitidoEm?: string | null;
   expiraEm?: string | null;
   credencialUrl?: string | null;
-  arquivo?: string | null;
 }
 
 export interface Habilidade {
@@ -152,7 +150,7 @@ export interface Deficiencia {
   descricao?: string | null;
 }
 
-export type PorteEmpresa = "MEI" | "Micro" | "Pequena" | "Media" | "Grande";
+export type PorteEmpresa = "mei" | "micro" | "pequena" | "media" | "grande";
 
 export interface Empresa {
   id: string;
@@ -218,7 +216,7 @@ export interface RespostaCadastroPendenteVerificacao {
   email: string;
 }
 
-/** Uma sessão ativa (refresh token) do usuário — ver `GET /auth/sessoes`. */
+/** Uma sessão ativa do usuário (refresh token), como vem de `POST /auth/sessoes`. */
 export interface SessaoAtiva {
   id: string;
   userAgent?: string | null;
@@ -236,9 +234,9 @@ export interface PreferenciasNotificacao {
   redeSeguidores: boolean;
 }
 
-export type ModalidadeVaga = "Presencial" | "Hibrido" | "Remoto";
-export type ContratoVaga = "CLT" | "PJ" | "Estagio" | "JovemAprendiz" | "Temporario";
-export type StatusVaga = "Aberta" | "Pausada" | "Encerrada";
+export type ModalidadeVaga = "presencial" | "hibrido" | "remoto";
+export type ContratoVaga = "clt" | "pj" | "estagio" | "jovem_aprendiz" | "temporario";
+export type StatusVaga = "aberta" | "pausada" | "encerrada";
 export type PublicoAlvoVaga = "geral" | "pcd" | "cinquenta_mais" | "pcd_cinquenta_mais";
 export type RecursoAcessibilidadeVaga =
   | "interprete_libras"
@@ -262,14 +260,11 @@ export interface Vaga {
   modalidade: ModalidadeVaga;
   contrato?: ContratoVaga;
   salario?: number | string | null;
-  exclusivaPcd?: boolean;
   publicoAlvo?: PublicoAlvoVaga;
   acessibilidade?: string | null;
   recursosAcessibilidade?: RecursoAcessibilidadeVaga[] | null;
   status: StatusVaga;
-  /** O backend serializa os timestamps como `createdAt`/`updatedAt` (não `criadoEm`). */
-  createdAt?: string;
-  dataPublicacao?: string | null;
+  criadoEm?: string;
   dataEncerramento?: string | null;
   empresaId?: string;
   /** Só presente em `GET /vagas/minhas` (painel de gestão). */
@@ -284,7 +279,7 @@ export interface Vaga {
   };
 }
 
-export type StatusCandidatura = "Pendente" | "EmAnalise" | "Aprovada" | "Rejeitada" | "Cancelada" | "Visualizada";
+export type StatusCandidatura = "pendente" | "em_analise" | "aprovada" | "rejeitada" | "cancelada" | "visualizada";
 
 export interface Candidatura {
   id: string;
@@ -298,10 +293,7 @@ export interface Candidatura {
 export interface Postagem {
   id: string;
   conteudo: string;
-  imagem?: string | null;
-  /** O backend serializa os timestamps como `created_at`/`updated_at`. */
   criadoEm?: string;
-  created_at?: string;
   atualizadoEm?: string;
   autor?: Usuario;
   usuarioId?: string;
@@ -315,18 +307,17 @@ export interface Comentario {
   id: string;
   comentario: string;
   criadoEm?: string;
-  created_at?: string;
   autor?: Usuario;
   postagemId?: string;
   respostas?: Comentario[];
 }
 
-export type { Conversa, Mensagem, ParticipanteConversa } from "@/lib/api-types";
+export type { Conversa, Mensagem, ParticipanteConversa } from "@/lib/tiposApi";
 
 
 export type TipoNotificacao = string;
 
-/** Quem praticou a ação de uma notificação — nunca traz dado sensível (ver NotificacaoService.INCLUIR_ATOR no backend). */
+/** Quem praticou a ação de uma notificação; nunca traz dado sensível (ver NotificacaoService.INCLUIR_ATOR no backend). */
 export interface AtorNotificacao {
   id: string;
   nome: string;
@@ -336,21 +327,20 @@ export interface AtorNotificacao {
 export interface Notificacao {
   id: string;
   titulo: string;
-  /** Campo real do backend (Notificacao.descricao) — nunca "mensagem", que nunca existiu na resposta da API. */
+  /** Campo real do backend (`Notificacao.descricao`); a resposta não tem `mensagem`. */
   descricao?: string;
   tipo: TipoNotificacao;
-  /** String livre (migration 0033) para granularidade de ícone/ação — ausente em notificações anteriores à migration. */
+  /** Código livre do evento (como `curtida_postagem`), usado para escolher ícone e destino. */
   subtipo?: string | null;
-  /** Ponteiro polimórfico (sem FK) para o conteúdo relacionado — ausente quando não há destino aplicável. */
+  /** Ponteiro polimórfico (sem FK) para o conteúdo relacionado; ausente quando não há destino aplicável. */
   entidadeTipo?: string | null;
   entidadeId?: string | null;
   ator?: AtorNotificacao | null;
   lida: boolean;
-  /** Campo real serializado pelo backend (Notificacao usa createdAt: "created_at", que renomeia o próprio atributo) — nunca "criadoEm", que nunca existiu na resposta da API. Confirmado via chamada real à API, não só pelo código-fonte. */
-  created_at: string;
+  criadoEm: string;
 }
 
-/** Resultado de `GET /conversas/pode-iniciar/:usuarioId` (Fase 4) — nunca lança erro, só informa. */
+/** Resultado de `GET /conversas/pode-iniciar/:usuarioId`: só informa, nunca lança erro de permissão. */
 export interface PodeIniciarConversa {
   permitido: boolean;
   motivo?: string;
@@ -366,34 +356,20 @@ export interface RespostaPaginada<T> {
   totalPaginas?: number;
 }
 
-/* ==========================================================
-   Arquivos e anexos
-   ========================================================== */
+/* Arquivos e anexos */
 export type TipoArquivo = "imagem" | "documento" | "video";
-
-export interface Arquivo {
-  id: string;
-  url: string;
-  tipo: TipoArquivo;
-  categoria: string;
-  nomeOriginal?: string | null;
-  mimeType?: string;
-  tamanhoBytes?: number;
-}
 
 export interface AnexoPostagem {
   id: string;
   url: string;
   tipo: TipoArquivo;
   nomeOriginal?: string | null;
-  /** Descrição acessível fornecida pelo autor — usada como `alt` real e lida pelo sistema de voz. */
+  /** Descrição acessível fornecida pelo autor, usada como `alt` real e lida pelo sistema de voz. */
   descricao?: string | null;
   ordem?: number;
 }
 
-/* ==========================================================
-   Feed
-   ========================================================== */
+/* Feed */
 export interface PostagemCompleta extends Postagem {
   anexos?: AnexoPostagem[];
   curtidoPorMim?: boolean;
@@ -412,11 +388,9 @@ export interface CompartilhamentoCompleto {
 }
 
 /**
- * Item da linha do tempo unificada de um perfil (auditoria do Site, item 6
- * — `GET /postagens/usuario/:usuarioId/linha-do-tempo`): publicações
- * próprias e compartilhamentos intercalados por data, em vez de duas abas
- * separadas. `tipo` distingue os dois; `postagem` é sempre a publicação a
- * exibir (própria ou a ORIGINAL, no caso de compartilhamento).
+ * Item da linha do tempo de um perfil (`GET /postagens/usuario/:usuarioId/linha-do-tempo`):
+ * publicações próprias e compartilhamentos intercalados por data. `tipo` distingue os dois, e
+ * `postagem` é sempre a publicação a exibir (a própria ou a original, no caso de compartilhamento).
  */
 export interface ItemLinhaDoTempo {
   tipo: "postagem" | "compartilhamento";
@@ -433,25 +407,22 @@ export interface ComentarioCompleto extends Comentario {
   totalRespostas?: number;
 }
 
-/* ==========================================================
-   Seguidores
-   ========================================================== */
+/* Seguidores */
 /** Espelha exatamente o retorno de `GET /seguir/resumo/:usuarioId` no backend. */
 export interface ResumoSeguidores {
   totalSeguidores: number;
   totalSeguindo: number;
   seguindoEsteUsuario?: boolean;
-  /** Perfil privado/público do alvo (Fase 3) — só usuário/candidato usa isso hoje. */
+  /** Perfil público ou privado do alvo; só existe para usuários e candidatos. */
   perfilPublico?: boolean;
-  /** O alvo já segue o usuário autenticado — necessário para "Seguir de volta". */
+  /** O alvo já segue o usuário autenticado; necessário para "Seguir de volta". */
   elesSeguemVoce?: boolean;
   /** Usuário autenticado tem uma solicitação de seguir pendente para o alvo (perfil privado). */
   solicitacaoPendente?: boolean;
   /**
-   * Bloqueio (bidirecional) entre o usuário autenticado e o alvo (Fase 9,
-   * Bloco 5) — só usuário/candidato usa isso hoje (empresa não tem esse
-   * campo). Usado por `SeguirButton` para nunca oferecer uma ação de
-   * seguir que o backend recusaria de qualquer forma.
+   * Bloqueio, em qualquer direção, entre o usuário autenticado e o alvo; só existe para usuários e
+   * candidatos. O `SeguirButton` usa este campo para nunca oferecer uma ação que o backend
+   * recusaria.
    */
   bloqueado?: boolean;
 }
@@ -466,7 +437,7 @@ export interface SugestaoPerfil {
   motivo?: string;
 }
 
-/** Espelha `GET /seguir/sugestoes/empresas` — sugestão explicável de empresa para seguir. */
+/** Espelha `GET /seguir/sugestoes/empresas`: sugestão explicável de empresa para seguir. */
 export interface SugestaoEmpresa {
   id: string;
   usuarioId?: string;
@@ -480,28 +451,26 @@ export interface SugestaoEmpresa {
   motivo?: string;
 }
 
-/* ==========================================================
-   Minha atividade
-   Espelha `GET /atividade/minha` — sempre escopado ao próprio usuário
-   autenticado. Cada categoria traz uma prévia (`itens`) e o `total` real;
-   "ver tudo" usa os endpoints dedicados que já existiam (candidaturas,
-   favoritos, seguidores etc).
-   ========================================================== */
+/*
+ * Minha atividade: espelha `GET /atividade/minha`, sempre do próprio usuário autenticado. Cada
+ * categoria traz uma prévia (`itens`) e o `total` real; "ver tudo" usa as rotas próprias de cada
+ * lista (candidaturas, favoritos, seguidores etc.).
+ */
 export interface FavoritoVagaItem {
   id: string;
-  created_at?: string;
+  criadoEm?: string;
   vaga?: Vaga;
 }
 
 export interface EmpresaSeguidaItem {
   id: string;
-  created_at?: string;
+  criadoEm?: string;
   empresa?: Empresa;
 }
 
 export interface InteracaoFeedItem {
   id: string;
-  created_at?: string;
+  criadoEm?: string;
   comentario?: string;
   postagem?: PostagemCompleta;
 }
@@ -521,9 +490,7 @@ export interface AtividadePessoal {
   };
 }
 
-/* ==========================================================
-   Dashboards e administração
-   ========================================================== */
+/* Dashboards e administração */
 export interface MetricasCandidato {
   candidaturas?: number;
   candidaturasPorStatus?: Record<string, number>;
@@ -554,11 +521,9 @@ export interface MetricasAdmin {
   [chave: string]: unknown;
 }
 
-/* ==========================================================
-   Preferências de acessibilidade (persistidas na conta)
-   ========================================================== */
+/* Preferências de acessibilidade (salvas na conta) */
 /** Espelha exatamente a tabela `preferencias_acessibilidade` do Backend. */
-export interface PreferenciasAcessibilidade {
+export interface PreferenciasAcessibilidadeApi {
   tema?: "claro" | "escuro" | "sistema" | null;
   altoContraste?: boolean;
   fonteDislexia?: boolean;
@@ -567,7 +532,7 @@ export interface PreferenciasAcessibilidade {
   espacamentoTexto?: boolean;
   reduzirAnimacoes?: boolean;
   leituraPorVoz?: boolean;
-  /** `null` = ainda não respondeu o consentimento inicial de voz; `true`/`false` = já respondeu (Fase 9, Bloco 8). */
+  /** `null`: ainda não respondeu ao consentimento de voz; `true` ou `false`: já respondeu. */
   consentimentoVoz?: boolean | null;
   velocidadeVoz?: number | string;
   linguagemSimplificada?: boolean;
@@ -577,17 +542,10 @@ export interface PreferenciasAcessibilidade {
 }
 
 
-/* ==========================================================
-   Página inicial pública
-   ========================================================== */
+/* Página inicial pública */
 export interface HomePublica {
-  // Nomes alinhados ao que `PublicoService.home()` (Backend) realmente
-  // devolve — auditoria do Site (item 7) encontrou um descompasso: o tipo
-  // aqui esperava `usuarios`/`vagas`/`candidaturas`, mas a API sempre
-  // devolveu `candidatos`/`vagasAbertas`/`contratacoes`. Como nenhuma chave
-  // batia, `EstatisticasFaixa` só conseguia exibir "empresas parceiras" (a
-  // única coincidência) — as outras 3 estatísticas da faixa pública nunca
-  // apareceram de verdade, silenciosamente.
+  // Mesmas chaves de `PublicoService.paginaInicial()` no backend: `empresas`, `vagasAbertas`,
+  // `candidatos` e `candidaturas`.
   estatisticas?: {
     candidatos?: number;
     vagasAbertas?: number;
@@ -600,22 +558,19 @@ export interface HomePublica {
   [chave: string]: unknown;
 }
 
-/* ==========================================================
-   Chatbot
-   ========================================================== */
+/* Chatbot */
 export interface ChatbotConversa {
   id: string;
   titulo?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  criadoEm?: string;
+  atualizadoEm?: string;
 }
 
-/** `papel`/`created_at` espelham exatamente os nomes de atributo do model Sequelize (não `origem`/`criadoEm`). */
 export interface ChatbotMensagem {
   id: string;
   conversaId: string;
   conteudo: string;
   papel: "usuario" | "assistente";
-  created_at?: string;
+  criadoEm?: string;
 }
 

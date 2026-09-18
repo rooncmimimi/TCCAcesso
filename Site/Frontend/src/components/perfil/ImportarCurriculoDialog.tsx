@@ -51,11 +51,11 @@ const TIPOS_ACEITOS = [
 ];
 
 /**
- * Importar dados do currículo — extração por palavras-chave (sem IA),
+ * Importar dados do currículo: extração por palavras-chave (sem IA),
  * sempre em 4 passos obrigatórios: enviar → extrair → revisar/editar →
  * confirmar. Nada é gravado no perfil antes da confirmação explícita, e
  * cada item pode ser desmarcado ou editado livremente. CPF nunca aparece
- * aqui, de propósito — o rascunho nunca traz esse campo.
+ * aqui, de propósito: o rascunho nunca traz esse campo.
  */
 export function ImportarCurriculoDialog({
   candidatoId,

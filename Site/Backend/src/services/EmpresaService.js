@@ -1,11 +1,11 @@
 import { Op, fn, col } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import { Empresa, Usuario, Vaga } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono, ehAdministrador, garantirEmpresaAprovada } from "../utils/authorization.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirDono, ehAdministrador, garantirEmpresaAprovada } from "../utils/autorizacao.js";
 import BloqueioService from "./BloqueioService.js";
-import AdminAuditService from "./AdminAuditService.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
 
 /** Campos que a própria empresa pode atualizar. */
 const CAMPOS_EDITAVEIS = [
@@ -24,6 +24,10 @@ const CAMPOS_EDITAVEIS = [
     "culturaInclusiva"
 ];
 
+/**
+ * Perfil de empresa: listagem, empresas parceiras, consulta por id ou por usuário, edição pela
+ * própria empresa e exclusão pelo administrador.
+ */
 class EmpresaService {
     filtrarCampos(data, solicitante) {
         const dados = CAMPOS_EDITAVEIS.reduce((acc, campo) => {
@@ -45,10 +49,8 @@ class EmpresaService {
         return dados;
     }
 
-    /* ==========================================================
-       LISTAR (público)
-    ========================================================== */
-    async findAll(query) {
+    /* Listar (público) */
+    async listar(query) {
         const { pagina, limite, offset } = resolverPaginacao(query);
         const { search, cidade, estado, setor, porte, empresaVerificada } = query;
 
@@ -86,37 +88,35 @@ class EmpresaService {
             where,
             limit: limite,
             offset,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("empresas", rows, count, pagina, limite);
     }
 
-    /* ==========================================================
-       EMPRESAS PARCEIRAS (vitrine da home)
-       Critério de produto: "parceira" = aprovada pela plataforma
-       (pode publicar vagas). O selo "verificada" é um reconhecimento
-       ADICIONAL de confiança, independente — nunca um requisito para
-       aparecer como parceira. Mesmo critério de PublicoService.home().
-    ========================================================== */
-    async findPartners() {
+    /*
+     * Empresas parceiras (vitrine da página inicial). "Parceira" é a empresa aprovada pela
+     * plataforma, que pode publicar vagas; o selo "verificada" é um reconhecimento extra de
+     * confiança, nunca requisito para aparecer. Mesmo critério de `PublicoService.paginaInicial()`.
+     */
+    async listarParceiras() {
         const empresas = await Empresa.findAll({
             where: { statusAprovacao: "aprovada" },
             order: [
                 ["empresaVerificada", "DESC"],
-                ["created_at", "DESC"]
+                ["criadoEm", "DESC"]
             ],
             limit: 6
         });
 
         if (empresas.length === 0) return empresas;
 
-        // Mesmo padrão de VagaService.findByEmpresaAutenticada / PublicoService.home:
+        // Mesmo padrão de VagaService.buscarPorEmpresaAutenticada / PublicoService.paginaInicial:
         // uma única consulta agregada, nunca uma por empresa.
         const contagens = await Vaga.findAll({
             where: {
                 empresaId: empresas.map((empresa) => empresa.id),
-                status: "Aberta"
+                status: "aberta"
             },
             attributes: ["empresaId", [fn("COUNT", col("id")), "total"]],
             group: ["empresaId"]
@@ -133,10 +133,8 @@ class EmpresaService {
         });
     }
 
-    /* ==========================================================
-       BUSCAR POR ID (público)
-    ========================================================== */
-    async findById(id, solicitante) {
+    /* Buscar por id (público) */
+    async buscarPorId(id, solicitante) {
         const empresa = await Empresa.findByPk(id, {
             include: [
                 {
@@ -147,14 +145,14 @@ class EmpresaService {
                 {
                     model: Vaga,
                     as: "vagas",
-                    where: { status: "Aberta" },
+                    where: { status: "aberta" },
                     required: false
                 }
             ]
         });
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         await BloqueioService.garantirVisibilidadePerfil(
@@ -166,13 +164,12 @@ class EmpresaService {
     }
 
     /**
-     * Perfil público resolvido a partir do `usuarioId` do autor de uma
-     * postagem/comentário — permite "clicar na foto/nome no feed" quando o
-     * autor é uma conta empresa, sem o cliente conhecer o `empresaId` antes.
-     * Diferente de `findByUsuario` (usada só em /empresas/me): aqui o
-     * `Usuario` incluído é restrito a campos públicos (sem e-mail/telefone).
+     * Perfil público resolvido pelo `usuarioId` do autor de uma postagem ou comentário, para abrir
+     * o perfil de uma empresa a partir do feed sem o cliente conhecer o `empresaId`. Diferente de
+     * `buscarPorUsuario` (usada em /empresas/me), aqui o `Usuario` incluído só traz campos públicos
+     * (sem e-mail e telefone).
      */
-    async findByUsuarioPublico(usuarioId, solicitante) {
+    async buscarPorUsuarioPublico(usuarioId, solicitante) {
         const empresa = await Empresa.findOne({
             where: { usuarioId },
             include: [
@@ -184,14 +181,14 @@ class EmpresaService {
                 {
                     model: Vaga,
                     as: "vagas",
-                    where: { status: "Aberta" },
+                    where: { status: "aberta" },
                     required: false
                 }
             ]
         });
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         await BloqueioService.garantirVisibilidadePerfil(
@@ -202,33 +199,29 @@ class EmpresaService {
         return empresa;
     }
 
-    /* ==========================================================
-       PERFIL DA EMPRESA AUTENTICADA
-    ========================================================== */
-    async findByUsuario(usuarioId) {
+    /* Perfil da empresa autenticada */
+    async buscarPorUsuario(usuarioId) {
         const empresa = await Empresa.findOne({
             where: { usuarioId },
             include: [{ model: Usuario, as: "usuario" }]
         });
 
         if (!empresa) {
-            throw ApiError.notFound("Perfil de empresa não encontrado.");
+            throw ErroApi.naoEncontrado("Perfil de empresa não encontrado.");
         }
 
         return empresa;
     }
 
-    /* ==========================================================
-       ATUALIZAR (dona ou administrador)
-    ========================================================== */
-    async update(id, data, solicitante) {
+    /* Atualizar (dona ou administrador) */
+    async atualizar(id, data, solicitante) {
         const transaction = await sequelize.transaction();
 
         try {
             const empresa = await Empresa.findByPk(id, { transaction });
 
             if (!empresa) {
-                throw ApiError.notFound("Empresa não encontrada.");
+                throw ErroApi.naoEncontrado("Empresa não encontrada.");
             }
 
             garantirDono(solicitante, empresa.usuarioId);
@@ -247,12 +240,11 @@ class EmpresaService {
         }
     }
 
-    /* ==========================================================
-       REMOVER (administrador)
-       Rota já restrita a administrador (rbacMiddleware) — não há caminho
-       de "dono" aqui, então a auditoria é sempre registrada.
-    ========================================================== */
-    async delete(id, solicitante, contexto = {}) {
+    /*
+     * Remover (administrador). A rota já é restrita a administrador (`exigirTipoUsuarioMiddleware`)
+     * e não há caminho de dona, então a auditoria é sempre registrada.
+     */
+    async excluir(id, solicitante, contexto = {}) {
         const transaction = await sequelize.transaction();
         let empresaRemovida;
 
@@ -260,7 +252,7 @@ class EmpresaService {
             const empresa = await Empresa.findByPk(id, { transaction });
 
             if (!empresa) {
-                throw ApiError.notFound("Empresa não encontrada.");
+                throw ErroApi.naoEncontrado("Empresa não encontrada.");
             }
 
             empresaRemovida = {
@@ -276,13 +268,13 @@ class EmpresaService {
             throw erro;
         }
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "EXCLUIR_EMPRESA",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: "excluir_empresa",
             entidadeTipo: "empresa",
             entidadeId: id,
             descricao: `Empresa ${empresaRemovida.razaoSocial} foi removida.`,
-            metadata: { empresa: empresaRemovida },
+            metadados: { empresa: empresaRemovida },
             ip: contexto.ip,
             userAgent: contexto.userAgent
         });

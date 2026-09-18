@@ -1,16 +1,16 @@
 import { Empresa, Usuario } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import NotificacaoService from "./NotificacaoService.js";
-import AdminAuditService from "./AdminAuditService.js";
-import { avisarPorEmailBestEffort } from "../utils/avisoEmailBestEffort.js";
-import { templateEmpresaSuspensa } from "../utils/emailTemplates.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
+import { tentarAvisarPorEmail } from "../utils/avisoEmail.js";
+import { modeloEmpresaSuspensa } from "../utils/modelosEmail.js";
 
 /**
- * Painel administrativo — aprovação, verificação e suspensão de empresas.
+ * Painel administrativo: aprovação, verificação e suspensão de empresas.
  *
- * Todas as rotas que chegam aqui já passaram por authMiddleware +
- * rbacMiddleware("administrador"); ainda assim os métodos nunca
+ * Todas as rotas que chegam aqui já passaram por autenticacaoMiddleware +
+ * exigirTipoUsuarioMiddleware("administrador"); ainda assim os métodos nunca
  * confiam em identificadores do corpo da requisição para escalonar
  * privilégios (defesa em profundidade).
  */
@@ -36,7 +36,7 @@ class AdminEmpresaService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("empresas", rows, count, pagina, limite);
@@ -46,7 +46,7 @@ class AdminEmpresaService {
         const empresa = await Empresa.findByPk(id);
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         const statusAnterior = empresa.statusAprovacao;
@@ -54,18 +54,16 @@ class AdminEmpresaService {
         await empresa.update({
             statusAprovacao: aprovada ? "aprovada" : "reprovada",
             motivoReprovacao: aprovada ? null : motivo || null,
-            // "Aprovada" (checagem cadastral, libera publicar vaga) e
-            // "verificada" (selo de confiança adicional) são conceitos
-            // deliberadamente separados agora — aprovar não verifica mais
-            // automaticamente. Verificação é uma ação administrativa
+            // "aprovada" (checagem cadastral, libera publicar vagas) e "verificada" (selo de
+            // confiança) são conceitos separados: aprovar não verifica. A verificação é uma ação
             // própria, ver `verificarEmpresa` abaixo.
             avaliadoEm: new Date(),
-            avaliadoPor: solicitante.id
+            avaliadoPorId: solicitante.id
         });
 
         await NotificacaoService.criar({
             usuarioId: empresa.usuarioId,
-            tipo: "Sistema",
+            tipo: "sistema",
             titulo: aprovada
                 ? "Cadastro aprovado"
                 : "Cadastro reprovado",
@@ -77,18 +75,18 @@ class AdminEmpresaService {
             entidadeId: empresa.usuarioId
         });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: aprovada ? "APROVAR_EMPRESA" : "REPROVAR_EMPRESA",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: aprovada ? "aprovar_empresa" : "reprovar_empresa",
             entidadeTipo: "empresa",
             entidadeId: empresa.id,
             descricao: aprovada
                 ? `Empresa ${empresa.razaoSocial} foi aprovada.`
                 : `Empresa ${empresa.razaoSocial} foi reprovada.`,
-            metadata: {
-                before: { statusAprovacao: statusAnterior },
-                after: { statusAprovacao: empresa.statusAprovacao },
-                reason: aprovada ? null : motivo || null
+            metadados: {
+                antes: { statusAprovacao: statusAnterior },
+                depois: { statusAprovacao: empresa.statusAprovacao },
+                motivo: aprovada ? null : motivo || null
             },
             ip: contexto.ip,
             userAgent: contexto.userAgent
@@ -98,35 +96,33 @@ class AdminEmpresaService {
     }
 
     /**
-     * Selo de confiança "Empresa verificada" — independente da aprovação
-     * cadastral (`statusAprovacao`). Reaproveita o campo `empresaVerificada`
-     * que já existe no schema; não precisa de migration. Pode ser
-     * concedido ou removido a qualquer momento, em qualquer status de
-     * aprovação (uma empresa pode perder a verificação sem deixar de
-     * poder publicar vagas, por exemplo).
+     * Selo de confiança "Empresa verificada", independente da aprovação cadastral
+     * (`statusAprovacao`), no campo `empresaVerificada`. Pode ser dado ou tirado a qualquer
+     * momento, em qualquer status: uma empresa pode perder a verificação e continuar publicando
+     * vagas, por exemplo.
      */
     async verificarEmpresa(id, { verificada }, solicitante, contexto = {}) {
         const empresa = await Empresa.findByPk(id);
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         const estadoAnterior = empresa.empresaVerificada;
 
         await empresa.update({ empresaVerificada: Boolean(verificada) });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: verificada ? "VERIFICAR_EMPRESA" : "REMOVER_VERIFICACAO_EMPRESA",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: verificada ? "verificar_empresa" : "remover_verificacao_empresa",
             entidadeTipo: "empresa",
             entidadeId: empresa.id,
             descricao: verificada
                 ? `Empresa ${empresa.razaoSocial} recebeu o selo de verificada.`
                 : `Selo de verificada removido da empresa ${empresa.razaoSocial}.`,
-            metadata: {
-                before: { empresaVerificada: estadoAnterior },
-                after: { empresaVerificada: empresa.empresaVerificada }
+            metadados: {
+                antes: { empresaVerificada: estadoAnterior },
+                depois: { empresaVerificada: empresa.empresaVerificada }
             },
             ip: contexto.ip,
             userAgent: contexto.userAgent
@@ -136,35 +132,33 @@ class AdminEmpresaService {
     }
 
     /**
-     * Suspensão/reativação administrativa (Fase G) — ação isolada, sem
-     * efeito cascata sobre as vagas da empresa. Usa campos próprios
-     * (suspensoPor/suspensoEm/motivoSuspensao), nunca avaliadoPor/
-     * avaliadoEm/motivoReprovacao, que continuam representando só a
-     * avaliação cadastral inicial.
+     * Suspensão e reativação administrativa, sem efeito em cascata sobre as vagas da empresa. Usa
+     * campos próprios (`suspensoPorId`, `suspensoEm`, `motivoSuspensao`), e não `avaliadoPorId`,
+     * `avaliadoEm` e `motivoReprovacao`, que representam só a avaliação cadastral inicial.
      */
     async suspenderEmpresa(id, { motivo }, solicitante, contexto = {}) {
         const empresa = await Empresa.findByPk(id);
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         if (empresa.statusAprovacao !== "aprovada") {
-            throw ApiError.conflict(
+            throw ErroApi.conflito(
                 "Só é possível suspender uma empresa que esteja aprovada."
             );
         }
 
         await empresa.update({
             statusAprovacao: "suspensa",
-            suspensoPor: solicitante.id,
+            suspensoPorId: solicitante.id,
             suspensoEm: new Date(),
             motivoSuspensao: motivo || null
         });
 
         await NotificacaoService.criar({
             usuarioId: empresa.usuarioId,
-            tipo: "Moderacao",
+            tipo: "moderacao",
             titulo: "Empresa suspensa",
             descricao: `Sua empresa foi suspensa pela moderação. Motivo: ${motivo || "não informado"}.`,
             subtipo: "empresa_suspensa",
@@ -172,34 +166,33 @@ class AdminEmpresaService {
             entidadeId: empresa.usuarioId
         });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "SUSPENDER_EMPRESA",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: "suspender_empresa",
             entidadeTipo: "empresa",
             entidadeId: empresa.id,
             descricao: `Empresa ${empresa.razaoSocial} foi suspensa.`,
-            metadata: {
-                before: { statusAprovacao: "aprovada" },
-                after: { statusAprovacao: "suspensa" },
-                reason: motivo || null
+            metadados: {
+                antes: { statusAprovacao: "aprovada" },
+                depois: { statusAprovacao: "suspensa" },
+                motivo: motivo || null
             },
             ip: contexto.ip,
             userAgent: contexto.userAgent
         });
 
-        // Fase 9 (Bloco 3): diferente de conta bloqueada, o login da
-        // empresa continua funcionando — mas o e-mail garante que ela
-        // saiba do motivo mesmo sem abrir o painel. Best-effort, depois de
-        // tudo já persistido.
+        // Diferente de conta bloqueada, o login da empresa continua funcionando, mas o e-mail
+        // garante que ela saiba o motivo mesmo sem abrir o painel. Enviado sem garantia, depois de
+        // tudo já gravado.
         const usuarioDaEmpresa = await Usuario.findByPk(empresa.usuarioId, {
             attributes: ["id", "nome", "email"]
         });
         if (usuarioDaEmpresa) {
-            await avisarPorEmailBestEffort({
+            await tentarAvisarPorEmail({
                 usuarioId: usuarioDaEmpresa.id,
                 email: usuarioDaEmpresa.email,
                 nome: usuarioDaEmpresa.nome,
-                template: templateEmpresaSuspensa({ nome: usuarioDaEmpresa.nome, motivo: motivo || null }),
+                template: modeloEmpresaSuspensa({ nome: usuarioDaEmpresa.nome, motivo: motivo || null }),
                 tag: "empresa-suspensa",
                 acao: "aviso_empresa_suspensa",
                 servico: "AdminEmpresaService"
@@ -213,23 +206,23 @@ class AdminEmpresaService {
         const empresa = await Empresa.findByPk(id);
 
         if (!empresa) {
-            throw ApiError.notFound("Empresa não encontrada.");
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
         }
 
         if (empresa.statusAprovacao !== "suspensa") {
-            throw ApiError.conflict(
+            throw ErroApi.conflito(
                 "Só é possível reativar uma empresa que esteja suspensa."
             );
         }
 
-        // suspensoPor/suspensoEm/motivoSuspensao NÃO são apagados aqui —
+        // suspensoPorId/suspensoEm/motivoSuspensao não são apagados aqui:
         // ficam como histórico de que a empresa já foi suspensa antes,
         // mesmo padrão de motivoReprovacao sobrevivendo a uma aprovação.
         await empresa.update({ statusAprovacao: "aprovada" });
 
         await NotificacaoService.criar({
             usuarioId: empresa.usuarioId,
-            tipo: "Moderacao",
+            tipo: "moderacao",
             titulo: "Empresa reativada",
             descricao: "Sua empresa foi reativada pela moderação e voltou a operar normalmente.",
             subtipo: "empresa_reativada",
@@ -237,15 +230,15 @@ class AdminEmpresaService {
             entidadeId: empresa.usuarioId
         });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: "REATIVAR_EMPRESA",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: "reativar_empresa",
             entidadeTipo: "empresa",
             entidadeId: empresa.id,
             descricao: `Empresa ${empresa.razaoSocial} foi reativada.`,
-            metadata: {
-                before: { statusAprovacao: "suspensa" },
-                after: { statusAprovacao: "aprovada" }
+            metadados: {
+                antes: { statusAprovacao: "suspensa" },
+                depois: { statusAprovacao: "aprovada" }
             },
             ip: contexto.ip,
             userAgent: contexto.userAgent

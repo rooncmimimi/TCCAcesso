@@ -3,15 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, UserX } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
-import { urlArquivo } from "@/services/uploads.service";
-import { initials } from "@/contexts/SessionContext";
+import { urlArquivo } from "@/utils/arquivos";
+import { iniciaisDoNome } from "@/utils/formatacao";
 
 export const Route = createFileRoute("/configuracoes/bloqueados")({
   head: () => ({
@@ -41,8 +41,7 @@ function UsuariosBloqueados() {
     mutationFn: (usuarioId: string) => bloqueioService.desbloquear(usuarioId),
     onSuccess: (_dados, usuarioId) => {
       const pessoa = data?.dados.find((u) => u.id === usuarioId);
-      // Fase 9, Bloco 7: o toast já é lido automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success(pessoa ? `${pessoa.nome} foi desbloqueado(a).` : "Usuário desbloqueado.");
       void queryClient.invalidateQueries({ queryKey: CHAVE });
     },
@@ -52,7 +51,7 @@ function UsuariosBloqueados() {
   const bloqueados = data?.dados ?? [];
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/configuracoes/privacidade"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -90,7 +89,7 @@ function UsuariosBloqueados() {
                   <Avatar className="size-11 shrink-0">
                     {pessoa.fotoPerfil && <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />}
                     <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-                      {initials(pessoa.nome)}
+                      {iniciaisDoNome(pessoa.nome)}
                     </AvatarFallback>
                   </Avatar>
                   <p className="min-w-0 truncate font-semibold">{pessoa.nome}</p>
@@ -114,6 +113,6 @@ function UsuariosBloqueados() {
           )}
         </CardContent>
       </Card>
-    </AppShell>
+    </EstruturaApp>
   );
 }

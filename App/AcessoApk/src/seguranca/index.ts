@@ -1,5 +1,5 @@
 export * from "./types";
-export { getBloqueioBiometricoAtivo, setBloqueioBiometricoAtivo } from "./segurancaStorage";
+export { obterBloqueioBiometricoAtivo, definirBloqueioBiometricoAtivo } from "./armazenamentoSeguranca";
 export { coletarMeusDados, exportarECompartilhar } from "./exportarDados";
 export { SegurancaProvider } from "./SegurancaProvider";
 export { useSeguranca } from "./useSeguranca";

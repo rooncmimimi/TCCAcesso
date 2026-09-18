@@ -1,5 +1,6 @@
 import { body, param } from "express-validator";
 
+/** Exige que o parâmetro de rota `nome` (por padrão `id`) seja um UUID. */
 export const validarUuidParam = (nome = "id") => [
     param(nome).isUUID().withMessage("Identificador inválido.")
 ];

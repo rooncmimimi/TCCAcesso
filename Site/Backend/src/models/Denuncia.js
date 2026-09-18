@@ -1,13 +1,12 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: denuncias (migration 0020)
+ * Tabela `denuncias`: a fila de moderação.
  *
- * Estrutura polimórfica: entidade_id não tem FK real, porque pode
- * apontar para postagens, comentarios, usuarios, mensagens, vagas ou
- * empresas dependendo de entidade_tipo. A existência e a posse da
- * entidade são validadas em DenunciaService, não pelo banco.
+ * `entidadeId` não tem chave estrangeira porque pode apontar para postagem, comentário, usuário,
+ * mensagem, vaga ou empresa, conforme `entidadeTipo`. A existência e a posse da entidade são
+ * conferidas no `DenunciaService`, não pelo banco.
  */
 const Denuncia = sequelize.define(
     "Denuncia",
@@ -17,34 +16,23 @@ const Denuncia = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-        // Migration 0036 (Fase 5): antes NOT NULL + ON DELETE CASCADE — se
-        // o denunciante excluísse a própria conta, a denúncia inteira
-        // desaparecia, mesmo já resolvida e mesmo contra outra pessoa.
-        // Agora nullable + ON DELETE SET NULL (mesmo padrão de
-        // `adminResponsavelId`, logo abaixo): a denúncia sobrevive à
-        // exclusão do denunciante.
+
+        // Fica nulo se quem denunciou excluir a conta: a denúncia continua na fila e pode ser
+        // resolvida, só não há ninguém para avisar do desfecho.
         denuncianteId: {
-            field: "denunciante_id",
-            type: DataTypes.UUID,
-            allowNull: true
+            type: DataTypes.UUID
         },
+
         entidadeTipo: {
-            field: "entidade_tipo",
-            type: DataTypes.ENUM(
-                "postagem",
-                "comentario",
-                "usuario",
-                "mensagem",
-                "vaga",
-                "empresa"
-            ),
+            type: DataTypes.ENUM("postagem", "comentario", "usuario", "mensagem", "vaga", "empresa"),
             allowNull: false
         },
+
         entidadeId: {
-            field: "entidade_id",
             type: DataTypes.UUID,
             allowNull: false
         },
+
         motivo: {
             type: DataTypes.ENUM(
                 "spam",
@@ -58,42 +46,31 @@ const Denuncia = sequelize.define(
             ),
             allowNull: false
         },
+
         descricao: {
-            type: DataTypes.TEXT,
-            allowNull: true
+            type: DataTypes.TEXT
         },
+
         status: {
-            type: DataTypes.ENUM(
-                "pendente",
-                "em_analise",
-                "resolvida",
-                "rejeitada",
-                "arquivada"
-            ),
+            type: DataTypes.ENUM("pendente", "em_analise", "resolvida", "rejeitada", "arquivada"),
             allowNull: false,
             defaultValue: "pendente"
         },
-        adminResponsavelId: {
-            field: "admin_responsavel_id",
-            type: DataTypes.UUID,
-            allowNull: true
+
+        administradorResponsavelId: {
+            type: DataTypes.UUID
         },
-        observacaoAdmin: {
-            field: "observacao_admin",
-            type: DataTypes.TEXT,
-            allowNull: true
+
+        observacaoAdministrador: {
+            type: DataTypes.TEXT
         },
+
         resolvidoEm: {
-            field: "resolvido_em",
-            type: DataTypes.DATE,
-            allowNull: true
+            type: DataTypes.DATE
         }
     },
     {
-        tableName: "denuncias",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "denuncias"
     }
 );
 

@@ -1,31 +1,30 @@
 import { Op } from "sequelize";
 
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import {
     Usuario,
     Empresa,
     Candidato,
     Postagem,
     PostagemAnexo,
-    Denuncia,
-    Arquivo
+    Denuncia
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirAlvoDeAcaoAdministrativa } from "../utils/authorization.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirAlvoDeAcaoAdministrativa } from "../utils/autorizacao.js";
 import NotificacaoService from "./NotificacaoService.js";
-import AdminAuditService from "./AdminAuditService.js";
-import UploadService from "./UploadService.js";
-import { avisarPorEmailBestEffort } from "../utils/avisoEmailBestEffort.js";
-import { templateContaBloqueada } from "../utils/emailTemplates.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
+import ArmazenamentoService from "./ArmazenamentoService.js";
+import { tentarAvisarPorEmail } from "../utils/avisoEmail.js";
+import { modeloContaBloqueada } from "../utils/modelosEmail.js";
 
 /**
- * Painel administrativo — moderação de usuários (bloqueio, exclusão
+ * Painel administrativo: moderação de usuários (bloqueio, exclusão
  * definitiva) e o núcleo de exclusão de conta compartilhado com o
- * self-service (`authService.excluirConta`).
+ * self-service (`AutenticacaoService.excluirConta`).
  *
- * Todas as rotas que chegam aqui já passaram por authMiddleware +
- * rbacMiddleware("administrador"); ainda assim os métodos nunca
+ * Todas as rotas que chegam aqui já passaram por autenticacaoMiddleware +
+ * exigirTipoUsuarioMiddleware("administrador"); ainda assim os métodos nunca
  * confiam em identificadores do corpo da requisição para escalonar
  * privilégios (defesa em profundidade).
  */
@@ -59,7 +58,7 @@ class AdminUsuarioService {
             },
             limit: limite,
             offset,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         return montarResposta("usuarios", rows, count, pagina, limite);
@@ -80,7 +79,7 @@ class AdminUsuarioService {
         const usuario = await Usuario.findByPk(id);
 
         if (!usuario) {
-            throw ApiError.notFound("Usuário não encontrado.");
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
         garantirAlvoDeAcaoAdministrativa(usuario, solicitante, {
@@ -115,7 +114,7 @@ class AdminUsuarioService {
 
         await NotificacaoService.criar({
             usuarioId: usuario.id,
-            tipo: "Sistema",
+            tipo: "sistema",
             titulo: novoEstado ? "Conta bloqueada" : "Conta reativada",
             descricao: novoEstado
                 ? `Sua conta foi bloqueada. Motivo: ${motivo || "não informado"}.`
@@ -123,35 +122,32 @@ class AdminUsuarioService {
             subtipo: novoEstado ? "conta_bloqueada" : "conta_reativada"
         });
 
-        await AdminAuditService.log({
-            adminId: solicitante.id,
-            acao: novoEstado ? "BLOQUEAR_USUARIO" : "REATIVAR_USUARIO",
+        await AdminAuditoriaService.registrar({
+            administradorId: solicitante.id,
+            acao: novoEstado ? "bloquear_usuario" : "reativar_usuario",
             entidadeTipo: "usuario",
             entidadeId: usuario.id,
             descricao: novoEstado
                 ? `Usuário ${usuario.nome} (${usuario.email}) foi bloqueado.`
                 : `Usuário ${usuario.nome} (${usuario.email}) foi reativado.`,
-            metadata: {
-                before: estadoAnterior,
-                after: { bloqueado: novoEstado, ativo: !novoEstado },
-                reason: novoEstado ? motivo || null : null
+            metadados: {
+                antes: estadoAnterior,
+                depois: { bloqueado: novoEstado, ativo: !novoEstado },
+                motivo: novoEstado ? motivo || null : null
             },
             ip: contexto.ip,
             userAgent: contexto.userAgent
         });
 
-        // Fase 9 (Bloco 3): só no bloqueio, nunca na reativação — quem
-        // volta a ter acesso já vai ver a notificação in-app normalmente
-        // (o login funciona de novo), diferente de quem acabou de ser
-        // bloqueado e não tem mais nenhum jeito de ver um aviso dentro do
-        // app. Best-effort, depois de tudo já persistido — uma falha da
-        // Brevo nunca desfaz nem atrasa o bloqueio em si.
+        // Só no bloqueio, nunca na reativação: quem volta a ter acesso vê a notificação dentro do
+        // app, mas quem foi bloqueado não tem mais como ver um aviso lá. Enviado sem garantia,
+        // depois de tudo já gravado; uma falha da Brevo nunca desfaz nem atrasa o bloqueio.
         if (novoEstado) {
-            await avisarPorEmailBestEffort({
+            await tentarAvisarPorEmail({
                 usuarioId: usuario.id,
                 email: usuario.email,
                 nome: usuario.nome,
-                template: templateContaBloqueada({ nome: usuario.nome, motivo: motivo || null }),
+                template: modeloContaBloqueada({ nome: usuario.nome, motivo: motivo || null }),
                 tag: "conta-bloqueada",
                 acao: "aviso_conta_bloqueada",
                 servico: "AdminUsuarioService"
@@ -166,16 +162,13 @@ class AdminUsuarioService {
     }
 
     /**
-     * Reúne toda referência a arquivo do Storage pertencente à conta —
-     * usada só para saber o que apagar do bucket ANTES de excluir a
-     * conta (as linhas do banco em si já são CASCADE, ver removerUsuario).
+     * Reúne as referências a arquivos do Storage da conta, só para saber o que apagar do bucket
+     * antes de excluir a conta (as linhas do banco saem pelas próprias FKs, em
+     * `excluirContaDefinitivamente`).
      *
-     * `raw: true` em toda leitura aqui é proposital: foto de
-     * perfil/capa/logo/capa de empresa e imagem de postagem/anexo têm
-     * getter que resolve para a URL pública final — para remover do
-     * bucket precisamos do CAMINHO cru salvo no banco, não da URL
-     * resolvida (mesma técnica já usada em UsuarioController ao trocar
-     * foto/capa).
+     * `raw: true` em toda leitura daqui é proposital: foto de perfil, capa, logo e capa de empresa
+     * têm getter que devolve a URL pública final, e para remover do bucket é preciso o caminho cru
+     * salvo no banco (a mesma técnica de `UsuarioController` ao trocar foto e capa).
      */
     async _coletarArquivosDaConta(usuario) {
         const itens = [];
@@ -213,59 +206,23 @@ class AdminUsuarioService {
             adicionar(candidato?.curriculo, true, "candidato.curriculo");
         }
 
-        // Catálogo geral de uploads (cobre foto/capa/logo já tratados acima
-        // de novo — a deduplicação por caminho evita chamada repetida —
-        // mais certificados, documentos e postagens que só existem aqui).
-        const CATEGORIAS_PRIVADAS = new Set(["curriculo", "certificado", "documento"]);
-        const arquivos = await Arquivo.findAll({
-            where: { usuarioId: usuario.id },
-            attributes: ["categoria", "url"],
-            raw: true
-        });
-        for (const arquivo of arquivos) {
-            adicionar(
-                arquivo.url,
-                CATEGORIAS_PRIVADAS.has(arquivo.categoria),
-                `arquivo:${arquivo.categoria}`
-            );
-        }
-
-        // Imagens de postagem e anexos — cobertos separadamente porque nem
-        // toda imagem de postagem necessariamente passa pelo catálogo
-        // `arquivos` (o campo `imagem` da própria postagem é escrito à
-        // parte, ver PostagemController).
-        //
-        // Fase 7: anexo de postagem passou a poder estar no bucket
-        // PRIVADO (`privado=true`) — remover do bucket errado falha
-        // silenciosamente (best-effort) e o arquivo vira órfão pra
-        // sempre. `postagens.imagem` não tem coluna própria de
-        // privacidade (nunca diverge do anexo cujo caminho é igual —
-        // ver migration 0039): resolve pelo anexo correspondente.
+        // Anexos das publicações da conta, todos no bucket privado.
         const postagens = await Postagem.findAll({
             where: { usuarioId: usuario.id },
-            attributes: ["id", "imagem"],
+            attributes: ["id"],
             raw: true
         });
 
-        let anexos = [];
         if (postagens.length > 0) {
-            anexos = await PostagemAnexo.findAll({
-                where: { postagemId: postagens.map((p) => p.id) },
-                attributes: ["id", "url", "privado"],
+            const anexos = await PostagemAnexo.findAll({
+                where: { postagemId: postagens.map((postagem) => postagem.id) },
+                attributes: ["id", "url"],
                 raw: true
             });
-            for (const anexo of anexos) {
-                adicionar(anexo.url, anexo.privado, `postagem_anexo:${anexo.id}`);
-            }
-        }
 
-        for (const postagem of postagens) {
-            const anexoCorrespondente = anexos.find((anexo) => anexo.url === postagem.imagem);
-            adicionar(
-                postagem.imagem,
-                anexoCorrespondente?.privado ?? false,
-                `postagem:${postagem.id}.imagem`
-            );
+            for (const anexo of anexos) {
+                adicionar(anexo.url, true, `postagem_anexo:${anexo.id}`);
+            }
         }
 
         return itens;
@@ -275,7 +232,7 @@ class AdminUsuarioService {
      * Remove do Storage os arquivos coletados por `_coletarArquivosDaConta`.
      * Best-effort e nunca lança: uma falha aqui não pode impedir a
      * exclusão da conta (mesmo princípio já usado em
-     * `NotificacaoService.criar` — infraestrutura secundária nunca
+     * `NotificacaoService.criar`; infraestrutura secundária nunca
      * derruba a ação principal). Cada item é logado individualmente
      * (sucesso ou falha, com motivo) para permitir limpeza manual
      * posterior de qualquer blob que não tenha sido removido.
@@ -283,7 +240,7 @@ class AdminUsuarioService {
     async _removerArquivosDoStorage(itens, usuarioId) {
         const resultados = await Promise.allSettled(
             itens.map((item) =>
-                UploadService.removerArquivoFisico(item.caminho, {
+                ArmazenamentoService.removerArquivoFisico(item.caminho, {
                     privado: item.privado
                 })
             )
@@ -331,26 +288,18 @@ class AdminUsuarioService {
     }
 
     /**
-     * Núcleo da exclusão DEFINITIVA de uma conta — limpeza do Storage +
-     * arquivamento de denúncias pendentes contra a conta + `destroy()`,
-     * tudo atômico. Compartilhado pelos dois caminhos ativos de exclusão
-     * (Fase 5): `removerUsuario` (administrador, abaixo) e
-     * `authService.excluirConta` (o próprio usuário) — antes desta
-     * extração, o caminho self-service tinha uma implementação própria,
-     * mais simples, que não limpava Storage nem arquivava denúncias.
-     * Nenhum outro lugar deve reimplementar esta lógica.
+     * Núcleo da exclusão definitiva de uma conta: limpeza do Storage, arquivamento das denúncias
+     * pendentes contra a conta e `destroy()`, com o banco numa única transação. Usado pelos dois
+     * caminhos de exclusão, `removerUsuario` (administrador, abaixo) e
+     * `AutenticacaoService.excluirConta` (o próprio usuário); nenhum outro lugar deve reimplementar
+     * esta lógica.
      *
-     * Autorização e log de auditoria são responsabilidade de QUEM CHAMA:
-     * este método não decide se a ação é permitida (isso já aconteceu
-     * antes, via senha atual ou `garantirAlvoDeAcaoAdministrativa`), e só
-     * cria log de auditoria se o chamador pedir via `dentroDaTransacao`
-     * (só faz sentido para a ação administrativa — exclusão pelo próprio
-     * usuário não é uma "ação administrativa" a ser auditada como tal).
-     *
-     * `dentroDaTransacao`, se fornecido, roda ANTES do commit, na MESMA
-     * transação do `destroy()` — preserva a atomicidade original entre
-     * "conta excluída" e "log de auditoria escrito" (uma falha no log
-     * desfaz a exclusão inteira, nunca deixa a conta excluída sem log).
+     * Autorização e log de auditoria ficam com quem chama: este método não decide se a ação é
+     * permitida (isso já aconteceu antes, pela senha atual ou por
+     * `garantirAlvoDeAcaoAdministrativa`) e só grava log se o chamador passar `dentroDaTransacao`,
+     * o que só faz sentido na ação administrativa. `dentroDaTransacao` roda antes do commit, na
+     * mesma transação do `destroy()`: se o log falhar, a exclusão inteira é desfeita, e a conta
+     * nunca fica excluída sem log.
      */
     async excluirContaDefinitivamente(usuario, { dentroDaTransacao } = {}) {
         const dadosRemovidos = {
@@ -359,15 +308,15 @@ class AdminUsuarioService {
             email: usuario.email
         };
 
-        // Empresa vinculada (se houver) — reaproveitada tanto para a
+        // Empresa vinculada (se houver): reaproveitada tanto para a
         // limpeza de Storage (logo/capa) quanto para arquivar denúncias
-        // pendentes contra a EMPRESA (não só contra o usuário-dono).
+        // pendentes contra a empresa (não só contra o usuário-dono).
         const empresaVinculada =
             usuario.tipoUsuario === "empresa"
                 ? await Empresa.findOne({ where: { usuarioId: usuario.id } })
                 : null;
 
-        // 1) Limpeza do Storage ANTES de excluir — best-effort, nunca
+        // 1) Limpeza do Storage antes de excluir: best-effort, nunca
         // bloqueia a exclusão da conta (ver `_removerArquivosDoStorage`).
         // Feita fora de qualquer transação de banco: são chamadas de rede
         // ao Supabase Storage, nunca devem segurar uma transação aberta.
@@ -379,21 +328,21 @@ class AdminUsuarioService {
 
         // 2) Exclusão do banco + arquivamento de denúncias pendentes contra
         // a conta, atômicos numa única transação (mesmo padrão de
-        // `RefreshTokenService.rotacionar`): se qualquer parte falhar,
+        // `SessaoService.rotacionar`): se qualquer parte falhar,
         // nada é persistido.
         const transaction = await sequelize.transaction();
         let denunciasArquivadas = 0;
 
         try {
-            // Corrida: duas exclusões da MESMA conta ao mesmo tempo (ex.:
+            // Corrida: duas exclusões da mesma conta ao mesmo tempo (ex.:
             // usuário clica "excluir conta" em duas abas, ou o próprio
-            // usuário e um admin simultaneamente) — sem isso, a segunda
+            // usuário e um admin simultaneamente); sem isso, a segunda
             // chamada chega até aqui, faz `usuario.destroy()` numa linha
             // que a primeira já apagou (um DELETE sem linhas afetadas não
             // é erro no Postgres/Sequelize) e devolve 200 de novo, como
             // se tivesse excluído algo pela segunda vez. Trava a linha
-            // (mesmo padrão de `RefreshTokenService.rotacionar`) e
-            // confirma que ainda existe antes de prosseguir — a segunda
+            // (mesmo padrão de `SessaoService.rotacionar`) e
+            // confirma que ainda existe antes de prosseguir: a segunda
             // chamada encontra a linha já removida e recebe um 404 limpo.
             const usuarioTravado = await Usuario.findByPk(usuario.id, {
                 transaction,
@@ -401,7 +350,7 @@ class AdminUsuarioService {
             });
 
             if (!usuarioTravado) {
-                throw ApiError.notFound("Usuário não encontrado.");
+                throw ErroApi.naoEncontrado("Usuário não encontrado.");
             }
 
             const entidadeTipoAlvo = usuario.tipoUsuario === "empresa" ? "empresa" : "usuario";
@@ -410,13 +359,13 @@ class AdminUsuarioService {
 
             if (entidadeIdAlvo) {
                 // `denuncias.entidade_id` é polimórfico e sem FK real, de
-                // propósito (schema) — não é apagado pelo CASCADE. Sem
+                // propósito (schema): não é apagado pelo CASCADE. Sem
                 // isso, uma denúncia pendente contra a conta excluída
                 // ficaria parada na fila de moderação apontando para nada.
                 const [linhasAtualizadas] = await Denuncia.update(
                     {
                         status: "arquivada",
-                        observacaoAdmin:
+                        observacaoAdministrador:
                             "Encerrada automaticamente: a conta denunciada foi excluída."
                     },
                     {
@@ -431,17 +380,13 @@ class AdminUsuarioService {
                 denunciasArquivadas = linhasAtualizadas;
             }
 
-            // `admin_audit_logs` (entradas PASSADAS sobre esta conta, ex.:
-            // um bloqueio anterior), `denuncias.admin_responsavel_id`
-            // (quando esta conta já atuou como admin resolvendo uma
-            // denúncia) e `denuncias.denunciante_id` (quando esta conta
-            // denunciou outra pessoa — Fase 5, migration 0036) são
-            // deliberadamente NÃO tocados aqui — sobrevivem com
-            // `SET NULL`/snapshot em `metadata`, porque um log de
-            // auditoria (ou uma denúncia já registrada) precisa continuar
-            // legível mesmo depois que a conta que ele descreve deixa de
-            // existir. `usuario.destroy()` abaixo já respeita isso via as
-            // FKs do próprio banco.
+            // `registros_auditoria` (entradas anteriores sobre esta conta, como um bloqueio),
+            // `denuncias.administrador_responsavel_id` (quando esta conta resolveu denúncias como
+            // administradora) e `denuncias.denunciante_id` (quando denunciou outra pessoa,
+            // não são tocados aqui: sobrevivem com `SET NULL` ou retrato em
+            // `metadados`, porque um log de auditoria ou uma denúncia registrada precisa continuar
+            // legível depois que a conta deixa de existir. O `usuario.destroy()` abaixo respeita
+            // isso pelas FKs do banco.
             await usuarioTravado.destroy({ transaction });
 
             if (dentroDaTransacao) {
@@ -476,16 +421,16 @@ class AdminUsuarioService {
                 relatorioStorage,
                 denunciasArquivadas
             }) => {
-                await AdminAuditService.log(
+                await AdminAuditoriaService.registrar(
                     {
-                        adminId: solicitante.id,
-                        acao: "EXCLUIR_USUARIO",
+                        administradorId: solicitante.id,
+                        acao: "excluir_usuario",
                         entidadeTipo: "usuario",
                         entidadeId: id,
                         descricao: `Usuário ${dadosRemovidos.nome} (${dadosRemovidos.email}) foi excluído permanentemente.`,
-                        metadata: {
+                        metadados: {
                             usuario: dadosRemovidos,
-                            reason: motivo || null,
+                            motivo: motivo || null,
                             denunciasArquivadas,
                             storage: {
                                 totalArquivos: relatorioStorage.length,

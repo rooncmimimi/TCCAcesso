@@ -1,11 +1,8 @@
 /**
- * Cidades brasileiras via API pública do IBGE — usada só para sugerir/
- * autocompletar, nunca como fonte de verdade obrigatória: o campo de
- * cidade continua sendo texto livre em todo o app (ver CidadeAutocomplete).
- *
- * Cache em memória (módulo, não localStorage) — dura a sessão da aba e é
- * compartilhado por todos os formulários, então o IBGE só é consultado uma
- * vez por UF (ou uma vez no total, no modo "todas as cidades do Brasil").
+ * Cidades brasileiras pela API pública do IBGE, só para sugerir e autocompletar: o campo de cidade
+ * continua sendo texto livre em todo o Site (ver `CidadeAutocomplete`). O cache fica em memória no
+ * módulo, dura a sessão da aba e é compartilhado pelos formulários, então o IBGE é consultado uma
+ * vez por UF (ou uma vez no total, para todas as cidades do Brasil).
  */
 const BASE_URL = "https://servicodados.ibge.gov.br/api/v1/localidades";
 
@@ -17,7 +14,7 @@ interface MunicipioIbge {
   nome: string;
 }
 
-/** Lista de cidades de uma UF (ex.: "SP") — endpoint leve (poucos KB). */
+/** Lista de cidades de uma UF (ex.: "SP"); endpoint leve (poucos KB). */
 export async function buscarCidadesPorUf(uf: string): Promise<string[]> {
   const sigla = uf.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(sigla)) return [];
@@ -35,7 +32,7 @@ export async function buscarCidadesPorUf(uf: string): Promise<string[]> {
 }
 
 /**
- * Todas as cidades do Brasil (~5.500) — endpoint pesado (alguns MB), por
+ * Todas as cidades do Brasil (~5.500): endpoint pesado (alguns MB), por
  * isso só deve ser chamado sob demanda (ex.: filtro sem campo de estado),
  * nunca no carregamento da página. Buscado e cacheado uma única vez.
  */

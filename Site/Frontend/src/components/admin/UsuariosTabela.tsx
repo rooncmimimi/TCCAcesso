@@ -26,7 +26,7 @@ import {
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
-import { useSession } from "@/lib/session";
+import { useSessao } from "@/hooks/useSessao";
 import {
   ativarUsuario,
   desativarUsuario,
@@ -37,8 +37,9 @@ import {
 
 const TIPOS = ["todos", "candidato", "empresa", "administrador"] as const;
 
+/** Usuários da plataforma, com filtros, bloqueio e desbloqueio, exclusão e link para o detalhe. */
 export function UsuariosTabela() {
-  const { user } = useSession();
+  const { usuario: usuarioLogado } = useSessao();
 
   const queryClient = useQueryClient();
 
@@ -58,7 +59,7 @@ export function UsuariosTabela() {
         nome: busca || undefined,
         tipoUsuario: tipo === "todos" ? undefined : tipo,
       }),
-    enabled: Boolean(user),
+    enabled: Boolean(usuarioLogado),
   });
 
   const mutacao = useMutation({
@@ -172,16 +173,10 @@ export function UsuariosTabela() {
                       {usuario.nome}
                     </Link>
                   </TableCell>
-                  {/* `Table` (components/ui/table.tsx) já envolve a tabela num
-                      contêiner com scroll horizontal — mas só entra em ação se
-                      o conteúdo da célula puder ficar mais largo que a coluna.
-                      `break-all` fazia o e-mail quebrar a CADA caractere numa
-                      coluna estreita (item 5 da auditoria do Site: tabela
-                      ilegível em telas menores), sem nunca deixar a tabela
-                      "vazar" o bastante para o scroll aparecer. `whitespace-nowrap`
-                      deixa o e-mail inteiro numa linha só — a tabela fica mais
-                      larga que a viewport e o scroll horizontal (que já existia)
-                      passa a funcionar de verdade. */}
+                  {/* `whitespace-nowrap` mantém o e-mail numa linha só. A `Table` já tem scroll
+                      horizontal, que só aparece quando o conteúdo passa da largura da coluna;
+                      com `break-all`, o e-mail quebraria a cada caractere e a tabela ficaria
+                      ilegível em telas menores. */}
                   <TableCell className="whitespace-nowrap">{usuario.email}</TableCell>
                   <TableCell className="capitalize">{usuario.tipoUsuario}</TableCell>
                   <TableCell>
@@ -207,11 +202,11 @@ export function UsuariosTabela() {
                           </>
                         )}
                       </Button>
-                      {/* Excluir conta é irreversível — nunca oferecida contra a
-                          própria conta do admin nem contra outra conta
-                          administrativa (o backend já recusa os dois casos;
-                          aqui só evitamos um clique com resultado garantido). */}
-                      {usuario.tipoUsuario !== "administrador" && usuario.id !== user?.id && (
+                      {/* Excluir conta é irreversível e nunca é oferecida contra a própria
+                          conta do admin nem contra outra conta administrativa (o backend já
+                          recusa os dois casos; aqui só evitamos um clique com resultado
+                          garantido). */}
+                      {usuario.tipoUsuario !== "administrador" && usuario.id !== usuarioLogado?.id && (
                         <Button
                           size="sm"
                           variant="destructive"

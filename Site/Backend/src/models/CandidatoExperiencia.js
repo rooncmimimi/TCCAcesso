@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: candidato_experiencias (migration 0004)
+ * Tabela: candidato_experiencias
  */
 const CandidatoExperiencia = sequelize.define(
     "CandidatoExperiencia",
@@ -12,8 +12,7 @@ const CandidatoExperiencia = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-        candidatoId: {
-            field: "candidato_id",
+        candidatoId: {
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -31,13 +30,11 @@ const CandidatoExperiencia = sequelize.define(
         modalidade: {
             type: DataTypes.STRING(50)
         },
-        dataInicio: {
-            field: "data_inicio",
+        dataInicio: {
             type: DataTypes.DATEONLY,
             allowNull: false
         },
-        dataFim: {
-            field: "data_fim",
+        dataFim: {
             type: DataTypes.DATEONLY
         },
         atual: {
@@ -50,10 +47,7 @@ const CandidatoExperiencia = sequelize.define(
         }
     },
     {
-        tableName: "candidato_experiencias",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "candidato_experiencias",
     }
 );
 

@@ -1,11 +1,11 @@
 import { body, param } from "express-validator";
 
-const MODALIDADES = ["Presencial", "Hibrido", "Remoto"];
-const CONTRATOS = ["CLT", "PJ", "Estagio", "JovemAprendiz", "Temporario"];
-const STATUS = ["Aberta", "Pausada", "Encerrada"];
+const MODALIDADES = ["presencial", "hibrido", "remoto"];
+const CONTRATOS = ["clt", "pj", "estagio", "jovem_aprendiz", "temporario"];
+const STATUS = ["aberta", "pausada", "encerrada"];
 const PUBLICO_ALVO = ["geral", "pcd", "cinquenta_mais", "pcd_cinquenta_mais"];
 
-// Lista fechada — os recursos de acessibilidade da vaga não são texto
+// Lista fechada: os recursos de acessibilidade da vaga não são texto
 // livre (esse já existe no campo `acessibilidade`). "outro" existe para
 // cobrir um recurso relevante que não está nesta lista, sem virar texto
 // livre disfarçado: o detalhe complementar vai no campo `acessibilidade`.
@@ -63,8 +63,6 @@ const camposVaga = (obrigatorio) => [
         .withMessage("Use a sigla do estado (ex.: SP)."),
 
     body("cargaHoraria").optional({ values: "falsy" }).trim().isLength({ max: 50 }),
-
-    body("exclusivaPcd").optional().isBoolean(),
 
     body("publicoAlvo").optional({ values: "falsy" }).isIn(PUBLICO_ALVO).withMessage("Público-alvo inválido."),
 

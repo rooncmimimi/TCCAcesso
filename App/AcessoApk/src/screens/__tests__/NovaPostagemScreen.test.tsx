@@ -14,15 +14,15 @@ jest.mock("../../feed", () => ({
   },
 }));
 
-// Preserva o `AccessibilityProvider`/`useAccessibility` reais (mesma técnica
-// de `ResetPasswordScreen.test.tsx`) — troca só `announceForAccessibility`
+// Preserva o `AcessibilidadeProvider`/`useAcessibilidade` reais (mesma técnica
+// de `RedefinirSenhaScreen.test.tsx`): troca só `anunciarParaLeitorDeTela`
 // por um espião.
-jest.mock("../../accessibility", () => ({
-  ...jest.requireActual("../../accessibility"),
-  announceForAccessibility: (...args: unknown[]) => mockAnnounce(...args),
+jest.mock("../../acessibilidade", () => ({
+  ...jest.requireActual("../../acessibilidade"),
+  anunciarParaLeitorDeTela: (...args: unknown[]) => mockAnnounce(...args),
 }));
 
-// Mesma técnica de `CurriculoSecao.test.tsx` (`expo-document-picker`) —
+// Mesma técnica de `SecaoCurriculo.test.tsx` (`expo-document-picker`):
 // espiões simples, sem tentar simular o módulo nativo real.
 jest.mock("expo-image-picker", () => ({
   requestMediaLibraryPermissionsAsync: (...a: unknown[]) => mockRequestMediaLibraryPermissionsAsync(...a),
@@ -32,9 +32,9 @@ jest.mock("expo-image-picker", () => ({
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { AccessibilityProvider } from "../../accessibility";
+import { AcessibilidadeProvider } from "../../acessibilidade";
 import type { AppStackParamList } from "../../navigation/types";
-import { ThemeProvider } from "../../theme";
+import { TemaProvider } from "../../tema";
 import { NovaPostagemScreen } from "../NovaPostagemScreen";
 
 const navigationMock = {
@@ -48,11 +48,11 @@ const imagemSelecionada = {
 
 async function renderTela() {
   const utils = await render(
-    <AccessibilityProvider>
-      <ThemeProvider>
+    <AcessibilidadeProvider>
+      <TemaProvider>
         <NovaPostagemScreen navigation={navigationMock} route={{ key: "NovaPostagem", name: "NovaPostagem" }} />
-      </ThemeProvider>
-    </AccessibilityProvider>,
+      </TemaProvider>
+    </AcessibilidadeProvider>,
   );
   await waitFor(() => expect(utils.toJSON()).not.toBeNull());
   return utils;
@@ -128,7 +128,7 @@ describe("NovaPostagemScreen", () => {
     expect(getByLabelText("Texto da publicação").props.value).toBe("Um texto que não pode se perder.");
   });
 
-  describe("anexos (Fase 20)", () => {
+  describe("anexos", () => {
     it("com o campo de texto vazio, o botão de publicar continua desabilitado (sem nenhuma imagem ainda)", async () => {
       const { getByRole } = await renderTela();
       expect(getByRole("button", { name: "Publicar" }).props.accessibilityState.disabled).toBe(true);

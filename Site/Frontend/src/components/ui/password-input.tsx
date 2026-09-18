@@ -5,14 +5,9 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
 /**
- * Campo de senha com botão de mostrar/ocultar (item 8/9 da auditoria do
- * Site — todo campo de senha da plataforma usa este componente, em vez de
- * cada tela reimplementar o próprio estado de visibilidade).
- *
- * O botão fica DENTRO do campo (não altera o layout ao redor de quem já
- * usa `<Input type="password" />`) e é alcançável por teclado logo depois
- * do campo na ordem natural do DOM — sem `tabIndex`, quem navega só por
- * teclado também consegue conferir a senha digitada (WCAG 2.1.1).
+ * Campo de senha com botão de mostrar e ocultar, usado em todos os campos de senha do Site. O botão
+ * fica dentro do campo, sem mudar o layout, e vem logo depois dele na ordem de tabulação (sem
+ * `tabIndex`), para quem usa só o teclado também conferir a senha (WCAG 2.1.1).
  */
 const PasswordInput = React.forwardRef<HTMLInputElement, Omit<React.ComponentProps<"input">, "type">>(
   ({ className, ...props }, ref) => {

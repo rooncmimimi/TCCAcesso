@@ -1,9 +1,8 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 /**
- * Layout puro de `/admin/usuarios` — mesmo motivo de `admin/denuncias.tsx`:
- * precisa de `<Outlet />` para que `/admin/usuarios/$usuarioId`
- * (usuarios.$usuarioId.tsx, o detalhe) seja de fato renderizado.
+ * Layout de `/admin/usuarios`, pelo mesmo motivo de `admin/denuncias.tsx`: o `<Outlet />` é o que
+ * permite renderizar o detalhe (`usuarios.$usuarioId.tsx`).
  */
 export const Route = createFileRoute("/admin/usuarios")({
   component: () => <Outlet />,

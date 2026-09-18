@@ -1,4 +1,4 @@
-import { formatarData } from "@/utils/format";
+import { formatarData } from "@/utils/formatacao";
 import type { RecursoPerfil } from "@/services/perfil.service";
 import type { Certificado, Experiencia, Formacao, Habilidade } from "@/types";
 

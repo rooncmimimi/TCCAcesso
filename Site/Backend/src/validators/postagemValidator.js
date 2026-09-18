@@ -2,7 +2,7 @@ import { body, param } from "express-validator";
 
 /**
  * `descricoesAnexos` chega como JSON.stringify de um array de strings
- * (multipart não tem tipo array nativo) — cada posição corresponde ao
+ * (multipart não tem tipo array nativo): cada posição corresponde ao
  * anexo de mesmo índice em `arquivos`. Validado como string aqui porque
  * express-validator roda antes da checagem de tipo em `PostagemService`,
  * que faz o `JSON.parse` real e descarta silenciosamente se malformado.
@@ -31,7 +31,7 @@ export const validarAtualizacaoPostagem = [
     body("imagem").optional({ values: "falsy" }).isString().trim()
 ];
 
-/** Edita só a descrição de um anexo — `null`/vazio remove a descrição. */
+/** Edita só a descrição de um anexo. `null`/vazio remove a descrição. */
 export const validarDescricaoAnexo = [
     body("descricao")
         .optional({ nullable: true, values: "falsy" })

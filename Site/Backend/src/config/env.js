@@ -62,18 +62,10 @@ const ehUrlAbsolutaValida = (valor) => {
 const ORIGEM_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i;
 
 /**
- * `FRONTEND_URL` é uma lista (usada para CORS, que legitimamente aceita
- * MAIS de uma origem — ex.: localhost em dev junto com a URL real de
- * produção). Mas para montar links de e-mail (confirmação de cadastro,
- * redefinição de senha) precisa de UMA única URL "canônica" — e pegar
- * sempre a primeira da lista (`[0]`) significa que, se `localhost:5173`
- * ficar na frente por qualquer motivo (ex.: alguém configurou o Render
- * copiando o formato do `.env` local, com produção só ANEXADA depois),
- * todo link de e-mail sai apontando pra localhost mesmo em produção —
- * mesmo com a URL de produção certinha, só que em segundo lugar na mesma
- * variável. Preferir a primeira origem que NÃO é localhost resolve isso
- * sem exigir nenhuma variável nova e sem mudar CORS (que continua usando
- * a lista inteira, sem filtro nenhum).
+ * `FRONTEND_URL` é uma lista, porque o CORS aceita mais de uma origem (localhost em desenvolvimento
+ * junto da URL de produção). Os links de e-mail precisam de uma única URL: usar sempre a primeira
+ * da lista mandaria links para localhost em produção se ela viesse antes. Por isso vale a primeira
+ * origem que não é localhost; o CORS continua usando a lista inteira.
  */
 const escolherOrigemPublica = (lista) => lista.find((url) => !ORIGEM_LOCAL.test(url)) ?? lista[0];
 
@@ -94,8 +86,8 @@ const env = {
 
     jwt: {
         secret: process.env.JWT_SECRET,
-        // Access token de vida curta — a renovação transparente via refresh
-        // token (RefreshTokenService, validade própria de ~30 dias) é quem
+        // Access token de vida curta: a renovação transparente via refresh
+        // token (SessaoService, validade própria de ~30 dias) é quem
         // sustenta a sessão longa do usuário; o access token só precisa
         // durar o suficiente entre duas renovações automáticas.
         expiresIn: process.env.JWT_EXPIRES_IN || "30m"
@@ -108,26 +100,24 @@ const env = {
         ]),
         uploadDir: process.env.UPLOAD_DIR || "uploads",
         maxUploadBytes: Number(process.env.MAX_UPLOAD_BYTES) || 5 * 1024 * 1024,
-        // Vídeo precisa de um teto maior que imagem/documento — mas nunca
+        // Vídeo precisa de um teto maior que imagem/documento, mas nunca
         // acima do limite real do bucket/projeto Supabase (confirme antes de
         // subir esse valor: Storage > bucket > "Restrict file size").
         maxVideoUploadBytes:
             Number(process.env.MAX_VIDEO_UPLOAD_BYTES) || 50 * 1024 * 1024
     },
 
-    // Armazenamento de arquivos enviados (fotos, capas, anexos de postagem,
-    // currículos). Se as três variáveis abaixo estiverem configuradas, os
-    // arquivos vão para o Supabase Storage (persistente, sobrevive a
-    // deploys/restarts). Sem elas, cai no disco local — suficiente para
-    // desenvolvimento, mas NUNCA deve ser usado em produção num host sem
-    // disco persistente (o disco é apagado a cada deploy/restart).
+    // Armazenamento dos arquivos enviados (fotos, capas, anexos de postagem, currículos). Com as
+    // três variáveis abaixo, os arquivos vão para o Supabase Storage, que sobrevive a deploys e
+    // reinícios. Sem elas, vão para o disco local: serve para desenvolvimento, mas nunca para
+    // produção num host sem disco persistente.
     //
-    // Dois buckets, dois propósitos (nunca misturar):
-    // - publicBucket: fotos, capas, logos, anexos de postagem (imagem/vídeo).
-    //   Resolvido de forma síncrona via getPublicUrl — pode ser cacheado.
-    // - privateBucket: currículos e certificados. Nunca resolvido para uma
-    //   URL pública — só via URL assinada (createSignedUrl), gerada sob
-    //   demanda por um endpoint autorizado, nunca persistida no banco.
+    // Dois buckets, com propósitos que não se misturam:
+    // - publicBucket: fotos, capas e logos, resolvidos de forma síncrona via getPublicUrl (podem
+    //   ser cacheados), além de anexos antigos de postagem com `privado = false`;
+    // - privateBucket: currículos, certificados e anexos de postagem. Nunca viram URL pública: só
+    //   URL assinada (createSignedUrl), gerada sob demanda por um endpoint autorizado e nunca
+    //   gravada no banco.
     storage: {
         supabaseUrl: process.env.SUPABASE_URL || null,
         supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || null,
@@ -137,36 +127,27 @@ const env = {
         // Validade da URL assinada de documentos privados (segundos).
         signedUrlExpiresSeconds:
             Number(process.env.SIGNED_URL_EXPIRES_SECONDS) || 300,
-        // Fase 7: validade da URL assinada de mídia de postagem cujo autor
-        // está PÚBLICO/é empresa no momento da leitura — mais longa que
-        // `signedUrlExpiresSeconds` de propósito. Não há ganho de segurança
-        // real em expirar rápido algo que qualquer pessoa já pode ver; uma
-        // validade maior só reduz quantas vezes o backend re-assina a mesma
-        // mídia durante uma sessão normal de navegação no feed. Mídia de
-        // autor PRIVADO continua usando `signedUrlExpiresSeconds` (curta).
+        // Validade da URL assinada da mídia de postagem cujo autor é público ou empresa no momento
+        // da leitura, maior que `signedUrlExpiresSeconds`: não há ganho de segurança em expirar
+        // rápido o que qualquer pessoa pode ver, e uma validade maior reduz quantas vezes a mesma
+        // mídia é assinada durante a navegação. Mídia de autor privado continua com
+        // `signedUrlExpiresSeconds`.
         signedUrlPublicExpiresSeconds:
             Number(process.env.SIGNED_URL_PUBLIC_EXPIRES_SECONDS) || 21600
     },
 
-    // Sugestão de descrição de imagem por IA (OpenRouter) — sempre opcional.
+    // Sugestão de descrição de imagem por IA (OpenRouter): sempre opcional.
     // Sem `apiKey` configurada, o recurso fica indisponível e a aplicação
     // continua funcionando normalmente (descrição manual nunca depende
     // disto). Nunca falha o boot do servidor por causa dessa variável.
     openRouter: {
         apiKey: process.env.OPENROUTER_API_KEY || null,
-        // Lista de modelos gratuitos com visão, em ordem de prioridade —
-        // usa o parâmetro `models` da OpenRouter (não `model`), que tenta
-        // o próximo da lista automaticamente se o anterior estiver fora
-        // do ar, limitado, ou recusar por moderação. Deliberadamente NÃO
-        // usa mais o roteador "openrouter/free": ele pode cair num modelo
-        // sem relação nenhuma com descrever imagem (confirmado: já
-        // devolveu a resposta crua de um classificador de moderação de
-        // conteúdo, "nvidia/nemotron-3.5-content-safety", em vez de uma
-        // descrição). Lista testada manualmente contra a API real da
-        // OpenRouter antes de virar padrão — ver relatório no chat.
-        // Configurável via OPENROUTER_MODEL (uma lista separada por
-        // vírgula) para o caso de a disponibilidade de modelos gratuitos
-        // mudar no futuro.
+        // Modelos gratuitos com visão, em ordem de prioridade, no parâmetro `models` da OpenRouter
+        // (e não `model`): se um estiver fora do ar, limitado ou recusar por moderação, a
+        // OpenRouter tenta o próximo. O roteador genérico "openrouter/free" não é usado porque pode
+        // cair num modelo sem relação com descrever imagem (já devolveu a saída de um classificador
+        // de moderação). Configurável por `OPENROUTER_MODEL`, uma lista separada por vírgula, caso
+        // a oferta de modelos gratuitos mude.
         models: paraLista(process.env.OPENROUTER_MODEL, [
             "minimax/minimax-m3:free",
             "google/gemma-4-31b-it:free",
@@ -175,16 +156,14 @@ const env = {
         timeoutMs: Number(process.env.OPENROUTER_TIMEOUT_MS) || 20000
     },
 
-    // E-mail transacional (confirmação de cadastro e recuperação de senha)
-    // via Brevo (brevo.com). Sem `apiKey` configurada, o recurso fica
-    // indisponível: em desenvolvimento o código continua sendo registrado
-    // no log do servidor (como já era); em produção o servidor sobe
-    // normalmente, mas emite um aviso alto no log — sem isso, ninguém
-    // recebe e-mail de confirmação/recuperação de verdade.
+    // E-mail transacional (confirmação de cadastro e recuperação de senha) pela Brevo. Sem
+    // `apiKey`, o recurso fica indisponível: em desenvolvimento o código vai para o log do
+    // servidor; em produção o servidor sobe, mas registra um aviso, porque ninguém receberia os
+    // e-mails.
     brevo: {
         apiKey: process.env.BREVO_API_KEY || null,
         // Precisa ser um remetente verificado no painel do Brevo (endereço
-        // ou domínio com SPF/DKIM configurados) — nunca invente um valor
+        // ou domínio com SPF/DKIM configurados). Nunca invente um valor
         // aqui sem confirmar isso no painel do Brevo antes de ir a produção.
         remetenteEmail: process.env.BREVO_REMETENTE_EMAIL || null,
         remetenteNome: process.env.BREVO_REMETENTE_NOME || "ACESSO",
@@ -193,29 +172,25 @@ const env = {
 
     // URL base do Frontend para montar links de e-mail (confirmação de
     // cadastro, redefinição de senha). Reaproveita FRONTEND_URL (mesma
-    // variável já usada para CORS) — usa a primeira origem da lista que
+    // variável já usada para CORS): usa a primeira origem da lista que
     // não for localhost (ver `escolherOrigemPublica` acima).
     frontendUrl: escolherOrigemPublica(
         paraLista(process.env.FRONTEND_URL, ["http://localhost:5173"])
     ),
 
-    // Notificações push nativas via serviço de push da Expo (Fase R5).
-    // SEMPRE opcional: sem `accessToken` o `PushTokenService` ainda envia
-    // (o serviço da Expo aceita requisições sem token), mas o "Enhanced
-    // Security" da Expo fica desligado — configure EXPO_ACCESS_TOKEN em
-    // produção (painel expo.dev → Access Tokens). Um erro de envio de push
-    // NUNCA derruba a criação da notificação nem qualquer ação do usuário.
+    // Notificações push nativas pelo serviço da Expo, sempre opcionais. Sem `accessToken`, o
+    // `NotificacaoPushService` ainda envia (a Expo aceita requisições sem token), mas o "Enhanced
+    // Security" fica desligado; em produção, configure `EXPO_ACCESS_TOKEN` (expo.dev → Access
+    // Tokens). Erro de envio de push nunca derruba a criação da notificação nem a ação do usuário.
     expoPush: {
         accessToken: process.env.EXPO_ACCESS_TOKEN || null
     }
 };
 
 /**
- * Fail-fast de armazenamento: em produção, subir sem Supabase Storage
- * configurado significa cair silenciosamente no disco local do Render —
- * que é efêmero e é apagado a cada deploy/restart. Isso já causou perda
- * real de arquivos enviados por usuários. Em vez de deixar isso acontecer
- * de novo silenciosamente, o servidor recusa a subir.
+ * Em produção, sem Supabase Storage, os arquivos iriam para o disco local do Render, que é apagado
+ * a cada deploy ou reinício. O servidor prefere não subir a perder arquivos de usuários em
+ * silêncio.
  */
 if (env.isProducao && !(env.storage.supabaseUrl && env.storage.supabaseServiceRoleKey)) {
     console.error(
@@ -230,7 +205,7 @@ if (env.isProducao && !(env.storage.supabaseUrl && env.storage.supabaseServiceRo
 /**
  * Aviso (não fail-fast): sem BREVO_API_KEY em produção, nenhum e-mail de
  * confirmação de cadastro ou recuperação de senha é enviado de verdade.
- * A aplicação continua no ar — AuthService detecta a ausência do provedor
+ * A aplicação continua no ar: AutenticacaoService detecta a ausência do provedor
  * e não exige confirmação de e-mail de contas novas nesse caso (evita
  * travar cadastros por uma dependência externa não configurada), mas o
  * comportamento correto (gate de verificação + recuperação de senha por
@@ -245,15 +220,10 @@ if (env.isProducao && !env.brevo.apiKey) {
 }
 
 /**
- * Aviso (não fail-fast): uma `FRONTEND_URL` sem o esquema (ex.:
- * "meusite.onrender.com" em vez de "https://meusite.onrender.com") não
- * forma uma URL absoluta válida — `new URL(caminho, base)` lançava
- * `TypeError: Invalid URL` direto de dentro do fluxo de e-mail, sem
- * tratamento, virando "Erro interno do servidor." tanto na recuperação de
- * senha quanto na confirmação de cadastro (causa raiz já corrigida em
- * `utils/frontendUrl.js`, que nunca mais deixa isso derrubar a
- * requisição). Este aviso é só para pegar o problema de configuração
- * cedo, direto no log de boot — nunca imprime o valor da variável.
+ * Aviso, sem impedir a inicialização: uma `FRONTEND_URL` sem esquema ("meusite.onrender.com" em vez
+ * de "https://meusite.onrender.com") não forma uma URL absoluta, e os links de e-mail sairiam
+ * errados (`utils/urlFrontend.js` evita que isso derrube a requisição). O aviso mostra o problema
+ * já no log de inicialização, sem imprimir o valor da variável.
  */
 if (!ehUrlAbsolutaValida(env.frontendUrl)) {
     console.error(

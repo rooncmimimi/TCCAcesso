@@ -5,21 +5,15 @@ import React from "react";
 
 import { NovaVagaDialog } from "./NovaVagaDialog";
 import { EditarVagaDialog } from "./EditarVagaDialog";
-import { CardVagaEmpresa } from "./CardVagaEmpresa";
+import { VagaEmpresaCard } from "./VagaEmpresaCard";
 import type { Vaga } from "@/types";
 
 /**
- * Protege a correção da Etapa 2 para o cache de "minhas vagas": o dashboard
- * (`MinhasVagas.tsx`, queryKey ["minhas-vagas", status, pagina]) e o preview
- * do perfil da empresa (`PerfilEmpresa.tsx`, agora ["minhas-vagas", "perfil"])
- * são o MESMO recurso (`GET /vagas/minhas`) — antes, o perfil usava uma chave
- * isolada ("minhas-vagas-perfil") que nenhuma mutation invalidava, então a
- * lista do perfil ficava desatualizada depois de criar/editar/excluir uma
- * vaga pelo dashboard.
- *
- * Cada teste semeia o cache com dados nas DUAS formas de chave (dashboard e
- * perfil) antes da mutation e confirma que ambas ficam invalidadas depois —
- * comportamento real de cache, não só "a função foi chamada".
+ * O dashboard (`MinhasVagas.tsx`, chave `["minhas-vagas", status, pagina]`) e a prévia do perfil da
+ * empresa (`PerfilEmpresa.tsx`, `["minhas-vagas", "perfil"]`) mostram o mesmo recurso
+ * (`GET /vagas/minhas`) e compartilham o prefixo. Cada teste preenche o cache nas duas formas antes
+ * da mutation e confere que ambas foram invalidadas: testa o cache de verdade, e não só que a
+ * função foi chamada.
  */
 
 vi.mock("@/services/vagas.service", () => ({
@@ -31,8 +25,8 @@ vi.mock("@/services/vagas.service", () => ({
     },
 }));
 
-// `CardVagaEmpresa` usa <Link> do TanStack Router só para o botão "Ver
-// detalhes" — irrelevante para o que este arquivo testa (cache do React
+// `VagaEmpresaCard` usa <Link> do TanStack Router só para o botão "Ver
+// detalhes": irrelevante para o que este arquivo testa (cache do React
 // Query). Renderizar com o router real exigiria montar um RouterProvider
 // inteiro só por causa desse link; um substituto simples evita esse custo
 // sem mudar nada do que está sendo verificado.
@@ -47,14 +41,14 @@ const { default: vagasService } = await import("@/services/vagas.service");
 function criarQueryClientComCachePreExistente() {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     // Forma do dashboard (MinhasVagas.tsx).
-    queryClient.setQueryData(["minhas-vagas", "Aberta", 1], { vagas: [], total: 0 });
-    // Forma do preview do perfil (PerfilEmpresa.tsx) — mesmo prefixo agora.
+    queryClient.setQueryData(["minhas-vagas", "aberta", 1], { vagas: [], total: 0 });
+    // Forma da prévia do perfil (PerfilEmpresa.tsx), com o mesmo prefixo.
     queryClient.setQueryData(["minhas-vagas", "perfil"], { vagas: [], total: 0 });
     return queryClient;
 }
 
 function ambasAsListasEstaoInvalidadas(queryClient: QueryClient) {
-    const dashboard = queryClient.getQueryState(["minhas-vagas", "Aberta", 1]);
+    const dashboard = queryClient.getQueryState(["minhas-vagas", "aberta", 1]);
     const perfil = queryClient.getQueryState(["minhas-vagas", "perfil"]);
     return Boolean(dashboard?.isInvalidated) && Boolean(perfil?.isInvalidated);
 }
@@ -70,20 +64,18 @@ const vagaFake: Vaga = {
     requisitos: null,
     beneficios: null,
     salario: null,
-    modalidade: "Remoto",
-    contrato: "CLT",
+    modalidade: "remoto",
+    contrato: "clt",
     cidade: null,
     estado: null,
     cargaHoraria: null,
     acessibilidade: null,
-    exclusivaPcd: false,
     publicoAlvo: "pcd",
     recursosAcessibilidade: [],
-    status: "Aberta",
+    status: "aberta",
     empresaId: "empresa-1",
     totalCandidaturas: 0,
-    dataPublicacao: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
+    criadoEm: new Date().toISOString(),
 } as Vaga;
 
 beforeEach(() => {
@@ -92,27 +84,23 @@ beforeEach(() => {
 
 describe("cache de minhas vagas — criar, editar e excluir atualizam as duas telas", () => {
     it("criar vaga invalida a lista do dashboard e a do perfil", async () => {
-        // Arrange
         vi.mocked(vagasService.criar).mockResolvedValue(vagaFake);
         const queryClient = criarQueryClientComCachePreExistente();
         renderComProvider(<NovaVagaDialog />, queryClient);
 
-        // Act — abre o diálogo e envia o formulário (fireEvent.submit
-        // dispara o onSubmit diretamente, sem bloqueio de campo obrigatório
-        // do jsdom — o mutationFn está mockado, o conteúdo dos campos não
-        // importa para este teste, só o que acontece depois do sucesso).
+        // Abre o diálogo e envia o formulário. `fireEvent.submit` chama o `onSubmit` direto, sem a
+        // validação de campos obrigatórios do jsdom: o `mutationFn` está mockado e só importa o que
+        // acontece depois do sucesso.
         fireEvent.click(screen.getByRole("button", { name: "Nova vaga" }));
         const formulario = document.querySelector("form");
         expect(formulario).not.toBeNull();
         fireEvent.submit(formulario as HTMLFormElement);
 
-        // Assert
         await waitFor(() => expect(vagasService.criar).toHaveBeenCalledTimes(1));
         await waitFor(() => expect(ambasAsListasEstaoInvalidadas(queryClient)).toBe(true));
     });
 
     it("editar vaga invalida a lista do dashboard e a do perfil", async () => {
-        // Arrange
         vi.mocked(vagasService.atualizar).mockResolvedValue(vagaFake);
         const queryClient = criarQueryClientComCachePreExistente();
         renderComProvider(
@@ -122,31 +110,26 @@ describe("cache de minhas vagas — criar, editar e excluir atualizam as duas te
             queryClient,
         );
 
-        // Act
         fireEvent.click(screen.getByRole("button", { name: "Editar" }));
         const formulario = document.querySelector("form");
         expect(formulario).not.toBeNull();
         fireEvent.submit(formulario as HTMLFormElement);
 
-        // Assert
         await waitFor(() => expect(vagasService.atualizar).toHaveBeenCalledTimes(1));
         await waitFor(() => expect(ambasAsListasEstaoInvalidadas(queryClient)).toBe(true));
     });
 
     it("excluir vaga invalida a lista do dashboard e a do perfil", async () => {
-        // Arrange
         vi.mocked(vagasService.remover).mockResolvedValue(undefined);
         const queryClient = criarQueryClientComCachePreExistente();
         renderComProvider(
-            <CardVagaEmpresa vaga={vagaFake} selecionada={false} onVerCandidaturas={() => undefined} />,
+            <VagaEmpresaCard vaga={vagaFake} selecionada={false} onVerCandidaturas={() => undefined} />,
             queryClient,
         );
 
-        // Act
         fireEvent.click(screen.getByRole("button", { name: `Excluir vaga ${vagaFake.titulo}` }));
         fireEvent.click(screen.getByRole("button", { name: "Excluir vaga" }));
 
-        // Assert
         await waitFor(() => expect(vagasService.remover).toHaveBeenCalledTimes(1));
         await waitFor(() => expect(ambasAsListasEstaoInvalidadas(queryClient)).toBe(true));
     });

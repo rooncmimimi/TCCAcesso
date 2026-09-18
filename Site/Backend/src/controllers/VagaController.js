@@ -1,14 +1,14 @@
 import VagaService from "../services/VagaService.js";
+import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
-const contextoDa = (req) => ({
-    ip: req.ip,
-    userAgent: req.headers["user-agent"]
-});
-
+/**
+ * Vagas (`/vagas`): listagem pública, vagas da empresa, criação, edição, status, estatísticas e
+ * exclusão.
+ */
 class VagaController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
-            const dados = await VagaService.findAll(req.query);
+            const dados = await VagaService.listar(req.query);
 
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -18,7 +18,7 @@ class VagaController {
 
     async minhas(req, res, next) {
         try {
-            const dados = await VagaService.findByEmpresaAutenticada(
+            const dados = await VagaService.buscarPorEmpresaAutenticada(
                 req.user,
                 req.query
             );
@@ -29,9 +29,9 @@ class VagaController {
         }
     }
 
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
-            const vaga = await VagaService.findById(req.params.id, req.user);
+            const vaga = await VagaService.buscarPorId(req.params.id, req.user);
 
             return res.status(200).json({ sucesso: true, vaga });
         } catch (erro) {
@@ -39,9 +39,9 @@ class VagaController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
-            const vaga = await VagaService.create(req.body, req.user);
+            const vaga = await VagaService.criar(req.body, req.user);
 
             return res.status(201).json({ sucesso: true, vaga });
         } catch (erro) {
@@ -49,9 +49,9 @@ class VagaController {
         }
     }
 
-    async update(req, res, next) {
+    async atualizar(req, res, next) {
         try {
-            const vaga = await VagaService.update(
+            const vaga = await VagaService.atualizar(
                 req.params.id,
                 req.body,
                 req.user
@@ -69,7 +69,7 @@ class VagaController {
                 req.params.id,
                 req.body.status,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
 
             return res.status(200).json({ sucesso: true, vaga });
@@ -91,12 +91,12 @@ class VagaController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
-            const resultado = await VagaService.delete(
+            const resultado = await VagaService.excluir(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
 
             return res.status(200).json({ sucesso: true, ...resultado });

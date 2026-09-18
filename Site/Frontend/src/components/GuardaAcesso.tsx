@@ -1,8 +1,8 @@
 import { Navigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Loader2 } from "lucide-react";
-import { AppShell } from "@/layouts/AppShell";
-import { useSession } from "@/contexts/SessionContext";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
+import { useSessao } from "@/hooks/useSessao";
 import type { TipoUsuario } from "@/types";
 
 /**
@@ -17,11 +17,11 @@ export function GuardaAcesso({
   tipos: TipoUsuario[];
   children: ReactNode;
 }) {
-  const { user, hydrated, autenticado } = useSession();
+  const { usuario, inicializado, autenticado } = useSessao();
 
-  if (!hydrated) {
+  if (!inicializado) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div
           role="status"
           aria-live="polite"
@@ -30,15 +30,15 @@ export function GuardaAcesso({
           <Loader2 className="size-8 animate-spin" aria-hidden="true" />
           <p>Carregando sua sessão…</p>
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
-  if (!autenticado || !user) {
+  if (!autenticado || !usuario) {
     return <Navigate to="/entrar" />;
   }
 
-  if (!tipos.includes(user.tipo)) {
+  if (!tipos.includes(usuario.tipo)) {
     return <Navigate to="/feed" />;
   }
 

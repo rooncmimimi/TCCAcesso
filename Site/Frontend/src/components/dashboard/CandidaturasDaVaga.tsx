@@ -16,13 +16,13 @@ import { BotoesCurriculo } from "@/components/perfil/BotoesCurriculo";
 import { candidaturasService } from "@/services/dashboard.service";
 import type { StatusCandidatura, Vaga } from "@/types";
 
-const OPCOES_STATUS: StatusCandidatura[] = ["Pendente", "EmAnalise", "Aprovada", "Rejeitada"];
+const OPCOES_STATUS: StatusCandidatura[] = ["pendente", "em_analise", "aprovada", "rejeitada"];
 
 const ROTULOS: Record<string, string> = {
-  Pendente: "Pendente",
-  EmAnalise: "Em análise",
-  Aprovada: "Aprovada",
-  Rejeitada: "Rejeitada",
+  pendente: "Pendente",
+  em_analise: "Em análise",
+  aprovada: "Aprovada",
+  rejeitada: "Rejeitada",
 };
 
 /** Candidaturas recebidas para uma vaga específica, com atualização de status. */
@@ -79,7 +79,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                     </p>
                     {/* `curriculoNome` só vem preenchido quando o backend já
                         confirmou que esta empresa está autorizada (tem
-                        candidatura do candidato numa vaga própria) — nunca
+                        candidatura do candidato numa vaga própria); nunca
                         reimplementa essa checagem aqui. */}
                     {candidatura.candidato?.id && candidatura.candidato?.curriculoNome ? (
                       <div className="mt-2">

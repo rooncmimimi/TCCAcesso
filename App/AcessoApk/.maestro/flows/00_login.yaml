@@ -1,9 +1,8 @@
 appId: com.acesso.app
 name: (subfluxo) Login com conta de teste
 ---
-# Subfluxo reutilizado via `runFlow` pelos outros arquivos desta pasta —
-# nunca roda sozinho num CI de verdade sem que alguém primeiro tenha uma
-# conta de teste real (ver README.md desta pasta: por quê não é uma conta
+# Subfluxo usado via `runFlow` pelos outros arquivos desta pasta. Precisa de
+# uma conta de teste real (o README.md desta pasta explica por que ela não é
 # criada e descartada a cada execução).
 - launchApp
 - tapOn: "E-mail"

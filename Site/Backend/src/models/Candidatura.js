@@ -1,19 +1,17 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
-/**
- * Tabela: candidaturas
- * ENUM status_candidatura do banco.
- */
+/** Valores do enum `status_candidatura`, na ordem em que a candidatura costuma andar. */
 export const STATUS_CANDIDATURA = [
-    "Pendente",
-    "Visualizada",
-    "EmAnalise",
-    "Aprovada",
-    "Rejeitada",
-    "Cancelada"
+    "pendente",
+    "visualizada",
+    "em_analise",
+    "aprovada",
+    "rejeitada",
+    "cancelada"
 ];
 
+/** Tabela `candidaturas`: a candidatura de um candidato a uma vaga (uma por par). */
 const Candidatura = sequelize.define(
     "Candidatura",
     {
@@ -24,13 +22,11 @@ const Candidatura = sequelize.define(
         },
 
         vagaId: {
-            field: "vaga_id",
             type: DataTypes.UUID,
             allowNull: false
         },
 
         candidatoId: {
-            field: "candidato_id",
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -38,25 +34,15 @@ const Candidatura = sequelize.define(
         status: {
             type: DataTypes.ENUM(...STATUS_CANDIDATURA),
             allowNull: false,
-            defaultValue: "Pendente"
+            defaultValue: "pendente"
         },
 
         mensagem: {
             type: DataTypes.TEXT
-        },
-
-        dataCandidatura: {
-            field: "data_candidatura",
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW
         }
     },
     {
-        tableName: "candidaturas",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "candidaturas"
     }
 );
 

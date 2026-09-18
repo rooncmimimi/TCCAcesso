@@ -1,5 +1,6 @@
 import AtividadeService from "../services/AtividadeService.js";
 
+/** `GET /atividade/minha`: resumo de atividade do próprio usuário. */
 class AtividadeController {
     async minha(req, res, next) {
         try {

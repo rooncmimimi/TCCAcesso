@@ -1,4 +1,4 @@
-import { apiClient } from "../services/api/client";
+import { clienteApi } from "../services/api/cliente";
 import type {
   ListaNotificacoesResposta,
   ListarNotificacoesParametros,
@@ -10,49 +10,43 @@ import type {
   RemoverPushTokenResposta,
 } from "./types";
 
-/**
- * Única camada que conhece os endpoints reais de notificações
- * (`Site/Backend/src/routes/notificacaoRoutes.js`, confirmado por
- * auditoria). Todo path/payload/resposta é literal ao que o backend expõe
- * hoje. Nenhum método trata 401 por conta própria (interceptor do
- * `apiClient` já cuida disso, mesma regra do resto do app).
- */
+/** Notificações da conta e registro do token de push deste aparelho. */
 export const NotificacaoService = {
-  /** `GET /notificacoes` — paginado, mais recentes primeiro. */
+  /** `GET /notificacoes`: paginado, mais recentes primeiro. */
   async listar(parametros: ListarNotificacoesParametros = {}): Promise<ListaNotificacoesResposta> {
-    const { data } = await apiClient.get<ListaNotificacoesResposta>("/notificacoes", { params: parametros });
+    const { data } = await clienteApi.get<ListaNotificacoesResposta>("/notificacoes", { params: parametros });
     return data;
   },
 
-  /** `GET /notificacoes/nao-lidas` — usado pelo selo (badge) da aba. */
+  /** `GET /notificacoes/nao-lidas`: usado pelo selo (badge) da aba. */
   async contarNaoLidas(): Promise<number> {
-    const { data } = await apiClient.get<NaoLidasResposta>("/notificacoes/nao-lidas");
+    const { data } = await clienteApi.get<NaoLidasResposta>("/notificacoes/nao-lidas");
     return data.naoLidas;
   },
 
   /** `PATCH /notificacoes/:id/lida`. */
   async marcarComoLida(id: string): Promise<Notificacao> {
-    const { data } = await apiClient.patch<MarcarComoLidaResposta>(`/notificacoes/${id}/lida`);
+    const { data } = await clienteApi.patch<MarcarComoLidaResposta>(`/notificacoes/${id}/lida`);
     return data.notificacao;
   },
 
-  /** `PATCH /notificacoes/lidas` — marca TODAS as não lidas do usuário de uma vez. */
+  /** `PATCH /notificacoes/lidas`: marca todas as não lidas do usuário de uma vez. */
   async marcarTodasComoLidas(): Promise<void> {
-    await apiClient.patch("/notificacoes/lidas");
+    await clienteApi.patch("/notificacoes/lidas");
   },
 
   /** `DELETE /notificacoes/:id`. */
   async remover(id: string): Promise<void> {
-    await apiClient.delete(`/notificacoes/${id}`);
+    await clienteApi.delete(`/notificacoes/${id}`);
   },
 
-  /** `POST /notificacoes/push-token` (Fase R5) — registra/reaponta o Expo push token deste dispositivo. */
+  /** `POST /notificacoes/push-token`: registra ou atualiza o Expo push token deste aparelho. */
   async registrarPushToken(token: string, plataforma: PlataformaPush): Promise<void> {
-    await apiClient.post<RegistrarPushTokenResposta>("/notificacoes/push-token", { token, plataforma });
+    await clienteApi.post<RegistrarPushTokenResposta>("/notificacoes/push-token", { token, plataforma });
   },
 
-  /** `DELETE /notificacoes/push-token` (Fase R5) — remove o token no logout. Idempotente no backend. */
+  /** `DELETE /notificacoes/push-token`: remove o token ao sair da conta. Idempotente no backend. */
   async removerPushToken(token: string): Promise<void> {
-    await apiClient.delete<RemoverPushTokenResposta>("/notificacoes/push-token", { data: { token } });
+    await clienteApi.delete<RemoverPushTokenResposta>("/notificacoes/push-token", { data: { token } });
   },
 };

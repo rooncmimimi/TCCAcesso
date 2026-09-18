@@ -1,5 +1,6 @@
 import CompartilhamentoService from "../services/CompartilhamentoService.js";
 
+/** Compartilhamentos de postagens (`/compartilhamentos`), por usuário ou por postagem. */
 class CompartilhamentoController {
     async porUsuario(req, res, next) {
         try {
@@ -15,7 +16,7 @@ class CompartilhamentoController {
         }
     }
 
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const dados = await CompartilhamentoService.listarPorPostagem(
                 req.params.postagemId,
@@ -29,7 +30,7 @@ class CompartilhamentoController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
             const compartilhamento = await CompartilhamentoService.compartilhar(
                 req.params.postagemId,
@@ -45,7 +46,7 @@ class CompartilhamentoController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
             const resultado = await CompartilhamentoService.remover(
                 req.params.id,

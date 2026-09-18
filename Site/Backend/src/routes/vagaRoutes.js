@@ -2,10 +2,10 @@ import { Router } from "express";
 import VagaController from "../controllers/VagaController.js";
 import CandidaturaController from "../controllers/CandidaturaController.js";
 import InteracaoController from "../controllers/InteracaoController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import authOpcionalMiddleware from "../middlewares/authOpcionalMiddleware.js";
-import rbacMiddleware from "../middlewares/rbacMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalMiddleware.js";
+import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarCriacaoVaga,
@@ -16,97 +16,97 @@ import { validarCriacaoCandidatura } from "../validators/candidaturaValidator.js
 
 const router = Router();
 
-/* ---------- Público ---------- */
-router.get("/", VagaController.index);
+/* Público */
+router.get("/", VagaController.listar);
 
-/* ---------- Empresa autenticada ---------- */
+/* Empresa autenticada */
 router.get(
     "/minhas",
-    authMiddleware,
-    rbacMiddleware("empresa"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
     VagaController.minhas
 );
 
 router.get(
     "/:id",
-    authOpcionalMiddleware,
+    autenticacaoOpcionalMiddleware,
     validarUuidParam("id"),
-    validationMiddleware,
-    VagaController.show
+    validacaoMiddleware,
+    VagaController.obter
 );
 
 router.post(
     "/",
-    authMiddleware,
-    rbacMiddleware("empresa"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
     validarCriacaoVaga,
-    validationMiddleware,
-    VagaController.store
+    validacaoMiddleware,
+    VagaController.criar
 );
 
 router.put(
     "/:id",
-    authMiddleware,
-    rbacMiddleware("empresa", "administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
     validarAtualizacaoVaga,
-    validationMiddleware,
-    VagaController.update
+    validacaoMiddleware,
+    VagaController.atualizar
 );
 
 router.patch(
     "/:id/status",
-    authMiddleware,
-    rbacMiddleware("empresa", "administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
     validarStatusVaga,
-    validationMiddleware,
+    validacaoMiddleware,
     VagaController.alterarStatus
 );
 
 router.get(
     "/:id/estatisticas",
-    authMiddleware,
-    rbacMiddleware("empresa", "administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
     validarUuidParam("id"),
-    validationMiddleware,
+    validacaoMiddleware,
     VagaController.estatisticas
 );
 
 router.delete(
     "/:id",
-    authMiddleware,
-    rbacMiddleware("empresa", "administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
     validarUuidParam("id"),
-    validationMiddleware,
-    VagaController.destroy
+    validacaoMiddleware,
+    VagaController.excluir
 );
 
-/* ---------- Candidaturas da vaga ---------- */
+/* Candidaturas da vaga */
 router.post(
     "/:vagaId/candidaturas",
-    authMiddleware,
-    rbacMiddleware("candidato"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
     validarCriacaoCandidatura,
-    validationMiddleware,
-    CandidaturaController.store
+    validacaoMiddleware,
+    CandidaturaController.criar
 );
 
 router.get(
     "/:vagaId/candidaturas",
-    authMiddleware,
-    rbacMiddleware("empresa", "administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
     validarUuidParam("vagaId"),
-    validationMiddleware,
+    validacaoMiddleware,
     CandidaturaController.porVaga
 );
 
-/* ---------- Favoritar vaga ---------- */
+/* Favoritar vaga */
 router.post(
     "/:vagaId/favoritar",
-    authMiddleware,
-    rbacMiddleware("candidato"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
     validarUuidParam("vagaId"),
-    validationMiddleware,
-    InteracaoController.toggleFavorito
+    validacaoMiddleware,
+    InteracaoController.alternarFavorito
 );
 
 export default router;

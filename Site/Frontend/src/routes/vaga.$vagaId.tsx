@@ -9,7 +9,7 @@ import {
   ROTULO_RECURSO_ACESSIBILIDADE,
 } from "@/components/dashboard/constantesVaga";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import vagasService from "@/services/vagas.service";
 import mensagensService from "@/services/mensagens.service";
 import dashboardService, { candidaturasService } from "@/services/dashboard.service";
@@ -47,10 +47,10 @@ export const Route = createFileRoute("/vaga/$vagaId")({
 
 function DetalheVaga() {
   const { vagaId } = Route.useParams();
-  const { user } = useSession();
+  const { usuario } = useSessao();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const ehCandidato = user?.tipo === "candidato";
+  const ehCandidato = usuario?.tipo === "candidato";
 
   const { data: vaga, isLoading, isError, refetch } = useQuery({
     queryKey: ["vaga", vagaId],
@@ -77,7 +77,7 @@ function DetalheVaga() {
     onSuccess: () => {
       toast.success("Candidatura enviada com sucesso.");
       // O widget "Minhas candidaturas recentes" do painel (CandidaturasRecentes.tsx)
-      // usa o mesmo prefixo ["candidaturas","minhas"] — invalidar aqui já
+      // usa o mesmo prefixo ["candidaturas","minhas"]: invalidar aqui já
       // cobre as duas telas, mais o card de métricas do painel.
       void queryClient.invalidateQueries({ queryKey: ["candidaturas", "minhas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
@@ -89,8 +89,8 @@ function DetalheVaga() {
     mutationFn: () => vagasService.favoritar(vagaId),
     onSuccess: (resultado) => {
       toast.success(resultado.favoritada ? "Vaga favoritada." : "Vaga removida dos favoritos.");
-      // Fase 9, Bloco 6: mesmo raciocínio do favoritar em `vagas.tsx` — ver
-      // comentário lá. Duas keys para o mesmo dado, invalida as duas.
+      // Mesma regra do favoritar em `vagas.tsx` (ver o comentário lá): há duas chaves para o mesmo
+      // dado, e as duas são invalidadas.
       void queryClient.invalidateQueries({ queryKey: ["dashboard", "favoritos"] });
       void queryClient.invalidateQueries({ queryKey: ["vagas-favoritas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
@@ -109,16 +109,16 @@ function DetalheVaga() {
 
   if (isLoading) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="mt-4 h-64 w-full rounded-xl" />
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   if (isError || !vaga) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="alert" className="space-y-3 rounded-xl border border-destructive/40 p-6">
           <h1 className="text-xl font-bold">Vaga não encontrada</h1>
           <p className="text-sm text-muted-foreground">
@@ -133,16 +133,16 @@ function DetalheVaga() {
             </Button>
           </div>
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa";
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
-  const ehDonoDaVaga = vaga.empresa?.usuario?.id === user?.id;
+  const ehDonoDaVaga = vaga.empresa?.usuario?.id === usuario?.id;
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/vagas"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -153,7 +153,7 @@ function DetalheVaga() {
       <article className="mt-4">
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-3xl font-extrabold">{vaga.titulo}</h1>
-          {user && !ehDonoDaVaga && (
+          {usuario && !ehDonoDaVaga && (
             <DenunciarVagaMenu
               vagaId={vaga.id}
               titulo={vaga.titulo}
@@ -229,7 +229,7 @@ function DetalheVaga() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Button
                 className="min-h-12"
-                disabled={!ehCandidato || jaCandidatado || candidatar.isPending || vaga.status !== "Aberta"}
+                disabled={!ehCandidato || jaCandidatado || candidatar.isPending || vaga.status !== "aberta"}
                 onClick={() => candidatar.mutate()}
               >
                 {jaCandidatado ? "Candidatura enviada" : candidatar.isPending ? "Enviando…" : "Candidatar-se"}
@@ -326,7 +326,7 @@ function DetalheVaga() {
           </CardContent>
         </Card>
       </article>
-    </AppShell>
+    </EstruturaApp>
   );
 }
 
@@ -342,9 +342,9 @@ function DenunciarVagaMenu({
   autorNomeExibicao?: string;
 }) {
   const [denunciando, setDenunciando] = useState(false);
-  // Foco volta pra este botão ao fechar o DenunciarDialog — ver comentário
+  // Foco volta pra este botão ao fechar o DenunciarDialog (ver comentário
   // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
-  // o diálogo que abre.
+  // o diálogo que abre).
   const gatilhoMenuRef = useRef<HTMLButtonElement>(null);
 
   return (

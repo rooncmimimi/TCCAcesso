@@ -3,31 +3,27 @@ import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import env from "../config/env.js";
-import ApiError from "../utils/ApiError.js";
+import ErroApi from "../utils/ErroApi.js";
 import { storageHabilitado, enviarArquivo, removerArquivo } from "../utils/supabaseStorage.js";
 
 /**
  * Uploads da plataforma.
  *
  * Proteções aplicadas (OWASP A04/A08):
- * - nome de arquivo gerado no servidor (evita path traversal via originalname);
- * - extensão derivada de uma allowlist, nunca do nome/mimetype declarado
- *   pelo cliente sozinho — a assinatura binária real do arquivo também é
- *   conferida (ver `assinaturaValida`);
- * - limite de tamanho por tipo de arquivo (imagem/documento/vídeo têm
- *   limites diferentes — vídeo não reaproveita o limite de imagem);
+ * - nome de arquivo gerado no servidor (evita path traversal pelo `originalname`);
+ * - extensão derivada de uma allowlist, nunca só do nome ou do mimetype declarados pelo cliente, e
+ *   a assinatura binária real do arquivo também é conferida (`assinaturaValida`);
+ * - limite de tamanho por tipo de arquivo (vídeo tem limite próprio, maior que o de imagem e
+ *   documento);
  * - diretório de destino criado fora da árvore de código-fonte.
  *
- * Armazenamento: quando o Supabase Storage está configurado (ver
- * `config/env.js`), os arquivos vão para lá (persistente) via
- * `criarProcessadorArmazenamento`, e o multer só recebe o arquivo em
- * memória. Sem Supabase configurado, cai no disco local — comportamento
- * original, suficiente para desenvolvimento.
+ * Armazenamento: com o Supabase Storage configurado (`config/env.js`), o multer só recebe o arquivo
+ * em memória e `criarProcessadorArmazenamento` o envia para lá. Sem Supabase, os arquivos ficam no
+ * disco local, o que basta para desenvolvimento.
  *
- * Referência guardada no banco: o valor persistido é sempre um CAMINHO
- * relativo estável (ex.: `postagens/<usuarioId>/<uuid>.mp4`), nunca a URL
- * pública final — a URL é resolvida sob demanda (ver `supabaseStorage.js`
- * → `resolverUrlExibicao`, usado pelos getters dos models).
+ * O banco guarda sempre um caminho relativo estável (por exemplo
+ * `postagens/<usuarioId>/<uuid>.mp4`), nunca a URL final: a URL é resolvida sob demanda, com
+ * `resolverUrlExibicao` ou `gerarUrlAssinada` (`supabaseStorage.js`).
  */
 
 export const MIME_IMAGENS = {
@@ -43,7 +39,7 @@ export const MIME_DOCUMENTOS = {
         ".docx"
 };
 
-/** Vídeo de postagem — só os dois formatos com suporte de reprodução amplo no navegador. */
+/** Vídeo de postagem: só os dois formatos com suporte de reprodução amplo no navegador. */
 export const MIME_VIDEOS = {
     "video/mp4": ".mp4",
     "video/webm": ".webm"
@@ -51,7 +47,7 @@ export const MIME_VIDEOS = {
 
 const TODAS_EXTENSOES = { ...MIME_IMAGENS, ...MIME_DOCUMENTOS, ...MIME_VIDEOS };
 
-/** Limite de tamanho por mimetype — vídeo NUNCA reaproveita o limite de imagem/documento. */
+/** Limite de tamanho por mimetype: vídeo nunca reaproveita o limite de imagem/documento. */
 const LIMITE_BYTES_POR_MIME = {
     "image/png": env.security.maxUploadBytes,
     "image/jpeg": env.security.maxUploadBytes,
@@ -72,7 +68,7 @@ if (!storageHabilitado && !fs.existsSync(destino)) {
 
 /**
  * Confere a assinatura binária (magic bytes) do arquivo contra o mimetype
- * declarado — nunca confia só no `Content-Type` enviado pelo cliente.
+ * declarado; nunca confia só no `Content-Type` enviado pelo cliente.
  * Um PDF renomeado para `.mp4` com `Content-Type: video/mp4` não passa
  * nesta checagem, mesmo que a extensão/allowlist já tenham "aceitado" o
  * upload.
@@ -114,7 +110,7 @@ function assinaturaValida(buffer, mimetype) {
             );
 
         case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            // .docx é um ZIP (Office Open XML) — assinatura padrão de ZIP.
+            // .docx é um ZIP (Office Open XML): assinatura padrão de ZIP.
             return (
                 buffer[0] === 0x50 &&
                 buffer[1] === 0x4b &&
@@ -142,6 +138,10 @@ function assinaturaValida(buffer, mimetype) {
     }
 }
 
+/**
+ * Lê só os primeiros bytes de um arquivo em disco, o suficiente para conferir a assinatura quando o
+ * multer não guardou o arquivo em memória.
+ */
 async function lerInicioDoArquivo(caminho, bytes = 32) {
     const handle = await fs.promises.open(caminho, "r");
     try {
@@ -158,22 +158,15 @@ async function apagarSeExistir(caminho) {
     try {
         await fs.promises.unlink(caminho);
     } catch {
-        // Arquivo já pode não existir (ex.: upload em memória) — ignora.
+        // Arquivo já pode não existir (ex.: upload em memória), então ignora.
     }
 }
 
 /**
- * Etapa 4 (auditoria de robustez do upload): remove do Storage os
- * caminhos já enviados por ESTA MESMA requisição, quando um arquivo
- * seguinte do mesmo lote falha (assinatura inválida, tamanho, erro do
- * Storage). Sem isso, um lote de até 4 anexos onde o 3º falha deixava os
- * 2 primeiros órfãos no bucket — enviados, mas sem nenhuma linha no
- * banco os referenciando, já que a requisição inteira falha antes de
- * chegar ao controller/service que gravaria isso.
- *
- * Best-effort e nunca lança: uma falha ao limpar não pode mascarar o
- * erro original que o cliente precisa ver (ex.: "arquivo muito grande"
- * virando "erro ao excluir arquivo" seria pior que não limpar nada).
+ * Remove do Storage os arquivos já enviados por esta requisição quando um arquivo seguinte do mesmo
+ * lote falha (assinatura inválida, tamanho, erro do Storage). Sem isso, num lote de até 4 anexos
+ * com falha no terceiro, os dois primeiros ficariam órfãos no bucket, sem linha no banco. Nunca
+ * lança: uma falha na limpeza não pode esconder o erro original que o cliente precisa ver.
  */
 async function limparEnviadosNestaOperacao(caminhos, privado) {
     if (caminhos.length === 0) return;
@@ -211,7 +204,7 @@ const criarUpload = (allowlist, { files = 1, mensagem, limiteMaximo } = {}) => {
                   const extensao = allowlist[file.mimetype];
 
                   if (!extensao) {
-                      return cb(ApiError.badRequest(mensagem));
+                      return cb(ErroApi.requisicaoInvalida(mensagem));
                   }
 
                   return cb(null, `${Date.now()}-${crypto.randomUUID()}${extensao}`);
@@ -222,30 +215,19 @@ const criarUpload = (allowlist, { files = 1, mensagem, limiteMaximo } = {}) => {
         storage,
 
         limits: {
-            // Teto absoluto do multer (por arquivo). Quando o allowlist mistura
-            // tipos com limites diferentes (ex.: imagem + vídeo em uploadAnexos),
-            // usa o maior deles aqui — o limite fino por mimetype é aplicado
-            // depois, em `criarProcessadorArmazenamento` (`arquivo.size > limite`,
-            // esse sim o limite de verdade que vira mensagem pro usuário).
-            //
-            // `+ 1` (Fase J1, validação final): confirmado ao vivo que o
-            // busboy (usado pelo multer por baixo) trata `fileSize` como uma
-            // fronteira EXCLUSIVA — um arquivo de EXATAMENTE N bytes já
-            // dispara o limite (só N-1 bytes passa), diferente do texto da
-            // própria documentação do multer ("the maximum file size"). Sem
-            // este ajuste, um vídeo de exatamente 50MiB (o limite que a
-            // aplicação promete via `MAX_VIDEO_UPLOAD_BYTES`) era rejeitado
-            // aqui, antes mesmo de chegar na checagem fina abaixo — só
-            // compensa esse teto solto do multer; o limite que realmente
-            // importa (e que gera a mensagem de erro) continua sendo
-            // `LIMITE_BYTES_POR_MIME` em `criarProcessadorArmazenamento`.
+            // Teto do multer por arquivo. Com tipos de limites diferentes no mesmo upload (imagem e
+            // vídeo em `uploadAnexos`), usa o maior; o limite fino por mimetype, que gera a
+            // mensagem para o usuário, é aplicado em `criarProcessadorArmazenamento`. O `+ 1`
+            // compensa o busboy (usado pelo multer), que trata `fileSize` como limite exclusivo:
+            // sem ele, um vídeo de exatamente 50 MiB (`MAX_VIDEO_UPLOAD_BYTES`) seria recusado
+            // aqui.
             fileSize: (limiteMaximo ?? env.security.maxUploadBytes) + 1,
             files
         },
 
         fileFilter(req, file, cb) {
             if (!allowlist[file.mimetype]) {
-                return cb(ApiError.badRequest(mensagem));
+                return cb(ErroApi.requisicaoInvalida(mensagem));
             }
 
             return cb(null, true);
@@ -266,10 +248,8 @@ export const uploadDocumento = criarUpload(MIME_DOCUMENTOS, {
 });
 
 /**
- * Anexos de postagem: até 4 arquivos, imagem OU vídeo.
- * "Documento" não é mais aceito como anexo de publicação nova (continua
- * existindo só para currículo/certificado, via `uploadDocumento`) — ver
- * `MIME_DOCUMENTOS` acima, inalterado para esses outros usos.
+ * Anexos de postagem: até 4 arquivos, imagem ou vídeo. Documento só é aceito em currículo e
+ * certificado, via `uploadDocumento`.
  */
 export const uploadAnexos = criarUpload(
     { ...MIME_IMAGENS, ...MIME_VIDEOS },
@@ -281,26 +261,23 @@ export const uploadAnexos = criarUpload(
 );
 
 /**
- * Middleware (fábrica) a ser usado logo após qualquer
- * `upload*.single()`/`.array()`. Sempre valida a assinatura binária real
- * do arquivo e o limite de tamanho específico do seu mimetype — mesmo
- * sem Supabase configurado (proteção vale também no disco local). Quando
- * o Supabase Storage está configurado, também envia o arquivo para lá e
- * anexa o CAMINHO (não a URL) em `.url`.
+ * Middleware (fábrica) para usar logo depois de qualquer `upload*.single()` ou `.array()`. Sempre
+ * valida a assinatura binária real do arquivo e o limite de tamanho do seu mimetype, mesmo sem
+ * Supabase configurado (a proteção vale também no disco local). Com o Supabase Storage configurado,
+ * também envia o arquivo para lá e coloca o caminho (não a URL) em `.url`.
  *
- * `pasta`: string ou função `(req) => string` — prefixo de pasta dentro
- * do bucket (ex.: `postagens/<usuarioId>`, `perfis/<usuarioId>`). Só é
- * usado quando o Supabase está configurado; o fallback local continua
- * um diretório único, sem subpastas.
+ * `pasta`: string ou função `(req) => string` com o prefixo de pasta dentro do bucket (por exemplo
+ * `postagens/<usuarioId>` ou `perfis/<usuarioId>`). Só é usada com o Supabase configurado; no disco
+ * local tudo fica num diretório único, sem subpastas.
  *
- * `privado`: quando true, o arquivo vai para o bucket PRIVADO
- * (currículos/certificados) em vez do bucket público — nunca decidido
- * pelo cliente, sempre fixo na rota que monta este middleware.
+ * `privado`: quando true, o arquivo vai para o bucket privado (currículos, documentos e anexos de
+ * postagem) em vez do público. Nunca é decidido pelo cliente: fica fixo na rota que monta este
+ * middleware.
  */
 export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
     return async function processarArmazenamento(req, res, next) {
-        // Caminhos efetivamente enviados ao Storage por ESTA requisição —
-        // ver `limparEnviadosNestaOperacao` acima.
+        // Caminhos efetivamente enviados ao Storage por esta requisição
+        // (ver `limparEnviadosNestaOperacao` acima).
         const enviadosNestaOperacao = [];
 
         try {
@@ -311,7 +288,7 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
 
                 if (!assinaturaValida(buffer, arquivo.mimetype)) {
                     await apagarSeExistir(arquivo.path);
-                    throw ApiError.badRequest(
+                    throw ErroApi.requisicaoInvalida(
                         "O conteúdo do arquivo não corresponde a um arquivo válido do formato declarado."
                     );
                 }
@@ -320,7 +297,7 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
 
                 if (arquivo.size > limite) {
                     await apagarSeExistir(arquivo.path);
-                    throw ApiError.badRequest(
+                    throw ErroApi.requisicaoInvalida(
                         `Arquivo muito grande. Limite de ${Math.round(limite / (1024 * 1024))}MB para este tipo.`
                     );
                 }
@@ -338,17 +315,11 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
                         });
                         enviadosNestaOperacao.push(arquivo.url);
                     } catch (erroStorage) {
-                        // Correção (Fase J1): antes, um erro cru do Storage (ex.:
-                        // bucket recusando o mime type por configuração externa)
-                        // escapava daqui como `Error` genérico — o errorMiddleware
-                        // não reconhece esse tipo e responde com o 500 mais vago
-                        // possível ("Erro interno do servidor."), sem nenhuma pista
-                        // pro usuário. Mesmo padrão já usado por `EmailService.enviar`
-                        // pra outro serviço externo (Brevo): nunca repassa o erro cru
-                        // do provedor pro cliente, sempre uma mensagem específica,
-                        // preservando a causa original só pro log (`causaOriginal`,
-                        // já lido por `errorMiddleware.js`).
-                        const erroTratado = ApiError.serviceUnavailable(
+                        // Um erro cru do Storage (como o bucket recusar o tipo do arquivo) viraria
+                        // o 500 genérico do `erroMiddleware`. Aqui ele vira uma mensagem
+                        // específica, como no `EmailService.enviar`, e a causa original fica só no
+                        // log (`causaOriginal`).
+                        const erroTratado = ErroApi.servicoIndisponivel(
                             "Não foi possível enviar o arquivo agora. Tente novamente em alguns instantes."
                         );
                         erroTratado.causaOriginal = erroStorage;
@@ -371,7 +342,7 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
             return next();
         } catch (erro) {
             // Um arquivo no meio do lote falhou depois que os anteriores já
-            // tinham sido enviados por esta mesma requisição — remove só
+            // tinham sido enviados por esta mesma requisição: remove só
             // esses (nunca arquivos de outra requisição/usuário/postagem).
             // O erro de limpeza nunca substitui `erro`, que é o que o
             // cliente precisa ver.
@@ -381,19 +352,8 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
     };
 }
 
-// Correção (auditoria de segurança, achado A3): o antigo `processarArmazenamento`
-// exportado daqui (sem `pasta`, sempre bucket público, sem vínculo a usuário)
-// era usado pelas rotas `POST /uploads/imagem` e `POST /uploads/anexos`, sem
-// escopo por usuário — este export genérico deixou de existir para não
-// voltar a ser usado sem escopo por engano. Etapa 5: as próprias rotas
-// `/imagem` e `/anexos` (e o processador local que as substituiu) foram
-// removidas de `uploadRoutes.js` por auditoria de código morto — nenhum
-// consumidor real restante.
-
-/** Uso simples, bucket PRIVADO (upload genérico de documento — ex.: certificado). */
-export const processarArmazenamentoPrivado = criarProcessadorArmazenamento({
-    privado: true
-});
+// Não existe processador genérico, público ou privado: todo envio fica escopado a uma pasta da
+// entidade dona (perfil, empresa, currículo ou publicação), definida na rota.
 
 /** Caminho a persistir no banco: Supabase Storage (caminho) quando configurado, senão /uploads local. */
 export const urlPublica = (arquivo) => {

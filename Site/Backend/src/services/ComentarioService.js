@@ -1,15 +1,9 @@
 import PostagemService from "./PostagemService.js";
-import { Comentario, Usuario } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
-import { garantirDono } from "../utils/authorization.js";
-
-// Fábrica: o Sequelize muta objetos de include, então cada uso precisa de um novo objeto.
-const incluirAutor = () => ({
-    model: Usuario,
-    as: "usuario",
-    attributes: ["id", "nome", "fotoPerfil", "tipoUsuario"]
-});
+import { Comentario } from "../models/index.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { garantirDono } from "../utils/autorizacao.js";
+import { incluirAutor } from "../utils/inclusoes.js";
 
 /**
  * Comentários do feed (com respostas em árvore).
@@ -18,9 +12,8 @@ const incluirAutor = () => ({
  */
 class ComentarioService {
     /**
-     * `buscarAtiva` já aplica a checagem de acesso a conteúdo privado
-     * (Fase 3) — reaproveitada aqui em vez de duplicada, pra listar
-     * comentários de uma postagem exigir a mesma autorização de vê-la.
+     * `buscarAtiva` já aplica a checagem de acesso a conteúdo privado, então listar comentários de
+     * uma postagem exige a mesma autorização de vê-la.
      */
     async listarPorPostagem(postagemId, query, solicitante) {
         await PostagemService.buscarAtiva(postagemId, undefined, solicitante);
@@ -42,13 +35,13 @@ class ComentarioService {
             limit: limite,
             offset,
             distinct: true,
-            order: [["created_at", "ASC"]]
+            order: [["criadoEm", "ASC"]]
         });
 
         return montarResposta("comentarios", rows, count, pagina, limite);
     }
 
-    async create(postagemId, comentario, solicitante, comentarioPaiId = null) {
+    async criar(postagemId, comentario, solicitante, comentarioPaiId = null) {
         return PostagemService.comentar(postagemId, comentario, solicitante, comentarioPaiId);
     }
 
@@ -56,7 +49,7 @@ class ComentarioService {
         const pai = await Comentario.findByPk(comentarioPaiId);
 
         if (!pai || !pai.ativo) {
-            throw ApiError.notFound("Comentário não encontrado.");
+            throw ErroApi.naoEncontrado("Comentário não encontrado.");
         }
 
         return PostagemService.comentar(
@@ -67,11 +60,11 @@ class ComentarioService {
         );
     }
 
-    async update(comentarioId, texto, solicitante) {
+    async atualizar(comentarioId, texto, solicitante) {
         const comentario = await Comentario.findByPk(comentarioId);
 
         if (!comentario || !comentario.ativo) {
-            throw ApiError.notFound("Comentário não encontrado.");
+            throw ErroApi.naoEncontrado("Comentário não encontrado.");
         }
 
         garantirDono(solicitante, comentario.usuarioId);
@@ -84,7 +77,7 @@ class ComentarioService {
         return Comentario.findByPk(comentarioId, { include: [incluirAutor()] });
     }
 
-    async delete(comentarioId, solicitante, contexto = {}) {
+    async excluir(comentarioId, solicitante, contexto = {}) {
         return PostagemService.removerComentario(comentarioId, solicitante, contexto);
     }
 }

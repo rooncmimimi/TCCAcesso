@@ -1,19 +1,17 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: solicitacoes_seguimento (migration 0034)
+ * Tabela `solicitacoes_seguimento`: pedido para seguir um perfil privado,
+ * diferente de `usuarios_seguidos` (seguimento já aprovado).
  *
- * Solicitação de seguir um perfil PRIVADO — diferente de `usuarios_seguidos`
- * (seguimento já aprovado). Aceitar/recusar SEMPRE apaga a linha (nunca
- * grava `status: "aceita"/"recusada"` e deixa) — o estado durável que
- * importa depois de aceita já fica em `usuarios_seguidos`; uma solicitação
- * resolvida não tem valor de histórico (diferente de `Denuncia`, que
- * precisa de trilha de auditoria). Ver `SeguidorService` para a lógica.
+ * Aceitar ou recusar sempre apaga a linha, sem gravar `status: "aceita"` ou `"recusada"`: depois de
+ * aceita, o que importa já fica em `usuarios_seguidos`, e uma solicitação resolvida não tem valor
+ * de histórico (ao contrário de `Denuncia`, que precisa de trilha de auditoria). A lógica fica no
+ * `SeguidorService`.
  *
- * O índice único parcial `WHERE status = 'pendente'` (só no banco, não
- * espelhado aqui) garante que nunca existam duas solicitações pendentes
- * simultâneas do mesmo par — é a trava real contra corrida, não o código.
+ * O índice único parcial `WHERE status = 'pendente'` (só no banco) impede duas solicitações
+ * pendentes do mesmo par ao mesmo tempo; é ele a trava real contra corrida, não o código.
  */
 const SolicitacaoSeguimento = sequelize.define(
     "SolicitacaoSeguimento",
@@ -25,13 +23,11 @@ const SolicitacaoSeguimento = sequelize.define(
         },
 
         solicitanteId: {
-            field: "solicitante_id",
             type: DataTypes.UUID,
             allowNull: false
         },
 
         destinatarioId: {
-            field: "destinatario_id",
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -44,10 +40,8 @@ const SolicitacaoSeguimento = sequelize.define(
     },
     {
         tableName: "solicitacoes_seguimento",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
-    }
+        updatedAt: false
+        }
 );
 
 export default SolicitacaoSeguimento;

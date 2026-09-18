@@ -1,17 +1,17 @@
 import CandidatoService from "../services/CandidatoService.js";
 import { urlPublica } from "../middlewares/uploadMiddleware.js";
 import { Candidato } from "../models/index.js";
-import UploadService from "../services/UploadService.js";
+import ArmazenamentoService from "../services/ArmazenamentoService.js";
+import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
-const contextoDa = (req) => ({
-    ip: req.ip,
-    userAgent: req.headers["user-agent"]
-});
-
+/**
+ * Perfil de candidato (`/candidatos`), com currículo (envio, importação, URL assinada e download) e
+ * deficiências vinculadas.
+ */
 class CandidatoController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
-            const dados = await CandidatoService.findAll(req.query);
+            const dados = await CandidatoService.listar(req.query);
 
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -19,9 +19,9 @@ class CandidatoController {
         }
     }
 
-    async me(req, res, next) {
+    async perfilAtual(req, res, next) {
         try {
-            const candidato = await CandidatoService.findByUsuario(req.user.id);
+            const candidato = await CandidatoService.buscarPorUsuario(req.user.id);
 
             return res.status(200).json({ sucesso: true, candidato });
         } catch (erro) {
@@ -29,9 +29,9 @@ class CandidatoController {
         }
     }
 
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
-            const candidato = await CandidatoService.findById(req.params.id, req.user);
+            const candidato = await CandidatoService.buscarPorId(req.params.id, req.user);
 
             return res.status(200).json({ sucesso: true, candidato });
         } catch (erro) {
@@ -40,11 +40,11 @@ class CandidatoController {
     }
 
     /**
-     * URL temporária (assinada) do currículo — nunca uma URL permanente.
+     * URL temporária (assinada) do currículo, nunca uma URL permanente.
      * Autorização (dono, empresa com candidatura legítima ou administrador)
      * é verificada em `CandidatoService.gerarUrlCurriculo`.
      */
-    async curriculoUrl(req, res, next) {
+    async urlCurriculo(req, res, next) {
         try {
             const resultado = await CandidatoService.gerarUrlCurriculo(
                 req.params.id,
@@ -58,12 +58,11 @@ class CandidatoController {
     }
 
     /**
-     * Mesma autorização do endpoint acima, mas gera uma URL assinada com
-     * `Content-Disposition: attachment` (força download em vez de
-     * exibição inline) — mesmo padrão de
-     * `PostagemController.downloadAnexo` (Fase 7).
+     * Mesma autorização do endpoint acima, mas a URL assinada força download
+     * (`Content-Disposition: attachment`) em vez de exibição inline, como
+     * `PostagemController.baixarAnexo`.
      */
-    async curriculoDownload(req, res, next) {
+    async baixarCurriculo(req, res, next) {
         try {
             const resultado = await CandidatoService.gerarUrlCurriculo(
                 req.params.id,
@@ -77,9 +76,9 @@ class CandidatoController {
         }
     }
 
-    async update(req, res, next) {
+    async atualizar(req, res, next) {
         try {
-            const candidato = await CandidatoService.update(
+            const candidato = await CandidatoService.atualizar(
                 req.params.id,
                 req.body,
                 req.user
@@ -91,7 +90,7 @@ class CandidatoController {
         }
     }
 
-    async uploadCurriculo(req, res, next) {
+    async enviarCurriculo(req, res, next) {
         try {
             const curriculo = urlPublica(req.file);
 
@@ -107,7 +106,7 @@ class CandidatoController {
             );
 
             if (anterior?.curriculo && anterior.curriculo !== curriculo) {
-                await UploadService.removerArquivoFisico(anterior.curriculo, {
+                await ArmazenamentoService.removerArquivoFisico(anterior.curriculo, {
                     privado: true
                 });
             }
@@ -147,12 +146,12 @@ class CandidatoController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
-            const resultado = await CandidatoService.remove(
+            const resultado = await CandidatoService.remover(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
 
             return res.status(200).json({ sucesso: true, ...resultado });
@@ -162,7 +161,7 @@ class CandidatoController {
     }
 
     /**
-     * Extrai texto do arquivo enviado e devolve um RASCUNHO — nunca grava
+     * Extrai texto do arquivo enviado e devolve um rascunho; nunca grava
      * nada no perfil. O arquivo enviado aqui não vira o currículo oficial
      * do candidato (isso continua exigindo `PATCH /candidatos/:id/curriculo`
      * numa ação separada e explícita, depois que o usuário revisar/confirmar).

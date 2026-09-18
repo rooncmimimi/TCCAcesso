@@ -10,13 +10,13 @@ import { AccessibilityInfo, Text } from "react-native";
 
 import { ErrorBoundary } from "../ErrorBoundary";
 
-/** Lança na primeira renderização (não num evento) — o único jeito de exercitar `componentDidCatch` de verdade. */
+/** Lança na primeira renderização (não num evento): o único jeito de exercitar `componentDidCatch` de verdade. */
 function ComponenteQuebrado(): never {
   throw new Error("Falha de teste proposital.");
 }
 
 // Erros de render lançados de propósito neste arquivo aparecem no console
-// (comportamento do próprio React em desenvolvimento) — silenciado só aqui,
+// (comportamento do próprio React em desenvolvimento): silenciado só aqui,
 // não afeta os outros arquivos de teste.
 let consoleErrorSpy: jest.SpyInstance;
 beforeEach(() => {
@@ -75,7 +75,7 @@ describe("ErrorBoundary", () => {
     expect(anunciar).toHaveBeenCalledWith("Ocorreu um erro inesperado. Você pode tentar novamente.");
 
     // Um re-render da própria tela de erro (sem um novo erro acontecer) não
-    // deve repetir o anúncio — `componentDidCatch` só roda de novo se um
+    // deve repetir o anúncio: `componentDidCatch` só roda de novo se um
     // filho lançar de novo.
     await act(async () => {
       rerender(

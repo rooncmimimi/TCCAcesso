@@ -1,19 +1,19 @@
 import { Router } from "express";
 
 import DenunciaController from "../controllers/DenunciaController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
-import { denunciaLimiter } from "../middlewares/rateLimitMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
+import { limiteDenuncia } from "../middlewares/limiteRequisicoesMiddleware.js";
 import { validarCriacaoDenuncia } from "../validators/denunciaValidator.js";
 
 const router = Router();
 
 router.post(
     "/",
-    authMiddleware,
-    denunciaLimiter,
+    autenticacaoMiddleware,
+    limiteDenuncia,
     validarCriacaoDenuncia,
-    validationMiddleware,
+    validacaoMiddleware,
     DenunciaController.criar
 );
 

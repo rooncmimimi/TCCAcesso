@@ -1,18 +1,14 @@
 import { Candidatura, Vaga, Empresa } from "../models/index.js";
-import { ehAdministrador } from "./authorization.js";
+import { ehAdministrador } from "./autorizacao.js";
 import BloqueioService from "../services/BloqueioService.js";
 
 /**
- * Separação de dados públicos/privados do candidato (Fase 3 — correção de
- * IDOR). Centralizado aqui porque DUAS rotas diferentes expõem o mesmo
- * `Candidato` para terceiros — `GET /candidatos/:id` e
- * `GET /perfil/candidatos/:candidatoId` — e as duas precisam da mesma regra,
- * sem duplicar a lógica.
+ * Separação entre dados públicos e privados do candidato, contra IDOR. Fica num só lugar porque
+ * duas rotas expõem o mesmo `Candidato` a terceiros (`GET /candidatos/:id` e
+ * `GET /perfil/candidatos/:candidatoId`).
  *
- * Estratégia: allowlist explícita (mais seguro que denylist). Um campo só
- * fica visível para terceiro se estiver nas listas abaixo; qualquer campo
- * novo adicionado ao model no futuro fica PRIVADO por padrão, até alguém
- * decidir conscientemente torná-lo público.
+ * A estratégia é uma allowlist: um campo só aparece para terceiros se estiver nas listas abaixo, e
+ * qualquer campo novo do model fica privado até alguém decidir torná-lo público.
  */
 
 /** Campos do próprio candidato visíveis para qualquer usuário autenticado. */
@@ -33,10 +29,8 @@ const CAMPOS_PUBLICOS_CANDIDATO = new Set([
     "certificados",
     "habilidades",
     "deficiencias",
-    "createdAt",
-    "created_at",
-    "updatedAt",
-    "updated_at"
+    "criadoEm",
+    "atualizadoEm"
 ]);
 
 /** Campos do Usuario aninhado visíveis para qualquer usuário autenticado. */
@@ -82,7 +76,7 @@ async function empresaTemCandidaturaDoCandidato(solicitante, candidatoId) {
 
 /**
  * Decide se `solicitante` pode ver os campos privados de `candidato`
- * (dono, administrador, ou empresa com candidatura legítima) — nunca só
+ * (dono, administrador, ou empresa com candidatura legítima), nunca só
  * por estar autenticado. Bloqueio entre as partes sempre nega, mesmo que
  * houvesse candidatura.
  */
@@ -115,7 +109,7 @@ export async function podeVerDadosPrivados(candidato, solicitante) {
 
 /**
  * Remove do objeto (instância Sequelize ou JSON) qualquer campo que não
- * esteja na allowlist pública — usado quando `podeVerDadosPrivados`
+ * esteja na allowlist pública. Usado quando `podeVerDadosPrivados`
  * resolveu `false`. Muta e devolve o mesmo objeto (mesmo padrão já usado
  * no projeto para `usuario.email = undefined`).
  */
@@ -125,7 +119,7 @@ export function aplicarPrivacidadeCandidato(candidato, autorizado) {
     }
 
     // O arquivo do certificado é um documento do bucket privado (mesma
-    // categoria de currículo) — o restante do certificado (título,
+    // categoria de currículo); o restante do certificado (título,
     // instituição, link de credencial) é público normalmente, então só o
     // campo `arquivo` é escondido de terceiros, mesmo com o resto visível.
     if (!autorizado && Array.isArray(candidato.certificados)) {

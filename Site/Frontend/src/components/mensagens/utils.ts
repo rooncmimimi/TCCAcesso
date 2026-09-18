@@ -1,4 +1,4 @@
-import type { Conversa, ParticipanteConversa } from "@/lib/api-types";
+import type { Conversa, ParticipanteConversa } from "@/lib/tiposApi";
 
 /** Retorna o participante "do outro lado" da conversa em relação ao usuário logado. */
 export function participanteOposto(conversa: Conversa, usuarioId: string | null): ParticipanteConversa | undefined {
@@ -9,10 +9,8 @@ export function participanteOposto(conversa: Conversa, usuarioId: string | null)
 }
 
 /**
- * Fase 8: quando o participante do outro lado excluiu a conta, o backend
- * devolve `usuarioA`/`usuarioB` como `null` (histórico preservado, ver
- * migration 0040) — o fallback final passa a ser "Usuário removido" em vez
- * de "Contato", que sugeria só um cadastro incompleto.
+ * Quando o outro participante excluiu a conta, o backend devolve `usuarioA` ou `usuarioB` como
+ * `null` (o histórico fica preservado), e o nome exibido vira "Usuário removido".
  */
 export function nomeParticipante(participante?: ParticipanteConversa): string {
   return (

@@ -17,16 +17,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { DetalheLogSheet } from "@/components/admin/DetalheLogSheet";
 import { listarLogs, type LogAdmin } from "@/services/admin.service";
-import { formatarDataHora } from "@/utils/format";
+import { formatarDataHora } from "@/utils/formatacao";
 
 /**
- * Visualizador de admin_audit_logs — SOMENTE LEITURA. Não existe (e não
- * deve existir) nenhuma ação de editar/excluir aqui: a tabela é
- * conceitualmente imutável, sem endpoint de escrita em nenhuma camada.
- *
- * `entidadeId`/`entidadeTipo` (Fase 8): quando informados, mostra só os
- * logs relacionados àquele recurso — reaproveitado dentro dos detalhes de
- * usuário/publicação/comentário, em vez de duplicar a listagem.
+ * Visualizador de `registros_auditoria`, somente leitura: os registros são imutáveis e não há rota de
+ * escrita em nenhuma camada. Com `entidadeId` e `entidadeTipo`, mostra só os logs daquele recurso;
+ * é reaproveitado nos detalhes de usuário, publicação e comentário.
  */
 export function LogsTabela({
   entidadeId,
@@ -129,10 +125,10 @@ export function LogsTabela({
                   <TableCell className="text-xs text-muted-foreground">
                     {log.entidadeTipo ?? "—"}
                   </TableCell>
-                  <TableCell>{log.admin?.nome ?? "Conta removida"}</TableCell>
+                  <TableCell>{log.administrador?.nome ?? "Conta removida"}</TableCell>
                   <TableCell className="max-w-72 truncate">{log.descricao ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatarDataHora(log.created_at)}
+                    {formatarDataHora(log.criadoEm)}
                   </TableCell>
                 </TableRow>
               ))}

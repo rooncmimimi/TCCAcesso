@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { LogsTabela } from "@/components/admin/LogsTabela";
-import { useSession } from "@/lib/session";
+import { useSessao } from "@/hooks/useSessao";
 import adminService from "@/services/admin.service";
 import denunciaService, { MOTIVO_ROTULO } from "@/services/denuncia.service";
 
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/admin/usuarios/$usuarioId")({
 
 function AdminUsuarioDetalhe() {
   const { usuarioId } = Route.useParams();
-  const { user } = useSession();
+  const { usuario: usuarioLogado } = useSessao();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [excluindo, setExcluindo] = useState(false);
@@ -91,7 +91,7 @@ function AdminUsuarioDetalhe() {
           </Link>
           {/* Mesma restrição do backend (garantirAlvoDeAcaoAdministrativa):
               nunca oferecida contra a própria conta nem outra conta admin. */}
-          {usuario.tipoUsuario !== "administrador" && usuario.id !== user?.id && (
+          {usuario.tipoUsuario !== "administrador" && usuario.id !== usuarioLogado?.id && (
             <Button variant="destructive" className="min-h-11" onClick={() => setExcluindo(true)}>
               <Trash2 className="size-4" aria-hidden="true" /> Excluir conta
             </Button>
@@ -112,7 +112,7 @@ function AdminUsuarioDetalhe() {
           <div>
             <p className="text-xs font-bold uppercase text-muted-foreground">Cadastrado em</p>
             <p className="mt-1 text-sm">
-              {usuario.created_at ? new Date(usuario.created_at).toLocaleDateString("pt-BR") : "—"}
+              {usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString("pt-BR") : "—"}
             </p>
           </div>
           <div>

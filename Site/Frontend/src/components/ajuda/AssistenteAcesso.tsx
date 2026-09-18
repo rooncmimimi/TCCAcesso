@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { chatbotService } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
-import { useSpeech } from "@/contexts/SpeechContext";
-import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useVoz } from "@/hooks/useVoz";
+import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import type { ChatbotMensagem } from "@/types";
 
 const SAUDACAO: ChatbotMensagem = {
@@ -21,24 +21,20 @@ const SAUDACAO: ChatbotMensagem = {
 };
 
 /**
- * Assistente do ACESSO — embutido na página de Ajuda (nunca flutuante).
- * Usa o `ChatbotService` já existente no backend: respostas determinísticas
- * baseadas em palavras-chave sobre o funcionamento real da plataforma,
- * nunca inventadas. Disponível apenas para usuários autenticados, porque
- * `/chatbot/*` exige sessão (ver `chatbotRoutes.js`) — para visitantes, a
- * própria página de Ajuda já cobre as mesmas dúvidas em formato de FAQ.
+ * Assistente do ACESSO, embutido na página de Ajuda (nunca flutuante). Usa o `ChatbotService` do
+ * backend, com respostas por palavras-chave sobre o funcionamento real da plataforma. Só aparece
+ * para quem está logado, porque `/chatbot/*` exige sessão (ver `chatbotRoutes.js`); para
+ * visitantes, o FAQ da própria página cobre as mesmas dúvidas.
  */
 export function AssistenteAcesso() {
   const [conversaId, setConversaId] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<ChatbotMensagem[]>([SAUDACAO]);
   const [texto, setTexto] = useState("");
   const listaRef = useRef<HTMLDivElement>(null);
-  const { speak } = useSpeech();
-  // Fase 9, Bloco 7: `prefs.screenReader` é a única fonte de verdade sobre
-  // a leitura por voz estar ativa — nunca `choice` (registro de "já
-  // perguntou?" do primeiro acesso, que pode ficar desatualizado se o
-  // usuário mudar a preferência depois em Configurações).
-  const { prefs } = useAccessibility();
+  const { falar } = useVoz();
+  // `preferencias.screenReader` é o único indicador de que a voz está ativa, e não `escolha`, que
+  // só registra a resposta do primeiro acesso e pode estar desatualizada.
+  const { preferencias } = useAcessibilidade();
   const queryClient = useQueryClient();
 
   const enviar = useMutation({
@@ -46,10 +42,10 @@ export function AssistenteAcesso() {
     onSuccess: (dados) => {
       setConversaId(dados.conversa.id);
       setMensagens((atuais) => [...atuais, dados.resposta]);
-      // Resposta do assistente não passa por toast — não há duplicação
+      // Resposta do assistente não passa por toast: não há duplicação
       // possível aqui, é a única leitura deste evento.
-      if (prefs.screenReader) {
-        speak(dados.resposta.conteudo, { interrupt: false });
+      if (preferencias.screenReader) {
+        falar(dados.resposta.conteudo, { interrupt: false });
       }
       void queryClient.invalidateQueries({ queryKey: ["chatbot", "conversas"] });
     },

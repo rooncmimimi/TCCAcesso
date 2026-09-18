@@ -1,4 +1,4 @@
-import api from "./api";
+import clienteApi from "./api";
 import { buscarPaginado, type Paginado } from "./http";
 import type {
   Candidatura,
@@ -11,29 +11,24 @@ import type {
 /** Dashboards de candidato, empresa e administração. */
 export const dashboardService = {
   async candidato(): Promise<MetricasCandidato> {
-    const { data } = await api.get<{ metricas: MetricasCandidato }>("/dashboard/candidato");
+    const { data } = await clienteApi.get<{ metricas: MetricasCandidato }>("/dashboard/candidato");
     return data.metricas ?? {};
   },
 
   async empresa(): Promise<MetricasEmpresa> {
-    const { data } = await api.get<{ metricas: MetricasEmpresa }>("/dashboard/empresa");
+    const { data } = await clienteApi.get<{ metricas: MetricasEmpresa }>("/dashboard/empresa");
     return data.metricas ?? {};
   },
 
   async admin(): Promise<MetricasAdmin> {
-    const { data } = await api.get<{ metricas: MetricasAdmin }>("/dashboard/admin");
+    const { data } = await clienteApi.get<{ metricas: MetricasAdmin }>("/dashboard/admin");
     return data.metricas ?? {};
   },
 
   /**
-   * `GET /dashboard/favoritos` devolve registros de `FavoritoVaga` (chave
-   * `"favoritos"`, cada item com a vaga aninhada em `.vaga`), não uma
-   * lista achatada de vagas — bug pré-existente encontrado durante o
-   * Bloco 6 (Fase 9): a chamada usava a chave errada (`"vagas"`, que não
-   * existe na resposta) e nunca desembrulhava `.vaga`, então `dados`
-   * sempre vinha vazio e a tela de favoritos nunca refletia nada, com
-   * qualquer cache. Corrigido aqui, sem mudar o contrato desta função
-   * (`Paginado<Vaga>` continua igual) — nenhum consumidor precisou mudar.
+   * `GET /dashboard/favoritos` devolve registros de `FavoritoVaga` na chave `"favoritos"`, cada um
+   * com a vaga em `.vaga`, e não uma lista de vagas. Aqui eles são desembrulhados para manter o
+   * retorno `Paginado<Vaga>`.
    */
   async favoritos(params: { page?: number; limit?: number } = {}): Promise<Paginado<Vaga>> {
     const paginado = await buscarPaginado<{ vaga: Vaga | null }>("/dashboard/favoritos", "favoritos", params);
@@ -48,19 +43,19 @@ export const candidaturasService = {
   },
 
   async detalhar(id: string): Promise<Candidatura> {
-    const { data } = await api.get<{ candidatura: Candidatura }>(`/candidaturas/${id}`);
+    const { data } = await clienteApi.get<{ candidatura: Candidatura }>(`/candidaturas/${id}`);
     return data.candidatura;
   },
 
   async atualizarStatus(id: string, status: string): Promise<Candidatura> {
-    const { data } = await api.patch<{ candidatura: Candidatura }>(`/candidaturas/${id}/status`, {
+    const { data } = await clienteApi.patch<{ candidatura: Candidatura }>(`/candidaturas/${id}/status`, {
       status,
     });
     return data.candidatura;
   },
 
   async cancelar(id: string): Promise<void> {
-    await api.patch(`/candidaturas/${id}/cancelar`);
+    await clienteApi.patch(`/candidaturas/${id}/cancelar`);
   },
 
   async daVaga(vagaId: string, params: { page?: number; limit?: number } = {}) {
@@ -68,7 +63,7 @@ export const candidaturasService = {
   },
 
   async candidatar(vagaId: string, mensagem?: string): Promise<Candidatura> {
-    const { data } = await api.post<{ candidatura: Candidatura }>(`/vagas/${vagaId}/candidaturas`, {
+    const { data } = await clienteApi.post<{ candidatura: Candidatura }>(`/vagas/${vagaId}/candidaturas`, {
       mensagem: mensagem ?? null,
     });
     return data.candidatura;

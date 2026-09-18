@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RelatoriosCharts } from "@/components/admin/RelatoriosCharts";
+import { GraficosRelatorios } from "@/components/admin/GraficosRelatorios";
 import { obterRelatorios } from "@/services/admin.service";
 
 export const Route = createFileRoute("/admin/")({
@@ -34,11 +34,9 @@ const CARTOES: { chave: keyof RelatoriosTotais; rotulo: string }[] = [
   { chave: "candidaturas", rotulo: "Candidaturas" },
   { chave: "postagens", rotulo: "Publicações" },
   { chave: "usuariosBloqueados", rotulo: "Usuários bloqueados" },
-  // "Contratações" removido (auditoria do Site): o número vinha de
-  // `Candidatura.count` com status aprovado no backend, mas o ACESSO só
-  // conecta empresa↔candidato — não confirma contratação efetivada, então o
-  // indicador prometia um dado que a plataforma não tem. O backend continua
-  // devolvendo o campo (nenhuma migration), só deixou de ser exibido aqui.
+  // Não há indicador de "Contratações": o número viria das candidaturas aprovadas, mas o ACESSO só
+  // aproxima empresa e candidato e não confirma contratação, então o indicador prometeria um dado
+  // que a plataforma não tem. O backend ainda envia o campo; ele só não é exibido.
 ];
 
 type RelatoriosTotais = {
@@ -116,7 +114,7 @@ function RelatoriosAdmin() {
         ))}
       </ul>
 
-      <RelatoriosCharts visaoGeral={visaoGeral} candidaturasPorStatus={data.candidaturasPorStatus} />
+      <GraficosRelatorios visaoGeral={visaoGeral} candidaturasPorStatus={data.candidaturasPorStatus} />
 
       {data.deficienciasMaisComuns.length > 0 && (
         <Card className="shadow-none">

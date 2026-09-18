@@ -1,30 +1,22 @@
 import env from "../config/env.js";
-import ApiError from "../utils/ApiError.js";
+import ErroApi from "../utils/ErroApi.js";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
 /**
- * Cliente fino para a API de chat da OpenRouter (openrouter.ai) —
- * agregador que dá acesso a modelos de dezenas de provedores por trás de
- * uma única API, sem prender a aplicação a um provedor específico.
+ * Cliente fino para a API de chat da OpenRouter (openrouter.ai), um agregador que dá acesso a
+ * modelos de vários provedores por uma única API.
  *
- * Modelos: uma lista curada de modelos de VISÃO gratuitos (ver
- * `env.openRouter.models`), enviada via o parâmetro `models` da API —
- * a OpenRouter tenta cada um em ordem até um responder. Configurável via
- * `OPENROUTER_MODEL` (lista separada por vírgula).
+ * Usa uma lista de modelos gratuitos com visão (`env.openRouter.models`, configurável por
+ * `OPENROUTER_MODEL`) no parâmetro `models`, e a OpenRouter tenta cada um em ordem. O roteador
+ * "openrouter/free" não é usado porque pode escolher um modelo sem relação com descrever imagem (já
+ * devolveu "User Safety: safe", de um classificador de moderação).
  *
- * Deliberadamente NÃO usa o roteador "openrouter/free": ele escolhe
- * qualquer modelo gratuito disponível no momento, inclusive modelos sem
- * relação com descrever imagem — já confirmado em teste real que ele
- * pode cair num classificador de moderação de conteúdo e devolver algo
- * como "User Safety: safe" em vez de uma descrição.
- *
- * Nunca lança o erro cru do provedor para quem chama — sempre um
- * `ApiError` com uma mensagem genérica seguinte ao princípio "nunca expor
- * detalhe interno do backend" já seguido em todo o projeto.
+ * Nunca repassa o erro cru do provedor: quem chama recebe sempre um `ErroApi` com mensagem
+ * genérica.
  */
 class OpenRouterService {
-    /** Sem chave configurada, a funcionalidade fica indisponível — nunca derruba a aplicação. */
+    /** Sem chave configurada, a funcionalidade fica indisponível, mas nunca derruba a aplicação. */
     disponivel() {
         return Boolean(env.openRouter.apiKey);
     }
@@ -37,7 +29,7 @@ class OpenRouterService {
      */
     async gerarTextoSobreImagem(imagemBuffer, mimetype, prompt) {
         if (!this.disponivel()) {
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "Sugestão de descrição por IA não está configurada neste momento."
             );
         }
@@ -55,9 +47,8 @@ class OpenRouterService {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    // `models` (não `model`): tenta cada um da lista em
-                    // ordem até um responder — ver comentário em env.js
-                    // sobre por que não usamos mais "openrouter/free".
+                    // `models`, e não `model`: tenta cada modelo da lista em ordem até um responder
+                    // (ver o comentário em `env.js` sobre o roteador "openrouter/free").
                     models: env.openRouter.models,
                     messages: [
                         {
@@ -78,12 +69,12 @@ class OpenRouterService {
             });
         } catch (erro) {
             if (erro.name === "AbortError") {
-                throw ApiError.serviceUnavailable(
+                throw ErroApi.servicoIndisponivel(
                     "Não foi possível gerar uma sugestão de descrição a tempo."
                 );
             }
 
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "Não foi possível conectar ao serviço de sugestão de descrição."
             );
         } finally {
@@ -91,13 +82,13 @@ class OpenRouterService {
         }
 
         if (resposta.status === 429) {
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "Limite de uso do serviço de sugestão foi atingido. Tente novamente mais tarde."
             );
         }
 
         if (!resposta.ok) {
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "O serviço de sugestão de descrição não conseguiu processar esta imagem."
             );
         }
@@ -106,7 +97,7 @@ class OpenRouterService {
         const texto = dados?.choices?.[0]?.message?.content;
 
         if (!texto || typeof texto !== "string" || !texto.trim()) {
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "O serviço de sugestão não retornou uma descrição válida."
             );
         }

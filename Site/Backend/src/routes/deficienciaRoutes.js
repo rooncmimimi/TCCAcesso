@@ -1,8 +1,8 @@
 import { Router } from "express";
 import DeficienciaController from "../controllers/DeficienciaController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import rbacMiddleware from "../middlewares/rbacMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import {
     validarDeficiencia,
     validarIdDeficiencia
@@ -10,43 +10,43 @@ import {
 
 const router = Router();
 
-/* ---------- Leitura pública (catálogo) ---------- */
-router.get("/", DeficienciaController.index);
+/* Leitura pública (catálogo) */
+router.get("/", DeficienciaController.listar);
 
 router.get(
     "/:id",
     validarIdDeficiencia,
-    validationMiddleware,
-    DeficienciaController.show
+    validacaoMiddleware,
+    DeficienciaController.obter
 );
 
-/* ---------- Escrita restrita a administradores ---------- */
+/* Escrita restrita a administradores */
 router.post(
     "/",
-    authMiddleware,
-    rbacMiddleware("administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("administrador"),
     validarDeficiencia,
-    validationMiddleware,
-    DeficienciaController.store
+    validacaoMiddleware,
+    DeficienciaController.criar
 );
 
 router.put(
     "/:id",
-    authMiddleware,
-    rbacMiddleware("administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("administrador"),
     validarIdDeficiencia,
     validarDeficiencia,
-    validationMiddleware,
-    DeficienciaController.update
+    validacaoMiddleware,
+    DeficienciaController.atualizar
 );
 
 router.delete(
     "/:id",
-    authMiddleware,
-    rbacMiddleware("administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("administrador"),
     validarIdDeficiencia,
-    validationMiddleware,
-    DeficienciaController.destroy
+    validacaoMiddleware,
+    DeficienciaController.excluir
 );
 
 export default router;

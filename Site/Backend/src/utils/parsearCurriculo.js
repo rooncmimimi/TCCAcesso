@@ -1,14 +1,11 @@
 /**
- * Parser heurístico de currículo — sem IA, só regex/heurística posicional.
- * Sempre produz um RASCUNHO (nunca grava nada sozinho — quem chama decide
- * o que confirmar). Sempre honesto sobre incerteza: nunca inventa cargo,
- * empresa ou data quando o texto não permite extrair isso com confiança —
- * nesses casos, devolve o trecho como `descricaoSugerida` (texto bruto),
- * deixando os campos estruturados em branco para o usuário preencher.
+ * Parser heurístico de currículo, sem IA: só regex e posição das linhas. Sempre produz um rascunho
+ * e nunca grava nada sozinho; quem chama decide o que confirmar. Quando o texto não permite extrair
+ * cargo, empresa ou data com confiança, não inventa: devolve o trecho como `descricaoSugerida`
+ * (texto bruto) e deixa os campos estruturados em branco para o usuário preencher.
  *
- * REGRA INEGOCIÁVEL: nunca procura nem devolve CPF. Currículo é texto não
- * confiável — um número de 11 dígitos pode ser de terceiro (referência),
- * estar errado, ou ser coincidência. O campo CPF do candidato nunca deve
+ * Nunca procura nem devolve CPF. Currículo é texto não confiável: um número de 11 dígitos pode ser
+ * de outra pessoa (uma referência), estar errado ou ser coincidência. O CPF do candidato nunca deve
  * ser preenchido a partir daqui, então nem tentamos extrair.
  */
 
@@ -39,7 +36,7 @@ function normalizar(texto) {
 
 function identificarCabecalho(linha) {
     const limpa = normalizar(linha).replace(/[:\-–—]+$/, "").trim();
-    if (!limpa || limpa.length > 40) return null; // cabeçalho é curto — evita casar com um parágrafo inteiro
+    if (!limpa || limpa.length > 40) return null; // cabeçalho é curto: evita casar com um parágrafo inteiro
 
     for (const [secao, chaves] of Object.entries(CABECALHOS)) {
         if (chaves.some((chave) => limpa === chave || limpa.startsWith(chave))) {
@@ -50,7 +47,7 @@ function identificarCabecalho(linha) {
     return null;
 }
 
-/** Quebra o texto em blocos por linha em branco — cada bloco é um item candidato. */
+/** Quebra o texto em blocos por linha em branco: cada bloco é um item candidato. */
 function dividirEmBlocos(texto) {
     return texto
         .split(/\n\s*\n/)

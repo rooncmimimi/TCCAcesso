@@ -1,7 +1,7 @@
 /**
- * Máscaras de exibição para CPF e CNPJ — só formatam o que o usuário vê.
- * A validação de verdade continua no backend, sempre sobre dígitos puros
- * (o valor enviado à API nunca tem pontuação — ver `somenteDigitos`).
+ * Máscaras de exibição para CPF e CNPJ: só formatam o que o usuário vê. A validação de verdade
+ * continua no backend, sempre sobre dígitos puros; o valor enviado à API nunca tem pontuação (veja
+ * `somenteDigitos`).
  */
 
 export function somenteDigitos(valor: string): string {

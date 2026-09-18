@@ -1,32 +1,32 @@
 import { Deficiencia } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
+import ErroApi from "../utils/ErroApi.js";
 
 /**
  * Catálogo de deficiências.
  * Leitura pública; escrita restrita a administradores (aplicado na rota).
  */
 class DeficienciaService {
-    async findAll() {
+    async listar() {
         return Deficiencia.findAll({ order: [["nome", "ASC"]] });
     }
 
-    async findById(id) {
+    async buscarPorId(id) {
         const deficiencia = await Deficiencia.findByPk(id);
 
         if (!deficiencia) {
-            throw ApiError.notFound("Deficiência não encontrada.");
+            throw ErroApi.naoEncontrado("Deficiência não encontrada.");
         }
 
         return deficiencia;
     }
 
-    async create(data) {
+    async criar(data) {
         const existente = await Deficiencia.findOne({
             where: { nome: data.nome }
         });
 
         if (existente) {
-            throw ApiError.conflict("Esta deficiência já está cadastrada.");
+            throw ErroApi.conflito("Esta deficiência já está cadastrada.");
         }
 
         return Deficiencia.create({
@@ -35,8 +35,8 @@ class DeficienciaService {
         });
     }
 
-    async update(id, data) {
-        const deficiencia = await this.findById(id);
+    async atualizar(id, data) {
+        const deficiencia = await this.buscarPorId(id);
 
         await deficiencia.update({
             nome: data.nome ?? deficiencia.nome,
@@ -46,8 +46,8 @@ class DeficienciaService {
         return deficiencia;
     }
 
-    async delete(id) {
-        const deficiencia = await this.findById(id);
+    async excluir(id) {
+        const deficiencia = await this.buscarPorId(id);
 
         await deficiencia.destroy();
 

@@ -1,27 +1,26 @@
 import { ActivityIndicator, Text, View } from "react-native";
 
-import { ScreenContainer } from "../components/ui";
-import { useTheme } from "../theme";
+import { ContainerTela } from "../components/ui";
+import { useTema } from "../tema";
 
 /**
- * Mostrada só durante a restauração inicial da sessão salva (status
- * `loading` do `AuthProvider`) — nunca a tela de login "piscando" antes de
- * entrar direto, nem a tela de login "piscando" antes de descobrir que não
- * há sessão (Fase 3, item 13).
+ * Mostrada só enquanto a sessão salva é restaurada (status `carregando` do `AutenticacaoProvider`),
+ * para a tela de login não aparecer por um instante antes de entrar ou de descobrir que não há
+ * sessão.
  */
 export function SplashScreen() {
-  const { theme } = useTheme();
+  const { tema } = useTema();
 
   return (
-    <ScreenContainer>
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: theme.spacing.md }}>
-        <Text style={[theme.typography.display, { color: theme.colors.primary.solid }]}>ACESSO</Text>
+    <ContainerTela>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: tema.spacing.md }}>
+        <Text style={[tema.typography.display, { color: tema.colors.primary.solid }]}>ACESSO</Text>
         <ActivityIndicator
           size="large"
-          color={theme.colors.primary.solid}
+          color={tema.colors.primary.solid}
           accessibilityLabel="Carregando sua sessão"
         />
       </View>
-    </ScreenContainer>
+    </ContainerTela>
   );
 }

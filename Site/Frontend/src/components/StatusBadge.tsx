@@ -8,27 +8,27 @@ import type { StatusCandidatura, StatusVaga } from "@/types";
  * e vaga (Aberta, Pausada, Encerrada).
  */
 const ROTULOS: Record<string, string> = {
-  Pendente: "Pendente",
-  Visualizada: "Visualizada",
-  EmAnalise: "Em análise",
-  Aprovada: "Aprovada",
-  Rejeitada: "Rejeitada",
-  Cancelada: "Cancelada",
-  Aberta: "Aberta",
-  Pausada: "Arquivada",
-  Encerrada: "Encerrada",
+  pendente: "Pendente",
+  visualizada: "Visualizada",
+  em_analise: "Em análise",
+  aprovada: "Aprovada",
+  rejeitada: "Rejeitada",
+  cancelada: "Cancelada",
+  aberta: "Aberta",
+  pausada: "Arquivada",
+  encerrada: "Encerrada",
 };
 
 const VARIANTES: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  Pendente: "outline",
-  Visualizada: "secondary",
-  EmAnalise: "secondary",
-  Aprovada: "default",
-  Rejeitada: "destructive",
-  Cancelada: "outline",
-  Aberta: "default",
-  Pausada: "outline",
-  Encerrada: "secondary",
+  pendente: "outline",
+  visualizada: "secondary",
+  em_analise: "secondary",
+  aprovada: "default",
+  rejeitada: "destructive",
+  cancelada: "outline",
+  aberta: "default",
+  pausada: "outline",
+  encerrada: "secondary",
 };
 
 /** Tons usados pelas tabelas administrativas (rótulo livre via children). */
@@ -43,6 +43,10 @@ type StatusBadgeProps =
   | { status: StatusCandidatura | StatusVaga | string; tom?: never; children?: never }
   | { tom: "sucesso" | "atencao" | "perigo" | "neutro"; children: ReactNode; status?: never };
 
+/**
+ * Selo de status. Com `status`, usa o rótulo e a variante de candidatura ou vaga; com `tom`, mostra
+ * um texto livre (`children`) num dos tons das tabelas administrativas.
+ */
 export function StatusBadge(props: StatusBadgeProps) {
   if (props.tom) {
     return (

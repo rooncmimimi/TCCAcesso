@@ -6,12 +6,12 @@ import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
-import { AuthLayout } from "@/layouts/AuthLayout";
+import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import authService from "@/services/auth.service";
+import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 
 const esquema = z.object({
@@ -32,12 +32,9 @@ export const Route = createFileRoute("/recuperar-senha")({
 
 function RecuperarSenha() {
   const [enviando, setEnviando] = useState(false);
-  // O backend responde de forma deliberadamente genérica (não revela se o
-  // e-mail existe — anti-enumeração), então não há nada além de "e-mail
-  // enviado" para mostrar depois de solicitar. Diferente de antes, NÃO
-  // navega mais para `/redefinir-senha?email=...`: o mecanismo principal
-  // agora é o link do e-mail (token), então o próximo passo é o usuário
-  // abrir a caixa de entrada, não preencher outro formulário aqui.
+  // O backend responde de forma genérica (não revela se o e-mail existe), então só resta mostrar
+  // "e-mail enviado". A tela não leva a `/redefinir-senha`: o próximo passo é abrir o link recebido
+  // por e-mail.
   const [enviado, setEnviado] = useState(false);
   const {
     register,
@@ -48,7 +45,7 @@ function RecuperarSenha() {
   const aoEnviar = handleSubmit(async (valores) => {
     setEnviando(true);
     try {
-      await authService.esqueciSenha(valores.email);
+      await autenticacaoService.esqueciSenha(valores.email);
       setEnviado(true);
     } catch (erro) {
       toast.error(extrairMensagemErro(erro, "Não foi possível solicitar a recuperação de senha."));
@@ -58,7 +55,7 @@ function RecuperarSenha() {
   });
 
   return (
-    <AuthLayout>
+    <AutenticacaoLayout>
         <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
           <Logo />
         </Link>
@@ -131,6 +128,6 @@ function RecuperarSenha() {
             )}
           </CardContent>
         </Card>
-    </AuthLayout>
+    </AutenticacaoLayout>
   );
 }

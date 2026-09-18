@@ -1,10 +1,10 @@
 import { Router } from "express";
 import EmpresaController from "../controllers/EmpresaController.js";
 import InteracaoController from "../controllers/InteracaoController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import authOpcionalMiddleware from "../middlewares/authOpcionalMiddleware.js";
-import rbacMiddleware from "../middlewares/rbacMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalMiddleware.js";
+import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import upload, { criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
 import garantirEmpresaAprovadaMiddleware from "../middlewares/garantirEmpresaAprovadaMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
@@ -17,73 +17,73 @@ const processarLogoCapa = criarProcessadorArmazenamento({
     pasta: (req) => `empresas/${req.params.id}`
 });
 
-/* ---------- Rotas públicas ---------- */
-router.get("/", EmpresaController.index);
-router.get("/parceiras", EmpresaController.partners);
+/* Rotas públicas */
+router.get("/", EmpresaController.listar);
+router.get("/parceiras", EmpresaController.parceiras);
 
 router.get(
     "/usuario/:usuarioId",
-    authOpcionalMiddleware,
+    autenticacaoOpcionalMiddleware,
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     EmpresaController.porUsuario
 );
 
-/* ---------- Rotas autenticadas ---------- */
-router.get("/me", authMiddleware, EmpresaController.me);
+/* Rotas autenticadas */
+router.get("/me", autenticacaoMiddleware, EmpresaController.perfilAtual);
 
 router.get(
     "/seguindo",
-    authMiddleware,
-    rbacMiddleware("candidato"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
     InteracaoController.listarSeguidas
 );
 
 router.get(
     "/:id",
-    authOpcionalMiddleware,
+    autenticacaoOpcionalMiddleware,
     validarUuidParam("id"),
-    validationMiddleware,
-    EmpresaController.show
+    validacaoMiddleware,
+    EmpresaController.obter
 );
 
 router.put(
     "/:id",
-    authMiddleware,
+    autenticacaoMiddleware,
     validarAtualizacaoEmpresa,
-    validationMiddleware,
-    EmpresaController.update
+    validacaoMiddleware,
+    EmpresaController.atualizar
 );
 
 router.patch(
     "/:id/logo",
-    authMiddleware,
+    autenticacaoMiddleware,
     validarUuidParam("id"),
-    validationMiddleware,
+    validacaoMiddleware,
     garantirEmpresaAprovadaMiddleware,
     upload.single("logo"),
     processarLogoCapa,
-    EmpresaController.uploadLogo
+    EmpresaController.enviarLogo
 );
 
 router.patch(
     "/:id/capa",
-    authMiddleware,
+    autenticacaoMiddleware,
     validarUuidParam("id"),
-    validationMiddleware,
+    validacaoMiddleware,
     garantirEmpresaAprovadaMiddleware,
     upload.single("capa"),
     processarLogoCapa,
-    EmpresaController.uploadCapa
+    EmpresaController.enviarCapa
 );
 
 router.delete(
     "/:id",
-    authMiddleware,
-    rbacMiddleware("administrador"),
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("administrador"),
     validarUuidParam("id"),
-    validationMiddleware,
-    EmpresaController.destroy
+    validacaoMiddleware,
+    EmpresaController.excluir
 );
 
 export default router;

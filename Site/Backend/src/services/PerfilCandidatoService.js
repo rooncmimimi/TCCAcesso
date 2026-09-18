@@ -7,11 +7,11 @@ import {
     Usuario,
     Deficiencia
 } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
+import ErroApi from "../utils/ErroApi.js";
 import {
     obterCandidatoDoUsuario,
     ehAdministrador
-} from "../utils/authorization.js";
+} from "../utils/autorizacao.js";
 import {
     podeVerDadosPrivados,
     aplicarPrivacidadeCandidato
@@ -19,11 +19,11 @@ import {
 import BloqueioService from "./BloqueioService.js";
 
 /**
- * Perfil profissional detalhado do candidato:
- * experiências, formações, certificados e habilidades.
+ * Perfil profissional detalhado do candidato: experiências, formações, certificados e habilidades.
  *
- * Todas as operações são escopadas ao candidato autenticado
- * (proteção contra IDOR — OWASP A01).
+ * Criar, editar e excluir são sempre escopados ao candidato autenticado (proteção contra IDOR,
+ * OWASP A01). O perfil consolidado pode ser lido por outras pessoas, respeitando bloqueios e com os
+ * dados privados filtrados por `candidatoPrivacidade.js`.
  */
 
 const RECURSOS = {
@@ -84,7 +84,7 @@ class PerfilCandidatoService {
         const recurso = RECURSOS[nome];
 
         if (!recurso) {
-            throw ApiError.notFound("Recurso de perfil inválido.");
+            throw ErroApi.naoEncontrado("Recurso de perfil inválido.");
         }
 
         return recurso;
@@ -130,7 +130,7 @@ class PerfilCandidatoService {
         });
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         await BloqueioService.garantirNaoBloqueado(
@@ -138,10 +138,9 @@ class PerfilCandidatoService {
             solicitante
         );
 
-        // Correção de IDOR: este perfil "público" devolvia o Candidato
-        // inteiro (cpf, currículo, endereço, necessidades de acessibilidade
-        // etc.) para qualquer usuário autenticado — só o e-mail era limpo.
-        // Agora aplica a mesma allowlist usada em `CandidatoService.findById`.
+        // Aplica a mesma allowlist de `CandidatoService.buscarPorId`; sem ela, qualquer usuário
+        // autenticado receberia o candidato inteiro (CPF, currículo, endereço, necessidades de
+        // acessibilidade).
         const autorizado = await podeVerDadosPrivados(candidato, solicitante);
 
         return aplicarPrivacidadeCandidato(candidato, autorizado);
@@ -149,14 +148,14 @@ class PerfilCandidatoService {
 
     /**
      * Mesmo perfil público/consolidado, mas resolvido a partir do `usuarioId`
-     * do autor de uma postagem/comentário — é o que permite "clicar na foto/nome
+     * do autor de uma postagem/comentário: é o que permite "clicar na foto/nome
      * no feed" sem o cliente precisar conhecer o `candidatoId` de antemão.
      */
     async perfilCompletoPorUsuario(usuarioId, solicitante) {
         const candidato = await Candidato.findOne({ where: { usuarioId } });
 
         if (!candidato) {
-            throw ApiError.notFound("Candidato não encontrado.");
+            throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
         return this.perfilCompleto(candidato.id, solicitante);
@@ -191,14 +190,14 @@ class PerfilCandidatoService {
         const registro = await recurso.model.findByPk(id);
 
         if (!registro) {
-            throw ApiError.notFound("Registro não encontrado.");
+            throw ErroApi.naoEncontrado("Registro não encontrado.");
         }
 
         if (!ehAdministrador(solicitante)) {
             const candidato = await obterCandidatoDoUsuario(solicitante);
 
             if (String(registro.candidatoId) !== String(candidato.id)) {
-                throw ApiError.forbidden(
+                throw ErroApi.acessoNegado(
                     "Você não possui permissão sobre este registro."
                 );
             }

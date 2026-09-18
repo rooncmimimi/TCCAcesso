@@ -1,4 +1,4 @@
-import api from "./api";
+import clienteApi from "./api";
 
 /** Envelope padrão de listagem paginada do backend Express. */
 export interface Paginado<T> {
@@ -24,7 +24,7 @@ export async function buscarPaginado<T>(
   chave: string,
   params: ParamsPaginacao = {},
 ): Promise<Paginado<T>> {
-  const { data } = await api.get<Record<string, unknown>>(url, { params });
+  const { data } = await clienteApi.get<Record<string, unknown>>(url, { params });
 
   const lista = (data?.[chave] ?? data?.dados ?? []) as T[];
 
@@ -39,8 +39,8 @@ export async function buscarPaginado<T>(
 
 /** GET simples que devolve apenas uma chave do envelope. */
 export async function buscarChave<T>(url: string, chave: string, params?: unknown): Promise<T> {
-  const { data } = await api.get<Record<string, T>>(url, { params: params as never });
+  const { data } = await clienteApi.get<Record<string, T>>(url, { params: params as never });
   return data?.[chave] as T;
 }
 
-export default api;
+export default clienteApi;

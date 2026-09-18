@@ -1,5 +1,9 @@
 import PerfilCandidatoService from "../services/PerfilCandidatoService.js";
 
+/**
+ * Perfil profissional em `/perfil`: o perfil consolidado de um candidato (por candidato ou por
+ * usuário) e as experiências, formações, certificados e habilidades (`/perfil/:recurso`).
+ */
 class PerfilCandidatoController {
     async perfilCompleto(req, res, next) {
         try {
@@ -27,7 +31,7 @@ class PerfilCandidatoController {
         }
     }
 
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const registros = await PerfilCandidatoService.listarDoUsuario(
                 req.params.recurso,
@@ -40,7 +44,7 @@ class PerfilCandidatoController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
             const registro = await PerfilCandidatoService.criar(
                 req.params.recurso,
@@ -54,7 +58,7 @@ class PerfilCandidatoController {
         }
     }
 
-    async update(req, res, next) {
+    async atualizar(req, res, next) {
         try {
             const registro = await PerfilCandidatoService.atualizar(
                 req.params.recurso,
@@ -69,7 +73,7 @@ class PerfilCandidatoController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
             const resultado = await PerfilCandidatoService.remover(
                 req.params.recurso,

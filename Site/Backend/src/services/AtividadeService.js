@@ -13,12 +13,15 @@ import {
     Postagem
 } from "../models/index.js";
 
-/** Prévia por categoria — "ver tudo" usa os endpoints já existentes (candidaturas/minhas, dashboard/favoritos etc). */
+/**
+ * Prévia por categoria; "ver tudo" usa as rotas próprias de cada lista (candidaturas/minhas,
+ * dashboard/favoritos etc.).
+ */
 const LIMITE_PREVIA = 5;
 
 const ATRIBUTOS_EMPRESA_RESUMO = ["id", "usuarioId", "nomeFantasia", "razaoSocial", "logo", "empresaVerificada"];
 const ATRIBUTOS_PERFIL_RESUMO = ["id", "nome", "fotoPerfil", "tipoUsuario"];
-const ATRIBUTOS_POSTAGEM_RESUMO = ["id", "conteudo", "usuarioId", "created_at"];
+const ATRIBUTOS_POSTAGEM_RESUMO = ["id", "conteudo", "usuarioId", "criadoEm"];
 
 /**
  * "Minha atividade": agrega dados que já existem em outras tabelas
@@ -27,7 +30,7 @@ const ATRIBUTOS_POSTAGEM_RESUMO = ["id", "conteudo", "usuarioId", "created_at"];
  * nova e não registra histórico algum (sem visualizações, sem buscas).
  *
  * Estritamente privada: o escopo vem sempre de `solicitante.id`, nunca de um
- * parâmetro de rota — por isso é estruturalmente impossível um usuário ler a
+ * parâmetro de rota; por isso é estruturalmente impossível um usuário ler a
  * atividade de outro através desta rota.
  */
 class AtividadeService {
@@ -62,7 +65,7 @@ class AtividadeService {
                           }
                       ],
                       limit: LIMITE_PREVIA,
-                      order: [["data_candidatura", "DESC"]]
+                      order: [["criadoEm", "DESC"]]
                   })
                 : [],
             candidato ? Candidatura.count({ where: { candidatoId: candidato.id } }) : 0,
@@ -79,7 +82,7 @@ class AtividadeService {
                           }
                       ],
                       limit: LIMITE_PREVIA,
-                      order: [["created_at", "DESC"]]
+                      order: [["criadoEm", "DESC"]]
                   })
                 : [],
             candidato ? FavoritoVaga.count({ where: { candidatoId: candidato.id } }) : 0,
@@ -89,7 +92,7 @@ class AtividadeService {
                       where: { candidatoId: candidato.id },
                       include: [{ model: Empresa, as: "empresa", attributes: ATRIBUTOS_EMPRESA_RESUMO }],
                       limit: LIMITE_PREVIA,
-                      order: [["created_at", "DESC"]]
+                      order: [["criadoEm", "DESC"]]
                   })
                 : [],
             candidato ? EmpresaSeguida.count({ where: { candidatoId: candidato.id } }) : 0,
@@ -98,7 +101,7 @@ class AtividadeService {
                 where: { seguidorId: solicitante.id },
                 include: [{ model: Usuario, as: "seguido", attributes: ATRIBUTOS_PERFIL_RESUMO }],
                 limit: LIMITE_PREVIA,
-                order: [["created_at", "DESC"]]
+                order: [["criadoEm", "DESC"]]
             }),
             UsuarioSeguido.count({ where: { seguidorId: solicitante.id } }),
 
@@ -108,7 +111,7 @@ class AtividadeService {
                     { model: Postagem, as: "postagem", attributes: ATRIBUTOS_POSTAGEM_RESUMO, where: { ativo: true }, required: true }
                 ],
                 limit: LIMITE_PREVIA,
-                order: [["created_at", "DESC"]]
+                order: [["criadoEm", "DESC"]]
             }),
             Curtida.count({ where: { usuarioId: solicitante.id } }),
 
@@ -118,7 +121,7 @@ class AtividadeService {
                     { model: Postagem, as: "postagem", attributes: ATRIBUTOS_POSTAGEM_RESUMO, where: { ativo: true }, required: true }
                 ],
                 limit: LIMITE_PREVIA,
-                order: [["created_at", "DESC"]]
+                order: [["criadoEm", "DESC"]]
             }),
             Comentario.count({ where: { usuarioId: solicitante.id, ativo: true } }),
 
@@ -128,7 +131,7 @@ class AtividadeService {
                     { model: Postagem, as: "postagem", attributes: ATRIBUTOS_POSTAGEM_RESUMO, where: { ativo: true }, required: true }
                 ],
                 limit: LIMITE_PREVIA,
-                order: [["created_at", "DESC"]]
+                order: [["criadoEm", "DESC"]]
             }),
             Compartilhamento.count({ where: { usuarioId: solicitante.id } })
         ]);

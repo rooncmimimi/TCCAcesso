@@ -1,9 +1,9 @@
 import { Router } from "express";
 import PerfilCandidatoController from "../controllers/PerfilCandidatoController.js";
 import UsuarioController from "../controllers/UsuarioController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import rbacMiddleware from "../middlewares/rbacMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import {
     validarRecurso,
     validarIdRecurso,
@@ -17,7 +17,7 @@ import { validarUuidParam } from "../validators/usuarioValidator.js";
  */
 const router = Router();
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
 router.get(
     "/candidatos/usuario/:usuarioId",
@@ -30,51 +30,51 @@ router.get(
 );
 
 /**
- * Dados públicos mínimos de QUALQUER usuário (candidato, empresa ou
- * administrador) — usado como último fallback pela rota de perfil no
+ * Dados públicos mínimos de qualquer usuário (candidato, empresa ou
+ * administrador): usado como último fallback pela rota de perfil no
  * front quando o alvo não tem registro em Candidato nem Empresa (hoje,
  * isso só acontece com administradores). Nunca retorna e-mail/telefone/
- * documentos — só o necessário para montar o cabeçalho do perfil.
+ * documentos: só o necessário para montar o cabeçalho do perfil.
  */
 router.get(
     "/usuario/:usuarioId",
     validarUuidParam("usuarioId"),
-    validationMiddleware,
+    validacaoMiddleware,
     UsuarioController.perfilPublico
 );
 
 router.get(
     "/:recurso",
-    rbacMiddleware("candidato"),
+    exigirTipoUsuarioMiddleware("candidato"),
     validarRecurso,
-    validationMiddleware,
-    PerfilCandidatoController.index
+    validacaoMiddleware,
+    PerfilCandidatoController.listar
 );
 
 router.post(
     "/:recurso",
-    rbacMiddleware("candidato"),
+    exigirTipoUsuarioMiddleware("candidato"),
     validarRecurso,
     validarCorpoPerfil,
-    validationMiddleware,
-    PerfilCandidatoController.store
+    validacaoMiddleware,
+    PerfilCandidatoController.criar
 );
 
 router.put(
     "/:recurso/:id",
-    rbacMiddleware("candidato", "administrador"),
+    exigirTipoUsuarioMiddleware("candidato", "administrador"),
     validarIdRecurso,
     validarCorpoPerfil,
-    validationMiddleware,
-    PerfilCandidatoController.update
+    validacaoMiddleware,
+    PerfilCandidatoController.atualizar
 );
 
 router.delete(
     "/:recurso/:id",
-    rbacMiddleware("candidato", "administrador"),
+    exigirTipoUsuarioMiddleware("candidato", "administrador"),
     validarIdRecurso,
-    validationMiddleware,
-    PerfilCandidatoController.destroy
+    validacaoMiddleware,
+    PerfilCandidatoController.excluir
 );
 
 export default router;

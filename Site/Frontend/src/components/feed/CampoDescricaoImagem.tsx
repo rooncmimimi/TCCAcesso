@@ -7,25 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
 import { postagensService } from "@/services/postagens.service";
-import { useSpeech } from "@/contexts/SpeechContext";
-import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useVoz } from "@/hooks/useVoz";
+import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 
 type Modo = "escolha" | "ia" | "manual";
 
 /**
- * Campo de descrição acessível de uma imagem, com duas formas de criar o
- * texto — sempre visíveis com o mesmo peso, nunca uma escondida atrás da
- * outra:
+ * Campo de descrição acessível de uma imagem, com duas formas de criar o texto, sempre visíveis e
+ * com o mesmo peso:
+ * - "Descrever com IA": envia a imagem para o backend (que usa a OpenRouter) e mostra uma sugestão
+ *   sempre editável, que nunca é salva sozinha. A IA só é chamada quando o usuário clica.
+ * - "Escrever minha própria descrição": campo de texto comum, sem chamada de rede; funciona mesmo
+ *   sem IA disponível.
  *
- * - "Descrever com IA": envia a imagem para o backend (que usa a
- *   OpenRouter) e mostra uma sugestão — sempre editável, nunca salva
- *   sozinha. Só chama a IA quando o usuário clica, nunca automaticamente.
- * - "Escrever minha própria descrição": campo de texto comum, sem
- *   nenhuma chamada de rede — funciona mesmo sem IA configurada/disponível.
- *
- * `obterImagem` é assíncrono e só é chamado no clique de "Descrever com
- * IA" — no composer já é o `File` em mãos; ao editar um anexo já
- * publicado, é um `fetch` da própria imagem (ver GaleriaAnexos.tsx).
+ * `obterImagem` é assíncrono e só roda no clique de "Descrever com IA": no formulário de publicação
+ * já é o `File` em mãos; ao editar um anexo publicado, é um `fetch` da própria imagem (veja
+ * `GaleriaAnexos.tsx`).
  */
 export function CampoDescricaoImagem({
   id,
@@ -42,11 +39,10 @@ export function CampoDescricaoImagem({
 }) {
   const [modo, setModo] = useState<Modo>(value ? "manual" : "escolha");
   const idAnuncio = useId();
-  const { speak } = useSpeech();
-  // Fase 9, Bloco 7: `prefs.screenReader` é a única fonte de verdade —
-  // nunca `choice` (só registra "já perguntou?", pode ficar desatualizado
-  // se a preferência mudar depois em Configurações).
-  const { prefs } = useAccessibility();
+  const { falar } = useVoz();
+  // `preferencias.screenReader` é o único indicador de que a voz está ativa, e não `escolha`, que
+  // só registra a resposta do primeiro acesso.
+  const { preferencias } = useAcessibilidade();
 
   const sugerir = useMutation({
     mutationFn: async () => {
@@ -55,12 +51,12 @@ export function CampoDescricaoImagem({
     },
     onSuccess: (descricao) => {
       onChange(descricao);
-      // Lê a sugestão em voz alta só pra quem ativou a leitura por voz —
+      // Lê a sugestão em voz alta só pra quem ativou a leitura por voz:
       // ajuda a conferir se a IA acertou sem precisar ler o campo pequeno
       // na tela. Nunca fala sozinho se a pessoa desligou esse recurso.
-      // Não é um toast — nenhuma duplicação possível aqui.
-      if (prefs.screenReader) {
-        speak(`Sugestão da inteligência artificial: ${descricao}`);
+      // Não é um toast: nenhuma duplicação possível aqui.
+      if (preferencias.screenReader) {
+        falar(`Sugestão da inteligência artificial: ${descricao}`);
       }
     },
   });
@@ -176,7 +172,7 @@ export function CampoDescricaoImagem({
     );
   }
 
-  // modo === "manual" — sempre disponível, sem nenhuma chamada de IA.
+  // modo === "manual": sempre disponível, sem nenhuma chamada de IA.
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-semibold">

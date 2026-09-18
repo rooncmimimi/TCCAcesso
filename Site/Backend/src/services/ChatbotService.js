@@ -1,32 +1,26 @@
 import { ChatbotConversa, ChatbotMensagem } from "../models/index.js";
-import ApiError from "../utils/ApiError.js";
-import { resolverPaginacao, montarResposta } from "../utils/pagination.js";
+import ErroApi from "../utils/ErroApi.js";
+import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 
 /**
- * Chatbot de suporte — assistente da Central de Ajuda.
+ * Chatbot de suporte da Central de Ajuda. O histórico fica em `chatbot_conversas` e
+ * `chatbot_mensagens`, sempre escopado ao usuário autenticado (contra IDOR). As respostas vêm de
+ * uma base de conhecimento local e determinística: nenhum dado do usuário sai da aplicação e não há
+ * IA externa.
  *
- * O histórico é persistido em chatbot_conversas / chatbot_mensagens,
- * sempre escopado ao usuário autenticado (anti-IDOR). As respostas usam
- * uma base de conhecimento local determinística — nenhum dado do
- * usuário sai da aplicação, nenhuma IA externa, nenhuma alucinação.
+ * Uma pergunta casa com um tópico de duas formas:
+ * - `chaves`: lista de substrings, muitas vezes só o radical, para cobrir a conjugação em português
+ *   sem colisão ("denunc" casa com "denunciar", "denuncio" e "denúncia"). Um prefixo `\b` (limite
+ *   de palavra) evita casar dentro de outra palavra que por acaso contém o radical: "ativ" sozinho
+ *   casaria com "desativar", por isso "ativar" usa `\bativ`.
+ * - `regex`: quando o radical sozinho colidiria com outra coisa ("public" colide com "publicação")
+ *   ou quando o tópico só faz sentido com duas palavras próximas (verbo e "vaga").
  *
- * Duas formas de casar uma pergunta com um tópico:
- *
- * 1. `chaves`: lista de substrings. Usadas em RADICAL (não palavra
- *    completa) quando isso resolve conjugação em português sem colisão
- *    — ex.: "denunc" casa com "denunciar"/"denuncio"/"denúncia". Um
- *    prefixo com `\b` (limite de palavra) evita casar dentro de outra
- *    palavra que só por acaso contém o radical (ex.: "ativ" sozinho
- *    casaria com "desativar" — por isso "ativar" abaixo usa `\bativ`).
- * 2. `regex`: para quando o radical sozinho colidiria com outra coisa
- *    (ex.: "public" colide com "publicação") ou quando o tópico só faz
- *    sentido com duas palavras próximas (verbo + "vaga").
- *
- * A comparação roda sobre texto sem acento e minúsculo (`normalizar`),
- * então nenhuma chave usa acento.
+ * A comparação roda sobre o texto sem acento e em minúsculas (`normalizar`), então nenhuma chave
+ * usa acento.
  */
 const BASE_CONHECIMENTO = [
-    // ---------- Conta ----------
+    // Conta
     {
         chaves: ["criar conta", "criar uma conta", "cadastr", "me cadastrar", "fazer meu cadastro"],
         resposta:
@@ -62,7 +56,7 @@ const BASE_CONHECIMENTO = [
         resposta:
             "1. Acesse Configurações > Conta. 2. Escolha 'Pausar conta' (reversível — basta entrar de novo pra reativar) ou 'Excluir conta' (permanente). 3. Informe sua senha atual para confirmar. Atenção: excluir a conta não pode ser desfeito."
     },
-    // ---------- Perfil ----------
+    // Perfil
     {
         chaves: [
             "curriculo", "experiencia", "formacao", "habilidade", "certificad",
@@ -82,7 +76,7 @@ const BASE_CONHECIMENTO = [
             "Toque no nome ou na foto da pessoa em qualquer publicação, vaga, sugestão do Descobrir ou resultado de busca — isso abre o perfil dela."
     },
     {
-        // "sigo" é a conjugação em primeira pessoa de "seguir" — sem o
+        // "sigo" é a conjugação em primeira pessoa de "seguir": sem o
         // regex, "como sigo uma empresa" não bate com "seguir uma empresa".
         chaves: ["seguir alguem", "seguir uma pessoa", "seguir um perfil", "seguir uma empresa"],
         regex: /\bsigo\s+(uma\s+|um\s+)?(pessoa|empresa|perfil)/,
@@ -108,7 +102,7 @@ const BASE_CONHECIMENTO = [
             "Cada sugestão em 'Descobrir' mostra o motivo ao lado (mesma cidade, mesma área, empresa de uma vaga que você favoritou, etc.) — nunca é um cálculo escondido, e nunca usa deficiência ou diagnóstico como critério."
     },
 
-    // ---------- Vagas ----------
+    // Vagas
     {
         regex: /diferenca\w*.*(aprovad\w*|verificad\w*)|(aprovad\w*.*verificad\w*)|(verificad\w*.*aprovad\w*)/,
         resposta:
@@ -135,7 +129,7 @@ const BASE_CONHECIMENTO = [
     },
     {
         chaves: ["vaga para pcd", "vagas para pcd", "vaga para pessoa com deficiencia", "vagas para idoso"],
-        // "vaga"/"emprego" e "50" na mesma frase, em qualquer ordem — cobre
+        // "vaga"/"emprego" e "50" na mesma frase, em qualquer ordem: cobre
         // frases como "vaga pra pessoa com mais de 50" sem precisar
         // enumerar toda variação de como alguém menciona 50+.
         regex: /(vaga|emprego)\w*[\s\S]*\b50\b|\b50\b[\s\S]*(vaga|emprego)\w*/,
@@ -163,13 +157,13 @@ const BASE_CONHECIMENTO = [
             "minha atividade", "vagas favoritas", "quem eu sigo", "quem sigo",
             "minhas curtidas", "meus comentarios", "meus compartilhamentos"
         ],
-        // "pessoas/empresas que (eu) sigo" — o "eu" é opcional na fala natural.
+        // "pessoas/empresas que (eu) sigo": o "eu" é opcional na fala natural.
         regex: /(pessoas|empresas)\s+que\s+(eu\s+)?sigo/,
         resposta:
             "Em 'Minha atividade', no menu do seu perfil, você vê num só lugar suas candidaturas, vagas favoritas, pessoas e empresas que segue, e suas curtidas, comentários e compartilhamentos no feed. É uma página só sua — mais ninguém tem acesso a ela."
     },
     {
-        // Radicais de verbo + "vaga" próximos — sem isso, "publico"/"edito"/
+        // Radicais de verbo + "vaga" próximos: sem isso, "publico"/"edito"/
         // "excluo" (conjugados) não bateriam com "publicar"/"editar"/
         // "excluir", e um radical sozinho ("public") colidiria com
         // "publicação" do Feed.
@@ -183,7 +177,7 @@ const BASE_CONHECIMENTO = [
             "Empresas cadastradas podem publicar vagas, acompanhar candidatos e conversar pelo chat. O cadastro passa por aprovação da equipe do ACESSO."
     },
 
-    // ---------- Feed / rede social ----------
+    // Feed e rede social
     {
         chaves: [
             "curt", "coment", "compartilh", "nova publicacao", "criar publicacao",
@@ -222,12 +216,12 @@ const BASE_CONHECIMENTO = [
             "1. Abra o perfil da pessoa. 2. Toque no menu de opções. 3. Escolha 'Bloquear'. Um usuário bloqueado não consegue ver seu perfil nem enviar mensagens. Veja e gerencie sua lista de bloqueados em Configurações > Privacidade > Usuários bloqueados."
     },
 
-    // ---------- Mensagens ----------
+    // Mensagens
     {
-        // "mensage" (sem o "m"/"ns" final) cobre "mensagem" e "mensagens" —
+        // "mensage" (sem o "m"/"ns" final) cobre "mensagem" e "mensagens":
         // "mensagem" sozinho não bate com a forma plural. O regex cobre
         // "envio/enviar/mandar (uma) mensagem" com uma palavra no meio
-        // ("uma") — sem ele, essa frase colide em pontos com a chave
+        // ("uma"): sem ele, essa frase colide em pontos com a chave
         // curta "empresa" do tópico de Vagas e pode perder no empate.
         chaves: ["mensage", "chat", "conversa", "falar", "iniciar conversa"],
         regex: /\b(envi|mand)\w*\s+(uma\s+)?mensage/,
@@ -235,7 +229,7 @@ const BASE_CONHECIMENTO = [
             "1. Abra o perfil da pessoa/empresa (ou a página de uma vaga). 2. Toque em 'Enviar mensagem' ou 'Conversar com a empresa'. 3. Digite e envie. Todas as conversas ficam disponíveis na área de Mensagens, com um contador de não lidas."
     },
 
-    // ---------- Notificações ----------
+    // Notificações
     {
         chaves: [
             "notificacao", "notificacoes", "receber notificacao", "desativar notificacao",
@@ -245,7 +239,7 @@ const BASE_CONHECIMENTO = [
             "1. Acesse Configurações > Notificações. 2. Ligue ou desligue cada categoria separadamente: 'Vagas e candidaturas', 'Mensagens', 'Publicações e comentários' e rede/seguidores."
     },
 
-    // ---------- Privacidade ----------
+    // Privacidade
     {
         chaves: [
             "privacidade", "quem ve meus dados", "dados pessoais", "visibilidade",
@@ -255,7 +249,7 @@ const BASE_CONHECIMENTO = [
             "1. Acesse Configurações > Privacidade > Perfil público. 2. Ajuste quem vê seu perfil e seus dados de contato. Informações sobre deficiência nunca são públicas por padrão — só ficam visíveis para você mesmo e, quando aplicável, para uma empresa com candidatura sua ou para a equipe administrativa."
     },
 
-    // ---------- Acessibilidade ----------
+    // Acessibilidade
     {
         chaves: ["libras", "surdo", "surdez", "sinais"],
         resposta:
@@ -303,8 +297,8 @@ const normalizar = (texto) =>
 
 class ChatbotService {
     /**
-     * Escolhe o tópico com maior soma de CARACTERES das chaves batidas
-     * (não a contagem de chaves) — uma pergunta que bate uma chave longa
+     * Escolhe o tópico com maior soma de caracteres das chaves batidas
+     * (não a contagem de chaves): uma pergunta que bate uma chave longa
      * e específica ("empresa verificada") deve vencer uma que bate só
      * uma chave curta e genérica ("empresa"), mesmo com uma única chave
      * cada. `regex` soma pontuação fixa, no mesmo patamar de uma chave
@@ -337,7 +331,7 @@ class ChatbotService {
             where: { usuarioId: solicitante.id },
             limit: limite,
             offset,
-            order: [["updated_at", "DESC"]]
+            order: [["atualizadoEm", "DESC"]]
         });
 
         return montarResposta("conversas", rows, count, pagina, limite);
@@ -357,11 +351,11 @@ class ChatbotService {
         const conversa = await ChatbotConversa.findByPk(conversaId);
 
         if (!conversa) {
-            throw ApiError.notFound("Conversa não encontrada.");
+            throw ErroApi.naoEncontrado("Conversa não encontrada.");
         }
 
         if (String(conversa.usuarioId) !== String(solicitante.id)) {
-            throw ApiError.forbidden("Você não participa desta conversa.");
+            throw ErroApi.acessoNegado("Você não participa desta conversa.");
         }
 
         return conversa;
@@ -376,7 +370,7 @@ class ChatbotService {
             where: { conversaId },
             limit: limite,
             offset,
-            order: [["created_at", "ASC"]]
+            order: [["criadoEm", "ASC"]]
         });
 
         return montarResposta("mensagens", rows, count, pagina, limite);
@@ -402,7 +396,7 @@ class ChatbotService {
             conteudo: this.responder(pergunta)
         });
 
-        await conversa.changed("updated_at", true);
+        await conversa.changed("atualizadoEm", true);
         await conversa.save();
 
         return {

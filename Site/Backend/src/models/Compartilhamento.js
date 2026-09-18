@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: compartilhamentos (migration 0007)
+ * Tabela: compartilhamentos
  */
 const Compartilhamento = sequelize.define(
     "Compartilhamento",
@@ -12,13 +12,11 @@ const Compartilhamento = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-        postagemId: {
-            field: "postagem_id",
+        postagemId: {
             type: DataTypes.UUID,
             allowNull: false
         },
-        usuarioId: {
-            field: "usuario_id",
+        usuarioId: {
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -27,9 +25,7 @@ const Compartilhamento = sequelize.define(
         }
     },
     {
-        tableName: "compartilhamentos",
-        timestamps: true,
-        createdAt: "created_at",
+        tableName: "compartilhamentos",
         updatedAt: false
     }
 );

@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, Loader2, MessageCircle, Share2 } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,8 +11,9 @@ import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { ListaSeguidoresDialog } from "@/components/perfil/ListaSeguidoresDialog";
 import { CandidaturasRecentes } from "@/components/dashboard/CandidaturasRecentes";
 import { VagasFavoritas } from "@/components/dashboard/VagasFavoritas";
-import { initials, useSession } from "@/contexts/SessionContext";
-import { urlArquivo } from "@/services/uploads.service";
+import { iniciaisDoNome } from "@/utils/formatacao";
+import { useSessao } from "@/hooks/useSessao";
+import { urlArquivo } from "@/utils/arquivos";
 import { atividadeService } from "@/services/atividade.service";
 import type { InteracaoFeedItem } from "@/types";
 
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/minha-atividade")({
 });
 
 function MinhaAtividade() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["minha-atividade"],
@@ -42,7 +43,7 @@ function MinhaAtividade() {
   });
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Minha atividade</h1>
       <p className="mt-2 text-muted-foreground">
         Um resumo da sua presença no ACESSO. Esta página é privada — só você pode vê-la.
@@ -67,8 +68,8 @@ function MinhaAtividade() {
           <Card className="shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
               <CardTitle className="text-lg">Pessoas que você segue</CardTitle>
-              {user && data.seguindo.pessoas.total > 0 ? (
-                <ListaSeguidoresDialog usuarioId={user.id} modo="seguindo" total={data.seguindo.pessoas.total}>
+              {usuario && data.seguindo.pessoas.total > 0 ? (
+                <ListaSeguidoresDialog usuarioId={usuario.id} modo="seguindo" total={data.seguindo.pessoas.total}>
                   <Button variant="ghost" size="sm">
                     Ver tudo
                   </Button>
@@ -88,14 +89,14 @@ function MinhaAtividade() {
                   {data.seguindo.pessoas.itens.map((pessoa) => (
                     <li key={pessoa.id}>
                       <Link
-                        to={pessoa.id === user?.id ? "/perfil" : "/perfil/$usuarioId"}
-                        params={pessoa.id === user?.id ? undefined : { usuarioId: pessoa.id }}
+                        to={pessoa.id === usuario?.id ? "/perfil" : "/perfil/$usuarioId"}
+                        params={pessoa.id === usuario?.id ? undefined : { usuarioId: pessoa.id }}
                         className="flex items-center gap-3 rounded-lg py-3 hover:bg-secondary focus-visible:bg-secondary"
                       >
                         <Avatar className="size-10 shrink-0">
                           <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />
                           <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-                            {initials(pessoa.nome)}
+                            {iniciaisDoNome(pessoa.nome)}
                           </AvatarFallback>
                         </Avatar>
                         <p className="min-w-0 truncate font-semibold">{pessoa.nome}</p>
@@ -134,7 +135,7 @@ function MinhaAtividade() {
                           <Avatar className="size-10 shrink-0 rounded-md">
                             <AvatarImage src={urlArquivo(empresa?.logo)} alt="" />
                             <AvatarFallback className="rounded-md bg-primary-soft text-xs font-bold text-primary">
-                              {initials(nome)}
+                              {iniciaisDoNome(nome)}
                             </AvatarFallback>
                           </Avatar>
                           <p className="min-w-0 truncate font-semibold">{nome}</p>
@@ -177,7 +178,7 @@ function MinhaAtividade() {
           </Card>
         </div>
       )}
-    </AppShell>
+    </EstruturaApp>
   );
 }
 

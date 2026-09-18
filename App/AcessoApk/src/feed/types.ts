@@ -1,107 +1,80 @@
 /**
- * Tipos do contrato real de Feed do backend (Site/Backend), conforme
- * auditoria da Fase 10. Nomes de campo em português são LITERAIS ao que a
- * API envia (`models/Postagem.js`, `models/Comentario.js`,
- * `PostagemService.js`, `ComentarioService.js`) — não são estilo, são o
- * contrato.
- *
- * `POST /postagens` tem o middleware Multer `uploadAnexos.array("arquivos",
- * 4)` montado na rota, mas confirmado AO VIVO (Fase 10, contra o backend
- * local) que um corpo JSON puro (sem multipart) com `{conteudo, publica}`
- * passa direto — Multer só intercepta requisições multipart, então
- * `express.json()` preenche `req.body` normalmente quando não há arquivo
- * nenhum. Por isso `FeedService.criar` nesta fase nunca usa `FormData`.
+ * Tipos do feed: publicações, anexos e comentários, com os nomes de campo que a API envia
+ * (`models/Postagem.js`, `models/Comentario.js`).
  */
 
-/** O objeto `usuario` embutido em `Postagem`/`Comentario` — só os campos que
- * esta fase usa (mesmo índice de campos não mapeados que `EmpresaResumoVaga`
- * já tem em `src/vagas/types.ts`, mesmo motivo). */
+/**
+ * Autor embutido em publicações e comentários. Só os campos usados pelo app têm nome; o restante
+ * fica no índice.
+ */
 export interface AutorResumo {
   id: string;
   nome: string;
-  /** Sem componente de imagem nesta fase (Fase 10) — o avatar é sempre um
-   * círculo com as iniciais de `nome`, mesmo quando `fotoPerfil` existe. */
   fotoPerfil?: string | null;
   tipoUsuario?: string;
   [chave: string]: unknown;
 }
 
 /**
- * `Site/Backend/src/models/PostagemAnexo.js`. `url` já chega PRONTA para uso
- * (`PostagemService.decorar` → `assinarMidiaDasPostagens` assina a URL antes
- * de a resposta sair do backend) — diferente do currículo/logo (Fase
- * 13/18), este app NÃO precisa buscar uma URL separada para exibir a mídia
- * do feed; só usa `FeedService.obterUrlAnexo` como fallback pontual quando a
- * URL assinada expira (`Image.onError`), nunca no carregamento normal.
+ * `models/PostagemAnexo.js`. A `url` já chega assinada pelo backend; `FeedService.obterUrlAnexo` só
+ * entra em cena quando essa URL expira.
  *
- * `descricao` é o texto alternativo real da imagem/vídeo, lido pelo sistema
- * de voz do dispositivo — "usada como `alt` real da imagem", conforme o
- * próprio comentário do model no backend. Nunca gerada automaticamente sem
- * revisão do usuário (a sugestão por IA é sempre um rascunho editável, nunca
- * publicada sem confirmação).
+ * `descricao` é o texto alternativo da mídia, lido pelo leitor de tela. Nunca é gerada sem revisão:
+ * a sugestão da IA é um rascunho que a pessoa edita ou confirma.
  */
 export interface PostagemAnexo {
   id: string;
   postagemId: string;
   tipo: "imagem" | "video" | "documento";
   url: string;
-  privado: boolean;
   nomeOriginal?: string | null;
   descricao?: string | null;
-  mimeType?: string | null;
+  tipoMime?: string | null;
   tamanhoBytes?: number | null;
   ordem: number;
   [chave: string]: unknown;
 }
 
 /**
- * Tipado só com os campos que esta fase usa — o backend envia mais campos
- * (compartilhamentos etc.), e eles continuam disponíveis em tempo de
- * execução (índice `[chave: string]`), só não são nomeados aqui até uma tela
- * futura precisar deles.
+ * Só os campos usados pelo app têm nome; o restante (compartilhamentos etc.) continua acessível
+ * pelo índice.
  *
- * `usuario`/`autor` coexistem no contrato real (confirmado pela auditoria do
- * site, ainda que o backend hoje só tenha sido observado enviando
- * `usuario`) — toda leitura do autor deve usar `postagem.usuario ??
- * postagem.autor`, nunca só um dos dois campos.
+ * O autor chega em `usuario`, mas o contrato também prevê `autor`; leia sempre
+ * `postagem.usuario ?? postagem.autor`.
  */
 export interface Postagem {
   id: string;
   conteudo: string | null;
-  imagem?: string | null;
   publica: boolean;
   editadoEm?: string | null;
-  created_at: string;
+  criadoEm: string;
   usuario?: AutorResumo;
   autor?: AutorResumo;
   totalCurtidas: number;
   curtidoPorMim: boolean;
   totalComentarios: number;
-  /** Só presente em `GET /postagens`/`GET /postagens/:id` (`incluirAnexos()` no backend) — até 4, na ordem de `ordem`. */
+  /** Só presente em `GET /postagens`/`GET /postagens/:id` (`incluirAnexos()` no backend); até 4, na ordem de `ordem`. */
   anexos?: PostagemAnexo[];
   [chave: string]: unknown;
 }
 
 /**
- * Tipado só com os campos que esta fase usa. `respostas` só aparece nos
- * comentários de nível raiz devolvidos por `GET
- * /postagens/:postagemId/comentarios` (o backend já filtra
- * `comentarioPaiId: null` nesse endpoint e embute as respostas de 1 nível
- * junto — nunca vêm comentários de nível raiz dentro de `respostas`).
+ * `respostas` só vem nos comentários raiz de `GET /postagens/:postagemId/comentarios`, com as
+ * respostas (um nível) já embutidas pelo backend.
  */
 export interface Comentario {
   id: string;
   comentario: string;
   comentarioPaiId?: string | null;
   editadoEm?: string | null;
-  created_at: string;
+  criadoEm: string;
   usuario?: AutorResumo;
   autor?: AutorResumo;
   respostas?: Comentario[];
   [chave: string]: unknown;
 }
 
-/** `GET /postagens` — paginação incremental (scroll infinito), não clássica (diferente de Vagas, de propósito — ver `HomeScreen.tsx`). */
+/** `GET /postagens`: paginação incremental para a rolagem infinita do feed (ver `FeedScreen.tsx`). */
 export interface ListaPostagensResposta {
   sucesso: true;
   total: number;
@@ -117,13 +90,16 @@ export interface PostagemDetalheResposta {
   postagem: Postagem;
 }
 
-/** `POST /postagens` — 201 em sucesso. */
+/** `POST /postagens`: 201 em sucesso. */
 export interface CriarPostagemResposta {
   sucesso: true;
   postagem: Postagem;
 }
 
-/** `POST /postagens/:postagemId/curtidas` — toggle idempotente na MESMA rota (sem DELETE separado). Sempre a fonte de verdade: sem optimistic update nesta fase (decisão do usuário, por consistência com o padrão de favoritar de Vagas). */
+/**
+ * `POST /postagens/:postagemId/curtidas`: a mesma rota curte e descurte. O resultado do servidor é
+ * sempre o que vale, sem atualização otimista, no mesmo padrão do favoritar de vagas.
+ */
 export interface AlternarCurtidaResposta {
   sucesso: true;
   curtido: boolean;
@@ -140,13 +116,17 @@ export interface ListaComentariosResposta {
   comentarios: Comentario[];
 }
 
-/** `POST /postagens/:postagemId/comentarios` — 201 em sucesso. */
+/** `POST /postagens/:postagemId/comentarios`: 201 em sucesso. */
 export interface CriarComentarioResposta {
   sucesso: true;
   comentario: Comentario;
 }
 
-/** `DELETE /comentarios/:id` (Fase R6) — soft delete (`ativo=false`), só o autor ou admin (`garantirDono` no backend, 403 caso contrário; 404 se já removido). Emite `feed:comentario` com `removido:true` — o mesmo evento que a tela de detalhe já trata. */
+/**
+ * `DELETE /comentarios/:id`: exclusão lógica (`ativo=false`) pelo autor ou por administrador (403
+ * para os demais, 404 se já removido). Emite `feed:comentario` com `removido: true`, evento que a
+ * tela de detalhe já trata.
+ */
 export interface RemoverComentarioResposta {
   sucesso: true;
   mensagem: string;
@@ -162,14 +142,7 @@ export interface ListarComentariosParametros {
   limit?: number;
 }
 
-/**
- * Formato que `expo-image-picker` devolve em `result.assets[0]` (Expo SDK
- * 57, confirmado na documentação versionada antes de escrever este código —
- * ver `AGENTS.md`), tipado só com os campos que `FeedService`/
- * `NovaPostagemScreen` usam. `fileSize` é usado para o mesmo tipo de
- * checagem de tamanho que o backend aplica (`uploadMiddleware.js`), para dar
- * um erro amigável ANTES de tentar o upload, não só depois de um 400.
- */
+/** Imagem escolhida no `expo-image-picker`, reduzida aos campos que o app envia no upload. */
 export interface AnexoSelecionado {
   uri: string;
   nome: string | null;
@@ -177,23 +150,23 @@ export interface AnexoSelecionado {
   tamanhoBytes: number | null;
 }
 
-/** Um anexo pronto para publicar: o arquivo escolhido + a descrição acessível que o usuário escreveu (ou aceitou da sugestão por IA) para ele. Nunca publicado sem essa descrição ter passado pela revisão do usuário — mesmo vazia, é uma escolha explícita, nunca gerada automaticamente sem tela. */
+/**
+ * Anexo pronto para publicar: o arquivo e a descrição que a pessoa escreveu ou aceitou da sugestão
+ * da IA. A descrição sempre passa pela revisão dela, mesmo quando fica vazia.
+ */
 export interface AnexoParaPublicar {
   arquivo: AnexoSelecionado;
   descricao: string;
 }
 
 /**
- * Payload de `POST /postagens`/`PUT /postagens/:id` — interface EXPLÍCITA,
- * não `Omit<Postagem, ...>` (mesmo motivo já documentado em
- * `src/vagas/types.ts`/`src/perfil/types.ts`: `Postagem` tem `[chave:
- * string]: unknown`, e `Omit`/`Pick` sobre um tipo com índice de string
- * colapsam `keyof` para `string`, perdendo a tipagem real dos campos).
+ * Corpo de `POST /postagens` e `PUT /postagens/:id`, declarado campo a campo: um `Omit` sobre
+ * `Postagem`, que tem o índice `[chave: string]`, perderia a tipagem dos campos.
  */
 export interface CriarPostagemDados {
   conteudo?: string;
   publica?: boolean;
-  /** Até 4 (limite do backend, `uploadAnexos.array("arquivos", 4)`) — só imagem nesta fase (ver `NovaPostagemScreen.tsx`: anexar vídeo fica para uma fase futura, sem player de vídeo no app ainda). */
+  /** Até 4 imagens (limite do backend). O app ainda não anexa vídeos. */
   anexos?: AnexoParaPublicar[];
 }
 
@@ -202,46 +175,46 @@ export interface AtualizarPostagemDados {
   publica?: boolean;
 }
 
-/** `PATCH /postagens/:id/anexos/:anexoId` — devolve a publicação inteira já atualizada (mesmo formato de `PostagemDetalheResposta`), nunca só o anexo isolado. */
+/** `PATCH /postagens/:id/anexos/:anexoId`: devolve a publicação inteira já atualizada (mesmo formato de `PostagemDetalheResposta`), nunca só o anexo isolado. */
 export interface AtualizarDescricaoAnexoResposta {
   sucesso: true;
   postagem: Postagem;
 }
 
-/** `DELETE /postagens/:id` — soft delete (`ativo=false`), dono ou admin. */
+/** `DELETE /postagens/:id`: soft delete (`ativo=false`), dono ou admin. */
 export interface RemoverPostagemResposta {
   sucesso: true;
   mensagem: string;
 }
 
-/** `GET /postagens/:id/anexos/:anexoId/url` (exibição) e `.../download` (força download) — mesmo formato, `expiraEm` é `null` só no caso legado (anexo não-privado, sem TTL). Usado nesta fase só como fallback pontual quando a URL já embutida na publicação expira (`Image.onError`), nunca no carregamento normal (ver `PostagemAnexo.url` acima). */
+/**
+ * `GET /postagens/:id/anexos/:anexoId/url` (exibição) e `.../download`. `expiraEm` só é `null` em
+ * anexos antigos não privados, sem prazo. No app, serve apenas para renovar uma URL expirada (ver
+ * `PostagemAnexo`).
+ */
 export interface GerarUrlAnexoResposta {
   sucesso: true;
   url: string;
   expiraEm: string | null;
 }
 
-/** `POST /postagens/anexos/sugerir-descricao` — stateless, nunca grava nada; falha (sem OpenRouter configurado, limite de taxa, imagem não reconhecida) é sempre "sugestão indisponível agora", nunca um impedimento para publicar (mesma regra documentada no backend, `PostagemController.sugerirDescricaoAnexo`). */
+/**
+ * `POST /postagens/anexos/sugerir-descricao`: não grava nada. Qualquer falha (OpenRouter não
+ * configurado, limite de requisições, imagem não reconhecida) só significa que a sugestão está
+ * indisponível; publicar continua possível.
+ */
 export interface SugerirDescricaoResposta {
   sucesso: true;
   descricao: string;
 }
 
 /**
- * Payloads dos eventos de Socket.IO do Feed (`Site/Backend/src/realtime/
- * socket.js` → `emitirFeed`, usado por `PostagemService`). Emissão GLOBAL
- * (`io.emit`, sem sala) e SEMPRE `{id, <flag>}` — nunca o objeto de domínio
- * completo nem uma URL assinada (comentário de segurança explícito no
- * backend: o payload contornaria toda autorização de `garantirAcessoAPostagem`
- * se carregasse dado de verdade). O cliente NUNCA confia no payload além do
- * que está tipado aqui — sempre revalida via REST antes de mostrar qualquer
- * conteúdo nascido de um destes eventos (ver `HomeScreen.tsx`/
- * `PostagemDetailScreen.tsx`). As contagens (`totalCurtidas`/
- * `totalComentarios`) são a única exceção: são números não-sensíveis (não
- * revelam nada que a autorização já não tenha permitido só por o cliente ter
- * a postagem carregada), por isso são aplicados diretamente, sem um round-trip
- * REST extra — é o que torna a "curtida"/contagem de comentários de verdade
- * em tempo real.
+ * Eventos de Socket.IO do feed (`emitirFeed` em `realtime/socket.js`). Vão para todos os clientes
+ * conectados, sem sala, e por isso carregam só ids e marcadores, nunca a publicação nem URLs de
+ * mídia. Ao receber, a tela busca o conteúdo pela API, que aplica as regras de acesso.
+ *
+ * As contagens (`totalCurtidas`, `totalComentarios`) são a exceção: números que não revelam nada
+ * além do que a pessoa já vê, aplicados direto, sem nova requisição.
  */
 export interface FeedPostagemEvento {
   id: string;
@@ -258,7 +231,10 @@ export interface FeedCurtidaEvento {
 export interface FeedComentarioEvento {
   postagemId: string;
   totalComentarios: number;
-  /** Só presente quando um comentário foi removido — nunca vem no evento de comentário CRIADO (o payload de criação não identifica qual comentário nasceu, só que a contagem mudou; por isso uma criação remota vira um refetch da lista inteira, não uma inserção pontual). */
+  /**
+   * Só vem na remoção. A criação informa apenas a nova contagem, sem dizer qual comentário surgiu,
+   * por isso um comentário novo recarrega a lista.
+   */
   comentarioId?: string;
   removido?: true;
 }

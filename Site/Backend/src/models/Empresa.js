@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
 import { criarHooksCampoCifrado } from "../utils/campoCifrado.js";
 
@@ -9,10 +9,7 @@ const hooksCnpj = criarHooksCampoCifrado({
     campoHash: "cnpjHash"
 });
 
-/**
- * Tabela: empresas
- * ENUM porte_empresa: MEI | Micro | Pequena | Media | Grande
- */
+/** Tabela `empresas`: o perfil de empresa de uma conta, com a aprovação feita pela moderação. */
 const Empresa = sequelize.define(
     "Empresa",
     {
@@ -23,19 +20,22 @@ const Empresa = sequelize.define(
         },
 
         usuarioId: {
-            field: "usuario_id",
             type: DataTypes.UUID,
             allowNull: false,
             unique: true
         },
 
-        // A coluna em texto puro foi removida do banco (migration 0031) —
-        // este é um campo VIRTUAL agora, nunca persistido diretamente. Os
-        // hooks de `campoCifrado.js` cifram/decifram por baixo dos panos em
-        // `cnpjCifrado`/`cnpjHash`, então todo código que já lia/escrevia
-        // `empresa.cnpj` continua funcionando sem nenhuma mudança. A
-        // obrigatoriedade no cadastro é garantida na validação da aplicação;
-        // a unicidade é garantida pelo índice único em `cnpj_hash`.
+        razaoSocial: {
+            type: DataTypes.STRING(200),
+            allowNull: false
+        },
+
+        nomeFantasia: {
+            type: DataTypes.STRING(200)
+        },
+
+        // Campo virtual, como o CPF do candidato: o banco guarda só `cnpj_cifrado` e `cnpj_hash`,
+        // e os hooks de `campoCifrado.js` cuidam da conversão nos dois sentidos.
         cnpj: {
             type: DataTypes.VIRTUAL(DataTypes.STRING(14)),
             validate: {
@@ -44,28 +44,19 @@ const Empresa = sequelize.define(
         },
 
         cnpjCifrado: {
-            field: "cnpj_cifrado",
             type: DataTypes.TEXT
         },
 
         cnpjHash: {
-            field: "cnpj_hash",
             type: DataTypes.STRING(64),
             unique: true
         },
 
-        razaoSocial: {
-            field: "razao_social",
-            type: DataTypes.STRING(200),
-            allowNull: false
-        },
-
-        nomeFantasia: {
-            field: "nome_fantasia",
-            type: DataTypes.STRING(200)
-        },
-
         descricao: {
+            type: DataTypes.TEXT
+        },
+
+        culturaInclusiva: {
             type: DataTypes.TEXT
         },
 
@@ -74,7 +65,7 @@ const Empresa = sequelize.define(
         },
 
         porte: {
-            type: DataTypes.ENUM("MEI", "Micro", "Pequena", "Media", "Grande")
+            type: DataTypes.ENUM("mei", "micro", "pequena", "media", "grande")
         },
 
         site: {
@@ -104,21 +95,6 @@ const Empresa = sequelize.define(
             }
         },
 
-        empresaVerificada: {
-            field: "empresa_verificada",
-            type: DataTypes.BOOLEAN,
-            allowNull: false,
-            defaultValue: false
-        }
-,
-
-        statusAprovacao: {
-            field: "status_aprovacao",
-            type: DataTypes.ENUM("pendente", "aprovada", "reprovada", "suspensa"),
-            allowNull: false,
-            defaultValue: "pendente"
-        },
-
         capa: {
             type: DataTypes.TEXT,
             get() {
@@ -126,50 +102,46 @@ const Empresa = sequelize.define(
             }
         },
 
-        culturaInclusiva: {
-            field: "cultura_inclusiva",
-            type: DataTypes.TEXT
+        empresaVerificada: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
+        },
+
+        statusAprovacao: {
+            type: DataTypes.ENUM("pendente", "aprovada", "reprovada", "suspensa"),
+            allowNull: false,
+            defaultValue: "pendente"
         },
 
         motivoReprovacao: {
-            field: "motivo_reprovacao",
             type: DataTypes.TEXT
         },
 
         avaliadoEm: {
-            field: "avaliado_em",
             type: DataTypes.DATE
         },
 
-        avaliadoPor: {
-            field: "avaliado_por",
+        avaliadoPorId: {
             type: DataTypes.UUID
         },
 
-        // Suspensão administrativa (Fase 10 / Fase G) — deliberadamente
-        // separada de avaliadoPor/avaliadoEm/motivoReprovacao, que
-        // continuam representando exclusivamente a avaliação cadastral
-        // inicial da empresa (aprovação/reprovação).
-        suspensoPor: {
-            field: "suspenso_por",
-            type: DataTypes.UUID
-        },
-
+        // Suspensão administrativa, separada de `avaliadoPorId`, `avaliadoEm` e `motivoReprovacao`,
+        // que registram só a avaliação inicial do cadastro (aprovação ou reprovação).
         suspensoEm: {
-            field: "suspenso_em",
             type: DataTypes.DATE
+        },
+
+        suspensoPorId: {
+            type: DataTypes.UUID
         },
 
         motivoSuspensao: {
-            field: "motivo_suspensao",
             type: DataTypes.TEXT
         }
     },
     {
         tableName: "empresas",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at",
         hooks: {
             beforeSave: hooksCnpj.beforeSave,
             afterSave: hooksCnpj.afterSave,

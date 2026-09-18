@@ -31,7 +31,7 @@ import type { EntidadeDenunciaTipo } from "@/services/denuncia.service";
  *
  * `denunciaEntidadeTipo`/`denunciaEntidadeId` são independentes de
  * `alvoUsuarioId`: bloqueio é sempre usuário-a-usuário, mas denunciar um
- * perfil de EMPRESA precisa do id da empresa (entidade própria no
+ * perfil de empresa precisa do id da empresa (entidade própria no
  * backend), não do usuário dono dela.
  */
 export function BloquearUsuarioMenu({
@@ -48,15 +48,13 @@ export function BloquearUsuarioMenu({
   const navigate = useNavigate();
   const [confirmando, setConfirmando] = useState(false);
   const [denunciando, setDenunciando] = useState(false);
-  // Foco volta pra este botão ao fechar os diálogos abaixo — ver comentário
+  // Foco volta pra este botão ao fechar os diálogos abaixo (ver comentário
   // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
-  // o diálogo que abre.
+  // o diálogo que abre).
   const gatilhoMenuRef = useRef<HTMLButtonElement>(null);
 
-  // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
-  // `useAutoSpeech` — falar aqui também duplicava (e, no erro, a fala
-  // manual usava um texto genérico fixo em vez da mensagem real do
-  // backend que o toast já mostra corretamente).
+  // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`, com a mensagem real do backend;
+  // falar aqui também duplicaria a leitura.
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(alvoUsuarioId),
     onSuccess: () => {

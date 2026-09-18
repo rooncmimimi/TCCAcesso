@@ -1,5 +1,9 @@
 import SeguidorService from "../services/SeguidorService.js";
 
+/**
+ * Seguir usuários e empresas (`/seguir`): seguidores e seguindo, resumo da relação, sugestões e
+ * solicitações para perfis privados.
+ */
 class SeguidorController {
     async seguirUsuario(req, res, next) {
         try {
@@ -105,7 +109,7 @@ class SeguidorController {
         }
     }
 
-    /* ---------- Solicitações de seguimento (perfil privado) — Fase 3 ---------- */
+    /* Solicitações de seguir (perfil privado) */
 
     async solicitarSeguir(req, res, next) {
         try {

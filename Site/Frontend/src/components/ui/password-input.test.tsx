@@ -5,9 +5,8 @@ import "@testing-library/jest-dom/vitest";
 import { PasswordInput } from "./password-input";
 
 /**
- * Item 8/9 da auditoria do Site: um único componente de senha com botão de
- * mostrar/ocultar, reaproveitado em login, cadastro, troca de senha e
- * recuperação de senha.
+ * Um único componente de senha com botão de mostrar e ocultar, usado no login, no cadastro, na
+ * troca e na recuperação de senha.
  */
 
 afterEach(cleanup);

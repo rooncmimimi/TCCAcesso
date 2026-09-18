@@ -1,9 +1,9 @@
-import api from "./api";
-import type { ChatbotConversa, ChatbotMensagem, PreferenciasAcessibilidade } from "@/types";
-import type { AccessibilityPrefs } from "@/contexts/AccessibilityContext";
+import clienteApi from "./api";
+import type { ChatbotConversa, ChatbotMensagem, PreferenciasAcessibilidadeApi } from "@/types";
+import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
 
 /** Converte as preferências locais para o formato aceito pelo Backend. */
-export function prefsParaApi(prefs: AccessibilityPrefs): PreferenciasAcessibilidade {
+export function preferenciasParaApi(prefs: PreferenciasAcessibilidade): PreferenciasAcessibilidadeApi {
   return {
     tema: prefs.darkMode ? "escuro" : "claro",
     altoContraste: prefs.highContrast,
@@ -12,12 +12,9 @@ export function prefsParaApi(prefs: AccessibilityPrefs): PreferenciasAcessibilid
     espacamentoTexto: prefs.letterSpacing > 0 || prefs.lineHeight > 1.6,
     reduzirAnimacoes: prefs.reduceMotion,
     leituraPorVoz: prefs.screenReader,
-    // Fase 9, Bloco 8: `voiceConsent` só é enviado quando já tem uma
-    // resposta real (`true`/`false`) — quando ainda é `null` (nunca
-    // perguntado), o campo fica de fora do payload (`undefined` some no
-    // `JSON.stringify`) para NUNCA sobrescrever um valor já respondido no
-    // backend com "ainda não respondido" só porque o usuário salvou uma
-    // preferência não relacionada (ex.: mudou o tamanho da fonte).
+    // `voiceConsent` só vai no payload quando já tem resposta (`true` ou `false`). Com `null`
+    // (nunca perguntado), o campo fica de fora, para salvar uma preferência sem relação, como o
+    // tamanho da fonte, não apagar no backend uma resposta já dada.
     consentimentoVoz: prefs.voiceConsent ?? undefined,
     velocidadeVoz: Number(prefs.speechRate.toFixed(1)),
     libras: prefs.vlibras,
@@ -26,15 +23,15 @@ export function prefsParaApi(prefs: AccessibilityPrefs): PreferenciasAcessibilid
 }
 
 /** Converte a resposta do Backend para o formato local (campos ausentes são ignorados). */
-export function prefsDaApi(dto: PreferenciasAcessibilidade): Partial<AccessibilityPrefs> {
-  const parcial: Partial<AccessibilityPrefs> = {};
+export function preferenciasDaApi(dto: PreferenciasAcessibilidadeApi): Partial<PreferenciasAcessibilidade> {
+  const parcial: Partial<PreferenciasAcessibilidade> = {};
   if (dto.tema === "claro" || dto.tema === "escuro") parcial.darkMode = dto.tema === "escuro";
   if (typeof dto.altoContraste === "boolean") parcial.highContrast = dto.altoContraste;
   if (typeof dto.fonteDislexia === "boolean") parcial.dyslexiaFont = dto.fonteDislexia;
   if (typeof dto.escalaFonte === "number") parcial.fontScale = dto.escalaFonte / 100;
   if (typeof dto.reduzirAnimacoes === "boolean") parcial.reduceMotion = dto.reduzirAnimacoes;
   if (typeof dto.leituraPorVoz === "boolean") parcial.screenReader = dto.leituraPorVoz;
-  // Propaga os três estados (`true`/`false`/`null`) — `null` também é um
+  // Propaga os três estados (`true`/`false`/`null`): `null` também é um
   // valor real aqui (ainda não respondeu), diferente dos outros campos
   // acima que só existem como boolean.
   if (typeof dto.consentimentoVoz === "boolean" || dto.consentimentoVoz === null) {
@@ -50,21 +47,21 @@ export function prefsDaApi(dto: PreferenciasAcessibilidade): Partial<Accessibili
 }
 
 export const acessibilidadeService = {
-  async obter(): Promise<PreferenciasAcessibilidade> {
-    const { data } = await api.get<{ preferencias: PreferenciasAcessibilidade }>("/acessibilidade");
+  async obter(): Promise<PreferenciasAcessibilidadeApi> {
+    const { data } = await clienteApi.get<{ preferencias: PreferenciasAcessibilidadeApi }>("/acessibilidade");
     return data.preferencias ?? {};
   },
 
-  async salvar(payload: PreferenciasAcessibilidade): Promise<PreferenciasAcessibilidade> {
-    const { data } = await api.put<{ preferencias: PreferenciasAcessibilidade }>(
+  async salvar(payload: PreferenciasAcessibilidadeApi): Promise<PreferenciasAcessibilidadeApi> {
+    const { data } = await clienteApi.put<{ preferencias: PreferenciasAcessibilidadeApi }>(
       "/acessibilidade",
       payload,
     );
     return data.preferencias ?? {};
   },
 
-  async restaurar(): Promise<PreferenciasAcessibilidade> {
-    const { data } = await api.post<{ preferencias: PreferenciasAcessibilidade }>(
+  async restaurar(): Promise<PreferenciasAcessibilidadeApi> {
+    const { data } = await clienteApi.post<{ preferencias: PreferenciasAcessibilidadeApi }>(
       "/acessibilidade/reset",
     );
     return data.preferencias ?? {};
@@ -74,12 +71,12 @@ export const acessibilidadeService = {
 /** Assistente virtual (chatbot) com conversas persistidas. */
 export const chatbotService = {
   async conversas(): Promise<ChatbotConversa[]> {
-    const { data } = await api.get<{ conversas: ChatbotConversa[] }>("/chatbot/conversas");
+    const { data } = await clienteApi.get<{ conversas: ChatbotConversa[] }>("/chatbot/conversas");
     return data.conversas ?? [];
   },
 
   async mensagens(conversaId: string): Promise<ChatbotMensagem[]> {
-    const { data } = await api.get<{ mensagens: ChatbotMensagem[] }>(
+    const { data } = await clienteApi.get<{ mensagens: ChatbotMensagem[] }>(
       `/chatbot/conversas/${conversaId}/mensagens`,
     );
     return data.mensagens ?? [];
@@ -90,7 +87,7 @@ export const chatbotService = {
     conteudo: string,
     conversaId?: string | null,
   ): Promise<{ conversa: ChatbotConversa; pergunta: ChatbotMensagem; resposta: ChatbotMensagem }> {
-    const { data } = await api.post<{
+    const { data } = await clienteApi.post<{
       conversa: ChatbotConversa;
       pergunta: ChatbotMensagem;
       resposta: ChatbotMensagem;
@@ -99,7 +96,7 @@ export const chatbotService = {
   },
 
   async remover(conversaId: string): Promise<void> {
-    await api.delete(`/chatbot/conversas/${conversaId}`);
+    await clienteApi.delete(`/chatbot/conversas/${conversaId}`);
   },
 };
 

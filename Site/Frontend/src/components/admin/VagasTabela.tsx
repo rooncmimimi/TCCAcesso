@@ -22,7 +22,7 @@ import {
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
-import { useSession } from "@/lib/session";
+import { useSessao } from "@/hooks/useSessao";
 import {
   alterarStatusVaga,
   listarVagas,
@@ -30,16 +30,17 @@ import {
   type VagaAdmin,
 } from "@/services/admin.service";
 
-const STATUS: VagaAdmin["status"][] = ["Aberta", "Pausada", "Encerrada"];
+const STATUS: VagaAdmin["status"][] = ["aberta", "pausada", "encerrada"];
 
 const TOM: Record<VagaAdmin["status"], "sucesso" | "atencao" | "neutro"> = {
-  Aberta: "sucesso",
-  Pausada: "atencao",
-  Encerrada: "neutro",
+  aberta: "sucesso",
+  pausada: "atencao",
+  encerrada: "neutro",
 };
 
+/** Vagas publicadas, com mudança de status e remoção pela moderação. */
 export function VagasTabela() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
 
   const queryClient = useQueryClient();
 
@@ -49,7 +50,7 @@ export function VagasTabela() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "vagas", pagina],
     queryFn: () => listarVagas({ page: pagina, limit: 10 }),
-    enabled: Boolean(user),
+    enabled: Boolean(usuario),
   });
 
   const statusMutacao = useMutation({

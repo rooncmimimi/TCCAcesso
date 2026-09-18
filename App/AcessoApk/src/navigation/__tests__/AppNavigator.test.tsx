@@ -1,14 +1,14 @@
 /* eslint-disable import/first -- `jest.mock` precisa vir antes dos imports dos módulos que ele substitui. */
-jest.mock("../../auth", () => ({
-  useAuth: () => ({
-    status: "authenticated",
-    user: { id: "1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato" },
-    isAuthenticated: true,
-    isLoading: false,
-    sessionEndedReason: null,
-    login: jest.fn(),
-    logout: jest.fn(),
-    clearSessionEndedReason: jest.fn(),
+jest.mock("../../autenticacao", () => ({
+  useAutenticacao: () => ({
+    status: "autenticado",
+    usuario: { id: "1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato" },
+    autenticado: true,
+    carregando: false,
+    motivoFimSessao: null,
+    entrar: jest.fn(),
+    sair: jest.fn(),
+    limparMotivoFimSessao: jest.fn(),
   }),
 }));
 
@@ -16,8 +16,8 @@ const vagaMock = {
   id: "v1",
   titulo: "Desenvolvedor Front-end",
   descricao: "Descrição completa da vaga.",
-  modalidade: "Remoto",
-  status: "Aberta",
+  modalidade: "remoto",
+  status: "aberta",
   empresa: { id: "e1", nomeFantasia: "ACME" },
 };
 
@@ -29,9 +29,8 @@ jest.mock("../../vagas", () => ({
   },
 }));
 
-// Fase 10: `AppNavigator` monta `AppTabs`, que monta `HomeScreen` (agora
-// buscando o feed de verdade ao montar) — sem este mock, o teste chamaria a
-// API real.
+// O `AppNavigator` monta as abas, e o `FeedScreen` busca o feed ao montar; sem este mock o teste
+// chamaria a API.
 jest.mock("../../feed", () => ({
   ...jest.requireActual("../../feed"),
   FeedService: {
@@ -44,26 +43,26 @@ jest.mock("../../feed", () => ({
 import { createNavigationContainerRef, getStateFromPath, NavigationContainer } from "@react-navigation/native";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 
-import { AccessibilityProvider } from "../../accessibility";
-import { ThemeProvider } from "../../theme";
+import { AcessibilidadeProvider } from "../../acessibilidade";
+import { TemaProvider } from "../../tema";
 import { AppNavigator } from "../AppNavigator";
 import { linking } from "../linking";
 
-// Mesma técnica de `ProfileNavigator.test.tsx` — o header/botão "voltar" do
+// Mesma técnica de `PerfilNavigator.test.tsx`: o header/botão "voltar" do
 // native-stack é desenhado nativamente (`react-native-screens`), sem um nó
 // consultável com accessibilityLabel no ambiente de teste; `goBack()` pela
 // ref do `NavigationContainer` dispara exatamente a mesma ação da pilha.
-const navigationRef = createNavigationContainerRef();
+const refNavegacao = createNavigationContainerRef();
 
 async function renderApp() {
   const utils = await render(
-    <AccessibilityProvider>
-      <ThemeProvider>
-        <NavigationContainer ref={navigationRef}>
+    <AcessibilidadeProvider>
+      <TemaProvider>
+        <NavigationContainer ref={refNavegacao}>
           <AppNavigator />
         </NavigationContainer>
-      </ThemeProvider>
-    </AccessibilityProvider>,
+      </TemaProvider>
+    </AcessibilidadeProvider>,
   );
   await waitFor(() => expect(utils.toJSON()).not.toBeNull());
   return utils;
@@ -98,7 +97,7 @@ describe("AppNavigator — Jobs → VagaDetail", () => {
     await findByText("Descrição completa da vaga.");
 
     await act(async () => {
-      navigationRef.current?.goBack();
+      refNavegacao.current?.goBack();
     });
 
     // De volta à lista: o contador da lista reaparece (só existe na tela de Vagas, não no detalhe).
@@ -106,7 +105,7 @@ describe("AppNavigator — Jobs → VagaDetail", () => {
   });
 });
 
-describe("linking — deep link acesso://vagas/:vagaId (Fase 9, resolve a pendência da Fase 4)", () => {
+describe("linking — deep link acesso://vagas/:vagaId", () => {
   it("getStateFromPath resolve /vagas/123 para a rota VagaDetail com vagaId '123'", () => {
     const estado = getStateFromPath("/vagas/123", linking.config);
     const serializado = JSON.stringify(estado);

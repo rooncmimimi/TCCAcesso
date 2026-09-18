@@ -15,18 +15,14 @@ import { assinarMidiaDasPostagens } from "./PostagemService.js";
  * Retorna apenas informações não sensíveis.
  */
 class PublicoService {
-    async home() {
-        // `contratacoes` (Candidatura.count status "Aprovada") foi removido
-        // da home pública na auditoria do Site (item 7): o ACESSO só conecta
-        // empresa↔candidato, não confirma contratação efetivada — exibir
-        // isso como "contratações" prometia um dado que a plataforma não
-        // tem (mesma causa raiz já corrigida no painel administrativo).
-        // `candidaturas` (sem filtro de status) é o dado real e não
-        // enganoso que substitui esse espaço na faixa de estatísticas.
+    async paginaInicial() {
+        // A página pública não mostra "contratações" (candidaturas aprovadas): o ACESSO aproxima
+        // empresa e candidato, mas não confirma contratação, então o número prometeria um dado que
+        // a plataforma não tem. `candidaturas`, sem filtro de status, é o dado real usado no lugar.
         const [empresas, vagasAbertas, candidatos, candidaturas] =
             await Promise.all([
                 Empresa.count({ where: { statusAprovacao: "aprovada" } }),
-                Vaga.count({ where: { status: "Aberta", oculta: false } }),
+                Vaga.count({ where: { status: "aberta", oculta: false } }),
                 Usuario.count({
                     where: { tipoUsuario: "candidato", ativo: true }
                 }),
@@ -37,11 +33,10 @@ class PublicoService {
             await Promise.all([
                 Vaga.findAll({
                     where: {
-                        status: "Aberta",
+                        status: "aberta",
                         oculta: false,
-                        // Fase 9: mesmo filtro de VagaService.findAll —
-                        // vitrine pública nunca destaca vaga de empresa
-                        // suspensa/reprovada/pendente.
+                        // Mesmo filtro de `VagaService.listar`: a vitrine pública nunca destaca
+                        // vaga de empresa suspensa, reprovada ou pendente.
                         "$empresa.status_aprovacao$": "aprovada"
                     },
                     include: [
@@ -59,7 +54,7 @@ class PublicoService {
                         }
                     ],
                     limit: 6,
-                    order: [["created_at", "DESC"]]
+                    order: [["criadoEm", "DESC"]]
                 }),
                 Empresa.findAll({
                     where: { statusAprovacao: "aprovada" },
@@ -73,18 +68,16 @@ class PublicoService {
                         "empresaVerificada"
                     ],
                     limit: 12,
-                    order: [["created_at", "DESC"]]
+                    order: [["criadoEm", "DESC"]]
                 }).then(async (empresas) => {
-                    // Total de vagas abertas por empresa, numa única consulta
-                    // agregada (nunca uma query por empresa) — mesmo padrão
-                    // já usado em VagaService.findByEmpresaAutenticada. Sem
-                    // isso, `totalVagas` nunca existia neste endpoint.
+                    // Total de vagas abertas por empresa, numa única consulta agregada (nunca uma
+                    // consulta por empresa), como em `VagaService.buscarPorEmpresaAutenticada`.
                     if (empresas.length === 0) return empresas;
 
                     const contagens = await Vaga.findAll({
                         where: {
                             empresaId: empresas.map((e) => e.id),
-                            status: "Aberta",
+                            status: "aberta",
                             oculta: false
                         },
                         attributes: ["empresaId", [fn("COUNT", col("id")), "total"]],
@@ -102,10 +95,9 @@ class PublicoService {
                     });
                 }),
                 Postagem.findAll({
-                    // Visitante anônimo nunca pode ser "seguidor aprovado" —
-                    // teaser da home nunca mostra postagem de autor com
-                    // perfil privado, mesmo que a postagem em si seja
-                    // marcada como `publica` (Fase 3).
+                    // Visitante anônimo nunca é seguidor aprovado, então a prévia da página inicial
+                    // nunca mostra postagem de autor com perfil privado, mesmo marcada como
+                    // `publica`.
                     where: {
                         ativo: true,
                         publica: true,
@@ -122,25 +114,21 @@ class PublicoService {
                                 "tipoUsuario"
                             ]
                         },
-                        // Fase 7: sem isso, `assinarMidiaDasPostagens` não
-                        // tem como saber se `imagem` está no bucket privado
-                        // (não acha o anexo correspondente) e resolve
-                        // errado como público — gerando uma URL quebrada
-                        // pra qualquer postagem enviada depois desta fase.
+                        // Sem os anexos aqui, `assinarMidiaDasPostagens` não teria o que assinar e a
+                        // mídia viria com o caminho cru, que não abre o arquivo.
                         {
                             model: PostagemAnexo,
                             as: "anexos",
-                            attributes: ["id", "url", "privado"],
+                            attributes: ["id", "url"],
                             separate: true
                         }
                     ],
                     limit: 3,
-                    order: [["created_at", "DESC"]]
+                    order: [["criadoEm", "DESC"]]
                 }).then(async (postagens) => {
-                    // Fase 7: já filtrado a autor público acima — resolve a
-                    // URL de exibição só depois, nunca antes (mesmo sem
-                    // `solicitante`, é um visitante anônimo — sempre TTL
-                    // longo, decidido internamente pelo helper).
+                    // Já filtrado a autores públicos acima; só então as URLs de exibição são
+                    // resolvidas. Sem `solicitante` é um visitante anônimo, e o helper decide a
+                    // validade maior sozinho.
                     const planas = postagens.map((postagem) => postagem.toJSON());
                     await assinarMidiaDasPostagens(planas);
                     return planas;
@@ -165,7 +153,7 @@ class PublicoService {
 
         return Vaga.findAll({
             where: {
-                status: "Aberta",
+                status: "aberta",
                 oculta: false,
                 ...(query.q
                     ? {
@@ -183,7 +171,7 @@ class PublicoService {
                 }
             ],
             limit: limite,
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
     }
 }

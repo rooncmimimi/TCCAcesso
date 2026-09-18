@@ -1,4 +1,4 @@
-import api from "./api";
+import clienteApi from "./api";
 import { buscarPaginado, type Paginado } from "./http";
 import type {
   Candidato,
@@ -13,7 +13,7 @@ import type {
 
 export type RecursoPerfil = "experiencias" | "formacoes" | "certificados" | "habilidades";
 
-/** Dados públicos mínimos de qualquer usuário — nunca inclui e-mail/telefone/documentos. */
+/** Dados públicos mínimos de qualquer usuário, nunca inclui e-mail/telefone/documentos. */
 export interface UsuarioPublico {
   id: string;
   nome: string;
@@ -25,32 +25,32 @@ export interface UsuarioPublico {
 /** Perfil do candidato: dados, currículo, experiências, formações, certificados e habilidades. */
 export const perfilService = {
   async meuCandidato(): Promise<Candidato> {
-    const { data } = await api.get<{ candidato: Candidato }>("/candidatos/me");
+    const { data } = await clienteApi.get<{ candidato: Candidato }>("/candidatos/me");
     return data.candidato;
   },
 
   async candidatoPorId(id: string): Promise<Candidato> {
-    const { data } = await api.get<{ candidato: Candidato }>(`/candidatos/${id}`);
+    const { data } = await clienteApi.get<{ candidato: Candidato }>(`/candidatos/${id}`);
     return data.candidato;
   },
 
   async perfilCompleto(candidatoId: string): Promise<Candidato> {
-    const { data } = await api.get<{ candidato: Candidato }>(`/perfil/candidatos/${candidatoId}`);
+    const { data } = await clienteApi.get<{ candidato: Candidato }>(`/perfil/candidatos/${candidatoId}`);
     return data.candidato;
   },
 
-  /** Perfil consolidado (dados + experiências + formações + certificados + habilidades + deficiências) por usuarioId — usado para abrir o perfil de outra pessoa a partir do feed. */
+  /** Perfil consolidado (dados + experiências + formações + certificados + habilidades + deficiências) por usuarioId: usado para abrir o perfil de outra pessoa a partir do feed. */
   async perfilCompletoPorUsuario(usuarioId: string): Promise<Candidato> {
-    const { data } = await api.get<{ candidato: Candidato }>(`/perfil/candidatos/usuario/${usuarioId}`);
+    const { data } = await clienteApi.get<{ candidato: Candidato }>(`/perfil/candidatos/usuario/${usuarioId}`);
     return data.candidato;
   },
 
   /**
-   * Dados públicos mínimos de qualquer usuário — fallback usado quando o
+   * Dados públicos mínimos de qualquer usuário: fallback usado quando o
    * alvo não tem registro de candidato nem de empresa (hoje, administradores).
    */
   async usuarioPublico(usuarioId: string): Promise<UsuarioPublico> {
-    const { data } = await api.get<{ usuario: UsuarioPublico }>(`/perfil/usuario/${usuarioId}`);
+    const { data } = await clienteApi.get<{ usuario: UsuarioPublico }>(`/perfil/usuario/${usuarioId}`);
     return data.usuario;
   },
 
@@ -59,18 +59,17 @@ export const perfilService = {
   },
 
   async atualizarCandidato(id: string, payload: Record<string, unknown>): Promise<Candidato> {
-    const { data } = await api.put<{ candidato: Candidato }>(`/candidatos/${id}`, payload);
+    const { data } = await clienteApi.put<{ candidato: Candidato }>(`/candidatos/${id}`, payload);
     return data.candidato;
   },
 
   /**
-   * URL assinada e temporária para VISUALIZAR o currículo — nunca
-   * persistir, buscar sempre sob demanda no momento do clique (mesmo
-   * princípio da Fase 7 para mídia de postagem). Backend reautoriza do
-   * zero (dono, empresa com candidatura ou administrador).
+   * URL assinada e temporária para visualizar o currículo. Nunca é guardada: é buscada no momento
+   * do clique, como a mídia das postagens. O backend reautoriza do zero (dono, empresa com
+   * candidatura ou administrador).
    */
   async urlCurriculo(candidatoId: string): Promise<{ url: string; nomeArquivo: string | null }> {
-    const { data } = await api.get<{ url: string; nomeArquivo: string | null }>(
+    const { data } = await clienteApi.get<{ url: string; nomeArquivo: string | null }>(
       `/candidatos/${candidatoId}/curriculo`,
     );
     return { url: data.url, nomeArquivo: data.nomeArquivo };
@@ -78,7 +77,7 @@ export const perfilService = {
 
   /** Mesma autorização acima, mas com download forçado (Content-Disposition: attachment). */
   async urlDownloadCurriculo(candidatoId: string): Promise<{ url: string; nomeArquivo: string | null }> {
-    const { data } = await api.get<{ url: string; nomeArquivo: string | null }>(
+    const { data } = await clienteApi.get<{ url: string; nomeArquivo: string | null }>(
       `/candidatos/${candidatoId}/curriculo/download`,
     );
     return { url: data.url, nomeArquivo: data.nomeArquivo };
@@ -88,7 +87,7 @@ export const perfilService = {
     const form = new FormData();
     form.append("curriculo", arquivo);
 
-    const { data } = await api.patch<{ candidato: Candidato }>(
+    const { data } = await clienteApi.patch<{ candidato: Candidato }>(
       `/candidatos/${candidatoId}/curriculo`,
       form,
       { headers: { "Content-Type": "multipart/form-data" } },
@@ -97,7 +96,7 @@ export const perfilService = {
   },
 
   /**
-   * Extrai um RASCUNHO do currículo (PDF/DOCX) para revisão — nunca grava
+   * Extrai um rascunho do currículo (PDF/DOCX) para revisão: nunca grava
    * nada no perfil sozinho, e o arquivo enviado aqui não vira o currículo
    * oficial (isso continua sendo `enviarCurriculo`, chamado à parte).
    */
@@ -105,7 +104,7 @@ export const perfilService = {
     const form = new FormData();
     form.append("curriculo", arquivo);
 
-    const { data } = await api.post<{ rascunho: RascunhoCurriculo }>(
+    const { data } = await clienteApi.post<{ rascunho: RascunhoCurriculo }>(
       `/candidatos/${candidatoId}/curriculo/importar`,
       form,
       { headers: { "Content-Type": "multipart/form-data" } },
@@ -114,30 +113,30 @@ export const perfilService = {
   },
 
   async adicionarDeficiencia(candidatoId: string, payload: Record<string, unknown>) {
-    const { data } = await api.post(`/candidatos/${candidatoId}/deficiencias`, payload);
+    const { data } = await clienteApi.post(`/candidatos/${candidatoId}/deficiencias`, payload);
     return data;
   },
 
   async removerDeficiencia(candidatoId: string, deficienciaId: string) {
-    await api.delete(`/candidatos/${candidatoId}/deficiencias/${deficienciaId}`);
+    await clienteApi.delete(`/candidatos/${candidatoId}/deficiencias/${deficienciaId}`);
   },
 
   /** Catálogo público de deficiências, usado para o seletor no perfil. */
   async catalogoDeficiencias(): Promise<Deficiencia[]> {
-    const { data } = await api.get<{ deficiencias: Deficiencia[] }>("/deficiencias");
+    const { data } = await clienteApi.get<{ deficiencias: Deficiencia[] }>("/deficiencias");
     return data.deficiencias ?? [];
   },
 
-  /* -------- Recursos do perfil (CRUD genérico) -------- */
+  /* Recursos do perfil (CRUD genérico) */
   async listarRecurso<T = Experiencia | Formacao | Certificado | Habilidade>(
     recurso: RecursoPerfil,
   ): Promise<T[]> {
-    const { data } = await api.get<{ registros: T[] }>(`/perfil/${recurso}`);
+    const { data } = await clienteApi.get<{ registros: T[] }>(`/perfil/${recurso}`);
     return data.registros ?? [];
   },
 
   async criarRecurso<T>(recurso: RecursoPerfil, payload: Record<string, unknown>): Promise<T> {
-    const { data } = await api.post<{ registro: T }>(`/perfil/${recurso}`, payload);
+    const { data } = await clienteApi.post<{ registro: T }>(`/perfil/${recurso}`, payload);
     return data.registro;
   },
 
@@ -146,17 +145,17 @@ export const perfilService = {
     id: string,
     payload: Record<string, unknown>,
   ): Promise<T> {
-    const { data } = await api.put<{ registro: T }>(`/perfil/${recurso}/${id}`, payload);
+    const { data } = await clienteApi.put<{ registro: T }>(`/perfil/${recurso}/${id}`, payload);
     return data.registro;
   },
 
   async removerRecurso(recurso: RecursoPerfil, id: string): Promise<void> {
-    await api.delete(`/perfil/${recurso}/${id}`);
+    await clienteApi.delete(`/perfil/${recurso}/${id}`);
   },
 
-  /* -------- Conta / usuário -------- */
+  /* Conta e usuário */
   async atualizarUsuario(id: string, payload: Record<string, unknown>): Promise<Usuario> {
-    const { data } = await api.put<{ usuario: Usuario }>(`/usuarios/${id}`, payload);
+    const { data } = await clienteApi.put<{ usuario: Usuario }>(`/usuarios/${id}`, payload);
     return data.usuario;
   },
 
@@ -164,7 +163,7 @@ export const perfilService = {
     const form = new FormData();
     form.append("foto", arquivo);
 
-    const { data } = await api.patch<{ usuario: Usuario }>(`/usuarios/${id}/foto`, form, {
+    const { data } = await clienteApi.patch<{ usuario: Usuario }>(`/usuarios/${id}/foto`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.usuario;
@@ -174,14 +173,14 @@ export const perfilService = {
     const form = new FormData();
     form.append("capa", arquivo);
 
-    const { data } = await api.patch<{ usuario: Usuario }>(`/usuarios/${id}/capa`, form, {
+    const { data } = await clienteApi.patch<{ usuario: Usuario }>(`/usuarios/${id}/capa`, form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.usuario;
   },
 
   async alterarSenha(payload: { senhaAtual: string; novaSenha: string }): Promise<void> {
-    await api.patch("/auth/senha", payload);
+    await clienteApi.patch("/auth/senha", payload);
   },
 };
 

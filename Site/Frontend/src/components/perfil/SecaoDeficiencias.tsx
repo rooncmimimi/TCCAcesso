@@ -27,7 +27,7 @@ import { perfilService } from "@/services/perfil.service";
 import type { Candidato } from "@/types";
 
 /**
- * Deficiências vinculadas ao candidato — "quando aplicável", conforme o próprio
+ * Deficiências vinculadas ao candidato: "quando aplicável", conforme o próprio
  * candidato cadastra. Em modo leitura (perfil de outra pessoa), só lista, sem
  * ações de adicionar/remover.
  */
@@ -160,7 +160,7 @@ export function SecaoDeficiencias({
                     type="button"
                     aria-label={`Remover ${d.nome}`}
                     // Chip compacto (Badge min-h-9) não comporta um alvo de
-                    // 44px sem ficar maior que o próprio chip — a margem
+                    // 44px sem ficar maior que o próprio chip: a margem
                     // negativa expande a área de toque real (mín. 24px, piso
                     // absoluto da WCAG 2.5.8) sem aumentar o espaço ocupado
                     // no layout, diferente do padrão min-h-11/min-w-11 usado

@@ -4,10 +4,10 @@ import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AccessibilityPanel } from "@/components/accessibility/AccessibilityPanel";
-import { useAccessibility } from "@/contexts/AccessibilityContext";
-import { useSession } from "@/contexts/SessionContext";
-import acessibilidadeService, { prefsParaApi } from "@/services/acessibilidade.service";
+import { PainelAcessibilidade } from "@/components/acessibilidade/PainelAcessibilidade";
+import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { useSessao } from "@/hooks/useSessao";
+import acessibilidadeService, { preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 
 export const Route = createFileRoute("/boas-vindas")({
@@ -27,8 +27,8 @@ export const Route = createFileRoute("/boas-vindas")({
 });
 
 function BoasVindas() {
-  const { draft, save } = useAccessibility();
-  const { user, update, autenticado } = useSession();
+  const { rascunho, salvar } = useAcessibilidade();
+  const { usuario, atualizar, autenticado } = useSessao();
   const navigate = useNavigate();
 
   return (
@@ -41,7 +41,7 @@ function BoasVindas() {
       <main id="conteudo" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10">
         <p className="text-sm font-bold uppercase tracking-wide text-primary">Passo 1 de 1</p>
         <h1 className="mt-2 text-3xl font-extrabold">
-          {user?.nome ? `Bem-vindo(a), ${user.nome.split(" ")[0]}!` : "Bem-vindo(a) ao ACESSO!"}
+          {usuario?.nome ? `Bem-vindo(a), ${usuario.nome.split(" ")[0]}!` : "Bem-vindo(a) ao ACESSO!"}
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
           Ajuste como você quer ver, ouvir e navegar. Tudo muda na hora — teste à vontade e salve
@@ -50,7 +50,7 @@ function BoasVindas() {
 
         <Card className="mt-8 shadow-card">
           <CardContent className="p-5 sm:p-6">
-            <AccessibilityPanel />
+            <PainelAcessibilidade />
           </CardContent>
         </Card>
 
@@ -58,16 +58,16 @@ function BoasVindas() {
           <Button
             className="min-h-12 text-base"
             onClick={async () => {
-              save();
+              salvar();
               if (autenticado) {
                 try {
-                  await acessibilidadeService.salvar(prefsParaApi(draft));
+                  await acessibilidadeService.salvar(preferenciasParaApi(rascunho));
 
                 } catch (erro) {
                   toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. As preferências ficaram salvas neste dispositivo."));
                 }
               }
-              update({ onboarded: true });
+              atualizar({ onboarded: true });
               toast.success("Preferências salvas na sua conta.");
               navigate({ to: "/feed" });
             }}

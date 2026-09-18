@@ -6,10 +6,10 @@ const router = Router();
 
 router.get("/home", async (req, res, next) => {
     try {
-        const dados = await PublicoService.home();
+        const dados = await PublicoService.paginaInicial();
         return res.status(200).json({ sucesso: true, ...dados });
     } catch (erro) {
-        // Log estruturado já feito pelo errorMiddleware ao receber next(erro).
+        // Log estruturado já feito pelo erroMiddleware ao receber next(erro).
         return next(erro);
     }
 });

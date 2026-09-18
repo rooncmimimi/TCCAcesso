@@ -5,11 +5,11 @@ import { Compass, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { initials } from "@/contexts/SessionContext";
-import { urlArquivo } from "@/services/uploads.service";
+import { iniciaisDoNome } from "@/utils/formatacao";
+import { urlArquivo } from "@/utils/arquivos";
 import { seguidoresService } from "@/services/empresas.service";
 
-/** Prévia compacta de "Descobrir" na barra lateral do feed — só 3 pessoas, com link para a página completa. */
+/** Prévia compacta de "Descobrir" na barra lateral do feed: só 3 pessoas, com link para a página completa. */
 export function SugestoesResumo() {
   const { data, isLoading } = useQuery({
     queryKey: ["descobrir-pessoas-resumo"],
@@ -42,7 +42,7 @@ export function SugestoesResumo() {
                   <Avatar className="size-8 shrink-0">
                     <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />
                     <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-                      {initials(pessoa.nome)}
+                      {iniciaisDoNome(pessoa.nome)}
                     </AvatarFallback>
                   </Avatar>
                   <span className="min-w-0 truncate text-sm font-medium">{pessoa.nome}</span>

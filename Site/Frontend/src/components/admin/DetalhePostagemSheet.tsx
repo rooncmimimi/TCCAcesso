@@ -10,14 +10,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { GaleriaAnexos } from "@/components/feed/GaleriaAnexos";
 import { LogsTabela } from "@/components/admin/LogsTabela";
-import { formatarDataHora } from "@/utils/format";
+import { formatarDataHora } from "@/utils/formatacao";
 import type { PostagemAdmin } from "@/services/admin.service";
 
 /**
- * Detalhe completo de uma publicação (Fase 8) — substitui abrir a URL crua
- * da imagem em outra guia. Mídia reaproveita `GaleriaAnexos`/`LightboxMidia`
- * tal como no feed: mesmas URLs assinadas, mesmo download autorizado
- * (Fase 7) — nada de Storage é reimplementado aqui.
+ * Detalhe completo de uma publicação para a moderação. A mídia usa `GaleriaAnexos` e
+ * `LightboxMidia`, como no feed: mesmas URLs assinadas e o mesmo download autorizado.
  */
 export function DetalhePostagemSheet({
   postagem,
@@ -36,7 +34,7 @@ export function DetalhePostagemSheet({
             <SheetHeader>
               <SheetTitle>Publicação de {postagem.usuario?.nome ?? "usuário"}</SheetTitle>
               <SheetDescription>
-                Publicado em {formatarDataHora(postagem.createdAt)}
+                Publicado em {formatarDataHora(postagem.criadoEm)}
                 {postagem.usuario?.email ? ` · ${postagem.usuario.email}` : ""}
               </SheetDescription>
             </SheetHeader>

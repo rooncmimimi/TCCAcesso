@@ -18,13 +18,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AssistenteAcesso } from "@/components/ajuda/AssistenteAcesso";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
+import { normalizarParaBusca } from "@/utils/texto";
 
 export const Route = createFileRoute("/ajuda")({
   validateSearch: z.object({ central: z.enum(["candidato", "empresa"]).optional() }),
@@ -55,10 +56,8 @@ interface Categoria {
 }
 
 /**
- * Conteúdo real da central de ajuda — cada resposta reflete uma
- * funcionalidade que já existe na plataforma (nada inventado). Fica
- * inline no próprio arquivo da rota, seguindo o mesmo padrão já usado
- * em `index.tsx`/`sobre-nos.tsx` para conteúdo estático da página.
+ * Conteúdo da central de ajuda: cada resposta descreve uma funcionalidade que existe na plataforma.
+ * Fica no próprio arquivo da rota, como o conteúdo estático de `index.tsx` e `sobre-nos.tsx`.
  */
 const CATEGORIAS_CANDIDATO: Categoria[] = [
   {
@@ -240,11 +239,9 @@ const CATEGORIAS_CANDIDATO: Categoria[] = [
 ];
 
 /**
- * Categorias específicas para empresas — conteúdo diferente do candidato
- * (cadastro em seções, gestão de vagas e candidaturas, perfil empresarial).
- * Cada resposta reflete uma tela/ação que já existe (nada inventado):
- * confirmei os rótulos exatos direto no código de `dashboard/empresa.tsx`,
- * `CardVagaEmpresa.tsx` e `CandidaturasDaVaga.tsx` antes de escrever.
+ * Categorias para empresas (cadastro em seções, gestão de vagas e candidaturas, perfil
+ * empresarial), com os mesmos rótulos de `dashboard/empresa.tsx`, `VagaEmpresaCard.tsx` e
+ * `CandidaturasDaVaga.tsx`.
  */
 const CATEGORIAS_EMPRESA: Categoria[] = [
   {
@@ -371,24 +368,13 @@ const CATEGORIAS_EMPRESA: Categoria[] = [
   },
 ];
 
-// Faixa Unicode dos sinais diacríticos combinantes (acentos) — U+0300 a
-// U+036F, a mesma usada em `Backend/src/services/ChatbotService.js`.
-// Construída por código de caractere (não como range literal no source)
-// para nunca depender de um caractere combinante sobreviver intacto numa
-// edição futura do arquivo.
-const DIACRITICOS = new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, "g");
-
-function normalizar(texto: string) {
-  return texto.toLowerCase().normalize("NFD").replace(DIACRITICOS, "");
-}
-
 function Ajuda() {
-  const { autenticado, user } = useSession();
+  const { autenticado, usuario } = useSessao();
   const { central: centralNaUrl } = Route.useSearch();
   const [busca, setBusca] = useState("");
   const [central, setCentral] = useState<"candidato" | "empresa">(centralNaUrl ?? "candidato");
 
-  // Identifica o tipo de usuário automaticamente quando logado — a pessoa
+  // Identifica o tipo de usuário automaticamente quando logado: a pessoa
   // sempre pode trocar manualmente pelo alternador abaixo (ex.: um
   // candidato querendo ver como funciona para empresas, ou uma empresa
   // ainda não cadastrada explorando antes de criar conta). Um link direto
@@ -397,30 +383,30 @@ function Ajuda() {
   useEffect(() => {
     if (centralNaUrl) {
       setCentral(centralNaUrl);
-    } else if (user?.tipo === "empresa") {
+    } else if (usuario?.tipo === "empresa") {
       setCentral("empresa");
-    } else if (user?.tipo === "candidato") {
+    } else if (usuario?.tipo === "candidato") {
       setCentral("candidato");
     }
-  }, [centralNaUrl, user?.tipo]);
+  }, [centralNaUrl, usuario?.tipo]);
 
   const CATEGORIAS = central === "empresa" ? CATEGORIAS_EMPRESA : CATEGORIAS_CANDIDATO;
 
-  const termo = normalizar(busca.trim());
+  const termo = normalizarParaBusca(busca.trim());
 
   const resultados = useMemo(() => {
     if (!termo) return null;
     return CATEGORIAS.flatMap((categoria) =>
       categoria.artigos
         .filter(
-          (a) => normalizar(a.pergunta).includes(termo) || normalizar(a.resposta).includes(termo),
+          (a) => normalizarParaBusca(a.pergunta).includes(termo) || normalizarParaBusca(a.resposta).includes(termo),
         )
         .map((artigo) => ({ categoria: categoria.titulo, ...artigo })),
     );
   }, [termo, CATEGORIAS]);
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Olá! Como podemos ajudar?</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">
         {central === "empresa"
@@ -593,6 +579,6 @@ function Ajuda() {
           )}
         </div>
       </section>
-    </AppShell>
+    </EstruturaApp>
   );
 }

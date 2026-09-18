@@ -1,12 +1,12 @@
 import ComentarioService from "../services/ComentarioService.js";
+import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
-const contextoDa = (req) => ({
-    ip: req.ip,
-    userAgent: req.headers["user-agent"]
-});
-
+/**
+ * Comentários: listar e criar em `/postagens/:postagemId/comentarios`, excluir em
+ * `DELETE /comentarios/:id`.
+ */
 class ComentarioController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const dados = await ComentarioService.listarPorPostagem(
                 req.params.postagemId,
@@ -20,9 +20,9 @@ class ComentarioController {
         }
     }
 
-    async store(req, res, next) {
+    async criar(req, res, next) {
         try {
-            const comentario = await ComentarioService.create(
+            const comentario = await ComentarioService.criar(
                 req.params.postagemId,
                 req.body.comentario,
                 req.user,
@@ -35,12 +35,12 @@ class ComentarioController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
-            const resultado = await ComentarioService.delete(
+            const resultado = await ComentarioService.excluir(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
 
             return res.status(200).json({ sucesso: true, ...resultado });

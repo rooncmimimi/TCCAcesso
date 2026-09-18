@@ -1,17 +1,17 @@
 import EmpresaService from "../services/EmpresaService.js";
 import { urlPublica } from "../middlewares/uploadMiddleware.js";
 import { Empresa } from "../models/index.js";
-import UploadService from "../services/UploadService.js";
+import ArmazenamentoService from "../services/ArmazenamentoService.js";
+import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
-const contextoDa = (req) => ({
-    ip: req.ip,
-    userAgent: req.headers["user-agent"]
-});
-
+/**
+ * Perfil de empresa (`/empresas`): consulta, empresas parceiras, edição, logo e capa e exclusão
+ * pelo administrador.
+ */
 class EmpresaController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
-            const dados = await EmpresaService.findAll(req.query);
+            const dados = await EmpresaService.listar(req.query);
 
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -19,9 +19,9 @@ class EmpresaController {
         }
     }
 
-    async partners(req, res, next) {
+    async parceiras(req, res, next) {
         try {
-            const empresas = await EmpresaService.findPartners();
+            const empresas = await EmpresaService.listarParceiras();
 
             return res.status(200).json({ sucesso: true, empresas });
         } catch (erro) {
@@ -29,9 +29,9 @@ class EmpresaController {
         }
     }
 
-    async me(req, res, next) {
+    async perfilAtual(req, res, next) {
         try {
-            const empresa = await EmpresaService.findByUsuario(req.user.id);
+            const empresa = await EmpresaService.buscarPorUsuario(req.user.id);
 
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -41,7 +41,7 @@ class EmpresaController {
 
     async porUsuario(req, res, next) {
         try {
-            const empresa = await EmpresaService.findByUsuarioPublico(
+            const empresa = await EmpresaService.buscarPorUsuarioPublico(
                 req.params.usuarioId,
                 req.user
             );
@@ -52,9 +52,9 @@ class EmpresaController {
         }
     }
 
-    async show(req, res, next) {
+    async obter(req, res, next) {
         try {
-            const empresa = await EmpresaService.findById(req.params.id, req.user);
+            const empresa = await EmpresaService.buscarPorId(req.params.id, req.user);
 
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -62,9 +62,9 @@ class EmpresaController {
         }
     }
 
-    async update(req, res, next) {
+    async atualizar(req, res, next) {
         try {
-            const empresa = await EmpresaService.update(
+            const empresa = await EmpresaService.atualizar(
                 req.params.id,
                 req.body,
                 req.user
@@ -76,7 +76,7 @@ class EmpresaController {
         }
     }
 
-    async uploadLogo(req, res, next) {
+    async enviarLogo(req, res, next) {
         try {
             const logo = urlPublica(req.file);
 
@@ -85,14 +85,14 @@ class EmpresaController {
                 raw: true
             });
 
-            const empresa = await EmpresaService.update(
+            const empresa = await EmpresaService.atualizar(
                 req.params.id,
                 { logo },
                 req.user
             );
 
             if (anterior?.logo && anterior.logo !== logo) {
-                await UploadService.removerArquivoFisico(anterior.logo, {
+                await ArmazenamentoService.removerArquivoFisico(anterior.logo, {
                     privado: false
                 });
             }
@@ -103,7 +103,7 @@ class EmpresaController {
         }
     }
 
-    async uploadCapa(req, res, next) {
+    async enviarCapa(req, res, next) {
         try {
             const capa = urlPublica(req.file);
 
@@ -112,14 +112,14 @@ class EmpresaController {
                 raw: true
             });
 
-            const empresa = await EmpresaService.update(
+            const empresa = await EmpresaService.atualizar(
                 req.params.id,
                 { capa },
                 req.user
             );
 
             if (anterior?.capa && anterior.capa !== capa) {
-                await UploadService.removerArquivoFisico(anterior.capa, {
+                await ArmazenamentoService.removerArquivoFisico(anterior.capa, {
                     privado: false
                 });
             }
@@ -130,12 +130,12 @@ class EmpresaController {
         }
     }
 
-    async destroy(req, res, next) {
+    async excluir(req, res, next) {
         try {
-            const resultado = await EmpresaService.delete(
+            const resultado = await EmpresaService.excluir(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
 
             return res.status(200).json({ sucesso: true, ...resultado });

@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   UserCog,
 } from "lucide-react";
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Card, CardContent } from "@/components/ui/card";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 
@@ -54,7 +54,7 @@ const secoes = [
 
 function Configuracoes() {
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Configurações</h1>
       <p className="mt-2 text-muted-foreground">
         Tudo o que você precisa para deixar o ACESSO do seu jeito.
@@ -122,6 +122,6 @@ function Configuracoes() {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

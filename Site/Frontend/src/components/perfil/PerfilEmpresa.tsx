@@ -2,15 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { BadgeCheck, Building2, Globe, Loader2, MapPin, Pencil, Users } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import { empresasService, seguidoresService } from "@/services/empresas.service";
-import { urlArquivo } from "@/services/uploads.service";
+import { urlArquivo } from "@/utils/arquivos";
 import { EditarEmpresaDialog } from "./EditarEmpresaDialog";
 import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
@@ -25,14 +25,14 @@ import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
  * Com `usuarioId` de outra empresa: modo leitura pública, com botão de seguir.
  */
 export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
-  const { user } = useSession();
+  const { usuario } = useSessao();
 
-  const proprioPerfil = !usuarioId || usuarioId === user?.id;
+  const proprioPerfil = !usuarioId || usuarioId === usuario?.id;
 
   const { data: minhaEmpresa, isLoading: carregandoMinhaEmpresa, isError: erroMinhaEmpresa } = useQuery({
     queryKey: ["minha-empresa"],
     queryFn: () => empresasService.minhaEmpresa(),
-    enabled: proprioPerfil && Boolean(user),
+    enabled: proprioPerfil && Boolean(usuario),
   });
 
   const { data: empresaAlheia, isLoading: carregandoEmpresaAlheia, isError: erroEmpresaAlheia } = useQuery({
@@ -43,15 +43,14 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
   });
 
   const empresa = proprioPerfil ? minhaEmpresa : empresaAlheia;
-  const isLoading = proprioPerfil ? carregandoMinhaEmpresa : carregandoEmpresaAlheia;
-  const isError = proprioPerfil ? erroMinhaEmpresa : erroEmpresaAlheia;
+  const carregando = proprioPerfil ? carregandoMinhaEmpresa : carregandoEmpresaAlheia;
+  const temErro = proprioPerfil ? erroMinhaEmpresa : erroEmpresaAlheia;
 
   const aprovada = empresa?.statusAprovacao === "aprovada";
 
-  // Mesmo recurso que o dashboard (`MinhasVagas.tsx`, queryKey ["minhas-vagas", status, pagina])
-  // — só uma prévia menor, sem filtro de status. Precisa ficar sob o mesmo prefixo "minhas-vagas"
-  // para que criar/editar/excluir uma vaga (que invalida ["minhas-vagas"]) também atualize esta
-  // lista; antes usava a chave isolada "minhas-vagas-perfil" e nunca era invalidada por elas.
+  // Mesmo recurso do dashboard (`MinhasVagas.tsx`, chave `["minhas-vagas", status, pagina]`), numa
+  // prévia menor e sem filtro de status. Fica sob o mesmo prefixo para criar, editar ou excluir uma
+  // vaga (que invalidam `["minhas-vagas"]`) também atualizar esta lista.
   const { data: vagasProprias, isLoading: carregandoVagasProprias } = useQuery({
     queryKey: ["minhas-vagas", "perfil"],
     queryFn: () => empresasService.vagasDaEmpresa({ limit: 10 }),
@@ -64,43 +63,43 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
     enabled: Boolean(empresa?.id) && aprovada,
   });
 
-  if (isLoading) {
+  if (carregando) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil da empresa…
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
-  if (isError || !empresa) {
+  if (temErro || !empresa) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="alert" className="py-10 text-sm text-destructive">
           {proprioPerfil
             ? "Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde."
             : "Este perfil não está disponível."}
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   if (!aprovada) {
     if (!proprioPerfil) {
-      // Empresa pendente/reprovada não tem perfil público — não há o que mostrar a terceiros.
+      // Empresa pendente/reprovada não tem perfil público: não há o que mostrar a terceiros.
       return (
-        <AppShell>
+        <EstruturaApp>
           <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
             Este perfil não está disponível.
           </div>
-        </AppShell>
+        </EstruturaApp>
       );
     }
     return (
-      <AppShell>
+      <EstruturaApp>
         <AvisoAprovacaoEmpresa empresa={empresa} />
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
@@ -110,7 +109,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
   const carregandoVagas = proprioPerfil && carregandoVagasProprias;
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Card className="overflow-hidden shadow-card">
         <div
           aria-hidden="true"
@@ -233,7 +232,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                       {vaga.cidade ?? "Local não informado"} · {vaga.modalidade}
                     </p>
                   </div>
-                  <Badge variant={vaga.status === "Aberta" ? "default" : "secondary"} className="shrink-0 font-medium">
+                  <Badge variant={vaga.status === "aberta" ? "default" : "secondary"} className="shrink-0 font-medium">
                     {vaga.status}
                   </Badge>
                 </li>
@@ -245,13 +244,12 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
 
       <Card className="mt-4 shadow-card">
         <CardContent className="p-5 sm:p-6">
-          {/* Uma linha do tempo só (publicações + compartilhamentos
-              intercalados por data), não mais duas abas desconectadas —
-              auditoria do Site, item 6. */}
+          {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
+              data. */}
           <h2 className="mb-4 text-lg font-bold">Publicações</h2>
           <LinhaDoTempoUsuario usuarioId={empresa.usuarioId ?? ""} />
         </CardContent>
       </Card>
-    </AppShell>
+    </EstruturaApp>
   );
 }

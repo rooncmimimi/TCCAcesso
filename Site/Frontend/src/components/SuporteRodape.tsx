@@ -1,16 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { Accessibility, HelpCircle, Lock, Mail, ShieldCheck } from "lucide-react";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 
 /**
- * Área de suporte no final das páginas principais — sempre visível,
+ * Área de suporte no final das páginas principais: sempre visível,
  * identifica o tipo de usuário logado para destacar a Central de Ajuda
  * certa primeiro, mas nunca esconde a outra (uma empresa pode querer ver
  * a central de candidato por curiosidade, e vice-versa).
  */
 export function SuporteRodape() {
-  const { user } = useSession();
-  const ehEmpresa = user?.tipo === "empresa";
+  const { usuario } = useSessao();
+  const ehEmpresa = usuario?.tipo === "empresa";
 
   const links = [
     {

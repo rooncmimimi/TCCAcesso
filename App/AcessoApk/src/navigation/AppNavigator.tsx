@@ -1,71 +1,53 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import { AppTabs } from "./AppTabs";
+import { AbasNavigator } from "./AbasNavigator";
 import type { AppStackParamList } from "./types";
-import { ConversationScreen } from "../screens/ConversationScreen";
-import { FollowListScreen } from "../screens/FollowListScreen";
+import { ConversaScreen } from "../screens/ConversaScreen";
+import { ListaSeguidoresScreen } from "../screens/ListaSeguidoresScreen";
 import { NovaPostagemScreen } from "../screens/NovaPostagemScreen";
-import { PostagemDetailScreen } from "../screens/PostagemDetailScreen";
-import { PublicProfileScreen } from "../screens/PublicProfileScreen";
-import { ReportScreen } from "../screens/ReportScreen";
-import { SearchResultsScreen, TITULO_TIPO_BUSCA } from "../screens/SearchResultsScreen";
-import { VagaDetailScreen } from "../screens/VagaDetailScreen";
-import { useTheme } from "../theme";
+import { DetalhePostagemScreen } from "../screens/DetalhePostagemScreen";
+import { PerfilPublicoScreen } from "../screens/PerfilPublicoScreen";
+import { DenunciaScreen } from "../screens/DenunciaScreen";
+import { ResultadosBuscaScreen, TITULO_TIPO_BUSCA } from "../screens/ResultadosBuscaScreen";
+import { DetalheVagaScreen } from "../screens/DetalheVagaScreen";
+import { useTema } from "../tema";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
 /**
- * `Tabs` continua sem header próprio (cada aba decide sozinha). `VagaDetail`
- * (Fase 9) foi a primeira tela empilhada por cima das tabs — exatamente o
- * que este Stack já existia preparado para receber (comentário das fases
- * anteriores citava literalmente "detalhe de vaga"). `NovaPostagem`/
- * `PostagemDetail` (Fase 10) seguem o mesmo padrão. Todas ganham um header
- * nativo themed igual ao que `ProfileNavigator.tsx` já usa, com "voltar"
- * nativo do Android de graça.
+ * Pilha principal da área logada: as abas (`Tabs`, sem header próprio) e as telas abertas por cima
+ * delas, como detalhe de vaga, publicação e conversa, com header nativo e o voltar do Android.
  */
 export function AppNavigator() {
-  const { theme } = useTheme();
+  const { tema } = useTema();
 
-  // O título do header nativo (`react-native-screens`) é um componente
-  // nativo à parte — não um `<Text>` do próprio app — então NÃO herda
-  // `theme.typography` sozinho; sem isto, seria a única exceção ao "ponto
-  // único de composição" que `theme/accessibleTheme.ts` documenta, e a
-  // preferência `dyslexiaFont` ficaria sem efeito nos títulos de tela em
-  // pilha (Rodada 3, item 13). Só `fontFamily` — não `fontSize`/
-  // `lineHeight`/`letterSpacing`: a barra do header nativo tem altura fixa
-  // da plataforma, escalar o tamanho do texto ali arriscaria cortar o
-  // título quando `fontScale`/`lineHeightScale` também estão no máximo, e
-  // não há dispositivo real disponível para validar isso nesta rodada —
-  // fica registrado como gap pré-existente, não como parte desta correção.
-  const headerTitleStyle = theme.typography.title.fontFamily
-    ? { fontFamily: theme.typography.title.fontFamily }
+  // O título do header nativo (`react-native-screens`) não é um `<Text>` do app, então não herda
+  // `tema.typography`; sem isto a fonte para dislexia não chegaria aos títulos. Só a `fontFamily` é
+  // aplicada: a barra tem altura fixa, e tamanhos maiores poderiam cortar o título, o que ainda não
+  // foi validado em aparelho.
+  const headerTitleStyle = tema.typography.title.fontFamily
+    ? { fontFamily: tema.typography.title.fontFamily }
     : undefined;
 
   return (
-    // `screenOptions` centraliza o estilo do header (mesmo padrão que
-    // `ProfileNavigator.tsx` já usava) — as 7 telas empilhadas abaixo
-    // repetiam as MESMAS 4 propriedades (`headerStyle`/`headerTintColor`/
-    // `headerTitleStyle`/`headerShadowVisible`) uma a uma; cada `<Stack.
-    // Screen>` agora só declara o que é de fato diferente entre elas
-    // (`title`, às vezes calculado a partir de `route.params`). `Tabs`
-    // continua sem header — só sobrescreve `headerShown: false` no seu
-    // próprio `options`.
+    // `screenOptions` concentra o estilo do header; cada tela declara só o que muda, normalmente o
+    // título, às vezes vindo de `route.params`. `Tabs` desliga o header nas próprias opções.
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.textPrimary,
+        headerStyle: { backgroundColor: tema.colors.surface },
+        headerTintColor: tema.colors.textPrimary,
         headerTitleStyle,
         headerShadowVisible: false,
       }}
     >
-      <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="VagaDetail" component={VagaDetailScreen} options={{ title: "Detalhe da vaga" }} />
+      <Stack.Screen name="Tabs" component={AbasNavigator} options={{ headerShown: false }} />
+      <Stack.Screen name="VagaDetail" component={DetalheVagaScreen} options={{ title: "Detalhe da vaga" }} />
       <Stack.Screen name="NovaPostagem" component={NovaPostagemScreen} options={{ title: "Nova publicação" }} />
-      <Stack.Screen name="PostagemDetail" component={PostagemDetailScreen} options={{ title: "Publicação" }} />
-      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: "Perfil" }} />
+      <Stack.Screen name="PostagemDetail" component={DetalhePostagemScreen} options={{ title: "Publicação" }} />
+      <Stack.Screen name="PublicProfile" component={PerfilPublicoScreen} options={{ title: "Perfil" }} />
       <Stack.Screen
         name="FollowList"
-        component={FollowListScreen}
+        component={ListaSeguidoresScreen}
         options={({ route }) => ({
           title:
             route.params.modo === "seguidores"
@@ -75,18 +57,17 @@ export function AppNavigator() {
       />
       <Stack.Screen
         name="Conversation"
-        component={ConversationScreen}
+        component={ConversaScreen}
         options={({ route }) => ({
-          // Título inicial vem do param (Fase 17) — a própria tela troca
-          // via `navigation.setOptions` se precisar, mesmo mecanismo do
-          // header nativo, sem duplicar a lógica de título aqui.
+          // Título inicial vindo do parâmetro; a tela pode trocá-lo depois com
+          // `navigation.setOptions`.
           title: route.params.nomeOutroParticipante || "Conversa",
         })}
       />
-      <Stack.Screen name="Report" component={ReportScreen} options={{ title: "Denunciar" }} />
+      <Stack.Screen name="Report" component={DenunciaScreen} options={{ title: "Denunciar" }} />
       <Stack.Screen
         name="SearchResults"
-        component={SearchResultsScreen}
+        component={ResultadosBuscaScreen}
         options={({ route }) => ({ title: TITULO_TIPO_BUSCA[route.params.tipo] })}
       />
     </Stack.Navigator>

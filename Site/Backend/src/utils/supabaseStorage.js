@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import env from "../config/env.js";
 
+/**
+ * Com a URL e a chave de service role do Supabase configuradas, os uploads vão para o Storage; sem
+ * elas, ficam no disco local (`uploadMiddleware.js`).
+ */
 export const storageHabilitado = Boolean(
     env.storage.supabaseUrl && env.storage.supabaseServiceRoleKey
 );
@@ -13,13 +17,11 @@ const bucketPara = (privado) =>
     privado ? env.storage.privateBucket : env.storage.publicBucket;
 
 /**
- * Envia um buffer para o Supabase Storage num caminho já definido pelo
- * backend (nunca pelo nome enviado pelo cliente) e devolve esse MESMO
- * caminho — não a URL final. O banco guarda o caminho (referência
- * estável); a URL de exibição é resolvida sob demanda, nunca persistida.
- *
- * `privado`: true → bucket privado (currículos/certificados), false →
- * bucket público (fotos, capas, logos, anexos de postagem).
+ * Envia um buffer para o Supabase Storage num caminho definido pelo backend (nunca pelo nome
+ * enviado pelo cliente) e devolve esse mesmo caminho, não a URL final. O banco guarda o caminho,
+ * que é a referência estável; a URL de exibição é resolvida sob demanda e nunca persistida.
+ * `privado`: true usa o bucket privado (currículos, documentos e anexos de postagem); false, o
+ * público (fotos, capas e logos).
  */
 export async function enviarArquivo(buffer, caminho, mimetype, { privado = false } = {}) {
     const { error } = await client.storage
@@ -47,18 +49,14 @@ export async function removerArquivo(caminho, { privado = false } = {}) {
 }
 
 /**
- * Resolve um valor guardado no banco para uma URL utilizável pelo
- * frontend — SÓ para campos do bucket PÚBLICO (fotoPerfil, capaPerfil,
- * logo, capa, postagem_anexos.url). Nunca usar para currículo/certificado
- * (bucket privado) — para esses, ver `gerarUrlAssinada`.
+ * Resolve um valor do banco para uma URL utilizável pelo frontend, só para arquivos do bucket
+ * público (fotoPerfil, capaPerfil, logo, capa e anexos antigos de postagem com `privado = false`).
+ * Para currículo, certificado e anexos privados, use `gerarUrlAssinada`.
  *
- * Trata três formatos, para nunca quebrar dado já existente:
- * 1. Já é uma URL completa (http/https) — dado antigo (Supabase ou outro
- *    host) — devolve como está.
- * 2. Já é um caminho local (`/uploads/...`) — dado antigo do disco local
- *    ou o próprio fallback local atual — devolve como está.
- * 3. É um caminho relativo novo (`postagens/<id>/<uuid>.mp4`) — resolve
- *    para a URL pública do bucket público.
+ * Trata três formatos, para não quebrar dados existentes:
+ * - URL completa (http/https), de dados antigos: devolve como está;
+ * - caminho local (`/uploads/...`), de dados antigos ou do fallback local: devolve como está;
+ * - caminho relativo (`postagens/<id>/<uuid>.mp4`): resolve para a URL pública do bucket público.
  */
 export function resolverUrlExibicao(caminho) {
     if (!caminho) {
@@ -81,16 +79,13 @@ export function resolverUrlExibicao(caminho) {
 }
 
 /**
- * Gera uma URL temporária (assinada) para um arquivo do bucket PRIVADO —
- * usada exclusivamente por endpoints que já validaram autorização (ver
- * `CandidatoService.gerarUrlCurriculo`). Nunca deve ser persistida no
- * banco nem cacheada além do tempo de resposta da requisição.
+ * Gera uma URL temporária (assinada) para um arquivo do bucket privado. Só deve ser chamada depois
+ * da autorização (como em `CandidatoService.gerarUrlCurriculo` e `PostagemService`), e a URL nunca
+ * deve ser persistida no banco nem guardada em cache além da própria resposta.
  *
- * Compatibilidade com dado antigo: valores salvos antes desta arquitetura
- * (`/uploads/...` local ou uma URL completa já resolvida) não são objetos
- * do bucket privado — não há o que assinar. Nesses casos devolve o valor
- * como está, marcado como `legado: true` e sem expiração real, em vez de
- * fingir que uma assinatura foi gerada.
+ * Valores antigos (`/uploads/...` local ou URL completa já resolvida) não são objetos do bucket
+ * privado e não há o que assinar: nesses casos devolve o valor como está, com `legado: true` e sem
+ * expiração real, em vez de fingir que gerou uma assinatura.
  */
 export async function gerarUrlAssinada(caminho, { expiresIn, download } = {}) {
     if (!caminho) {
@@ -123,16 +118,10 @@ export async function gerarUrlAssinada(caminho, { expiresIn, download } = {}) {
 }
 
 /**
- * Versão em LOTE de `gerarUrlAssinada` — uma única chamada ao Supabase
- * para vários caminhos (ex.: todos os anexos de todas as postagens de
- * uma página do feed), em vez de uma chamada por arquivo. Usada pela
- * Fase 7 (mídia de postagem) para nunca fazer "N publicações → N
- * chamadas separadas" ao gerar URL de exibição.
- *
- * Devolve um array na MESMA ordem/tamanho de `caminhos` — `null` no
- * índice de qualquer entrada vazia ou que falhou ao assinar (nunca
- * lança por um item individual falho, só por erro da chamada em lote
- * inteira). `download`: string (nome sugerido) ou `true` força
+ * Versão em lote de `gerarUrlAssinada`: uma única chamada ao Supabase para vários caminhos (como
+ * todos os anexos de uma página do feed), em vez de uma chamada por arquivo. Devolve um array na
+ * mesma ordem e tamanho de `caminhos`, com `null` nas entradas vazias ou que falharam; só lança se
+ * a chamada em lote inteira falhar. `download` (nome sugerido ou `true`) força
  * `Content-Disposition: attachment` em vez de exibição inline.
  */
 export async function gerarUrlsAssinadas(caminhos, { expiresIn, download } = {}) {

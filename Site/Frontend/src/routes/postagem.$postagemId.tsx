@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardPostagem } from "@/components/feed/CardPostagem";
+import { PostagemCard } from "@/components/feed/PostagemCard";
 import { usePostagemDetalhe } from "@/components/feed/hooks";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 
@@ -34,7 +34,7 @@ function DetalhePostagem() {
   const { data: postagem, isLoading, isError, refetch } = usePostagemDetalhe(postagemId);
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/feed"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -61,9 +61,9 @@ function DetalhePostagem() {
 
       {postagem && (
         <div className="mt-4">
-          <CardPostagem postagem={postagem} mostrarComentariosAbertos />
+          <PostagemCard postagem={postagem} mostrarComentariosAbertos />
         </div>
       )}
-    </AppShell>
+    </EstruturaApp>
   );
 }

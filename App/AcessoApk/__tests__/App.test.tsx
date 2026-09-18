@@ -1,29 +1,21 @@
 /* eslint-disable import/first -- `jest.mock` precisa vir antes dos imports dos módulos que ele substitui. */
 /**
- * Fase 23 ("Testes avançados") — o mais próximo de um E2E de verdade que
- * este ambiente permite (sem SDK Android/emulador, um Maestro de verdade
- * não roda aqui — ver `.maestro/README.md`). Renderiza o `App` exportado de
- * verdade (`SafeAreaProvider`/`AccessibilityProvider`/`ThemeProvider`/
- * `SegurancaProvider`/`RootNavigator` reais) — nenhum teste existente até
- * agora fazia isso (todos montam uma tela ou um navegador isolado). O que É
- * mockado: a camada de serviço (HTTP) e os dois módulos nativos que só esta
- * árvore completa realmente exercita (`react-native-safe-area-context`,
- * cujos insets nunca resolvem sem o mock oficial da própria biblioteca —
- * achado ao escrever este teste, documentado abaixo).
+ * O teste mais próximo de um E2E que roda sem emulador: renderiza o `App` real, com todos os
+ * providers e o `RaizNavigator`, e percorre login, feed, vagas e saída da conta. Só a camada de
+ * serviços (HTTP) e os módulos nativos são mockados.
  *
- * `useAuth()` é mockado com um estado compartilhado de verdade (mesma
- * técnica de `RootNavigator.test.tsx` — `useSyncExternalStore`, não um
- * `useState` local: `login()` chamado a partir do `LoginScreen` precisa
- * atualizar o que `RootNavigator` está lendo, senão a tela nunca troca).
+ * `useAutenticacao()` vira um estado compartilhado com `useSyncExternalStore` (mesma técnica de
+ * `RaizNavigator.test.tsx`), para que o `login()` chamado pela tela de entrada atualize o que o
+ * `RaizNavigator` lê.
  */
 import { useSyncExternalStore } from "react";
 
 type EstadoAuthFalso = {
-  status: "unauthenticated" | "authenticated";
-  user: Record<string, unknown> | null;
+  status: "naoAutenticado" | "autenticado";
+  usuario: Record<string, unknown> | null;
 };
 
-let mockEstadoAuth: EstadoAuthFalso = { status: "unauthenticated", user: null };
+let mockEstadoAuth: EstadoAuthFalso = { status: "naoAutenticado", usuario: null };
 const mockOuvintesAuth = new Set<() => void>();
 
 function mockDefinirEstadoAuth(novo: Partial<EstadoAuthFalso>) {
@@ -35,7 +27,7 @@ const mockLogin = jest.fn();
 const mockLogout = jest.fn();
 
 function mockUseAuthFalso() {
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- nome começa com "mock", não "use": permitido dentro do factory de `jest.mock` (hoisted), ver mesma técnica em `RootNavigator.test.tsx`.
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- nome começa com "mock", não "use": permitido dentro do factory de `jest.mock` (hoisted), ver mesma técnica em `RaizNavigator.test.tsx`.
   const estado = useSyncExternalStore(
     (ouvinte) => {
       mockOuvintesAuth.add(ouvinte);
@@ -46,50 +38,38 @@ function mockUseAuthFalso() {
 
   return {
     status: estado.status,
-    user: estado.user,
-    isAuthenticated: estado.status === "authenticated",
-    isLoading: false,
-    sessionEndedReason: null,
-    login: async (credenciais: unknown) => mockLogin(credenciais),
-    logout: async () => mockLogout(),
-    clearSessionEndedReason: () => {},
+    usuario: estado.usuario,
+    autenticado: estado.status === "autenticado",
+    carregando: false,
+    motivoFimSessao: null,
+    entrar: async (credenciais: unknown) => mockLogin(credenciais),
+    sair: async () => mockLogout(),
+    limparMotivoFimSessao: () => {},
   };
 }
 
-jest.mock("../src/auth", () => ({
-  ...jest.requireActual("../src/auth"),
-  useAuth: () => mockUseAuthFalso(),
-  AuthService: { reenviarConfirmacao: jest.fn(), esqueciSenha: jest.fn(), redefinirSenha: jest.fn() },
+jest.mock("../src/autenticacao", () => ({
+  ...jest.requireActual("../src/autenticacao"),
+  useAutenticacao: () => mockUseAuthFalso(),
+  AutenticacaoService: { reenviarConfirmacao: jest.fn(), esqueciSenha: jest.fn(), redefinirSenha: jest.fn() },
 }));
 
-// `useAuth()` acima é totalmente substituído (estado compartilhado falso),
-// mas o `AuthProvider` REAL continua montado por baixo (`App.tsx` o
-// renderiza sem condição nenhuma, e este arquivo nunca mockou o componente
-// em si) — seu próprio efeito de restauração de sessão chama
-// `SecureStore.getItemAsync` de verdade ao montar. Sem mock, isso lançaria
-// (não existe módulo nativo no Jest) e poluiria o teste com uma rejeição
-// não tratada, mesmo o valor nunca sendo lido por ninguém (RootNavigator
-// só enxerga o `useAuth()` falso acima).
+// O `AutenticacaoProvider` real continua montado pelo `App` e tenta restaurar a sessão pelo
+// SecureStore. Sem este mock a chamada lançaria no Jest, mesmo que ninguém leia o resultado.
 jest.mock("expo-secure-store", () => ({
   setItemAsync: jest.fn(),
   getItemAsync: jest.fn().mockResolvedValue(null),
   deleteItemAsync: jest.fn(),
 }));
 
-// `App.tsx` é a ÚNICA árvore de teste desta suíte inteira que renderiza o
-// `SafeAreaProvider` de verdade (todo outro arquivo monta uma tela sozinha,
-// sem ele) — sem o mock oficial da própria biblioteca, os insets nunca
-// resolvem no ambiente do Jest (não existe o evento nativo que os
-// preenche) e a árvore inteira fica presa sem renderizar nenhum filho.
-// `.default`: o mock da biblioteca só tem export default (achado ao
-// escrever este teste — sem o `.default`, `SafeAreaProvider` vira
-// `undefined` e o React lança "Element type is invalid").
+// Este é o único teste que monta o `SafeAreaProvider` real. Sem o mock oficial da biblioteca, os
+// insets nunca resolvem no Jest e nada é renderizado; o mock só tem export default, daí o
+// `.default`.
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- factory de `jest.mock` roda antes de qualquer import ES (hoisted), precisa de `require` mesmo.
 jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
 
-// Sem hardware biométrico disponível — `SegurancaProvider` nunca mostra
-// `BiometricLockScreen` neste teste (não é o que está sendo verificado
-// aqui; já tem cobertura própria em `RootNavigator.test.tsx`).
+// Sem biometria disponível, o bloqueio nunca aparece aqui; ele tem cobertura própria em
+// `RaizNavigator.test.tsx`.
 jest.mock("expo-local-authentication", () => ({
   hasHardwareAsync: jest.fn().mockResolvedValue(false),
   isEnrolledAsync: jest.fn().mockResolvedValue(false),
@@ -131,16 +111,15 @@ const vagaExemplo = {
   id: "v1",
   titulo: "Desenvolvedor Front-end",
   descricao: "Vaga de teste para o percurso completo.",
-  modalidade: "Remoto",
+  modalidade: "remoto",
   cidade: "São Paulo",
   estado: "SP",
-  status: "Aberta",
+  status: "aberta",
   empresa: { id: "e1", nomeFantasia: "ACME" },
 };
 
-// Mesmo rótulo que `VagaListItem` (`JobsScreen.tsx`) monta de verdade —
-// conferida a construção exata (`[titulo, empresa, local, modalidade,
-// publicoAlvo].filter(Boolean).join(", ")`) antes de escrever este teste.
+// Mesmo `accessibilityLabel` que `ItemVaga` monta em `VagasScreen.tsx`: título, empresa, local,
+// modalidade e, quando houver, salário e público-alvo.
 const ROTULO_VAGA = "Desenvolvedor Front-end, ACME, São Paulo - SP, Remoto";
 
 async function renderApp() {
@@ -152,7 +131,7 @@ async function renderApp() {
 describe("App — percurso completo (login real → feed → Vagas → detalhe → favoritar / logout)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockEstadoAuth = { status: "unauthenticated", user: null };
+    mockEstadoAuth = { status: "naoAutenticado", usuario: null };
     mockListarFeed.mockResolvedValue({ sucesso: true, total: 0, pagina: 1, limite: 10, totalPaginas: 0, postagens: [] });
     mockListarVagas.mockResolvedValue({
       sucesso: true,
@@ -167,14 +146,14 @@ describe("App — percurso completo (login real → feed → Vagas → detalhe �
 
   it("login pelo formulário leva ao feed; navega para Vagas, abre uma vaga (composite Tab→Stack) e favorita", async () => {
     mockLogin.mockImplementation(async () => {
-      mockDefinirEstadoAuth({ status: "authenticated", user: candidatoLogado });
+      mockDefinirEstadoAuth({ status: "autenticado", usuario: candidatoLogado });
       return { sucesso: true, token: "tok-fake", refreshToken: "ref-fake", usuario: candidatoLogado };
     });
     mockFavoritarVaga.mockResolvedValue(true);
 
     const { getByLabelText, getByRole, findByText, findByLabelText, queryByLabelText } = await renderApp();
 
-    // 1. Tela de login real — digita e envia.
+    // 1. Tela de login real: digita e envia.
     expect(await findByText("Entrar")).toBeTruthy();
     await act(async () => {
       fireEvent.changeText(getByLabelText("E-mail"), "ana@exemplo.com");
@@ -188,18 +167,17 @@ describe("App — percurso completo (login real → feed → Vagas → detalhe �
 
     expect(mockLogin).toHaveBeenCalledWith({ email: "ana@exemplo.com", senha: "SenhaValida123!" });
 
-    // 2. Sessão "authenticated" — RootNavigator troca pro App Stack, Home carrega o feed real (vazio).
+    // 2. Sessão "autenticado": RaizNavigator troca pro App Stack, Home carrega o feed real (vazio).
     expect(await findByText("Olá, Ana Candidata!")).toBeTruthy();
     expect(queryByLabelText("E-mail")).toBeNull();
 
-    // 3. Aba Vagas — composite navigation Tab → Stack pai (VagaDetail não é uma rota da própria tab, mora em AppStackParamList).
+    // 3. Aba Vagas. O detalhe da vaga não é uma rota da aba: fica na pilha principal
+    // (`AppStackParamList`).
     await act(async () => {
       fireEvent.press(getByLabelText("Vagas"));
     });
-    // O rótulo é o `accessibilityLabel` do card inteiro — o texto visível
-    // vem em `Text`s SEPARADOS (título/empresa/local), então `findByText`
-    // com a string completa nunca bateria; é `findByLabelText` que
-    // corresponde ao nó único e acessível (achado ao escrever este teste).
+    // O rótulo completo é o `accessibilityLabel` do card; o texto visível fica em vários `Text`
+    // separados, então só `findByLabelText` encontra o card inteiro.
     const itemVaga = await findByLabelText(ROTULO_VAGA);
     await act(async () => {
       fireEvent.press(itemVaga);
@@ -209,7 +187,7 @@ describe("App — percurso completo (login real → feed → Vagas → detalhe �
     expect(await findByText("Vaga de teste para o percurso completo.")).toBeTruthy();
     expect(mockObterVagaPorId).toHaveBeenCalledWith("v1");
 
-    // 5. Favoritar — chama o serviço real, atualiza o rótulo/estado.
+    // 5. Favoritar: chama o serviço real, atualiza o rótulo/estado.
     await act(async () => {
       fireEvent.press(getByRole("button", { name: "Favoritar vaga" }));
     });
@@ -219,11 +197,11 @@ describe("App — percurso completo (login real → feed → Vagas → detalhe �
 
   it("do Perfil, 'Sair da conta' encerra a sessão e volta à tela de login", async () => {
     mockLogin.mockImplementation(async () => {
-      mockDefinirEstadoAuth({ status: "authenticated", user: candidatoLogado });
+      mockDefinirEstadoAuth({ status: "autenticado", usuario: candidatoLogado });
       return { sucesso: true, token: "tok-fake", refreshToken: "ref-fake", usuario: candidatoLogado };
     });
     mockLogout.mockImplementation(async () => {
-      mockDefinirEstadoAuth({ status: "unauthenticated", user: null });
+      mockDefinirEstadoAuth({ status: "naoAutenticado", usuario: null });
     });
 
     const { getByLabelText, getByRole, findByText, findByLabelText, getByText, queryByLabelText } = await renderApp();
@@ -247,9 +225,7 @@ describe("App — percurso completo (login real → feed → Vagas → detalhe �
       fireEvent.press(botaoSair);
     });
 
-    // Sessão encerrada — RootNavigator troca de volta pro ramo "Auth"
-    // (descarta a pilha do App inteira, mesmo mecanismo já documentado em
-    // `RootNavigator.tsx`) — nada do App restante fica acessível.
+    // Sessão encerrada: o `RaizNavigator` volta para as telas de entrada e descarta a pilha do app.
     await waitFor(() => expect(getByLabelText("E-mail")).toBeTruthy());
     expect(queryByLabelText("Página inicial")).toBeNull();
     expect(getByText("Entrar")).toBeTruthy();

@@ -16,6 +16,7 @@ import type { ComentarioCompleto, PostagemCompleta } from "@/types";
 
 const LIMITE_PADRAO = 10;
 
+/** Chave de cache do feed: cada filtro tem sua entrada, todas sob o prefixo `postagens`, invalidado de uma vez. */
 export function chaveFeed(filtro: FiltroFeed = {}) {
   return ["postagens", filtro] as const;
 }
@@ -81,11 +82,9 @@ function removerPostagemDoCacheFeed(dados: PaginasFeed | undefined, postagemId: 
 }
 
 /**
- * Assina os eventos de tempo real do feed e mantém o cache do React Query em dia.
- *
- * Nomes e formatos de payload espelham exatamente o que o backend emite em
- * `PostagemService` (`feed:postagem`, `feed:curtida`, `feed:comentario` —
- * ver `Site/Backend/src/services/PostagemService.js`).
+ * Assina os eventos de tempo real do feed e mantém o cache do React Query em dia. Nomes e formatos
+ * dos payloads espelham o que o backend emite em `PostagemService` (`feed:postagem`, `feed:curtida`
+ * e `feed:comentario`).
  */
 export function useFeedTempoReal() {
   const queryClient = useQueryClient();
@@ -106,7 +105,7 @@ export function useFeedTempoReal() {
       }
 
       // Publicação editada em outra aba/dispositivo: o Socket.IO só sinaliza
-      // QUAL postagem mudou — nunca carrega o conteúdo (broadcast sem sala,
+      // qual postagem mudou, nunca carrega o conteúdo (broadcast sem sala,
       // ver `emitirFeed` no backend). O conteúdo atualizado vem sempre de um
       // refetch autorizado via REST, que reaplica `garantirAcessoAPostagem`.
       if (dados.atualizada && dados.id) {
@@ -219,7 +218,7 @@ export function useRemoverPostagem() {
 }
 
 // A única mutation do feed com atualização otimista (`onMutate` + rollback
-// em `onError`) — curtir é a ação que mais se repete numa sessão de feed, e
+// em `onError`): curtir é a ação que mais se repete numa sessão de feed, e
 // esperar a resposta do servidor pra virar o coração fazia o clique parecer
 // travado. As outras (comentar, compartilhar, publicar) já têm sua própria
 // espera natural (digitar, abrir um diálogo) e não precisam do mesmo truque.
@@ -331,8 +330,7 @@ export function useCompartilharPostagem() {
       queryClient.setQueryData<PostagemCompleta>(["postagem", variaveis.postagemId], (atual) =>
         atual ? aplicar(atual) : atual,
       );
-      // Fase 9, Bloco 7: o toast já é lido automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("Publicação compartilhada.");
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível compartilhar.")),
@@ -361,6 +359,7 @@ export function useDesfazerCompartilhamento() {
   });
 }
 
+/** Devolve uma função que recarrega os comentários de uma publicação. */
 export function useInvalidarComentarios() {
   const queryClient = useQueryClient();
   return useCallback(

@@ -4,12 +4,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Briefcase, Loader2 } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FiltrosVagas, type FiltrosVagasState } from "@/components/vagas/FiltrosVagas";
+import { FiltrosVagas, type FiltrosVagasEstado } from "@/components/vagas/FiltrosVagas";
 import { VagaCard } from "@/components/vagas/VagaCard";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import vagasService from "@/services/vagas.service";
 import dashboardService from "@/services/dashboard.service";
 import { extrairMensagemErro } from "@/services/api";
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/vagas")({
   component: Vagas,
 });
 
-const FILTROS_INICIAIS: FiltrosVagasState = {
+const FILTROS_INICIAIS: FiltrosVagasEstado = {
   busca: "",
   modalidade: "",
   cidade: "",
@@ -41,13 +41,13 @@ const FILTROS_INICIAIS: FiltrosVagasState = {
 };
 
 function Vagas() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
   const queryClient = useQueryClient();
-  const [rascunho, setRascunho] = useState<FiltrosVagasState>(FILTROS_INICIAIS);
-  const [filtros, setFiltros] = useState<FiltrosVagasState>(FILTROS_INICIAIS);
+  const [rascunho, setRascunho] = useState<FiltrosVagasEstado>(FILTROS_INICIAIS);
+  const [filtros, setFiltros] = useState<FiltrosVagasEstado>(FILTROS_INICIAIS);
   const [pagina, setPagina] = useState(1);
 
-  const ehCandidato = user?.tipo === "candidato";
+  const ehCandidato = usuario?.tipo === "candidato";
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["vagas", filtros, pagina],
@@ -77,15 +77,12 @@ function Vagas() {
     mutationFn: (vagaId: string) => vagasService.favoritar(vagaId),
     onSuccess: (resultado) => {
       toast.success(resultado.favoritada ? "Vaga favoritada." : "Vaga removida dos favoritos.");
-      // Fase 9, Bloco 6: existem DUAS queryKeys para favoritos —
-      // `["dashboard","favoritos"]` (esta tela e o detalhe da vaga, lista
-      // "achatada") e `["vagas-favoritas", pagina]` (widget do painel,
-      // paginado). São formas de busca genuinamente diferentes para o
-      // mesmo dado, então em vez de unificar (arriscar regressão na
-      // paginação do widget) invalidamos as duas — o prefixo sem `pagina`
-      // cobre qualquer página já cacheada do widget sem forçá-la de volta
-      // à página 1. `metricas-candidato` também conta favoritos (card
-      // "Vagas favoritas" do painel), por isso entra aqui também.
+      // Há duas chaves de query para favoritos: `["dashboard", "favoritos"]` (esta tela e o detalhe
+      // da vaga, lista simples) e `["vagas-favoritas", pagina]` (widget do painel, paginado). São
+      // buscas diferentes do mesmo dado, então as duas são invalidadas, em vez de unificadas com
+      // risco de quebrar a paginação do widget; o prefixo sem `pagina` cobre qualquer página em
+      // cache. `metricas-candidato` também conta favoritos (card "Vagas favoritas" do painel) e
+      // entra junto.
       void queryClient.invalidateQueries({ queryKey: ["dashboard", "favoritos"] });
       void queryClient.invalidateQueries({ queryKey: ["vagas-favoritas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
@@ -101,7 +98,7 @@ function Vagas() {
   }
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Vagas inclusivas</h1>
       <p className="mt-2 text-muted-foreground" role="status" aria-live="polite">
         {isLoading
@@ -180,6 +177,6 @@ function Vagas() {
           </Button>
         </div>
       )}
-    </AppShell>
+    </EstruturaApp>
   );
 }

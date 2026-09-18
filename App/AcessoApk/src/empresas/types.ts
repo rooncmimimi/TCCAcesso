@@ -1,34 +1,28 @@
 /**
- * Tipos do contrato real de empresa (Site/Backend), conforme auditoria da
- * Fase 14 (leitura pública, usada por `PublicProfileScreen`) e da Fase 18
- * (gestão da própria empresa — `EmpresaController`/`EmpresaService`,
- * `empresaValidator.js`).
+ * Tipos de empresa: leitura do perfil público (`PerfilPublicoScreen`) e edição da própria empresa
+ * (`EmpresaService` e `empresaValidator.js` no backend).
  *
- * IMPORTANTE (achado da Fase 12, reaplicado aqui): o payload de atualização
- * (`AtualizarEmpresaDados`) é uma interface EXPLÍCITA, nunca derivada via
- * `Omit<EmpresaResumo, ...>` — `EmpresaResumo` tem um índice `[chave:
- * string]: unknown`, e `Omit` sobre um tipo com índice colapsa `keyof` para
- * `string`, perdendo toda checagem de campo obrigatório/nome errado
- * silenciosamente (bug real encontrado e documentado na Fase 12).
+ * `AtualizarEmpresaDados` é declarado campo a campo em vez de `Omit<EmpresaResumo, ...>`: como
+ * `EmpresaResumo` tem o índice `[chave: string]: unknown`, o `Omit` reduziria as chaves a `string`
+ * e aceitaria nomes de campo errados sem aviso.
  *
- * Upload de logo/capa (`PATCH /empresas/:id/logo|capa`, multipart) fica de
- * fora desta fase de propósito — mesma decisão já tomada para foto de
- * perfil do candidato (Fase 12): exigiria `expo-image-picker` (dependência
- * nova de câmera/galeria), e o próprio roteiro já reserva mídia para a Fase
- * 20 (Feed completo — mídia + Socket.IO). Editar dados de texto da empresa
- * não depende disso.
+ * O app não envia logo nem capa (`PATCH /empresas/:id/logo` e `/capa`); aqui só os dados de texto
+ * são editados.
  */
-/** `Empresa.statusAprovacao` — controla o que a própria empresa pode fazer (`utils/authorization.js: garantirEmpresaAprovada`). Quase toda ação de auto-gestão (editar perfil, logo/capa, vagas, candidaturas) exige `"aprovada"`. */
+/**
+ * `Empresa.statusAprovacao`. Quase tudo que a própria empresa faz (editar perfil, logo e capa,
+ * vagas, candidaturas) exige `"aprovada"` (`garantirEmpresaAprovada` em `utils/autorizacao.js`).
+ */
 export type StatusAprovacaoEmpresa = "pendente" | "aprovada" | "reprovada" | "suspensa";
 
-export type PorteEmpresa = "MEI" | "Micro" | "Pequena" | "Media" | "Grande";
+export type PorteEmpresa = "mei" | "micro" | "pequena" | "media" | "grande";
 
 export interface EmpresaResumo {
   id: string;
   usuarioId: string;
   nomeFantasia?: string | null;
   razaoSocial: string;
-  /** Só exibição — nunca editável pela própria empresa (exclusivo de administrador no backend). */
+  /** Só exibição, nunca editável pela própria empresa (exclusivo de administrador no backend). */
   cnpj?: string | null;
   logo?: string | null;
   capa?: string | null;
@@ -55,7 +49,7 @@ export interface EmpresaResposta {
   empresa: EmpresaResumo;
 }
 
-/** `PUT /empresas/:id` — só os campos que a PRÓPRIA empresa pode editar (`EmpresaService.CAMPOS_EDITAVEIS`); `cnpj`/`empresaVerificada` são exclusivos de administrador, nem aparecem aqui. */
+/** `PUT /empresas/:id`: só os campos que a própria empresa pode editar (`EmpresaService.CAMPOS_EDITAVEIS`); `cnpj`/`empresaVerificada` são exclusivos de administrador, nem aparecem aqui. */
 export interface AtualizarEmpresaDados {
   razaoSocial?: string;
   nomeFantasia?: string;

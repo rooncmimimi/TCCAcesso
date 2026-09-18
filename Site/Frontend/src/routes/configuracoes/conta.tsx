@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Pencil } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { EditarPerfilDialog } from "@/components/perfil/EditarPerfilDialog";
 import { EditarEmpresaDialog } from "@/components/perfil/EditarEmpresaDialog";
 import { SecaoTrocarEmail } from "@/components/configuracoes/SecaoTrocarEmail";
 import { SecaoContaPerigo } from "@/components/configuracoes/SecaoContaPerigo";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
 import { empresasService } from "@/services/empresas.service";
 
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/configuracoes/conta")({
   ),
 });
 
-function formatarData(iso?: string | null): string {
+function formatarDataLonga(iso?: string | null): string {
   if (!iso) return "—";
   try {
     return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(iso));
@@ -44,22 +44,22 @@ const RUBRICA_TIPO: Record<string, string> = {
 };
 
 function Conta() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
 
   const { data: candidato } = useQuery({
     queryKey: ["meu-candidato"],
     queryFn: () => perfilService.meuCandidato(),
-    enabled: user?.tipo === "candidato",
+    enabled: usuario?.tipo === "candidato",
   });
 
   const { data: empresa } = useQuery({
     queryKey: ["minha-empresa"],
     queryFn: () => empresasService.minhaEmpresa(),
-    enabled: user?.tipo === "empresa",
+    enabled: usuario?.tipo === "empresa",
   });
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -79,29 +79,29 @@ function Conta() {
             <dl className="grid gap-3 sm:grid-cols-2">
               <div>
                 <dt className="text-xs font-medium uppercase text-muted-foreground">Nome</dt>
-                <dd className="font-medium">{user?.nome}</dd>
+                <dd className="font-medium">{usuario?.nome}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase text-muted-foreground">Tipo de conta</dt>
-                <dd className="font-medium">{user ? RUBRICA_TIPO[user.tipo] ?? user.tipo : "—"}</dd>
+                <dd className="font-medium">{usuario ? RUBRICA_TIPO[usuario.tipo] ?? usuario.tipo : "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase text-muted-foreground">Conta criada em</dt>
-                <dd className="font-medium">{formatarData(user?.criadoEm ?? user?.created_at)}</dd>
+                <dd className="font-medium">{formatarDataLonga(usuario?.criadoEm ?? usuario?.criadoEm)}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase text-muted-foreground">Último acesso</dt>
-                <dd className="font-medium">{formatarData(user?.ultimoLogin)}</dd>
+                <dd className="font-medium">{formatarDataLonga(usuario?.ultimoLogin)}</dd>
               </div>
             </dl>
 
-            {user?.tipo === "empresa" && empresa ? (
+            {usuario?.tipo === "empresa" && empresa ? (
               <EditarEmpresaDialog empresa={empresa}>
                 <Button variant="outline" className="min-h-11 gap-2">
                   <Pencil className="size-4" aria-hidden="true" /> Editar dados da empresa
                 </Button>
               </EditarEmpresaDialog>
-            ) : user?.tipo === "candidato" ? (
+            ) : usuario?.tipo === "candidato" ? (
               <EditarPerfilDialog candidato={candidato}>
                 <Button variant="outline" className="min-h-11 gap-2">
                   <Pencil className="size-4" aria-hidden="true" /> Editar nome, telefone e localidade
@@ -126,6 +126,6 @@ function Conta() {
 
         <SecaoContaPerigo />
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

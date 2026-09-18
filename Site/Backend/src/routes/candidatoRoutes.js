@@ -1,8 +1,8 @@
 import { Router } from "express";
 import CandidatoController from "../controllers/CandidatoController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import rbacMiddleware from "../middlewares/rbacMiddleware.js";
-import validationMiddleware from "../middlewares/validationMiddleware.js";
+import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
+import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { uploadDocumento, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
 import { garantirDonoDeCandidato } from "../middlewares/garantirDonoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
@@ -13,55 +13,55 @@ import {
 
 const router = Router();
 
-// Currículo (documento privado) vai para `curriculos/<candidatoId>/<uuid>.ext`
-// no bucket PRIVADO — nunca resolvido para URL pública (ver Fase 4).
+// Currículo vai para `curriculos/<candidatoId>/<uuid>.ext` no bucket privado e nunca vira URL
+// pública.
 const processarCurriculo = criarProcessadorArmazenamento({
     pasta: (req) => `curriculos/${req.params.id}`,
     privado: true
 });
 
-router.use(authMiddleware);
+router.use(autenticacaoMiddleware);
 
 // Perfil do candidato autenticado.
-router.get("/me", CandidatoController.me);
+router.get("/me", CandidatoController.perfilAtual);
 
 // Busca de talentos: empresas e administradores.
 router.get(
     "/",
-    rbacMiddleware("empresa", "administrador"),
-    CandidatoController.index
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
+    CandidatoController.listar
 );
 
 router.get(
     "/:id",
     validarUuidParam("id"),
-    validationMiddleware,
-    CandidatoController.show
+    validacaoMiddleware,
+    CandidatoController.obter
 );
 
 router.put(
     "/:id",
     validarAtualizacaoCandidato,
-    validationMiddleware,
-    CandidatoController.update
+    validacaoMiddleware,
+    CandidatoController.atualizar
 );
 
 router.patch(
     "/:id/curriculo",
     validarUuidParam("id"),
-    validationMiddleware,
+    validacaoMiddleware,
     garantirDonoDeCandidato,
     uploadDocumento.single("curriculo"),
     processarCurriculo,
-    CandidatoController.uploadCurriculo
+    CandidatoController.enviarCurriculo
 );
 
-// Extração (sem IA) de um rascunho a partir do arquivo — nunca grava nada
+// Extração (sem IA) de um rascunho a partir do arquivo: nunca grava nada
 // sozinho, nunca salva o arquivo como currículo oficial (ver controller).
 router.post(
     "/:id/curriculo/importar",
     validarUuidParam("id"),
-    validationMiddleware,
+    validacaoMiddleware,
     uploadDocumento.single("curriculo"),
     CandidatoController.importarCurriculo
 );
@@ -71,24 +71,23 @@ router.post(
 router.get(
     "/:id/curriculo",
     validarUuidParam("id"),
-    validationMiddleware,
-    CandidatoController.curriculoUrl
+    validacaoMiddleware,
+    CandidatoController.urlCurriculo
 );
 
-// Mesma autorização acima, mas força download (Content-Disposition:
-// attachment) em vez de exibição inline — mesmo padrão do anexo de
-// postagem (Fase 7).
+// Mesma autorização acima, mas força download (`Content-Disposition: attachment`) em vez de
+// exibição inline, como no anexo de postagem.
 router.get(
     "/:id/curriculo/download",
     validarUuidParam("id"),
-    validationMiddleware,
-    CandidatoController.curriculoDownload
+    validacaoMiddleware,
+    CandidatoController.baixarCurriculo
 );
 
 router.post(
     "/:id/deficiencias",
     validarVinculoDeficiencia,
-    validationMiddleware,
+    validacaoMiddleware,
     CandidatoController.vincularDeficiencia
 );
 
@@ -96,16 +95,16 @@ router.delete(
     "/:id/deficiencias/:deficienciaId",
     validarUuidParam("id"),
     validarUuidParam("deficienciaId"),
-    validationMiddleware,
+    validacaoMiddleware,
     CandidatoController.desvincularDeficiencia
 );
 
 router.delete(
     "/:id",
-    rbacMiddleware("administrador"),
+    exigirTipoUsuarioMiddleware("administrador"),
     validarUuidParam("id"),
-    validationMiddleware,
-    CandidatoController.destroy
+    validacaoMiddleware,
+    CandidatoController.excluir
 );
 
 export default router;

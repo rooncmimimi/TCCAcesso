@@ -4,28 +4,19 @@ import { Loader2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { buscarCidadesPorUf, buscarTodasAsCidades } from "@/services/ibge.service";
+import { normalizarParaBusca } from "@/utils/texto";
 
 const MAX_SUGESTOES = 8;
 
-function normalizar(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
 /**
- * Campo de cidade com sugestões do IBGE — sempre texto livre por baixo:
- * nunca bloqueia digitação, nunca apaga ou substitui o que a pessoa já
- * escreveu se a cidade não for encontrada na lista (ex.: grafia diferente,
- * distrito não listado, cidade de outro país). A sugestão é só uma ajuda.
+ * Campo de cidade com sugestões do IBGE, sempre com texto livre por baixo: nunca bloqueia a
+ * digitação nem apaga ou troca o que a pessoa escreveu quando a cidade não está na lista (grafia
+ * diferente, distrito não listado, cidade de outro país). A sugestão é só uma ajuda.
  *
- * Com `estado` (UF de 2 letras) informado, busca só as cidades daquela UF
- * (endpoint leve). Sem `estado` — como no filtro de vagas, que não tem
- * campo de UF —, busca a lista completa do Brasil sob demanda, uma única
- * vez por sessão (endpoint pesado, por isso nunca é buscado automaticamente
- * nem em todo carregamento de página).
+ * Com `estado` (UF de 2 letras), busca só as cidades daquela UF (endpoint leve). Sem `estado`, como
+ * no filtro de vagas, que não tem campo de UF, busca a lista completa do Brasil sob demanda, uma
+ * única vez por sessão (endpoint pesado, por isso nunca é buscado automaticamente nem a cada
+ * carregamento de página).
  */
 export function CidadeAutocomplete({
   id,
@@ -48,7 +39,7 @@ export function CidadeAutocomplete({
   className?: string;
   "aria-label"?: string;
   autoComplete?: string;
-  /** Chamado quando Enter é pressionado sem nenhuma sugestão destacada — ex.: disparar a busca de um filtro. */
+  /** Chamado quando Enter é pressionado sem nenhuma sugestão destacada (ex.: disparar a busca de um filtro). */
   onEnterSemSelecao?: () => void;
 }) {
   const listboxId = useId();
@@ -95,18 +86,18 @@ export function CidadeAutocomplete({
     };
   }, [ufValida, usaListaGlobal]);
 
-  // Filtra as sugestões com um pequeno debounce — a digitação em si nunca é atrasada.
+  // Filtra as sugestões com um pequeno debounce: a digitação em si nunca é atrasada.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    const termo = normalizar(value);
+    const termo = normalizarParaBusca(value).trim();
     if (!termo || cidades.length === 0) {
       setSugestoesFiltradas([]);
       return;
     }
 
     debounceRef.current = setTimeout(() => {
-      const filtradas = cidades.filter((cidade) => normalizar(cidade).includes(termo)).slice(0, MAX_SUGESTOES);
+      const filtradas = cidades.filter((cidade) => normalizarParaBusca(cidade).trim().includes(termo)).slice(0, MAX_SUGESTOES);
       setSugestoesFiltradas(filtradas);
       setIndiceAtivo(-1);
     }, 200);
@@ -216,7 +207,7 @@ export function CidadeAutocomplete({
         </ul>
       )}
 
-      {/* Nunca substitui nem apaga o texto digitado — só avisa que não bateu com nenhuma sugestão. */}
+      {/* Nunca substitui nem apaga o texto digitado: só avisa que não bateu com nenhuma sugestão. */}
       {mostrarDica && (
         <p className="mt-1 text-xs text-muted-foreground">
           Nenhuma sugestão encontrada — o texto digitado será salvo como está.

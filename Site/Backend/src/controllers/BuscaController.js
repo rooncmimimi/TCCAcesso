@@ -1,7 +1,11 @@
 import BuscaService from "../services/BuscaService.js";
 
+/**
+ * `GET /busca`: o parâmetro `tipo` escolhe entre o resumo de todas as categorias e uma categoria
+ * paginada.
+ */
 class BuscaController {
-    async index(req, res, next) {
+    async listar(req, res, next) {
         try {
             const dados = await BuscaService.buscar(req.query, req.user);
 

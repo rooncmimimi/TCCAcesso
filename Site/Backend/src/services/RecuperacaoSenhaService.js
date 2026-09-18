@@ -1,14 +1,15 @@
 import { Op } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 import { Usuario, CodigoRecuperacaoSenha } from "../models/index.js";
 import { gerarCodigoNumerico, gerarTokenOpaco, hashToken, compararHash } from "../utils/tokens.js";
-import { hashPassword } from "../utils/bcrypt.js";
-import RefreshTokenService from "./RefreshTokenService.js";
+import { gerarHashSenha } from "../utils/bcrypt.js";
+import SessaoService from "./SessaoService.js";
 import EmailService from "./EmailService.js";
-import authService from "./authService.js";
-import { templateRecuperacaoSenha } from "../utils/emailTemplates.js";
-import { montarUrlFrontend } from "../utils/frontendUrl.js";
-import ApiError from "../utils/ApiError.js";
+import NotificacaoPushService from "./NotificacaoPushService.js";
+import AutenticacaoService from "./AutenticacaoService.js";
+import { modeloRecuperacaoSenha } from "../utils/modelosEmail.js";
+import { montarUrlFrontend } from "../utils/urlFrontend.js";
+import ErroApi from "../utils/ErroApi.js";
 
 const MINUTOS_VALIDADE = 15;
 const MAX_TENTATIVAS = 5;
@@ -17,20 +18,18 @@ const MENSAGEM_INVALIDO = "Link ou código inválido ou expirado.";
 /**
  * Recuperação de senha.
  *
- * Mecanismo PRINCIPAL: token opaco de alta entropia (48 bytes,
- * `gerarTokenOpaco()`), entregue por link no e-mail
- * (`/redefinir-senha?token=...`) — não exige digitar nada, e o token não
- * tem o espaço de busca limitado (10^6) do código numérico.
+ * Mecanismo principal: token opaco de alta entropia (48 bytes, `gerarTokenOpaco()`), entregue por
+ * link no e-mail (`/redefinir-senha?token=...`). Não exige digitar nada, e o token não tem o espaço
+ * de busca limitado (10^6) do código numérico.
  *
- * Mecanismo de FALLBACK: código de 6 dígitos, mantido porque é o único
- * mecanismo que o aplicativo mobile usa (sem deep link de redefinição).
- * Os dois segredos são gerados juntos e guardados na MESMA linha —
- * resgatar um invalida o outro (auditoria do Site, item 1).
+ * Alternativa: código de 6 dígitos, mantido porque é o único mecanismo que o app usa (não há deep
+ * link de redefinição). Os dois segredos são gerados juntos e guardados na mesma linha, e usar um
+ * invalida o outro.
  *
- * Segurança (ambos os mecanismos):
- * - resposta genérica ao solicitar (não revela se o e-mail existe — anti-enumeração);
- * - segredo guardado só como hash (SHA-256), nunca em claro;
- * - expiração de 15 minutos e revogação de códigos/tokens anteriores;
+ * Segurança, nos dois mecanismos:
+ * - resposta genérica ao solicitar (não revela se o e-mail existe);
+ * - segredo guardado só como hash SHA-256, nunca em claro;
+ * - expiração de 15 minutos e revogação de códigos e tokens anteriores;
  * - comparação em tempo constante; ao redefinir, todas as sessões do usuário são revogadas.
  */
 class RecuperacaoSenhaService {
@@ -67,12 +66,11 @@ class RecuperacaoSenhaService {
         });
 
         if (EmailService.disponivel()) {
-            const { assunto, html, texto } = templateRecuperacaoSenha({
+            const { assunto, html, texto } = modeloRecuperacaoSenha({
                 nome: usuario.nome,
                 codigo,
-                // O link agora carrega o TOKEN (mecanismo principal) — não o
-                // e-mail/código. Um clique já é suficiente, sem digitar nada,
-                // e não expõe o código de 6 dígitos na URL/histórico/referrer.
+                // O link carrega o token (mecanismo principal), e não e-mail e código: um clique
+                // basta, e o código de 6 dígitos não aparece na URL, no histórico nem no referrer.
                 linkRedefinir: montarUrlFrontend("/redefinir-senha", { token }),
                 minutosValidade: MINUTOS_VALIDADE
             });
@@ -88,7 +86,7 @@ class RecuperacaoSenhaService {
                 });
             } catch (erro) {
                 // Best-effort, igual ao cadastro: a resposta ao cliente é
-                // sempre a mesma genérica (anti-enumeração) — o usuário
+                // sempre a mesma genérica (anti-enumeração); o usuário
                 // pode simplesmente solicitar de novo.
                 console.error(
                     JSON.stringify({
@@ -101,11 +99,8 @@ class RecuperacaoSenhaService {
                 );
             }
         } else if (process.env.NODE_ENV !== "production") {
-            // Sem provedor de e-mail configurado: mantém o fallback só de
-            // desenvolvimento (nunca em produção) que já existia antes —
-            // agora também loga o link com o token (mecanismo principal),
-            // sem o qual esse fluxo não seria testável localmente sem um
-            // provedor de e-mail configurado.
+            // Sem provedor de e-mail, só fora de produção: o código e o link com o token vão para o
+            // log, para o fluxo poder ser testado localmente.
             console.info(
                 `[RECUPERACAO] Código para ${usuario.email}: ${codigo} (expira em ${MINUTOS_VALIDADE} min)`
             );
@@ -118,15 +113,14 @@ class RecuperacaoSenhaService {
     }
 
     /**
-     * @param {object} dados
-     * @param {string} [dados.token] Token opaco (mecanismo principal, link de e-mail).
-     * @param {string} [dados.email] E-mail da conta (só usado no fluxo por código).
-     * @param {string} [dados.codigo] Código de 6 dígitos (fallback, usado pelo app mobile).
-     * @param {string} dados.novaSenha
+     * Cada chamada usa exatamente um dos fluxos: `token` (o hash do token já identifica a linha,
+     * sem `email` nem `codigo`) ou `email` e `codigo`.
      *
-     * Exatamente um dos dois fluxos é usado por chamada: `token` (não
-     * precisa de `email`/`codigo` — o hash do token já identifica a linha
-     * sozinho) ou `email`+`codigo` (fluxo original, inalterado).
+     * @param {object} dados
+     * @param {string} [dados.token] Token opaco (mecanismo principal, link do e-mail).
+     * @param {string} [dados.email] E-mail da conta (só no fluxo por código).
+     * @param {string} [dados.codigo] Código de 6 dígitos (usado pelo app).
+     * @param {string} dados.novaSenha
      */
     async redefinir({ token, email, codigo, novaSenha }) {
         if (token) {
@@ -138,7 +132,7 @@ class RecuperacaoSenhaService {
         });
 
         if (!usuario) {
-            throw ApiError.badRequest("Código inválido ou expirado.");
+            throw ErroApi.requisicaoInvalida("Código inválido ou expirado.");
         }
 
         const registro = await CodigoRecuperacaoSenha.findOne({
@@ -147,23 +141,23 @@ class RecuperacaoSenhaService {
                 utilizadoEm: null,
                 expiraEm: { [Op.gt]: new Date() }
             },
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
 
         if (!registro) {
-            throw ApiError.badRequest("Código inválido ou expirado.");
+            throw ErroApi.requisicaoInvalida("Código inválido ou expirado.");
         }
 
         if (registro.tentativas >= MAX_TENTATIVAS) {
             await registro.update({ utilizadoEm: new Date() });
-            throw ApiError.badRequest(
+            throw ErroApi.requisicaoInvalida(
                 "Número de tentativas excedido. Solicite um novo código."
             );
         }
 
         if (!compararHash(hashToken(codigo), registro.codigoHash)) {
             await registro.increment("tentativas");
-            throw ApiError.badRequest("Código inválido ou expirado.");
+            throw ErroApi.requisicaoInvalida("Código inválido ou expirado.");
         }
 
         await this._aplicarNovaSenha(usuario, registro, novaSenha);
@@ -174,7 +168,7 @@ class RecuperacaoSenhaService {
     /**
      * Fluxo principal: identifica a linha diretamente pelo hash do token
      * (sem precisar de e-mail) e, se válida, aplica a nova senha. Não há
-     * limite de tentativas aqui de propósito — com 48 bytes aleatórios
+     * limite de tentativas aqui de propósito: com 48 bytes aleatórios
      * (2^384 combinações) um atacante não tem como "tentar de novo" com
      * qualquer chance prática de acerto, diferente do código de 6 dígitos
      * (10^6 combinações), que por isso continua limitado a 5 tentativas.
@@ -189,13 +183,13 @@ class RecuperacaoSenhaService {
         });
 
         if (!registro) {
-            throw ApiError.badRequest(MENSAGEM_INVALIDO);
+            throw ErroApi.requisicaoInvalida(MENSAGEM_INVALIDO);
         }
 
         const usuario = await Usuario.findByPk(registro.usuarioId);
 
         if (!usuario) {
-            throw ApiError.badRequest(MENSAGEM_INVALIDO);
+            throw ErroApi.requisicaoInvalida(MENSAGEM_INVALIDO);
         }
 
         await this._aplicarNovaSenha(usuario, registro, novaSenha);
@@ -213,7 +207,10 @@ class RecuperacaoSenhaService {
                 { transaction }
             );
 
-            comSenha.senhaHash = await hashPassword(novaSenha);
+            comSenha.senhaHash = await gerarHashSenha(novaSenha);
+            // Invalida os access tokens emitidos antes desta redefinição, como na troca de senha
+            // feita dentro da conta.
+            comSenha.senhaAlteradaEm = new Date();
             await comSenha.save({ transaction });
 
             await registro.update({ utilizadoEm: new Date() }, { transaction });
@@ -224,8 +221,9 @@ class RecuperacaoSenhaService {
             throw erro;
         }
 
-        await RefreshTokenService.revogarTodos(usuario.id);
-        await authService.avisarSenhaAlterada(usuario);
+        await SessaoService.revogarTodos(usuario.id);
+        await NotificacaoPushService.removerTodosDoUsuario(usuario.id);
+        await AutenticacaoService.avisarSenhaAlterada(usuario);
     }
 }
 

@@ -33,17 +33,11 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, onOpenAutoFocus, onCloseAutoFocus, ...props }, ref) => {
-  // Elemento que estava focado ao abrir — guardado explicitamente porque,
-  // testado ao vivo neste app, a devolução de foco automática do Radix não
-  // restaura esse elemento de forma confiável (mesmo problema documentado e
-  // corrigido em LightboxMidia.tsx e em alert-dialog.tsx). Capturado em
-  // `onOpenAutoFocus` (chamado antes do próprio Radix mover o foco para
-  // dentro do diálogo), não em useEffect nem no corpo do componente — este
-  // wrapper fica montado mesmo com o diálogo fechado. Consumidores que já
-  // passam seu próprio `onCloseAutoFocus` (ex.: LightboxMidia, com foco de
-  // retorno específico por item de galeria) continuam funcionando: o deles
-  // roda primeiro, e o `preventDefault()` que já chamam impede este fallback
-  // genérico de agir por cima.
+  // Elemento focado ao abrir, guardado para devolver o foco ao fechar, como em `alert-dialog.tsx`:
+  // a devolução automática do Radix não o restaura de forma confiável aqui. É capturado em
+  // `onOpenAutoFocus`, antes de o Radix mover o foco. Quem já passa o próprio `onCloseAutoFocus`
+  // (como o `LightboxMidia`) continua valendo: ele roda primeiro, e o `preventDefault()` impede
+  // este retorno genérico.
   const gatilhoRef = React.useRef<HTMLElement | null>(null);
 
   return (

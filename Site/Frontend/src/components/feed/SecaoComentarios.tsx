@@ -15,9 +15,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { initials, useSession } from "@/contexts/SessionContext";
-import { urlArquivo } from "@/services/uploads.service";
-import { formatarTempoRelativo } from "@/utils/format";
+import { iniciaisDoNome } from "@/utils/formatacao";
+import { useSessao } from "@/hooks/useSessao";
+import { urlArquivo } from "@/utils/arquivos";
+import { formatarTempoRelativo } from "@/utils/formatacao";
 import type { ComentarioCompleto } from "@/types";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
@@ -32,10 +33,10 @@ function LinhaComentario({
   postagemId: string;
   aoResponder?: (comentario: ComentarioCompleto) => void;
 }) {
-  const { user } = useSession();
+  const { usuario } = useSessao();
   const autor = comentario.usuario ?? comentario.autor;
   const remover = useRemoverComentario(postagemId);
-  const podeExcluir = autor?.id === user?.id;
+  const podeExcluir = autor?.id === usuario?.id;
   const [denunciando, setDenunciando] = useState(false);
 
   return (
@@ -49,7 +50,7 @@ function LinhaComentario({
           <Avatar className="size-8">
             <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-              {initials(autor?.nome ?? "Usuário")}
+              {iniciaisDoNome(autor?.nome ?? "Usuário")}
             </AvatarFallback>
           </Avatar>
         </LinkAutor>
@@ -63,7 +64,7 @@ function LinhaComentario({
             <p className="text-sm leading-relaxed">{comentario.comentario}</p>
           </div>
           <div className="mt-1 flex items-center gap-3 px-1 text-xs text-muted-foreground">
-            <span>{formatarTempoRelativo(comentario.criadoEm ?? comentario.created_at)}</span>
+            <span>{formatarTempoRelativo(comentario.criadoEm ?? comentario.criadoEm)}</span>
             {aoResponder && (
               <button
                 type="button"
@@ -103,7 +104,7 @@ function LinhaComentario({
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            {user && !podeExcluir && (
+            {usuario && !podeExcluir && (
               <button
                 type="button"
                 className="min-h-6 font-semibold text-muted-foreground hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
@@ -114,7 +115,7 @@ function LinhaComentario({
             )}
           </div>
 
-          {user && !podeExcluir && (
+          {usuario && !podeExcluir && (
             <DenunciarDialog
               open={denunciando}
               onOpenChange={setDenunciando}
@@ -140,7 +141,7 @@ function LinhaComentario({
 
 /** Lista de comentários (com respostas de 1 nível) e formulário de novo comentário/resposta. */
 export function SecaoComentarios({ postagemId }: { postagemId: string }) {
-  const { user } = useSession();
+  const { usuario } = useSessao();
   const { data, isLoading, isError } = useComentarios(postagemId);
   const criar = useCriarComentario(postagemId);
   const [texto, setTexto] = useState("");
@@ -164,9 +165,9 @@ export function SecaoComentarios({ postagemId }: { postagemId: string }) {
     <div className="mt-4 border-t border-border pt-4">
       <form onSubmit={aoEnviar} aria-label="Adicionar comentário" className="flex gap-3">
         <Avatar className="size-8 shrink-0">
-          <AvatarImage src={urlArquivo(user?.fotoPerfil)} alt="" />
+          <AvatarImage src={urlArquivo(usuario?.fotoPerfil)} alt="" />
           <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-            {initials(user?.nome ?? "Visitante")}
+            {iniciaisDoNome(usuario?.nome ?? "Visitante")}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">

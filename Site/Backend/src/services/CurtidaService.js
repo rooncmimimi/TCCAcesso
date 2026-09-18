@@ -10,9 +10,8 @@ class CurtidaService {
     }
 
     /**
-     * `buscarAtiva` aplica a checagem de acesso a conteúdo privado (Fase 3)
-     * — sem isso, dava pra listar quem curtiu uma postagem privada sem
-     * nunca ter tido acesso a ela.
+     * `buscarAtiva` aplica a checagem de acesso a conteúdo privado; sem ela, daria para listar quem
+     * curtiu uma postagem privada sem ter acesso a ela.
      */
     async listarPorPostagem(postagemId, solicitante) {
         await PostagemService.buscarAtiva(postagemId, undefined, solicitante);
@@ -26,7 +25,7 @@ class CurtidaService {
                     attributes: ["id", "nome", "fotoPerfil"]
                 }
             ],
-            order: [["created_at", "DESC"]]
+            order: [["criadoEm", "DESC"]]
         });
     }
 }

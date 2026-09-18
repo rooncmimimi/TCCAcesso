@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Briefcase, ClipboardList, Loader2, Users } from "lucide-react";
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
-import { MetricCard } from "@/components/dashboard/MetricCard";
+import { MetricaCard } from "@/components/dashboard/MetricaCard";
 import { MinhasVagas } from "@/components/dashboard/MinhasVagas";
 import { CandidaturasDaVaga } from "@/components/dashboard/CandidaturasDaVaga";
 import { AvisoAprovacaoEmpresa } from "@/components/perfil/AvisoAprovacaoEmpresa";
@@ -55,34 +55,34 @@ function PainelEmpresa() {
 
   if (carregandoEmpresa) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando painel da empresa…
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   if (erroEmpresa || !empresa) {
     return (
-      <AppShell>
+      <EstruturaApp>
         <div role="alert" className="py-10 text-sm text-destructive">
           Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde.
         </div>
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   if (empresa.statusAprovacao !== "aprovada") {
     return (
-      <AppShell>
+      <EstruturaApp>
         <AvisoAprovacaoEmpresa empresa={empresa} />
-      </AppShell>
+      </EstruturaApp>
     );
   }
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Painel da empresa</h1>
       <p className="mt-2 text-muted-foreground">
         Gerencie suas vagas publicadas e acompanhe as candidaturas recebidas.
@@ -102,10 +102,10 @@ function PainelEmpresa() {
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard titulo="Vagas publicadas" valor={data?.vagas ?? 0} icon={Briefcase} />
-            <MetricCard titulo="Vagas abertas" valor={data?.vagasAbertas ?? 0} icon={ClipboardList} />
-            <MetricCard titulo="Candidaturas recebidas" valor={data?.candidaturas ?? 0} icon={ClipboardList} />
-            <MetricCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
+            <MetricaCard titulo="Vagas publicadas" valor={data?.vagas ?? 0} icon={Briefcase} />
+            <MetricaCard titulo="Vagas abertas" valor={data?.vagasAbertas ?? 0} icon={ClipboardList} />
+            <MetricaCard titulo="Candidaturas recebidas" valor={data?.candidaturas ?? 0} icon={ClipboardList} />
+            <MetricaCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
           </div>
 
           {resumoTextual ? (
@@ -129,6 +129,6 @@ function PainelEmpresa() {
           </div>
         )}
       </div>
-    </AppShell>
+    </EstruturaApp>
   );
 }

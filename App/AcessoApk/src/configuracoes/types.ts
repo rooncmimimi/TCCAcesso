@@ -1,10 +1,9 @@
 /**
- * Tipos de configurações de privacidade e notificação (Fase 15), conforme
- * auditoria de `usuarioRoutes.js` (`BloqueioController`) e
- * `notificacaoRoutes.js` (`NotificacaoController`).
+ * Tipos das configurações de privacidade (`BloqueioController` no backend) e de notificações
+ * (`NotificacaoController`).
  */
 
-/** `PUT /usuarios/privacidade` — controla se `POST /seguir/usuarios/:id` segue direto ou exige solicitação (Fase 14). */
+/** `PUT /usuarios/privacidade`. Em perfil privado, seguir vira uma solicitação. */
 export interface AtualizarPrivacidadeResposta {
   sucesso: true;
   perfilPublico: boolean;
@@ -12,13 +11,13 @@ export interface AtualizarPrivacidadeResposta {
 
 export type PreferenciaMensagens = "todos" | "seguidores" | "seguindo" | "mutuo" | "empresas" | "ninguem";
 
-/** `PUT /usuarios/privacidade/mensagens` — quem pode iniciar uma conversa com o usuário (usado pela Fase 17). */
+/** `PUT /usuarios/privacidade/mensagens`: quem pode iniciar uma conversa com o usuário. */
 export interface AtualizarPreferenciaMensagensResposta {
   sucesso: true;
   preferenciaMensagens: PreferenciaMensagens;
 }
 
-/** `GET/PUT /notificacoes/preferencias` — 4 categorias, todas booleanas, todas `true` por padrão (`findOrCreate`). */
+/** `GET/PUT /notificacoes/preferencias`: 4 categorias, todas booleanas, todas `true` por padrão (`findOrCreate`). */
 export interface PreferenciasNotificacao {
   id: string;
   usuarioId: string;
@@ -34,7 +33,7 @@ export interface PreferenciasNotificacaoResposta {
   preferencias: PreferenciasNotificacao;
 }
 
-/** Só os 4 campos que `PUT /notificacoes/preferencias` de fato aceita (todos opcionais — envia só o que mudou). */
+/** Só os 4 campos que `PUT /notificacoes/preferencias` de fato aceita (todos opcionais: envia só o que mudou). */
 export interface PreferenciasNotificacaoDados {
   vagasCandidaturas?: boolean;
   mensagens?: boolean;

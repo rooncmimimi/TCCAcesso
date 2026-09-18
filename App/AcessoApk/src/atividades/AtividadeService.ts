@@ -1,17 +1,14 @@
-import { apiClient } from "../services/api/client";
+import { clienteApi } from "../services/api/cliente";
 import type { MinhaAtividade, MinhaAtividadeResposta } from "./types";
 
 /**
- * Única camada que conhece o endpoint real de "Minha atividade"
- * (`Site/Backend/src/routes/atividadeRoutes.js`, confirmado por auditoria).
- * Um único método, sem parâmetro — todo o escopo vem da sessão autenticada
- * no backend. Nenhum método trata 401 por conta própria (mesma regra de
- * `VagasService`/`SeguidorService`).
+ * Resumo da tela "Minha atividade". Não recebe parâmetros: o backend usa a sessão para saber de
+ * quem é a atividade.
  */
 export const AtividadeService = {
-  /** `GET /atividades/minha`. */
+  /** `GET /atividade/minha` (singular, como o backend registra em `routes/index.js`). */
   async minha(): Promise<MinhaAtividade> {
-    const { data } = await apiClient.get<MinhaAtividadeResposta>("/atividades/minha");
+    const { data } = await clienteApi.get<MinhaAtividadeResposta>("/atividade/minha");
     return data.atividade;
   },
 };

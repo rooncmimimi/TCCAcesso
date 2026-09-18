@@ -16,7 +16,7 @@ import { storageHabilitado } from "./utils/supabaseStorage.js";
 async function iniciarServidor() {
     await conectarBanco();
 
-    // Nunca loga as credenciais — só o modo em uso, para deixar óbvio em
+    // Nunca loga as credenciais, só o modo em uso, para deixar óbvio em
     // produção se o Storage persistente está realmente ativo ou se caiu
     // (não deveria, dado o fail-fast em env.js) no disco local efêmero.
     if (storageHabilitado) {

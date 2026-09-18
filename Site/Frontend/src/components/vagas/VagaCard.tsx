@@ -24,7 +24,7 @@ export function VagaCard({
 }) {
   const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa";
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
-  // `data-speak` só afeta o leitor de voz próprio do ACESSO (useAutoSpeech) — o
+  // `data-speak` só afeta o leitor de voz próprio do ACESSO (useLeituraAutomatica): o
   // nome acessível nativo do link continua sendo o título, sem duplicar leitura
   // para quem usa NVDA/JAWS/VoiceOver (esses seguem lendo os parágrafos abaixo
   // normalmente). Dá contexto completo numa frase só: vaga, empresa, local, modalidade.

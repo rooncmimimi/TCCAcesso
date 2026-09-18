@@ -3,7 +3,7 @@ import { FileText, Maximize2, Pencil, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { urlArquivo } from "@/services/uploads.service";
+import { urlArquivo } from "@/utils/arquivos";
 import { CampoDescricaoImagem } from "./CampoDescricaoImagem";
 import { LightboxMidia } from "./LightboxMidia";
 import { useAtualizarDescricaoAnexo } from "./hooks";
@@ -14,7 +14,7 @@ const MAX_DESCRICAO = 500;
 /**
  * Legenda + ação de editar descrição, compartilhada entre imagem e vídeo.
  * Apresentação discreta: texto pequeno, secundário, só aparece quando há
- * descrição ou quando o autor está editando — nunca ocupa espaço à toa.
+ * descrição ou quando o autor está editando; nunca ocupa espaço à toa.
  */
 function DescricaoAnexo({
   anexo,
@@ -106,13 +106,10 @@ function DescricaoAnexo({
 }
 
 /**
- * Exibe os anexos de uma publicação: galeria de imagens, vídeos e — apenas
- * para publicações antigas — links para documentos. "Documento" não é mais
- * uma opção ao criar uma publicação nova, mas anexos desse tipo já
- * existentes no banco continuam sendo exibidos normalmente aqui.
- *
- * `editavel` (só true para o autor da publicação) libera o controle de
- * editar a descrição de cada anexo, sem nunca permitir trocar o arquivo.
+ * Mostra os anexos de uma publicação: galeria de imagens, vídeos e links para documentos.
+ * Publicações novas não aceitam documento, mas anexos antigos desse tipo continuam aparecendo.
+ * `editavel` (só para o autor) libera a edição da descrição de cada anexo, nunca a troca do
+ * arquivo.
  */
 export function GaleriaAnexos({
   anexos,
@@ -124,12 +121,9 @@ export function GaleriaAnexos({
   editavel?: boolean;
 }) {
   const [lightbox, setLightbox] = useState<{ itens: AnexoPostagem[]; indice: number } | null>(null);
-  // Elemento que abriu o Lightbox — o foco volta pra ele ao fechar (Fase 9,
-  // Bloco J3). Não depende da devolução de foco automática do Radix: em
-  // teste real no navegador, o `FocusScope` do Radix não restaurou o foco
-  // de forma confiável neste app (o motivo exato não importa — a correção
-  // é assumir o controle explícito via `onCloseAutoFocus`, o mecanismo que
-  // o próprio Radix expõe pra isso).
+  // Elemento que abriu o lightbox, para onde o foco volta ao fechar. O retorno é feito
+  // explicitamente (`onCloseAutoFocus`), porque a devolução automática de foco do Radix não
+  // funcionou de forma confiável aqui.
   const gatilhoLightboxRef = useRef<HTMLElement | null>(null);
 
   if (!anexos?.length) return null;
@@ -226,11 +220,8 @@ export function GaleriaAnexos({
         </ul>
       )}
 
-      {/* Sempre montado (Fase 9, Bloco J3) — o Dialog interno já não mostra
-          nada quando `itens` está vazio. `aoFecharDevolverFoco` garante o
-          retorno do foco ao botão que abriu o Lightbox (testado ao vivo: a
-          devolução de foco automática do Radix não é confiável neste app —
-          o controle explícito é a forma robusta). */}
+      {/* Sempre montado: o `Dialog` interno não mostra nada com `itens` vazio.
+          `aoFecharDevolverFoco` leva o foco de volta ao botão que abriu o lightbox. */}
       <LightboxMidia
         aberto={Boolean(lightbox)}
         onOpenChange={(aberto) => {

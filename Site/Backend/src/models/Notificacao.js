@@ -1,24 +1,21 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: notificacoes
- * ENUM tipo_notificacao do banco.
+ * Valores do enum `tipo_notificacao`. O Sequelize valida contra esta lista antes de gravar, então
+ * um tipo que exista no banco e falte aqui faria a notificação falhar em silêncio (o try/catch de
+ * `NotificacaoService.criar` engole o erro).
  */
 export const TIPOS_NOTIFICACAO = [
-    "Sistema",
-    "Mensagem",
-    "Vaga",
-    "Candidatura",
-    "Feed",
-    // Adicionado ao ENUM do banco na migration 0023, mas nunca tinha sido
-    // refletido aqui — o Sequelize valida contra ESTE array antes de
-    // tocar o banco, então toda notificação com tipo "Moderacao" (empresa
-    // suspensa/reativada, denúncia analisada) falhava silenciosamente
-    // (o try/catch de NotificacaoService.criar engolia o erro).
-    "Moderacao"
+    "sistema",
+    "mensagem",
+    "vaga",
+    "candidatura",
+    "feed",
+    "moderacao"
 ];
 
+/** Tabela `notificacoes`: o que aparece no sino do site e do app. */
 const Notificacao = sequelize.define(
     "Notificacao",
     {
@@ -29,7 +26,6 @@ const Notificacao = sequelize.define(
         },
 
         usuarioId: {
-            field: "usuario_id",
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -37,6 +33,12 @@ const Notificacao = sequelize.define(
         tipo: {
             type: DataTypes.ENUM(...TIPOS_NOTIFICACAO),
             allowNull: false
+        },
+
+        // Texto livre em vez de enum, para um caso novo (como "resposta_comentario") não exigir
+        // migration. Decide o ícone e o destino do toque.
+        subtipo: {
+            type: DataTypes.STRING(50)
         },
 
         titulo: {
@@ -54,44 +56,24 @@ const Notificacao = sequelize.define(
             defaultValue: false
         },
 
-        // Campos abaixo: migration 0033, todos opcionais/nullable — uma
-        // notificação antiga (criada antes desta migration) simplesmente
-        // não tem esses valores, e o frontend trata isso normalmente
-        // (sem link/avatar, só o texto já congelado em titulo/descricao).
-
-        // String livre (sem ENUM, mesmo padrão de admin_audit_logs.acao)
-        // para granularidade de ícone/ação sem precisar de migration a
-        // cada novo caso — ex.: "curtida_postagem", "resposta_comentario".
-        subtipo: {
-            type: DataTypes.STRING(50)
-        },
-
-        // Ponteiro polimórfico SEM FK real (mesmo padrão de
-        // denuncias.entidade_id / admin_audit_logs.entidade_id) — aponta
-        // para o que a notificação é sobre (postagem, vaga, conversa...).
-        // Existência/posse são validadas na aplicação, nunca pelo banco.
+        // Referência polimórfica, sem chave estrangeira: aponta para o que a notificação é sobre
+        // (postagem, vaga, conversa...). A existência é conferida pela aplicação, nunca pelo banco.
         entidadeTipo: {
-            field: "entidade_tipo",
             type: DataTypes.STRING(30)
         },
 
         entidadeId: {
-            field: "entidade_id",
             type: DataTypes.UUID
         },
 
-        // Quem praticou a ação — SET NULL se a conta do ator for excluída
-        // depois (a notificação sobrevive, só perde avatar/link ao vivo).
+        // Quem praticou a ação. Vira nulo se a conta for excluída: a notificação sobrevive, só perde
+        // avatar e link.
         atorId: {
-            field: "ator_id",
             type: DataTypes.UUID
         }
     },
     {
-        tableName: "notificacoes",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at"
+        tableName: "notificacoes"
     }
 );
 

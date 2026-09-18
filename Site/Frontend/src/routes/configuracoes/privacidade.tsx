@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronRight, MessageSquare, ShieldCheck, UserX } from "lucide-react";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import type { PreferenciaMensagens } from "@/types";
 
 const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: string }[] = [
@@ -44,17 +44,16 @@ export const Route = createFileRoute("/configuracoes/privacidade")({
 });
 
 function Privacidade() {
-  const { user, update } = useSession();
-  const perfilPublico = user?.perfilPublico ?? true;
-  const preferenciaMensagens = user?.preferenciaMensagens ?? "todos";
+  const { usuario, atualizar } = useSessao();
+  const perfilPublico = usuario?.perfilPublico ?? true;
+  const preferenciaMensagens = usuario?.preferenciaMensagens ?? "todos";
 
-  // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
-  // `useAutoSpeech` — falar manualmente aqui também duplicava o anúncio
-  // do mesmo evento (mesma mutation, mesmo `onSuccess`).
-  const atualizar = useMutation({
+  // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
+  // leitura.
+  const atualizarPrivacidade = useMutation({
     mutationFn: (valor: boolean) => bloqueioService.atualizarPrivacidade(valor),
     onSuccess: (resultado) => {
-      update({ perfilPublico: resultado.perfilPublico });
+      atualizar({ perfilPublico: resultado.perfilPublico });
       toast.success(
         resultado.perfilPublico ? "Seu perfil agora é público." : "Seu perfil agora é privado.",
       );
@@ -65,14 +64,14 @@ function Privacidade() {
   const atualizarMensagens = useMutation({
     mutationFn: (valor: PreferenciaMensagens) => bloqueioService.atualizarPreferenciaMensagens(valor),
     onSuccess: (resultado) => {
-      update({ preferenciaMensagens: resultado.preferenciaMensagens });
+      atualizar({ preferenciaMensagens: resultado.preferenciaMensagens });
       toast.success("Preferência de mensagens atualizada.");
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
   });
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -110,8 +109,8 @@ function Privacidade() {
             <Switch
               id="perfil-publico"
               checked={perfilPublico}
-              disabled={atualizar.isPending}
-              onCheckedChange={(valor) => atualizar.mutate(valor)}
+              disabled={atualizarPrivacidade.isPending}
+              onCheckedChange={(valor) => atualizarPrivacidade.mutate(valor)}
               aria-label={`Perfil público, ${perfilPublico ? "ativado" : "desativado"}`}
             />
           </div>
@@ -168,6 +167,6 @@ function Privacidade() {
           </Link>
         </CardContent>
       </Card>
-    </AppShell>
+    </EstruturaApp>
   );
 }

@@ -8,9 +8,8 @@ export const validarCriacaoComentario = [
         .isLength({ min: 1, max: 1000 })
         .withMessage("O comentário deve ter entre 1 e 1000 caracteres."),
 
-    // Opcional — presente quando é uma resposta a outro comentário (não
-    // um comentário raiz). O model Comentario e PostagemService.comentar
-    // já suportavam isso; só faltava o controller/validator repassarem.
+    // Opcional: presente quando o comentário é resposta a outro comentário, e não um comentário
+    // raiz.
     body("comentarioPaiId")
         .optional({ values: "falsy" })
         .isUUID()

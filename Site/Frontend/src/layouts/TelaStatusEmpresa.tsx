@@ -4,44 +4,34 @@ import { LogOut, RefreshCcw } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { AvisoAprovacaoEmpresa } from "@/components/perfil/AvisoAprovacaoEmpresa";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 import type { Empresa } from "@/types";
 
 /**
- * Tela dedicada exibida por `AppShell` no lugar do app inteiro enquanto a
- * empresa autenticada não está aprovada (`pendente`/`reprovada`/`suspensa`).
- *
- * Deliberadamente NÃO usa `AppHeader`/`SuporteRodape`: nenhum link de
- * navegação para feed, vagas, mensagens ou o menu de perfil pode aparecer
- * "atrás" desta tela — só a marca, o status e a saída da conta. Sem rodapé
- * de suporte por decisão consciente (não pelo esquecimento): a maioria dos
- * seus links leva a rotas também envolvidas por `AppShell`, que voltariam a
- * cair nesta mesma tela — um "Fale conosco" por e-mail cobre a necessidade
- * de contato sem gerar um link que não leva a lugar nenhum.
+ * Tela exibida pelo `EstruturaApp` no lugar do app enquanto a empresa não está aprovada (pendente,
+ * reprovada ou suspensa). Não usa `CabecalhoApp` nem `SuporteRodape`: nenhum link para feed, vagas,
+ * mensagens ou perfil pode aparecer atrás dela, só a marca, o status e a saída da conta. O rodapé
+ * de suporte ficou de fora porque a maioria dos links levaria de volta a esta tela; o contato por
+ * e-mail resolve.
  */
 export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
-  const { signOut } = useSession();
+  const { sair } = useSessao();
   const navigate = useNavigate();
   const [verificando, setVerificando] = useState(false);
 
   const pendente = empresa.statusAprovacao === "pendente";
 
-  async function handleSair() {
-    await signOut();
+  async function sairDaConta() {
+    await sair();
     navigate({ to: "/" });
   }
 
   /**
-   * Recarrega a página inteira (não só `recarregar()` do `SessionContext`)
-   * de propósito: um `useQuery` de qualquer página que tenha chegado a
-   * montar antes desta tela assumir a tela (ex.: a janela entre o app abrir
-   * e a sessão hidratar) pode ter ficado com um 403 já em cache; um reload
-   * completo garante estado limpo — nenhuma query antiga, nenhum cache
-   * inconsistente — e já busca a sessão do zero. Se um administrador já
-   * aprovou o cadastro, o próprio `AppShell` libera o app normalmente; caso
-   * contrário, esta mesma tela volta a aparecer.
+   * Recarrega a página inteira, e não só a sessão: alguma query montada antes desta tela pode ter
+   * guardado um 403 em cache, e o reload garante estado limpo. Se a empresa já foi aprovada, o
+   * `EstruturaApp` libera o app; senão, esta tela volta.
    */
-  function handleVerificar() {
+  function verificarStatus() {
     setVerificando(true);
     window.location.reload();
   }
@@ -56,12 +46,12 @@ export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
           acoes={
             <>
               {pendente ? (
-                <Button variant="outline" onClick={handleVerificar} disabled={verificando}>
+                <Button variant="outline" onClick={verificarStatus} disabled={verificando}>
                   <RefreshCcw className={verificando ? "size-4 animate-spin" : "size-4"} aria-hidden="true" />
                   Verificar novamente
                 </Button>
               ) : null}
-              <Button variant="destructive" onClick={() => void handleSair()}>
+              <Button variant="destructive" onClick={() => void sairDaConta()}>
                 <LogOut className="size-4" aria-hidden="true" />
                 Sair da conta
               </Button>

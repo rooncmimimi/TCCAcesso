@@ -6,7 +6,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { LogsTabela } from "@/components/admin/LogsTabela";
-import { formatarDataHora } from "@/utils/format";
+import { formatarDataHora } from "@/utils/formatacao";
 import type { ComentarioAdmin } from "@/services/admin.service";
 
 export function DetalheComentarioSheet({
@@ -18,7 +18,7 @@ export function DetalheComentarioSheet({
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
 }) {
-  const dataCriacao = comentario?.createdAt ?? comentario?.created_at;
+  const dataCriacao = comentario?.criadoEm ?? comentario?.criadoEm;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

@@ -1,27 +1,16 @@
 import type { LinkingOptions } from "@react-navigation/native";
 
-import type { RootStackParamList } from "./types";
+import type { RaizStackParamList } from "./types";
 
 /**
- * Preparação de Deep Linking (Fase 4, item 26) — a arquitetura de rotas já
- * existe e resolve os links abaixo; nenhum destino que dependa de uma tela
- * que ainda não existe foi inventado.
+ * Deep links do app. `prefixes` usa só o esquema próprio (`acesso://`, definido em `app.json`), que
+ * funciona em builds de desenvolvimento e produção; o prefixo do Expo Go (`Linking.createURL()`, do
+ * `expo-linking`) ficou de fora para não adicionar uma dependência só para testes.
  *
- * `prefixes` usa só o esquema customizado (`app.json` → `"scheme": "acesso"`),
- * que funciona em builds standalone/dev client. Não incluí o prefixo
- * dinâmico do Expo Go (`Linking.createURL()`, do pacote `expo-linking`) para
- * não instalar uma dependência nova só por conveniência de teste — se algum
- * dia isso for necessário, é só somar um item a este array, sem mudar mais
- * nada da configuração.
- *
- * Um link para uma rota protegida (ex.: `acesso://mensagens`) só resolve de
- * fato depois que o usuário estiver autenticado — o React Navigation só
- * associa um link a uma tela que esteja MONTADA no momento, e enquanto
- * `status !== "authenticated"` a árvore do `App Stack` nem existe. Isso é
- * intencional (o link não deveria "furar" a autenticação) e não uma
- * limitação a corrigir agora.
+ * Links para telas protegidas só resolvem com a sessão ativa, porque o React Navigation só associa
+ * um link a telas montadas. Assim um link não fura a autenticação.
  */
-export const linking: LinkingOptions<RootStackParamList> = {
+export const linking: LinkingOptions<RaizStackParamList> = {
   prefixes: ["acesso://"],
   config: {
     screens: {
@@ -45,20 +34,16 @@ export const linking: LinkingOptions<RootStackParamList> = {
                 screens: {
                   ProfileMenu: "perfil",
                 },
-                // `acesso://perfil/123` (perfil de OUTRO usuário) ainda não
-                // tem tela — MyProfile só mostra o perfil do próprio usuário
-                // logado. PENDÊNCIA PARA FASE FUTURA: mapear assim que a
-                // tela de destino existir.
+                // Perfis de outras pessoas (`PublicProfile`) ainda não têm deep link; `ProfileMenu`
+                // é só o menu da própria conta.
               },
             },
           },
-          // `VagaDetail` mora no Stack pai (irmão de `Tabs`), não dentro de
-          // `Tabs.screens.Jobs` — é lá que a tela vive (Fase 9, resolve a
-          // pendência que este arquivo documentava desde a Fase 4).
+          // `VagaDetail` fica na pilha principal, ao lado de `Tabs`, e não dentro da aba de vagas.
           VagaDetail: "vagas/:vagaId",
         },
       },
-      // Splash/Unsupported não são destinos de link — são estados
+      // Splash/Unsupported não são destinos de link: são estados
       // derivados da sessão, não rotas que alguém deveria compartilhar.
     },
   },

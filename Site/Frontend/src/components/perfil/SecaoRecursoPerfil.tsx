@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
-import { RecursoFormDialog } from "./RecursoFormDialog";
+import { FormularioRecursoDialog } from "./FormularioRecursoDialog";
 import { linhaPrincipal, linhaSecundaria, type RegistroPerfil as Registro } from "./formatacaoRecurso";
 
 /**
@@ -24,8 +24,8 @@ import { linhaPrincipal, linhaSecundaria, type RegistroPerfil as Registro } from
  *
  * Modo edição (padrão, perfil próprio): busca os dados via `perfilService` e
  * permite adicionar/editar/remover. Modo leitura (perfil de outra pessoa):
- * recebe `itens` já carregados (do `perfilCompleto`) e só lista, sem ações —
- * evita duplicar este componente para os dois casos.
+ * recebe `itens` já carregados (do `perfilCompleto`) e só lista, sem ações.
+ * Evita duplicar este componente para os dois casos.
  */
 export function SecaoRecursoPerfil({
   recurso,
@@ -68,11 +68,11 @@ export function SecaoRecursoPerfil({
           {titulo}
         </h2>
         {somenteLeitura ? null : (
-          <RecursoFormDialog recurso={recurso}>
+          <FormularioRecursoDialog recurso={recurso}>
             <Button type="button" size="sm" variant="outline" className="min-h-9 gap-1">
               <Plus className="size-4" aria-hidden="true" /> Adicionar
             </Button>
-          </RecursoFormDialog>
+          </FormularioRecursoDialog>
         )}
       </div>
 
@@ -100,7 +100,7 @@ export function SecaoRecursoPerfil({
               </div>
               {somenteLeitura ? null : (
                 <div className="flex shrink-0 gap-1">
-                  <RecursoFormDialog recurso={recurso} registro={item}>
+                  <FormularioRecursoDialog recurso={recurso} registro={item}>
                     <Button
                       type="button"
                       size="icon"
@@ -110,7 +110,7 @@ export function SecaoRecursoPerfil({
                     >
                       <Pencil className="size-4" aria-hidden="true" />
                     </Button>
-                  </RecursoFormDialog>
+                  </FormularioRecursoDialog>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button

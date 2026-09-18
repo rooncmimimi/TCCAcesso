@@ -30,6 +30,7 @@ function removerDaResposta(atual: RespostaLista | undefined, id: string): Respos
   return { ...atual, comentarios: restantes, itens: restantes, total: Math.max(atual.total - 1, 0) } as RespostaLista;
 }
 
+/** Comentários para moderação, com busca por texto, paginação e remoção. */
 export function ComentariosTabela() {
   const queryClient = useQueryClient();
   const [pagina, setPagina] = useState(1);

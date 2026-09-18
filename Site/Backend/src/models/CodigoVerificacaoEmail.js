@@ -1,9 +1,9 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
- * Tabela: codigos_verificacao_email (migration 0018)
- * Apenas o hash do código é persistido.
+ * Tabela `codigos_verificacao_email`: códigos de 6 dígitos (só o hash) para confirmar um cadastro
+ * novo ou a troca de e-mail. Na confirmação de cadastro, `novoEmail` é o próprio e-mail da conta.
  */
 const CodigoVerificacaoEmail = sequelize.define(
     "CodigoVerificacaoEmail",
@@ -13,40 +13,39 @@ const CodigoVerificacaoEmail = sequelize.define(
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+
         usuarioId: {
-            field: "usuario_id",
             type: DataTypes.UUID,
             allowNull: false
         },
+
         novoEmail: {
-            field: "novo_email",
             type: DataTypes.STRING(150),
             allowNull: false
         },
+
         codigoHash: {
-            field: "codigo_hash",
             type: DataTypes.STRING(255),
             allowNull: false
         },
+
         expiraEm: {
-            field: "expira_em",
             type: DataTypes.DATE,
             allowNull: false
         },
+
         tentativas: {
             type: DataTypes.SMALLINT,
             allowNull: false,
             defaultValue: 0
         },
+
         utilizadoEm: {
-            field: "utilizado_em",
             type: DataTypes.DATE
         }
     },
     {
         tableName: "codigos_verificacao_email",
-        timestamps: true,
-        createdAt: "created_at",
         updatedAt: false
     }
 );

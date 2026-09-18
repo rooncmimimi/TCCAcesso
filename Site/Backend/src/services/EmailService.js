@@ -1,5 +1,5 @@
 import env from "../config/env.js";
-import ApiError from "../utils/ApiError.js";
+import ErroApi from "../utils/ErroApi.js";
 
 const ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 
@@ -16,8 +16,8 @@ function mascarar(email) {
  *
  * Segue o mesmo princípio já usado em OpenRouterService: sem
  * `BREVO_API_KEY` configurada, o recurso fica indisponível (nunca derruba
- * a aplicação) e nunca lança o erro cru do provedor para quem chama —
- * sempre um `ApiError` com mensagem genérica, sem detalhe interno.
+ * a aplicação) e nunca lança o erro cru do provedor para quem chama:
+ * sempre um `ErroApi` com mensagem genérica, sem detalhe interno.
  */
 class EmailService {
     disponivel() {
@@ -33,15 +33,15 @@ class EmailService {
      * @param {string} [params.texto]
      * @param {string} [params.tag] - identifica o fluxo no painel de
      *   estatísticas da Brevo (ex.: "confirmacao-cadastro",
-     *   "recuperacao-senha") — uma chave de API só, tags por finalidade.
+     *   "recuperacao-senha"); uma chave de API só, tags por finalidade.
      *   Nunca cria uma chave nova por fluxo: o limite diário de envio da
      *   Brevo é por conta, não por chave, e a permissão de uma chave já é
-     *   "enviar e-mail transacional" de forma genérica — chaves separadas
+     *   "enviar e-mail transacional" de forma genérica; chaves separadas
      *   não isolam nada de verdade, só dão mais credencial pra vazar.
      */
     async enviar({ para, nomeDestinatario, assunto, html, texto, tag }) {
         if (!this.disponivel()) {
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "Envio de e-mail não está configurado neste momento."
             );
         }
@@ -80,7 +80,7 @@ class EmailService {
                     motivo
                 })
             );
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "Não foi possível enviar o e-mail agora. Tente novamente em alguns instantes."
             );
         } finally {
@@ -89,7 +89,7 @@ class EmailService {
 
         if (!resposta.ok) {
             // Nunca repassa o corpo bruto da resposta da Brevo (pode conter
-            // detalhes internos do provedor) — só o status, só no log do
+            // detalhes internos do provedor): só o status, só no log do
             // servidor, nunca na resposta ao cliente.
             console.error(
                 JSON.stringify({
@@ -101,7 +101,7 @@ class EmailService {
                     httpStatus: resposta.status
                 })
             );
-            throw ApiError.serviceUnavailable(
+            throw ErroApi.servicoIndisponivel(
                 "Não foi possível enviar o e-mail agora. Tente novamente em alguns instantes."
             );
         }

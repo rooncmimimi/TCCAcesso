@@ -168,11 +168,11 @@ function AdminDenunciaDetalhe() {
             </div>
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">Registrada em</p>
-              <p className="mt-1 text-sm">{new Date(denuncia.created_at).toLocaleString("pt-BR")}</p>
+              <p className="mt-1 text-sm">{new Date(denuncia.criadoEm).toLocaleString("pt-BR")}</p>
             </div>
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">Responsável</p>
-              <p className="mt-1 text-sm">{denuncia.adminResponsavel?.nome ?? "Ninguém atribuído"}</p>
+              <p className="mt-1 text-sm">{denuncia.administradorResponsavel?.nome ?? "Ninguém atribuído"}</p>
             </div>
           </div>
 
@@ -185,10 +185,10 @@ function AdminDenunciaDetalhe() {
             </div>
           )}
 
-          {denuncia.observacaoAdmin && (
+          {denuncia.observacaoAdministrador && (
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">Observação da moderação</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm">{denuncia.observacaoAdmin}</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm">{denuncia.observacaoAdministrador}</p>
             </div>
           )}
         </CardContent>
@@ -343,7 +343,7 @@ function BolhaContexto({ mensagem, denunciada = false }: { mensagem: MensagemCon
     >
       <p className="whitespace-pre-wrap break-words">{mensagem.conteudo}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {new Date(mensagem.created_at).toLocaleString("pt-BR")}
+        {new Date(mensagem.criadoEm).toLocaleString("pt-BR")}
         {denunciada ? " · mensagem denunciada" : ""}
       </p>
     </li>

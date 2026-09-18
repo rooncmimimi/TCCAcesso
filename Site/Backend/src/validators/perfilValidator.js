@@ -27,7 +27,7 @@ const dataOpcional = (campo) =>
         .withMessage(`Informe uma data válida em ${campo}.`);
 
 /**
- * Validação condicional por recurso — cada tipo tem campos próprios.
+ * Validação condicional por recurso: cada tipo tem campos próprios.
  */
 export const validarCorpoPerfil = [
     body("cargo")

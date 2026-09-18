@@ -20,21 +20,22 @@ import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { DetalhePostagemSheet } from "@/components/admin/DetalhePostagemSheet";
 import { extrairMensagemErro } from "@/services/api";
-import { useSession } from "@/lib/session";
+import { useSessao } from "@/hooks/useSessao";
 import { listarPostagens, removerPostagem, type PostagemAdmin } from "@/services/admin.service";
-import { formatarDataHora } from "@/utils/format";
+import { formatarDataHora } from "@/utils/formatacao";
 
 type RespostaLista = Awaited<ReturnType<typeof listarPostagens>>;
 
-/** Tira `id` da lista já carregada em cache, sem esperar um novo fetch — base da atualização otimista (Fase 8). */
+/** Tira o `id` da lista já em cache, sem esperar nova busca; é a base da remoção otimista. */
 function removerDaResposta(atual: RespostaLista | undefined, id: string): RespostaLista | undefined {
   if (!atual) return atual;
   const restantes = atual.postagens.filter((postagem) => postagem.id !== id);
   return { ...atual, postagens: restantes, itens: restantes, total: Math.max(atual.total - 1, 0) } as RespostaLista;
 }
 
+/** Publicações para moderação, com busca, paginação e remoção otimista. */
 export function PostagensTabela() {
-  const { user } = useSession();
+  const { usuario } = useSessao();
   const queryClient = useQueryClient();
 
   const [pagina, setPagina] = useState(1);
@@ -48,7 +49,7 @@ export function PostagensTabela() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: chaveConsulta,
     queryFn: () => listarPostagens({ page: pagina, limit: 10, q: termoAplicado || undefined }),
-    enabled: Boolean(user),
+    enabled: Boolean(usuario),
   });
 
   const mutacao = useMutation({
@@ -64,7 +65,7 @@ export function PostagensTabela() {
       const status = (erro as AxiosError)?.response?.status;
 
       // 409 (já removida por outra aba/admin) ou 404 (não existe mais): o
-      // resultado que o admin queria já é verdade no servidor — mantém a
+      // resultado que o admin queria já é verdade no servidor; mantém a
       // remoção otimista, só avisa em tom neutro, sem desfazer.
       if (status === 409 || status === 404) {
         toast.info(status === 409 ? "Esta publicação já havia sido removida." : "Esta publicação não existe mais.");
@@ -79,8 +80,8 @@ export function PostagensTabela() {
     },
     onSettled: () => {
       setAlvo(null);
-      // Se a remoção esvaziou a página atual (e não é a primeira), volta
-      // uma página em vez de deixar a tela vazia (Fase 8).
+      // Se a remoção esvaziou a página atual (e não é a primeira), volta uma página em vez de
+      // deixar a tela vazia.
       const atual = queryClient.getQueryData<RespostaLista>(chaveConsulta);
       if (atual && atual.postagens.length === 0 && pagina > 1) {
         setPagina((p) => Math.max(p - 1, 1));
@@ -160,7 +161,7 @@ export function PostagensTabela() {
                   <TableCell className="max-w-md">
                     <p className="line-clamp-2 text-sm text-muted-foreground">{postagem.conteudo}</p>
                   </TableCell>
-                  <TableCell>{formatarDataHora(postagem.createdAt)}</TableCell>
+                  <TableCell>{formatarDataHora(postagem.criadoEm)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button

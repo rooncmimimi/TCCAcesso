@@ -31,7 +31,7 @@ import { FotoUploader } from "./FotoUploader";
 import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
 import type { Empresa, PorteEmpresa } from "@/types";
 
-const PORTES: PorteEmpresa[] = ["MEI", "Micro", "Pequena", "Media", "Grande"];
+const PORTES: PorteEmpresa[] = ["mei", "micro", "pequena", "media", "grande"];
 
 /** Edição do perfil empresarial. O backend recusa a chamada se a empresa não estiver aprovada. */
 export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; children: ReactNode }) {
@@ -51,8 +51,8 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
 
   const invalidarEmpresa = () => queryClient.invalidateQueries({ queryKey: ["minha-empresa"] });
 
-  // Fase 9, Bloco 7: os toasts abaixo já são lidos automaticamente por
-  // `useAutoSpeech` — falar aqui também duplicava.
+  // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
+  // leitura.
   const salvar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => empresasService.atualizar(empresa.id, payload),
     onSuccess: () => {

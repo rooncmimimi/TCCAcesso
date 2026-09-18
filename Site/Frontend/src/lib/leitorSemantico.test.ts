@@ -2,12 +2,11 @@ import { describe, it, expect } from "vitest";
 import { descreverElemento, obterContextoDialogo, resolverAlvoFalavel } from "./leitorSemantico";
 
 /**
- * `leitorSemantico.ts` lê `el.innerText` (texto como o usuário VÊ, calculado
- * a partir do layout renderizado) — jsdom não faz layout e nunca implementou
- * essa propriedade (limitação documentada do próprio jsdom, não um bug
- * daqui). Define-a manualmente só onde o teste depende de texto visível
- * de outro elemento (aria-describedby/aria-labelledby); os demais testes
- * usam aria-label/placeholder/title/alt, que não dependem disso.
+ * `leitorSemantico.ts` lê `el.innerText` (o texto como o usuário vê, calculado a partir do layout
+ * renderizado), mas o jsdom não faz layout e nunca implementou essa propriedade (limitação
+ * conhecida do jsdom). O teste a define manualmente só onde depende do texto visível de outro
+ * elemento (`aria-describedby`, `aria-labelledby`); os demais usam `aria-label`, `placeholder`,
+ * `title` ou `alt`, que não dependem disso.
  */
 function definirTextoVisivel(el: HTMLElement, texto: string) {
     Object.defineProperty(el, "innerText", { value: texto, configurable: true });
@@ -49,7 +48,8 @@ describe("descreverElemento", () => {
         interruptor.setAttribute("aria-label", "Perfil público");
         interruptor.setAttribute("aria-checked", "true");
 
-        // aria-label já presente: não repete "ativado" (a autora do rótulo já descreveu o estado, ou optou por não fazê-lo)
+        // aria-label já presente: não repete "ativado" (quem escreveu o rótulo já descreveu o
+        // estado, ou optou por não fazê-lo)
         expect(descreverElemento(interruptor)).toBe("Perfil público, interruptor.");
     });
 

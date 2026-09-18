@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import sequelize from "../config/bancoDeDados.js";
 
 /**
  * Tabela: candidato_deficiencias (associativa)
@@ -13,14 +13,12 @@ const CandidatoDeficiencia = sequelize.define(
             primaryKey: true
         },
 
-        candidatoId: {
-            field: "candidato_id",
+        candidatoId: {
             type: DataTypes.UUID,
             allowNull: false
         },
 
-        deficienciaId: {
-            field: "deficiencia_id",
+        deficienciaId: {
             type: DataTypes.UUID,
             allowNull: false
         },
@@ -30,10 +28,7 @@ const CandidatoDeficiencia = sequelize.define(
         }
     },
     {
-        tableName: "candidato_deficiencias",
-        timestamps: true,
-        createdAt: "created_at",
-        updatedAt: "updated_at",
+        tableName: "candidato_deficiencias",
         indexes: [
             {
                 unique: true,

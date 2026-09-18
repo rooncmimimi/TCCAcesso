@@ -6,15 +6,15 @@ import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { AppShell } from "@/layouts/AppShell";
+import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { authService } from "@/services/auth.service";
+import { autenticacaoService } from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
-import { useSession } from "@/contexts/SessionContext";
+import { useSessao } from "@/hooks/useSessao";
 
 const esquema = z
   .object({
@@ -52,7 +52,7 @@ export const Route = createFileRoute("/configuracoes/senha")({
 
 function AlterarSenha() {
   const navigate = useNavigate();
-  const { signOut } = useSession();
+  const { sair } = useSessao();
   const [enviando, setEnviando] = useState(false);
 
   const {
@@ -69,13 +69,12 @@ function AlterarSenha() {
   const aoEnviar = handleSubmit(async (valores) => {
     setEnviando(true);
     try {
-      await authService.alterarSenha(valores.senhaAtual, valores.novaSenha);
+      await autenticacaoService.alterarSenha(valores.senhaAtual, valores.novaSenha);
       reset();
-      // O backend encerra TODAS as sessões (inclusive esta) ao trocar a senha —
-      // mesmo padrão já usado na redefinição de senha por código.
-      await signOut();
-      // Fase 9, Bloco 7: os toasts já são lidos automaticamente por
-      // `useAutoSpeech` — falar aqui também duplicava.
+      // O backend encerra todas as sessões ao trocar a senha, inclusive esta, então a tela sai da
+      // conta, como na redefinição por código.
+      await sair();
+      // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("Senha alterada com sucesso. Entre novamente com a nova senha.");
       void navigate({ to: "/entrar" });
     } catch (erro) {
@@ -88,7 +87,7 @@ function AlterarSenha() {
   });
 
   return (
-    <AppShell>
+    <EstruturaApp>
       <Link
         to="/configuracoes/conta"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -179,6 +178,6 @@ function AlterarSenha() {
           </form>
         </CardContent>
       </Card>
-    </AppShell>
+    </EstruturaApp>
   );
 }

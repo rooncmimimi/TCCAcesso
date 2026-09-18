@@ -3,13 +3,13 @@ import AdminUsuarioService from "../services/AdminUsuarioService.js";
 import AdminConteudoService from "../services/AdminConteudoService.js";
 import AdminRelatorioService from "../services/AdminRelatorioService.js";
 import UsuarioService from "../services/UsuarioService.js";
-import AdminAuditService from "../services/AdminAuditService.js";
+import AdminAuditoriaService from "../services/AdminAuditoriaService.js";
+import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
-const contextoDa = (req) => ({
-    ip: req.ip,
-    userAgent: req.headers["user-agent"]
-});
-
+/**
+ * Painel administrativo (`/admin`): empresas, usuários, conteúdo do feed, vagas, relatórios e logs
+ * de auditoria. A fila de denúncias do painel fica no `DenunciaController`.
+ */
 class AdminController {
     async empresas(req, res, next) {
         try {
@@ -26,7 +26,7 @@ class AdminController {
                 req.params.id,
                 { aprovada: true },
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -40,7 +40,7 @@ class AdminController {
                 req.params.id,
                 { aprovada: false, motivo: req.body.motivo },
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -54,7 +54,7 @@ class AdminController {
                 req.params.id,
                 { motivo: req.body.motivo },
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -67,7 +67,7 @@ class AdminController {
             const empresa = await AdminEmpresaService.reativarEmpresa(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -81,7 +81,7 @@ class AdminController {
                 req.params.id,
                 { verificada: req.body.verificada },
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, empresa });
         } catch (erro) {
@@ -113,7 +113,7 @@ class AdminController {
                 req.params.id,
                 req.body,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -127,7 +127,7 @@ class AdminController {
                 req.params.id,
                 { motivo: req.body?.motivo },
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -149,7 +149,7 @@ class AdminController {
             const dados = await AdminConteudoService.removerPostagem(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -162,7 +162,7 @@ class AdminController {
             const dados = await AdminConteudoService.removerComentario(
                 req.params.id,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -194,7 +194,7 @@ class AdminController {
                 req.params.id,
                 req.body.oculta,
                 req.user,
-                contextoDa(req)
+                contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -213,7 +213,7 @@ class AdminController {
 
     async logs(req, res, next) {
         try {
-            const dados = await AdminAuditService.listar(req.query);
+            const dados = await AdminAuditoriaService.listar(req.query);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);

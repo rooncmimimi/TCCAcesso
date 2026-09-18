@@ -4,7 +4,10 @@ services:
     runtime: node
     plan: free
     rootDir: Site/Backend
-    buildCommand: npm install
+    # As migrations pendentes são aplicadas no build, antes de a versão nova entrar no ar: se
+    # falharem, o deploy falha e a versão anterior continua servindo. `npm run migrate` não faz
+    # nada quando não há migration pendente.
+    buildCommand: npm install && npm run migrate
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

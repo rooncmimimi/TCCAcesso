@@ -1,51 +1,56 @@
-# ACESSO — App mobile
+# ACESSO — app Android
 
-Aplicativo mobile do ACESSO (React Native + Expo, SDK 57).
+Rede profissional inclusiva, com foco em acessibilidade e inclusão de pessoas com deficiência.
+App nativo em **Java + XML**, usando o **Supabase** como backend (Auth, PostgreSQL, Storage e RLS).
+Não existe backend próprio: o app fala direto com o Supabase usando só a chave pública (anon),
+e as políticas RLS do banco decidem o que cada usuário pode ver ou alterar.
 
-## Começando
+Todo o código do projeto (classes, métodos, variáveis, IDs, layouts, recursos e tabelas) está em
+português. Ficam em inglês apenas os nomes que pertencem ao Android, às bibliotecas ou à API do
+Supabase e não podem ser trocados (ex.: `AppCompatActivity`, `onCreate`, `colorPrimary`,
+`access_token`, `auth.users`).
 
-```bash
-npm install
-cp .env.example .env   # no Windows: copy .env.example .env
-npm start
+## Como rodar
+
+1. Abra a pasta `App/AcessoApk` no Android Studio (Ladybug ou mais novo) e espere o Gradle sincronizar.
+2. No arquivo `local.properties` (o Android Studio cria sozinho), acrescente:
+   ```
+   URL_SUPABASE=https://SEU-PROJETO.supabase.co
+   CHAVE_ANONIMA_SUPABASE=sua-chave-anon
+   ```
+   Os valores ficam em Supabase > Project Settings > API. **Nunca use a service_role key no app.**
+   O `local.properties` não vai para o Git.
+3. No Supabase, rode `supabase/001_perfis.sql` no SQL Editor.
+4. Em Supabase > Authentication > URL Configuration, adicione `acesso://redefinir-senha`
+   em **Redirect URLs** (é para onde o link de recuperação de senha leva).
+5. Rode o app num emulador ou celular (Android 8.0 ou mais novo).
+
+## Estrutura
+
+```
+com.acesso.app
+├── telas         TelaLogin, TelaCadastro, TelaEsqueciSenha, TelaNovaSenha, TelaTermos, TelaPrincipal
+├── fragmentos    conteúdo das abas da barra inferior
+├── viewmodels    estado das telas e validações antes de chamar o Supabase
+├── repositorios  RepositorioAutenticacao: toda a comunicação com o Supabase Auth
+├── servicos      ClienteSupabase (conexão) e TradutorErrosSupabase (mensagens em português)
+├── modelos       SessaoUsuario, ResultadoCadastro
+└── utilitarios   Validador, GerenciadorSessao, UtilitarioRede, MensagemStatus
 ```
 
-Aponte `EXPO_PUBLIC_API_URL` (em `.env`) para a API do `Site/Backend`
-rodando localmente (`http://localhost:3000/api` por padrão).
+Fluxo: **Tela → ViewModel → Repositório → Supabase**.
 
-## Scripts
+## Banco (Supabase)
 
-| Comando | O que faz |
-| --- | --- |
-| `npm start` | Abre o Metro Bundler (Expo Go ou build de desenvolvimento) |
-| `npm run android` / `npm run ios` | Abre direto num emulador/simulador |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Suíte de testes (Jest + Testing Library) |
-| `npm run e2e` | Fluxos E2E (Maestro) — ver `.maestro/README.md` antes de rodar |
+`supabase/001_perfis.sql` cria a tabela `perfis`. O `id` é o mesmo UUID do usuário no
+Supabase Auth, e a senha nunca é guardada nessa tabela. Um gatilho cria o perfil
+automaticamente quando a conta é criada. RLS: usuários logados veem os perfis, mas só editam
+o próprio. E-mail e data de nascimento não aparecem para outras pessoas.
+
+O banco é o mesmo projeto Supabase do Site. As tabelas do Site já ficam bloqueadas para a
+chave pública, então o app não consegue acessá-las.
 
 ## Testes
 
-Suíte unitária/integração roda com `npm test` (nenhum passo extra
-necessário — todo acesso a rede/armazenamento/serviços nativos já é
-mockado por arquivo). Os fluxos E2E (`.maestro/`) são um projeto à parte,
-com pré-requisitos próprios (Maestro CLI, uma build instalada, uma conta de
-teste) — ver `.maestro/README.md`.
-
-## Build (EAS)
-
-Perfis de build em `eas.json` (`development`/`preview`/`production`). Ver a
-seção "Build do app mobile (EAS)" no README na raiz do repositório para os
-pré-requisitos (conta Expo, `eas init`, segredo `EXPO_TOKEN`) antes de rodar
-`eas build` — nenhum deles está configurado ainda.
-
-## Arquitetura
-
-`Screen → Service → API`: cada domínio (`src/feed/`, `src/vagas/`,
-`src/autenticacao/` etc.) é um módulo flat com `types.ts` + `<Domínio>Service.ts` +
-`index.ts`, espelhando o contrato real do `Site/Backend` (conferido nas
-rotas, controllers e validators do backend, nunca presumido). Preferências
-locais (`src/acessibilidade/`, `src/seguranca/`) usam
-`AsyncStorage`; a sessão (tokens) usa `expo-secure-store`
-(`src/armazenamento/armazenamentoSeguro.ts`) — nunca o mesmo mecanismo para as duas
-coisas.
+Validações e mensagens de erro têm testes JUnit em `app/src/test` (Android Studio: botão
+direito na pasta > Run Tests, ou `./gradlew test`).

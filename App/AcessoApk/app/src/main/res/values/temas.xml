@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Os nomes dos itens (colorPrimary, textInputStyle...) são atributos do
+         Android/Material e não podem ser traduzidos; os valores são nossos. -->
+    <style name="Tema.Acesso" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/acesso_primaria</item>
+        <item name="colorOnPrimary">@color/acesso_sobre_primaria</item>
+        <item name="colorPrimaryContainer">@color/acesso_container_primaria</item>
+        <item name="colorOnPrimaryContainer">@color/acesso_sobre_container_primaria</item>
+        <item name="colorSecondary">@color/acesso_titulo</item>
+        <item name="colorError">@color/acesso_erro</item>
+        <item name="colorErrorContainer">@color/acesso_container_erro</item>
+        <item name="colorOnErrorContainer">@color/acesso_sobre_container_erro</item>
+        <item name="colorOutline">@color/acesso_contorno</item>
+        <item name="colorSurface">@color/acesso_fundo</item>
+        <item name="colorOnSurface">@color/acesso_texto</item>
+        <item name="colorOnSurfaceVariant">@color/acesso_texto_secundario</item>
+        <item name="android:colorBackground">@color/acesso_fundo</item>
+        <item name="android:windowBackground">@color/acesso_fundo</item>
+        <item name="android:statusBarColor">@color/acesso_fundo</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <item name="textInputStyle">@style/Estilo.Acesso.Campo</item>
+        <item name="materialButtonStyle">@style/Estilo.Acesso.Botao</item>
+        <item name="materialButtonOutlinedStyle">@style/Estilo.Acesso.BotaoContorno</item>
+        <item name="borderlessButtonStyle">@style/Estilo.Acesso.BotaoTexto</item>
+    </style>
+
+    <!-- Campos com rótulo sempre visível (não só placeholder) -->
+    <style name="Estilo.Acesso.Campo" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/acesso_superficie</item>
+        <item name="errorIconDrawable">@drawable/ic_erro</item>
+    </style>
+
+    <style name="Estilo.Acesso.Botao" parent="Widget.Material3.Button">
+        <item name="android:minHeight">@dimen/altura_botao</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+        <item name="cornerRadius">28dp</item>
+    </style>
+
+    <style name="Estilo.Acesso.BotaoContorno" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/altura_botao</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="strokeColor">@color/acesso_primaria</item>
+    </style>
+
+    <style name="Estilo.Acesso.BotaoTexto" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+    </style>
+
+    <style name="Texto.Acesso.Marca" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:textColor">@color/acesso_titulo</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Texto.Acesso.TituloTela" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textColor">@color/acesso_titulo</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Mensagem de status (erro, sucesso ou carregando). O TalkBack lê
+         automaticamente quando o texto muda (accessibilityLiveRegion). -->
+    <style name="Estilo.Acesso.MensagemStatus" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/espaco_campos</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:drawablePadding">12dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:accessibilityLiveRegion">polite</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+</resources>

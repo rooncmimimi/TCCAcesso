@@ -12,7 +12,7 @@ TCCACESSO/
 │   ├── Backend/    API REST (Node.js + Express + Sequelize + PostgreSQL)
 │   └── Frontend/   Aplicação web (React + TypeScript + Vite + TanStack Router)
 └── App/
-    └── AcessoApk/  Aplicativo mobile (React Native + Expo)
+    └── AcessoApk/  Aplicativo Android (Java + XML + Supabase)
 ```
 
 Cada pasta em `Site/` é um projeto independente com seu próprio `package.json`,
@@ -60,31 +60,17 @@ principal dispara o deploy automaticamente.
 ## Integração contínua (CI)
 
 `.github/workflows/ci.yml` roda lint, checagem de tipos e a suíte de testes
-dos três projetos (App, Backend, Frontend) em todo push e pull request —
+dos três projetos (App Android, Backend, Frontend) em todo push e pull request —
 nenhum precisa de banco de dados real nem de segredo nenhum (os testes de
 cada projeto já são isolados por design). Ver comentários no próprio
 workflow para o detalhamento de cada job.
 
-## Build do app mobile (EAS)
+## App Android
 
-`App/AcessoApk/eas.json` define os perfis de build (`development`,
-`preview`, `production`) do [EAS Build](https://docs.expo.dev/build/introduction/).
-`.github/workflows/eas-build.yml` aciona um build manualmente (aba Actions
-do GitHub → "EAS Build (App)" → "Run workflow") — nunca automático a cada
-push, para não consumir cota de build sem necessidade.
-
-**Pendente (exige uma conta Expo de verdade, fora do alcance de qualquer
-sessão automatizada)**, antes do workflow funcionar pela primeira vez:
-
-1. Rodar `eas init` (ou `eas build:configure`) uma vez, localmente, dentro
-   de `App/AcessoApk`, autenticado na conta Expo do projeto — isso
-   preenche `extra.eas.projectId` em `app.json` sozinho.
-2. Gerar um token em <https://expo.dev/settings/access-tokens> e salvá-lo
-   como o segredo do repositório `EXPO_TOKEN` (Settings → Secrets and
-   variables → Actions, no GitHub).
-
-Sem isso, o workflow falha cedo com uma mensagem explicando exatamente o
-que falta — nunca tenta simular uma conta/projeto que não existe.
+O app fica em `App/AcessoApk`: Android nativo em Java, com o Supabase como
+backend (Auth, PostgreSQL, Storage e RLS). Abra a pasta no Android Studio e
+siga o `App/AcessoApk/README.md`. O CI compila o APK de debug e roda os
+testes JUnit em todo push e pull request.
 
 ## Acessibilidade
 

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta inspirada nas telas de referência. Todas as combinações
+         de texto/fundo passam no contraste mínimo 4,5:1 (WCAG AA). -->
+    <color name="acesso_background">#FDF7FD</color>
+    <color name="acesso_surface">#FFFFFF</color>
+    <color name="acesso_primary">#6750A4</color>          <!-- botões: branco sobre roxo = 6,4:1 -->
+    <color name="acesso_on_primary">#FFFFFF</color>
+    <color name="acesso_primary_container">#EADDFF</color>
+    <color name="acesso_on_primary_container">#21005D</color>
+    <color name="acesso_title">#3949AB</color>            <!-- títulos em azul = 7,3:1 -->
+    <color name="acesso_text">#1D1B20</color>
+    <color name="acesso_text_secondary">#49454F</color>
+    <color name="acesso_outline">#79747E</color>
+    <color name="acesso_error">#B3261E</color>
+    <color name="acesso_error_container">#F9DEDC</color>
+    <color name="acesso_on_error_container">#410E0B</color>
+    <color name="acesso_success">#1B5E20</color>
+    <color name="acesso_success_container">#DCEFD9</color>
+
+    <!-- Faixas diagonais decorativas do fundo -->
+    <color name="stripe_blue">#D8E3FB</color>
+    <color name="stripe_yellow">#FCF3D9</color>
+    <color name="stripe_red">#FADADF</color>
+    <color name="stripe_green">#DDEAE1</color>
+</resources>

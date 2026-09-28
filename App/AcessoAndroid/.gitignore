@@ -1,0 +1,16 @@
+# Arquivos locais do Android Studio / Gradle
+.gradle/
+.idea/
+*.iml
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Contém sdk.dir e as chaves do Supabase: nunca versionar
+local.properties
+
+*.apk
+*.aab
+*.keystore
+*.jks

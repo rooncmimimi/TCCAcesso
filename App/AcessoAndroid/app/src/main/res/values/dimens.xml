@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding">24dp</dimen>
+    <dimen name="field_spacing">16dp</dimen>
+    <!-- Área de toque confortável (mínimo recomendado é 48dp) -->
+    <dimen name="button_height">56dp</dimen>
+</resources>

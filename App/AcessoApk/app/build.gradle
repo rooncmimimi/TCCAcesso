@@ -4,10 +4,10 @@ plugins {
 
 // As credenciais do Supabase ficam no local.properties (fora do Git)
 // e chegam ao código Java pela classe BuildConfig.
-Properties localProperties = new Properties()
-File localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withInputStream { localProperties.load(it) }
+Properties propriedadesLocais = new Properties()
+File arquivoPropriedadesLocais = rootProject.file('local.properties')
+if (arquivoPropriedadesLocais.exists()) {
+    arquivoPropriedadesLocais.withInputStream { propriedadesLocais.load(it) }
 }
 
 android {
@@ -21,8 +21,8 @@ android {
         versionCode 1
         versionName '1.0'
 
-        buildConfigField 'String', 'SUPABASE_URL', "\"${localProperties.getProperty('SUPABASE_URL', '')}\""
-        buildConfigField 'String', 'SUPABASE_ANON_KEY', "\"${localProperties.getProperty('SUPABASE_ANON_KEY', '')}\""
+        buildConfigField 'String', 'URL_SUPABASE', "\"${propriedadesLocais.getProperty('URL_SUPABASE', '')}\""
+        buildConfigField 'String', 'CHAVE_ANONIMA_SUPABASE', "\"${propriedadesLocais.getProperty('CHAVE_ANONIMA_SUPABASE', '')}\""
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }

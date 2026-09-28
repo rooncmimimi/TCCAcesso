@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nome_app">ACESSO</string>
+    <string name="slogan_app">Rede profissional inclusiva</string>
+    <string name="voltar">Voltar</string>
+
+    <!-- Login -->
+    <string name="login_titulo">Entrar na sua conta</string>
+    <string name="rotulo_email">E-mail</string>
+    <string name="rotulo_senha">Senha</string>
+    <string name="acao_entrar">Entrar</string>
+    <string name="acao_entrando">Entrando…</string>
+    <string name="acao_esqueci_senha">Esqueci minha senha</string>
+    <string name="login_sem_conta">Ainda não tem conta?</string>
+    <string name="acao_criar_conta">Criar conta</string>
+
+    <!-- Cadastro -->
+    <string name="cadastro_titulo">Criar conta</string>
+    <string name="cadastro_introducao">Preencha seus dados. Campos marcados como opcionais podem ficar em branco.</string>
+    <string name="rotulo_nome_completo">Nome completo</string>
+    <string name="rotulo_confirmar_senha">Confirmar senha</string>
+    <string name="ajuda_senha">Pelo menos 8 caracteres, com letras e números.</string>
+    <string name="rotulo_cidade">Cidade</string>
+    <string name="ajuda_cidade">Usada para mostrar oportunidades perto de você.</string>
+    <string name="rotulo_data_nascimento">Data de nascimento (opcional)</string>
+    <string name="ajuda_data_nascimento">Formato dia/mês/ano, por exemplo 25/09/2000.</string>
+    <string name="abrir_calendario">Escolher data no calendário</string>
+    <string name="titulo_calendario_nascimento">Data de nascimento</string>
+    <string name="caixa_termos">Li e aceito os Termos de Uso e a Política de Privacidade.</string>
+    <string name="acao_ler_termos">Ler os Termos e a Política de Privacidade</string>
+    <string name="acao_cadastrar">Criar minha conta</string>
+    <string name="acao_cadastrando">Criando sua conta…</string>
+    <string name="cadastro_ja_tem_conta">Já tem conta? Entrar</string>
+    <string name="cadastro_confirmar_email_titulo">Confirme seu e-mail</string>
+    <string name="cadastro_confirmar_email_mensagem">Sua conta foi criada. Enviamos um link de confirmação para o seu e-mail. Depois de confirmar, volte aqui e entre.</string>
+    <string name="acao_ir_para_login">Ir para o login</string>
+
+    <!-- Recuperação de senha -->
+    <string name="esqueci_titulo">Recuperar senha</string>
+    <string name="esqueci_introducao">Digite o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.</string>
+    <string name="acao_enviar_link">Enviar link</string>
+    <string name="acao_enviando">Enviando…</string>
+    <string name="esqueci_enviado">Pronto! Se houver uma conta com esse e-mail, você vai receber o link em alguns minutos. Confira também a caixa de spam.</string>
+
+    <string name="nova_senha_titulo">Criar nova senha</string>
+    <string name="nova_senha_introducao">Escolha uma nova senha para a sua conta.</string>
+    <string name="rotulo_nova_senha">Nova senha</string>
+    <string name="acao_salvar_senha">Salvar nova senha</string>
+    <string name="acao_salvando">Salvando…</string>
+    <string name="nova_senha_sucesso">Senha alterada. Agora é só entrar com a nova senha.</string>
+    <string name="nova_senha_link_invalido">Este link de recuperação é inválido ou expirou. Peça um novo link.</string>
+
+    <!-- Navegação principal -->
+    <string name="aba_inicio">Início</string>
+    <string name="aba_oportunidades">Oportunidades</string>
+    <string name="aba_criar">Criar</string>
+    <string name="aba_pesquisa">Pesquisa</string>
+    <string name="aba_perfil">Perfil</string>
+    <string name="mensagem_em_construcao">Esta área está em desenvolvimento e será construída nas próximas etapas.</string>
+    <string name="usuario_logado_como">Você entrou como %1$s</string>
+    <string name="acao_sair">Sair da conta</string>
+    <string name="sair_confirmar_titulo">Sair da conta?</string>
+    <string name="sair_confirmar_mensagem">Você precisará entrar novamente com seu e-mail e senha.</string>
+    <string name="cancelar">Cancelar</string>
+
+    <!-- Termos -->
+    <string name="termos_titulo">Termos e Privacidade</string>
+    <string name="termos_texto">ACESSO é um projeto de TCC que conecta profissionais e oportunidades com foco em acessibilidade e inclusão.\n\n<b>Quais dados coletamos e por quê</b>\n• Nome e e-mail: para criar sua conta e identificar você na plataforma.\n• Cidade: para mostrar oportunidades perto de você.\n• Data de nascimento (opcional): nunca é exibida para outras pessoas.\n• Informações de acessibilidade (opcionais): só são informadas se você quiser, e você decide se elas aparecem no seu perfil.\n\n<b>Como protegemos</b>\nSua senha é guardada de forma criptografada pelo Supabase Auth; nem a equipe do ACESSO tem acesso a ela. Cada pessoa só consegue alterar os próprios dados.\n\n<b>Seus direitos (LGPD)</b>\nVocê pode consultar, corrigir ou excluir seus dados a qualquer momento pelo próprio app ou falando com a equipe do projeto.\n\n<b>Uso da plataforma</b>\nNão publique conteúdo ofensivo, discriminatório ou dados pessoais de outras pessoas. Os dados de demonstração exibidos no app são fictícios.</string>
+</resources>

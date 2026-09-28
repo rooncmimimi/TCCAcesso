@@ -3,5 +3,5 @@
 # Onde encontrar: Supabase > Project Settings > API.
 #
 # Use SOMENTE a chave "anon" (pública). Nunca coloque a service_role key aqui.
-SUPABASE_URL=https://SEU-PROJETO.supabase.co
-SUPABASE_ANON_KEY=sua-chave-anon-aqui
+URL_SUPABASE=https://SEU-PROJETO.supabase.co
+CHAVE_ANONIMA_SUPABASE=sua-chave-anon-aqui

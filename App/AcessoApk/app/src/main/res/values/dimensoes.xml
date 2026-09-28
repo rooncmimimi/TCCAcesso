@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="margem_tela">24dp</dimen>
+    <dimen name="espaco_campos">16dp</dimen>
+    <!-- Área de toque confortável (mínimo recomendado é 48dp) -->
+    <dimen name="altura_botao">56dp</dimen>
+</resources>

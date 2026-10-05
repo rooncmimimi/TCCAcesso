@@ -4,4 +4,21 @@
     <dimen name="espaco_campos">16dp</dimen>
     <!-- Área de toque confortável (mínimo recomendado é 48dp) -->
     <dimen name="altura_botao">56dp</dimen>
+
+    <!-- Cantos arredondados do site (radius = 14px): botões e campos usam
+         rounded-md (12px) e cartões rounded-xl (18px) -->
+    <dimen name="raio_controle">12dp</dimen>
+    <dimen name="raio_item">14dp</dimen>
+    <dimen name="raio_cartao">18dp</dimen>
+
+    <!-- Raio no topo do login e do cadastro: altura visível antes de esmaecer -->
+    <dimen name="altura_fundo_raio_topo">220dp</dimen>
+    <dimen name="altura_esmaecimento_raio">120dp</dimen>
+
+    <!-- Tela de apresentação -->
+    <dimen name="apresentacao_margem">20dp</dimen>
+    <dimen name="apresentacao_altura_botao_cabecalho">48dp</dimen>
+    <dimen name="apresentacao_tamanho_logo">40dp</dimen>
+    <dimen name="apresentacao_tamanho_icone_item">40dp</dimen>
+    <dimen name="apresentacao_texto_titulo">34sp</dimen>
 </resources>

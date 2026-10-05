@@ -29,7 +29,7 @@ Supabase e não podem ser trocados (ex.: `AppCompatActivity`, `onCreate`, `color
 
 ```
 com.acesso.app
-├── telas         TelaLogin, TelaCadastro, TelaEsqueciSenha, TelaNovaSenha, TelaTermos, TelaPrincipal
+├── telas         TelaApresentacao, TelaLogin, TelaCadastro, TelaEsqueciSenha, TelaNovaSenha, TelaTermos, TelaPrincipal
 ├── fragmentos    conteúdo das abas da barra inferior
 ├── viewmodels    estado das telas e validações antes de chamar o Supabase
 ├── repositorios  RepositorioAutenticacao: toda a comunicação com o Supabase Auth
@@ -39,6 +39,18 @@ com.acesso.app
 ```
 
 Fluxo: **Tela → ViewModel → Repositório → Supabase**.
+
+Ao abrir o app, a `TelaApresentacao` aparece só na primeira vez (ou até o usuário tocar em
+um dos botões dela) e depois segue para a `TelaLogin`. Para vê-la de novo, limpe os dados do app
+ou, no build de debug, rode
+`adb shell am start -n com.acesso.app/.telas.TelaApresentacao --ez mostrar_apresentacao true`.
+O "Run" do Android Studio reinstala o app **mantendo os dados**, então depois de concluída a
+apresentação não aparece mais; use um dos dois jeitos acima para revê-la.
+
+Identidade visual: cores e cantos seguem o site (`Site/Frontend/src/styles/globals.css`). O raio
+decorativo é o mesmo do site (`raio-acesso.svg`), vetorizado em `res/drawable/raio_acesso.xml` e
+aplicado pelo estilo `Estilo.Acesso.FundoRaio` (apresentação) e pelo layout
+`componente_fundo_raio_topo.xml` (login e cadastro).
 
 ## Banco (Supabase)
 

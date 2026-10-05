@@ -30,18 +30,22 @@
     <style name="Estilo.Acesso.Campo" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="boxBackgroundColor">@color/acesso_superficie</item>
         <item name="errorIconDrawable">@drawable/ic_erro</item>
+        <item name="boxCornerRadiusTopStart">@dimen/raio_controle</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/raio_controle</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/raio_controle</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/raio_controle</item>
     </style>
 
     <style name="Estilo.Acesso.Botao" parent="Widget.Material3.Button">
         <item name="android:minHeight">@dimen/altura_botao</item>
         <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
-        <item name="cornerRadius">28dp</item>
+        <item name="cornerRadius">@dimen/raio_controle</item>
     </style>
 
     <style name="Estilo.Acesso.BotaoContorno" parent="Widget.Material3.Button.OutlinedButton">
         <item name="android:minHeight">@dimen/altura_botao</item>
         <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
-        <item name="cornerRadius">28dp</item>
+        <item name="cornerRadius">@dimen/raio_controle</item>
         <item name="strokeColor">@color/acesso_primaria</item>
     </style>
 
@@ -58,6 +62,88 @@
     <style name="Texto.Acesso.TituloTela" parent="TextAppearance.Material3.HeadlineSmall">
         <item name="android:textColor">@color/acesso_titulo</item>
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Raio decorativo da identidade visual, como na página inicial do site:
+         preenche a área cortando as sobras (object-cover), ampliado 1,3x e com
+         25% de opacidade. Só decoração: o TalkBack ignora. -->
+    <style name="Estilo.Acesso.FundoRaio" parent="">
+        <item name="android:src">@drawable/raio_acesso</item>
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:scaleX">1.3</item>
+        <item name="android:scaleY">1.3</item>
+        <item name="android:alpha">0.25</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <!-- Tela de apresentação: página inicial do site. Herda os estilos de botão do app. -->
+    <style name="Tema.Acesso.Apresentacao">
+        <item name="android:windowBackground">@color/acesso_fundo</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <style name="Estilo.Acesso.Apresentacao.Botao" parent="Estilo.Acesso.Botao">
+        <item name="iconGravity">textEnd</item>
+        <item name="iconSize">20dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Estilo.Acesso.Apresentacao.BotaoEscuro" parent="Estilo.Acesso.Apresentacao.Botao">
+        <item name="backgroundTint">@color/acesso_texto</item>
+        <item name="iconTint">@color/acesso_sobre_primaria</item>
+    </style>
+
+    <style name="Estilo.Acesso.Apresentacao.BotaoClaro" parent="Estilo.Acesso.BotaoContorno">
+        <item name="backgroundTint">@color/acesso_superficie</item>
+        <item name="strokeColor">@color/acesso_borda</item>
+        <item name="android:textColor">@color/acesso_texto</item>
+        <item name="iconTint">@color/acesso_texto</item>
+        <item name="iconSize">20dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- Botões compactos do cabeçalho (Entrar / Criar conta), ainda com 48dp de toque -->
+    <style name="Estilo.Acesso.Apresentacao.BotaoCabecalho" parent="Estilo.Acesso.Apresentacao.Botao">
+        <item name="android:minHeight">@dimen/apresentacao_altura_botao_cabecalho</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+    </style>
+
+    <style name="Estilo.Acesso.Apresentacao.BotaoCabecalhoClaro" parent="Estilo.Acesso.Apresentacao.BotaoClaro">
+        <item name="android:minHeight">@dimen/apresentacao_altura_botao_cabecalho</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+    </style>
+
+    <!-- Linha da lista de recursos: fundo cinza-azulado, ícone colorido e texto -->
+    <style name="Estilo.Acesso.Apresentacao.Recurso" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:background">@drawable/fundo_recurso_apresentacao</item>
+        <item name="android:minHeight">64dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:drawablePadding">14dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">@color/acesso_texto</item>
     </style>
 
     <!-- Mensagem de status (erro, sucesso ou carregando). O TalkBack lê

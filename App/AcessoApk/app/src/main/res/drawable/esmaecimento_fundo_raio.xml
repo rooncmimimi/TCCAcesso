@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faz o raio do topo sumir suavemente no fundo da tela, deixando a área
+     dos campos e links sem decoração (contraste garantido). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:endColor="@color/acesso_fundo"
+        android:startColor="@color/acesso_fundo_transparente" />
+</shape>

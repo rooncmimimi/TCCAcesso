@@ -12,15 +12,21 @@
         android:supportsRtl="true"
         android:theme="@style/Tema.Acesso">
 
+        <!-- Primeira tela: apresentação (só na primeira vez); depois segue para o login -->
         <activity
-            android:name=".telas.TelaLogin"
+            android:name=".telas.TelaApresentacao"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:theme="@style/Tema.Acesso.Apresentacao">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".telas.TelaLogin"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".telas.TelaCadastro"

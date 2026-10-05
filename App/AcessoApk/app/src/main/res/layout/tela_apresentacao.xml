@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Apresentação do ACESSO, baseada na página inicial do site.
+     A tela desenha atrás das barras do sistema; as margens de status bar e
+     navegação são aplicadas no código (TelaApresentacao.aplicarMargensSistema). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/acesso_fundo"
+    tools:context=".telas.TelaApresentacao">
+
+    <!-- Raio da identidade visual por trás de todo o conteúdo, como no site -->
+    <ImageView
+        style="@style/Estilo.Acesso.FundoRaio"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Cabeçalho fixo: marca + Entrar + Criar conta. O Flow joga os botões
+             para uma segunda linha quando não cabem (fonte grande / tela estreita). -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cabecalho"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/acesso_superficie"
+            android:paddingStart="16dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="12dp">
+
+            <LinearLayout
+                android:id="@+id/marca"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="@dimen/apresentacao_tamanho_logo"
+                    android:layout_height="@dimen/apresentacao_tamanho_logo"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/logo_apresentacao" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:accessibilityHeading="true"
+                    android:maxLines="1"
+                    android:text="@string/nome_app"
+                    android:textColor="@color/acesso_texto"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/botoesCabecalho"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/botaoEntrar"
+                    style="@style/Estilo.Acesso.Apresentacao.BotaoCabecalhoClaro"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:text="@string/acao_entrar" />
+
+                <Button
+                    android:id="@+id/botaoCriarConta"
+                    style="@style/Estilo.Acesso.Apresentacao.BotaoCabecalho"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:maxLines="1"
+                    android:text="@string/acao_criar_conta" />
+            </LinearLayout>
+
+            <androidx.constraintlayout.helper.widget.Flow
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="marca,botoesCabecalho"
+                app:flow_horizontalBias="0"
+                app:flow_horizontalStyle="spread_inside"
+                app:flow_verticalAlign="center"
+                app:flow_verticalGap="12dp"
+                app:flow_wrapMode="chain"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/acesso_borda" />
+
+        <!-- ScrollView para a tela continuar usável com fonte grande -->
+        <ScrollView
+            android:id="@+id/rolagem"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:id="@+id/conteudo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/apresentacao_margem"
+                android:paddingTop="32dp"
+                android:paddingEnd="@dimen/apresentacao_margem"
+                android:paddingBottom="32dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/fundo_selo_apresentacao"
+                    android:drawableStart="@drawable/ic_brilho"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:paddingStart="10dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="6dp"
+                    android:text="@string/apresentacao_selo"
+                    android:textColor="@color/acesso_primaria"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/titulo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:accessibilityHeading="true"
+                    android:hyphenationFrequency="full"
+                    android:letterSpacing="-0.02"
+                    android:lineSpacingMultiplier="1.05"
+                    android:text="@string/apresentacao_titulo"
+                    android:textColor="@color/acesso_texto"
+                    android:textSize="@dimen/apresentacao_texto_titulo"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:lineSpacingMultiplier="1.2"
+                    android:text="@string/apresentacao_descricao"
+                    android:textColor="@color/acesso_texto_secundario"
+                    android:textSize="18sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoQueroVagas"
+                    style="@style/Estilo.Acesso.Apresentacao.Botao"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:text="@string/apresentacao_acao_vagas"
+                    app:icon="@drawable/ic_seta_avancar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoSouEmpresa"
+                    style="@style/Estilo.Acesso.Apresentacao.BotaoClaro"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/apresentacao_acao_empresa"
+                    app:icon="@drawable/ic_empresa" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+                    app:cardBackgroundColor="@color/acesso_superficie"
+                    app:cardCornerRadius="@dimen/raio_cartao"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/acesso_borda"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:accessibilityHeading="true"
+                            android:letterSpacing="0.06"
+                            android:text="@string/apresentacao_recursos_titulo"
+                            android:textAllCaps="true"
+                            android:textColor="@color/acesso_texto_secundario"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            style="@style/Estilo.Acesso.Apresentacao.Recurso"
+                            android:drawableStart="@drawable/icone_recurso_voz"
+                            android:text="@string/apresentacao_recurso_voz" />
+
+                        <TextView
+                            style="@style/Estilo.Acesso.Apresentacao.Recurso"
+                            android:drawableStart="@drawable/icone_recurso_fonte"
+                            android:text="@string/apresentacao_recurso_fonte" />
+
+                        <TextView
+                            style="@style/Estilo.Acesso.Apresentacao.Recurso"
+                            android:drawableStart="@drawable/icone_recurso_leitor"
+                            android:text="@string/apresentacao_recurso_leitor" />
+
+                        <TextView
+                            style="@style/Estilo.Acesso.Apresentacao.Recurso"
+                            android:drawableStart="@drawable/icone_recurso_contraste"
+                            android:text="@string/apresentacao_recurso_contraste" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/botaoConfigurarAcessibilidade"
+                            style="@style/Estilo.Acesso.Apresentacao.BotaoEscuro"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:text="@string/apresentacao_acao_configurar"
+                            app:icon="@drawable/ic_seta_avancar"
+                            app:iconGravity="textEnd" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</FrameLayout>

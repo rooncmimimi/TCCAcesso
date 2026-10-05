@@ -1,26 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Paleta inspirada nas telas de referência. Todas as combinações
-         de texto/fundo passam no contraste mínimo 4,5:1 (WCAG AA). -->
-    <color name="acesso_fundo">#FDF7FD</color>
-    <color name="acesso_superficie">#FFFFFF</color>
-    <color name="acesso_primaria">#6750A4</color>          <!-- botões: branco sobre roxo = 6,4:1 -->
+    <!-- Paleta do site ACESSO (Site/Frontend/src/styles/globals.css, tema claro).
+         Todas as combinações de texto/fundo passam no contraste mínimo 4,5:1
+         (WCAG AA), inclusive sobre o raio decorativo. -->
+    <color name="acesso_fundo">#F8FAFD</color>                <!-- background -->
+    <color name="acesso_fundo_transparente">#00F8FAFD</color>   <!-- fundo sem opacidade, para degradês -->
+    <color name="acesso_superficie">#FFFFFF</color>           <!-- card -->
+    <color name="acesso_fundo_secundario">#EDF2F9</color>     <!-- secondary -->
+    <color name="acesso_primaria">#178035</color>             <!-- primary: branco sobre verde = 5,0:1 -->
     <color name="acesso_sobre_primaria">#FFFFFF</color>
-    <color name="acesso_container_primaria">#EADDFF</color>
-    <color name="acesso_sobre_container_primaria">#21005D</color>
-    <color name="acesso_titulo">#3949AB</color>            <!-- títulos em azul = 7,3:1 -->
-    <color name="acesso_texto">#1D1B20</color>
-    <color name="acesso_texto_secundario">#49454F</color>
-    <color name="acesso_contorno">#79747E</color>
-    <color name="acesso_erro">#B3261E</color>
-    <color name="acesso_container_erro">#F9DEDC</color>
-    <color name="acesso_sobre_container_erro">#410E0B</color>
+    <color name="acesso_container_primaria">#EEFAF1</color>   <!-- primary-soft -->
+    <color name="acesso_sobre_container_primaria">#0E4F21</color>
+    <color name="acesso_titulo">#101926</color>               <!-- foreground: títulos como no site -->
+    <color name="acesso_texto">#101926</color>                <!-- foreground -->
+    <!-- Um pouco mais escuro que o muted-foreground do site (#596475) para
+         manter 4,5:1 mesmo sobre a faixa vermelha do raio. -->
+    <color name="acesso_texto_secundario">#475569</color>
+    <color name="acesso_borda">#DDE2E8</color>                <!-- border (cartões, separadores) -->
+    <color name="acesso_contorno">#6B7280</color>             <!-- contorno de campos: 4,8:1 -->
+    <color name="acesso_erro">#D5131C</color>                 <!-- destructive -->
+    <color name="acesso_container_erro">#FDE7E8</color>
+    <color name="acesso_sobre_container_erro">#5C0A0E</color>
     <color name="acesso_sucesso">#1B5E20</color>
     <color name="acesso_container_sucesso">#DCEFD9</color>
 
-    <!-- Faixas diagonais decorativas do fundo -->
-    <color name="faixa_azul">#D8E3FB</color>
-    <color name="faixa_amarela">#FCF3D9</color>
-    <color name="faixa_vermelha">#FADADF</color>
-    <color name="faixa_verde">#DDEAE1</color>
+    <!-- Raio da identidade visual (drawable/raio_acesso.xml), cores da
+         bandeira do Orgulho da Pessoa com Deficiência como no site -->
+    <color name="raio_azul">#0190F5</color>
+    <color name="raio_amarelo">#FCDA04</color>
+    <color name="raio_branco">#FDFBFA</color>
+    <color name="raio_vermelho">#FB0E1D</color>
+    <color name="raio_verde">#059E47</color>
+
+    <!-- Ícones da lista de recursos da apresentação (mesmas cores do site) -->
+    <color name="recurso_verde">#21A848</color>
+    <color name="recurso_amarelo">#FAD905</color>
+    <color name="recurso_sobre_amarelo">#050407</color>
+    <color name="recurso_azul">#0A98E7</color>
+    <color name="recurso_vermelho">#EB1B25</color>
 </resources>

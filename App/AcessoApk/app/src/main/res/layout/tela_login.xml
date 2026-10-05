@@ -6,13 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".telas.TelaLogin">
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:adjustViewBounds="true"
-        android:importantForAccessibility="no"
-        android:scaleType="fitStart"
-        android:src="@drawable/fundo_faixas" />
+    <include layout="@layout/componente_fundo_raio_topo" />
 
     <!-- ScrollView para a tela continuar usável com fonte grande -->
     <ScrollView

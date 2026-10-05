@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raio da identidade visual no topo da tela, esmaecendo para o fundo.
+     Usado pelo login e pelo cadastro com <include>. O raio ocupa a tela toda
+     (mesma escala e posição da apresentação, que usa o mesmo estilo) e a parte
+     de baixo é coberta pelo fundo, deixando campos e links sem decoração. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:importantForAccessibility="noHideDescendants">
+
+    <ImageView
+        style="@style/Estilo.Acesso.FundoRaio"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/altura_fundo_raio_topo" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/altura_esmaecimento_raio"
+            android:background="@drawable/esmaecimento_fundo_raio" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@color/acesso_fundo" />
+    </LinearLayout>
+</FrameLayout>

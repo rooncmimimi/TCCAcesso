@@ -4,6 +4,21 @@
     <string name="slogan_app">Rede profissional inclusiva</string>
     <string name="voltar">Voltar</string>
 
+    <!-- Apresentação (primeira tela na primeira vez que o app é aberto) -->
+    <string name="apresentacao_logo">Logotipo do ACESSO</string>
+    <string name="apresentacao_selo">Acessibilidade desde o primeiro clique</string>
+    <!-- As partes marcadas com <annotation> recebem cor no código (TelaApresentacao) -->
+    <string name="apresentacao_titulo">Conectando talentos PCD a oportunidades que <annotation cor="verde">transformam</annotation> <annotation cor="vermelho">vidas</annotation>.</string>
+    <string name="apresentacao_descricao">O ACESSO é a rede profissional feita para pessoas com deficiência, profissionais 50+ e empresas que levam a inclusão a sério.</string>
+    <string name="apresentacao_acao_vagas">Quero encontrar vagas</string>
+    <string name="apresentacao_acao_empresa">Sou empresa</string>
+    <string name="apresentacao_recursos_titulo">Recursos de acessibilidade do app</string>
+    <string name="apresentacao_recurso_voz">Leitura por voz pronta para ativar</string>
+    <string name="apresentacao_recurso_fonte">Textos que acompanham o tamanho da fonte do celular</string>
+    <string name="apresentacao_recurso_leitor">Compatível com leitores de tela (TalkBack)</string>
+    <string name="apresentacao_recurso_contraste">Alto contraste e botões fáceis de tocar</string>
+    <string name="apresentacao_acao_configurar">Configurar acessibilidade agora</string>
+
     <!-- Login -->
     <string name="login_titulo">Entrar na sua conta</string>
     <string name="rotulo_email">E-mail</string>

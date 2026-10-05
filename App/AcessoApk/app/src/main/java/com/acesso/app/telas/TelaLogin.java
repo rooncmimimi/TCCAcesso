@@ -12,7 +12,7 @@ import com.acesso.app.databinding.TelaLoginBinding;
 import com.acesso.app.utilitarios.MensagemStatus;
 import com.acesso.app.viewmodels.ViewModelLogin;
 
-/** Primeira tela do app. Se já houver sessão salva, vai direto para a tela principal. */
+/** Aberta logo depois da TelaApresentacao. Se já houver sessão salva, vai direto para a tela principal. */
 public class TelaLogin extends AppCompatActivity {
 
     private TelaLoginBinding componentes;

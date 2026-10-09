@@ -1,128 +1,72 @@
-# Continuidade — telas mobile, autenticação e planejamento do back-end
+# Continuidade — app mobile, autenticação e integração com o back-end
 
-Registro do trabalho interrompido em 08/10/2026 para retomar depois.
-Escopo da tarefa: concluir as telas do app (`App/AcessoApk`) com base no site, corrigir o ícone,
-ajustar a tela de apresentação ao fluxo de login, preparar a autenticação para a API e escrever
-`App/AcessoApk/docs/PLANEJAMENTO_BACKEND.md`.
+Registro para retomar o trabalho em outra sessão. Última atualização: 09/10/2026,
+branch `app/telas-mobile-autenticacao`.
 
-> **Atenção: o app NÃO compila neste commit.** O trabalho parou no meio da troca das telas.
-> Classes já referenciadas (`TelaStatusEmpresa`, `FragmentoPerfil`, `FragmentoPesquisa`,
-> `TelaPrincipal.abrirCriacao`) ainda não existem, e telas antigas ainda usam a API velha do
-> repositório. Veja "Pendências" na ordem sugerida.
+> **O app compila**, os 51 testes JUnit passam e o `lintDebug` não tem erros. Os fluxos
+> principais foram conferidos no emulador `Small_Phone` (API 30) em modo demonstração.
+> A autenticação pela API do site (`FONTE_AUTENTICACAO=api`) ainda **não** foi testada com a
+> API rodando.
 
-## 1. O que a análise encontrou
+Documentos relacionados:
+- `App/AcessoApk/docs/PLANEJAMENTO_BACKEND.md` — como o app vai usar a API, endpoints reais,
+  propostas e plano por etapas.
+- `App/AcessoApk/README.md` — como configurar, rodar e testar o app.
 
-- **App** (Java + XML, MVVM): Tela → ViewModel → Repositório → **Supabase Auth direto**, com a
-  tabela própria `perfis` (`App/AcessoApk/supabase/001_perfis.sql`). Não tinha tipo de conta
-  (pessoa/empresa). As 5 abas (Início, Oportunidades, Criar, Pesquisa, Perfil) eram
-  "em construção" (`FragmentoEmConstrucao`).
-- **Site/Backend** (Express + Sequelize + JWT + bcrypt) já tem as rotas de autenticação:
-  `POST /api/auth/login`, `/register/candidato`, `/register/empresa`, `/refresh`, `/logout`,
-  `/senha/esqueci`, `/senha/redefinir`, `GET /api/auth/me`. Tabelas `usuarios`, `candidatos`,
-  `empresas` (empresa nasce com `statusAprovacao = pendente`).
-- Ou seja: hoje **app e site têm bases de usuários separadas** (Supabase Auth × tabela `usuarios`).
-  Recomendação para o documento do back-end: o app passar a usar a API do site.
-- **Ícone**: o launcher usava um desenho genérico de "pessoa". O logo do site é o ícone
-  `Accessibility` do lucide-react num círculo verde (`size-9` + `rounded-xl` = círculo).
-- **Apresentação**: aparecia só na primeira abertura (`GerenciadorApresentacao`). O commit
-  `012aa19` pede que ela volte a aparecer enquanto não houver login.
-- **Linha de base** (antes das mudanças): `assembleDebug` e `testDebugUnitTest` passavam;
-  `lintDebug` tinha 1 erro (`windowLightNavigationBar` exige API 27) e 33 avisos.
-- Emuladores disponíveis: `Small_Phone`, `Medium_Phone`, `Pixel_API_30` (todos API 30).
+## 1. Histórico
 
-## 2. O que já foi feito (neste commit)
+| Commit | O que foi feito |
+|---|---|
+| `b76d8bf` (08/10) | Estrutura de autenticação (Supabase / API / simulada), sessão com tipo de conta, validações iguais às da API, ícone com o símbolo do site, layouts das abas. App não compilava. |
+| `2859ee0` (09/10) | App volta a compilar: `TelaPrincipal`, `TelaStatusEmpresa`, `FragmentoPerfil`, `FragmentoPesquisa`, apresentação/login/cadastro ligados à `Navegacao`; remoção de `FragmentoEmConstrucao` e `GerenciadorApresentacao`; testes novos. |
+| `1274db5` (09/10) | Correções vistas no emulador (Início em branco, topo do login cortado, cores do Material 3, rótulos cortados) e ajustes visuais. |
+| (este commit) | `PLANEJAMENTO_BACKEND.md`, README do app e da raiz, este arquivo. |
 
-### Configuração
-- `app/build.gradle`: `FONTE_AUTENTICACAO` (`supabase` padrão | `api` | `simulada`) e `URL_API`,
-  lidos de `-P...` ou do `local.properties`. Valor inválido falha o build.
-- `app/src/debug/`: HTTP sem TLS só no debug e só para `10.0.2.2`/`localhost`.
-- `local.properties.example` documenta as novas chaves.
-- `values-v27/temas.xml`: corrige o erro de lint preexistente.
+## 2. O que foi verificado no emulador (modo demonstração)
 
-### Autenticação (estrutura para a API)
-- Contrato único `repositorios/RepositorioAutenticacao` (interface) com três implementações,
-  escolhidas só em `FabricaRepositorios`:
-  - `RepositorioAutenticacaoSupabase` — o código que já funcionava (empresa responde
-    "depende da API").
-  - `RepositorioAutenticacaoApi` — escrito contra as rotas reais do `Site/Backend`
-    (login, cadastros, refresh, logout, senha). **Ainda não testado com a API rodando.**
-  - `RepositorioAutenticacaoSimulado` — só no debug, claramente marcado; contas fixas
-    (senha `Acesso@2026`): `pessoa@`, `empresa@`, `empresa.pendente@`, `nao.confirmado@`,
-    `pausado@`, `falha.rede@acesso.test`.
-- `ExecutorHttp` + `ClienteHttp` (um OkHttp só), `ClienteApi`, `TradutorErrosApi`
-  (formato `{ mensagem, erros:[{campo,mensagem}] }`), `MensagensErro`, `FalhaHttp`.
-- `RetornoRepositorio.aoFalharComCampos` para erros do servidor aparecerem ao lado do campo.
-- Modelos: `TipoConta`, `ResultadoLogin` (autenticado / e-mail não confirmado / conta pausada),
-  `DadosCadastroPessoa`, `DadosCadastroEmpresa`; `SessaoUsuario` ganhou nome, tipo, status da
-  empresa e origem.
-- `GerenciadorSessao` grava os novos campos e descarta sessão de outra fonte (token simulado
-  nunca vai para servidor real).
-- `Navegacao`: decisão pura `destinoPara(sessao)` (apresentação / área pessoa / área empresa /
-  empresa em análise) + navegação com `CLEAR_TASK`.
-- `Validador`: senha com as regras da API (8–72, maiúscula, minúscula, número, símbolo),
-  telefone, CPF/CNPJ com dígito verificador, UF, CEP, site, publicação e vaga. `Mascaras`.
-- ViewModels: `ViewModelLogin` (3 desfechos + reativação), `ViewModelCadastro` (pessoa e
-  empresa, erros num mapa por campo), `ViewModelSessao` (renova token, sai), `ViewModelInicio`,
-  `ViewModelOportunidades`, `ViewModelPesquisa`, `ViewModelCriar`, `EstadoConteudo`.
-- Conteúdo: `RepositorioConteudo` → `RepositorioConteudoPendente` (avisa a rota da API que vai
-  atender; nada inventado) ou `RepositorioConteudoSimulado` (só no modo demonstração).
+Visto de fato, com capturas de tela, no `Small_Phone` (720×1280, API 30):
 
-### Ícone e visual
-- `ic_acessibilidade` agora é o desenho exato do lucide `accessibility` 0.575.0 (o do site).
-- `icone_app_frente` usa esse símbolo; ícones adaptativos ganharam camada `monochrome`.
-- Logo da apresentação: símbolo com 22dp em 40dp (proporção do site).
-- Novos estilos (cartão, selo, aviso, avatar, item de menu, chip), cores de aviso, ícones Material.
+- Apresentação sem sessão; "Entrar", "Criar conta" e "Sou empresa" (cadastro já em Empresa).
+- Login de pessoa → área da pessoa; reabrir o app → direto na área logada (sem apresentação).
+- Abas Início, Vagas, Criar, Pesquisa e Perfil; Voltar numa aba → Início.
+- Pesquisa: erro de termo curto, estado vazio, resultados; barra de abas some com o teclado.
+- Sair com confirmação → apresentação; Voltar depois disso sai do app.
+- Empresa aprovada → aba "Painel"; "Publicar nova vaga" abre Criar em "Vaga"; validação da vaga.
+- Empresa pendente → tela "Sua empresa está em análise"; Voltar sai do app.
+- Cadastro de pessoa: erros por campo com foco no primeiro, máscara de CPF, cadastro concluído
+  → área da pessoa.
+- Fonte do sistema em 1,3×: Perfil e Vagas sem sobreposição.
 
-### Telas (layouts prontos; Java parcial)
-- Layouts: `tela_cadastro` (seletor pessoa/empresa + campos do site), `tela_login` (avisos do
-  modo demonstração), `tela_principal`, `tela_status_empresa`, `fragmento_inicio`,
-  `fragmento_oportunidades`, `fragmento_criar`, `fragmento_pesquisa`, `fragmento_perfil`,
-  componentes e itens de lista.
-- Java pronto: `FragmentoInicio`, `FragmentoOportunidades`, `FragmentoCriar`,
-  `ExibidorEstado`, `Rotulos`, `MargensSistema`.
+**Não verificado:** TalkBack navegando de verdade, contas `nao.confirmado@`, `pausado@` e
+`falha.rede@`, máscaras de telefone/CNPJ/CEP na tela (cobertas só por teste unitário),
+orientação paisagem, telas maiores (Medium_Phone), Android 15 (edge-to-edge obrigatório),
+fontes `supabase` e `api` com servidor real.
 
 ## 3. Pendências (ordem sugerida)
 
-1. **Fazer compilar**
-   - `TelaPrincipal`: usar `ViewModelSessao` (verificar/renovar; ao encerrar →
-     `Navegacao.voltarParaApresentacao`), aba Oportunidades vira "Painel" para empresa,
-     fragmentos novos, método `abrirCriacao(boolean vaga)`, `MargensSistema` + esconder a barra
-     inferior com teclado aberto, mostrar `avisoDemonstracao` se `FabricaRepositorios.modoDemonstracao()`.
-   - Criar `TelaStatusEmpresa` (layout já existe; textos `status_empresa_*`; Sair e Fale conosco).
-   - Criar `FragmentoPerfil` (layout pronto; sair com confirmação — lógica do
-     `FragmentoEmConstrucao`) e `FragmentoPesquisa` (layout + `ViewModelPesquisa` prontos).
-   - `TelaApresentacao`: com sessão → `Navegacao.abrirAreaAutenticada`; sem sessão → sempre
-     mostrar; botões abrem login/cadastro **sem** `finish()` (usar `Navegacao.loginECadastro`;
-     "Sou empresa" pré-seleciona empresa); mostrar `EXTRA_AVISO`. Remover
-     `GerenciadorApresentacao` e `EXTRA_MOSTRAR_APRESENTACAO`.
-   - `TelaLogin`: tirar `verificarSessaoSalva`; observar `getSessaoAutenticada()` →
-     `Navegacao.abrirAreaAutenticada`; diálogo de reativação; avisos de demonstração.
-   - `TelaCadastro`: `EXTRA_EMPRESA`, alternar seções, máscaras, lista de porte, mapa de erros →
-     campos (ordem visual, foco no primeiro), desfecho AUTENTICADO → área da conta.
-   - `TelaEsqueciSenha`/`TelaNovaSenha`/`TelaTermos`: `MargensSistema`; nova senha volta com
-     `Navegacao.abrirLoginDoZero`.
-   - Apagar `FragmentoEmConstrucao` e `fragmento_em_construcao.xml`.
-   - `AndroidManifest`: registrar `TelaStatusEmpresa`; `adjustResize` na `TelaPrincipal`.
-2. **Testes**: atualizar `ValidadorTeste` (regra de senha mudou: `acesso2026` deixou de ser
-   válida); criar testes de `Navegacao.destinoPara`, `RepositorioAutenticacaoApi.lerResultadoLogin`
-   / `lerExpiracaoJwt`, `TradutorErrosApi`, `ViewModelCadastro.validar*`/`montarDados*`,
-   `Mascaras.formatar`, CPF/CNPJ.
-3. **Verificação**: `./gradlew testDebugUnitTest assembleDebug lintDebug`; depois
-   `./gradlew installDebug -PFONTE_AUTENTICACAO=simulada` no emulador `Small_Phone` e conferir:
-   apresentação → login → área pessoa/empresa/empresa em análise; Voltar não retorna à
-   apresentação; reabrir o app vai direto à área logada; sair volta à apresentação; validações,
-   carregamento e teclado no cadastro. Registrar o que foi visto de fato.
-4. **Documentação**: `App/AcessoApk/docs/PLANEJAMENTO_BACKEND.md` (seções 6.1–6.10 do pedido) e
-   atualizar `App/AcessoApk/README.md` (fontes de login, modo demonstração, estrutura nova).
+1. **Testar a fonte `api` com a API local** — passo a passo na seção 11 do planejamento.
+2. **Tela de confirmação de e-mail por código** (`POST /api/auth/cadastro/confirmar-email`).
+3. **Status da empresa após renovar a sessão** (`GET /api/auth/me`) e botão "Verificar
+   novamente" na `TelaStatusEmpresa`.
+4. **`RepositorioConteudoApi`** para as abas (começar por Vagas).
+5. Decidir as propostas A (cidade/data no cadastro de candidato) e B (`/auth/refresh` com
+   empresa) do planejamento.
+6. Recuperação de senha com a fonte `api` (hoje o link do e-mail abre o site).
+7. Cifrar os tokens com o Android Keystore.
+8. Ajustes visuais menores: dica da busca de vagas cortada com fonte grande; o texto de
+   `termos_texto` cita o Supabase Auth (precisa mudar quando a fonte padrão for `api`).
+9. Testar com TalkBack e em Android 15.
 
 ## 4. Como retomar
 
 ```bash
 git checkout app/telas-mobile-autenticacao
 cd App/AcessoApk
-./gradlew --offline assembleDebug     # vai falhar até o item 1 das pendências
+./gradlew --offline testDebugUnitTest assembleDebug lintDebug
+./gradlew installDebug -PFONTE_AUTENTICACAO=simulada   # emulador ligado
 ```
 
-Contexto útil: o build e os testes rodam offline; o `lintDebug` precisa de internet na primeira
-vez (baixa `lint-gradle`). O arquivo `App/AcessoApk/Quero` é um resto de saída de terminal já
+Dicas do ambiente: o build e os testes rodam offline; o `lintDebug` precisa de internet na
+primeira vez. No Git Bash, comandos `adb` com caminhos `/sdcard/...` precisam de
+`MSYS_NO_PATHCONV=1`. O arquivo `App/AcessoApk/Quero` é um resto de saída de terminal
 versionado antes desta tarefa — não foi mexido.

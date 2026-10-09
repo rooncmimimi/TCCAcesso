@@ -81,7 +81,8 @@
         <item name="android:windowBackground">@color/acesso_fundo</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <!-- Ícones escuros na barra de navegação: só existe a partir do Android 8.1
+             (API 27), por isso fica em values-v27/temas.xml. -->
     </style>
 
     <style name="Estilo.Acesso.Apresentacao.Botao" parent="Estilo.Acesso.Botao">
@@ -144,6 +145,101 @@
         <item name="android:gravity">center_vertical</item>
         <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
         <item name="android:textColor">@color/acesso_texto</item>
+    </style>
+
+    <!-- ===== Área logada e componentes compartilhados ===== -->
+
+    <!-- Cartão como o Card do site: branco, borda clara, cantos de 18dp, sem sombra forte -->
+    <style name="Estilo.Acesso.Cartao" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardBackgroundColor">@color/acesso_superficie</item>
+        <item name="cardCornerRadius">@dimen/raio_cartao</item>
+        <item name="strokeColor">@color/acesso_borda</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardElevation">0dp</item>
+    </style>
+
+    <!-- Lista suspensa (modalidade, contrato, porte...) com os mesmos cantos dos campos -->
+    <style name="Estilo.Acesso.Campo.Lista" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxBackgroundColor">@color/acesso_superficie</item>
+        <item name="errorIconDrawable">@drawable/ic_erro</item>
+        <item name="boxCornerRadiusTopStart">@dimen/raio_controle</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/raio_controle</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/raio_controle</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/raio_controle</item>
+    </style>
+
+    <style name="Texto.Acesso.TituloSecao" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textColor">@color/acesso_titulo</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Selo em pílula: tipo de conta, status, público da vaga, recursos -->
+    <style name="Estilo.Acesso.Selo" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/fundo_selo</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
+        <item name="android:textColor">@color/acesso_texto</item>
+    </style>
+
+    <style name="Estilo.Acesso.Selo.Destaque">
+        <item name="android:background">@drawable/fundo_selo_destaque</item>
+        <item name="android:textColor">@color/acesso_sobre_container_primaria</item>
+    </style>
+
+    <!-- Faixa de aviso (modo demonstração, integração pendente): ícone + texto, não só cor -->
+    <style name="Estilo.Acesso.Aviso" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/fundo_aviso</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:drawablePadding">12dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+        <item name="android:textColor">@color/acesso_sobre_container_aviso</item>
+        <item name="drawableTint">@color/acesso_sobre_container_aviso</item>
+        <item name="drawableStartCompat">@drawable/ic_informacao</item>
+    </style>
+
+    <!-- Iniciais do nome num círculo verde-claro, como o avatar do site sem foto -->
+    <style name="Estilo.Acesso.Avatar" parent="">
+        <item name="android:layout_width">@dimen/tamanho_avatar</item>
+        <item name="android:layout_height">@dimen/tamanho_avatar</item>
+        <item name="android:background">@drawable/fundo_avatar</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/acesso_sobre_container_primaria</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <!-- Linha de menu do Perfil: ícone, texto à esquerda e 56dp de altura de toque -->
+    <style name="Estilo.Acesso.ItemMenu" parent="Widget.Material3.Button.TextButton.Icon">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/altura_botao</item>
+        <item name="android:gravity">start|center_vertical</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">@color/acesso_texto</item>
+        <item name="iconTint">@color/acesso_texto_secundario</item>
+        <item name="iconPadding">16dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.None</item>
+    </style>
+
+    <!-- Filtros e opções (modalidade, público, recursos): 48dp de área de toque -->
+    <style name="Estilo.Acesso.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipMinTouchTargetSize">48dp</item>
+        <item name="ensureMinTouchTargetSize">true</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
     </style>
 
     <!-- Mensagem de status (erro, sucesso ou carregando). O TalkBack lê

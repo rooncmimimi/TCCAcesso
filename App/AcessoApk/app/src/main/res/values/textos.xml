@@ -34,7 +34,7 @@
     <string name="cadastro_introducao">Preencha seus dados. Campos marcados como opcionais podem ficar em branco.</string>
     <string name="rotulo_nome_completo">Nome completo</string>
     <string name="rotulo_confirmar_senha">Confirmar senha</string>
-    <string name="ajuda_senha">Pelo menos 8 caracteres, com letras e números.</string>
+    <string name="ajuda_senha">De 8 a 72 caracteres, com letra maiúscula, minúscula, número e símbolo (ex.: @, #, !).</string>
     <string name="rotulo_cidade">Cidade</string>
     <string name="ajuda_cidade">Usada para mostrar oportunidades perto de você.</string>
     <string name="rotulo_data_nascimento">Data de nascimento (opcional)</string>
@@ -71,12 +71,169 @@
     <string name="aba_criar">Criar</string>
     <string name="aba_pesquisa">Pesquisa</string>
     <string name="aba_perfil">Perfil</string>
-    <string name="mensagem_em_construcao">Esta área está em desenvolvimento e será construída nas próximas etapas.</string>
     <string name="usuario_logado_como">Você entrou como %1$s</string>
     <string name="acao_sair">Sair da conta</string>
     <string name="sair_confirmar_titulo">Sair da conta?</string>
     <string name="sair_confirmar_mensagem">Você precisará entrar novamente com seu e-mail e senha.</string>
     <string name="cancelar">Cancelar</string>
+
+    <!-- Avisos de integração e modo demonstração -->
+    <string name="aviso_modo_demonstracao">Modo demonstração: respostas simuladas, sem servidor. Nada do que você fizer é salvo.</string>
+    <string name="aviso_contas_demonstracao">Contas de demonstração (senha Acesso@2026): pessoa@acesso.test, empresa@acesso.test e empresa.pendente@acesso.test.</string>
+    <string name="login_reativar_titulo">Sua conta está pausada</string>
+    <string name="login_reativar_mensagem">Você pausou esta conta anteriormente. Deseja reativá-la e continuar?</string>
+    <string name="acao_reativar">Reativar minha conta</string>
+    <string name="tentar_novamente">Tentar novamente</string>
+    <string name="carregando">Carregando…</string>
+
+    <!-- Cadastro: tipo de conta e campos de empresa -->
+    <string name="cadastro_eu_sou">Eu sou</string>
+    <string name="cadastro_tipo_pessoa">Pessoa candidata</string>
+    <string name="cadastro_tipo_empresa">Empresa</string>
+    <string name="rotulo_telefone">Telefone com DDD (opcional)</string>
+    <string name="rotulo_cpf">CPF (opcional)</string>
+    <string name="rotulo_nome_responsavel">Nome da pessoa responsável</string>
+    <string name="secao_dados_empresa">Dados da empresa</string>
+    <string name="secao_localizacao">Localização (opcional)</string>
+    <string name="secao_informacoes_profissionais">Informações profissionais (opcional)</string>
+    <string name="secao_seguranca">Segurança</string>
+    <string name="rotulo_razao_social">Razão social</string>
+    <string name="rotulo_nome_fantasia">Nome fantasia (opcional)</string>
+    <string name="rotulo_cnpj">CNPJ</string>
+    <string name="rotulo_cidade_empresa">Cidade</string>
+    <string name="rotulo_uf">UF</string>
+    <string name="rotulo_endereco">Endereço</string>
+    <string name="rotulo_cep">CEP</string>
+    <string name="rotulo_setor">Setor</string>
+    <string name="ajuda_setor">Ex.: Tecnologia, Varejo, Saúde</string>
+    <string name="rotulo_porte">Tamanho da empresa</string>
+    <string name="rotulo_site">Site</string>
+    <string name="rotulo_descricao_empresa">Descrição da empresa</string>
+    <string name="cadastro_empresa_aviso_aprovacao">Contas de empresa passam pela aprovação da equipe do ACESSO antes de publicar vagas.</string>
+    <string name="porte_mei">MEI</string>
+    <string name="porte_micro">Microempresa</string>
+    <string name="porte_pequena">Pequena</string>
+    <string name="porte_media">Média</string>
+    <string name="porte_grande">Grande</string>
+
+    <!-- Início (feed) -->
+    <string name="aba_painel">Painel</string>
+    <string name="inicio_saudacao">Olá, %1$s!</string>
+    <string name="inicio_saudacao_sem_nome">Olá!</string>
+    <string name="inicio_subtitulo_pessoa">Vagas inclusivas, histórias da comunidade e novidades das empresas.</string>
+    <string name="inicio_subtitulo_empresa">Acompanhe a comunidade e divulgue a cultura inclusiva da sua empresa.</string>
+    <string name="inicio_compartilhe_titulo">Compartilhe com a comunidade</string>
+    <string name="inicio_compartilhe_texto">Conte uma conquista, uma dica ou uma novidade.</string>
+    <string name="acao_escrever_publicacao">Escrever publicação</string>
+    <string name="inicio_publicacoes_titulo">Publicações da comunidade</string>
+    <string name="inicio_sem_publicacoes">Ainda não há publicações. Seja o primeiro a compartilhar algo com a comunidade.</string>
+    <string name="publicacao_contagem">%1$d curtidas · %2$d comentários</string>
+    <string name="tipo_conta_pessoa">Pessoa candidata</string>
+    <string name="tipo_conta_empresa">Empresa</string>
+
+    <!-- Oportunidades (vagas) -->
+    <string name="vagas_titulo">Vagas inclusivas</string>
+    <string name="vagas_busca">Cargo, empresa ou palavra-chave</string>
+    <string name="acao_buscar">Buscar</string>
+    <string name="vagas_filtro_modalidade">Modalidade</string>
+    <string name="vagas_filtro_publico">Público da vaga</string>
+    <string name="filtro_todas">Todas</string>
+    <string name="filtro_todos">Todos</string>
+    <string name="modalidade_presencial">Presencial</string>
+    <string name="modalidade_hibrido">Híbrido</string>
+    <string name="modalidade_remoto">Remoto</string>
+    <string name="publico_geral">Todos os públicos</string>
+    <string name="publico_pcd">Exclusiva PCD</string>
+    <string name="publico_cinquenta_mais">Exclusiva 50+</string>
+    <string name="publico_pcd_cinquenta_mais">PCD e 50+</string>
+    <plurals name="vagas_contagem">
+        <item quantity="one">%d oportunidade encontrada.</item>
+        <item quantity="other">%d oportunidades encontradas.</item>
+    </plurals>
+    <string name="vagas_nenhuma">Nenhuma vaga encontrada com esses filtros.</string>
+    <string name="vaga_empresa_verificada">Empresa verificada</string>
+    <string name="vaga_local_nao_informado">Local não informado</string>
+    <string name="vaga_candidaturas">%1$d candidaturas recebidas</string>
+    <string name="contrato_clt">CLT</string>
+    <string name="contrato_pj">PJ</string>
+    <string name="contrato_estagio">Estágio</string>
+    <string name="contrato_jovem_aprendiz">Jovem aprendiz</string>
+    <string name="contrato_temporario">Temporário</string>
+    <string name="recurso_interprete_libras">Intérprete de Libras</string>
+    <string name="recurso_tecnologia_assistiva">Tecnologia assistiva</string>
+    <string name="recurso_ambiente_fisico_acessivel">Ambiente físico acessível</string>
+    <string name="recurso_banheiro_adaptado">Banheiro adaptado</string>
+    <string name="recurso_elevador_rampa">Elevador ou rampa de acesso</string>
+    <string name="recurso_jornada_adaptavel">Jornada adaptável</string>
+    <string name="recurso_ferramentas_digitais_acessiveis">Ferramentas digitais acessíveis</string>
+    <string name="recurso_outro">Outro recurso (ver descrição)</string>
+
+    <!-- Painel da empresa -->
+    <string name="painel_titulo">Painel da empresa</string>
+    <string name="painel_subtitulo">Gerencie suas vagas publicadas e acompanhe as candidaturas recebidas.</string>
+    <string name="painel_vagas_publicadas">Vagas publicadas</string>
+    <string name="painel_vagas_abertas">Vagas abertas</string>
+    <string name="painel_candidaturas">Candidaturas recebidas</string>
+    <string name="painel_seguidores">Seguidores</string>
+    <string name="painel_minhas_vagas">Minhas vagas</string>
+    <string name="painel_sem_vagas">Você ainda não publicou vagas.</string>
+    <string name="acao_publicar_vaga">Publicar nova vaga</string>
+
+    <!-- Criar -->
+    <string name="criar_titulo">Criar</string>
+    <string name="criar_opcao_publicacao">Publicação</string>
+    <string name="criar_opcao_vaga">Vaga</string>
+    <string name="criar_publicacao_rotulo">O que você quer compartilhar?</string>
+    <string name="criar_publicacao_ajuda">Não publique dados pessoais seus ou de outras pessoas.</string>
+    <string name="acao_publicar">Publicar</string>
+    <string name="acao_publicando">Publicando…</string>
+    <string name="criar_publicacao_sucesso_demo">Publicação simulada (modo demonstração): nada foi enviado a um servidor.</string>
+    <string name="criar_publicacao_sucesso">Publicação enviada!</string>
+    <string name="rotulo_titulo_vaga">Título da vaga</string>
+    <string name="rotulo_descricao_vaga">Descrição da vaga</string>
+    <string name="ajuda_descricao_vaga">Mínimo de 20 caracteres. Inclua atividades e requisitos.</string>
+    <string name="rotulo_modalidade">Modalidade</string>
+    <string name="rotulo_contrato">Tipo de contrato</string>
+    <string name="rotulo_publico_alvo">Público da vaga</string>
+    <string name="rotulo_cidade_vaga">Cidade (opcional)</string>
+    <string name="rotulo_uf_vaga">UF (opcional)</string>
+    <string name="criar_recursos_titulo">Recursos de acessibilidade oferecidos</string>
+    <string name="criar_vaga_sucesso_demo">Vaga simulada (modo demonstração): nada foi enviado a um servidor.</string>
+    <string name="criar_vaga_sucesso">Vaga publicada!</string>
+
+    <!-- Pesquisa -->
+    <string name="pesquisa_titulo">Pesquisar</string>
+    <string name="pesquisa_campo">Nome, cargo, empresa ou vaga</string>
+    <string name="pesquisa_categoria">O que você procura</string>
+    <string name="pesquisa_categoria_pessoas">Pessoas</string>
+    <string name="pesquisa_categoria_empresas">Empresas</string>
+    <string name="pesquisa_categoria_vagas">Vagas</string>
+    <string name="pesquisa_instrucao">Digite o que procura e toque em Buscar.</string>
+    <string name="pesquisa_nada_encontrado">Nada encontrado para essa pesquisa.</string>
+
+    <!-- Perfil -->
+    <string name="perfil_secao_conta">Conta</string>
+    <string name="perfil_secao_app">Aplicativo</string>
+    <string name="perfil_editar">Editar perfil</string>
+    <string name="perfil_editar_pendente">A edição do perfil depende da integração com a API do ACESSO (PUT /api/usuarios/:id). Por enquanto, edite pelo site.</string>
+    <string name="perfil_acessibilidade">Acessibilidade do celular</string>
+    <string name="perfil_termos">Termos e privacidade</string>
+    <string name="perfil_fale_conosco">Fale conosco</string>
+    <string name="perfil_email_contato">projetoacessoinclusivo@gmail.com</string>
+    <string name="perfil_status_empresa">Situação: %1$s</string>
+    <string name="status_aprovada">aprovada</string>
+    <string name="status_pendente">em análise</string>
+    <string name="status_reprovada">não aprovada</string>
+    <string name="status_suspensa">suspensa</string>
+    <string name="sem_app_email">Nenhum aplicativo de e-mail encontrado. Escreva para projetoacessoinclusivo@gmail.com.</string>
+
+    <!-- Empresa aguardando aprovação (como a TelaStatusEmpresa do site) -->
+    <string name="status_empresa_titulo_pendente">Sua empresa está em análise</string>
+    <string name="status_empresa_texto_pendente">Seu cadastro foi recebido e está aguardando a aprovação de um administrador do ACESSO. Enquanto isso, publicar vagas, editar o perfil da empresa e ver candidaturas ficam indisponíveis.\n\nQuando a análise terminar, saia e entre de novo para atualizar a situação.</string>
+    <string name="status_empresa_titulo_suspensa">Conta empresarial suspensa</string>
+    <string name="status_empresa_texto_suspensa">Sua empresa foi suspensa pela moderação do ACESSO. Enquanto a suspensão estiver ativa, o acesso à plataforma permanece bloqueado.</string>
+    <string name="status_empresa_titulo_reprovada">Seu cadastro empresarial não foi aprovado</string>
+    <string name="status_empresa_texto_reprovada">A equipe do ACESSO analisou seu cadastro e ele não foi aprovado. Os recursos empresariais ficam indisponíveis enquanto esse status não mudar.</string>
 
     <!-- Termos -->
     <string name="termos_titulo">Termos e Privacidade</string>

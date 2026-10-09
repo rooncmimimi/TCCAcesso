@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Cadastro de pessoa candidata ou empresa, com os campos do cadastro do site
+     (Site/Frontend/src/routes/cadastro.tsx). No celular é um formulário único com
+     rolagem; os campos de empresa aparecem em seções, como no site. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/raiz"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".telas.TelaCadastro">
@@ -21,6 +25,7 @@
             app:navigationIcon="@drawable/ic_voltar" />
 
         <ScrollView
+            android:id="@+id/rolagem"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -46,6 +51,58 @@
                     android:textAppearance="?attr/textAppearanceBodyLarge"
                     android:textColor="@color/acesso_texto_secundario" />
 
+                <include
+                    android:id="@+id/avisoDemonstracao"
+                    layout="@layout/componente_aviso_demonstracao"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp" />
+
+                <!-- ===== Tipo de conta ===== -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/cadastro_eu_sou"
+                    android:textAppearance="?attr/textAppearanceTitleSmall"
+                    android:textColor="@color/acesso_titulo" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/grupoTipoConta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:checkedButton="@+id/botaoTipoPessoa"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/botaoTipoPessoa"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/cadastro_tipo_pessoa"
+                        app:icon="@drawable/ic_perfil" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/botaoTipoEmpresa"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/cadastro_tipo_empresa"
+                        app:icon="@drawable/ic_empresa" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <TextView
+                    android:id="@+id/avisoAprovacaoEmpresa"
+                    style="@style/Estilo.Acesso.Aviso"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/cadastro_empresa_aviso_aprovacao"
+                    android:visibility="gone" />
+
+                <!-- ===== Campos comuns ===== -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/campoNomeCompleto"
                     android:layout_width="match_parent"
@@ -81,6 +138,334 @@
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoTelefone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/rotulo_telefone">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaTelefone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:autofillHints="phoneNational"
+                        android:imeOptions="actionNext"
+                        android:inputType="phone"
+                        android:maxLength="15"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- ===== Só pessoa ===== -->
+                <LinearLayout
+                    android:id="@+id/secaoPessoa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoCpf"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_cpf"
+                        app:placeholderText="000.000.000-00">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaCpf"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionNext"
+                            android:inputType="number"
+                            android:digits="0123456789.-"
+                            android:maxLength="14"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoCidade"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_cidade"
+                        app:helperText="@string/ajuda_cidade">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaCidade"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="addressLocality"
+                            android:imeOptions="actionNext"
+                            android:inputType="textCapWords"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoDataNascimento"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_data_nascimento"
+                        app:endIconContentDescription="@string/abrir_calendario"
+                        app:endIconDrawable="@drawable/ic_calendario"
+                        app:endIconMode="custom"
+                        app:helperText="@string/ajuda_data_nascimento">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaDataNascimento"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="birthDateFull"
+                            android:imeOptions="actionNext"
+                            android:inputType="date"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- ===== Só empresa ===== -->
+                <LinearLayout
+                    android:id="@+id/secaoEmpresa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:accessibilityHeading="true"
+                        android:text="@string/secao_dados_empresa"
+                        android:textAppearance="@style/Texto.Acesso.TituloSecao"
+                        android:textColor="@color/acesso_primaria" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoRazaoSocial"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:hint="@string/rotulo_razao_social">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaRazaoSocial"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionNext"
+                            android:inputType="textCapWords"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoNomeFantasia"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_nome_fantasia">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaNomeFantasia"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionNext"
+                            android:inputType="textCapWords"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoCnpj"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_cnpj"
+                        app:placeholderText="00.000.000/0000-00">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaCnpj"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:digits="0123456789./-"
+                            android:imeOptions="actionNext"
+                            android:inputType="number"
+                            android:maxLength="18"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:accessibilityHeading="true"
+                        android:text="@string/secao_localizacao"
+                        android:textAppearance="@style/Texto.Acesso.TituloSecao"
+                        android:textColor="@color/acesso_primaria" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/campoCidadeEmpresa"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:layout_weight="2"
+                            android:hint="@string/rotulo_cidade_empresa">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/entradaCidadeEmpresa"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:imeOptions="actionNext"
+                                android:inputType="textCapWords"
+                                android:maxLines="1" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/campoUf"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginTop="8dp"
+                            android:layout_weight="1"
+                            android:hint="@string/rotulo_uf">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/entradaUf"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:imeOptions="actionNext"
+                                android:inputType="textCapCharacters"
+                                android:maxLength="2"
+                                android:maxLines="1" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoEndereco"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_endereco">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaEndereco"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="postalAddress"
+                            android:imeOptions="actionNext"
+                            android:inputType="textPostalAddress|textCapWords"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoCep"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_cep"
+                        app:placeholderText="00000-000">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaCep"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="postalCode"
+                            android:digits="0123456789-"
+                            android:imeOptions="actionNext"
+                            android:inputType="number"
+                            android:maxLength="9"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:accessibilityHeading="true"
+                        android:text="@string/secao_informacoes_profissionais"
+                        android:textAppearance="@style/Texto.Acesso.TituloSecao"
+                        android:textColor="@color/acesso_primaria" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoSetor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:hint="@string/rotulo_setor"
+                        app:helperText="@string/ajuda_setor">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaSetor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionNext"
+                            android:inputType="textCapSentences"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoPorte"
+                        style="@style/Estilo.Acesso.Campo.Lista"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_porte">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/entradaPorte"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoSite"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_site"
+                        app:placeholderText="https://">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaSite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionNext"
+                            android:inputType="textUri"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/campoDescricao"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaco_campos"
+                        android:hint="@string/rotulo_descricao_empresa"
+                        app:counterEnabled="true"
+                        app:counterMaxLength="4000">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/entradaDescricao"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="top|start"
+                            android:inputType="textMultiLine|textCapSentences"
+                            android:minLines="3" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:accessibilityHeading="true"
+                        android:text="@string/secao_seguranca"
+                        android:textAppearance="@style/Texto.Acesso.TituloSecao"
+                        android:textColor="@color/acesso_primaria" />
+                </LinearLayout>
+
+                <!-- ===== Senha (comum) ===== -->
+                <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/campoSenha"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -112,47 +497,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:autofillHints="newPassword"
-                        android:imeOptions="actionNext"
-                        android:inputType="textPassword"
-                        android:maxLines="1" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/campoCidade"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaco_campos"
-                    android:hint="@string/rotulo_cidade"
-                    app:helperText="@string/ajuda_cidade">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/entradaCidade"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:autofillHints="addressLocality"
-                        android:imeOptions="actionNext"
-                        android:inputType="textCapWords"
-                        android:maxLines="1" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/campoDataNascimento"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaco_campos"
-                    android:hint="@string/rotulo_data_nascimento"
-                    app:endIconContentDescription="@string/abrir_calendario"
-                    app:endIconDrawable="@drawable/ic_calendario"
-                    app:endIconMode="custom"
-                    app:helperText="@string/ajuda_data_nascimento">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/entradaDataNascimento"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:autofillHints="birthDateFull"
                         android:imeOptions="actionDone"
-                        android:inputType="date"
+                        android:inputType="textPassword"
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
 

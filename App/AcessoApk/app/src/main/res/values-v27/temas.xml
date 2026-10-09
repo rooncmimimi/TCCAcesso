@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mesmo tema de values/temas.xml, mais os ícones escuros na barra de navegação
+         (android:windowLightNavigationBar existe só a partir da API 27). -->
+    <style name="Tema.Acesso.Apresentacao">
+        <item name="android:windowBackground">@color/acesso_fundo</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

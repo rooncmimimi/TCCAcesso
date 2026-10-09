@@ -1,7 +1,23 @@
 # Copie este arquivo para local.properties (o Android Studio já cria um com sdk.dir)
-# e acrescente as duas linhas abaixo com os dados do seu projeto Supabase.
-# Onde encontrar: Supabase > Project Settings > API.
+# e acrescente as linhas abaixo com os dados do seu ambiente.
 #
+# --- Supabase (fonte de login padrão) ---
+# Onde encontrar: Supabase > Project Settings > API.
 # Use SOMENTE a chave "anon" (pública). Nunca coloque a service_role key aqui.
 URL_SUPABASE=https://SEU-PROJETO.supabase.co
 CHAVE_ANONIMA_SUPABASE=sua-chave-anon-aqui
+
+# --- De onde vem o login (opcional, padrão: supabase) ---
+#   supabase  -> Supabase Auth, como o app já funcionava
+#   api       -> API Express do Site (Site/Backend), usando URL_API abaixo
+#   simulada  -> respostas falsas para testar telas e navegação (só no build de debug)
+# Também dá para trocar sem editar este arquivo: ./gradlew installDebug -PFONTE_AUTENTICACAO=simulada
+FONTE_AUTENTICACAO=supabase
+
+# --- API do Site (só usada com FONTE_AUTENTICACAO=api) ---
+# Emulador com a API rodando no seu computador (npm run dev em Site/Backend):
+#   URL_API=http://10.0.2.2:3000/api
+# Celular físico na mesma rede Wi-Fi: use o IP do computador e libere-o em
+# app/src/debug/res/xml/configuracao_rede.xml, ou use HTTPS.
+# Produção: sempre https://, com o endereço real do servidor publicado.
+URL_API=

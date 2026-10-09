@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aba Perfil: dados da conta e atalhos (perfil + configurações do site, em lista) -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/margem_tela">
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Estilo.Acesso.Cartao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/cabecalhoPerfil"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/textoIniciais"
+                    style="@style/Estilo.Acesso.Avatar"
+                    android:layout_width="@dimen/tamanho_avatar_perfil"
+                    android:layout_height="@dimen/tamanho_avatar_perfil"
+                    android:textSize="26sp" />
+
+                <TextView
+                    android:id="@+id/textoNome"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:accessibilityHeading="true"
+                    android:gravity="center"
+                    android:textAppearance="@style/Texto.Acesso.TituloTela" />
+
+                <TextView
+                    android:id="@+id/textoEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="@color/acesso_texto_secundario" />
+
+                <TextView
+                    android:id="@+id/textoTipoConta"
+                    style="@style/Estilo.Acesso.Selo.Destaque"
+                    android:layout_marginTop="12dp" />
+
+                <TextView
+                    android:id="@+id/textoStatusEmpresa"
+                    style="@style/Estilo.Acesso.Selo"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:accessibilityHeading="true"
+            android:text="@string/perfil_secao_conta"
+            android:textAppearance="@style/Texto.Acesso.TituloSecao" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Estilo.Acesso.Cartao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:divider="@drawable/divisor_lista"
+                android:orientation="vertical"
+                android:showDividers="middle">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoEditarPerfil"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/perfil_editar"
+                    app:icon="@drawable/ic_editar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoSair"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/acao_sair"
+                    android:textColor="@color/acesso_erro"
+                    app:icon="@drawable/ic_sair"
+                    app:iconTint="@color/acesso_erro" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:accessibilityHeading="true"
+            android:text="@string/perfil_secao_app"
+            android:textAppearance="@style/Texto.Acesso.TituloSecao" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Estilo.Acesso.Cartao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:divider="@drawable/divisor_lista"
+                android:orientation="vertical"
+                android:showDividers="middle">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoAcessibilidade"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/perfil_acessibilidade"
+                    app:icon="@drawable/ic_acessibilidade" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoTermos"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/perfil_termos"
+                    app:icon="@drawable/ic_documento" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoFaleConosco"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/perfil_fale_conosco"
+                    app:icon="@drawable/ic_email" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/mensagemStatus"
+            style="@style/Estilo.Acesso.MensagemStatus" />
+    </LinearLayout>
+</ScrollView>

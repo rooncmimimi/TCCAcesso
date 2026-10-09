@@ -7,9 +7,10 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.acesso.app.repositorios.FabricaRepositorios;
 import com.acesso.app.repositorios.RepositorioAutenticacao;
 import com.acesso.app.repositorios.RetornoRepositorio;
-import com.acesso.app.servicos.TradutorErrosSupabase;
+import com.acesso.app.servicos.MensagensErro;
 import com.acesso.app.utilitarios.Validador;
 
 public class ViewModelNovaSenha extends AndroidViewModel {
@@ -27,7 +28,7 @@ public class ViewModelNovaSenha extends AndroidViewModel {
 
     public ViewModelNovaSenha(@NonNull Application aplicacao) {
         super(aplicacao);
-        repositorioAutenticacao = new RepositorioAutenticacao(aplicacao);
+        repositorioAutenticacao = FabricaRepositorios.autenticacao(aplicacao);
     }
 
     public LiveData<String> getErroSenha() {
@@ -79,7 +80,7 @@ public class ViewModelNovaSenha extends AndroidViewModel {
             public void aoFalhar(String mensagem) {
                 carregando.setValue(false);
                 // Token do link vencido ou já usado: explica em vez de falar em "sessão".
-                mensagemErro.setValue(TradutorErrosSupabase.SESSAO_EXPIRADA.equals(mensagem)
+                mensagemErro.setValue(MensagensErro.SESSAO_EXPIRADA.equals(mensagem)
                         ? LINK_INVALIDO
                         : mensagem);
             }

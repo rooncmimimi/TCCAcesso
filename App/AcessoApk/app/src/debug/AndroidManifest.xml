@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Acrescenta ao manifesto principal só no build de debug (ver res/xml/configuracao_rede.xml). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:networkSecurityConfig="@xml/configuracao_rede" />
+</manifest>

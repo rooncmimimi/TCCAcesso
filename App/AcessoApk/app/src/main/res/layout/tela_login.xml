@@ -2,6 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/raiz"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".telas.TelaLogin">
@@ -38,10 +39,28 @@
                 android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="@color/acesso_texto_secundario" />
 
+            <include
+                android:id="@+id/avisoDemonstracao"
+                layout="@layout/componente_aviso_demonstracao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" />
+
+            <TextView
+                android:id="@+id/textoContasDemonstracao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/aviso_contas_demonstracao"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/acesso_texto_secundario"
+                android:textIsSelectable="true"
+                android:visibility="gone" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
+                android:layout_marginTop="32dp"
                 android:accessibilityHeading="true"
                 android:text="@string/login_titulo"
                 android:textAppearance="@style/Texto.Acesso.TituloTela" />

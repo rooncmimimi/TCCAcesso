@@ -10,6 +10,19 @@ if (arquivoPropriedadesLocais.exists()) {
     arquivoPropriedadesLocais.withInputStream { propriedadesLocais.load(it) }
 }
 
+// Lê primeiro da linha de comando (-PNOME=valor) e depois do local.properties.
+def configuracao = { String nome, String padrao ->
+    (project.findProperty(nome) ?: propriedadesLocais.getProperty(nome, padrao)).toString().trim()
+}
+
+// De onde vem o login: "supabase" (padrão, como o app já funcionava), "api" (API Express
+// do Site, Site/Backend) ou "simulada" (respostas falsas, só no build de debug, para testar
+// a navegação sem servidor). Veja docs/PLANEJAMENTO_BACKEND.md.
+def fonteAutenticacao = configuracao('FONTE_AUTENTICACAO', 'supabase')
+if (!['supabase', 'api', 'simulada'].contains(fonteAutenticacao)) {
+    throw new GradleException("FONTE_AUTENTICACAO inválida: '${fonteAutenticacao}'. Use supabase, api ou simulada.")
+}
+
 android {
     namespace 'com.acesso.app'
     compileSdk 35
@@ -23,6 +36,9 @@ android {
 
         buildConfigField 'String', 'URL_SUPABASE', "\"${propriedadesLocais.getProperty('URL_SUPABASE', '')}\""
         buildConfigField 'String', 'CHAVE_ANONIMA_SUPABASE', "\"${propriedadesLocais.getProperty('CHAVE_ANONIMA_SUPABASE', '')}\""
+        buildConfigField 'String', 'FONTE_AUTENTICACAO', "\"${fonteAutenticacao}\""
+        // Endereço base da API do Site, terminando em /api. Ex.: http://10.0.2.2:3000/api no emulador.
+        buildConfigField 'String', 'URL_API', "\"${configuracao('URL_API', '')}\""
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }

@@ -2,10 +2,6 @@ package com.acesso.app.servicos;
 
 import com.acesso.app.BuildConfig;
 
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
 /**
@@ -15,19 +11,7 @@ import okhttp3.Request;
  */
 public final class ClienteSupabase {
 
-    public static final MediaType TIPO_JSON = MediaType.get("application/json; charset=utf-8");
-
-    private static final OkHttpClient CLIENTE_HTTP = new OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .writeTimeout(20, TimeUnit.SECONDS)
-            .build();
-
     private ClienteSupabase() {
-    }
-
-    public static OkHttpClient http() {
-        return CLIENTE_HTTP;
     }
 
     public static boolean estaConfigurado() {

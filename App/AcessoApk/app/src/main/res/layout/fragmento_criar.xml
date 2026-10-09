@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aba Criar: nova publicação (FormularioPostagem do site) e, para empresa,
+     nova vaga (NovaVagaDialog do site). No celular o diálogo vira um formulário
+     de tela cheia, com rolagem e os campos acima do teclado. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rolagem"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/margem_tela">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:text="@string/criar_titulo"
+            android:textAppearance="@style/Texto.Acesso.TituloTela" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/grupoTipoCriacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:checkedButton="@+id/botaoOpcaoPublicacao"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botaoOpcaoPublicacao"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/criar_opcao_publicacao" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botaoOpcaoVaga"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/criar_opcao_vaga" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- ===== Publicação ===== -->
+        <LinearLayout
+            android:id="@+id/secaoPublicacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoPublicacao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_campos"
+                android:hint="@string/criar_publicacao_rotulo"
+                app:counterEnabled="true"
+                app:counterMaxLength="3000"
+                app:helperText="@string/criar_publicacao_ajuda">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/entradaPublicacao"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:minLines="5" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <!-- ===== Vaga (só empresa) ===== -->
+        <LinearLayout
+            android:id="@+id/secaoVaga"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoTituloVaga"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_campos"
+                android:hint="@string/rotulo_titulo_vaga"
+                app:counterEnabled="true"
+                app:counterMaxLength="200">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/entradaTituloVaga"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoDescricaoVaga"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_campos"
+                android:hint="@string/rotulo_descricao_vaga"
+                app:counterEnabled="true"
+                app:counterMaxLength="8000"
+                app:helperText="@string/ajuda_descricao_vaga">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/entradaDescricaoVaga"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:minLines="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoModalidade"
+                style="@style/Estilo.Acesso.Campo.Lista"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_campos"
+                android:hint="@string/rotulo_modalidade">
+
+                <AutoCompleteTextView
+                    android:id="@+id/entradaModalidade"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoContrato"
+                style="@style/Estilo.Acesso.Campo.Lista"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_campos"
+                android:hint="@string/rotulo_contrato">
+
+                <AutoCompleteTextView
+                    android:id="@+id/entradaContrato"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoPublicoAlvo"
+                style="@style/Estilo.Acesso.Campo.Lista"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaco_campos"
+                android:hint="@string/rotulo_publico_alvo">
+
+                <AutoCompleteTextView
+                    android:id="@+id/entradaPublicoAlvo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoCidadeVaga"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:layout_weight="2"
+                    android:hint="@string/rotulo_cidade_vaga">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaCidadeVaga"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textCapWords"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoUfVaga"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:layout_weight="1"
+                    android:hint="@string/rotulo_uf_vaga">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaUfVaga"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionDone"
+                        android:inputType="textCapCharacters"
+                        android:maxLength="2"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/criar_recursos_titulo"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="@color/acesso_titulo" />
+
+            <!-- Preenchido no código com a lista fechada de recursos do site -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/grupoRecursos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/mensagemStatus"
+            style="@style/Estilo.Acesso.MensagemStatus" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/botaoEnviar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/acao_publicar" />
+    </LinearLayout>
+</ScrollView>

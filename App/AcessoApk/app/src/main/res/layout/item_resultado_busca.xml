@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Linha de resultado da pesquisa: ícone da categoria, nome e detalhe -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/conteudoItem"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/iconeCategoria"
+        android:layout_width="@dimen/tamanho_avatar"
+        android:layout_height="@dimen/tamanho_avatar"
+        android:background="@drawable/fundo_avatar"
+        android:importantForAccessibility="no"
+        android:padding="10dp"
+        app:tint="@color/acesso_sobre_container_primaria" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textoTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="@color/acesso_titulo"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textoSubtitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/acesso_texto_secundario" />
+    </LinearLayout>
+</LinearLayout>

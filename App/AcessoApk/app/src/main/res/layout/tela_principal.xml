@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Área logada: conteúdo da aba atual e a barra de navegação inferior.
+     As margens das barras do sistema e do teclado são aplicadas em TelaPrincipal. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/raiz"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".telas.TelaPrincipal">
+
+    <include
+        android:id="@+id/avisoDemonstracao"
+        layout="@layout/componente_aviso_demonstracao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp" />
 
     <FrameLayout
         android:id="@+id/containerFragmentos"

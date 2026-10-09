@@ -19,10 +19,19 @@ import androidx.core.view.WindowInsetsCompat;
  */
 public final class MargensSistema {
 
+    /** Avisa quando o teclado abre ou fecha (ex.: a TelaPrincipal esconde a barra de abas). */
+    public interface OuvinteTeclado {
+        void aoMudar(boolean tecladoAberto);
+    }
+
     private MargensSistema() {
     }
 
     public static void aplicar(Activity tela, View raiz) {
+        aplicar(tela, raiz, null);
+    }
+
+    public static void aplicar(Activity tela, View raiz, OuvinteTeclado ouvinteTeclado) {
         WindowCompat.setDecorFitsSystemWindows(tela.getWindow(), false);
         WindowCompat.getInsetsController(tela.getWindow(), tela.getWindow().getDecorView())
                 .setAppearanceLightStatusBars(true);
@@ -38,6 +47,9 @@ public final class MargensSistema {
             Insets teclado = margens.getInsets(WindowInsetsCompat.Type.ime());
             view.setPadding(esquerda + barras.left, topo + barras.top, direita + barras.right,
                     base + Math.max(barras.bottom, teclado.bottom));
+            if (ouvinteTeclado != null) {
+                ouvinteTeclado.aoMudar(margens.isVisible(WindowInsetsCompat.Type.ime()));
+            }
             return WindowInsetsCompat.CONSUMED;
         });
     }

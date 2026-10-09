@@ -12,7 +12,8 @@
         android:supportsRtl="true"
         android:theme="@style/Tema.Acesso">
 
-        <!-- Primeira tela: apresentação (só na primeira vez); depois segue para o login -->
+        <!-- Primeira tela: com sessão salva, segue direto para a área da conta;
+             sem sessão, mostra a apresentação com os caminhos para entrar ou criar conta -->
         <activity
             android:name=".telas.TelaApresentacao"
             android:exported="true"
@@ -56,8 +57,16 @@
             android:name=".telas.TelaTermos"
             android:exported="false" />
 
+        <!-- Área logada. adjustResize: com o teclado aberto (Criar, Pesquisa), a tela encolhe
+             e a barra de abas some (MargensSistema) -->
         <activity
             android:name=".telas.TelaPrincipal"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Empresa logada aguardando aprovação, reprovada ou suspensa -->
+        <activity
+            android:name=".telas.TelaStatusEmpresa"
             android:exported="false" />
     </application>
 </manifest>

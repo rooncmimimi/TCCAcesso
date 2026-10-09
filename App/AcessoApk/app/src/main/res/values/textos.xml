@@ -71,7 +71,6 @@
     <string name="aba_criar">Criar</string>
     <string name="aba_pesquisa">Pesquisa</string>
     <string name="aba_perfil">Perfil</string>
-    <string name="usuario_logado_como">Você entrou como %1$s</string>
     <string name="acao_sair">Sair da conta</string>
     <string name="sair_confirmar_titulo">Sair da conta?</string>
     <string name="sair_confirmar_mensagem">Você precisará entrar novamente com seu e-mail e senha.</string>

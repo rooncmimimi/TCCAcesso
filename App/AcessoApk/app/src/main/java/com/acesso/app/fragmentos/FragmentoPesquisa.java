@@ -52,7 +52,11 @@ public class FragmentoPesquisa extends Fragment {
             }
         });
 
-        viewModel.getErroTermo().observe(getViewLifecycleOwner(), componentes.campoTermo::setError);
+        viewModel.getErroTermo().observe(getViewLifecycleOwner(), erro -> {
+            componentes.campoTermo.setError(erro);
+            // Sem erro, o campo não guarda o espaço da mensagem (evita um buraco na tela).
+            componentes.campoTermo.setErrorEnabled(erro != null);
+        });
         viewModel.getResultados().observe(getViewLifecycleOwner(), estado -> {
             componentes.listaResultados.removeAllViews();
             componentes.textoInstrucao.setVisibility(estado == null ? View.VISIBLE : View.GONE);

@@ -67,7 +67,7 @@
 
     <!-- Navegação principal -->
     <string name="aba_inicio">Início</string>
-    <string name="aba_oportunidades">Oportunidades</string>
+    <string name="aba_oportunidades">Vagas</string>
     <string name="aba_criar">Criar</string>
     <string name="aba_pesquisa">Pesquisa</string>
     <string name="aba_perfil">Perfil</string>
@@ -78,6 +78,7 @@
 
     <!-- Avisos de integração e modo demonstração -->
     <string name="aviso_modo_demonstracao">Modo demonstração: respostas simuladas, sem servidor. Nada do que você fizer é salvo.</string>
+    <string name="aviso_modo_demonstracao_curto">Modo demonstração: nada é salvo.</string>
     <string name="aviso_contas_demonstracao">Contas de demonstração (senha Acesso@2026): pessoa@acesso.test, empresa@acesso.test e empresa.pendente@acesso.test.</string>
     <string name="login_reativar_titulo">Sua conta está pausada</string>
     <string name="login_reativar_mensagem">Você pausou esta conta anteriormente. Deseja reativá-la e continuar?</string>

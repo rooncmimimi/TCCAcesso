@@ -57,6 +57,8 @@ public class TelaPrincipal extends AppCompatActivity {
 
         componentes.avisoDemonstracao.getRoot().setVisibility(
                 FabricaRepositorios.modoDemonstracao() ? View.VISIBLE : View.GONE);
+        // Versão curta: o aviso fica em todas as abas e não deve tomar o espaço do conteúdo.
+        componentes.avisoDemonstracao.getRoot().setText(R.string.aviso_modo_demonstracao_curto);
         if (sessao.ehEmpresa()) {
             componentes.navegacaoInferior.getMenu().findItem(R.id.aba_oportunidades).setTitle(R.string.aba_painel);
         }
@@ -91,8 +93,10 @@ public class TelaPrincipal extends AppCompatActivity {
         });
         viewModelSessao.verificar();
 
+        // A Início já vem marcada; setSelectedItemId nela contaria como "tocar de novo" e não
+        // abriria nada. Por isso o primeiro fragmento é mostrado direto.
         if (estadoSalvo == null) {
-            componentes.navegacaoInferior.setSelectedItemId(R.id.aba_inicio);
+            mostrarAba(R.id.aba_inicio);
         }
     }
 

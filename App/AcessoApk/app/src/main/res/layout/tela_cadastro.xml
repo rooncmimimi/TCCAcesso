@@ -67,11 +67,14 @@
                     android:textAppearance="?attr/textAppearanceTitleSmall"
                     android:textColor="@color/acesso_titulo" />
 
+                <!-- Opções empilhadas, cada uma com a largura toda: lado a lado, "Pessoa candidata"
+                     era cortado no celular (e mais ainda com a fonte ampliada). -->
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/grupoTipoConta"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:orientation="vertical"
                     app:checkedButton="@+id/botaoTipoPessoa"
                     app:selectionRequired="true"
                     app:singleSelection="true">
@@ -79,18 +82,16 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/botaoTipoPessoa"
                         style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="@string/cadastro_tipo_pessoa"
                         app:icon="@drawable/ic_perfil" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/botaoTipoEmpresa"
                         style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="@string/cadastro_tipo_empresa"
                         app:icon="@drawable/ic_empresa" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>

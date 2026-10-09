@@ -2,6 +2,7 @@ package com.acesso.app.telas;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
@@ -42,8 +43,11 @@ public class TelaLogin extends AppCompatActivity {
         observarViewModel();
 
         componentes.botaoEntrar.setOnClickListener(v -> enviar());
+        // Envia pelo botão do teclado virtual e também pelo Enter de um teclado físico.
         componentes.entradaSenha.setOnEditorActionListener((v, acao, evento) -> {
-            if (acao == EditorInfo.IME_ACTION_DONE) {
+            boolean enterFisico = evento != null && evento.getKeyCode() == KeyEvent.KEYCODE_ENTER
+                    && evento.getAction() == KeyEvent.ACTION_DOWN;
+            if (acao == EditorInfo.IME_ACTION_DONE || enterFisico) {
                 enviar();
                 return true;
             }

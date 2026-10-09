@@ -15,6 +15,16 @@
         <item name="colorSurface">@color/acesso_fundo</item>
         <item name="colorOnSurface">@color/acesso_texto</item>
         <item name="colorOnSurfaceVariant">@color/acesso_texto_secundario</item>
+        <!-- Sem estas, o Material 3 usa o lilás padrão dele na barra de abas,
+             nos diálogos e nos menus, o que não combina com a paleta do site. -->
+        <item name="colorSecondaryContainer">@color/acesso_container_primaria</item>
+        <item name="colorOnSecondaryContainer">@color/acesso_sobre_container_primaria</item>
+        <item name="colorSurfaceContainerLowest">@color/acesso_superficie</item>
+        <item name="colorSurfaceContainerLow">@color/acesso_superficie</item>
+        <item name="colorSurfaceContainer">@color/acesso_superficie</item>
+        <item name="colorSurfaceContainerHigh">@color/acesso_superficie</item>
+        <item name="colorSurfaceContainerHighest">@color/acesso_fundo_secundario</item>
+        <item name="bottomNavigationStyle">@style/Estilo.Acesso.NavegacaoInferior</item>
         <item name="android:colorBackground">@color/acesso_fundo</item>
         <item name="android:windowBackground">@color/acesso_fundo</item>
         <item name="android:statusBarColor">@color/acesso_fundo</item>
@@ -52,6 +62,20 @@
     <style name="Estilo.Acesso.BotaoTexto" parent="Widget.Material3.Button.TextButton">
         <item name="android:minHeight">48dp</item>
         <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+    </style>
+
+    <!-- Barra de abas: fundo branco com linha fina no topo (como o cabeçalho do site),
+         aba ativa em verde-claro e rótulo sempre visível. -->
+    <style name="Estilo.Acesso.NavegacaoInferior" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:background">@drawable/fundo_navegacao_inferior</item>
+        <item name="itemIconTint">@color/cor_item_navegacao</item>
+        <item name="itemTextColor">@color/cor_item_navegacao</item>
+        <item name="itemTextAppearanceActive">@style/Texto.Acesso.AbaAtiva</item>
+        <item name="labelVisibilityMode">labeled</item>
+    </style>
+
+    <style name="Texto.Acesso.AbaAtiva" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="Texto.Acesso.Marca" parent="TextAppearance.Material3.DisplaySmall">

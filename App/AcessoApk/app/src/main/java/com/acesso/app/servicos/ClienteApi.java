@@ -14,8 +14,9 @@ public final class ClienteApi {
     private ClienteApi() {
     }
 
+    /** URL_API preenchida com um endereço válido (com http:// ou https://). */
     public static boolean estaConfigurada() {
-        return !BuildConfig.URL_API.isEmpty();
+        return ClienteHttp.enderecoValido(BuildConfig.URL_API);
     }
 
     /** Ex.: url("auth/login") -> http://10.0.2.2:3000/api/auth/login */

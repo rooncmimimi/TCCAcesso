@@ -17,6 +17,8 @@ import com.acesso.app.servicos.TradutorErrosSupabase;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import java.util.function.Supplier;
+
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
@@ -52,7 +54,7 @@ public class RepositorioAutenticacaoSupabase implements RepositorioAutenticacao 
         corpo.addProperty("email", email.trim());
         corpo.addProperty("password", senha);
 
-        Request requisicao = ClienteSupabase.requisicao(ClienteSupabase.urlAutenticacao("token?grant_type=password"))
+        Supplier<Request> requisicao = () -> ClienteSupabase.requisicao(ClienteSupabase.urlAutenticacao("token?grant_type=password"))
                 .post(RequestBody.create(corpo.toString(), ClienteHttp.TIPO_JSON))
                 .build();
 
@@ -81,7 +83,7 @@ public class RepositorioAutenticacaoSupabase implements RepositorioAutenticacao 
         corpo.addProperty("password", dados.senha);
         corpo.add("data", dadosPerfil);
 
-        Request requisicao = ClienteSupabase.requisicao(ClienteSupabase.urlAutenticacao("signup"))
+        Supplier<Request> requisicao = () -> ClienteSupabase.requisicao(ClienteSupabase.urlAutenticacao("signup"))
                 .post(RequestBody.create(corpo.toString(), ClienteHttp.TIPO_JSON))
                 .build();
 
@@ -112,7 +114,7 @@ public class RepositorioAutenticacaoSupabase implements RepositorioAutenticacao 
         JsonObject corpo = new JsonObject();
         corpo.addProperty("email", email.trim());
 
-        Request requisicao = ClienteSupabase.requisicao(
+        Supplier<Request> requisicao = () -> ClienteSupabase.requisicao(
                         ClienteSupabase.urlAutenticacao("recover?redirect_to=" + ENDERECO_NOVA_SENHA))
                 .post(RequestBody.create(corpo.toString(), ClienteHttp.TIPO_JSON))
                 .build();
@@ -125,7 +127,7 @@ public class RepositorioAutenticacaoSupabase implements RepositorioAutenticacao 
         JsonObject corpo = new JsonObject();
         corpo.addProperty("password", novaSenha);
 
-        Request requisicao = ClienteSupabase.requisicaoAutenticada(ClienteSupabase.urlAutenticacao("user"), tokenRecuperacao)
+        Supplier<Request> requisicao = () -> ClienteSupabase.requisicaoAutenticada(ClienteSupabase.urlAutenticacao("user"), tokenRecuperacao)
                 .put(RequestBody.create(corpo.toString(), ClienteHttp.TIPO_JSON))
                 .build();
 
@@ -137,7 +139,7 @@ public class RepositorioAutenticacaoSupabase implements RepositorioAutenticacao 
         JsonObject corpo = new JsonObject();
         corpo.addProperty("refresh_token", sessao.getTokenRenovacao());
 
-        Request requisicao = ClienteSupabase.requisicao(ClienteSupabase.urlAutenticacao("token?grant_type=refresh_token"))
+        Supplier<Request> requisicao = () -> ClienteSupabase.requisicao(ClienteSupabase.urlAutenticacao("token?grant_type=refresh_token"))
                 .post(RequestBody.create(corpo.toString(), ClienteHttp.TIPO_JSON))
                 .build();
 
@@ -157,12 +159,16 @@ public class RepositorioAutenticacaoSupabase implements RepositorioAutenticacao 
 
     // ---------------------------------------------------------------------
 
-    private <T> void executar(Request requisicao, RetornoRepositorio<T> retorno, ExecutorHttp.LeitorResposta<T> leitor) {
+    /**
+     * A requisição só é montada depois de conferir a configuração: com URL_SUPABASE vazia
+     * ou inválida, montar a URL lançaria IllegalArgumentException e fecharia o app.
+     */
+    private <T> void executar(Supplier<Request> requisicao, RetornoRepositorio<T> retorno, ExecutorHttp.LeitorResposta<T> leitor) {
         if (!ClienteSupabase.estaConfigurado()) {
             executor.falhar(retorno, new FalhaHttp("O app ainda não foi configurado com o Supabase. Veja o README."));
             return;
         }
-        executor.executar(requisicao, retorno, leitor);
+        executor.executar(requisicao.get(), retorno, leitor);
     }
 
     private static SessaoUsuario lerSessao(JsonObject json) {

@@ -3,7 +3,7 @@
 Registro para retomar o trabalho em outra sessão. Última atualização: 09/10/2026,
 branch `app/telas-mobile-autenticacao`.
 
-> **O app compila**, os 51 testes JUnit passam e o `lintDebug` não tem erros. Os fluxos
+> **O app compila**, os 53 testes JUnit passam e o `lintDebug` não tem erros. Os fluxos
 > principais foram conferidos no emulador `Small_Phone` (API 30) em modo demonstração.
 > A autenticação pela API do site (`FONTE_AUTENTICACAO=api`) ainda **não** foi testada com a
 > API rodando.
@@ -20,7 +20,20 @@ Documentos relacionados:
 | `b76d8bf` (08/10) | Estrutura de autenticação (Supabase / API / simulada), sessão com tipo de conta, validações iguais às da API, ícone com o símbolo do site, layouts das abas. App não compilava. |
 | `2859ee0` (09/10) | App volta a compilar: `TelaPrincipal`, `TelaStatusEmpresa`, `FragmentoPerfil`, `FragmentoPesquisa`, apresentação/login/cadastro ligados à `Navegacao`; remoção de `FragmentoEmConstrucao` e `GerenciadorApresentacao`; testes novos. |
 | `1274db5` (09/10) | Correções vistas no emulador (Início em branco, topo do login cortado, cores do Material 3, rótulos cortados) e ajustes visuais. |
-| (este commit) | `PLANEJAMENTO_BACKEND.md`, README do app e da raiz, este arquivo. |
+| `81f8715` (09/10) | `PLANEJAMENTO_BACKEND.md`, README do app e da raiz, este arquivo. |
+| (este commit) | Correção do fechamento do app ao entrar sem servidor configurado (ver abaixo). |
+
+### Correção: app fechava ao tocar em "Entrar"
+
+Sintoma: tela preta, volta ao login e, na segunda tentativa, "ACESSO keeps stopping".
+Logcat: `IllegalArgumentException: Expected URL scheme 'http' or 'https' but no scheme was found
+for /auth/...` em `ClienteSupabase.requisicao`, chamado por `RepositorioAutenticacaoSupabase.entrar`.
+Causa: com a fonte padrão (`supabase`) e `URL_SUPABASE` vazia no `local.properties`, a
+requisição era montada **antes** da checagem "está configurado?", e o OkHttp lançava a exceção
+na thread principal. O mesmo acontecia na fonte `api` com `URL_API` vazia.
+Correção: as requisições passaram a ser montadas só depois da checagem, e a checagem recusa
+também endereços sem `http://`/`https://` (`ClienteHttp.enderecoValido`, com teste). Sem
+configuração, o login mostra "O app ainda não foi configurado com o Supabase. Veja o README."
 
 ## 2. O que foi verificado no emulador (modo demonstração)
 

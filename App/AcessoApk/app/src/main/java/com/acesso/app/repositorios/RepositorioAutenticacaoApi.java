@@ -18,6 +18,7 @@ import com.google.gson.JsonParser;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.function.Supplier;
 
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -206,19 +207,20 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
 
     // ---------------------------------------------------------------------
 
-    private static Request post(String caminho, JsonObject corpo) {
-        return ClienteApi.requisicao(caminho)
+    /** Montada só em executar(), depois de conferir URL_API (vazia, faria o OkHttp lançar exceção). */
+    private static Supplier<Request> post(String caminho, JsonObject corpo) {
+        return () -> ClienteApi.requisicao(caminho)
                 .post(RequestBody.create(corpo.toString(), ClienteHttp.TIPO_JSON))
                 .build();
     }
 
-    private static <T> void executar(ExecutorHttp executor, Request requisicao, RetornoRepositorio<T> retorno,
+    private static <T> void executar(ExecutorHttp executor, Supplier<Request> requisicao, RetornoRepositorio<T> retorno,
                                      ExecutorHttp.LeitorResposta<T> leitor) {
         if (!ClienteApi.estaConfigurada()) {
             executor.falhar(retorno, new FalhaHttp("O endereço da API ainda não foi configurado (URL_API). Veja o README."));
             return;
         }
-        executor.executar(requisicao, retorno, leitor);
+        executor.executar(requisicao.get(), retorno, leitor);
     }
 
     private static void adicionarSePreenchido(JsonObject corpo, String campo, String valor) {

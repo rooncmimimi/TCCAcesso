@@ -14,8 +14,9 @@ public final class ClienteSupabase {
     private ClienteSupabase() {
     }
 
+    /** URL válida (com https://) e chave preenchidas no local.properties. */
     public static boolean estaConfigurado() {
-        return !BuildConfig.URL_SUPABASE.isEmpty() && !BuildConfig.CHAVE_ANONIMA_SUPABASE.isEmpty();
+        return ClienteHttp.enderecoValido(BuildConfig.URL_SUPABASE) && !BuildConfig.CHAVE_ANONIMA_SUPABASE.isEmpty();
     }
 
     /** Endereço da API de autenticação, ex.: https://xyz.supabase.co/auth/v1/token */

@@ -9,9 +9,16 @@ import { Input } from "@/components/ui/input";
  * fica dentro do campo, sem mudar o layout, e vem logo depois dele na ordem de tabulação (sem
  * `tabIndex`), para quem usa só o teclado também conferir a senha (WCAG 2.1.1).
  */
-const PasswordInput = React.forwardRef<HTMLInputElement, Omit<React.ComponentProps<"input">, "type">>(
-  ({ className, ...props }, ref) => {
+type PropsSenha = Omit<React.ComponentProps<"input">, "type"> & {
+  /** Rótulo do botão no idioma escolhido; o de ocultar é derivado dele. Padrão em português. */
+  rotuloMostrar?: string;
+  rotuloOcultar?: string;
+};
+
+const PasswordInput = React.forwardRef<HTMLInputElement, PropsSenha>(
+  ({ className, rotuloMostrar = "Mostrar senha", rotuloOcultar, ...props }, ref) => {
     const [visivel, setVisivel] = React.useState(false);
+    const ocultar = rotuloOcultar ?? (rotuloMostrar === "Mostrar senha" ? "Ocultar senha" : rotuloMostrar);
 
     return (
       <div className="relative">
@@ -25,7 +32,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, Omit<React.ComponentPro
           type="button"
           onClick={() => setVisivel((atual) => !atual)}
           className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-r-md"
-          aria-label={visivel ? "Ocultar senha" : "Mostrar senha"}
+          aria-label={visivel ? ocultar : rotuloMostrar}
           aria-pressed={visivel}
         >
           {visivel ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}

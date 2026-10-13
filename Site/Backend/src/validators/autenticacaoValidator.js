@@ -20,6 +20,13 @@ export const regrasSenha = (campo = "senha") =>
         .withMessage("A senha deve conter ao menos um caractere especial.");
 
 const regrasComuns = [
+    // Código de entrega do Google, quando o cadastro veio de "Continuar com Google". O servidor o
+    // verifica; o cliente não tem como forjar o `sub` que ele carrega.
+    body("googleCodigo").optional({ values: "falsy" }).isString(),
+
+    // Rótulo da versão dos documentos legais que a tela mostrou, gravado junto do aceite.
+    body("termosVersao").optional({ values: "falsy" }).trim().isLength({ max: 20 }),
+
     body("nome")
         .trim()
         .isLength({ min: 3, max: 150 })
@@ -41,14 +48,50 @@ const regrasComuns = [
     regrasSenha("senha")
 ];
 
+/**
+ * Cadastro de candidato: as duas primeiras etapas do wizard chegam juntas, e **todo** campo de dado
+ * é obrigatório. Foto de perfil e currículo não entram aqui — são os dois opcionais, e vêm depois.
+ *
+ * O asterisco da tela não vale como validação: estas regras são a validação de verdade, e o
+ * frontend repete as mesmas mensagens só para errar antes da viagem.
+ */
 export const validarCadastroCandidato = [
     ...regrasComuns,
 
+    // `regrasComuns` deixa o telefone opcional porque empresa também o usa; para candidato ele é
+    // obrigatório, e esta regra roda junto da outra.
+    body("telefone").trim().notEmpty().withMessage("Informe seu telefone."),
+
     body("cpf")
-        .optional({ values: "falsy" })
         .trim()
         .matches(/^\d{11}$/)
-        .withMessage("Informe um CPF válido.")
+        .withMessage("Informe um CPF válido."),
+
+    // Código ISO 3166-1 alpha-2 (veja o model Candidato).
+    body("pais")
+        .trim()
+        .toUpperCase()
+        .matches(/^[A-Z]{2}$/)
+        .withMessage("Use o código do país com 2 letras (ex.: BR)."),
+
+    body("dataNascimento")
+        .trim()
+        .isISO8601()
+        .withMessage("Informe uma data de nascimento válida (AAAA-MM-DD).")
+        .bail()
+        .custom((valor) => new Date(valor) <= new Date())
+        .withMessage("A data de nascimento não pode estar no futuro."),
+
+    body("cidade")
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage("Informe a cidade onde você mora."),
+
+    body("estado")
+        .trim()
+        .toUpperCase()
+        .matches(/^[A-Z]{2}$/)
+        .withMessage("Use a sigla do estado com 2 letras (ex.: SP).")
 ];
 
 export const validarCadastroEmpresa = [
@@ -89,7 +132,18 @@ export const validarCadastroEmpresa = [
         .optional({ values: "falsy" })
         .trim()
         .matches(/^\d{8}$/)
-        .withMessage("Informe um CEP válido (8 dígitos).")
+        .withMessage("Informe um CEP válido (8 dígitos)."),
+
+    // País da sede, no mesmo formato de `candidatos.pais`: ISO 3166-1 alpha-2.
+    body("pais")
+        .optional({ values: "falsy" })
+        .trim()
+        .toUpperCase()
+        .matches(/^[A-Z]{2}$/)
+        .withMessage("Use o código do país com 2 letras (ex.: BR)."),
+
+    // Como a empresa pratica inclusão; aparece no perfil institucional.
+    body("culturaInclusiva").optional({ values: "falsy" }).trim().isLength({ max: 4000 })
 ];
 
 export const validarLogin = [

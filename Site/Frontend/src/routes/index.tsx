@@ -128,9 +128,6 @@ function Inicio() {
             <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
               <Link to="/sobre-nos">Sobre nós</Link>
             </Button>
-            <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
-              <Link to="/ajuda">Ajuda</Link>
-            </Button>
             <Button asChild variant="outline" className="min-h-11">
               <Link to="/entrar">Entrar</Link>
             </Button>
@@ -175,7 +172,8 @@ function Inicio() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="min-h-12 text-base">
-                <Link to="/cadastro" search={{ perfil: "empresa" }}>
+                {/* A conta de empresa nasce de uma conta de candidato, então o caminho começa lá. */}
+                <Link to="/cadastro/candidato" search={{ depois: "empresa" }}>
                   <Building2 aria-hidden="true" /> Sou empresa
                 </Link>
               </Button>
@@ -324,9 +322,9 @@ function Inicio() {
             <Link to="/sobre-nos" className="hover:underline">
               Sobre nós
             </Link>
-            <Link to="/ajuda" className="hover:underline">
-              Ajuda
-            </Link>
+            <a href="mailto:projetoacessoinclusivo@gmail.com" className="hover:underline">
+              Fale conosco
+            </a>
           </nav>
         </div>
         <div className="mx-auto max-w-6xl px-4 pb-8 text-sm text-muted-foreground">

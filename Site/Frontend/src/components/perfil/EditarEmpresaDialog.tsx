@@ -29,9 +29,8 @@ import { empresasService } from "@/services/empresas.service";
 import { CapaUploader } from "./CapaUploader";
 import { FotoUploader } from "./FotoUploader";
 import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
-import type { Empresa, PorteEmpresa } from "@/types";
-
-const PORTES: PorteEmpresa[] = ["mei", "micro", "pequena", "media", "grande"];
+import { PORTES_EMPRESA } from "@/utils/formatacao";
+import type { Empresa } from "@/types";
 
 /** Edição do perfil empresarial. O backend recusa a chamada se a empresa não estiver aprovada. */
 export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; children: ReactNode }) {
@@ -192,9 +191,9 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PORTES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
+                  {PORTES_EMPRESA.map((p) => (
+                    <SelectItem key={p.valor} value={p.valor}>
+                      {p.rotulo}
                     </SelectItem>
                   ))}
                 </SelectContent>

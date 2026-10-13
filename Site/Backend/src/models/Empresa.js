@@ -88,6 +88,22 @@ const Empresa = sequelize.define(
             type: DataTypes.STRING(8)
         },
 
+        // Conta de **candidato** de quem cadastrou a empresa. Diferente de `usuarioId`, que é o
+        // login institucional: são dois papéis distintos da mesma pessoa, em contas separadas.
+        // Preenchido a partir da sessão de quem cria, nunca do corpo da requisição.
+        usuarioCandidatoId: {
+            type: DataTypes.UUID
+        },
+
+        // ISO 3166-1 alpha-2 maiúsculo, pelo mesmo motivo de `Candidato.pais`: o código não muda
+        // com o idioma da interface, então a tela exibe o nome do país no idioma que quiser.
+        pais: {
+            type: DataTypes.CHAR(2),
+            validate: {
+                is: /^[A-Z]{2}$/
+            }
+        },
+
         logo: {
             type: DataTypes.TEXT,
             get() {

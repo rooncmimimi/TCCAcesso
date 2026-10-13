@@ -20,6 +20,8 @@ const CAMPOS_PUBLICOS_CANDIDATO = new Set([
     "tituloProfissional",
     "cidade",
     "estado",
+    // Público pelo mesmo motivo que cidade e estado: é localidade, e mais grossa que as duas.
+    "pais",
     "disponibilidade",
     "linkedin",
     "github",

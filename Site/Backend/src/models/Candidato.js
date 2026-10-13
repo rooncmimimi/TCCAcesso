@@ -102,6 +102,16 @@ const Candidato = sequelize.define(
             type: DataTypes.STRING(2)
         },
 
+        // ISO 3166-1 alpha-2 maiúsculo (`BR`, `US`, `ES`), não o nome escrito: o código não muda com
+        // o idioma da interface, então a tela exibe o nome do país no idioma que quiser a partir do
+        // mesmo dado. A lista de códigos válidos vive na aplicação; o banco só confere o formato.
+        pais: {
+            type: DataTypes.CHAR(2),
+            validate: {
+                is: /^[A-Z]{2}$/
+            }
+        },
+
         endereco: {
             type: DataTypes.TEXT
         },

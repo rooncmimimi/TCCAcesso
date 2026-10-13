@@ -1,7 +1,6 @@
 import sequelize from "../config/bancoDeDados.js";
 
 import Usuario from "./Usuario.js";
-import Administrador from "./Administrador.js";
 import Sessao from "./Sessao.js";
 import TokenPush from "./TokenPush.js";
 import CodigoRecuperacaoSenha from "./CodigoRecuperacaoSenha.js";
@@ -33,8 +32,6 @@ import Mensagem from "./Mensagem.js";
 import Notificacao from "./Notificacao.js";
 import Denuncia from "./Denuncia.js";
 import RegistroAuditoria from "./RegistroAuditoria.js";
-import ChatbotConversa from "./ChatbotConversa.js";
-import ChatbotMensagem from "./ChatbotMensagem.js";
 
 /**
  * Registro central dos models e das associações.
@@ -51,8 +48,9 @@ Candidato.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 Usuario.hasOne(Empresa, { foreignKey: "usuarioId", as: "empresa" });
 Empresa.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 
-Usuario.hasOne(Administrador, { foreignKey: "usuarioId", as: "administrador" });
-Administrador.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+// Conta de candidato de quem cadastrou a empresa (as duas contas são separadas, só vinculadas).
+Usuario.hasMany(Empresa, { foreignKey: "usuarioCandidatoId", as: "empresasCadastradas" });
+Empresa.belongsTo(Usuario, { foreignKey: "usuarioCandidatoId", as: "usuarioCandidato" });
 
 /* Sessões, códigos e preferências da conta */
 
@@ -242,18 +240,9 @@ Denuncia.belongsTo(Usuario, { foreignKey: "administradorResponsavelId", as: "adm
 Usuario.hasMany(RegistroAuditoria, { foreignKey: "administradorId", as: "registrosAuditoria" });
 RegistroAuditoria.belongsTo(Usuario, { foreignKey: "administradorId", as: "administrador" });
 
-/* Assistente virtual */
-
-Usuario.hasMany(ChatbotConversa, { foreignKey: "usuarioId", as: "chatbotConversas" });
-ChatbotConversa.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
-
-ChatbotConversa.hasMany(ChatbotMensagem, { foreignKey: "conversaId", as: "mensagens" });
-ChatbotMensagem.belongsTo(ChatbotConversa, { foreignKey: "conversaId", as: "conversa" });
-
 export {
     sequelize,
     Usuario,
-    Administrador,
     Sessao,
     TokenPush,
     CodigoRecuperacaoSenha,
@@ -284,7 +273,5 @@ export {
     Mensagem,
     Notificacao,
     Denuncia,
-    RegistroAuditoria,
-    ChatbotConversa,
-    ChatbotMensagem
+    RegistroAuditoria
 };

@@ -8,7 +8,6 @@ import {
   Briefcase,
   ChevronDown,
   Compass,
-  HelpCircle,
   Home,
   LayoutDashboard,
   LogOut,
@@ -116,9 +115,6 @@ export function CabecalhoApp() {
           <nav aria-label="Navegação pública" className="flex items-center gap-1 sm:gap-2">
             <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
               <Link to="/vagas">Vagas</Link>
-            </Button>
-            <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
-              <Link to="/ajuda">Ajuda</Link>
             </Button>
             <Button asChild variant="outline" className="min-h-11">
               <Link to="/entrar">Entrar</Link>
@@ -248,11 +244,6 @@ export function CabecalhoApp() {
             <DropdownMenuItem asChild>
               <Link to="/configuracoes">
                 <Settings aria-hidden="true" /> Configurações
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/ajuda">
-                <HelpCircle aria-hidden="true" /> Ajuda
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

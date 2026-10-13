@@ -1,10 +1,21 @@
-# Importação de currículo (PDF/DOCX) — próximos passos
+# Importação de currículo (PDF/DOCX)
 
-**Status:** não implementado nesta etapa (28/08/2026). Análise de viabilidade concluída
-em etapa anterior; decisão explícita do usuário permitia adiar caso o escopo não coubesse
-razoavelmente nesta etapa — as demais entregas da etapa (Minha atividade, Descoberta de
-pessoas/empresas, autocomplete de cidades, CPF/CNPJ) tomaram a prioridade e o orçamento
-de tempo/contexto disponível.
+**Status: implementado.** Este documento começou como plano (28/08/2026) e hoje descreve o que
+existe. Onde encontrar cada parte:
+
+| Parte | Onde |
+| --- | --- |
+| Extração de texto | `src/utils/extrairTextoDocumento.js` (`pdf-parse` para PDF, `mammoth` para DOCX) |
+| Parser heurístico | `src/utils/parsearCurriculo.js` — devolve rascunho, não grava nada |
+| Endpoint do rascunho | `POST /candidatos/:id/curriculo/importar` |
+| Currículo oficial | `PATCH /candidatos/:id/curriculo` (bucket privado, URL só assinada) |
+| Revisão no perfil | `components/perfil/ImportarCurriculoDialog.tsx` |
+| Revisão no cadastro | `components/cadastro/EtapaCurriculoPerfil.tsx` (etapa 3 do cadastro) |
+
+As três regras que a etapa de cadastro garante, e que valem para qualquer tela que use o
+importador: **nada é sobrescrito em silêncio** (a importação só preenche campo vazio), **nada é
+duplicado** (reimportar substitui as listas, e a gravação acontece uma vez só, na confirmação) e
+**nada é inventado** (o que o parser não identifica fica em branco para preenchimento manual).
 
 ## Por que não é trivial
 
@@ -53,8 +64,7 @@ número parece um CPF — deseja preenchê-lo?") como uma ação manual extra, n
   populando os mesmos formulários de Experiência/Formação/Habilidades já existentes no
   perfil, pré-preenchidos com o rascunho, mas totalmente editáveis antes de salvar.
 - Dependências novas a instalar: `pdf-parse`, `mammoth` (ambas MIT, sem custo, sem
-  chamada externa — processamento 100% local, mantendo a mesma filosofia "sem IA paga"
-  já usada no chatbot).
+  chamada externa — processamento 100% local, sem IA paga).
 
 ## Escopo estimado
 

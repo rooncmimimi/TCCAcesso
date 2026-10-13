@@ -68,6 +68,15 @@ export const autenticacaoService = {
     return data.usuario;
   },
 
+  /**
+   * Marca o cadastro como terminado, na última etapa do wizard. Enquanto não for chamada,
+   * `cadastroConcluidoEm` fica nula e o login oferece retomar o cadastro.
+   */
+  async concluirCadastro(): Promise<Usuario> {
+    const { data } = await clienteApi.post<{ usuario: Usuario }>("/auth/cadastro/concluir");
+    return data.usuario;
+  },
+
   async sair(): Promise<void> {
     try {
       const refreshToken = obterRefreshToken();

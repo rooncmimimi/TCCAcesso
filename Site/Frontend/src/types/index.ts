@@ -25,6 +25,12 @@ export interface Usuario {
   ultimoLogin?: string | null;
   pausadoPeloUsuario?: boolean;
   perfilPublico?: boolean;
+  /**
+   * Quando a pessoa terminou a última etapa do cadastro. Nulo significa cadastro começado e não
+   * terminado — o caso normal com confirmação de e-mail ativa, que corta o fluxo em dois — e é o
+   * que faz o login oferecer retomar de onde parou.
+   */
+  cadastroConcluidoEm?: string | null;
   /** Só vem preenchido na resposta pro próprio dono (nunca em perfis de terceiros). */
   preferenciaMensagens?: PreferenciaMensagens;
   /**
@@ -56,6 +62,8 @@ export interface Candidato {
   tituloProfissional?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  /** Código ISO 3166-1 alpha-2 maiúsculo (`BR`), nunca o nome escrito. Ver `dados/paises.ts`. */
+  pais?: string | null;
   endereco?: string | null;
   cep?: string | null;
   linkedin?: string | null;
@@ -558,19 +566,4 @@ export interface HomePublica {
   [chave: string]: unknown;
 }
 
-/* Chatbot */
-export interface ChatbotConversa {
-  id: string;
-  titulo?: string | null;
-  criadoEm?: string;
-  atualizadoEm?: string;
-}
-
-export interface ChatbotMensagem {
-  id: string;
-  conversaId: string;
-  conteudo: string;
-  papel: "usuario" | "assistente";
-  criadoEm?: string;
-}
 

@@ -39,7 +39,10 @@ class AutenticacaoController {
         try {
             const resultado = await AutenticacaoService.cadastrarEmpresa(
                 req.body,
-                contextoRequisicao(req)
+                contextoRequisicao(req),
+                // Quem está criando, lido da sessão e nunca do corpo: o vínculo com a conta de
+                // candidato precisa ser provado, não alegado.
+                req.user ?? null
             );
 
             return res.status(201).json({ sucesso: true, ...resultado });
@@ -80,6 +83,16 @@ class AutenticacaoController {
     async perfilAtual(req, res, next) {
         try {
             const usuario = await AutenticacaoService.perfilAtual(req.user.id);
+
+            return res.status(200).json({ sucesso: true, usuario });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async concluirCadastro(req, res, next) {
+        try {
+            const usuario = await AutenticacaoService.concluirCadastro(req.user.id);
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {

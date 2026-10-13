@@ -42,6 +42,7 @@ const CAMPOS_EDITAVEIS = [
     "github",
     "cidade",
     "estado",
+    "pais",
     "endereco",
     "cep",
     "disponibilidade",

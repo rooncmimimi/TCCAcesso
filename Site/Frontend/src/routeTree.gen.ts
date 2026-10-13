@@ -11,9 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as BoasVindasRouteImport } from './routes/boas-vindas'
-import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DescobrirRouteImport } from './routes/descobrir'
@@ -23,9 +21,12 @@ import { Route as MensagensRouteImport } from './routes/mensagens'
 import { Route as MinhaAtividadeRouteImport } from './routes/minha-atividade'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as RetornoGoogleRouteImport } from './routes/retorno-google'
 import { Route as SobreNosRouteImport } from './routes/sobre-nos'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VagasRouteImport } from './routes/vagas'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminComentariosRouteImport } from './routes/admin/comentarios'
@@ -35,6 +36,9 @@ import { Route as AdminLogsRouteImport } from './routes/admin/logs'
 import { Route as AdminPostagensRouteImport } from './routes/admin/postagens'
 import { Route as AdminUsuariosRouteImport } from './routes/admin/usuarios'
 import { Route as AdminVagasRouteImport } from './routes/admin/vagas'
+import { Route as CadastroIndexRouteImport } from './routes/cadastro/index'
+import { Route as CadastroCandidatoRouteImport } from './routes/cadastro/candidato'
+import { Route as CadastroEmpresaRouteImport } from './routes/cadastro/empresa'
 import { Route as ConfiguracoesIndexRouteImport } from './routes/configuracoes/index'
 import { Route as ConfiguracoesAcessibilidadeRouteImport } from './routes/configuracoes/acessibilidade'
 import { Route as ConfiguracoesBloqueadosRouteImport } from './routes/configuracoes/bloqueados'
@@ -65,19 +69,9 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AjudaRoute = AjudaRouteImport.update({
-  id: '/ajuda',
-  path: '/ajuda',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BoasVindasRoute = BoasVindasRouteImport.update({
   id: '/boas-vindas',
   path: '/boas-vindas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CadastroRoute = CadastroRouteImport.update({
-  id: '/cadastro',
-  path: '/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfirmarEmailRoute = ConfirmarEmailRouteImport.update({
@@ -125,6 +119,11 @@ const PerfilRoute = PerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
   id: '/recuperar-senha',
   path: '/recuperar-senha',
@@ -135,9 +134,19 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   path: '/redefinir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RetornoGoogleRoute = RetornoGoogleRouteImport.update({
+  id: '/retorno-google',
+  path: '/retorno-google',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SobreNosRoute = SobreNosRouteImport.update({
   id: '/sobre-nos',
   path: '/sobre-nos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VagasRoute = VagasRouteImport.update({
@@ -184,6 +193,21 @@ const AdminVagasRoute = AdminVagasRouteImport.update({
   id: '/vagas',
   path: '/vagas',
   getParentRoute: () => AdminRoute,
+} as any)
+const CadastroIndexRoute = CadastroIndexRouteImport.update({
+  id: '/cadastro/',
+  path: '/cadastro/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroCandidatoRoute = CadastroCandidatoRouteImport.update({
+  id: '/cadastro/candidato',
+  path: '/cadastro/candidato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroEmpresaRoute = CadastroEmpresaRouteImport.update({
+  id: '/cadastro/empresa',
+  path: '/cadastro/empresa',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesIndexRoute = ConfiguracoesIndexRouteImport.update({
   id: '/configuracoes/',
@@ -288,9 +312,7 @@ const AdminUsuariosUsuarioIdRoute = AdminUsuariosUsuarioIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/ajuda': typeof AjudaRoute
   '/boas-vindas': typeof BoasVindasRoute
-  '/cadastro': typeof CadastroRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
@@ -300,9 +322,12 @@ export interface FileRoutesByFullPath {
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRouteWithChildren
+  '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/retorno-google': typeof RetornoGoogleRoute
   '/sobre-nos': typeof SobreNosRoute
+  '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/denuncias': typeof AdminDenunciasRouteWithChildren
@@ -311,6 +336,8 @@ export interface FileRoutesByFullPath {
   '/admin/postagens': typeof AdminPostagensRoute
   '/admin/usuarios': typeof AdminUsuariosRouteWithChildren
   '/admin/vagas': typeof AdminVagasRoute
+  '/cadastro/candidato': typeof CadastroCandidatoRoute
+  '/cadastro/empresa': typeof CadastroEmpresaRoute
   '/configuracoes/acessibilidade': typeof ConfiguracoesAcessibilidadeRoute
   '/configuracoes/bloqueados': typeof ConfiguracoesBloqueadosRoute
   '/configuracoes/conta': typeof ConfiguracoesContaRoute
@@ -324,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/postagem/$postagemId': typeof PostagemPostagemIdRoute
   '/vaga/$vagaId': typeof VagaVagaIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/cadastro/': typeof CadastroIndexRoute
   '/configuracoes/': typeof ConfiguracoesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/perfil/': typeof PerfilIndexRoute
@@ -334,9 +362,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/ajuda': typeof AjudaRoute
   '/boas-vindas': typeof BoasVindasRoute
-  '/cadastro': typeof CadastroRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
@@ -344,15 +370,20 @@ export interface FileRoutesByTo {
   '/mensagens': typeof MensagensRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/retorno-google': typeof RetornoGoogleRoute
   '/sobre-nos': typeof SobreNosRoute
+  '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/logs': typeof AdminLogsRoute
   '/admin/postagens': typeof AdminPostagensRoute
   '/admin/vagas': typeof AdminVagasRoute
+  '/cadastro/candidato': typeof CadastroCandidatoRoute
+  '/cadastro/empresa': typeof CadastroEmpresaRoute
   '/configuracoes/acessibilidade': typeof ConfiguracoesAcessibilidadeRoute
   '/configuracoes/bloqueados': typeof ConfiguracoesBloqueadosRoute
   '/configuracoes/conta': typeof ConfiguracoesContaRoute
@@ -366,6 +397,7 @@ export interface FileRoutesByTo {
   '/postagem/$postagemId': typeof PostagemPostagemIdRoute
   '/vaga/$vagaId': typeof VagaVagaIdRoute
   '/admin': typeof AdminIndexRoute
+  '/cadastro': typeof CadastroIndexRoute
   '/configuracoes': typeof ConfiguracoesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/perfil': typeof PerfilIndexRoute
@@ -378,9 +410,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/ajuda': typeof AjudaRoute
   '/boas-vindas': typeof BoasVindasRoute
-  '/cadastro': typeof CadastroRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
@@ -390,9 +420,12 @@ export interface FileRoutesById {
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRouteWithChildren
+  '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/retorno-google': typeof RetornoGoogleRoute
   '/sobre-nos': typeof SobreNosRoute
+  '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/denuncias': typeof AdminDenunciasRouteWithChildren
@@ -401,6 +434,8 @@ export interface FileRoutesById {
   '/admin/postagens': typeof AdminPostagensRoute
   '/admin/usuarios': typeof AdminUsuariosRouteWithChildren
   '/admin/vagas': typeof AdminVagasRoute
+  '/cadastro/candidato': typeof CadastroCandidatoRoute
+  '/cadastro/empresa': typeof CadastroEmpresaRoute
   '/configuracoes/acessibilidade': typeof ConfiguracoesAcessibilidadeRoute
   '/configuracoes/bloqueados': typeof ConfiguracoesBloqueadosRoute
   '/configuracoes/conta': typeof ConfiguracoesContaRoute
@@ -414,6 +449,7 @@ export interface FileRoutesById {
   '/postagem/$postagemId': typeof PostagemPostagemIdRoute
   '/vaga/$vagaId': typeof VagaVagaIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/cadastro/': typeof CadastroIndexRoute
   '/configuracoes/': typeof ConfiguracoesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/perfil/': typeof PerfilIndexRoute
@@ -427,9 +463,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/ajuda'
     | '/boas-vindas'
-    | '/cadastro'
     | '/confirmar-email'
     | '/dashboard'
     | '/descobrir'
@@ -439,9 +473,12 @@ export interface FileRouteTypes {
     | '/minha-atividade'
     | '/notificacoes'
     | '/perfil'
+    | '/privacidade'
     | '/recuperar-senha'
     | '/redefinir-senha'
+    | '/retorno-google'
     | '/sobre-nos'
+    | '/termos'
     | '/vagas'
     | '/admin/comentarios'
     | '/admin/denuncias'
@@ -450,6 +487,8 @@ export interface FileRouteTypes {
     | '/admin/postagens'
     | '/admin/usuarios'
     | '/admin/vagas'
+    | '/cadastro/candidato'
+    | '/cadastro/empresa'
     | '/configuracoes/acessibilidade'
     | '/configuracoes/bloqueados'
     | '/configuracoes/conta'
@@ -463,6 +502,7 @@ export interface FileRouteTypes {
     | '/postagem/$postagemId'
     | '/vaga/$vagaId'
     | '/admin/'
+    | '/cadastro/'
     | '/configuracoes/'
     | '/dashboard/'
     | '/perfil/'
@@ -473,9 +513,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/ajuda'
     | '/boas-vindas'
-    | '/cadastro'
     | '/confirmar-email'
     | '/descobrir'
     | '/entrar'
@@ -483,15 +521,20 @@ export interface FileRouteTypes {
     | '/mensagens'
     | '/minha-atividade'
     | '/notificacoes'
+    | '/privacidade'
     | '/recuperar-senha'
     | '/redefinir-senha'
+    | '/retorno-google'
     | '/sobre-nos'
+    | '/termos'
     | '/vagas'
     | '/admin/comentarios'
     | '/admin/empresas'
     | '/admin/logs'
     | '/admin/postagens'
     | '/admin/vagas'
+    | '/cadastro/candidato'
+    | '/cadastro/empresa'
     | '/configuracoes/acessibilidade'
     | '/configuracoes/bloqueados'
     | '/configuracoes/conta'
@@ -505,6 +548,7 @@ export interface FileRouteTypes {
     | '/postagem/$postagemId'
     | '/vaga/$vagaId'
     | '/admin'
+    | '/cadastro'
     | '/configuracoes'
     | '/dashboard'
     | '/perfil'
@@ -516,9 +560,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/ajuda'
     | '/boas-vindas'
-    | '/cadastro'
     | '/confirmar-email'
     | '/dashboard'
     | '/descobrir'
@@ -528,9 +570,12 @@ export interface FileRouteTypes {
     | '/minha-atividade'
     | '/notificacoes'
     | '/perfil'
+    | '/privacidade'
     | '/recuperar-senha'
     | '/redefinir-senha'
+    | '/retorno-google'
     | '/sobre-nos'
+    | '/termos'
     | '/vagas'
     | '/admin/comentarios'
     | '/admin/denuncias'
@@ -539,6 +584,8 @@ export interface FileRouteTypes {
     | '/admin/postagens'
     | '/admin/usuarios'
     | '/admin/vagas'
+    | '/cadastro/candidato'
+    | '/cadastro/empresa'
     | '/configuracoes/acessibilidade'
     | '/configuracoes/bloqueados'
     | '/configuracoes/conta'
@@ -552,6 +599,7 @@ export interface FileRouteTypes {
     | '/postagem/$postagemId'
     | '/vaga/$vagaId'
     | '/admin/'
+    | '/cadastro/'
     | '/configuracoes/'
     | '/dashboard/'
     | '/perfil/'
@@ -564,9 +612,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AjudaRoute: typeof AjudaRoute
   BoasVindasRoute: typeof BoasVindasRoute
-  CadastroRoute: typeof CadastroRoute
   ConfirmarEmailRoute: typeof ConfirmarEmailRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DescobrirRoute: typeof DescobrirRoute
@@ -576,10 +622,15 @@ export interface RootRouteChildren {
   MinhaAtividadeRoute: typeof MinhaAtividadeRoute
   NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRouteWithChildren
+  PrivacidadeRoute: typeof PrivacidadeRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  RetornoGoogleRoute: typeof RetornoGoogleRoute
   SobreNosRoute: typeof SobreNosRoute
+  TermosRoute: typeof TermosRoute
   VagasRoute: typeof VagasRoute
+  CadastroCandidatoRoute: typeof CadastroCandidatoRoute
+  CadastroEmpresaRoute: typeof CadastroEmpresaRoute
   ConfiguracoesAcessibilidadeRoute: typeof ConfiguracoesAcessibilidadeRoute
   ConfiguracoesBloqueadosRoute: typeof ConfiguracoesBloqueadosRoute
   ConfiguracoesContaRoute: typeof ConfiguracoesContaRoute
@@ -589,6 +640,7 @@ export interface RootRouteChildren {
   ConfiguracoesSenhaRoute: typeof ConfiguracoesSenhaRoute
   PostagemPostagemIdRoute: typeof PostagemPostagemIdRoute
   VagaVagaIdRoute: typeof VagaVagaIdRoute
+  CadastroIndexRoute: typeof CadastroIndexRoute
   ConfiguracoesIndexRoute: typeof ConfiguracoesIndexRoute
 }
 
@@ -608,25 +660,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ajuda': {
-      id: '/ajuda'
-      path: '/ajuda'
-      fullPath: '/ajuda'
-      preLoaderRoute: typeof AjudaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/boas-vindas': {
       id: '/boas-vindas'
       path: '/boas-vindas'
       fullPath: '/boas-vindas'
       preLoaderRoute: typeof BoasVindasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cadastro': {
-      id: '/cadastro'
-      path: '/cadastro'
-      fullPath: '/cadastro'
-      preLoaderRoute: typeof CadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confirmar-email': {
@@ -692,6 +730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recuperar-senha': {
       id: '/recuperar-senha'
       path: '/recuperar-senha'
@@ -706,11 +751,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RedefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/retorno-google': {
+      id: '/retorno-google'
+      path: '/retorno-google'
+      fullPath: '/retorno-google'
+      preLoaderRoute: typeof RetornoGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sobre-nos': {
       id: '/sobre-nos'
       path: '/sobre-nos'
       fullPath: '/sobre-nos'
       preLoaderRoute: typeof SobreNosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vagas': {
@@ -775,6 +834,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/vagas'
       preLoaderRoute: typeof AdminVagasRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/cadastro/': {
+      id: '/cadastro/'
+      path: '/cadastro'
+      fullPath: '/cadastro/'
+      preLoaderRoute: typeof CadastroIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro/candidato': {
+      id: '/cadastro/candidato'
+      path: '/cadastro/candidato'
+      fullPath: '/cadastro/candidato'
+      preLoaderRoute: typeof CadastroCandidatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro/empresa': {
+      id: '/cadastro/empresa'
+      path: '/cadastro/empresa'
+      fullPath: '/cadastro/empresa'
+      preLoaderRoute: typeof CadastroEmpresaRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/configuracoes/': {
       id: '/configuracoes/'
@@ -996,9 +1076,7 @@ const PerfilRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  AjudaRoute: AjudaRoute,
   BoasVindasRoute: BoasVindasRoute,
-  CadastroRoute: CadastroRoute,
   ConfirmarEmailRoute: ConfirmarEmailRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DescobrirRoute: DescobrirRoute,
@@ -1008,10 +1086,15 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaAtividadeRoute: MinhaAtividadeRoute,
   NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRouteWithChildren,
+  PrivacidadeRoute: PrivacidadeRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
+  RetornoGoogleRoute: RetornoGoogleRoute,
   SobreNosRoute: SobreNosRoute,
+  TermosRoute: TermosRoute,
   VagasRoute: VagasRoute,
+  CadastroCandidatoRoute: CadastroCandidatoRoute,
+  CadastroEmpresaRoute: CadastroEmpresaRoute,
   ConfiguracoesAcessibilidadeRoute: ConfiguracoesAcessibilidadeRoute,
   ConfiguracoesBloqueadosRoute: ConfiguracoesBloqueadosRoute,
   ConfiguracoesContaRoute: ConfiguracoesContaRoute,
@@ -1021,6 +1104,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesSenhaRoute: ConfiguracoesSenhaRoute,
   PostagemPostagemIdRoute: PostagemPostagemIdRoute,
   VagaVagaIdRoute: VagaVagaIdRoute,
+  CadastroIndexRoute: CadastroIndexRoute,
   ConfiguracoesIndexRoute: ConfiguracoesIndexRoute,
 }
 export const routeTree = rootRouteImport

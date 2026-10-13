@@ -3,8 +3,7 @@ import sequelize from "../config/bancoDeDados.js";
 import {
     Usuario,
     Candidato,
-    Empresa,
-    Administrador
+    Empresa
 } from "../models/index.js";
 import ErroApi from "../utils/ErroApi.js";
 import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
@@ -66,8 +65,7 @@ class UsuarioService {
         const usuario = await Usuario.findByPk(id, {
             include: [
                 { model: Candidato, as: "candidato" },
-                { model: Empresa, as: "empresa" },
-                { model: Administrador, as: "administrador" }
+                { model: Empresa, as: "empresa" }
             ]
         });
 

@@ -160,6 +160,16 @@ const env = {
     // `apiKey`, o recurso fica indisponível: em desenvolvimento o código vai para o log do
     // servidor; em produção o servidor sobe, mas registra um aviso, porque ninguém receberia os
     // e-mails.
+    // Entrar/cadastrar com Google (OAuth 2.0 / OpenID Connect). Sem as três variáveis o recurso
+    // fica indisponível e o botão nem aparece no Site — nunca um botão que leva a erro.
+    // O `redirectUri` precisa ser idêntico ao cadastrado no Google Cloud Console, caractere a
+    // caractere, senão o próprio Google recusa a troca do código.
+    google: {
+        clientId: process.env.GOOGLE_CLIENT_ID || null,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || null,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI || null
+    },
+
     brevo: {
         apiKey: process.env.BREVO_API_KEY || null,
         // Precisa ser um remetente verificado no painel do Brevo (endereço

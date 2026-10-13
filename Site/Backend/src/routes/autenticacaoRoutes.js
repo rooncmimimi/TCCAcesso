@@ -1,6 +1,8 @@
 import { Router } from "express";
 import AutenticacaoController from "../controllers/AutenticacaoController.js";
+import GoogleAuthController from "../controllers/GoogleAuthController.js";
 import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import {
     limiteAutenticacao,
@@ -39,6 +41,9 @@ router.post(
 router.post(
     "/register/empresa",
     limiteAutenticacao,
+    // Opcional no middleware, obrigatório no service: assim um token inválido vira erro claro de
+    // autenticação em vez de passar como "sem sessão".
+    autenticacaoOpcionalMiddleware,
     validarCadastroEmpresa,
     validacaoMiddleware,
     AutenticacaoController.cadastrarEmpresa
@@ -94,7 +99,33 @@ router.post(
     AutenticacaoController.reenviarConfirmacaoCadastro
 );
 
+/* Entrar e cadastrar com Google (OAuth 2.0 / OpenID Connect) */
+
+// Diz se o recurso está configurado; o Site só mostra o botão quando está.
+router.get("/google/disponivel", GoogleAuthController.disponivel);
+
+// Devolve a URL da tela de consentimento. Público: acontece antes de existir conta.
+router.get("/google/iniciar", limiteAutenticacao, GoogleAuthController.iniciar);
+
+// Para onde o Google manda o navegador de volta. Sempre termina redirecionando ao Site.
+router.get("/google/callback", GoogleAuthController.callback);
+
+// O Site troca o código de entrega por sessão, por conflito ou pelo próximo passo do cadastro.
+router.post("/google/concluir", limiteAutenticacao, GoogleAuthController.concluir);
+
+// Vincula a conta Google a quem já entrou com senha — único caminho de vínculo para conta que já
+// existe, e por isso exige sessão.
+router.post("/google/vincular", autenticacaoMiddleware, GoogleAuthController.vincular);
+
 router.get("/me", autenticacaoMiddleware, AutenticacaoController.perfilAtual);
+
+// Marca o cadastro como terminado (última etapa do wizard). Enquanto não for chamada,
+// `cadastroConcluidoEm` fica nula e o Site oferece retomar o cadastro depois do login.
+router.post(
+    "/cadastro/concluir",
+    autenticacaoMiddleware,
+    AutenticacaoController.concluirCadastro
+);
 
 router.patch(
     "/senha",

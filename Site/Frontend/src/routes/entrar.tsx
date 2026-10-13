@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Label } from "@/components/ui/label";
+import { BotaoGoogle } from "@/components/cadastro/BotaoGoogle";
+import { Campo } from "@/components/cadastro/Campo";
+import { descricao } from "@/components/cadastro/descricao";
 import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
@@ -87,6 +89,16 @@ function Entrar() {
         return;
       }
       toast.success("Login realizado com sucesso!");
+
+      // Candidato que não terminou o cadastro volta de onde parou. É o caso normal de quem criou a
+      // conta com confirmação de e-mail ativa: as duas últimas etapas exigem sessão e ficaram para
+      // depois. `cadastroConcluidoEm` nula é o sinal; contas anteriores a esse campo já nascem
+      // preenchidas pela migration, então ninguém antigo é mandado para o cadastro.
+      if (resultado.tipo === "candidato" && !resultado.cadastroConcluidoEm) {
+        navigate({ to: "/cadastro/candidato", search: { retomar: true } });
+        return;
+      }
+
       // Administrador vai direto ao painel administrativo; indo para `/feed` como os demais,
       // parecia que o login não tinha funcionado.
       navigate({ to: resultado.tipo === "administrador" ? "/admin" : "/feed" });
@@ -133,190 +145,190 @@ function Entrar() {
     }
   }
 
+  const emInterrupcao = Boolean(emailNaoVerificado || contaPausadaPendente);
+
   return (
-    <AutenticacaoLayout>
-        <div className="mb-6 flex items-center justify-between">
-          <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
-            <Logo />
+    <AutenticacaoLayout className="max-w-lg">
+      <div className="mb-6 flex items-center justify-between">
+        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+          <Logo />
+        </Link>
+        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
+          <Link to="/configuracoes/acessibilidade">
+            <Accessibility aria-hidden="true" />
+            <span className="hidden sm:inline">Acessibilidade</span>
           </Link>
-          <Button
-            asChild
-            variant="ghost"
-            className="min-h-11 gap-1.5"
-            aria-label="Configurações de acessibilidade"
-          >
-            <Link to="/configuracoes/acessibilidade">
-              <Accessibility aria-hidden="true" />
-              <span className="hidden sm:inline">Acessibilidade</span>
-            </Link>
-          </Button>
-        </div>
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            {emailNaoVerificado ? (
-              <>
-                <div className="flex items-center gap-3">
-                  <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
-                    <Mail className="size-5" />
-                  </span>
-                  <div>
-                    <h1
-                      ref={tituloNaoVerificadoRef}
-                      tabIndex={-1}
-                      data-speak="Confirme seu e-mail antes de entrar."
-                      className="text-xl font-extrabold outline-none"
-                    >
-                      Confirme seu e-mail
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                      Enviamos um e-mail de confirmação para <strong className="text-foreground">{emailNaoVerificado}</strong>. Verifique
-                      sua caixa de entrada (e a pasta de spam) e clique no link antes de entrar.
-                    </p>
-                  </div>
-                </div>
+        </Button>
+      </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mt-6 min-h-11 w-full"
-                  disabled={reenviando || reenviado}
-                  onClick={reenviarConfirmacao}
+      <Card className="shadow-card">
+        <CardContent className="p-6 sm:p-8">
+          {emailNaoVerificado ? (
+            <>
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary"
                 >
-                  {reenviando ? (
-                    <>
-                      <Loader2 className="animate-spin" aria-hidden="true" /> Reenviando…
-                    </>
-                  ) : reenviado ? (
-                    "E-mail reenviado"
-                  ) : (
-                    "Reenviar e-mail"
-                  )}
-                </Button>
+                  <Mail className="size-5" />
+                </span>
+                <h1
+                  ref={tituloNaoVerificadoRef}
+                  tabIndex={-1}
+                  data-speak="Confirme seu e-mail antes de entrar."
+                  className="text-xl font-extrabold outline-none"
+                >
+                  Confirme seu e-mail
+                </h1>
+              </div>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="mt-2 min-h-11 w-full gap-2"
-                  onClick={() => {
-                    setEmailNaoVerificado(null);
-                    setReenviado(false);
-                  }}
-                >
-                  <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
-                </Button>
-              </>
-            ) : contaPausadaPendente ? (
-              <>
-                <div className="flex items-center gap-3">
-                  <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
-                    <PauseCircle className="size-5" />
-                  </span>
-                  <div>
-                    <h1
-                      ref={tituloPausadaRef}
-                      tabIndex={-1}
-                      data-speak="Sua conta está pausada. Deseja reativá-la agora?"
-                      className="text-xl font-extrabold outline-none"
-                    >
-                      Sua conta está pausada
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                      Você pausou esta conta anteriormente. Deseja reativá-la e continuar?
-                    </p>
-                  </div>
-                </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Enviamos um e-mail de confirmação para{" "}
+                <strong className="text-foreground">{emailNaoVerificado}</strong>. Verifique sua caixa de entrada e
+                também a pasta de spam, e clique no link antes de entrar.
+              </p>
 
-                <Button
-                  type="button"
-                  className="mt-6 min-h-12 w-full text-base"
-                  disabled={enviando}
-                  onClick={reativarConta}
-                >
-                  {enviando ? (
-                    <>
-                      <Loader2 className="animate-spin" aria-hidden="true" /> Reativando…
-                    </>
-                  ) : (
-                    "Reativar minha conta"
-                  )}
-                </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-6 min-h-11 w-full"
+                disabled={reenviando || reenviado}
+                onClick={reenviarConfirmacao}
+              >
+                {reenviando ? (
+                  <>
+                    <Loader2 className="animate-spin" aria-hidden="true" /> Reenviando…
+                  </>
+                ) : reenviado ? (
+                  "E-mail reenviado"
+                ) : (
+                  "Reenviar e-mail"
+                )}
+              </Button>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="mt-2 min-h-11 w-full gap-2"
-                  onClick={() => setContaPausadaPendente(null)}
+              <Button
+                type="button"
+                variant="ghost"
+                className="mt-2 min-h-11 w-full gap-2"
+                onClick={() => {
+                  setEmailNaoVerificado(null);
+                  setReenviado(false);
+                }}
+              >
+                <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+              </Button>
+            </>
+          ) : contaPausadaPendente ? (
+            <>
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary"
                 >
-                  <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
-                </Button>
-              </>
-            ) : (
-              <>
+                  <PauseCircle className="size-5" />
+                </span>
+                <h1
+                  ref={tituloPausadaRef}
+                  tabIndex={-1}
+                  data-speak="Sua conta está pausada. Deseja reativá-la agora?"
+                  className="text-xl font-extrabold outline-none"
+                >
+                  Sua conta está pausada
+                </h1>
+              </div>
+
+              <p className="mt-4 text-sm text-muted-foreground">
+                Você pausou esta conta anteriormente. Deseja reativá-la e continuar?
+              </p>
+
+              <Button type="button" className="mt-6 min-h-12 w-full text-base" disabled={enviando} onClick={reativarConta}>
+                {enviando ? (
+                  <>
+                    <Loader2 className="animate-spin" aria-hidden="true" /> Reativando…
+                  </>
+                ) : (
+                  "Reativar minha conta"
+                )}
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="mt-2 min-h-11 w-full gap-2"
+                onClick={() => setContaPausadaPendente(null)}
+              >
+                <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="mb-6">
                 <h1 className="text-2xl font-extrabold">Entrar no ACESSO</h1>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   Suas preferências de acessibilidade acompanham sua conta.
                 </p>
-                <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      className="min-h-12"
-                      aria-invalid={Boolean(errors.email)}
-                      aria-describedby={errors.email ? "email-erro" : undefined}
-                      {...register("email")}
-                    />
-                    {errors.email && (
-                      <p id="email-erro" role="alert" className="text-sm font-medium text-destructive">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="senha">Senha</Label>
-                      <Link to="/recuperar-senha" className="text-sm font-semibold text-primary underline">
-                        Esqueceu a senha?
-                      </Link>
-                    </div>
-                    <PasswordInput
-                      id="senha"
-                      autoComplete="current-password"
-                      className="min-h-12"
-                      aria-invalid={Boolean(errors.senha)}
-                      aria-describedby={errors.senha ? "senha-erro" : undefined}
-                      {...register("senha")}
-                    />
-                    {errors.senha && (
-                      <p id="senha-erro" role="alert" className="text-sm font-medium text-destructive">
-                        {errors.senha.message}
-                      </p>
-                    )}
-                  </div>
-                  <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
-                    {enviando ? (
-                      <>
-                        <Loader2 className="animate-spin" aria-hidden="true" /> Entrando…
-                      </>
-                    ) : (
-                      <>
-                        Entrar <ArrowRight aria-hidden="true" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-                <p className="mt-6 text-sm text-muted-foreground">
-                  Ainda não tem conta?{" "}
-                  <Link to="/cadastro" className="font-semibold text-primary underline">
-                    Criar conta gratuita
-                  </Link>
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+
+              <BotaoGoogle />
+
+              <form className="space-y-5" onSubmit={aoEnviar} noValidate>
+                <Campo id="email" rotulo="E-mail" erro={errors.email?.message}>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    className="min-h-12"
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={descricao("email", false, Boolean(errors.email))}
+                    {...register("email")}
+                  />
+                </Campo>
+
+                <Campo
+                  id="senha"
+                  rotulo="Senha"
+                  erro={errors.senha?.message}
+                  acao={
+                    <Link to="/recuperar-senha" className="text-sm font-semibold text-primary underline">
+                      Esqueceu a senha?
+                    </Link>
+                  }
+                >
+                  <PasswordInput
+                    id="senha"
+                    autoComplete="current-password"
+                    className="min-h-12"
+                    aria-invalid={Boolean(errors.senha)}
+                    aria-describedby={descricao("senha", false, Boolean(errors.senha))}
+                    {...register("senha")}
+                  />
+                </Campo>
+
+                <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
+                  {enviando ? (
+                    <>
+                      <Loader2 className="animate-spin" aria-hidden="true" /> Entrando…
+                    </>
+                  ) : (
+                    <>
+                      Entrar <ArrowRight aria-hidden="true" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {!emInterrupcao && (
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Ainda não tem uma conta?{" "}
+          <Link to="/cadastro" className="font-semibold text-primary underline underline-offset-2">
+            Criar conta gratuita
+          </Link>
+        </p>
+      )}
     </AutenticacaoLayout>
   );
 }

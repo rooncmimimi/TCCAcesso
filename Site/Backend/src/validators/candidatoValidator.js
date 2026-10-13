@@ -44,6 +44,14 @@ export const validarAtualizacaoCandidato = [
         .isLength({ min: 2, max: 2 })
         .withMessage("Use a sigla do estado (ex.: SP)."),
 
+    // Código ISO 3166-1 alpha-2, não o nome do país (veja o model Candidato).
+    body("pais")
+        .optional({ values: "falsy" })
+        .trim()
+        .toUpperCase()
+        .matches(/^[A-Z]{2}$/)
+        .withMessage("Use o código do país com 2 letras (ex.: BR)."),
+
     body("cep")
         .optional({ values: "falsy" })
         .trim()

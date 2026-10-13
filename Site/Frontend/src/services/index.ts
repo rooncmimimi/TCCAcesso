@@ -11,6 +11,6 @@ export { default as notificacoesService } from "./notificacoes.service";
 export { default as dashboardService, candidaturasService } from "./dashboard.service";
 export { default as adminService } from "./admin.service";
 export { default as publicoService, buscaService } from "./publico.service";
-export { default as acessibilidadeService, chatbotService } from "./acessibilidade.service";
+export { default as acessibilidadeService } from "./acessibilidade.service";
 export { default as atividadeService } from "./atividade.service";
 export * from "./socket";

@@ -1,10 +1,11 @@
+import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
 import sequelize from "../config/bancoDeDados.js";
+import env from "../config/env.js";
 import {
     Usuario,
     Candidato,
     Empresa,
-    Administrador,
     CodigoVerificacaoEmail
 } from "../models/index.js";
 import { gerarHashSenha, compararSenha } from "../utils/bcrypt.js";
@@ -88,9 +89,62 @@ class AutenticacaoService {
         };
     }
 
-    /* Cadastro de candidato */
+    /**
+     * Campos do registro de aceite dos documentos legais, para gravar junto do `Usuario.create`.
+     *
+     * O momento vem do servidor, nunca do cliente, e a versão é a que o cliente diz ter mostrado —
+     * é só um rótulo do texto exibido, não uma permissão, então não há o que forjar aqui. Sem versão
+     * informada não grava nada: melhor um aceite sem registro do que um registro que mente sobre
+     * qual texto foi aceito.
+     */
+    registroDeAceite(versao) {
+        if (!versao) return {};
+
+        return { termosAceitosEm: new Date(), termosVersao: String(versao).slice(0, 20) };
+    }
+
+    /**
+     * Lê o código de entrega do Google e devolve o `sub` verificado, para vincular no cadastro.
+     *
+     * O `sub` vem do token que **este servidor** assinou depois de verificar o ID token com o
+     * Google — nunca de um campo que o navegador mandou. É o que impede alguém de criar uma conta
+     * dizendo ser dona de uma conta Google qualquer.
+     *
+     * Código ausente é cadastro comum, sem Google: devolve `{}` e segue. Código presente e inválido
+     * é erro, porque aí houve intenção de vincular e ela não pôde ser comprovada.
+     */
+    vinculoGoogle(codigo) {
+        if (!codigo) return {};
+
+        let conteudo;
+        try {
+            conteudo = jwt.verify(codigo, env.jwt.secret);
+        } catch {
+            throw ErroApi.requisicaoInvalida(
+                "A verificação com o Google expirou. Entre com o Google novamente."
+            );
+        }
+
+        if (!conteudo?.perfil?.sub) {
+            throw ErroApi.requisicaoInvalida("Verificação do Google inválida.");
+        }
+
+        return { googleId: conteudo.perfil.sub };
+    }
+
+    /**
+     * Cadastro de candidato: cria conta e perfil numa transação e já devolve sessão.
+     *
+     * As duas primeiras etapas do wizard chegam juntas aqui (conta + dados pessoais), de propósito:
+     * são os campos obrigatórios do candidato, e gravá-los numa transação só evita a conta existir
+     * pela metade se a chamada seguinte falhar.
+     *
+     * `emailVerificado` nasce **falso** e continua falso até alguém de fato confirmar o endereço —
+     * o cadastro deixou de exigir a confirmação, mas isso não torna o e-mail verificado. Quem libera
+     * o uso da conta é o login (`entrar`), que não barra candidato por e-mail não confirmado.
+     */
     async cadastrarCandidato(data, contexto = {}) {
-        const { nome, email, senha, telefone, cpf } = data;
+        const { nome, email, senha, telefone, cpf, pais, dataNascimento, cidade, estado, termosVersao, googleCodigo } = data;
 
         if (await this.buscarPorEmail(email)) {
             throw ErroApi.conflito("Este e-mail já está cadastrado.");
@@ -100,8 +154,8 @@ class AutenticacaoService {
             throw ErroApi.conflito("Este CPF já está cadastrado.");
         }
 
-        const precisaConfirmarEmail = EmailService.disponivel();
         const transaction = await sequelize.transaction();
+        let usuarioCriado;
 
         try {
             const usuario = await Usuario.create(
@@ -111,7 +165,9 @@ class AutenticacaoService {
                     senhaHash: await gerarHashSenha(senha),
                     telefone: telefone || null,
                     tipoUsuario: "candidato",
-                    emailVerificado: !precisaConfirmarEmail
+                    emailVerificado: false,
+                    ...this.registroDeAceite(termosVersao),
+                    ...this.vinculoGoogle(googleCodigo)
                 },
                 { transaction }
             );
@@ -119,22 +175,68 @@ class AutenticacaoService {
             await Candidato.create(
                 {
                     usuarioId: usuario.id,
-                    cpf: cpf || null
+                    cpf: cpf || null,
+                    pais: pais ? pais.toUpperCase() : null,
+                    dataNascimento: dataNascimento || null,
+                    cidade: cidade || null,
+                    estado: estado ? estado.toUpperCase() : null
                 },
                 { transaction }
             );
 
             await transaction.commit();
-
-            return this.finalizarCadastro(usuario, contexto);
+            usuarioCriado = usuario;
         } catch (erro) {
             await transaction.rollback();
             throw erro;
         }
+
+        // Fora da transação, e best-effort: o e-mail de confirmação continua saindo para quem
+        // quiser verificar o endereço depois (recuperação de senha agradece), mas o cadastro não
+        // depende dele. Falhar aqui não pode derrubar uma conta que já está criada.
+        if (EmailService.disponivel()) {
+            try {
+                await this.enviarCodigoConfirmacaoCadastro(usuarioCriado);
+            } catch {
+                // `enviarCodigoConfirmacaoCadastro` já engole a falha de envio; isto cobre o resto
+                // (gravar o código, por exemplo). A pessoa pode pedir reenvio quando quiser.
+            }
+        }
+
+        return this.montarSessao(usuarioCriado, contexto);
     }
 
     /* Cadastro de empresa */
-    async cadastrarEmpresa(data, contexto = {}) {
+    /**
+     * Cadastro de empresa. Exige que quem está criando já tenha conta de **candidato**.
+     *
+     * É a regra do produto: a conta de empresa nasce de uma conta pessoal e fica vinculada a ela.
+     * As duas permanecem separadas — cada uma com seu login e seu `tipo_usuario` —, então nada da
+     * autorização muda; o que a empresa ganha é o registro de quem respondeu pelo cadastro.
+     *
+     * O vínculo vem de `solicitante`, que o controller lê da sessão. Nunca do corpo da requisição:
+     * um campo enviado pelo cliente seria alegação, não prova, e qualquer um poderia dizer que a
+     * empresa pertence à conta de outra pessoa.
+     *
+     * Nada aqui contorna a aprovação: a empresa continua nascendo em análise.
+     */
+    async cadastrarEmpresa(data, contexto = {}, solicitante = null) {
+        if (!solicitante) {
+            throw ErroApi.naoAutenticado(
+                "Para cadastrar uma empresa é preciso entrar com a sua conta de candidato."
+            );
+        }
+
+        if (solicitante.tipoUsuario !== "candidato") {
+            throw ErroApi.acessoNegado(
+                "Só uma conta de candidato pode cadastrar uma empresa. Entre com a sua conta pessoal."
+            );
+        }
+
+        return this.criarEmpresa(data, contexto, solicitante.id);
+    }
+
+    async criarEmpresa(data, contexto = {}, usuarioCandidatoId = null) {
         const {
             nome,
             email,
@@ -150,7 +252,10 @@ class AutenticacaoService {
             cidade,
             estado,
             endereco,
-            cep
+            cep,
+            pais,
+            culturaInclusiva,
+            termosVersao
         } = data;
 
         if (await this.buscarPorEmail(email)) {
@@ -172,7 +277,8 @@ class AutenticacaoService {
                     senhaHash: await gerarHashSenha(senha),
                     telefone: telefone || null,
                     tipoUsuario: "empresa",
-                    emailVerificado: !precisaConfirmarEmail
+                    emailVerificado: !precisaConfirmarEmail,
+                    ...this.registroDeAceite(termosVersao)
                 },
                 { transaction }
             );
@@ -190,7 +296,10 @@ class AutenticacaoService {
                     cidade: cidade || null,
                     estado: estado ? estado.toUpperCase() : null,
                     endereco: endereco || null,
-                    cep: cep || null
+                    cep: cep || null,
+                    pais: pais ? pais.toUpperCase() : null,
+                    culturaInclusiva: culturaInclusiva || null,
+                    usuarioCandidatoId
                 },
                 { transaction }
             );
@@ -205,10 +314,13 @@ class AutenticacaoService {
     }
 
     /**
-     * Depois de criar a conta: com o envio de confirmação disponível (`BREVO_API_KEY` configurada),
-     * a conta exige confirmar o e-mail antes do primeiro login e ainda não recebe sessão. Sem
-     * provedor, o login é imediato, para não travar o cadastro por uma dependência externa não
-     * configurada.
+     * Fecha o cadastro de **empresa**. Com o envio de confirmação disponível (`BREVO_API_KEY`
+     * configurada), a conta exige confirmar o e-mail antes do primeiro login e ainda não recebe
+     * sessão. Sem provedor, o login é imediato, para não travar o cadastro por uma dependência
+     * externa não configurada.
+     *
+     * Candidato não passa por aqui: `cadastrarCandidato` devolve sessão direto, porque o cadastro
+     * dele deixou de exigir confirmação de e-mail.
      */
     async finalizarCadastro(usuario, contexto) {
         if (!EmailService.disponivel()) {
@@ -397,6 +509,22 @@ class AutenticacaoService {
             throw ErroApi.naoAutenticado("E-mail ou senha inválidos.");
         }
 
+        // Os demais portões (conta desativada, bloqueada, e-mail não confirmado e conta pausada)
+        // ficam em `entrarComUsuario`, compartilhados com o login pelo Google.
+        return this.entrarComUsuario(usuario, contexto, confirmarReativacao);
+    }
+
+    /**
+     * Últimas checagens e emissão da sessão, a partir de um usuário já identificado.
+     *
+     * Existe para o login com Google passar exatamente pelos mesmos portões do login com senha —
+     * conta desativada, bloqueada, e-mail não confirmado (empresa) e conta pausada. Sem isto, entrar
+     * pelo Google seria um caminho paralelo que escapa das regras de autorização.
+     *
+     * Quem chama é responsável por já ter provado a identidade: senha conferida em `entrar`, ou
+     * `sub` do ID token verificado em `GoogleAuthService`.
+     */
+    async entrarComUsuario(usuario, contexto = {}, confirmarReativacao = false) {
         if (!usuario.ativo) {
             throw ErroApi.acessoNegado("Usuário desativado.");
         }
@@ -409,16 +537,10 @@ class AutenticacaoService {
             );
         }
 
-        // E-mail e senha corretos, mas o cadastro ainda não foi confirmado: não emite sessão (como
-        // a conta pausada, abaixo), e o cliente oferece "reenviar e-mail de confirmação" em vez de
-        // um erro genérico. Contas antigas (DEFAULT true) e contas criadas sem provedor de e-mail
-        // já têm `emailVerificado = true` e nunca caem aqui.
-        if (!usuario.emailVerificado) {
+        if (!usuario.emailVerificado && usuario.tipoUsuario !== "candidato") {
             return { emailNaoVerificado: true, email: usuario.email };
         }
 
-        // Conta pausada pelo próprio usuário: e-mail/senha corretos, mas não
-        // emite sessão até o usuário confirmar que quer reativar.
         if (usuario.pausadoPeloUsuario) {
             if (!confirmarReativacao) {
                 return { contaPausada: true };
@@ -458,8 +580,7 @@ class AutenticacaoService {
         const usuario = await Usuario.findByPk(id, {
             include: [
                 { model: Candidato, as: "candidato" },
-                { model: Empresa, as: "empresa" },
-                { model: Administrador, as: "administrador" }
+                { model: Empresa, as: "empresa" }
             ]
         });
 
@@ -468,6 +589,60 @@ class AutenticacaoService {
         }
 
         return usuario;
+    }
+
+    /**
+     * Marca o cadastro como terminado. Chamada na última etapa do wizard.
+     *
+     * Enquanto `cadastroConcluidoEm` for nula, o Site entende que a pessoa parou no meio — o caso
+     * normal quando a confirmação de e-mail está ativa, que corta o cadastro em dois — e oferece
+     * retomar de onde parou depois do login. Idempotente: concluir de novo não reescreve a data,
+     * para a primeira conclusão continuar sendo a verdadeira.
+     */
+    async concluirCadastro(usuarioId) {
+        const usuario = await Usuario.findByPk(usuarioId);
+
+        if (!usuario) {
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
+        }
+
+        // Candidato só conclui com os campos obrigatórios do perfil preenchidos. É aqui que isso é
+        // conferido no servidor, e não em `PUT /candidatos/:id`, porque aquele endpoint também
+        // serve à edição avulsa do perfil, onde exigir estes campos travaria qualquer outra
+        // alteração. Currículo e foto continuam opcionais e nunca entram nesta conta.
+        if (usuario.tipoUsuario === "candidato") {
+            const candidato = await Candidato.findOne({ where: { usuarioId } });
+
+            if (!candidato) {
+                throw ErroApi.naoEncontrado("Perfil de candidato não encontrado.");
+            }
+
+            // Só o que as duas primeiras etapas pedem. A etapa de perfil profissional e currículo é
+            // inteiramente opcional: ninguém fica preso no cadastro por não ter currículo em mãos
+            // ou por não saber como se descrever ainda.
+            const obrigatorios = {
+                "país": candidato.pais,
+                "data de nascimento": candidato.dataNascimento,
+                cidade: candidato.cidade,
+                estado: candidato.estado
+            };
+
+            const faltando = Object.entries(obrigatorios)
+                .filter(([, valor]) => !String(valor ?? "").trim())
+                .map(([nome]) => nome);
+
+            if (faltando.length) {
+                throw ErroApi.requisicaoInvalida(
+                    `Para concluir o cadastro, preencha: ${faltando.join(", ")}.`
+                );
+            }
+        }
+
+        if (!usuario.cadastroConcluidoEm) {
+            await usuario.update({ cadastroConcluidoEm: new Date() });
+        }
+
+        return this.perfilAtual(usuarioId);
     }
 
     /* Troca de senha */

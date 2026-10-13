@@ -7,6 +7,8 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 | --- | --- |
 | `0001_esquema_inicial.sql` | Cria o schema inteiro: funções, enums, tabelas, índices, gatilhos, RLS e comentários. Roda num banco sem as tabelas da aplicação. |
 | `0002_catalogo_deficiencias.sql` | Preenche o catálogo `deficiencias`, que o candidato usa para se declarar PCD no perfil. |
+| `0003_remover_chatbot_e_administradores.sql` | Remove as tabelas do chatbot (`chatbot_conversas`, `chatbot_mensagens`), o enum `papel_chatbot` e a tabela `administradores`, que nenhum fluxo preenchia. |
+| `0004_pais_do_candidato_e_cadastro_concluido.sql` | Adiciona `candidatos.pais` (ISO 3166-1 alpha-2) e `usuarios.cadastro_concluido_em`, que sustentam o cadastro em etapas e a retomada depois da confirmação de e-mail. |
 
 ## Como aplicar
 

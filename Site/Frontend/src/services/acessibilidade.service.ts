@@ -1,5 +1,5 @@
 import clienteApi from "./api";
-import type { ChatbotConversa, ChatbotMensagem, PreferenciasAcessibilidadeApi } from "@/types";
+import type { PreferenciasAcessibilidadeApi } from "@/types";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
 
 /** Converte as preferências locais para o formato aceito pelo Backend. */
@@ -65,38 +65,6 @@ export const acessibilidadeService = {
       "/acessibilidade/reset",
     );
     return data.preferencias ?? {};
-  },
-};
-
-/** Assistente virtual (chatbot) com conversas persistidas. */
-export const chatbotService = {
-  async conversas(): Promise<ChatbotConversa[]> {
-    const { data } = await clienteApi.get<{ conversas: ChatbotConversa[] }>("/chatbot/conversas");
-    return data.conversas ?? [];
-  },
-
-  async mensagens(conversaId: string): Promise<ChatbotMensagem[]> {
-    const { data } = await clienteApi.get<{ mensagens: ChatbotMensagem[] }>(
-      `/chatbot/conversas/${conversaId}/mensagens`,
-    );
-    return data.mensagens ?? [];
-  },
-
-  /** Espelha o retorno real de `ChatbotService.enviar` no backend: `{ conversa, pergunta, resposta }`. */
-  async enviar(
-    conteudo: string,
-    conversaId?: string | null,
-  ): Promise<{ conversa: ChatbotConversa; pergunta: ChatbotMensagem; resposta: ChatbotMensagem }> {
-    const { data } = await clienteApi.post<{
-      conversa: ChatbotConversa;
-      pergunta: ChatbotMensagem;
-      resposta: ChatbotMensagem;
-    }>("/chatbot/mensagens", { conteudo, conversaId: conversaId ?? null });
-    return data;
-  },
-
-  async remover(conversaId: string): Promise<void> {
-    await clienteApi.delete(`/chatbot/conversas/${conversaId}`);
   },
 };
 

@@ -120,6 +120,32 @@ const Usuario = sequelize.define(
         // handshake do socket), então trocar ou redefinir a senha derruba a conta em todo aparelho.
         senhaAlteradaEm: {
             type: DataTypes.DATE
+        },
+
+        // Nulo significa cadastro começado e não terminado: é o que permite oferecer "retomar
+        // cadastro" depois da confirmação de e-mail, já que a confirmação quebra o fluxo em dois.
+        // Não dá para deduzir isso de `preferencias_acessibilidade`, cuja linha nasce na primeira
+        // leitura (`AcessibilidadeService.obter` usa `findOrCreate`).
+        cadastroConcluidoEm: {
+            type: DataTypes.DATE
+        },
+
+        // Claim `sub` do ID token do Google: identificador estável da conta, que é o que vincula
+        // uma conta Google a uma conta ACESSO. É `sub`, e não o e-mail, porque o e-mail de uma
+        // conta Google pode mudar e pode ser reaproveitado por outra pessoa; `sub` não.
+        googleId: {
+            type: DataTypes.STRING(255),
+            unique: true
+        },
+
+        // Qual versão dos documentos legais foi aceita e quando. Sem isso o aceite seria só um
+        // booleano que ninguém guarda, e não haveria como saber o que foi aceito quando o texto mudar.
+        termosAceitosEm: {
+            type: DataTypes.DATE
+        },
+
+        termosVersao: {
+            type: DataTypes.STRING(20)
         }
     },
     {

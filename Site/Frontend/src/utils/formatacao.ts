@@ -2,6 +2,8 @@
  * Funções utilitárias de formatação usadas na interface.
  */
 
+import type { PorteEmpresa } from "@/types";
+
 const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -115,3 +117,18 @@ export function formatarTamanhoArquivo(bytes?: number | null): string {
   }
   return `${valor.toFixed(valor >= 10 || indice === 0 ? 0 : 1)} ${unidades[indice]}`;
 }
+
+/**
+ * Rótulos dos portes de empresa, na ordem do menor para o maior.
+ *
+ * O banco guarda o valor cru (`media`); a tela mostra o nome escrito como se escreve em português
+ * ("Média", "MEI" em caixa alta). Fica aqui, e não em cada tela, porque o cadastro e a edição do
+ * perfil da empresa precisam oferecer exatamente as mesmas opções com os mesmos nomes.
+ */
+export const PORTES_EMPRESA: { valor: PorteEmpresa; rotulo: string }[] = [
+  { valor: "mei", rotulo: "MEI" },
+  { valor: "micro", rotulo: "Microempresa" },
+  { valor: "pequena", rotulo: "Pequena" },
+  { valor: "media", rotulo: "Média" },
+  { valor: "grande", rotulo: "Grande" },
+];

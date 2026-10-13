@@ -15,8 +15,8 @@ export function AutenticacaoLayout({
 }: {
   children: ReactNode;
   /**
-   * Sobrepõe a largura máxima padrão (`max-w-md`); o cadastro, por exemplo, usa `max-w-lg` por ter
-   * dois formulários possíveis.
+   * Sobrepõe a largura máxima padrão (`max-w-md`); entrar e cadastro usam `max-w-lg`, para os dois
+   * cartões terem a mesma largura quando se vai de um para o outro.
    */
   className?: string;
 }) {

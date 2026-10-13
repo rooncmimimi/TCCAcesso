@@ -27,6 +27,8 @@ export function CidadeAutocomplete({
   placeholder,
   className,
   "aria-label": ariaLabel,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedby,
   autoComplete = "off",
   onEnterSemSelecao,
 }: {
@@ -38,6 +40,9 @@ export function CidadeAutocomplete({
   placeholder?: string;
   className?: string;
   "aria-label"?: string;
+  /** Mesmos atributos dos outros campos: sem eles o erro aparece ao lado, mas não marca o campo. */
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
   autoComplete?: string;
   /** Chamado quando Enter é pressionado sem nenhuma sugestão destacada (ex.: disparar a busca de um filtro). */
   onEnterSemSelecao?: () => void;
@@ -157,6 +162,8 @@ export function CidadeAutocomplete({
           aria-autocomplete="list"
           aria-activedescendant={indiceAtivo >= 0 ? `${listboxId}-${indiceAtivo}` : undefined}
           aria-label={ariaLabel}
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedby}
           autoComplete={autoComplete}
           value={value}
           placeholder={placeholder}

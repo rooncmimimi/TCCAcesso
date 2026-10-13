@@ -146,8 +146,13 @@ function ConfirmarEmail() {
                 <h1 ref={tituloRef} tabIndex={-1} className="mt-4 text-xl font-extrabold outline-none">
                   E-mail confirmado com sucesso!
                 </h1>
+                {/*
+                  Sem prometer que acabou: quem confirma vindo do cadastro ainda tem as duas
+                  últimas etapas pela frente, e o login leva direto para elas (`?retomar=true`).
+                */}
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Sua conta está pronta. Você já pode entrar no ACESSO.
+                  Agora é só entrar. Se o seu cadastro ficou pela metade, continuamos de onde você
+                  parou.
                 </p>
                 <Button asChild className="mt-6 min-h-12 w-full text-base">
                   <Link to="/entrar">Entrar no ACESSO</Link>

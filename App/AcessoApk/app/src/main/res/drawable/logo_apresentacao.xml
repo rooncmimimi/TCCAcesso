@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logotipo do cabeçalho: círculo verde com o símbolo de acessibilidade -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/acesso_primaria" />
+            <size
+                android:width="@dimen/apresentacao_tamanho_logo"
+                android:height="@dimen/apresentacao_tamanho_logo" />
+        </shape>
+    </item>
+    <item
+        android:width="24dp"
+        android:height="24dp"
+        android:drawable="@drawable/ic_acessibilidade"
+        android:gravity="center" />
+</layer-list>

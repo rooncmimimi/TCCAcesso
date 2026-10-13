@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/aba_inicio" android:icon="@drawable/ic_inicio" android:title="@string/aba_inicio" />
+    <item android:id="@+id/aba_oportunidades" android:icon="@drawable/ic_oportunidades" android:title="@string/aba_oportunidades" />
+    <item android:id="@+id/aba_criar" android:icon="@drawable/ic_criar" android:title="@string/aba_criar" />
+    <item android:id="@+id/aba_pesquisa" android:icon="@drawable/ic_pesquisa" android:title="@string/aba_pesquisa" />
+    <item android:id="@+id/aba_perfil" android:icon="@drawable/ic_perfil" android:title="@string/aba_perfil" />
+</menu>

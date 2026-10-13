@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone quadrado colorido da lista de recursos da apresentação -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="@dimen/apresentacao_tamanho_icone_item"
+        android:height="@dimen/apresentacao_tamanho_icone_item">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="@color/recurso_amarelo" />
+        </shape>
+    </item>
+    <item
+        android:width="22dp"
+        android:height="22dp"
+        android:drawable="@drawable/ic_tamanho_texto"
+        android:gravity="center" />
+</layer-list>

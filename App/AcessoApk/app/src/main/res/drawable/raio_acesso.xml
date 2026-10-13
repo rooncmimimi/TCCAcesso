@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raio da identidade visual do ACESSO: o mesmo raio em zigue-zague (cores da
+     bandeira do Orgulho da Pessoa com Deficiência) usado na página inicial do
+     site (Site/Frontend/src/assets/raio-acesso.svg), vetorizado e já girado na
+     mesma posição. É só decoração; use pelo layout componente_fundo_raio.xml. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="300dp"
+    android:viewportWidth="317.5"
+    android:viewportHeight="264.58">
+    <path android:fillColor="@color/raio_azul" android:pathData="M127.69,8.54 L121.17,13.90 L138.37,83.85 L112.20,71.87 L110.89,72.76 L128.85,146.34 L110.33,138.24 L109.23,139.15 L127.87,210.86 L138.78,224.12 L120.09,150.77 L138.25,158.42 L139.84,157.66 L121.96,84.40 L148.38,96.92 L149.59,95.92 Z" />
+    <path android:fillColor="@color/raio_amarelo" android:pathData="M133.65,3.63 L127.03,9.09 L148.31,95.49 L122.00,82.88 L120.79,83.88 L138.67,157.14 L120.15,149.05 L118.85,149.94 L137.96,223.12 L147.51,234.72 L129.13,161.30 L147.76,169.30 L148.86,168.40 L131.08,95.04 L156.85,108.10 L158.53,107.45 Z" />
+    <path android:fillColor="@color/raio_branco" android:pathData="M138.51,-0.37 L132.99,4.18 L157.29,106.62 L131.13,93.52 L129.82,94.41 L147.60,167.76 L129.10,159.47 L127.80,160.36 L146.69,233.72 L156.14,245.21 L137.87,171.70 L156.67,180.13 L157.77,179.22 L140.40,105.90 L166.05,119.05 L167.35,118.16 L140.97,2.62 Z" />
+    <path android:fillColor="@color/raio_vermelho" android:pathData="M140.15,1.62 L166.11,117.33 L141.03,104.64 L139.14,105.27 L156.51,178.59 L137.94,169.98 L136.63,170.87 L155.33,244.21 L165.14,256.14 L146.78,182.52 L166.57,192.16 L167.68,191.25 L150.39,118.04 L175.57,130.85 L176.99,129.87 L150.78,14.54 Z" />
+    <path android:fillColor="@color/raio_verde" android:pathData="M149.96,13.55 L175.75,129.04 L150.26,116.30 L149.04,117.30 L166.42,190.62 L146.66,180.58 L145.45,181.58 L164.32,255.15 L171.87,264.31 L173.75,262.77 L155.96,193.67 L175.75,203.32 L176.97,202.32 L159.85,129.53 L185.04,142.13 L186.35,141.24 L160.51,26.36 Z" />
+</vector>

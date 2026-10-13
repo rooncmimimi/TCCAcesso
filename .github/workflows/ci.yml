@@ -1,11 +1,12 @@
 name: CI
 
-# Roda lint/typecheck/testes dos três projetos do monorepo em todo push e
+# Roda testes/build dos três projetos do monorepo em todo push e
 # pull request. Nenhum job precisa de banco de dados real ou de segredo
 # nenhum: os testes de cada projeto já são isolados por design (Backend
 # mocka Sequelize/Supabase Storage em todo teste que os tocaria — conferido
-# arquivo por arquivo antes de escrever este workflow, nunca presumido; App
-# e Frontend usam suas próprias suítes com mocks de API). As variáveis de
+# arquivo por arquivo antes de escrever este workflow, nunca presumido;
+# Frontend usa sua própria suíte com mocks de API; o App Android roda os
+# testes JUnit e compila o APK de debug). As variáveis de
 # ambiente do Backend abaixo existem só para passar da validação de
 # "obrigatórias" em `config/env.js` — nenhuma delas precisa apontar para
 # algo que responde de verdade.
@@ -20,22 +21,22 @@ concurrency:
 
 jobs:
   app:
-    name: App (lint, typecheck, testes)
+    name: App Android (testes e build)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: App/AcessoApk
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-java@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: App/AcessoApk/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npx jest --ci
+          distribution: temurin
+          java-version: 17
+      # O Android SDK já vem instalado no runner ubuntu-latest.
+      - uses: gradle/actions/setup-gradle@v4
+      # Sem local.properties no CI: SUPABASE_URL/SUPABASE_ANON_KEY ficam
+      # vazios e o app compila normalmente (só não conecta ao Supabase).
+      - run: ./gradlew --no-daemon testDebugUnitTest assembleDebug
 
   backend:
     name: Backend (testes)

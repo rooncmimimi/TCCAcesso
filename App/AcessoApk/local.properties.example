@@ -1,0 +1,7 @@
+# Copie este arquivo para local.properties (o Android Studio já cria um com sdk.dir)
+# e acrescente as duas linhas abaixo com os dados do seu projeto Supabase.
+# Onde encontrar: Supabase > Project Settings > API.
+#
+# Use SOMENTE a chave "anon" (pública). Nunca coloque a service_role key aqui.
+URL_SUPABASE=https://SEU-PROJETO.supabase.co
+CHAVE_ANONIMA_SUPABASE=sua-chave-anon-aqui

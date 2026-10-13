@@ -35,10 +35,11 @@ function IconeGoogle() {
  *
  * Só aparece quando o backend confirma que o recurso está configurado: um botão que leva a erro é
  * pior do que botão nenhum. A senha do Google nunca é digitada no ACESSO — o botão leva à página
- * oficial de autorização, e o retorno é tratado em `/entrar/google`.
+ * oficial de autorização, e o retorno é tratado em `/retorno-google`.
  *
- * `tipoConta` só serve para **criar** conta nova, e viaja dentro do `state` assinado pelo backend,
- * não solto na URL: ninguém vira empresa trocando um parâmetro no caminho.
+ * `tipoConta` não escolhe o tipo da conta: toda conta começa como candidato. Ele só carrega a
+ * intenção de seguir para o cadastro da empresa depois, e viaja dentro do `state` assinado pelo
+ * backend em vez de solto na URL — assim ninguém troca um parâmetro no caminho para virar empresa.
  */
 export function BotaoGoogle({
   tipoConta,
@@ -99,6 +100,38 @@ export function BotaoGoogle({
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ou</span>
         <span className="h-px flex-1 bg-border" />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Substitui o botão depois que a pessoa já voltou do Google.
+ *
+ * Mostrar "Continuar com Google" outra vez convidaria a sair do ACESSO no meio do cadastro e voltar
+ * com o formulário vazio. Aqui o papel é outro: dizer qual conta foi verificada, que é a que será
+ * vinculada quando o cadastro terminar.
+ *
+ * A confirmação é dita por texto, não por cor nem só pelo ícone — o ícone é decorativo.
+ */
+export function ContaGoogleConfirmada({ email }: { email?: string | null }) {
+  return (
+    <div className="mb-6 flex items-start gap-3 rounded-xl border border-border bg-secondary px-4 py-3">
+      <span className="mt-0.5 shrink-0">
+        <IconeGoogle />
+      </span>
+      <p className="text-sm">
+        <span className="font-semibold">Conta Google confirmada.</span>{" "}
+        {email ? (
+          <>
+            Ela será vinculada a este cadastro: <strong className="font-semibold">{email}</strong>.
+          </>
+        ) : (
+          <>Ela será vinculada a este cadastro quando você terminar.</>
+        )}{" "}
+        <span className="text-muted-foreground">
+          Defina também uma senha — com ela você entra mesmo sem o Google.
+        </span>
+      </p>
     </div>
   );
 }

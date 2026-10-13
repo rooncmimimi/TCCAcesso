@@ -15,7 +15,6 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
-import { BotaoGoogle } from "@/components/cadastro/BotaoGoogle";
 import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
 import { LegendaObrigatorio } from "@/components/cadastro/MarcaObrigatorio";
@@ -335,7 +334,13 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             descricao="Os dados que identificam a empresa publicamente e no cadastro."
             focar={navegou.current}
           />
-          <BotaoGoogle tipoConta="empresa" />
+          {/*
+            Não há "Continuar com Google" aqui: esta tela só é alcançável por quem já entrou com a
+            conta de candidato, e o botão levaria o navegador para o Google no meio do formulário —
+            ao voltar, a sessão já existe, o retorno manda para o feed e tudo que foi digitado se
+            perde. A conta da empresa é uma segunda conta, com senha própria, criada a partir da
+            conta pessoal; o Google entra no cadastro de candidato, não aqui.
+          */}
 
           <LegendaObrigatorio />
 

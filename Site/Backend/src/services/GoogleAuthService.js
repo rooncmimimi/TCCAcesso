@@ -31,9 +31,10 @@ const MINUTOS_VALIDADE_STATE = 10;
  *   Google vinculado, o fluxo **para** e pede que a pessoa entre com a senha para então vincular.
  *   Vincular só porque o e-mail coincide deixaria qualquer um que criasse uma conta Google com
  *   aquele endereço assumir a conta alheia.
- * - **Papel não vem da URL**: `tipoConta` só é usado para **criar** conta nova, e só aceita
- *   `candidato` ou `empresa`. Numa conta que já existe, o tipo é o que está no banco — nenhum
- *   parâmetro de URL promove ninguém a empresa ou administrador.
+ * - **Papel não vem da URL**: `tipoConta` não escolhe o papel — conta nova nasce candidato de todo
+ *   jeito, e ele só carrega a intenção de seguir para o cadastro da empresa depois. Numa conta que
+ *   já existe, o tipo é o que está no banco: nenhum parâmetro de URL promove ninguém a empresa ou
+ *   administrador.
  */
 class GoogleAuthService {
     disponivel() {
@@ -189,7 +190,7 @@ class GoogleAuthService {
      * Devolve um dos três desfechos:
      * - `entrar`: já existe conta vinculada a este `sub`.
      * - `conflito`: existe conta com o mesmo e-mail, sem Google vinculado. Não vincula automaticamente.
-     * - `cadastrar`: não há conta; o cliente precisa escolher candidato ou empresa.
+     * - `cadastrar`: não há conta; o cliente segue para o cadastro de candidato.
      */
     async resolver(perfil) {
         const vinculado = await Usuario.findOne({ where: { googleId: perfil.sub } });

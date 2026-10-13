@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Building2, Loader2, User } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 import { Logo } from "@/components/Logo";
@@ -25,8 +25,9 @@ import { definirTokens } from "@/services/api";
  *   a retomada do cadastro quando ele não terminou;
  * - **conflito** — já existe conta ACESSO com aquele e-mail sem Google vinculado: pede para entrar
  *   com a senha, porque vincular só pelo e-mail deixaria qualquer um assumir a conta alheia;
- * - **cadastrar** — não há conta: pergunta se é candidato ou empresa, em vez de criar um tipo por
- *   conta própria.
+ * - **cadastrar** — não há conta: segue direto para o cadastro de candidato, levando o código de
+ *   entrega. Não há tela perguntando "candidato ou empresa" porque toda conta no ACESSO começa como
+ *   candidato — a conta da empresa é uma segunda conta, criada a partir dela.
  */
 export const Route = createFileRoute("/retorno-google")({
   validateSearch: z.object({
@@ -60,8 +61,26 @@ function RetornoGoogle() {
     googleService
       .concluir(codigo)
       .then(async (retorno) => {
-        if (retorno.desfecho !== "entrar") {
+        if (retorno.desfecho === "conflito") {
           setResultado(retorno);
+          return;
+        }
+
+        // Sem conta ainda: vai direto montar a conta de candidato, sem tela intermediária. O código
+        // de entrega segue na URL porque é ele que, no fim do wizard, vincula a conta Google à conta
+        // criada — o vínculo é feito pelo `sub` que o servidor reconfere, não por nada daqui.
+        // `depois=empresa` preserva a intenção de quem entrou por "Sou empresa": ela veio dentro do
+        // `state` assinado pelo backend, então não é um parâmetro que alguém troque no caminho.
+        // `replace` evita que o botão "voltar" caia nesta tela de passagem, que já gastou o código.
+        if (retorno.desfecho === "cadastrar") {
+          navigate({
+            to: "/cadastro/candidato",
+            search: {
+              google: retorno.codigo,
+              depois: retorno.tipoConta === "empresa" ? "empresa" : undefined,
+            },
+            replace: true,
+          });
           return;
         }
 
@@ -105,8 +124,6 @@ function RetornoGoogle() {
                 <Link to="/entrar">Entrar com e-mail e senha</Link>
               </Button>
             </Aviso>
-          ) : resultado?.desfecho === "cadastrar" ? (
-            <EscolherTipo resultado={resultado} />
           ) : (
             <div className="flex items-center gap-3 py-6" role="status">
               <Loader2 className="size-5 animate-spin text-primary" aria-hidden="true" />
@@ -149,53 +166,6 @@ function Aviso({
       </div>
       <p className="mt-4 text-sm text-muted-foreground">{texto}</p>
       <div className="mt-6">{children}</div>
-    </div>
-  );
-}
-
-/**
- * Conta Google sem conta ACESSO: a pessoa escolhe o tipo.
- *
- * O tipo nunca é escolhido pelo sistema nem vem de parâmetro de URL — candidato e empresa têm
- * regras e permissões diferentes, e errar aqui daria a alguém um papel que não é o dela.
- */
-function EscolherTipo({ resultado }: { resultado: Extract<ResultadoGoogle, { desfecho: "cadastrar" }> }) {
-  const tituloRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    tituloRef.current?.focus();
-  }, []);
-
-  return (
-    <div>
-      <h1 ref={tituloRef} tabIndex={-1} className="text-xl font-extrabold outline-none">
-        Falta só escolher o tipo de conta
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {resultado.perfil.email
-          ? `Confirmamos sua conta Google (${resultado.perfil.email}), mas ela ainda não tem cadastro no ACESSO.`
-          : "Confirmamos sua conta Google, mas ela ainda não tem cadastro no ACESSO."}{" "}
-        Os dois cadastros são diferentes — escolha o que combina com você.
-      </p>
-
-      <div className="mt-6 grid gap-3">
-        <Button asChild variant="outline" className="min-h-14 justify-start gap-3 text-base">
-          {/* O código segue junto: é ele que vincula a conta Google à conta criada. */}
-          <Link to="/cadastro/candidato" search={{ google: resultado.codigo }}>
-            <User aria-hidden="true" /> Criar conta de candidato
-          </Link>
-        </Button>
-        <Button asChild variant="outline" className="min-h-14 justify-start gap-3 text-base">
-          <Link to="/cadastro/candidato" search={{ google: resultado.codigo, depois: "empresa" }}>
-            <Building2 aria-hidden="true" /> Criar conta de empresa
-          </Link>
-        </Button>
-      </div>
-
-      <p className="mt-5 rounded-lg bg-secondary px-4 py-3 text-sm text-muted-foreground">
-        O Google informa apenas nome e e-mail. CPF, país, telefone e os dados da empresa continuam
-        sendo preenchidos por você — nada disso é adivinhado.
-      </p>
     </div>
   );
 }

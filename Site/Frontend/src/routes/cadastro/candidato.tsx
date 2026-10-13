@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { PainelAcessibilidade } from "@/components/acessibilidade/PainelAcessibilidade";
-import { BotaoGoogle } from "@/components/cadastro/BotaoGoogle";
+import { BotaoGoogle, ContaGoogleConfirmada } from "@/components/cadastro/BotaoGoogle";
 import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
 import { EtapaCurriculoPerfil } from "@/components/cadastro/EtapaCurriculoPerfil";
@@ -358,7 +358,22 @@ function WizardCandidato({
       {passo === CANDIDATO.CONTA && (
         <>
           <TituloEtapa titulo={t.contaTitulo} descricao={t.contaDescricao} focar={navegou.current} />
-          <BotaoGoogle tipoConta="candidato" />
+          {doGoogle ? (
+            /*
+              Quem já voltou do Google não vê o botão de novo: clicar nele sairia do ACESSO para a
+              tela do Google outra vez e, na volta, o formulário recomeçaria vazio. No lugar, a
+              confirmação de qual conta foi verificada — é ela que será vinculada no fim.
+            */
+            <ContaGoogleConfirmada email={doGoogle.email} />
+          ) : (
+            /*
+              `tipoConta` carrega a intenção de quem entrou por "Sou empresa": ela viaja dentro do
+              `state` assinado pelo backend e volta no retorno do Google, que então manda de novo
+              para cá com `?depois=empresa`. Sem isso, usar o Google no caminho "Sou empresa" perdia
+              a intenção e a pessoa terminava só com a conta pessoal, sem seguir para a empresa.
+            */
+            <BotaoGoogle tipoConta={seguirParaEmpresa ? "empresa" : "candidato"} />
+          )}
 
           <LegendaObrigatorio texto={t.legendaObrigatorio} />
 

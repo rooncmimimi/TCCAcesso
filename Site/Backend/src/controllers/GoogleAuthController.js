@@ -22,14 +22,15 @@ const SEGUNDOS_ENTREGA = 15 * 60;
  * Fluxo de entrar/cadastrar com Google.
  *
  * O retorno do Google é uma navegação do navegador para o **backend**, mas quem precisa da sessão é
- * o Site. A ponte é um "código de entrega": um JWT de 60 segundos, assinado aqui, que carrega
- * apenas o perfil **já verificado** pelo Google. O backend redireciona o navegador para o Site com
- * esse código, e o Site o troca num POST por sessão ou pelo próximo passo.
+ * o Site. A ponte é um "código de entrega": um JWT curto, assinado aqui, que carrega apenas o
+ * perfil **já verificado** pelo Google — a validade está em `SEGUNDOS_ENTREGA`, acima. O backend
+ * redireciona o navegador para o Site com esse código, e o Site o troca num POST por sessão ou pelo
+ * próximo passo.
  *
  * O código vai na URL porque, sem cookie de sessão (adiado para uma fase futura, ver
  * `docs/cookies-de-sessao.md`), não há outro canal entre o redirecionamento do Google e o Site. Por
- * isso ele dura um minuto, serve a uma coisa só e não é sessão: sozinho não autentica ninguém, só
- * diz qual conta Google foi verificada. A fase de cookies elimina essa passagem pela URL.
+ * isso ele é curto, serve a uma coisa só e não é sessão: sozinho não autentica ninguém, só diz qual
+ * conta Google foi verificada. A fase de cookies elimina essa passagem pela URL.
  */
 class GoogleAuthController {
     /** Diz se o recurso está configurado, para o Site não mostrar um botão que leva a erro. */
@@ -102,7 +103,8 @@ class GoogleAuthController {
      * Troca o código de entrega pelo próximo passo:
      * - `entrar`: sessão criada, conta já vinculada;
      * - `conflito`: existe conta com aquele e-mail sem Google vinculado — não vincula sozinho;
-     * - `cadastrar`: não há conta; o Site pergunta se é candidato ou empresa.
+     * - `cadastrar`: não há conta; o Site leva ao cadastro de candidato, que é onde toda conta
+     *   começa, e `tipoConta` apenas diz se ela deve seguir para o cadastro da empresa depois.
      */
     async concluir(req, res, next) {
         try {

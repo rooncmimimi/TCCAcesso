@@ -21,11 +21,15 @@ public final class TradutorErrosApi {
 
     public static FalhaHttp traduzir(int codigoHttp, String corpoResposta) {
         String mensagem = null;
+        String codigoErro = null;
         Map<String, String> errosCampos = new LinkedHashMap<>();
 
         try {
             JsonObject json = JsonParser.parseString(corpoResposta).getAsJsonObject();
             mensagem = texto(json, "mensagem");
+            if (json.has("detalhes") && json.get("detalhes").isJsonObject()) {
+                codigoErro = texto(json.getAsJsonObject("detalhes"), "codigo");
+            }
             if (json.has("erros") && json.get("erros").isJsonArray()) {
                 for (JsonElement item : json.getAsJsonArray("erros")) {
                     if (!item.isJsonObject()) {
@@ -44,20 +48,20 @@ public final class TradutorErrosApi {
         }
 
         if (codigoHttp == 429) {
-            return new FalhaHttp(MensagensErro.MUITAS_TENTATIVAS);
+            return new FalhaHttp(MensagensErro.MUITAS_TENTATIVAS, null, codigoHttp, null);
         }
         if (codigoHttp >= 500) {
             // Mensagens 5xx da API podem ser técnicas ("Erro ao consultar o banco de dados.").
-            return new FalhaHttp(MensagensErro.SERVICO_INDISPONIVEL);
+            return new FalhaHttp(MensagensErro.SERVICO_INDISPONIVEL, null, codigoHttp, null);
         }
         if (codigoHttp == 422 && !errosCampos.isEmpty()) {
             // "Erro de validação." sozinho não ajuda; os detalhes aparecem em cada campo.
-            return new FalhaHttp("Confira os campos destacados.", errosCampos);
+            return new FalhaHttp("Confira os campos destacados.", errosCampos, codigoHttp, null);
         }
         if (mensagem == null || mensagem.isEmpty()) {
             mensagem = codigoHttp == 401 ? MensagensErro.SESSAO_EXPIRADA : MensagensErro.ERRO_GENERICO;
         }
-        return new FalhaHttp(mensagem, errosCampos);
+        return new FalhaHttp(mensagem, errosCampos, codigoHttp, codigoErro);
     }
 
     private static String texto(JsonObject json, String chave) {

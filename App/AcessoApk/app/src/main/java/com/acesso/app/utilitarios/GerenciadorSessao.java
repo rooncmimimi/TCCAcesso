@@ -50,6 +50,16 @@ public class GerenciadorSessao {
     }
 
     /**
+     * Troca só o status da empresa, sem mexer nos tokens (que podem ter sido renovados
+     * enquanto a consulta estava em andamento).
+     */
+    public void atualizarStatusEmpresa(String statusEmpresa) {
+        if (preferencias.getString(CHAVE_TOKEN_ACESSO, null) != null) {
+            preferencias.edit().putString(CHAVE_STATUS_EMPRESA, statusEmpresa).apply();
+        }
+    }
+
+    /**
      * Devolve a sessão salva, ou null se ninguém estiver logado. Uma sessão de outra
      * fonte de login (ex.: simulada, depois de trocar para a API) é descartada.
      */

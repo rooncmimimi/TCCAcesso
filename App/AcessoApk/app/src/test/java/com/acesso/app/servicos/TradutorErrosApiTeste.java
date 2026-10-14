@@ -1,6 +1,8 @@
 package com.acesso.app.servicos;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -56,5 +58,32 @@ public class TradutorErrosApiTeste {
     @Test
     public void corpoQueNaoEJson() {
         assertEquals(MensagensErro.ERRO_GENERICO, TradutorErrosApi.traduzir(404, "<html>Not found</html>").getMensagem());
+    }
+
+    @Test
+    public void contaBloqueadaTrazOCodigoDaApi() {
+        String corpo = "{\"sucesso\":false,\"mensagem\":\"Sua conta foi bloqueada pela moderação do ACESSO.\","
+                + "\"detalhes\":{\"codigo\":\"CONTA_BLOQUEADA\"}}";
+        FalhaHttp falha = TradutorErrosApi.traduzir(403, corpo);
+        assertEquals("Sua conta foi bloqueada pela moderação do ACESSO.", falha.getMensagem());
+        assertEquals(CodigosErro.CONTA_BLOQUEADA, falha.getCodigoErro());
+        assertEquals(403, falha.getCodigoHttp());
+    }
+
+    @Test
+    public void senhaAlteradaTrazOCodigoDaApi() {
+        String corpo = "{\"sucesso\":false,\"mensagem\":\"Sua senha foi alterada. Entre novamente.\","
+                + "\"detalhes\":{\"codigo\":\"SENHA_ALTERADA\"}}";
+        FalhaHttp falha = TradutorErrosApi.traduzir(401, corpo);
+        assertEquals(CodigosErro.SENHA_ALTERADA, falha.getCodigoErro());
+        assertTrue(CodigosErro.encerraSessao(falha.getCodigoErro()));
+    }
+
+    @Test
+    public void erroSemCodigoNaoEncerraSessao() {
+        FalhaHttp falha = TradutorErrosApi.traduzir(403, "{\"sucesso\":false,\"mensagem\":\"Acesso negado.\"}");
+        assertNull(falha.getCodigoErro());
+        assertEquals(403, falha.getCodigoHttp());
+        assertFalse(CodigosErro.encerraSessao(null));
     }
 }

@@ -22,4 +22,12 @@ public interface RetornoRepositorio<T> {
     default void aoFalharComCampos(String mensagem, Map<String, String> errosCampos) {
         aoFalhar(mensagem);
     }
+
+    /**
+     * Falha com um código de {@link com.acesso.app.servicos.CodigosErro} (ex.: CONTA_BLOQUEADA).
+     * Quem não distingue os códigos recebe só a mensagem.
+     */
+    default void aoFalharComCodigo(String mensagem, String codigo) {
+        aoFalhar(mensagem);
+    }
 }

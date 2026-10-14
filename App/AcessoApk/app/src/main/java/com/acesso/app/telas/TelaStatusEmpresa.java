@@ -66,7 +66,6 @@ public class TelaStatusEmpresa extends AppCompatActivity {
                 Navegacao.abrirAreaAutenticada(this, atualizada);
             }
         });
-        viewModelSessao.verificar();
     }
 
     private void mostrarSituacao(String status) {
@@ -98,5 +97,12 @@ public class TelaStatusEmpresa extends AppCompatActivity {
                 .setNegativeButton(R.string.cancelar, null)
                 .setPositiveButton(R.string.acao_sair, (dialogo, botao) -> viewModelSessao.sair())
                 .show();
+    }
+
+    /** A cada vez que a tela volta (ex.: depois de ficar em segundo plano), confere a sessão. */
+    @Override
+    protected void onStart() {
+        super.onStart();
+        viewModelSessao.verificar();
     }
 }

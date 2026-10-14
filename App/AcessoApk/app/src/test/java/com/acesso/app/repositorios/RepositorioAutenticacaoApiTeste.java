@@ -9,6 +9,9 @@ import com.acesso.app.modelos.ResultadoCadastro;
 import com.acesso.app.modelos.ResultadoLogin;
 import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.modelos.TipoConta;
+import com.acesso.app.servicos.CodigosErro;
+import com.acesso.app.servicos.FalhaHttp;
+import com.acesso.app.servicos.MensagensErro;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -115,5 +118,42 @@ public class RepositorioAutenticacaoApiTeste {
         long agora = 1_000_000L;
         long expira = RepositorioAutenticacaoApi.lerExpiracaoJwt("nao-e-um-jwt", agora);
         assertTrue(expira > agora);
+    }
+
+    @Test
+    public void renovacaoRecusadaViraSessaoExpirada() {
+        FalhaHttp falha = RepositorioAutenticacaoApi.traduzirFalhaDeRenovacao(401,
+                "{\"sucesso\":false,\"mensagem\":\"Sessão expirada. Entre novamente.\"}");
+        assertEquals(MensagensErro.SESSAO_EXPIRADA, falha.getMensagem());
+        assertEquals(CodigosErro.SESSAO_EXPIRADA, falha.getCodigoErro());
+    }
+
+    @Test
+    public void renovacaoDeContaBloqueadaMantemAMensagemDaModeracao() {
+        FalhaHttp falha = RepositorioAutenticacaoApi.traduzirFalhaDeRenovacao(403,
+                "{\"mensagem\":\"Sua conta foi bloqueada pela moderação do ACESSO.\",\"detalhes\":{\"codigo\":\"CONTA_BLOQUEADA\"}}");
+        assertEquals("Sua conta foi bloqueada pela moderação do ACESSO.", falha.getMensagem());
+        assertEquals(CodigosErro.CONTA_BLOQUEADA, falha.getCodigoErro());
+    }
+
+    @Test
+    public void renovacaoCom403SemCodigoTambemEncerra() {
+        FalhaHttp falha = RepositorioAutenticacaoApi.traduzirFalhaDeRenovacao(403, "{\"mensagem\":\"Conta indisponível.\"}");
+        assertEquals(CodigosErro.SESSAO_EXPIRADA, falha.getCodigoErro());
+    }
+
+    @Test
+    public void falhasPassageirasDaRenovacaoNaoEncerram() {
+        assertNull(RepositorioAutenticacaoApi.traduzirFalhaDeRenovacao(429, "{}").getCodigoErro());
+        assertNull(RepositorioAutenticacaoApi.traduzirFalhaDeRenovacao(503, "{}").getCodigoErro());
+        assertEquals(MensagensErro.MUITAS_TENTATIVAS, RepositorioAutenticacaoApi.traduzirFalhaDeRenovacao(429, "{}").getMensagem());
+    }
+
+    @Test
+    public void statusDaEmpresaVemDeAuthMe() {
+        assertEquals("aprovada", RepositorioAutenticacaoApi.lerStatusEmpresa(json(
+                "{\"sucesso\":true,\"usuario\":{\"id\":\"u2\",\"tipoUsuario\":\"empresa\",\"empresa\":{\"statusAprovacao\":\"aprovada\"}}}")));
+        assertNull(RepositorioAutenticacaoApi.lerStatusEmpresa(json(
+                "{\"sucesso\":true,\"usuario\":{\"id\":\"u1\",\"tipoUsuario\":\"candidato\",\"empresa\":null}}")));
     }
 }

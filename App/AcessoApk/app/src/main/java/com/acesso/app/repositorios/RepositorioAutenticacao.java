@@ -39,6 +39,15 @@ public interface RepositorioAutenticacao {
      */
     void renovarSessao(SessaoUsuario sessao, RetornoRepositorio<SessaoUsuario> retorno);
 
+    /**
+     * Consulta a situação atual da empresa (pendente, aprovada, reprovada, suspensa), que a
+     * renovação da sessão não traz. Falhas passageiras chegam em aoFalhar e podem ser ignoradas.
+     * As fontes que não têm essa consulta devolvem a situação já conhecida.
+     */
+    default void carregarStatusEmpresa(SessaoUsuario sessao, RetornoRepositorio<String> retorno) {
+        retorno.aoConcluir(sessao.getStatusEmpresa());
+    }
+
     void enviarLinkNovaSenha(String email, RetornoRepositorio<Void> retorno);
 
     /** Troca a senha usando o token que veio no link de recuperação. */

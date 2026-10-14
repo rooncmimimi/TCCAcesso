@@ -91,7 +91,6 @@ public class TelaPrincipal extends AppCompatActivity {
                 Navegacao.abrirAreaAutenticada(this, atualizada);
             }
         });
-        viewModelSessao.verificar();
 
         // A Início já vem marcada; setSelectedItemId nela contaria como "tocar de novo" e não
         // abriria nada. Por isso o primeiro fragmento é mostrado direto.
@@ -127,5 +126,12 @@ public class TelaPrincipal extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.containerFragmentos, fragmento)
                 .commit();
+    }
+
+    /** A cada vez que a tela volta (ex.: depois de ficar em segundo plano), confere a sessão. */
+    @Override
+    protected void onStart() {
+        super.onStart();
+        viewModelSessao.verificar();
     }
 }

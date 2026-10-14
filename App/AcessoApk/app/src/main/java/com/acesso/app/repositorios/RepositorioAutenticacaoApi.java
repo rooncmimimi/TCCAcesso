@@ -10,6 +10,7 @@ import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.modelos.TipoConta;
 import com.acesso.app.servicos.ClienteApi;
 import com.acesso.app.servicos.ClienteHttp;
+import com.acesso.app.servicos.CodigosErro;
 import com.acesso.app.servicos.FalhaHttp;
 import com.acesso.app.servicos.MensagensErro;
 import com.acesso.app.servicos.TradutorErrosApi;
@@ -44,13 +45,29 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
 
     private final ExecutorHttp executor;
     private final ExecutorHttp executorRenovacao;
+    private final ExecutorHttp executorSessao;
 
     public RepositorioAutenticacaoApi(Context contexto) {
         executor = new ExecutorHttp(contexto, TradutorErrosApi::traduzir);
-        // Na renovação, 401/403 significa que a sessão acabou (refresh token revogado ou vencido).
-        executorRenovacao = new ExecutorHttp(contexto, (codigo, corpo) -> codigo == 401 || codigo == 403
-                ? new FalhaHttp(MensagensErro.SESSAO_EXPIRADA)
-                : TradutorErrosApi.traduzir(codigo, corpo));
+        executorRenovacao = new ExecutorHttp(contexto, RepositorioAutenticacaoApi::traduzirFalhaDeRenovacao);
+        // Requisições em nome do usuário logado: renovam o token sozinhas (RenovadorSessao).
+        executorSessao = new ExecutorHttp(contexto, TradutorErrosApi::traduzir, RenovadorSessao.global(contexto));
+    }
+
+    /**
+     * Na renovação, 401/403 significa que a sessão acabou (refresh token revogado ou vencido).
+     * Conta bloqueada mantém a mensagem da moderação; as outras falhas (rede, 429, 5xx) seguem
+     * como passageiras, sem código, e não encerram a sessão.
+     */
+    static FalhaHttp traduzirFalhaDeRenovacao(int codigoHttp, String corpo) {
+        FalhaHttp falha = TradutorErrosApi.traduzir(codigoHttp, corpo);
+        if (codigoHttp != 401 && codigoHttp != 403) {
+            return falha;
+        }
+        if (CodigosErro.CONTA_BLOQUEADA.equals(falha.getCodigoErro())) {
+            return falha;
+        }
+        return new FalhaHttp(MensagensErro.SESSAO_EXPIRADA, null, codigoHttp, CodigosErro.SESSAO_EXPIRADA);
     }
 
     /** POST /api/auth/login { email, senha, confirmarReativacao? } */
@@ -112,6 +129,22 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
     }
 
     /**
+     * GET /api/auth/me, com renovação automática do token. Só a situação da empresa interessa
+     * (POST /auth/refresh não a devolve): devolve statusAprovacao, ou null se a conta não tiver empresa.
+     */
+    @Override
+    public void carregarStatusEmpresa(SessaoUsuario sessao, RetornoRepositorio<String> retorno) {
+        if (!ClienteApi.estaConfigurada()) {
+            executorSessao.falhar(retorno, new FalhaHttp("O endereço da API ainda não foi configurado (URL_API). Veja o README."));
+            return;
+        }
+        executorSessao.executarComSessao(
+                token -> ClienteApi.requisicaoAutenticada("auth/me", token).get().build(),
+                retorno,
+                RepositorioAutenticacaoApi::lerStatusEmpresa);
+    }
+
+    /**
      * POST /api/auth/senha/esqueci { email }. A API manda um e-mail com código e link
      * para a página de redefinição do site (a resposta é sempre genérica).
      */
@@ -164,6 +197,18 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
             return new ResultadoCadastro(null);
         }
         return new ResultadoCadastro(lerSessao(json, null));
+    }
+
+    /** { usuario: { empresa: { statusAprovacao } } } de GET /auth/me. */
+    static String lerStatusEmpresa(JsonObject json) {
+        if (!json.has("usuario") || !json.get("usuario").isJsonObject()) {
+            return null;
+        }
+        JsonObject usuario = json.getAsJsonObject("usuario");
+        if (!usuario.has("empresa") || !usuario.get("empresa").isJsonObject()) {
+            return null;
+        }
+        return texto(usuario.getAsJsonObject("empresa"), "statusAprovacao");
     }
 
     static SessaoUsuario lerSessao(JsonObject json, String statusEmpresaAnterior) {

@@ -22,6 +22,7 @@ import {
     modeloSenhaAlterada
 } from "../utils/modelosEmail.js";
 import { montarUrlFrontend } from "../utils/urlFrontend.js";
+import { emailCanonico } from "../utils/email.js";
 import ErroApi from "../utils/ErroApi.js";
 
 const MINUTOS_VALIDADE_EMAIL = 15;
@@ -104,17 +105,18 @@ class AutenticacaoService {
     }
 
     /**
-     * Lê o código de entrega do Google e devolve o `sub` verificado, para vincular no cadastro.
+     * Lê o código de entrega do Google e devolve o que o Google verificou: o `sub`, o e-mail e se
+     * o próprio Google confirmou aquele e-mail.
      *
-     * O `sub` vem do token que **este servidor** assinou depois de verificar o ID token com o
-     * Google — nunca de um campo que o navegador mandou. É o que impede alguém de criar uma conta
-     * dizendo ser dona de uma conta Google qualquer.
+     * Tudo vem do token que **este servidor** assinou depois de verificar o ID token com o Google —
+     * nunca de um campo que o navegador mandou. É o que impede alguém de criar uma conta dizendo
+     * ser dona de uma conta Google qualquer.
      *
-     * Código ausente é cadastro comum, sem Google: devolve `{}` e segue. Código presente e inválido
-     * é erro, porque aí houve intenção de vincular e ela não pôde ser comprovada.
+     * Código ausente é cadastro comum, sem Google: devolve `null` e segue. Código presente e
+     * inválido é erro, porque aí houve intenção de vincular e ela não pôde ser comprovada.
      */
     vinculoGoogle(codigo) {
-        if (!codigo) return {};
+        if (!codigo) return null;
 
         let conteudo;
         try {
@@ -129,7 +131,37 @@ class AutenticacaoService {
             throw ErroApi.requisicaoInvalida("Verificação do Google inválida.");
         }
 
-        return { googleId: conteudo.perfil.sub };
+        return {
+            googleId: conteudo.perfil.sub,
+            email: conteudo.perfil.email ?? null,
+            emailVerificado: conteudo.perfil.emailVerificado === true
+        };
+    }
+
+    /**
+     * No cadastro com Google, o e-mail da conta tem de ser o que o Google verificou.
+     *
+     * Sem esta conferência o código só provaria que a pessoa passou pelo Google, e o e-mail do
+     * formulário seria uma alegação: qualquer um com uma conta Google criaria no ACESSO a conta de
+     * um e-mail alheio, com o **seu** Google vinculado e uma senha dele. Quando o dono do e-mail
+     * recuperasse a senha, o vínculo continuaria valendo e a conta seguiria acessível a quem a
+     * reservou (o ataque se chama *pre-hijacking*).
+     *
+     * Os dois e-mails são comparados na forma canônica, a mesma que o cadastro grava, porque o
+     * Google informa `maria.silva@gmail.com` e o formulário já chega como `mariasilva@gmail.com`.
+     */
+    conferirEmailDoGoogle(vinculo, email) {
+        if (!vinculo.emailVerificado) {
+            throw ErroApi.requisicaoInvalida(
+                "O Google não confirmou o e-mail desta conta. Faça o cadastro com e-mail e senha."
+            );
+        }
+
+        if (!vinculo.email || emailCanonico(vinculo.email) !== emailCanonico(email)) {
+            throw ErroApi.requisicaoInvalida(
+                "Use o mesmo e-mail da sua conta Google para concluir o cadastro."
+            );
+        }
     }
 
     /**
@@ -142,9 +174,20 @@ class AutenticacaoService {
      * `emailVerificado` nasce **falso** e continua falso até alguém de fato confirmar o endereço —
      * o cadastro deixou de exigir a confirmação, mas isso não torna o e-mail verificado. Quem libera
      * o uso da conta é o login (`entrar`), que não barra candidato por e-mail não confirmado.
+     *
+     * A única exceção é o cadastro com Google: ali o e-mail **tem de ser o que o Google verificou**
+     * (`conferirEmailDoGoogle`), e só então a conta já nasce com o e-mail verificado.
      */
     async cadastrarCandidato(data, contexto = {}) {
         const { nome, email, senha, telefone, cpf, pais, dataNascimento, cidade, estado, termosVersao, googleCodigo } = data;
+
+        // Antes de qualquer consulta ao banco: um código inválido ou um e-mail que não é o do Google
+        // recusa o cadastro sem revelar se o e-mail já existe.
+        const vinculo = this.vinculoGoogle(googleCodigo);
+
+        if (vinculo) {
+            this.conferirEmailDoGoogle(vinculo, email);
+        }
 
         if (await this.buscarPorEmail(email)) {
             throw ErroApi.conflito("Este e-mail já está cadastrado.");
@@ -165,9 +208,9 @@ class AutenticacaoService {
                     senhaHash: await gerarHashSenha(senha),
                     telefone: telefone || null,
                     tipoUsuario: "candidato",
-                    emailVerificado: false,
+                    emailVerificado: Boolean(vinculo),
                     ...this.registroDeAceite(termosVersao),
-                    ...this.vinculoGoogle(googleCodigo)
+                    ...(vinculo ? { googleId: vinculo.googleId } : {})
                 },
                 { transaction }
             );
@@ -193,8 +236,9 @@ class AutenticacaoService {
 
         // Fora da transação, e best-effort: o e-mail de confirmação continua saindo para quem
         // quiser verificar o endereço depois (recuperação de senha agradece), mas o cadastro não
-        // depende dele. Falhar aqui não pode derrubar uma conta que já está criada.
-        if (EmailService.disponivel()) {
+        // depende dele. Falhar aqui não pode derrubar uma conta que já está criada. Com Google não há
+        // o que confirmar: o e-mail já chegou verificado.
+        if (!vinculo && EmailService.disponivel()) {
             try {
                 await this.enviarCodigoConfirmacaoCadastro(usuarioCriado);
             } catch {

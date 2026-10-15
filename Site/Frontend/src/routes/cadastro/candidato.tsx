@@ -215,6 +215,9 @@ function WizardCandidato({
   // Nome e e-mail que o Google já informou, para a pessoa não redigitar (e o e-mail bater com a
   // conta Google que está sendo vinculada).
   const doGoogle = useMemo(() => perfilDoCodigoGoogle(googleCodigo), [googleCodigo]);
+  // O e-mail que o Google verificou é o da conta: o servidor recusa qualquer outro neste cadastro,
+  // então o campo vem travado em vez de deixar a pessoa descobrir isso só no fim da etapa 2.
+  const emailDoGoogle = Boolean(doGoogle?.email);
 
   const esquema = useMemo(() => criarEsquemaCandidato(t), [t]);
   const esquemaRef = useRef(esquema);
@@ -393,7 +396,7 @@ function WizardCandidato({
             <Campo
               id="email-cadastro"
               rotulo={t.email}
-              ajuda={t.emailAjuda}
+              ajuda={emailDoGoogle ? t.emailGoogleAjuda : t.emailAjuda}
               erro={erros.email?.message}
               obrigatorio
               dicaObrigatorio={t.dicaObrigatorio}
@@ -402,8 +405,9 @@ function WizardCandidato({
                 id="email-cadastro"
                 type="email"
                 required
-                className="min-h-12"
+                className={emailDoGoogle ? "min-h-12 read-only:bg-secondary" : "min-h-12"}
                 autoComplete="email"
+                readOnly={emailDoGoogle}
                 aria-invalid={Boolean(erros.email)}
                 aria-describedby={descricao("email-cadastro", true, Boolean(erros.email))}
                 {...register("email")}

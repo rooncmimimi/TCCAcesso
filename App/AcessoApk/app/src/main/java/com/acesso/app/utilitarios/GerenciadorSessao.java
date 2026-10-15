@@ -8,13 +8,16 @@ import com.acesso.app.modelos.TipoConta;
 import com.acesso.app.repositorios.FabricaRepositorios;
 import com.acesso.app.repositorios.RepositorioAutenticacaoSupabase;
 
+import java.security.GeneralSecurityException;
+
 /**
  * Guarda a sessão no aparelho para o usuário não precisar entrar toda vez.
  * É a fonte da verdade do app sobre "tem alguém logado?": existe sessão salva
  * e ela veio da fonte de login ativa.
  *
- * A senha nunca é salva: só os tokens que o servidor devolve. O arquivo é privado
- * do app (MODE_PRIVATE) e o backup está desligado no manifesto (allowBackup=false).
+ * A senha nunca é salva: só os tokens que o servidor devolve. Os tokens são cifrados com uma chave do
+ * Android Keystore (CifraSegredos); o arquivo é privado do app (MODE_PRIVATE) e o backup está desligado
+ * no manifesto (allowBackup=false).
  */
 public class GerenciadorSessao {
 
@@ -30,6 +33,7 @@ public class GerenciadorSessao {
     private static final String CHAVE_ORIGEM = "origem";
 
     private final SharedPreferences preferencias;
+    private final CifraSegredos cifra = CifraSegredos.doKeystore();
 
     public GerenciadorSessao(Context contexto) {
         preferencias = contexto.getApplicationContext().getSharedPreferences(NOME_PREFERENCIAS, Context.MODE_PRIVATE);
@@ -42,8 +46,8 @@ public class GerenciadorSessao {
                 .putString(CHAVE_NOME, sessao.getNome())
                 .putString(CHAVE_TIPO_CONTA, sessao.getTipoConta().getCodigo())
                 .putString(CHAVE_STATUS_EMPRESA, sessao.getStatusEmpresa())
-                .putString(CHAVE_TOKEN_ACESSO, sessao.getTokenAcesso())
-                .putString(CHAVE_TOKEN_RENOVACAO, sessao.getTokenRenovacao())
+                .putString(CHAVE_TOKEN_ACESSO, proteger(sessao.getTokenAcesso()))
+                .putString(CHAVE_TOKEN_RENOVACAO, proteger(sessao.getTokenRenovacao()))
                 .putLong(CHAVE_EXPIRA_EM, sessao.getExpiraEmMillis())
                 .putString(CHAVE_ORIGEM, sessao.getOrigem())
                 .apply();
@@ -60,20 +64,38 @@ public class GerenciadorSessao {
     }
 
     /**
-     * Devolve a sessão salva, ou null se ninguém estiver logado. Uma sessão de outra
-     * fonte de login (ex.: simulada, depois de trocar para a API) é descartada.
+     * Devolve a sessão salva, ou null se ninguém estiver logado. Uma sessão de outra fonte de login
+     * (ex.: simulada ou Supabase, quando o build usa a API) não vale para esta fonte, mas também NÃO é
+     * apagada: quem alterna entre builds com configurações diferentes não perde o login de cada um.
+     * Só uma gravação nova (login) a substitui.
      */
     public SessaoUsuario obter() {
-        String tokenAcesso = preferencias.getString(CHAVE_TOKEN_ACESSO, null);
-        String tokenRenovacao = preferencias.getString(CHAVE_TOKEN_RENOVACAO, null);
-        if (tokenAcesso == null || tokenRenovacao == null) {
+        String guardadoAcesso = preferencias.getString(CHAVE_TOKEN_ACESSO, null);
+        String guardadoRenovacao = preferencias.getString(CHAVE_TOKEN_RENOVACAO, null);
+        if (guardadoAcesso == null || guardadoRenovacao == null) {
             return null;
         }
         // Sessões salvas antes de existir a origem vieram do Supabase.
         String origem = preferencias.getString(CHAVE_ORIGEM, RepositorioAutenticacaoSupabase.ORIGEM);
         if (!FabricaRepositorios.origemAtiva().equals(origem)) {
+            return null;
+        }
+        String tokenAcesso;
+        String tokenRenovacao;
+        try {
+            tokenAcesso = cifra.decifrar(guardadoAcesso);
+            tokenRenovacao = cifra.decifrar(guardadoRenovacao);
+        } catch (GeneralSecurityException erro) {
+            // Os tokens não podem mais ser lidos (chave do Keystore perdida ou dado corrompido): nova entrada.
             limpar();
             return null;
+        }
+        if (!CifraSegredos.estaCifrado(guardadoAcesso) || !CifraSegredos.estaCifrado(guardadoRenovacao)) {
+            // Sessão gravada por uma versão anterior, em texto puro: passa a ser guardada cifrada.
+            preferencias.edit()
+                    .putString(CHAVE_TOKEN_ACESSO, proteger(tokenAcesso))
+                    .putString(CHAVE_TOKEN_RENOVACAO, proteger(tokenRenovacao))
+                    .apply();
         }
         TipoConta tipo = TipoConta.doCodigo(preferencias.getString(CHAVE_TIPO_CONTA, TipoConta.PESSOA.getCodigo()));
         return new SessaoUsuario(
@@ -94,5 +116,17 @@ public class GerenciadorSessao {
 
     public void limpar() {
         preferencias.edit().clear().apply();
+    }
+
+    /**
+     * Cifra o token para gravar. Se o Keystore do aparelho falhar (acontece em alguns modelos antigos),
+     * grava sem cifra, para o login ainda se manter, em vez de impedir o uso do app.
+     */
+    private String proteger(String token) {
+        try {
+            return cifra.cifrar(token);
+        } catch (GeneralSecurityException erro) {
+            return token;
+        }
     }
 }

@@ -10,6 +10,7 @@ import AutenticacaoService from "./AutenticacaoService.js";
 import { modeloRecuperacaoSenha } from "../utils/modelosEmail.js";
 import { montarUrlFrontend } from "../utils/urlFrontend.js";
 import ErroApi from "../utils/ErroApi.js";
+import { emailCanonico } from "../utils/email.js";
 
 const MINUTOS_VALIDADE = 15;
 const MAX_TENTATIVAS = 5;
@@ -40,7 +41,7 @@ class RecuperacaoSenhaService {
         };
 
         const usuario = await Usuario.findOne({
-            where: { email: String(email || "").toLowerCase().trim() }
+            where: { email: emailCanonico(email) }
         });
 
         if (!usuario || !usuario.ativo) {
@@ -128,7 +129,7 @@ class RecuperacaoSenhaService {
         }
 
         const usuario = await Usuario.findOne({
-            where: { email: String(email || "").toLowerCase().trim() }
+            where: { email: emailCanonico(email) }
         });
 
         if (!usuario) {

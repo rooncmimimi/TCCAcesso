@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 
 import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
+import { emailCanonico } from "../utils/email.js";
 import { Usuario } from "../models/index.js";
 
 const ESCOPOS = ["openid", "email", "profile"];
@@ -200,7 +201,10 @@ class GoogleAuthService {
         }
 
         if (perfil.email) {
-            const mesmoEmail = await Usuario.findOne({ where: { email: perfil.email } });
+            // O banco guarda o e-mail na forma canônica (`mariasilva@gmail.com`), e o Google informa
+            // o endereço como a conta foi criada (`maria.silva@gmail.com`): comparar o texto cru
+            // deixaria de achar a conta e a pessoa só descobriria o conflito no fim do cadastro.
+            const mesmoEmail = await Usuario.findOne({ where: { email: emailCanonico(perfil.email) } });
 
             if (mesmoEmail) {
                 return { desfecho: "conflito", email: perfil.email };

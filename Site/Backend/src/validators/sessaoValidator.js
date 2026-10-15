@@ -14,7 +14,6 @@ export const validarEsqueciSenha = [
     body("email")
         .trim()
         .isEmail()
-        .normalizeEmail()
         .withMessage("Informe um endereço de e-mail válido.")
 ];
 
@@ -62,7 +61,6 @@ export const validarReenviarConfirmacaoCadastro = [
     body("email")
         .trim()
         .isEmail()
-        .normalizeEmail()
         .withMessage("Informe um endereço de e-mail válido.")
 ];
 
@@ -92,5 +90,4 @@ export const validarSolicitarTrocaEmail = [
         .isEmail()
         .withMessage("Informe um endereço de e-mail válido.")
         .isLength({ max: 150 })
-        .normalizeEmail()
 ];

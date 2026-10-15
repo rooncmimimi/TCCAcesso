@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
+import validator from "validator";
 
 import { emailCanonico } from "./email.js";
-import { validarCadastroCandidato } from "../validators/autenticacaoValidator.js";
 
 describe("emailCanonico", () => {
     it.each([
@@ -34,27 +34,9 @@ describe("emailCanonico", () => {
         expect(emailCanonico("Isto Não É E-mail")).toBe("isto não é e-mail");
     });
 
-    it("dá exatamente o que o cadastro grava no banco (mesma regra do validador)", async () => {
-        const req = {
-            body: {
-                nome: "Maria Silva",
-                email: "Maria.Silva+acesso@Gmail.com",
-                senha: "Senha@1234",
-                telefone: "11999999999",
-                cpf: "12345678901",
-                pais: "br",
-                dataNascimento: "1990-01-01",
-                cidade: "São Paulo",
-                estado: "sp"
-            },
-            headers: {},
-            query: {},
-            params: {},
-            cookies: {}
-        };
-        const original = req.body.email;
-        for (const cadeia of validarCadastroCandidato) await cadeia.run(req);
-
-        expect(emailCanonico(original)).toBe(req.body.email);
+    it("segue a regra do pacote validator, a mesma que gravou os e-mails já existentes no banco", () => {
+        for (const email of ["Maria.Silva+acesso@Gmail.com", "joao.souza@outlook.com", "Ana+x@Yahoo.com", "a.b@icloud.com"]) {
+            expect(emailCanonico(email)).toBe(validator.normalizeEmail(email));
+        }
     });
 });

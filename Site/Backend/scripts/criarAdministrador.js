@@ -18,6 +18,7 @@
 import readline from "node:readline";
 
 import env from "../src/config/env.js";
+import { emailCanonico } from "../src/utils/email.js";
 import sequelize from "../src/config/bancoDeDados.js";
 import {
     Usuario,
@@ -97,10 +98,9 @@ async function descreverPerfilRemovido(usuario) {
 async function main() {
     console.log(`Banco "${env.db.name}" em ${env.db.host}.\n`);
 
-    // O login compara o e-mail em minúsculas e sem espaços (`AutenticacaoService.normalizarEmail`).
-    const email = String(argumento("email") ?? (await perguntar("E-mail: ")))
-        .trim()
-        .toLowerCase();
+    // O login procura o e-mail na forma canônica (`AutenticacaoService.normalizarEmail`), a mesma que
+    // o cadastro grava: minúsculas e, no Gmail, sem pontos e sem "+etiqueta".
+    const email = emailCanonico(String(argumento("email") ?? (await perguntar("E-mail: "))));
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new Error("E-mail inválido.");

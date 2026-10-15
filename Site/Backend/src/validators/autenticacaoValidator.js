@@ -36,8 +36,10 @@ const regrasComuns = [
         .trim()
         .isEmail()
         .withMessage("Informe um endereço de e-mail válido.")
-        .isLength({ max: 150 })
-        .normalizeEmail(),
+        // Sem `normalizeEmail()`: o e-mail chega aos serviços como foi digitado (sem espaços nas
+        // pontas) e a forma canônica é aplicada num lugar só, `utils/email.js`, para cadastro,
+        // login, Google e recuperação procurarem sempre o mesmo texto.
+        .isLength({ max: 150 }),
 
     body("telefone")
         .optional({ values: "falsy" })

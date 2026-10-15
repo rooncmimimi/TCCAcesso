@@ -41,10 +41,14 @@ const SEGUNDOS_COOLDOWN_REENVIO = 60;
  * - a sessão combina um access token JWT curto com refresh token rotativo.
  */
 class AutenticacaoService {
+    /**
+     * Forma em que o e-mail é gravado e procurado. É **a mesma** em todas as entradas (cadastro,
+     * login, Google, recuperação de senha, confirmação e troca de e-mail), porque o cadastro grava
+     * `maria.silva@gmail.com` como `mariasilva@gmail.com` e quem procurasse por outro texto não
+     * acharia a conta. A regra mora em `utils/email.js`.
+     */
     normalizarEmail(email) {
-        return String(email || "")
-            .toLowerCase()
-            .trim();
+        return emailCanonico(email);
     }
 
     gerarToken(usuario) {

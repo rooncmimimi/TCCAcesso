@@ -271,13 +271,24 @@ describe("resolver", () => {
         expect(Usuario.findOne).toHaveBeenCalledTimes(1);
     });
 
-    // Achado 2 da auditoria. O cadastro grava o e-mail do Gmail sem pontos e sem "+etiqueta"
-    // (`normalizeEmail`), mas `resolver` compara o e-mail do Google só em minúsculas. A etapa 2 do
-    // plano troca isso por uma regra única, e este teste passa a ser um teste comum.
-    it.fails("reconhece como conflito o Gmail com ponto quando a conta foi gravada sem ponto (achado 2)", async () => {
+    // Achado 2 da auditoria: o cadastro grava o e-mail do Gmail sem pontos e sem "+etiqueta", e o
+    // Google informa o endereço com os pontos. `resolver` procura pela forma canônica.
+    it("reconhece como conflito o Gmail com ponto quando a conta foi gravada sem ponto (achado 2)", async () => {
         bancoCom({ id: "u2", googleId: null, email: "mariasilva@gmail.com" });
         const resultado = await GoogleAuthService.resolver({ ...perfil, email: "maria.silva@gmail.com" });
         expect(resultado.desfecho).toBe("conflito");
+    });
+
+    it("procura o e-mail do Google na forma canônica, e não no texto cru", async () => {
+        bancoCom();
+        await GoogleAuthService.resolver({ ...perfil, email: "Maria.Silva+acesso@Gmail.com" });
+        expect(Usuario.findOne).toHaveBeenLastCalledWith({ where: { email: "mariasilva@gmail.com" } });
+    });
+
+    it("o conflito devolve o e-mail como o Google o informou, para a mensagem mostrar o que a pessoa conhece", async () => {
+        bancoCom({ id: "u2", googleId: null, email: "mariasilva@gmail.com" });
+        const resultado = await GoogleAuthService.resolver({ ...perfil, email: "maria.silva@gmail.com" });
+        expect(resultado.email).toBe("maria.silva@gmail.com");
     });
 });
 

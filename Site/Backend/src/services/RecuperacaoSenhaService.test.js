@@ -131,6 +131,14 @@ describe("RecuperacaoSenhaService.solicitar", () => {
         expect(paramsPassados).not.toHaveProperty("email");
         expect(paramsPassados).not.toHaveProperty("codigo");
     });
+
+    it("procura o e-mail na forma canônica, a mesma que o cadastro grava (Gmail com ponto e +etiqueta)", async () => {
+        Usuario.findOne.mockResolvedValue(null);
+
+        await RecuperacaoSenhaService.solicitar("  Maria.Silva+x@Gmail.com ");
+
+        expect(Usuario.findOne).toHaveBeenCalledWith({ where: { email: "mariasilva@gmail.com" } });
+    });
 });
 
 describe("RecuperacaoSenhaService.redefinir — mecanismo principal (token)", () => {
@@ -253,5 +261,15 @@ describe("RecuperacaoSenhaService.redefinir — fallback (código de 6 dígitos,
         await expect(
             RecuperacaoSenhaService.redefinir({ email: "ninguem@exemplo.com", codigo: "123456", novaSenha: "Senha!Forte1" })
         ).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it("procura o e-mail na forma canônica, a mesma que o cadastro grava", async () => {
+        Usuario.findOne.mockResolvedValue(null);
+
+        await RecuperacaoSenhaService.redefinir({ email: "Maria.Silva@Gmail.com", codigo: "123456", novaSenha: "Senha!Forte1" }).catch(
+            () => {}
+        );
+
+        expect(Usuario.findOne).toHaveBeenCalledWith({ where: { email: "mariasilva@gmail.com" } });
     });
 });

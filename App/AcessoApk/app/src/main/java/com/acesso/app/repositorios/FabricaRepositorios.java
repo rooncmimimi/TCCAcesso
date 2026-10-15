@@ -29,8 +29,16 @@ public final class FabricaRepositorios {
         }
     }
 
-    public static RepositorioConteudo conteudo() {
-        return modoDemonstracao() ? new RepositorioConteudoSimulado() : new RepositorioConteudoPendente();
+    /** Só a fonte "api" tem conteúdo real; a demonstração é simulada e o Supabase ainda não tem as tabelas de conteúdo. */
+    public static RepositorioConteudo conteudo(Context contexto) {
+        switch (fonteAtiva()) {
+            case FONTE_API:
+                return new RepositorioConteudoApi(contexto);
+            case FONTE_SIMULADA:
+                return new RepositorioConteudoSimulado();
+            default:
+                return new RepositorioConteudoPendente();
+        }
     }
 
     /** true quando as respostas são simuladas: as telas mostram o aviso "Modo demonstração". */

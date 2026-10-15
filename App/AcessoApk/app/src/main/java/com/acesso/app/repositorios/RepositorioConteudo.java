@@ -1,6 +1,7 @@
 package com.acesso.app.repositorios;
 
 import com.acesso.app.modelos.ItemBusca;
+import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.Publicacao;
 import com.acesso.app.modelos.ResumoEmpresa;
 import com.acesso.app.modelos.SessaoUsuario;
@@ -35,4 +36,7 @@ public interface RepositorioConteudo {
 
     /** POST /api/vagas (só empresa aprovada) */
     void criarVaga(SessaoUsuario sessao, Vaga vaga, RetornoRepositorio<Void> retorno);
+
+    /** GET /api/candidatos/me (pessoa) ou GET /api/empresas/me (empresa): só leitura. */
+    void carregarPerfil(SessaoUsuario sessao, RetornoRepositorio<PerfilConta> retorno);
 }

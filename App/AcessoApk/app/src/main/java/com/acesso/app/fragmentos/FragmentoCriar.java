@@ -20,6 +20,8 @@ import com.acesso.app.utilitarios.GerenciadorSessao;
 import com.acesso.app.utilitarios.MensagemStatus;
 import com.acesso.app.utilitarios.Rotulos;
 import com.acesso.app.viewmodels.ViewModelCriar;
+import com.acesso.app.viewmodels.ViewModelInicio;
+import com.acesso.app.viewmodels.ViewModelOportunidades;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -80,6 +82,13 @@ public class FragmentoCriar extends Fragment {
         componentes.botaoEnviar.setOnClickListener(v -> enviar());
         observarViewModel();
         return componentes.getRoot();
+    }
+
+    /** Pedido de outra aba (ex.: "Publicar nova vaga" no Painel): mostra o formulário certo, sem recriar a aba. */
+    public void abrirFormulario(boolean vaga) {
+        if (componentes != null && ehEmpresa) {
+            componentes.grupoTipoCriacao.check(vaga ? R.id.botaoOpcaoVaga : R.id.botaoOpcaoPublicacao);
+        }
     }
 
     private boolean formularioVagaAberto() {
@@ -181,6 +190,10 @@ public class FragmentoCriar extends Fragment {
                         ? (demonstracao ? R.string.criar_vaga_sucesso_demo : R.string.criar_vaga_sucesso)
                         : (demonstracao ? R.string.criar_publicacao_sucesso_demo : R.string.criar_publicacao_sucesso)));
                 limparCampos();
+                // O feed e o painel guardam a lista já carregada: marca para buscar de novo na próxima visita.
+                ViewModelProvider activity = new ViewModelProvider(requireActivity());
+                activity.get(ViewModelInicio.class).marcarDesatualizado();
+                activity.get(ViewModelOportunidades.class).marcarDesatualizado();
             }
         });
     }

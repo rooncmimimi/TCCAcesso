@@ -44,7 +44,7 @@ public class ViewModelCriar extends AndroidViewModel {
         public List<String> recursosAcessibilidade;
     }
 
-    private final RepositorioConteudo repositorio = FabricaRepositorios.conteudo();
+    private final RepositorioConteudo repositorio;
     private final GerenciadorSessao gerenciadorSessao;
 
     private final MutableLiveData<Map<String, String>> erros = new MutableLiveData<>(Collections.emptyMap());
@@ -54,6 +54,7 @@ public class ViewModelCriar extends AndroidViewModel {
     public ViewModelCriar(@NonNull Application aplicacao) {
         super(aplicacao);
         gerenciadorSessao = new GerenciadorSessao(aplicacao);
+        repositorio = FabricaRepositorios.conteudo(aplicacao);
     }
 
     public LiveData<Map<String, String>> getErros() {

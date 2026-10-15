@@ -20,7 +20,7 @@ public class ViewModelPesquisa extends AndroidViewModel {
 
     public static final int TAMANHO_MINIMO_TERMO = 2;
 
-    private final RepositorioConteudo repositorio = FabricaRepositorios.conteudo();
+    private final RepositorioConteudo repositorio;
     private final GerenciadorSessao gerenciadorSessao;
     private final MutableLiveData<EstadoConteudo<List<ItemBusca>>> resultados = new MutableLiveData<>();
     private final MutableLiveData<String> erroTermo = new MutableLiveData<>();
@@ -28,6 +28,7 @@ public class ViewModelPesquisa extends AndroidViewModel {
     public ViewModelPesquisa(@NonNull Application aplicacao) {
         super(aplicacao);
         gerenciadorSessao = new GerenciadorSessao(aplicacao);
+        repositorio = FabricaRepositorios.conteudo(aplicacao);
     }
 
     public LiveData<EstadoConteudo<List<ItemBusca>>> getResultados() {

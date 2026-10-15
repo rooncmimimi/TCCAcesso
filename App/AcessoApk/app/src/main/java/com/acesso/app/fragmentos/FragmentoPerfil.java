@@ -13,11 +13,14 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.acesso.app.R;
 import com.acesso.app.databinding.FragmentoPerfilBinding;
+import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.telas.TelaTermos;
 import com.acesso.app.utilitarios.AtalhosSistema;
 import com.acesso.app.utilitarios.MensagemStatus;
 import com.acesso.app.utilitarios.Rotulos;
+import com.acesso.app.viewmodels.EstadoConteudo;
+import com.acesso.app.viewmodels.ViewModelPerfil;
 import com.acesso.app.viewmodels.ViewModelSessao;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -29,6 +32,9 @@ public class FragmentoPerfil extends Fragment {
 
     private FragmentoPerfilBinding componentes;
     private ViewModelSessao viewModelSessao;
+    private ViewModelPerfil viewModelPerfil;
+    /** Dados da conta vindos do servidor; enquanto não chegam (ou se falhar), vale o que está na sessão. */
+    private PerfilConta perfilServidor;
 
     @Nullable
     @Override
@@ -38,6 +44,9 @@ public class FragmentoPerfil extends Fragment {
         // Mesmo ViewModel da TelaPrincipal: ao sair, é ela quem leva à apresentação.
         viewModelSessao = new ViewModelProvider(requireActivity()).get(ViewModelSessao.class);
         viewModelSessao.getSessao().observe(getViewLifecycleOwner(), this::mostrarConta);
+        viewModelPerfil = new ViewModelProvider(requireActivity()).get(ViewModelPerfil.class);
+        viewModelPerfil.getPerfil().observe(getViewLifecycleOwner(), this::aoMudarPerfil);
+        viewModelPerfil.carregar();
 
         componentes.botaoEditarPerfil.setOnClickListener(v ->
                 MensagemStatus.mostrarAviso(componentes.mensagemStatus, getString(R.string.perfil_editar_pendente)));
@@ -54,21 +63,51 @@ public class FragmentoPerfil extends Fragment {
         return componentes.getRoot();
     }
 
+    /** A aba fica no FragmentManager: a cada volta a ela, busca de novo os dados da conta. */
+    @Override
+    public void onHiddenChanged(boolean oculto) {
+        super.onHiddenChanged(oculto);
+        if (!oculto && viewModelPerfil != null) {
+            viewModelPerfil.carregar();
+        }
+    }
+
+    private void aoMudarPerfil(EstadoConteudo<PerfilConta> estado) {
+        if (estado == null) {
+            perfilServidor = null;
+        } else if (estado.dados != null) {
+            perfilServidor = estado.dados;
+            mostrarConta(viewModelSessao.getSessao().getValue());
+        } else if (estado.mensagem != null && !estado.integracaoPendente()) {
+            MensagemStatus.mostrarErro(componentes.mensagemStatus, estado.mensagem);
+        }
+    }
+
     private void mostrarConta(SessaoUsuario sessao) {
         if (sessao == null) {
             return;
         }
-        String nome = sessao.getNome() != null && !sessao.getNome().trim().isEmpty()
-                ? sessao.getNome().trim()
+        String nomeBase = perfilServidor != null && perfilServidor.nome != null && !perfilServidor.nome.trim().isEmpty()
+                ? perfilServidor.nome
+                : sessao.getNome();
+        String nome = nomeBase != null && !nomeBase.trim().isEmpty()
+                ? nomeBase.trim()
                 : sessao.getEmail();
         componentes.textoIniciais.setText(Rotulos.iniciais(nome));
         componentes.textoNome.setText(nome);
         componentes.textoEmail.setText(sessao.getEmail());
         componentes.textoTipoConta.setText(sessao.ehEmpresa() ? R.string.tipo_conta_empresa : R.string.tipo_conta_pessoa);
 
-        int status = Rotulos.de(sessao.getStatusEmpresa());
+        String statusEmpresa = perfilServidor != null && perfilServidor.statusEmpresa != null
+                ? perfilServidor.statusEmpresa
+                : sessao.getStatusEmpresa();
+        int status = Rotulos.de(statusEmpresa);
         if (sessao.ehEmpresa() && status != 0) {
             componentes.textoStatusEmpresa.setText(getString(R.string.perfil_status_empresa, getString(status)));
+            componentes.textoStatusEmpresa.setVisibility(View.VISIBLE);
+        } else if (!sessao.ehEmpresa() && perfilServidor != null && perfilServidor.detalhe != null) {
+            // Pessoa: a mesma etiqueta mostra o cargo e a cidade que o servidor devolveu.
+            componentes.textoStatusEmpresa.setText(perfilServidor.detalhe);
             componentes.textoStatusEmpresa.setVisibility(View.VISIBLE);
         } else {
             componentes.textoStatusEmpresa.setVisibility(View.GONE);

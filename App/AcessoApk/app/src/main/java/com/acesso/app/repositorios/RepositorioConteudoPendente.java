@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.acesso.app.modelos.ItemBusca;
+import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.Publicacao;
 import com.acesso.app.modelos.ResumoEmpresa;
 import com.acesso.app.modelos.SessaoUsuario;
@@ -58,6 +59,11 @@ public class RepositorioConteudoPendente implements RepositorioConteudo {
     public void criarVaga(SessaoUsuario sessao, Vaga vaga, RetornoRepositorio<Void> retorno) {
         pendente(retorno, "A vaga está pronta, mas o envio depende da API do ACESSO "
                 + "(POST /api/vagas). Nada foi publicado.");
+    }
+
+    @Override
+    public void carregarPerfil(SessaoUsuario sessao, RetornoRepositorio<PerfilConta> retorno) {
+        pendente(retorno, "Os dados do perfil virão da API do ACESSO (GET /api/candidatos/me ou /api/empresas/me).");
     }
 
     private <T> void pendente(RetornoRepositorio<T> retorno, String detalhe) {

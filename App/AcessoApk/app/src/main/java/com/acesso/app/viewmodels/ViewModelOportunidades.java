@@ -22,8 +22,9 @@ import java.util.List;
  */
 public class ViewModelOportunidades extends AndroidViewModel {
 
-    private final RepositorioConteudo repositorio = FabricaRepositorios.conteudo();
+    private final RepositorioConteudo repositorio;
     private final GerenciadorSessao gerenciadorSessao;
+    private boolean desatualizado;
     private final MutableLiveData<EstadoConteudo<List<Vaga>>> vagas = new MutableLiveData<>();
     private final MutableLiveData<EstadoConteudo<ResumoEmpresa>> resumoEmpresa = new MutableLiveData<>();
 
@@ -35,6 +36,7 @@ public class ViewModelOportunidades extends AndroidViewModel {
     public ViewModelOportunidades(@NonNull Application aplicacao) {
         super(aplicacao);
         gerenciadorSessao = new GerenciadorSessao(aplicacao);
+        repositorio = FabricaRepositorios.conteudo(aplicacao);
     }
 
     public LiveData<EstadoConteudo<List<Vaga>>> getVagas() {
@@ -53,13 +55,19 @@ public class ViewModelOportunidades extends AndroidViewModel {
         return publicoAlvo;
     }
 
+    /** Uma vaga nova foi criada: a próxima visita busca o painel e as vagas de novo. */
+    public void marcarDesatualizado() {
+        desatualizado = true;
+    }
+
     public void carregarVagasSeNecessario() {
-        if (vagas.getValue() == null) {
+        if (vagas.getValue() == null || desatualizado) {
             buscarVagas(busca, modalidade, publicoAlvo);
         }
     }
 
     public void buscarVagas(String novaBusca, String novaModalidade, String novoPublicoAlvo) {
+        desatualizado = false;
         busca = novaBusca != null ? novaBusca.trim() : "";
         modalidade = novaModalidade;
         publicoAlvo = novoPublicoAlvo;
@@ -79,9 +87,10 @@ public class ViewModelOportunidades extends AndroidViewModel {
     }
 
     public void carregarResumoEmpresa(boolean forcar) {
-        if (!forcar && resumoEmpresa.getValue() != null) {
+        if (!forcar && resumoEmpresa.getValue() != null && !desatualizado) {
             return;
         }
+        desatualizado = false;
         resumoEmpresa.setValue(EstadoConteudo.carregando());
         repositorio.carregarResumoEmpresa(gerenciadorSessao.obter(), new RetornoRepositorio<ResumoEmpresa>() {
             @Override

@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.acesso.app.modelos.ItemBusca;
+import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.Publicacao;
 import com.acesso.app.modelos.ResumoEmpresa;
 import com.acesso.app.modelos.SessaoUsuario;
@@ -170,6 +171,17 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
         item.titulo = titulo;
         item.subtitulo = subtitulo;
         return item;
+    }
+
+    /** Sem servidor, o perfil fictício é o que já está na sessão de demonstração. */
+    @Override
+    public void carregarPerfil(SessaoUsuario sessao, RetornoRepositorio<PerfilConta> retorno) {
+        responder(() -> {
+            PerfilConta perfil = new PerfilConta();
+            perfil.nome = sessao != null ? sessao.getNome() : null;
+            perfil.statusEmpresa = sessao != null ? sessao.getStatusEmpresa() : null;
+            retorno.aoConcluir(perfil);
+        });
     }
 
     private void responder(Runnable resposta) {

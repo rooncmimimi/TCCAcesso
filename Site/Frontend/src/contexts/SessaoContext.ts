@@ -3,6 +3,7 @@ import { createContext } from "react";
 import type {
   CredenciaisLogin,
   RespostaCadastroPendenteVerificacao,
+  RespostaLogin,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
   TipoUsuario,
@@ -29,6 +30,14 @@ export type SessaoContextValue = {
   /** Retorna `{ contaPausada: true }` ou `{ emailNaoVerificado: true, email }` (sem criar sessão) quando o login precisa de uma etapa extra. */
   entrar: (
     credenciais: CredenciaisLogin,
+  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>;
+  /**
+   * O "depois de autenticar" de qualquer entrada (senha ou Google): guarda os tokens, normaliza o
+   * usuário, conecta o socket e aplica as preferências de acessibilidade da conta. Quando a
+   * resposta é uma etapa extra (`contaPausada` ou `emailNaoVerificado`), devolve-a sem criar sessão.
+   */
+  iniciarSessao: (
+    resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado,
   ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>;
   /** Retorna `{ pendenteVerificacaoEmail: true, email }` (sem criar sessão) quando o cadastro exige confirmação de e-mail. */
   registrarCandidato: (

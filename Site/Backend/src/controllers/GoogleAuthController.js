@@ -112,9 +112,12 @@ class GoogleAuthController {
             const resultado = await GoogleAuthService.resolver(perfil);
 
             if (resultado.desfecho === "entrar") {
+                // `confirmarReativacao` é a mesma confirmação do login por senha: a conta pausada só
+                // volta quando a pessoa diz que quer, e o Site manda de novo o mesmo código de entrega.
                 const sessao = await AutenticacaoService.entrarComUsuario(
                     resultado.usuario,
-                    contextoRequisicao(req)
+                    contextoRequisicao(req),
+                    Boolean(req.body.confirmarReativacao)
                 );
 
                 return res.status(200).json({ sucesso: true, desfecho: "entrar", ...sessao });
@@ -126,6 +129,14 @@ class GoogleAuthController {
                     desfecho: "conflito",
                     email: resultado.email
                 });
+            }
+
+            // O cadastro só aceita o e-mail que o Google verificou (`conferirEmailDoGoogle`). Recusar
+            // já aqui poupa a pessoa de preencher duas etapas para ouvir um "não" no final.
+            if (perfil.emailVerificado !== true) {
+                throw ErroApi.requisicaoInvalida(
+                    "O Google não confirmou o e-mail desta conta. Faça o cadastro com e-mail e senha."
+                );
             }
 
             // Só o que o Google realmente forneceu. Nada de CPF, país ou telefone inventados.

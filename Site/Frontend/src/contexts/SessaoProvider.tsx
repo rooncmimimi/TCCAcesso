@@ -2,14 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { toast } from "sonner";
 
 import autenticacaoService from "@/services/autenticacao.service";
-import { aoExpirarSessao, limparTokens, obterAccessToken } from "@/services/api";
+import { aoExpirarSessao, definirTokens, limparTokens, obterAccessToken } from "@/services/api";
 import { conectarSocket, desconectarSocket } from "@/services/socket";
 import acessibilidadeService, {
   preferenciasDaApi,
   preferenciasParaApi,
 } from "@/services/acessibilidade.service";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
-import type { TipoUsuario, Usuario } from "@/types";
+import type {
+  RespostaLogin,
+  RespostaLoginContaPausada,
+  RespostaLoginEmailNaoVerificado,
+  TipoUsuario,
+  Usuario,
+} from "@/types";
 import { type UsuarioSessao, type SessaoContextValue, SessaoContext } from "@/contexts/SessaoContext";
 
 function normalizarUsuarioSessao(usuario: Usuario | (Usuario & Record<string, unknown>)): UsuarioSessao {
@@ -103,21 +109,33 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /**
+   * Único "depois de autenticar": o login por senha e o retorno do Google passam por aqui, para as
+   * duas entradas terminarem sempre do mesmo jeito (tokens, usuário normalizado, acessibilidade).
+   */
+  const iniciarSessao = useCallback(
+    async (
+      resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado,
+    ): Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado> => {
+      if ("contaPausada" in resposta || "emailNaoVerificado" in resposta) {
+        return resposta;
+      }
+      definirTokens(resposta.token, resposta.refreshToken);
+      const normalizado = aposAutenticar(resposta.usuario);
+      void sincronizarNoLogin();
+      return normalizado;
+    },
+    [aposAutenticar, sincronizarNoLogin],
+  );
+
   const valorContexto = useMemo<SessaoContextValue>(
     () => ({
       usuario,
       inicializado,
       carregando,
       autenticado: Boolean(usuario),
-      entrar: async (credenciais) => {
-        const resposta = await autenticacaoService.entrar(credenciais);
-        if ("contaPausada" in resposta || "emailNaoVerificado" in resposta) {
-          return resposta;
-        }
-        const normalizado = aposAutenticar(resposta.usuario);
-        void sincronizarNoLogin();
-        return normalizado;
-      },
+      iniciarSessao,
+      entrar: async (credenciais) => iniciarSessao(await autenticacaoService.entrar(credenciais)),
       registrarCandidato: async (payload) => {
         const resposta = await autenticacaoService.registrarCandidato(payload);
         if ("pendenteVerificacaoEmail" in resposta) return resposta;
@@ -143,7 +161,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       atualizar: (patch) => setUsuario((atual) => (atual ? { ...atual, ...patch } : atual)),
       recarregar: carregarPerfil,
     }),
-    [usuario, inicializado, carregando, aposAutenticar, carregarPerfil, sincronizarNoLogin, sincronizarNoCadastro],
+    [usuario, inicializado, carregando, aposAutenticar, carregarPerfil, iniciarSessao, sincronizarNoCadastro],
   );
 
   return <SessaoContext.Provider value={valorContexto}>{children}</SessaoContext.Provider>;

@@ -1,5 +1,10 @@
 import clienteApi from "@/services/api";
-import type { Usuario } from "@/types";
+import type {
+  RespostaLogin,
+  RespostaLoginContaPausada,
+  RespostaLoginEmailNaoVerificado,
+  Usuario,
+} from "@/types";
 
 /** Perfil que o Google de fato forneceu. Nada além disto é pré-preenchido no cadastro. */
 export interface PerfilGoogle {
@@ -8,8 +13,11 @@ export interface PerfilGoogle {
 }
 
 export type ResultadoGoogle =
-  /** Conta já vinculada: sessão criada. */
-  | { desfecho: "entrar"; usuario: Usuario; token: string; refreshToken: string }
+  /**
+   * Conta já vinculada. Pelos mesmos portões do login por senha, a resposta é a sessão criada, ou
+   * `{ contaPausada: true }`, ou `{ emailNaoVerificado: true, email }` (nesses dois, sem sessão).
+   */
+  | ({ desfecho: "entrar" } & (RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado))
   /** Já existe conta ACESSO com este e-mail, sem Google vinculado. Não vincula sozinho. */
   | { desfecho: "conflito"; email: string }
   /** Não há conta: o Site pergunta se é candidato ou empresa. */
@@ -24,8 +32,9 @@ export type ResultadoGoogle =
 /**
  * Entrar e cadastrar com Google.
  *
- * O Site nunca vê senha do Google nem o `sub` da conta: ele só carrega o "código de entrega" de um
- * minuto que o backend assinou, e é o backend que decide o que aquele código significa.
+ * O Site nunca vê a senha do Google: ele só carrega o "código de entrega" que o backend assinou
+ * (vale 15 minutos), e é o backend que decide o que aquele código significa. O corpo do código é
+ * legível (traz e-mail, nome e o `sub`), então não é segredo: é só uma prova assinada.
  */
 export const googleService = {
   /** O recurso está configurado neste ambiente? Decide se o botão aparece. */
@@ -42,9 +51,15 @@ export const googleService = {
     return data.url;
   },
 
-  /** Troca o código de entrega pelo desfecho: entrar, conflito ou cadastrar. */
-  async concluir(codigo: string): Promise<ResultadoGoogle> {
-    const { data } = await clienteApi.post<ResultadoGoogle>("/auth/google/concluir", { codigo });
+  /**
+   * Troca o código de entrega pelo desfecho: entrar, conflito ou cadastrar.
+   * `confirmarReativacao` é o "sim, quero reativar" de quem pausou a conta, como no login por senha.
+   */
+  async concluir(codigo: string, confirmarReativacao = false): Promise<ResultadoGoogle> {
+    const { data } = await clienteApi.post<ResultadoGoogle>("/auth/google/concluir", {
+      codigo,
+      ...(confirmarReativacao ? { confirmarReativacao: true } : {}),
+    });
     return data;
   },
 

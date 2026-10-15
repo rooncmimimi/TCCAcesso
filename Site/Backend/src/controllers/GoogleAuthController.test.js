@@ -188,8 +188,31 @@ describe("concluir", () => {
 
         await GoogleAuthController.concluir(requisicao({ body: { codigo: codigoDeEntrega() } }), res, vi.fn());
 
-        expect(AutenticacaoService.entrarComUsuario).toHaveBeenCalledWith(usuario, { ip: "10.0.0.1", userAgent: "navegador-de-teste" });
+        expect(AutenticacaoService.entrarComUsuario).toHaveBeenCalledWith(usuario, { ip: "10.0.0.1", userAgent: "navegador-de-teste" }, false);
         expect(res.json).toHaveBeenCalledWith({ sucesso: true, desfecho: "entrar", usuario: { id: "u1" }, token: "t", refreshToken: "r" });
+    });
+
+    it("entrar: reativa a conta pausada quando o Site reenvia o código com confirmarReativacao", async () => {
+        const usuario = { id: "u1" };
+        GoogleAuthService.resolver.mockResolvedValue({ desfecho: "entrar", usuario });
+        AutenticacaoService.entrarComUsuario.mockResolvedValue({ usuario: { id: "u1" }, token: "t", refreshToken: "r" });
+
+        await GoogleAuthController.concluir(
+            requisicao({ body: { codigo: codigoDeEntrega(), confirmarReativacao: true } }),
+            resposta(),
+            vi.fn()
+        );
+
+        expect(AutenticacaoService.entrarComUsuario).toHaveBeenCalledWith(usuario, expect.any(Object), true);
+    });
+
+    it("entrar: sem confirmarReativacao, a conta pausada não é reativada", async () => {
+        GoogleAuthService.resolver.mockResolvedValue({ desfecho: "entrar", usuario: { id: "u1" } });
+        AutenticacaoService.entrarComUsuario.mockResolvedValue({ contaPausada: true });
+
+        await GoogleAuthController.concluir(requisicao({ body: { codigo: codigoDeEntrega() } }), resposta(), vi.fn());
+
+        expect(AutenticacaoService.entrarComUsuario).toHaveBeenCalledWith({ id: "u1" }, expect.any(Object), false);
     });
 
     it("entrar: repassa a resposta de conta pausada (o Site precisa tratá-la)", async () => {
@@ -239,6 +262,31 @@ describe("concluir", () => {
             codigo
         });
         expect(JSON.stringify(corpo.perfil)).not.toContain("sub-1");
+    });
+
+    it("cadastrar: recusa já aqui, com 400, um e-mail que o Google não verificou", async () => {
+        const naoVerificado = { ...PERFIL, emailVerificado: false };
+        GoogleAuthService.resolver.mockResolvedValue({ desfecho: "cadastrar", perfil: naoVerificado });
+        const res = resposta();
+        const next = vi.fn();
+
+        await GoogleAuthController.concluir(requisicao({ body: { codigo: codigoDeEntrega({ perfil: naoVerificado, tipoConta: null }) } }), res, next);
+
+        expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400, message: expect.stringContaining("Google não confirmou") });
+        expect(res.json).not.toHaveBeenCalled();
+    });
+
+    it("conflito: continua aparecendo mesmo quando o Google não verificou o e-mail", async () => {
+        GoogleAuthService.resolver.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
+        const res = resposta();
+
+        await GoogleAuthController.concluir(
+            requisicao({ body: { codigo: codigoDeEntrega({ perfil: { ...PERFIL, emailVerificado: false }, tipoConta: null }) } }),
+            res,
+            vi.fn()
+        );
+
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ desfecho: "conflito" }));
     });
 
     // Achado 3 da auditoria: o código de entrega é um JWT sem estado e vale 15 minutos, então o

@@ -8,6 +8,7 @@ import { SessaoProvider } from "@/contexts/SessaoProvider";
 import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import acessibilidadeService from "@/services/acessibilidade.service";
+import { CHAVE_ACCESS_TOKEN, CHAVE_REFRESH_TOKEN } from "@/services/api";
 import type { RespostaLogin, Usuario } from "@/types";
 
 /**
@@ -132,4 +133,87 @@ describe("SessaoContext — sincronização de acessibilidade no cadastro", () =
         expect(result.current.sessao.usuario?.id).toBe("user-1");
         await waitFor(() => expect(console.error).toHaveBeenCalled());
     });
+});
+
+describe("SessaoContext — iniciarSessao (o único depois de autenticar, do login por senha e do Google)", () => {
+  /** Como o backend responde: o usuário vem crua, com `tipoUsuario` (nunca `tipo`). */
+  function respostaCrua(extra: Record<string, unknown> = {}) {
+    return {
+      usuario: { id: "u9", nome: "Ana", email: "ana@teste.dev", tipoUsuario: "administrador", ativo: true, ...extra },
+      token: "token-de-acesso",
+      refreshToken: "token-de-renovacao",
+    } as unknown as RespostaLogin;
+  }
+
+  it("guarda os dois tokens e deixa o usuário na sessão", async () => {
+    vi.spyOn(acessibilidadeService, "obter").mockResolvedValue({});
+    const { result } = renderSessaoEAcessibilidade();
+
+    await act(async () => {
+      await result.current.sessao.iniciarSessao(respostaCrua());
+    });
+
+    expect(window.localStorage.getItem(CHAVE_ACCESS_TOKEN)).toBe("token-de-acesso");
+    expect(window.localStorage.getItem(CHAVE_REFRESH_TOKEN)).toBe("token-de-renovacao");
+    expect(result.current.sessao.usuario?.id).toBe("u9");
+    expect(result.current.sessao.autenticado).toBe(true);
+  });
+
+  it("normaliza o usuário: `tipo` sai de `tipoUsuario`, que é o que o servidor manda (achado 5)", async () => {
+    vi.spyOn(acessibilidadeService, "obter").mockResolvedValue({});
+    const { result } = renderSessaoEAcessibilidade();
+
+    const usuario = await act(async () => result.current.sessao.iniciarSessao(respostaCrua()));
+
+    expect((usuario as { tipo: string }).tipo).toBe("administrador");
+    expect(result.current.sessao.usuario?.tipo).toBe("administrador");
+  });
+
+  it("aplica as preferências de acessibilidade da conta, como o login por senha (achado 6)", async () => {
+    vi.spyOn(acessibilidadeService, "obter").mockResolvedValue({ altoContraste: true, escalaFonte: 120 });
+    const { result } = renderSessaoEAcessibilidade();
+
+    await act(async () => {
+      await result.current.sessao.iniciarSessao(respostaCrua());
+    });
+
+    await waitFor(() => {
+      expect(result.current.acessibilidade.preferencias.highContrast).toBe(true);
+      expect(result.current.acessibilidade.preferencias.fontScale).toBeCloseTo(1.2);
+    });
+  });
+
+  it("devolve a conta pausada sem criar sessão nem mexer nos tokens", async () => {
+    const obter = vi.spyOn(acessibilidadeService, "obter").mockResolvedValue({});
+    const { result } = renderSessaoEAcessibilidade();
+
+    const resposta = await act(async () => result.current.sessao.iniciarSessao({ contaPausada: true }));
+
+    expect(resposta).toEqual({ contaPausada: true });
+    expect(result.current.sessao.usuario).toBeNull();
+    expect(window.localStorage.getItem(CHAVE_ACCESS_TOKEN)).toBeNull();
+    expect(obter).not.toHaveBeenCalled();
+  });
+
+  it("devolve o e-mail por confirmar sem criar sessão", async () => {
+    const { result } = renderSessaoEAcessibilidade();
+
+    const resposta = await act(async () =>
+      result.current.sessao.iniciarSessao({ emailNaoVerificado: true, email: "rh@empresa.com" }),
+    );
+
+    expect(resposta).toEqual({ emailNaoVerificado: true, email: "rh@empresa.com" });
+    expect(result.current.sessao.autenticado).toBe(false);
+  });
+
+  it("o login por senha passa pela mesma rotina", async () => {
+    vi.mocked(autenticacaoService.entrar).mockResolvedValue(respostaCrua() );
+    vi.spyOn(acessibilidadeService, "obter").mockResolvedValue({});
+    const { result } = renderSessaoEAcessibilidade();
+
+    const usuario = await act(async () => result.current.sessao.entrar({ email: "ana@teste.dev", senha: "Senha@123" }));
+
+    expect((usuario as { tipo: string }).tipo).toBe("administrador");
+    expect(window.localStorage.getItem(CHAVE_ACCESS_TOKEN)).toBe("token-de-acesso");
+  });
 });

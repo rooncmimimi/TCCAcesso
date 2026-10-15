@@ -17,6 +17,7 @@ import { descricao } from "@/components/cadastro/descricao";
 import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 
 const esquemaLogin = z.object({
   email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
@@ -90,18 +91,9 @@ function Entrar() {
       }
       toast.success("Login realizado com sucesso!");
 
-      // Candidato que não terminou o cadastro volta de onde parou. É o caso normal de quem criou a
-      // conta com confirmação de e-mail ativa: as duas últimas etapas exigem sessão e ficaram para
-      // depois. `cadastroConcluidoEm` nula é o sinal; contas anteriores a esse campo já nascem
-      // preenchidas pela migration, então ninguém antigo é mandado para o cadastro.
-      if (resultado.tipo === "candidato" && !resultado.cadastroConcluidoEm) {
-        navigate({ to: "/cadastro/candidato", search: { retomar: true } });
-        return;
-      }
-
-      // Administrador vai direto ao painel administrativo; indo para `/feed` como os demais,
-      // parecia que o login não tinha funcionado.
-      navigate({ to: resultado.tipo === "administrador" ? "/admin" : "/feed" });
+      // Retomar o cadastro por terminar, painel do administrador ou feed: a regra é a mesma do
+      // retorno do Google (ver `lib/destinoAposEntrar.ts`).
+      navigate(destinoAposEntrar(resultado));
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível entrar. Verifique seus dados.");
       setError("senha", { message: mensagem });
@@ -132,11 +124,11 @@ function Entrar() {
     setEnviando(true);
     try {
       const resultado = await entrar({ ...contaPausadaPendente, confirmarReativacao: true });
-      if ("contaPausada" in resultado) return;
+      if ("contaPausada" in resultado || "emailNaoVerificado" in resultado) return;
       // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
       // leitura.
       toast.success("Conta reativada. Bem-vindo de volta!");
-      navigate({ to: "/feed" });
+      navigate(destinoAposEntrar(resultado));
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, "Não foi possível reativar a conta.");
       toast.error(mensagem);

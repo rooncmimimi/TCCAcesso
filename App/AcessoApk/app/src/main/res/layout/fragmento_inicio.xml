@@ -33,32 +33,30 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp">
 
+            <!-- Compositor de publicação: avatar e um botão largo, como "Começar publicação" -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="12dp">
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/inicio_compartilhe_titulo"
-                    android:textAppearance="@style/Texto.Acesso.TituloSecao" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/inicio_compartilhe_texto"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="@color/acesso_texto_secundario" />
+                    android:id="@+id/textoIniciaisCompositor"
+                    style="@style/Estilo.Acesso.Avatar"
+                    android:autoSizeMaxTextSize="16sp"
+                    android:autoSizeMinTextSize="9sp"
+                    android:autoSizeTextType="uniform"
+                    android:maxLines="1"
+                    android:padding="6dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/botaoEscrever"
                     style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
                     android:text="@string/acao_escrever_publicacao"
                     app:icon="@drawable/ic_criar" />
             </LinearLayout>

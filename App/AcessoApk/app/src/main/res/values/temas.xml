@@ -229,6 +229,21 @@
         <item name="drawableStartCompat">@drawable/ic_informacao</item>
     </style>
 
+    <!-- Quadrado com as iniciais da empresa no cartão da vaga (a API ainda não entrega o logotipo ao app) -->
+    <style name="Estilo.Acesso.LogoEmpresa" parent="">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/fundo_logo_empresa</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/acesso_sobre_container_primaria</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeMinTextSize">9sp</item>
+        <item name="android:autoSizeMaxTextSize">16sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
     <!-- Iniciais do nome num círculo verde-claro, como o avatar do site sem foto -->
     <style name="Estilo.Acesso.Avatar" parent="">
         <item name="android:layout_width">@dimen/tamanho_avatar</item>

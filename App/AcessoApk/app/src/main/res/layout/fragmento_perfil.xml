@@ -20,16 +20,36 @@
                 android:id="@+id/cabecalhoPerfil"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:clipToPadding="false"
                 android:focusable="true"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
                 android:padding="20dp">
+
+                <!-- Capa com o efeito de raios da identidade visual (decorativa para o TalkBack) -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="88dp"
+                    android:layout_marginStart="-20dp"
+                    android:layout_marginTop="-20dp"
+                    android:layout_marginEnd="-20dp"
+                    android:background="@color/acesso_container_primaria"
+                    android:importantForAccessibility="noHideDescendants">
+
+                    <ImageView
+                        style="@style/Estilo.Acesso.FundoRaio"
+                        android:layout_width="match_parent"
+                        android:contentDescription="@null"
+                        android:layout_height="match_parent" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/textoIniciais"
                     style="@style/Estilo.Acesso.Avatar"
                     android:layout_width="@dimen/tamanho_avatar_perfil"
                     android:layout_height="@dimen/tamanho_avatar_perfil"
+                    android:layout_marginTop="-40dp"
+                    android:background="@drawable/fundo_avatar_perfil"
                     android:textSize="26sp" />
 
                 <TextView

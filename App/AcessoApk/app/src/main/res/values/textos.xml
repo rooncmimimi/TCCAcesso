@@ -122,8 +122,9 @@
     <string name="inicio_saudacao_sem_nome">Olá!</string>
     <string name="inicio_subtitulo_pessoa">Vagas inclusivas, histórias da comunidade e novidades das empresas.</string>
     <string name="inicio_subtitulo_empresa">Acompanhe a comunidade e divulgue a cultura inclusiva da sua empresa.</string>
-    <string name="inicio_compartilhe_titulo">Compartilhe com a comunidade</string>
-    <string name="inicio_compartilhe_texto">Conte uma conquista, uma dica ou uma novidade.</string>
+    <string name="cabecalho_abrir_perfil">Abrir meu perfil</string>
+    <string name="cabecalho_pesquisar">Pesquisar</string>
+    <string name="cabecalho_pesquisar_descricao">Pesquisar vagas, pessoas e empresas</string>
     <string name="acao_escrever_publicacao">Escrever publicação</string>
     <string name="inicio_publicacoes_titulo">Publicações da comunidade</string>
     <string name="inicio_sem_publicacoes">Ainda não há publicações. Seja o primeiro a compartilhar algo com a comunidade.</string>

@@ -38,6 +38,7 @@ public class FragmentoOportunidades extends Fragment {
     private FragmentoOportunidadesBinding componentes;
     private ViewModelOportunidades viewModel;
     private LayoutInflater inflador;
+    private boolean ehEmpresa;
 
     @Nullable
     @Override
@@ -48,12 +49,27 @@ public class FragmentoOportunidades extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(ViewModelOportunidades.class);
 
         SessaoUsuario sessao = new GerenciadorSessao(requireContext()).obter();
-        if (sessao != null && sessao.ehEmpresa()) {
+        ehEmpresa = sessao != null && sessao.ehEmpresa();
+        if (ehEmpresa) {
             prepararPainelEmpresa();
         } else {
             prepararBuscaVagas();
         }
         return componentes.getRoot();
+    }
+
+    /** A aba fica no FragmentManager: ao voltar a ela, atualiza se uma vaga nova foi criada. */
+    @Override
+    public void onHiddenChanged(boolean oculto) {
+        super.onHiddenChanged(oculto);
+        if (oculto || viewModel == null) {
+            return;
+        }
+        if (ehEmpresa) {
+            viewModel.carregarResumoEmpresa(false);
+        } else {
+            viewModel.carregarVagasSeNecessario();
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -176,6 +192,7 @@ public class FragmentoOportunidades extends Fragment {
     private View criarItemVaga(Vaga vaga, boolean mostrarCandidaturas) {
         ItemVagaBinding item = ItemVagaBinding.inflate(inflador, componentes.listaVagas, false);
         item.textoTitulo.setText(vaga.titulo);
+        item.textoIniciaisEmpresa.setText(Rotulos.iniciais(vaga.nomeEmpresa));
         item.textoEmpresa.setText(vaga.nomeEmpresa);
         if (vaga.empresaVerificada) {
             item.textoEmpresa.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_verificado, 0);

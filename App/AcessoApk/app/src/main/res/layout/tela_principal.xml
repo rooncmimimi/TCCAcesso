@@ -19,6 +19,57 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp" />
 
+    <!-- Cabeçalho compacto: avatar (abre o Perfil) e campo de busca (abre a Pesquisa) -->
+    <LinearLayout
+        android:id="@+id/cabecalhoPrincipal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/botaoAvatar"
+            style="@style/Estilo.Acesso.Avatar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:autoSizeMaxTextSize="16sp"
+            android:autoSizeMinTextSize="9sp"
+            android:autoSizeTextType="uniform"
+            android:maxLines="1"
+            android:padding="6dp"
+            android:clickable="true"
+            android:contentDescription="@string/cabecalho_abrir_perfil"
+            android:focusable="true"
+            android:importantForAccessibility="yes" />
+
+        <TextView
+            android:id="@+id/botaoBuscaRapida"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:background="@drawable/fundo_busca_rapida"
+            android:clickable="true"
+            android:contentDescription="@string/cabecalho_pesquisar_descricao"
+            android:drawablePadding="12dp"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:minHeight="48dp"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp"
+            android:text="@string/cabecalho_pesquisar"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="@color/acesso_texto_secundario"
+            app:drawableStartCompat="@drawable/ic_pesquisa"
+            app:drawableTint="@color/acesso_texto_secundario" />
+    </LinearLayout>
+
     <FrameLayout
         android:id="@+id/containerFragmentos"
         android:layout_width="match_parent"

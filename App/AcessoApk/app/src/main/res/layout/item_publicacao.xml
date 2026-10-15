@@ -58,6 +58,13 @@
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:textColor="@color/acesso_texto" />
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/acesso_borda"
+            android:importantForAccessibility="no" />
+
         <TextView
             android:id="@+id/textoInteracoes"
             android:layout_width="match_parent"

@@ -46,6 +46,7 @@ public class FragmentoInicio extends Fragment {
         componentes.textoSubtitulo.setText(sessao != null && sessao.ehEmpresa()
                 ? R.string.inicio_subtitulo_empresa
                 : R.string.inicio_subtitulo_pessoa);
+        componentes.textoIniciaisCompositor.setText(Rotulos.iniciais(sessao != null ? sessao.getNome() : null));
         componentes.botaoEscrever.setOnClickListener(v ->
                 ((TelaPrincipal) requireActivity()).abrirCriacao(false));
 
@@ -59,6 +60,15 @@ public class FragmentoInicio extends Fragment {
         });
         viewModel.carregarSeNecessario();
         return componentes.getRoot();
+    }
+
+    /** A aba fica no FragmentManager: ao voltar a ela, atualiza se algo novo foi publicado. */
+    @Override
+    public void onHiddenChanged(boolean oculto) {
+        super.onHiddenChanged(oculto);
+        if (!oculto && viewModel != null) {
+            viewModel.carregarSeNecessario();
+        }
     }
 
     private void mostrarPublicacoes(LayoutInflater inflador, List<Publicacao> publicacoes) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Vaga (como o VagaCard do site): título, empresa, local, resumo e selos -->
+<!-- Vaga (como o VagaCard do site): logotipo (iniciais) da empresa, título, empresa, local, resumo e selos -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Estilo.Acesso.Cartao"
@@ -15,36 +15,54 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/textoTitulo"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="@color/acesso_titulo"
-            android:textStyle="bold" />
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/textoEmpresa"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:drawablePadding="4dp"
-            android:gravity="center_vertical"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="@color/acesso_texto_secundario"
-            app:drawableTint="@color/acesso_primaria" />
+            <TextView
+                android:id="@+id/textoIniciaisEmpresa"
+                style="@style/Estilo.Acesso.LogoEmpresa" />
 
-        <TextView
-            android:id="@+id/textoLocal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:drawablePadding="4dp"
-            android:gravity="center_vertical"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="@color/acesso_texto_secundario"
-            app:drawableStartCompat="@drawable/ic_local"
-            app:drawableTint="@color/acesso_texto_secundario" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textoTitulo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/acesso_titulo"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textoEmpresa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/acesso_texto_secundario"
+                    app:drawableTint="@color/acesso_primaria" />
+
+                <TextView
+                    android:id="@+id/textoLocal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/acesso_texto_secundario"
+                    app:drawableStartCompat="@drawable/ic_local"
+                    app:drawableTint="@color/acesso_texto_secundario" />
+            </LinearLayout>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/textoDescricao"

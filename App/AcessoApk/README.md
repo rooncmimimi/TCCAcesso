@@ -32,16 +32,18 @@ usadas e não podem ser trocados (ex.: `AppCompatActivity`, `onCreate`, `colorPr
 
    | `FONTE_AUTENTICACAO` | Para que serve | O que mais configurar |
    |---|---|---|
-   | `supabase` (padrão) | Login real pelo Supabase Auth | `URL_SUPABASE` e `CHAVE_ANONIMA_SUPABASE` (Supabase > Project Settings > API). **Nunca use a service_role key no app.** |
-   | `api` | Login real pela API do site (`Site/Backend`) | `URL_API`, ex.: `http://10.0.2.2:3000/api` no emulador |
+   | `api` (padrão) | Login real pela API do site (`Site/Backend`), publicada no Render | Nada: `URL_API` já vem como `https://acesso-backend.onrender.com/api`. Para uma API local no emulador: `URL_API=http://10.0.2.2:3000/api` |
+   | `supabase` | Login direto pelo Supabase Auth | `URL_SUPABASE` e `CHAVE_ANONIMA_SUPABASE` (Supabase > Project Settings > API). **Nunca use a service_role key no app.** |
    | `simulada` | Testar telas e navegação sem servidor | Nada. Só existe no build de debug. |
 
    Também dá para trocar sem editar o arquivo: `./gradlew installDebug -PFONTE_AUTENTICACAO=simulada`.
-3. Só para a fonte `supabase`:
+3. Só para a fonte `supabase` (não é a usada pelo app hoje):
    - rode `supabase/001_perfis.sql` no SQL Editor do Supabase;
    - em Supabase > Authentication > URL Configuration, adicione `acesso://redefinir-senha` em
      **Redirect URLs** (é para onde o link de recuperação de senha leva).
-4. Só para a fonte `api`: rode a API (`cd Site/Backend && npm run dev`, ver o README dela).
+4. Só se usar a API **local** em vez da do Render: rode-a (`cd Site/Backend && npm run dev`, ver o README
+   dela) e aponte `URL_API` para ela. Com a API do Render (padrão), a primeira chamada depois de um tempo
+   parado pode levar cerca de 30 s.
 5. Rode o app num emulador ou celular (Android 8.0 ou mais novo).
 
 ### Modo demonstração (`simulada`)

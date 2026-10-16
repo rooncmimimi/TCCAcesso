@@ -32,6 +32,37 @@ export const limiteAutenticacao = rateLimit({
 });
 
 /**
+ * Limite das rotas do fluxo do Google que acontecem **antes** de existir sessão: `iniciar` (a URL da
+ * tela de consentimento) e `callback` (a volta do Google, que chama o Google para trocar o código).
+ *
+ * O `limiteAutenticacao` não serve aqui: ele só conta falhas, e essas rotas quase sempre respondem
+ * 200 (ou 302), então nunca chegariam ao limite; sobraria o limite geral de 300 por 15 minutos. Este
+ * conta todas as requisições. Entrar uma vez custa uma chamada a cada rota, então 60 por IP a cada 15
+ * minutos deixa folga até para uma escola ou um escritório inteiro atrás do mesmo IP.
+ *
+ * `aoExceder` troca a resposta padrão (JSON 429) por outra: o `callback` é uma navegação do
+ * navegador, e um JSON solto na tela não diz nada à pessoa.
+ */
+export const LIMITE_GOOGLE_POR_JANELA = 60;
+
+export function criarLimiteGoogle({ max = LIMITE_GOOGLE_POR_JANELA, aoExceder } = {}) {
+    return rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: {
+            sucesso: false,
+            mensagem: "Muitas tentativas de entrar com o Google. Tente novamente em alguns minutos."
+        },
+        ...(aoExceder ? { handler: (req, res) => aoExceder(req, res) } : {})
+    });
+}
+
+/** `GET /auth/google/iniciar`: responde 429 em JSON, que o Site mostra como aviso. */
+export const limiteGoogleIniciar = criarLimiteGoogle();
+
+/**
  * Limite próprio para /auth/senha/esqueci. O `limiteAutenticacao` usa
  * `skipSuccessfulRequests: true`, certo para login e cadastro, mas "esqueci minha senha" sempre
  * responde 200, mesmo com e-mail inexistente (para não revelar contas); com essa opção, nenhuma

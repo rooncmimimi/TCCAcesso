@@ -5,7 +5,9 @@ import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
 import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import {
+    criarLimiteGoogle,
     limiteAutenticacao,
+    limiteGoogleIniciar,
     limiteRenovacaoToken,
     limiteReenvioConfirmacao,
     limiteRecuperacaoSenha
@@ -104,11 +106,18 @@ router.post(
 // Diz se o recurso está configurado; o Site só mostra o botão quando está.
 router.get("/google/disponivel", GoogleAuthController.disponivel);
 
-// Devolve a URL da tela de consentimento. Público: acontece antes de existir conta.
-router.get("/google/iniciar", limiteAutenticacao, GoogleAuthController.iniciar);
+// Devolve a URL da tela de consentimento. Público: acontece antes de existir conta. Tem limite
+// próprio (conta todas as requisições), além do de falhas. O próprio vem por último, para os
+// cabeçalhos RateLimit-* das respostas de sucesso serem os dele.
+router.get("/google/iniciar", limiteAutenticacao, limiteGoogleIniciar, GoogleAuthController.iniciar);
 
-// Para onde o Google manda o navegador de volta. Sempre termina redirecionando ao Site.
-router.get("/google/callback", GoogleAuthController.callback);
+// Para onde o Google manda o navegador de volta. Sempre termina redirecionando ao Site, inclusive
+// quando o limite é excedido.
+router.get(
+    "/google/callback",
+    criarLimiteGoogle({ aoExceder: (req, res) => GoogleAuthController.limiteExcedido(req, res) }),
+    GoogleAuthController.callback
+);
 
 // O Site troca o código de entrega por sessão, por conflito ou pelo próximo passo do cadastro.
 router.post("/google/concluir", limiteAutenticacao, GoogleAuthController.concluir);

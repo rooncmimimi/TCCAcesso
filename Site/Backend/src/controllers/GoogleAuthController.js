@@ -20,6 +20,23 @@ const CODIGO_DE_OUTRO_FLUXO =
 const rotaDeRetorno = (intencao) => (intencao === INTENCAO_VINCULAR ? "/configuracoes/seguranca" : "/retorno-google");
 
 /**
+ * Origem e tela para onde o navegador volta, lidas do `state`. O Google devolve o `state` inclusive
+ * quando a pessoa cancela, então isso vale antes de qualquer desvio: sem ele, cancelar em
+ * desenvolvimento jogaria a pessoa no site publicado, e cancelar uma vinculação a jogaria na tela de
+ * login. Só cai no padrão quando o `state` não veio ou não é válido.
+ */
+function destinoDeRetorno(state) {
+    try {
+        const previa = GoogleAuthService.lerState(state);
+
+        return { origem: previa.origem || env.frontendUrl, rota: rotaDeRetorno(previa.intencao) };
+    } catch {
+        // `state` ausente ou inválido: segue com a origem padrão e o erro aparece adiante.
+        return { origem: env.frontendUrl, rota: rotaDeRetorno(null) };
+    }
+}
+
+/**
  * Fluxo de entrar/cadastrar com Google.
  *
  * O retorno do Google é uma navegação do navegador para o **backend**, mas quem precisa da sessão é
@@ -59,21 +76,19 @@ class GoogleAuthController {
         }
     }
 
+    /**
+     * Resposta do limite de requisições do `callback` (ver `criarLimiteGoogle`): como o resto do
+     * fluxo, termina num redirecionamento ao Site com `erro=falha`, e não num JSON solto na tela.
+     */
+    limiteExcedido(req, res) {
+        const { origem, rota } = destinoDeRetorno(req.query.state);
+
+        return res.redirect(`${origem}${rota}?${new URLSearchParams({ erro: "falha" }).toString()}`);
+    }
+
     /** Para onde o Google manda o navegador de volta. Sempre termina num redirecionamento ao Site. */
     async callback(req, res) {
-        // O Google devolve o `state` inclusive quando a pessoa cancela, então a origem e a tela de
-        // retorno são lidas antes de qualquer desvio: sem isso, cancelar em desenvolvimento jogaria a
-        // pessoa no site publicado, e cancelar uma vinculação a jogaria na tela de login. Só cai no
-        // padrão quando o `state` não veio ou não é válido.
-        let origem = env.frontendUrl;
-        let rota = rotaDeRetorno(null);
-        try {
-            const previa = GoogleAuthService.lerState(req.query.state);
-            if (previa.origem) origem = previa.origem;
-            rota = rotaDeRetorno(previa.intencao);
-        } catch {
-            // `state` ausente ou inválido: segue com a origem padrão e o erro aparece abaixo.
-        }
+        const { origem, rota } = destinoDeRetorno(req.query.state);
 
         const comErro = (erro) => `${origem}${rota}?${new URLSearchParams({ erro }).toString()}`;
 

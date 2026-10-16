@@ -314,6 +314,53 @@ describe("callback", () => {
     });
 });
 
+// Achado 16: o limite de requisições do callback responde como o resto do fluxo, redirecionando ao Site.
+describe("limiteExcedido", () => {
+    it("redireciona ao Site com erro=falha, e não responde um JSON solto na tela", () => {
+        const res = resposta();
+
+        GoogleAuthController.limiteExcedido(requisicao({ query: { state: "s" } }), res);
+
+        expect(res.redirect).toHaveBeenCalledWith("https://site.exemplo/retorno-google?erro=falha");
+        expect(res.json).not.toHaveBeenCalled();
+    });
+
+    it("volta à origem gravada no state", () => {
+        GoogleAuthService.lerState.mockReturnValue({ nonce: "n1", vinculo: VINCULO, origem: "http://localhost:5173" });
+        const res = resposta();
+
+        GoogleAuthController.limiteExcedido(requisicao({ query: { state: "s" } }), res);
+
+        expect(res.redirect).toHaveBeenCalledWith("http://localhost:5173/retorno-google?erro=falha");
+    });
+
+    it("numa vinculação, volta à tela de Segurança", () => {
+        GoogleAuthService.lerState.mockReturnValue({
+            nonce: "n1",
+            vinculo: VINCULO,
+            origem: "https://site.exemplo",
+            intencao: "vincular",
+            usuarioId: "u1"
+        });
+        const res = resposta();
+
+        GoogleAuthController.limiteExcedido(requisicao({ query: { state: "s" } }), res);
+
+        expect(res.redirect).toHaveBeenCalledWith("https://site.exemplo/configuracoes/seguranca?erro=falha");
+    });
+
+    it("sem state válido, cai na origem padrão (nunca num endereço vindo da URL)", () => {
+        GoogleAuthService.lerState.mockImplementation(() => {
+            throw new Error("state inválido");
+        });
+        const res = resposta();
+
+        GoogleAuthController.limiteExcedido(requisicao({ query: { state: "https://evil.example" } }), res);
+
+        expect(res.redirect).toHaveBeenCalledWith("https://site.exemplo/retorno-google?erro=falha");
+    });
+});
+
 describe("concluir", () => {
     it("recusa código inválido com 400", async () => {
         const { next } = await concluir(corpo({ codigo: "abc.def.ghi" }));

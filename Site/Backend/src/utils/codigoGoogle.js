@@ -16,7 +16,10 @@ import ErroApi from "./ErroApi.js";
  *   memória do navegador (`sessionStorage`), nunca na URL.
  *
  * Cada um tem a sua `audience`, então um nunca é aceito no lugar do outro, e nenhum dos dois é
- * aceito como access token (que exige `issuer: acesso-api`).
+ * aceito como access token (que exige `issuer: acesso-api`). O `state` da ida ao Google (ver
+ * `GoogleAuthService`) também: `AUDIENCIA_STATE`. Os quatro tipos de token assinados com o
+ * `JWT_SECRET` ficam, assim, separados — o access token pelo `issuer`, os três do Google pela
+ * `audience` — e um não passa pelo outro.
  */
 export const SEGUNDOS_CODIGO_DE_ENTREGA = 120;
 export const SEGUNDOS_PROVA = 15 * 60;
@@ -28,6 +31,7 @@ export const SEGUNDOS_PROVA = 15 * 60;
  */
 export const INTENCAO_VINCULAR = "vincular";
 
+export const AUDIENCIA_STATE = "acesso:google:state";
 const AUDIENCIA_ENTREGA = "acesso:google:entrega";
 const AUDIENCIA_PROVA = "acesso:google:prova";
 

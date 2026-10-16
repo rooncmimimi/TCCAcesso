@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
 import { emailCanonico } from "../utils/email.js";
-import { INTENCAO_VINCULAR, intencaoValida, vinculoValido } from "../utils/codigoGoogle.js";
+import { AUDIENCIA_STATE, INTENCAO_VINCULAR, intencaoValida, vinculoValido } from "../utils/codigoGoogle.js";
 import { modeloContaGoogle } from "../utils/modelosEmail.js";
 import { Usuario } from "../models/index.js";
 import EmailService from "./EmailService.js";
@@ -108,7 +108,9 @@ class GoogleAuthService {
                 ...(intencao ? { intencao, usuarioId } : {})
             },
             env.jwt.secret,
-            { expiresIn: `${MINUTOS_VALIDADE_STATE}m` }
+            // `audience` própria: o `state` não é aceito no lugar do código de entrega, da prova ou do
+            // access token, nem o contrário.
+            { expiresIn: `${MINUTOS_VALIDADE_STATE}m`, audience: AUDIENCIA_STATE }
         );
 
         const url = this.cliente().generateAuthUrl({
@@ -148,7 +150,7 @@ class GoogleAuthService {
         }
 
         try {
-            const conteudo = jwt.verify(state, env.jwt.secret);
+            const conteudo = jwt.verify(state, env.jwt.secret, { audience: AUDIENCIA_STATE });
 
             if (!conteudo?.nonce || !vinculoValido(conteudo.vinculo) || !intencaoValida(conteudo.intencao, conteudo.usuarioId)) {
                 throw new Error("state sem nonce, sem vínculo com o navegador ou com intenção inválida");

@@ -13,6 +13,7 @@ vi.mock("../config/env.js", () => ({
 }));
 
 const {
+    AUDIENCIA_STATE,
     INTENCAO_VINCULAR,
     SEGUNDOS_CODIGO_DE_ENTREGA,
     SEGUNDOS_PROVA,
@@ -204,5 +205,35 @@ describe("prova do Google", () => {
 
     it("o access token não é aceito como prova nem a prova como access token", () => {
         expect(() => verificarJwt(assinarProva(PERFIL))).toThrow();
+    });
+});
+
+// Achado 15: o state da ida ao Google também é um JWT assinado com o mesmo segredo; ele tem a sua
+// audience, e nenhum dos outros tipos de token o aceita.
+describe("separação entre o state, o código de entrega, a prova e o access token", () => {
+    const state = () =>
+        jwt.sign({ nonce: "n1", vinculo: VINCULO }, SEGREDO, { expiresIn: 60, audience: AUDIENCIA_STATE });
+
+    it("o state não vale como código de entrega", () => {
+        expect(statusDe(() => lerCodigoDeEntrega(state()))).toBe(400);
+    });
+
+    it("o state não vale como prova", () => {
+        expect(statusDe(() => lerProva(state()))).toBe(400);
+    });
+
+    it("o state não vale como access token (falta o issuer)", () => {
+        expect(() => verificarJwt(state())).toThrow();
+    });
+
+    it("o código de entrega e a prova não valem como state", () => {
+        const codigo = assinarCodigoDeEntrega({ perfil: PERFIL, tipoConta: null, vinculo: VINCULO });
+
+        expect(() => jwt.verify(codigo, SEGREDO, { audience: AUDIENCIA_STATE })).toThrow();
+        expect(() => jwt.verify(assinarProva(PERFIL), SEGREDO, { audience: AUDIENCIA_STATE })).toThrow();
+    });
+
+    it("o access token não vale como state", () => {
+        expect(() => jwt.verify(assinarJwt({ id: "u1", tipoUsuario: "candidato" }), SEGREDO, { audience: AUDIENCIA_STATE })).toThrow();
     });
 });

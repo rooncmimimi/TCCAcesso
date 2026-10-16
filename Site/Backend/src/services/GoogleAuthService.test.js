@@ -182,7 +182,9 @@ describe("origemDeRetorno", () => {
 });
 
 describe("lerState", () => {
-    const assinar = (conteudo, opcoes = { expiresIn: "10m" }) => jwt.sign(conteudo, SEGREDO, opcoes);
+    // Cada teste de recusa muda só uma coisa: a validade e a `audience` entram por padrão.
+    const assinar = (conteudo, opcoes = {}) =>
+        jwt.sign(conteudo, SEGREDO, { expiresIn: "10m", audience: "acesso:google:state", ...opcoes });
 
     it("devolve o conteúdo de um state válido", () => {
         expect(GoogleAuthService.lerState(assinar({ nonce: "n1", tipoConta: null, vinculo: VINCULO }))).toMatchObject({
@@ -208,6 +210,23 @@ describe("lerState", () => {
         expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO, ...extra })))).toBe(400);
     });
 
+    // Achado 15: o state tem a sua audience, e os tokens de outros tipos não passam por ele.
+    it("recusa um state sem audience, mesmo assinado com o segredo certo e com conteúdo válido", () => {
+        const semAudience = jwt.sign({ nonce: "n1", vinculo: VINCULO }, SEGREDO, { expiresIn: "10m" });
+        expect(statusDe(() => GoogleAuthService.lerState(semAudience))).toBe(400);
+    });
+
+    it.each([["acesso:google:entrega"], ["acesso:google:prova"], ["acesso:api"]])(
+        "recusa um state com a audience de outro tipo de token (%s)",
+        (audience) => {
+            expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO }, { audience })))).toBe(400);
+        }
+    );
+
+    it("o state que o serviço gera tem a audience do state", () => {
+        expect(jwt.decode(gerar().state).aud).toBe("acesso:google:state");
+    });
+
     it("recusa um state com vínculo mal formado", () => {
         expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: "curto" })))).toBe(400);
     });
@@ -221,7 +240,10 @@ describe("lerState", () => {
     });
 
     it("recusa state assinado com outro segredo", () => {
-        const falso = jwt.sign({ nonce: "n1", vinculo: VINCULO }, "outro-segredo-qualquer-com-bastante-tamanho", { expiresIn: "10m" });
+        const falso = jwt.sign({ nonce: "n1", vinculo: VINCULO }, "outro-segredo-qualquer-com-bastante-tamanho", {
+            expiresIn: "10m",
+            audience: "acesso:google:state"
+        });
         expect(statusDe(() => GoogleAuthService.lerState(falso))).toBe(400);
     });
 

@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "migrate": "node scripts/migrar.js",
     "criar-admin": "node scripts/criarAdministrador.js",
+    "google:verificar": "node scripts/verificarGoogle.js",
     "test": "vitest run"
   },
   "license": "MIT",

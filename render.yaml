@@ -49,3 +49,14 @@ services:
         sync: false
       - key: BREVO_REMETENTE_NOME
         value: ACESSO
+      # Entrar com Google (OAuth). Sem as três o botão "Continuar com Google" nem aparece no Site, e se o
+      # serviço for recriado a partir deste arquivo ele sumiria sem aviso. Os valores ficam só no painel
+      # do Render, nunca aqui. GOOGLE_REDIRECT_URI é https://<este-serviço>.onrender.com/api/auth/google/callback
+      # e precisa estar cadastrado, idêntico, em "URIs de redirecionamento autorizados" do cliente OAuth
+      # no Google Cloud Console. Para conferir tudo depois de mexer: `npm run google:verificar`.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false

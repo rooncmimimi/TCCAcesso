@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 
+import { ORIGEM_LOCAL, avisosDoGoogle } from "./avisosDeAmbiente.js";
+
 dotenv.config();
 
 /**
@@ -58,8 +60,6 @@ const ehUrlAbsolutaValida = (valor) => {
         return false;
     }
 };
-
-const ORIGEM_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i;
 
 /**
  * `FRONTEND_URL` é uma lista, porque o CORS aceita mais de uma origem (localhost em desenvolvimento
@@ -243,6 +243,15 @@ if (!ehUrlAbsolutaValida(env.frontendUrl)) {
             "sair sem o botão de acesso rápido até isso ser corrigido — o " +
             "código numérico continua funcionando normalmente."
     );
+}
+
+/**
+ * Avisos do login com Google (variáveis faltando, endereço de retorno errado, origens locais em
+ * produção). Nenhum imprime valor de variável. Ver `avisosDeAmbiente.js` e, para conferir de fato
+ * com o Google, `npm run google:verificar`.
+ */
+for (const aviso of avisosDoGoogle({ google: env.google, isProducao: env.isProducao, corsOrigins: env.security.corsOrigins })) {
+    console.error(aviso);
 }
 
 export default env;

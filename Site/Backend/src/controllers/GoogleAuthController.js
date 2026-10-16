@@ -99,7 +99,9 @@ class GoogleAuthController {
                 JSON.stringify({
                     nivel: "error",
                     servico: "GoogleAuthController.callback",
-                    motivo: erro?.message ?? String(erro)
+                    motivo: erro?.message ?? String(erro),
+                    // O que o Google respondeu (`invalid_client`, `invalid_grant`...), quando foi ele que falhou.
+                    ...(erro?.motivoGoogle ? { motivoGoogle: erro.motivoGoogle } : {})
                 })
             );
 

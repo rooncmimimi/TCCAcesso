@@ -279,6 +279,75 @@ describe("perfilDoCodigo", () => {
         expect(erro.message).not.toMatch(/invalid_grant/);
     });
 
+    // Achado 14: a pessoa vê uma mensagem genérica, mas o log do servidor guarda o que o Google disse.
+    describe("a causa real da falha na troca do código", () => {
+        const falhaDoGoogle = (resposta) => Object.assign(new Error("Request failed with status code 400"), { response: { data: resposta } });
+
+        it("fica na falha, para o log do servidor: invalid_client é o segredo errado ou trocado", async () => {
+            clienteGoogle.getToken.mockRejectedValue(
+                falhaDoGoogle({ error: "invalid_client", error_description: "The OAuth client was not found." })
+            );
+
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+
+            expect(erro.motivoGoogle).toBe("invalid_client: The OAuth client was not found.");
+        });
+
+        it("distingue invalid_grant (código usado ou vencido)", async () => {
+            clienteGoogle.getToken.mockRejectedValue(falhaDoGoogle({ error: "invalid_grant", error_description: "Bad Request" }));
+
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+
+            expect(erro.motivoGoogle).toBe("invalid_grant: Bad Request");
+        });
+
+        it("sem resposta do Google, guarda o código de rede", async () => {
+            clienteGoogle.getToken.mockRejectedValue(Object.assign(new Error("getaddrinfo ENOTFOUND"), { code: "ENOTFOUND" }));
+
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+
+            expect(erro.motivoGoogle).toBe("ENOTFOUND");
+        });
+
+        it("sem nenhuma pista, guarda a mensagem do erro", async () => {
+            clienteGoogle.getToken.mockRejectedValue(new Error("algo inesperado"));
+
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+
+            expect(erro.motivoGoogle).toBe("algo inesperado");
+        });
+
+        it("a mensagem para a pessoa continua genérica, sem o motivo", async () => {
+            clienteGoogle.getToken.mockRejectedValue(
+                falhaDoGoogle({ error: "invalid_client", error_description: "The OAuth client was not found." })
+            );
+
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+
+            expect(erro.statusCode).toBe(400);
+            expect(erro.message).not.toMatch(/invalid_client|OAuth/);
+        });
+
+        it("só lê o código e a descrição: nenhum outro campo da resposta entra no log", async () => {
+            clienteGoogle.getToken.mockRejectedValue(
+                falhaDoGoogle({ error: "invalid_grant", error_description: "Bad Request", id_token: "token-secreto", access_token: "outro-secreto" })
+            );
+
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+
+            expect(erro.motivoGoogle).not.toMatch(/secreto/);
+        });
+
+        it("limita o tamanho e junta quebras de linha", async () => {
+            clienteGoogle.getToken.mockRejectedValue(falhaDoGoogle({ error: "invalid_request", error_description: "linha 1\nlinha 2 " + "x".repeat(500) }));
+
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+
+            expect(erro.motivoGoogle).not.toContain("\n");
+            expect(erro.motivoGoogle.length).toBeLessThanOrEqual(200);
+        });
+    });
+
     it("recusa quando o Google não devolve ID token", async () => {
         clienteGoogle.getToken.mockResolvedValue({ tokens: { access_token: "so-access" } });
         await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1")).rejects.toMatchObject({ statusCode: 400 });

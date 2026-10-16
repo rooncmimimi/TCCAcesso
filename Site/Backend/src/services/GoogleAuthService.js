@@ -165,6 +165,23 @@ class GoogleAuthService {
     }
 
     /**
+     * O que o Google respondeu de errado ao trocar o código, em poucas palavras para o log do
+     * servidor: `invalid_client` (segredo errado ou trocado), `invalid_grant` (código usado ou
+     * vencido), `redirect_uri_mismatch`... Lê só o código e a descrição curta da resposta de erro
+     * (nunca tokens nem o corpo inteiro) ou, sem resposta, o código de rede (`ENOTFOUND`,
+     * `ETIMEDOUT`). Nada disso vai para o cliente.
+     */
+    motivoDoGoogle(erro) {
+        const resposta = erro?.response?.data;
+        const codigo = typeof resposta?.error === "string" ? resposta.error : null;
+        const descricao = typeof resposta?.error_description === "string" ? resposta.error_description : null;
+
+        const motivo = [codigo, descricao].filter(Boolean).join(": ") || erro?.code || erro?.message || "motivo desconhecido";
+
+        return String(motivo).replace(/\s+/g, " ").slice(0, 200);
+    }
+
+    /**
      * Troca o código por tokens e devolve o perfil **verificado** do Google.
      *
      * O perfil sai do ID token assinado e já validado (emissor, destinatário, expiração) pela
@@ -182,10 +199,13 @@ class GoogleAuthService {
         let tokens;
         try {
             ({ tokens } = await cliente.getToken(codigo));
-        } catch {
-            throw ErroApi.requisicaoInvalida(
+        } catch (erro) {
+            const falha = ErroApi.requisicaoInvalida(
                 "Não foi possível concluir a autenticação com o Google. Tente novamente."
             );
+            // A mensagem para a pessoa continua genérica; a causa real fica só no log do servidor.
+            falha.motivoGoogle = this.motivoDoGoogle(erro);
+            throw falha;
         }
 
         if (!tokens?.id_token) {

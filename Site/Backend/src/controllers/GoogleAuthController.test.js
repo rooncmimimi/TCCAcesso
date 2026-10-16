@@ -174,6 +174,37 @@ describe("callback", () => {
         expect(console.error).toHaveBeenCalledWith(expect.stringContaining("nonce não confere"));
     });
 
+    // Achado 14: depois de rotacionar o segredo, uma falha precisa trazer a pista no log.
+    it("registra no log o que o Google respondeu, quando foi ele que falhou", async () => {
+        const falha = Object.assign(new Error("Não foi possível concluir a autenticação com o Google. Tente novamente."), {
+            motivoGoogle: "invalid_client: The OAuth client was not found."
+        });
+        GoogleAuthService.perfilDoCodigo.mockRejectedValue(falha);
+        const res = resposta();
+
+        await GoogleAuthController.callback(requisicao({ query: { code: "c", state: "s" } }), res);
+
+        const registro = JSON.parse(console.error.mock.calls[0][0]);
+        expect(registro).toMatchObject({ motivoGoogle: "invalid_client: The OAuth client was not found." });
+    });
+
+    it("não acrescenta motivoGoogle ao log de uma falha que não veio do Google", async () => {
+        GoogleAuthService.perfilDoCodigo.mockRejectedValue(new Error("nonce não confere"));
+
+        await GoogleAuthController.callback(requisicao({ query: { code: "c", state: "s" } }), resposta());
+
+        expect(JSON.parse(console.error.mock.calls[0][0])).not.toHaveProperty("motivoGoogle");
+    });
+
+    it("o motivo do Google nunca vai para a URL", async () => {
+        GoogleAuthService.perfilDoCodigo.mockRejectedValue(Object.assign(new Error("falhou"), { motivoGoogle: "invalid_client" }));
+        const res = resposta();
+
+        await GoogleAuthController.callback(requisicao({ query: { code: "c", state: "s" } }), res);
+
+        expect(res.redirect.mock.calls[0][0]).not.toContain("invalid_client");
+    });
+
     it("nunca coloca o motivo do erro na URL", async () => {
         GoogleAuthService.perfilDoCodigo.mockRejectedValue(new Error("motivo-interno-secreto"));
         const res = resposta();

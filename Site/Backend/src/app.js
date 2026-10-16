@@ -5,6 +5,7 @@ import morgan from "morgan";
 import path from "node:path";
 
 import env from "./config/env.js";
+import { opcoesCors } from "./config/cors.js";
 import routes from "./routes/index.js";
 import erroMiddleware from "./middlewares/erroMiddleware.js";
 import { limiteApi } from "./middlewares/limiteRequisicoesMiddleware.js";
@@ -22,19 +23,8 @@ app.use(
     })
 );
 
-app.use(
-    cors({
-        origin(origin, callback) {
-            // Permite ferramentas sem Origin (curl, Postman) e origens allowlisted.
-            if (!origin || env.security.corsOrigins.includes(origin)) {
-                return callback(null, true);
-            }
-
-            return callback(new Error("Origem não permitida pelo CORS."));
-        },
-        credentials: true
-    })
-);
+// Permite ferramentas sem Origin (curl, Postman) e origens allowlisted; recusa as demais com 403.
+app.use(cors(opcoesCors));
 
 /* Parsers */
 app.use(express.json({ limit: "1mb" }));

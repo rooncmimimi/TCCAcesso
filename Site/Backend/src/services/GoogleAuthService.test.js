@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 
 /**
@@ -45,8 +46,14 @@ const { Usuario } = await import("../models/index.js");
 const { default: EmailService } = await import("./EmailService.js");
 const { default: NotificacaoService } = await import("./NotificacaoService.js");
 const { default: GoogleAuthService } = await import("./GoogleAuthService.js");
+const { cifrar } = await import("../utils/cifra.js");
 
 const CONFIG_PADRAO = { ...env.google };
+
+// O verificador do PKCE e o valor cifrado que o state carrega com ele.
+const VERIFICADOR = "verificador-de-teste-com-pelo-menos-quarenta-e-tres-caracteres";
+const CV = cifrar(VERIFICADOR, "google:pkce");
+const desafioDe = (verificador) => crypto.createHash("sha256").update(verificador).digest("base64url");
 
 // O hash (SHA-256 em base64url, 43 caracteres) do segredo que o Site guarda no navegador.
 const VINCULO = "ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0";
@@ -106,6 +113,50 @@ describe("gerarUrlDeAutorizacao", () => {
         expect(conteudo.exp - conteudo.iat).toBe(600);
         expect(conteudo.nonce).toMatch(/^[0-9a-f]{32}$/);
         expect(clienteGoogle.generateAuthUrl.mock.calls[0][0].nonce).toBe(conteudo.nonce);
+    });
+
+    // Achado 15: PKCE (S256). O desafio vai ao Google; o verificador, cifrado, fica no state.
+    describe("PKCE", () => {
+        it("pede ao Google com code_challenge S256", () => {
+            gerar();
+
+            const pedido = clienteGoogle.generateAuthUrl.mock.calls[0][0];
+            expect(pedido.code_challenge_method).toBe("S256");
+            expect(pedido.code_challenge).toMatch(/^[A-Za-z0-9_-]{43}$/);
+        });
+
+        it("o desafio é o SHA-256 do verificador que o state devolve depois", () => {
+            const { state } = gerar();
+
+            const { codeVerifier } = GoogleAuthService.lerState(state);
+
+            expect(clienteGoogle.generateAuthUrl.mock.calls[0][0].code_challenge).toBe(desafioDe(codeVerifier));
+        });
+
+        it("o verificador tem pelo menos 43 caracteres do alfabeto permitido (RFC 7636)", () => {
+            const { codeVerifier } = GoogleAuthService.lerState(gerar().state);
+
+            expect(codeVerifier).toMatch(/^[A-Za-z0-9_-]{43,128}$/);
+        });
+
+        it("o state é legível (é um JWT), então o verificador nele só pode estar cifrado", () => {
+            const { state } = gerar();
+
+            const { codeVerifier } = GoogleAuthService.lerState(state);
+            const corpoLegivel = Buffer.from(state.split(".")[1], "base64url").toString("utf8");
+
+            expect(corpoLegivel).not.toContain(codeVerifier);
+            expect(corpoLegivel).toContain('"cv"');
+        });
+
+        it("cada pedido tem o seu verificador e o seu desafio", () => {
+            const a = GoogleAuthService.lerState(gerar().state).codeVerifier;
+            const b = GoogleAuthService.lerState(gerar().state).codeVerifier;
+
+            expect(a).not.toBe(b);
+            const [pedidoA, pedidoB] = clienteGoogle.generateAuthUrl.mock.calls.map(([p]) => p.code_challenge);
+            expect(pedidoA).not.toBe(pedidoB);
+        });
     });
 
     it("gera um nonce novo a cada pedido", () => {
@@ -184,7 +235,7 @@ describe("origemDeRetorno", () => {
 describe("lerState", () => {
     // Cada teste de recusa muda só uma coisa: a validade e a `audience` entram por padrão.
     const assinar = (conteudo, opcoes = {}) =>
-        jwt.sign(conteudo, SEGREDO, { expiresIn: "10m", audience: "acesso:google:state", ...opcoes });
+        jwt.sign({ cv: CV, ...conteudo }, SEGREDO, { expiresIn: "10m", audience: "acesso:google:state", ...opcoes });
 
     it("devolve o conteúdo de um state válido", () => {
         expect(GoogleAuthService.lerState(assinar({ nonce: "n1", tipoConta: null, vinculo: VINCULO }))).toMatchObject({
@@ -193,7 +244,36 @@ describe("lerState", () => {
         });
     });
 
-    it("recusa um state sem o vínculo com o navegador (achado 3)", () => {
+    it("devolve o verificador do PKCE, aberto, e não o valor cifrado", () => {
+        const conteudo = GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO }));
+
+        expect(conteudo.codeVerifier).toBe(VERIFICADOR);
+        expect(conteudo).not.toHaveProperty("cv");
+    });
+
+    it("recusa um state sem o verificador do PKCE", () => {
+        const semVerificador = jwt.sign({ nonce: "n1", vinculo: VINCULO }, SEGREDO, {
+            expiresIn: "10m",
+            audience: "acesso:google:state"
+        });
+
+        expect(statusDe(() => GoogleAuthService.lerState(semVerificador))).toBe(400);
+    });
+
+    it("recusa um state cujo verificador foi alterado ou cifrado para outro uso", () => {
+        const alterado = Buffer.from(CV, "base64url");
+        alterado[alterado.length - 1] ^= 1;
+
+        expect(
+            statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO, cv: alterado.toString("base64url") })))
+        ).toBe(400);
+        expect(
+            statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO, cv: cifrar(VERIFICADOR, "outro-uso") })))
+        ).toBe(400);
+        expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO, cv: VERIFICADOR })))).toBe(400);
+    });
+
+    it("recusa um state com vínculo ausente (achado 3)", () => {
         expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", tipoConta: null })))).toBe(400);
     });
 
@@ -269,7 +349,7 @@ describe("perfilDoCodigo", () => {
     });
 
     it("devolve o perfil verificado, com e-mail em minúsculas", async () => {
-        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1")).resolves.toEqual({
+        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR)).resolves.toEqual({
             sub: "sub-1",
             email: "ana.silva@gmail.com",
             emailVerificado: true,
@@ -277,8 +357,19 @@ describe("perfilDoCodigo", () => {
         });
     });
 
+    it("troca o código mandando o verificador do PKCE ao Google", async () => {
+        await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR);
+
+        expect(clienteGoogle.getToken).toHaveBeenCalledWith({ code: "codigo", codeVerifier: VERIFICADOR });
+    });
+
+    it("recusa com 400, sem chamar o Google, quando falta o verificador", async () => {
+        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1", undefined)).rejects.toMatchObject({ statusCode: 400 });
+        expect(clienteGoogle.getToken).not.toHaveBeenCalled();
+    });
+
     it("confere o ID token contra o Client ID configurado", async () => {
-        await GoogleAuthService.perfilDoCodigo("codigo", "n1");
+        await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR);
         expect(clienteGoogle.verifyIdToken).toHaveBeenCalledWith({
             idToken: "id-token-fake",
             audience: env.google.clientId
@@ -286,17 +377,17 @@ describe("perfilDoCodigo", () => {
     });
 
     it("recusa quando o nonce do ID token não é o do state (token de outro pedido)", async () => {
-        await expect(GoogleAuthService.perfilDoCodigo("codigo", "outro")).rejects.toMatchObject({ statusCode: 400 });
+        await expect(GoogleAuthService.perfilDoCodigo("codigo", "outro", VERIFICADOR)).rejects.toMatchObject({ statusCode: 400 });
     });
 
     it("recusa sem código de autorização", async () => {
-        await expect(GoogleAuthService.perfilDoCodigo("", "n1")).rejects.toMatchObject({ statusCode: 400 });
+        await expect(GoogleAuthService.perfilDoCodigo("", "n1", VERIFICADOR)).rejects.toMatchObject({ statusCode: 400 });
         expect(clienteGoogle.getToken).not.toHaveBeenCalled();
     });
 
     it("recusa com 400 e mensagem genérica quando o Google rejeita o código", async () => {
         clienteGoogle.getToken.mockRejectedValue(new Error("invalid_grant"));
-        const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+        const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
         expect(erro.statusCode).toBe(400);
         expect(erro.message).not.toMatch(/invalid_grant/);
     });
@@ -310,7 +401,7 @@ describe("perfilDoCodigo", () => {
                 falhaDoGoogle({ error: "invalid_client", error_description: "The OAuth client was not found." })
             );
 
-            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
 
             expect(erro.motivoGoogle).toBe("invalid_client: The OAuth client was not found.");
         });
@@ -318,7 +409,7 @@ describe("perfilDoCodigo", () => {
         it("distingue invalid_grant (código usado ou vencido)", async () => {
             clienteGoogle.getToken.mockRejectedValue(falhaDoGoogle({ error: "invalid_grant", error_description: "Bad Request" }));
 
-            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
 
             expect(erro.motivoGoogle).toBe("invalid_grant: Bad Request");
         });
@@ -326,7 +417,7 @@ describe("perfilDoCodigo", () => {
         it("sem resposta do Google, guarda o código de rede", async () => {
             clienteGoogle.getToken.mockRejectedValue(Object.assign(new Error("getaddrinfo ENOTFOUND"), { code: "ENOTFOUND" }));
 
-            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
 
             expect(erro.motivoGoogle).toBe("ENOTFOUND");
         });
@@ -334,7 +425,7 @@ describe("perfilDoCodigo", () => {
         it("sem nenhuma pista, guarda a mensagem do erro", async () => {
             clienteGoogle.getToken.mockRejectedValue(new Error("algo inesperado"));
 
-            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
 
             expect(erro.motivoGoogle).toBe("algo inesperado");
         });
@@ -344,7 +435,7 @@ describe("perfilDoCodigo", () => {
                 falhaDoGoogle({ error: "invalid_client", error_description: "The OAuth client was not found." })
             );
 
-            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
 
             expect(erro.statusCode).toBe(400);
             expect(erro.message).not.toMatch(/invalid_client|OAuth/);
@@ -355,7 +446,7 @@ describe("perfilDoCodigo", () => {
                 falhaDoGoogle({ error: "invalid_grant", error_description: "Bad Request", id_token: "token-secreto", access_token: "outro-secreto" })
             );
 
-            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
 
             expect(erro.motivoGoogle).not.toMatch(/secreto/);
         });
@@ -363,7 +454,7 @@ describe("perfilDoCodigo", () => {
         it("limita o tamanho e junta quebras de linha", async () => {
             clienteGoogle.getToken.mockRejectedValue(falhaDoGoogle({ error: "invalid_request", error_description: "linha 1\nlinha 2 " + "x".repeat(500) }));
 
-            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1").catch((e) => e);
+            const erro = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR).catch((e) => e);
 
             expect(erro.motivoGoogle).not.toContain("\n");
             expect(erro.motivoGoogle.length).toBeLessThanOrEqual(200);
@@ -372,17 +463,17 @@ describe("perfilDoCodigo", () => {
 
     it("recusa quando o Google não devolve ID token", async () => {
         clienteGoogle.getToken.mockResolvedValue({ tokens: { access_token: "so-access" } });
-        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1")).rejects.toMatchObject({ statusCode: 400 });
+        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR)).rejects.toMatchObject({ statusCode: 400 });
     });
 
     it("recusa um ID token sem sub", async () => {
         clienteGoogle.verifyIdToken.mockResolvedValue(idToken({ email: "a@b.com", nonce: "n1" }));
-        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1")).rejects.toMatchObject({ statusCode: 400 });
+        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR)).rejects.toMatchObject({ statusCode: 400 });
     });
 
     it("propaga a falha da verificação de assinatura, emissor ou validade", async () => {
         clienteGoogle.verifyIdToken.mockRejectedValue(new Error("Wrong recipient"));
-        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1")).rejects.toThrow("Wrong recipient");
+        await expect(GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR)).rejects.toThrow("Wrong recipient");
     });
 
     it.each([[undefined], [false], ["true"], [1]])(
@@ -391,7 +482,7 @@ describe("perfilDoCodigo", () => {
             clienteGoogle.verifyIdToken.mockResolvedValue(
                 idToken({ sub: "sub-1", email: "a@b.com", email_verified: valor, nonce: "n1" })
             );
-            const perfil = await GoogleAuthService.perfilDoCodigo("codigo", "n1");
+            const perfil = await GoogleAuthService.perfilDoCodigo("codigo", "n1", VERIFICADOR);
             expect(perfil.emailVerificado).toBe(false);
         }
     );

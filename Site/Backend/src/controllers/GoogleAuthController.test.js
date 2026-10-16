@@ -97,7 +97,13 @@ beforeEach(() => {
     // reset (e não só clear): respostas `...Once` que sobrarem de um teste não vazam para o próximo.
     vi.resetAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
-    GoogleAuthService.lerState.mockReturnValue({ nonce: "n1", tipoConta: null, vinculo: VINCULO, origem: "https://site.exemplo" });
+    GoogleAuthService.lerState.mockReturnValue({
+        nonce: "n1",
+        tipoConta: null,
+        vinculo: VINCULO,
+        origem: "https://site.exemplo",
+        codeVerifier: "verificador-do-pkce"
+    });
 });
 
 describe("disponivel", () => {
@@ -213,13 +219,20 @@ describe("callback", () => {
     });
 
     it("no sucesso, devolve o código de entrega no fragmento da URL, e não na query (achado 13)", async () => {
-        GoogleAuthService.lerState.mockReturnValue({ nonce: "n1", tipoConta: "empresa", vinculo: VINCULO, origem: "https://site.exemplo" });
+        GoogleAuthService.lerState.mockReturnValue({
+            nonce: "n1",
+            tipoConta: "empresa",
+            vinculo: VINCULO,
+            origem: "https://site.exemplo",
+            codeVerifier: "verificador-do-pkce"
+        });
         GoogleAuthService.perfilDoCodigo.mockResolvedValue(PERFIL);
         const res = resposta();
 
         await GoogleAuthController.callback(requisicao({ query: { code: "c", state: "s" } }), res);
 
-        expect(GoogleAuthService.perfilDoCodigo).toHaveBeenCalledWith("c", "n1");
+        // O verificador do PKCE, que o state trouxe, vai junto: o Google só troca o código com ele.
+        expect(GoogleAuthService.perfilDoCodigo).toHaveBeenCalledWith("c", "n1", "verificador-do-pkce");
         const destino = new URL(res.redirect.mock.calls[0][0]);
         expect(destino.origin + destino.pathname).toBe("https://site.exemplo/retorno-google");
         expect(destino.search).toBe("");

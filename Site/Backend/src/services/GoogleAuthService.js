@@ -7,6 +7,7 @@ import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
 import { emailCanonico } from "../utils/email.js";
 import { AUDIENCIA_STATE, INTENCAO_VINCULAR, intencaoValida, vinculoValido } from "../utils/codigoGoogle.js";
+import { cifrar, decifrar } from "../utils/cifra.js";
 import { modeloContaGoogle } from "../utils/modelosEmail.js";
 import { Usuario } from "../models/index.js";
 import EmailService from "./EmailService.js";
@@ -14,6 +15,9 @@ import NotificacaoService from "./NotificacaoService.js";
 
 const ESCOPOS = ["openid", "email", "profile"];
 const MINUTOS_VALIDADE_STATE = 10;
+
+/** Contexto da cifra do verificador do PKCE: ele só abre quando lido para este fim. */
+const CONTEXTO_PKCE = "google:pkce";
 
 const SO_CANDIDATO = "Entrar com o Google vale só para contas de candidato. Para esta conta, use e-mail e senha.";
 
@@ -34,6 +38,10 @@ const SO_CANDIDATO = "Entrar com o Google vale só para contas de candidato. Par
  *   que clicou, e é isso que amarra o retorno àquele navegador (ver `vinculo` abaixo).
  * - **Repetição (`nonce`)**: o `nonce` vai no pedido e volta dentro do ID token assinado pelo
  *   Google; se não bater com o do `state`, o token é de outro pedido e é recusado.
+ * - **PKCE (S256)**: o pedido leva o `code_challenge`, e o código só se troca por tokens com o
+ *   `code_verifier` correspondente. O verificador viaja **cifrado** dentro do `state` (que é
+ *   assinado, mas legível): quem interceptar o endereço de retorno não consegue o verificador. É
+ *   defesa em profundidade, porque o cliente já é confidencial (usa o segredo do cliente).
  * - **Vínculo por `sub`**: a conta é encontrada por `googleId` (a claim `sub`), nunca pelo e-mail.
  *   `sub` é estável e único; e-mail muda e pode ser reaproveitado.
  * - **Sem vínculo automático por e-mail**: se já existe conta ACESSO com aquele e-mail mas sem
@@ -99,9 +107,15 @@ class GoogleAuthService {
         }
 
         const nonce = crypto.randomBytes(16).toString("hex");
+
+        // PKCE: o verificador fica só com o servidor (cifrado no state); ao Google vai o desafio.
+        const verificador = crypto.randomBytes(32).toString("base64url");
+        const desafio = crypto.createHash("sha256").update(verificador).digest("base64url");
+
         const state = jwt.sign(
             {
                 nonce,
+                cv: cifrar(verificador, CONTEXTO_PKCE),
                 tipoConta,
                 vinculo,
                 origem: this.origemDeRetorno(origem),
@@ -117,6 +131,8 @@ class GoogleAuthService {
             scope: ESCOPOS,
             state,
             nonce,
+            code_challenge: desafio,
+            code_challenge_method: "S256",
             // `select_account` evita entrar silenciosamente com a conta que já estava logada no
             // navegador — quem tem mais de uma conta Google precisa escolher qual usar.
             prompt: "select_account",
@@ -156,7 +172,10 @@ class GoogleAuthService {
                 throw new Error("state sem nonce, sem vínculo com o navegador ou com intenção inválida");
             }
 
-            return conteudo;
+            // Falha (e cai no erro genérico abaixo) se o verificador faltar ou não abrir.
+            const { cv, ...resto } = conteudo;
+
+            return { ...resto, codeVerifier: decifrar(cv, CONTEXTO_PKCE) };
         } catch {
             // Mensagem genérica de propósito: distinguir "expirado" de "assinatura inválida" só
             // ajudaria quem está sondando o fluxo.
@@ -189,18 +208,23 @@ class GoogleAuthService {
      * O perfil sai do ID token assinado e já validado (emissor, destinatário, expiração) pela
      * `google-auth-library`; o `nonce` é conferido aqui contra o do `state`.
      */
-    async perfilDoCodigo(codigo, nonceEsperado) {
+    async perfilDoCodigo(codigo, nonceEsperado, codeVerifier) {
         this.garantirDisponivel();
 
         if (!codigo) {
             throw ErroApi.requisicaoInvalida("Autorização do Google ausente.");
         }
 
+        // O pedido saiu com `code_challenge`: sem o verificador o Google recusaria a troca.
+        if (!codeVerifier) {
+            throw ErroApi.requisicaoInvalida("Autorização do Google incompleta. Tente entrar novamente.");
+        }
+
         const cliente = this.cliente();
 
         let tokens;
         try {
-            ({ tokens } = await cliente.getToken(codigo));
+            ({ tokens } = await cliente.getToken({ code: codigo, codeVerifier }));
         } catch (erro) {
             const falha = ErroApi.requisicaoInvalida(
                 "Não foi possível concluir a autenticação com o Google. Tente novamente."

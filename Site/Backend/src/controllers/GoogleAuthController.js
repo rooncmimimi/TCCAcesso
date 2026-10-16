@@ -98,8 +98,10 @@ class GoogleAuthController {
         }
 
         try {
-            const { nonce, tipoConta, vinculo, intencao, usuarioId } = GoogleAuthService.lerState(req.query.state);
-            const perfil = await GoogleAuthService.perfilDoCodigo(req.query.code, nonce);
+            const { nonce, tipoConta, vinculo, intencao, usuarioId, codeVerifier } = GoogleAuthService.lerState(
+                req.query.state
+            );
+            const perfil = await GoogleAuthService.perfilDoCodigo(req.query.code, nonce, codeVerifier);
 
             const codigo = assinarCodigoDeEntrega({ perfil, tipoConta, vinculo, intencao, usuarioId });
 

@@ -32,10 +32,21 @@ export function IconeGoogle({ className = "size-5" }: { className?: string }) {
 }
 
 /**
+ * Quanto esperar, em ms, antes de cada nova tentativa de perguntar se o Google está disponível.
+ *
+ * O servidor da hospedagem "dorme" quando fica parado e leva meio minuto para acordar (medido: 32 s,
+ * com o tempo limite do cliente em 20 s). Sem nova tentativa, a pergunta falhava uma vez e o botão
+ * sumia até a pessoa recarregar a página, sem aviso. Só **falha** de rede ou de servidor tenta de
+ * novo; a resposta "não está configurado" é definitiva.
+ */
+const ESPERAS_ENTRE_TENTATIVAS = [2000, 4000, 8000, 16000];
+
+/**
  * "Continuar com Google".
  *
  * Só aparece quando o backend confirma que o recurso está configurado: um botão que leva a erro é
- * pior do que botão nenhum. A senha do Google nunca é digitada no ACESSO — o botão leva à página
+ * pior do que botão nenhum. Se o servidor estiver acordando, pergunta de novo algumas vezes antes
+ * de desistir (ver `ESPERAS_ENTRE_TENTATIVAS`). A senha do Google nunca é digitada no ACESSO — o botão leva à página
  * oficial de autorização, e o retorno é tratado em `/retorno-google`.
  *
  * `tipoConta` não escolhe o tipo da conta: toda conta começa como candidato. Ele só carrega a
@@ -54,17 +65,30 @@ export function BotaoGoogle({
 
   useEffect(() => {
     let cancelado = false;
-    googleService
-      .disponivel()
-      .then((ok) => {
-        if (!cancelado) setDisponivel(ok);
-      })
-      .catch(() => {
-        if (!cancelado) setDisponivel(false);
-      });
+    let temporizador: ReturnType<typeof setTimeout> | undefined;
+
+    function perguntar(tentativa: number) {
+      googleService
+        .disponivel()
+        .then((ok) => {
+          if (!cancelado) setDisponivel(ok);
+        })
+        .catch(() => {
+          if (cancelado) return;
+
+          if (tentativa < ESPERAS_ENTRE_TENTATIVAS.length) {
+            temporizador = setTimeout(() => perguntar(tentativa + 1), ESPERAS_ENTRE_TENTATIVAS[tentativa]);
+          } else {
+            setDisponivel(false);
+          }
+        });
+    }
+
+    perguntar(0);
 
     return () => {
       cancelado = true;
+      clearTimeout(temporizador);
     };
   }, []);
 

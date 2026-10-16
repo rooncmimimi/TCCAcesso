@@ -18,11 +18,16 @@ O que isso implica, sem rodeio: **qualquer script que rode na página do Site co
 tokens**. É o risco clássico de XSS com `localStorage`. O App não tem esse problema — `SecureStore`
 é armazenamento do sistema operacional, não do JavaScript.
 
-Há um segundo ponto, introduzido nesta fase: o retorno do Google passa um "código de entrega" de 60
-segundos pela URL (`/entrar/google?codigo=…`), porque sem cookie de sessão não existe outro canal
-entre o redirecionamento do Google e o Site. Ele é de uso único, dura um minuto e sozinho não
-autentica ninguém — mas fica no histórico do navegador. A migração para cookies elimina essa
-passagem.
+Há um segundo ponto: o retorno do Google passa um "código de entrega" pela URL
+(`/retorno-google#codigo=…`), porque sem cookie de sessão não existe outro canal entre o
+redirecionamento do Google e o Site. Ele vai no **fragmento** da URL, que o navegador não envia a
+servidor nenhum (nem aos logs da Vercel), e o Site o apaga da barra de endereço assim que o lê. Dura 2
+minutos, só pode ser usado **uma vez** e só funciona no navegador que começou o fluxo: o Site guarda
+um segredo aleatório no `sessionStorage` da aba, manda ao servidor apenas o hash dele, e o servidor
+só aceita o código acompanhado do segredo. Sozinho, o código não autentica ninguém. (Limite
+declarado: o registro de "já usado" fica na memória de uma instância só; com mais de uma instância,
+o que continua barrando o reaproveitamento é o segredo da aba.) A migração para cookies eliminaria
+essa passagem pela URL.
 
 ## O que mudaria
 

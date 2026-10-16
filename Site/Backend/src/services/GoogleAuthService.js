@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
 import { emailCanonico } from "../utils/email.js";
+import { vinculoValido } from "../utils/codigoGoogle.js";
 import { Usuario } from "../models/index.js";
 
 const ESCOPOS = ["openid", "email", "profile"];
@@ -15,15 +16,17 @@ const MINUTOS_VALIDADE_STATE = 10;
  * Entrar e cadastrar com uma conta Google (OAuth 2.0 + OpenID Connect).
  *
  * O ACESSO nunca vê a senha do Google: a pessoa autentica na página do próprio Google e volta com
- * um código de uso único, que o servidor troca por um ID token assinado. Só o ID token é levado a
- * sério — nada que o navegador diga sobre a identidade da pessoa é aceito.
+ * um código de autorização, que o servidor troca por um ID token assinado. Só o ID token é levado a
+ * sério — nada que o navegador diga sobre a identidade da pessoa é aceito. Do servidor para o Site, a
+ * identidade já verificada segue num "código de entrega" próprio (ver `utils/codigoGoogle.js`).
  *
  * Proteções implementadas aqui:
  *
  * - **CSRF (`state`)**: o `state` é um JWT curto assinado com o `JWT_SECRET`, com validade de dez
  *   minutos. Quem não passou por `gerarUrlDeAutorizacao` não consegue forjar um `state` válido, e
  *   um `state` antigo não serve. É stateless de propósito: não exige sessão nem tabela para um
- *   fluxo que acontece antes de existir conta.
+ *   fluxo que acontece antes de existir conta. Ele carrega o hash do segredo guardado no navegador
+ *   que clicou, e é isso que amarra o retorno àquele navegador (ver `vinculo` abaixo).
  * - **Repetição (`nonce`)**: o `nonce` vai no pedido e volta dentro do ID token assinado pelo
  *   Google; se não bater com o do `state`, o token é de outro pedido e é recusado.
  * - **Vínculo por `sub`**: a conta é encontrada por `googleId` (a claim `sub`), nunca pelo e-mail.
@@ -63,17 +66,28 @@ class GoogleAuthService {
      *
      * `tipoConta` fica dentro do `state` assinado, e não solto na query de retorno, para não poder
      * ser trocado no meio do caminho por quem quer virar empresa.
+     *
+     * `vinculo` é o hash do segredo que o Site guardou no `sessionStorage` do navegador que
+     * começou o fluxo. Ele viaja no `state`, passa ao código de entrega e é conferido em
+     * `concluir`: quem não é esse navegador não consegue trocar o código (o ataque de "login CSRF",
+     * em que alguém leva a vítima a entrar na conta do atacante). É obrigatório.
      */
-    gerarUrlDeAutorizacao({ tipoConta = null, origem = null } = {}) {
+    gerarUrlDeAutorizacao({ tipoConta = null, origem = null, vinculo = null } = {}) {
         this.garantirDisponivel();
 
         if (tipoConta && !["candidato", "empresa"].includes(tipoConta)) {
             throw ErroApi.requisicaoInvalida("Tipo de conta inválido.");
         }
 
+        if (!vinculoValido(vinculo)) {
+            throw ErroApi.requisicaoInvalida(
+                "Não foi possível identificar este navegador. Atualize a página e tente de novo."
+            );
+        }
+
         const nonce = crypto.randomBytes(16).toString("hex");
         const state = jwt.sign(
-            { nonce, tipoConta, origem: this.origemDeRetorno(origem) },
+            { nonce, tipoConta, vinculo, origem: this.origemDeRetorno(origem) },
             env.jwt.secret,
             { expiresIn: `${MINUTOS_VALIDADE_STATE}m` }
         );
@@ -117,8 +131,8 @@ class GoogleAuthService {
         try {
             const conteudo = jwt.verify(state, env.jwt.secret);
 
-            if (!conteudo?.nonce) {
-                throw new Error("state sem nonce");
+            if (!conteudo?.nonce || !vinculoValido(conteudo.vinculo)) {
+                throw new Error("state sem nonce ou sem vínculo com o navegador");
             }
 
             return conteudo;

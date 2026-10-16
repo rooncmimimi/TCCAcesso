@@ -41,6 +41,10 @@ const { default: GoogleAuthService } = await import("./GoogleAuthService.js");
 
 const CONFIG_PADRAO = { ...env.google };
 
+// O hash (SHA-256 em base64url, 43 caracteres) do segredo que o Site guarda no navegador.
+const VINCULO = "ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0";
+const gerar = (extra = {}) => GoogleAuthService.gerarUrlDeAutorizacao({ vinculo: VINCULO, ...extra });
+
 beforeEach(() => {
     vi.clearAllMocks();
     env.google = { ...CONFIG_PADRAO };
@@ -68,13 +72,13 @@ describe("disponivel", () => {
 
     it("recusa gerar a URL com 503 quando o recurso não está configurado", () => {
         env.google.clientSecret = null;
-        expect(statusDe(() => GoogleAuthService.gerarUrlDeAutorizacao())).toBe(503);
+        expect(statusDe(() => gerar())).toBe(503);
     });
 });
 
 describe("gerarUrlDeAutorizacao", () => {
     it("pede só openid, email e profile, com seleção de conta e sem escopos já concedidos", () => {
-        GoogleAuthService.gerarUrlDeAutorizacao();
+        gerar();
 
         const pedido = clienteGoogle.generateAuthUrl.mock.calls[0][0];
         expect(pedido.scope).toEqual(["openid", "email", "profile"]);
@@ -84,7 +88,7 @@ describe("gerarUrlDeAutorizacao", () => {
     });
 
     it("assina o state por 10 minutos e usa o mesmo nonce no state e no pedido ao Google", () => {
-        const { state } = GoogleAuthService.gerarUrlDeAutorizacao({ tipoConta: "empresa", origem: "http://localhost:5173" });
+        const { state } = gerar({ tipoConta: "empresa", origem: "http://localhost:5173" });
 
         const conteudo = jwt.verify(state, SEGREDO);
         expect(conteudo.tipoConta).toBe("empresa");
@@ -95,17 +99,36 @@ describe("gerarUrlDeAutorizacao", () => {
     });
 
     it("gera um nonce novo a cada pedido", () => {
-        const a = jwt.decode(GoogleAuthService.gerarUrlDeAutorizacao().state).nonce;
-        const b = jwt.decode(GoogleAuthService.gerarUrlDeAutorizacao().state).nonce;
+        const a = jwt.decode(gerar().state).nonce;
+        const b = jwt.decode(gerar().state).nonce;
         expect(a).not.toBe(b);
     });
 
+    // Achado 3 da auditoria: o retorno só vale no navegador que clicou. O hash do segredo desse
+    // navegador entra no state assinado e, daí, no código de entrega.
+    it("grava no state o hash do segredo do navegador, para amarrar o retorno a ele (achado 3)", () => {
+        const { state } = gerar();
+        expect(jwt.verify(state, SEGREDO).vinculo).toBe(VINCULO);
+    });
+
+    it.each([[undefined], [null], [""], ["curto"], [`${VINCULO}x`], ["a".repeat(43) + "="]])(
+        "recusa com 400 o vínculo %j: sem ele o retorno não poderia ser amarrado a um navegador",
+        (vinculo) => {
+            expect(statusDe(() => GoogleAuthService.gerarUrlDeAutorizacao({ vinculo }))).toBe(400);
+            expect(clienteGoogle.generateAuthUrl).not.toHaveBeenCalled();
+        }
+    );
+
+    it("recusa gerar a URL quando nenhum argumento é passado", () => {
+        expect(statusDe(() => GoogleAuthService.gerarUrlDeAutorizacao())).toBe(400);
+    });
+
     it.each(["administrador", "candidato ", "EMPRESA", "x"])("recusa tipoConta %j com 400", (tipoConta) => {
-        expect(statusDe(() => GoogleAuthService.gerarUrlDeAutorizacao({ tipoConta }))).toBe(400);
+        expect(statusDe(() => gerar({ tipoConta }))).toBe(400);
     });
 
     it.each([null, "candidato", "empresa"])("aceita tipoConta %j", (tipoConta) => {
-        expect(() => GoogleAuthService.gerarUrlDeAutorizacao({ tipoConta })).not.toThrow();
+        expect(() => gerar({ tipoConta })).not.toThrow();
     });
 });
 
@@ -130,7 +153,18 @@ describe("lerState", () => {
     const assinar = (conteudo, opcoes = { expiresIn: "10m" }) => jwt.sign(conteudo, SEGREDO, opcoes);
 
     it("devolve o conteúdo de um state válido", () => {
-        expect(GoogleAuthService.lerState(assinar({ nonce: "n1", tipoConta: null }))).toMatchObject({ nonce: "n1" });
+        expect(GoogleAuthService.lerState(assinar({ nonce: "n1", tipoConta: null, vinculo: VINCULO }))).toMatchObject({
+            nonce: "n1",
+            vinculo: VINCULO
+        });
+    });
+
+    it("recusa um state sem o vínculo com o navegador (achado 3)", () => {
+        expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", tipoConta: null })))).toBe(400);
+    });
+
+    it("recusa um state com vínculo mal formado", () => {
+        expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: "curto" })))).toBe(400);
     });
 
     it("recusa state ausente com 400", () => {
@@ -138,17 +172,17 @@ describe("lerState", () => {
     });
 
     it("recusa state expirado com 400", () => {
-        expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1" }, { expiresIn: -10 })))).toBe(400);
+        expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO }, { expiresIn: -10 })))).toBe(400);
     });
 
     it("recusa state assinado com outro segredo", () => {
-        const falso = jwt.sign({ nonce: "n1" }, "outro-segredo-qualquer-com-bastante-tamanho", { expiresIn: "10m" });
+        const falso = jwt.sign({ nonce: "n1", vinculo: VINCULO }, "outro-segredo-qualquer-com-bastante-tamanho", { expiresIn: "10m" });
         expect(statusDe(() => GoogleAuthService.lerState(falso))).toBe(400);
     });
 
     it("recusa state adulterado", () => {
-        const [cabecalho, , assinatura] = assinar({ nonce: "n1" }).split(".");
-        const corpoTrocado = Buffer.from(JSON.stringify({ nonce: "n2", exp: 9999999999 })).toString("base64url");
+        const [cabecalho, , assinatura] = assinar({ nonce: "n1", vinculo: VINCULO }).split(".");
+        const corpoTrocado = Buffer.from(JSON.stringify({ nonce: "n2", vinculo: VINCULO, exp: 9999999999 })).toString("base64url");
         expect(statusDe(() => GoogleAuthService.lerState(`${cabecalho}.${corpoTrocado}.${assinatura}`))).toBe(400);
     });
 

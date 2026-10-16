@@ -1,36 +1,34 @@
-import jwt from "jsonwebtoken";
-
 import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
 import GoogleAuthService from "../services/GoogleAuthService.js";
 import AutenticacaoService from "../services/AutenticacaoService.js";
 import { contextoRequisicao } from "../utils/contextoRequisicao.js";
+import {
+    assinarCodigoDeEntrega,
+    assinarProva,
+    conferirVinculo,
+    lerCodigoDeEntrega
+} from "../utils/codigoGoogle.js";
+import { codigosDeEntregaUsados } from "../utils/usoUnico.js";
 
-/**
- * Vida do código de entrega.
- *
- * Quinze minutos, e não um, porque ele não serve só para a troca imediata: quem não tem conta ainda
- * precisa atravessar o cadastro inteiro antes de reenviá-lo, e é ele que prova qual conta Google
- * foi verificada. Um minuto expirava no meio do formulário e o vínculo se perdia.
- *
- * Continua curto de propósito: sozinho não autentica ninguém, só diz "esta conta Google foi
- * verificada agora". Quinze minutos cobrem um cadastro sem deixar a prova circulando por horas.
- */
-const SEGUNDOS_ENTREGA = 15 * 60;
+const CODIGO_JA_USADO = "Este código do Google já foi usado. Entre com o Google de novo.";
 
 /**
  * Fluxo de entrar/cadastrar com Google.
  *
  * O retorno do Google é uma navegação do navegador para o **backend**, mas quem precisa da sessão é
- * o Site. A ponte é um "código de entrega": um JWT curto, assinado aqui, que carrega apenas o
- * perfil **já verificado** pelo Google — a validade está em `SEGUNDOS_ENTREGA`, acima. O backend
- * redireciona o navegador para o Site com esse código, e o Site o troca num POST por sessão ou pelo
- * próximo passo.
+ * o Site. A ponte é um "código de entrega": um JWT assinado aqui, que carrega apenas o perfil
+ * **já verificado** pelo Google e o hash de um segredo que só o navegador que começou o fluxo tem
+ * (ver `utils/codigoGoogle.js`). O backend redireciona o navegador para o Site com esse código no
+ * **fragmento** da URL (`#codigo=…`, que não vai a servidores nem a logs), e o Site o troca num POST,
+ * junto com o segredo, por sessão ou pelo próximo passo.
  *
- * O código vai na URL porque, sem cookie de sessão (adiado para uma fase futura, ver
- * `docs/cookies-de-sessao.md`), não há outro canal entre o redirecionamento do Google e o Site. Por
- * isso ele é curto, serve a uma coisa só e não é sessão: sozinho não autentica ninguém, só diz qual
- * conta Google foi verificada. A fase de cookies elimina essa passagem pela URL.
+ * Por isso o código, sozinho, **não** autentica ninguém:
+ *
+ * - só funciona no navegador que começou o fluxo (sem o segredo do `sessionStorage` dele, é recusado);
+ * - dura poucos minutos e só pode ser usado **uma vez**.
+ *
+ * Quem recebe o endereço de outra pessoa, ou o encontra no histórico, não consegue usá-lo.
  */
 class GoogleAuthController {
     /** Diz se o recurso está configurado, para o Site não mostrar um botão que leva a erro. */
@@ -43,6 +41,8 @@ class GoogleAuthController {
         try {
             const { url } = GoogleAuthService.gerarUrlDeAutorizacao({
                 tipoConta: req.query.tipoConta || null,
+                // O hash do segredo guardado no navegador que clicou: amarra o retorno a ele.
+                vinculo: req.query.vinculo || null,
                 // De onde o Site chamou: é para lá que o navegador volta depois do Google.
                 origem: req.get('origin') || null
             });
@@ -66,23 +66,22 @@ class GoogleAuthController {
             // `state` ausente ou inválido: segue com a origem padrão e o erro aparece abaixo.
         }
 
-        const destino = (parametros) =>
-            `${origem}/retorno-google?${new URLSearchParams(parametros).toString()}`;
+        const comErro = (erro) => `${origem}/retorno-google?${new URLSearchParams({ erro }).toString()}`;
 
         // A pessoa cancelou na tela do Google, ou o Google recusou o pedido.
         if (req.query.error) {
-            return res.redirect(destino({ erro: "cancelado" }));
+            return res.redirect(comErro("cancelado"));
         }
 
         try {
-            const { nonce, tipoConta } = GoogleAuthService.lerState(req.query.state);
+            const { nonce, tipoConta, vinculo } = GoogleAuthService.lerState(req.query.state);
             const perfil = await GoogleAuthService.perfilDoCodigo(req.query.code, nonce);
 
-            const codigo = jwt.sign({ perfil, tipoConta }, env.jwt.secret, {
-                expiresIn: SEGUNDOS_ENTREGA
-            });
+            const codigo = assinarCodigoDeEntrega({ perfil, tipoConta, vinculo });
 
-            return res.redirect(destino({ codigo }));
+            // No fragmento, e não na query: o fragmento não é enviado ao servidor do Site nem entra
+            // nos logs dele, e o Site o apaga da barra de endereço assim que o lê.
+            return res.redirect(`${origem}/retorno-google#codigo=${codigo}`);
         } catch (erro) {
             // O motivo nunca vai para a URL — o Site mostra uma mensagem genérica —, mas vai para o
             // log do servidor: sem isso, uma falha aqui é indistinguível de outra e só resta
@@ -95,7 +94,7 @@ class GoogleAuthController {
                 })
             );
 
-            return res.redirect(destino({ erro: "falha" }));
+            return res.redirect(comErro("falha"));
         }
     }
 
@@ -104,11 +103,31 @@ class GoogleAuthController {
      * - `entrar`: sessão criada, conta já vinculada;
      * - `conflito`: existe conta com aquele e-mail sem Google vinculado — não vincula sozinho;
      * - `cadastrar`: não há conta; o Site leva ao cadastro de candidato, que é onde toda conta
-     *   começa, e `tipoConta` apenas diz se ela deve seguir para o cadastro da empresa depois.
+     *   começa, e `tipoConta` apenas diz se ela deve seguir para o cadastro da empresa depois. A
+     *   resposta traz a `prova` do Google, que o Site guarda na memória do navegador e reenvia no
+     *   cadastro.
+     *
+     * Ordem das conferências: assinatura e validade do código, **depois** o vínculo com o navegador
+     * e só então a reserva de uso único. Quem não é o navegador do fluxo, portanto, não consegue nem
+     * "gastar" o código de quem é.
+     *
+     * Duas respostas deixam o código **utilizável de novo**, porque não chegaram a cumprir o papel
+     * dele: `contaPausada` (a pessoa ainda vai decidir se reativa) e `emailNaoVerificado`. O mesmo
+     * vale para qualquer erro.
      */
     async concluir(req, res, next) {
+        let reservado = null;
+
         try {
-            const { perfil, tipoConta } = lerCodigoDeEntrega(req.body.codigo);
+            const conteudo = lerCodigoDeEntrega(req.body.codigo);
+            conferirVinculo(conteudo.vinculo, req.body.vinculo);
+
+            if (!codigosDeEntregaUsados.reservar(conteudo.jti, conteudo.exp)) {
+                throw ErroApi.requisicaoInvalida(CODIGO_JA_USADO);
+            }
+            reservado = conteudo.jti;
+
+            const { perfil, tipoConta } = conteudo;
             const resultado = await GoogleAuthService.resolver(perfil);
 
             if (resultado.desfecho === "entrar") {
@@ -119,6 +138,10 @@ class GoogleAuthController {
                     contextoRequisicao(req),
                     Boolean(req.body.confirmarReativacao)
                 );
+
+                if (sessao.contaPausada || sessao.emailNaoVerificado) {
+                    codigosDeEntregaUsados.liberar(reservado);
+                }
 
                 return res.status(200).json({ sucesso: true, desfecho: "entrar", ...sessao });
             }
@@ -145,11 +168,15 @@ class GoogleAuthController {
                 desfecho: "cadastrar",
                 tipoConta: tipoConta ?? null,
                 perfil: { email: perfil.email, nome: perfil.nome },
-                // Devolvido para o Site reenviar no cadastro e o vínculo ser feito pelo `sub`
-                // verificado, nunca por um `sub` que o navegador alegue.
-                codigo: req.body.codigo
+                // Assinada aqui, depois de o ID token ser verificado: o Site a reenvia no cadastro e o
+                // vínculo é feito pelo `sub` que ela carrega, nunca por um `sub` que o navegador alegue.
+                prova: assinarProva(perfil)
             });
         } catch (erro) {
+            if (reservado) {
+                codigosDeEntregaUsados.liberar(reservado);
+            }
+
             return next(erro);
         }
     }
@@ -158,35 +185,32 @@ class GoogleAuthController {
      * Vincula a conta Google a quem já está autenticado por senha.
      *
      * É o caminho de saída do `conflito`: a pessoa entra normalmente e então anexa o Google. Exige
-     * sessão justamente para provar que a conta é dela.
+     * sessão justamente para provar que a conta é dela, e o código passa pelas mesmas conferências
+     * do `concluir` (vínculo com o navegador e uso único).
      */
     async vincular(req, res, next) {
+        let reservado = null;
+
         try {
-            const { perfil } = lerCodigoDeEntrega(req.body.codigo);
-            await GoogleAuthService.vincular(req.user.id, perfil);
+            const conteudo = lerCodigoDeEntrega(req.body.codigo);
+            conferirVinculo(conteudo.vinculo, req.body.vinculo);
+
+            if (!codigosDeEntregaUsados.reservar(conteudo.jti, conteudo.exp)) {
+                throw ErroApi.requisicaoInvalida(CODIGO_JA_USADO);
+            }
+            reservado = conteudo.jti;
+
+            await GoogleAuthService.vincular(req.user.id, conteudo.perfil);
             const usuario = await AutenticacaoService.perfilAtual(req.user.id);
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {
+            if (reservado) {
+                codigosDeEntregaUsados.liberar(reservado);
+            }
+
             return next(erro);
         }
-    }
-}
-
-/** Lê o código de entrega e devolve o perfil verificado que ele carrega. */
-function lerCodigoDeEntrega(codigo) {
-    try {
-        const conteudo = jwt.verify(codigo, env.jwt.secret);
-
-        if (!conteudo?.perfil?.sub) {
-            throw new Error("código sem perfil");
-        }
-
-        return conteudo;
-    } catch {
-        // `ErroApi` para o middleware de erro devolver 400 com a mensagem; um `Error` comum virava
-        // 500 "Erro interno do servidor", que não diz à pessoa o que fazer.
-        throw ErroApi.requisicaoInvalida("Sessão do Google expirada. Tente entrar novamente.");
     }
 }
 

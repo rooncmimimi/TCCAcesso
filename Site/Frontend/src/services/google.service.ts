@@ -1,4 +1,5 @@
 import clienteApi from "@/services/api";
+import { corpoDoToken, lerVinculo, prepararVinculo } from "@/lib/googleNavegador";
 import type {
   RespostaLogin,
   RespostaLoginContaPausada,
@@ -20,21 +21,27 @@ export type ResultadoGoogle =
   | ({ desfecho: "entrar" } & (RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado))
   /** Já existe conta ACESSO com este e-mail, sem Google vinculado. Não vincula sozinho. */
   | { desfecho: "conflito"; email: string }
-  /** Não há conta: o Site pergunta se é candidato ou empresa. */
+  /** Não há conta: o Site leva ao cadastro de candidato, onde toda conta começa. */
   | {
       desfecho: "cadastrar";
       tipoConta: "candidato" | "empresa" | null;
       perfil: PerfilGoogle;
-      /** Reenviado no cadastro para o vínculo ser feito pelo `sub` verificado no servidor. */
-      codigo: string;
+      /**
+       * Prova assinada de que o Google verificou este `sub` e este e-mail. Fica na memória da aba
+       * (`lib/googleNavegador`) e acompanha o cadastro, onde o servidor a reconfere.
+       */
+      prova: string;
     };
 
 /**
  * Entrar e cadastrar com Google.
  *
- * O Site nunca vê a senha do Google: ele só carrega o "código de entrega" que o backend assinou
- * (vale 15 minutos), e é o backend que decide o que aquele código significa. O corpo do código é
- * legível (traz e-mail, nome e o `sub`), então não é segredo: é só uma prova assinada.
+ * O Site nunca vê a senha do Google. Ele leva o "código de entrega" que o backend assinou na volta
+ * do Google (vale 2 minutos, **uma única vez**) e o troca por sessão ou pelo próximo passo — e só
+ * no navegador que começou o fluxo: junto com o código vai o segredo que ficou no `sessionStorage`
+ * desta aba (ver `lib/googleNavegador.ts`), e o servidor confere que ele bate com o hash gravado no
+ * código. O corpo do código é legível (traz e-mail, nome e o `sub`), então não é segredo: o que o
+ * protege é o vínculo com o navegador e o uso único.
  */
 export const googleService = {
   /** O recurso está configurado neste ambiente? Decide se o botão aparece. */
@@ -43,10 +50,16 @@ export const googleService = {
     return data.disponivel === true;
   },
 
-  /** URL da tela de consentimento do Google, para onde o navegador é levado. */
+  /**
+   * URL da tela de consentimento do Google, para onde o navegador é levado.
+   *
+   * Cada chamada começa um fluxo novo: gera e guarda o segredo desta aba e manda ao servidor só o
+   * hash dele. Lança `ErroGoogleNavegador` quando o navegador não consegue guardá-lo.
+   */
   async urlDeAutorizacao(tipoConta?: "candidato" | "empresa"): Promise<string> {
+    const vinculo = await prepararVinculo();
     const { data } = await clienteApi.get<{ url: string }>("/auth/google/iniciar", {
-      params: tipoConta ? { tipoConta } : undefined,
+      params: { vinculo, ...(tipoConta ? { tipoConta } : {}) },
     });
     return data.url;
   },
@@ -58,6 +71,7 @@ export const googleService = {
   async concluir(codigo: string, confirmarReativacao = false): Promise<ResultadoGoogle> {
     const { data } = await clienteApi.post<ResultadoGoogle>("/auth/google/concluir", {
       codigo,
+      vinculo: lerVinculo() ?? undefined,
       ...(confirmarReativacao ? { confirmarReativacao: true } : {}),
     });
     return data;
@@ -65,7 +79,10 @@ export const googleService = {
 
   /** Vincula a conta Google a quem já está autenticado por senha (saída do conflito). */
   async vincular(codigo: string): Promise<Usuario> {
-    const { data } = await clienteApi.post<{ usuario: Usuario }>("/auth/google/vincular", { codigo });
+    const { data } = await clienteApi.post<{ usuario: Usuario }>("/auth/google/vincular", {
+      codigo,
+      vinculo: lerVinculo() ?? undefined,
+    });
     return data.usuario;
   },
 };
@@ -73,21 +90,20 @@ export const googleService = {
 export default googleService;
 
 /**
- * Lê nome e e-mail de dentro do código de entrega, só para pré-preencher o formulário.
+ * Lê nome e e-mail de dentro da prova do Google, só para pré-preencher o formulário.
  *
  * O corpo de um JWT é base64, não segredo — dá para ler sem a chave. Isso **não** é verificação:
- * quem confere a assinatura é o servidor, quando o código volta no cadastro. Aqui serve apenas para
+ * quem confere a assinatura é o servidor, quando a prova volta no cadastro. Aqui serve apenas para
  * a pessoa não precisar redigitar o que o Google já informou.
  */
-export function perfilDoCodigoGoogle(codigo?: string): PerfilGoogle | null {
-  if (!codigo) return null;
+export function perfilDaProvaGoogle(prova?: string | null): PerfilGoogle | null {
+  if (!prova) return null;
 
-  try {
-    const corpo = codigo.split(".")[1];
-    if (!corpo) return null;
-    const json = JSON.parse(atob(corpo.replace(/-/g, "+").replace(/_/g, "/")));
-    return { email: json?.perfil?.email ?? null, nome: json?.perfil?.nome ?? null };
-  } catch {
-    return null;
-  }
+  const perfil = corpoDoToken(prova)?.perfil as { email?: unknown; nome?: unknown } | undefined;
+  if (!perfil || typeof perfil !== "object") return null;
+
+  return {
+    email: typeof perfil.email === "string" ? perfil.email : null,
+    nome: typeof perfil.nome === "string" ? perfil.nome : null,
+  };
 }

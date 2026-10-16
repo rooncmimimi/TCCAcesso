@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import googleService from "@/services/google.service";
 import { extrairMensagemErro } from "@/services/api";
+import { ErroGoogleNavegador } from "@/lib/googleNavegador";
 
 /** Logotipo oficial do Google, nas cores da marca. Decorativo: o texto do botão é quem nomeia. */
 function IconeGoogle() {
@@ -76,7 +77,12 @@ export function BotaoGoogle({
       const url = await googleService.urlDeAutorizacao(tipoConta);
       window.location.href = url;
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível abrir a autenticação do Google."));
+      // O navegador que não guarda o segredo da aba já traz a mensagem pronta e o que fazer.
+      toast.error(
+        erro instanceof ErroGoogleNavegador
+          ? erro.message
+          : extrairMensagemErro(erro, "Não foi possível abrir a autenticação do Google.")
+      );
       setIndo(false);
     }
   }

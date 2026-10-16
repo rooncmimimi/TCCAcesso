@@ -56,10 +56,15 @@ const { Usuario, Candidato, CodigoVerificacaoEmail } = await import("../models/i
 const { default: SessaoService } = await import("./SessaoService.js");
 const { default: EmailService } = await import("./EmailService.js");
 const { default: AutenticacaoService } = await import("./AutenticacaoService.js");
+const { assinarCodigoDeEntrega, assinarProva } = await import("../utils/codigoGoogle.js");
 
 const PERFIL_GOOGLE = { sub: "sub-do-google-1", email: "ana@exemplo.com", emailVerificado: true, nome: "Ana Souza" };
 
-const codigoDoGoogle = (perfil = PERFIL_GOOGLE, opcoes = { expiresIn: 900 }) => jwt.sign({ perfil, tipoConta: null }, SEGREDO, opcoes);
+/** A prova que `GoogleAuthController.concluir` entrega ao Site e o Site reenvia no cadastro (`googleCodigo`). */
+const codigoDoGoogle = (perfil = PERFIL_GOOGLE, opcoes = null) =>
+    opcoes
+        ? jwt.sign({ perfil }, SEGREDO, { audience: "acesso:google:prova", ...opcoes })
+        : assinarProva(perfil);
 
 const dadosDoCadastro = (extra = {}) => ({
     nome: "Ana Souza",
@@ -90,12 +95,12 @@ beforeEach(() => {
 const camposGravados = () => Usuario.create.mock.calls[0][0];
 
 describe("vinculoGoogle", () => {
-    it("sem código, é um cadastro comum e não vincula nada", () => {
+    it("sem prova, é um cadastro comum e não vincula nada", () => {
         expect(AutenticacaoService.vinculoGoogle(undefined)).toBeNull();
         expect(AutenticacaoService.vinculoGoogle("")).toBeNull();
     });
 
-    it("devolve o sub, o e-mail e se o Google o verificou, tudo do código que este servidor assinou", () => {
+    it("devolve o sub, o e-mail e se o Google o verificou, tudo da prova que este servidor assinou", () => {
         expect(AutenticacaoService.vinculoGoogle(codigoDoGoogle())).toEqual({
             googleId: "sub-do-google-1",
             email: "ana@exemplo.com",
@@ -113,14 +118,28 @@ describe("vinculoGoogle", () => {
         expect(() => AutenticacaoService.vinculoGoogle(expirado)).toThrowError(expect.objectContaining({ statusCode: 400 }));
     });
 
-    it("recusa código assinado por outro segredo (alguém tentando alegar um sub)", () => {
-        const falso = jwt.sign({ perfil: PERFIL_GOOGLE }, "outro-segredo-qualquer-com-bastante-tamanho", { expiresIn: 900 });
+    it("recusa prova assinada por outro segredo (alguém tentando alegar um sub)", () => {
+        const falso = jwt.sign({ perfil: PERFIL_GOOGLE }, "outro-segredo-qualquer-com-bastante-tamanho", {
+            expiresIn: 900,
+            audience: "acesso:google:prova"
+        });
         expect(() => AutenticacaoService.vinculoGoogle(falso)).toThrowError(expect.objectContaining({ statusCode: 400 }));
     });
 
-    it("recusa um JWT válido que não é código de entrega (sem perfil.sub)", () => {
+    it("recusa um JWT válido que não é prova (access token, sem perfil.sub nem audience)", () => {
         const acesso = jwt.sign({ id: "u1", tipoUsuario: "candidato" }, SEGREDO, { expiresIn: 60 });
         expect(() => AutenticacaoService.vinculoGoogle(acesso)).toThrowError(expect.objectContaining({ statusCode: 400 }));
+    });
+
+    // O código de entrega vai na URL de retorno do Google; a prova, não. Se um valesse pelo outro, quem
+    // visse o endereço de retorno poderia usá-lo diretamente no cadastro.
+    it("não aceita o código de entrega do retorno do Google no lugar da prova (achado 3)", () => {
+        const codigoDeEntrega = assinarCodigoDeEntrega({
+            perfil: PERFIL_GOOGLE,
+            tipoConta: null,
+            vinculo: "ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0"
+        });
+        expect(() => AutenticacaoService.vinculoGoogle(codigoDeEntrega)).toThrowError(expect.objectContaining({ statusCode: 400 }));
     });
 });
 
@@ -168,7 +187,7 @@ describe("cadastrarCandidato com Google", () => {
         expect(camposGravados().tipoUsuario).toBe("candidato");
     });
 
-    it("recusa código de entrega inválido, sem criar nada", async () => {
+    it("recusa prova inválida, sem criar nada", async () => {
         await expect(AutenticacaoService.cadastrarCandidato(dadosDoCadastro({ googleCodigo: "lixo" }))).rejects.toMatchObject({ statusCode: 400 });
         expect(Usuario.create).not.toHaveBeenCalled();
     });
@@ -202,7 +221,7 @@ describe("cadastrarCandidato com Google", () => {
         expect(CodigoVerificacaoEmail.create).toHaveBeenCalled();
     });
 
-    it("recusa o cadastro quando o código não traz e-mail", async () => {
+    it("recusa o cadastro quando a prova não traz e-mail", async () => {
         const semEmail = codigoDoGoogle({ ...PERFIL_GOOGLE, email: null });
         await expect(AutenticacaoService.cadastrarCandidato(dadosDoCadastro({ googleCodigo: semEmail }))).rejects.toMatchObject({
             statusCode: 400

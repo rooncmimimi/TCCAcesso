@@ -1,7 +1,5 @@
-import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
 import sequelize from "../config/bancoDeDados.js";
-import env from "../config/env.js";
 import {
     Usuario,
     Candidato,
@@ -23,6 +21,7 @@ import {
 } from "../utils/modelosEmail.js";
 import { montarUrlFrontend } from "../utils/urlFrontend.js";
 import { emailCanonico } from "../utils/email.js";
+import { lerProva } from "../utils/codigoGoogle.js";
 import ErroApi from "../utils/ErroApi.js";
 
 const MINUTOS_VALIDADE_EMAIL = 15;
@@ -109,36 +108,26 @@ class AutenticacaoService {
     }
 
     /**
-     * Lê o código de entrega do Google e devolve o que o Google verificou: o `sub`, o e-mail e se
-     * o próprio Google confirmou aquele e-mail.
+     * Lê a prova do Google que acompanha o cadastro e devolve o que o Google verificou: o `sub`, o
+     * e-mail e se o próprio Google confirmou aquele e-mail.
      *
-     * Tudo vem do token que **este servidor** assinou depois de verificar o ID token com o Google —
-     * nunca de um campo que o navegador mandou. É o que impede alguém de criar uma conta dizendo
-     * ser dona de uma conta Google qualquer.
+     * Tudo vem da prova que **este servidor** assinou (em `concluir`, depois de verificar o ID token
+     * com o Google) — nunca de um campo que o navegador mandou. É o que impede alguém de criar uma
+     * conta dizendo ser dona de uma conta Google qualquer. A prova tem `audience` própria: o código
+     * de entrega, que vai pela URL, não serve no lugar dela.
      *
-     * Código ausente é cadastro comum, sem Google: devolve `null` e segue. Código presente e
-     * inválido é erro, porque aí houve intenção de vincular e ela não pôde ser comprovada.
+     * Prova ausente é cadastro comum, sem Google: devolve `null` e segue. Prova presente e inválida
+     * é erro, porque aí houve intenção de vincular e ela não pôde ser comprovada.
      */
-    vinculoGoogle(codigo) {
-        if (!codigo) return null;
+    vinculoGoogle(prova) {
+        if (!prova) return null;
 
-        let conteudo;
-        try {
-            conteudo = jwt.verify(codigo, env.jwt.secret);
-        } catch {
-            throw ErroApi.requisicaoInvalida(
-                "A verificação com o Google expirou. Entre com o Google novamente."
-            );
-        }
-
-        if (!conteudo?.perfil?.sub) {
-            throw ErroApi.requisicaoInvalida("Verificação do Google inválida.");
-        }
+        const { perfil } = lerProva(prova);
 
         return {
-            googleId: conteudo.perfil.sub,
-            email: conteudo.perfil.email ?? null,
-            emailVerificado: conteudo.perfil.emailVerificado === true
+            googleId: perfil.sub,
+            email: perfil.email ?? null,
+            emailVerificado: perfil.emailVerificado === true
         };
     }
 

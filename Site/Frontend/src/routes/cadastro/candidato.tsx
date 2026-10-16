@@ -29,8 +29,9 @@ import { ehCodigoDePais } from "@/dados/paises";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
-import { perfilDoCodigoGoogle } from "@/services/google.service";
+import { perfilDaProvaGoogle } from "@/services/google.service";
 import { extrairMensagemErro } from "@/services/api";
+import { lerProva, limparProva } from "@/lib/googleNavegador";
 import { formatarCpf, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
 
 /**
@@ -95,8 +96,11 @@ export const Route = createFileRoute("/cadastro/candidato")({
     retomar: z.coerce.boolean().optional(),
     /** `?depois=empresa`: quem veio por "Sou empresa" segue para o cadastro institucional ao final. */
     depois: z.enum(["empresa"]).optional(),
-    /** Código de entrega do Google: vincula a conta Google à conta criada aqui. */
-    google: z.string().optional(),
+    /**
+     * `?google=true`: quem chega do Google sem ter conta. A prova do Google que vincula a conta
+     * criada aqui **não** vai na URL — fica no `sessionStorage` da aba (`lib/googleNavegador`).
+     */
+    google: z.coerce.boolean().optional(),
   }),
   head: () => ({
     meta: [
@@ -115,6 +119,12 @@ export const Route = createFileRoute("/cadastro/candidato")({
 function CadastroCandidato() {
   const { retomar, depois, google } = Route.useSearch();
   const { autenticado, usuario } = useSessao();
+  // A prova do Google só vale quando a pessoa veio do Google (`?google`); sem isso, uma prova que
+  // sobrou de um cadastro abandonado é descartada, para não travar o e-mail de outro cadastro.
+  const googleProva = useMemo(() => (google ? lerProva() : null), [google]);
+  useEffect(() => {
+    if (!google) limparProva();
+  }, [google]);
   // O idioma vale só enquanto o cadastro durar: não é salvo na conta, porque nada fora deste fluxo
   // está traduzido e uma preferência gravada não teria onde ser honrada depois do login.
   const [idioma, setIdioma] = useState<CodigoIdioma>("pt");
@@ -158,7 +168,7 @@ function CadastroCandidato() {
             retomando={retomando}
             t={t}
             seguirParaEmpresa={depois === "empresa"}
-            googleCodigo={google}
+            googleProva={googleProva ?? undefined}
           />
         </CardContent>
       </Card>
@@ -189,11 +199,11 @@ function WizardCandidato({
   retomando,
   t,
   seguirParaEmpresa,
-  googleCodigo,
+  googleProva,
 }: {
   seguirParaEmpresa?: boolean;
   /** Quando veio de "Continuar com Google": vai junto no cadastro para o servidor vincular. */
-  googleCodigo?: string;
+  googleProva?: string;
   /** Entrou por "retomar cadastro": a conta já existe e o fluxo começa na etapa de perfil. */
   retomando?: boolean;
   t: TextosCadastro;
@@ -214,7 +224,7 @@ function WizardCandidato({
   // trocar de idioma no meio do formulário também trocar a língua das mensagens de erro.
   // Nome e e-mail que o Google já informou, para a pessoa não redigitar (e o e-mail bater com a
   // conta Google que está sendo vinculada).
-  const doGoogle = useMemo(() => perfilDoCodigoGoogle(googleCodigo), [googleCodigo]);
+  const doGoogle = useMemo(() => perfilDaProvaGoogle(googleProva), [googleProva]);
   // O e-mail que o Google verificou é o da conta: o servidor recusa qualquer outro neste cadastro,
   // então o campo vem travado em vez de deixar a pessoa descobrir isso só no fim da etapa 2.
   const emailDoGoogle = Boolean(doGoogle?.email);
@@ -279,8 +289,12 @@ function WizardCandidato({
         estado: v.estado.toUpperCase(),
         // Registra qual versão dos documentos legais a tela mostrou no momento do aceite.
         termosVersao: VERSAO_DOCUMENTOS,
-        ...(googleCodigo ? { googleCodigo } : {}),
+        // O campo da API continua `googleCodigo`; o conteúdo é a prova assinada pelo servidor.
+        ...(googleProva ? { googleCodigo: googleProva } : {}),
       });
+
+      // A conta existe: a prova cumpriu o papel e não deve ficar na aba para outro cadastro.
+      limparProva();
 
       // O cadastro de candidato não devolve mais `pendenteVerificacaoEmail`; o ramo fica como rede
       // de segurança caso o backend volte a exigir confirmação algum dia.

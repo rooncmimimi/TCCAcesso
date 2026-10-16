@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
+import { guardarProva, lerVinculo, limparVinculo } from "@/lib/googleNavegador";
 import googleService from "@/services/google.service";
 import { extrairMensagemErro } from "@/services/api";
 
@@ -21,8 +22,9 @@ import { extrairMensagemErro } from "@/services/api";
  * filho dele, e como a tela de login não tem `<Outlet/>` o filho nunca renderizava — a URL mudava
  * e a pessoa continuava vendo o formulário de login, sem nada acontecer.
  *
- * O backend redireciona o navegador para cá com um código de entrega (vale 15 minutos) ou com um
- * erro. Esta tela troca o código pelo desfecho e segue:
+ * O backend redireciona o navegador para cá com um código de entrega ou com um erro. O código vem
+ * no **fragmento** da URL (`#codigo=…`), que o navegador não envia a servidor nenhum, e o erro vem
+ * na query (`?erro=`). Esta tela troca o código pelo desfecho e segue:
  *
  * - **entrar** — conta já vinculada. A sessão começa pela **mesma rotina do login por senha**
  *   (`iniciarSessao`) e o destino é o mesmo (`destinoAposEntrar`): retomar cadastro por terminar,
@@ -30,13 +32,18 @@ import { extrairMensagemErro } from "@/services/api";
  *   mostra o motivo que o servidor mandou;
  * - **conflito** — já existe conta ACESSO com aquele e-mail sem Google vinculado: pede para entrar
  *   com a senha, porque vincular só pelo e-mail deixaria qualquer um assumir a conta alheia;
- * - **cadastrar** — não há conta: segue direto para o cadastro de candidato, levando o código de
- *   entrega. Não há tela perguntando "candidato ou empresa" porque toda conta no ACESSO começa como
- *   candidato — a conta da empresa é uma segunda conta, criada a partir dela.
+ * - **cadastrar** — não há conta: guarda a prova do Google na aba (`lib/googleNavegador`, nunca na
+ *   URL) e segue direto para o cadastro de candidato. Não há tela perguntando "candidato ou empresa"
+ *   porque toda conta no ACESSO começa como candidato — a conta da empresa é uma segunda conta,
+ *   criada a partir dela.
+ *
+ * O código só vale no navegador que começou o fluxo e uma única vez: o Site o apresenta junto com o
+ * segredo guardado no `sessionStorage` da aba (achado 3). Sem esse segredo — o endereço foi colado
+ * em outra aba ou outro navegador —, a tela nem chama o servidor e explica o que houve.
  *
  * O código sai da barra de endereço assim que é lido: ele traz e-mail e nome do Google, e não há
  * por que deixá-lo no histórico do navegador. Fica só na memória da tela, que é de onde a
- * reativação de conta pausada o reenvia.
+ * reativação de conta pausada o reenvia (o servidor não gasta o código nesse caso).
  */
 export const Route = createFileRoute("/retorno-google")({
   validateSearch: z.object({
@@ -48,6 +55,8 @@ export const Route = createFileRoute("/retorno-google")({
 });
 
 const FALHA_GENERICA = "Não foi possível concluir a entrada com o Google. Tente novamente.";
+const OUTRO_NAVEGADOR =
+  "Esta entrada com o Google não começou neste navegador. Volte ao login e use o botão do Google de novo.";
 
 type Estado =
   | { tipo: "carregando" }
@@ -66,19 +75,38 @@ function mensagemDaFalha(erro: unknown): string {
   return status !== undefined && status >= 400 && status < 500 ? extrairMensagemErro(erro, FALHA_GENERICA) : FALHA_GENERICA;
 }
 
-/** Tira `?codigo=` da barra de endereço sem recarregar a página nem mexer no histórico do roteador. */
+/**
+ * O código de entrega, no fragmento (`#codigo=`), que é onde o backend o coloca. A query
+ * (`?codigo=`) ainda é aceita: era o formato anterior, e um retorno em andamento durante a troca de
+ * versão não deve quebrar.
+ */
+function lerCodigoDaUrl(codigoDaBusca: string | undefined): string | undefined {
+  try {
+    const doFragmento = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("codigo");
+    return doFragmento || codigoDaBusca || undefined;
+  } catch {
+    return codigoDaBusca;
+  }
+}
+
+/** Tira o código (do fragmento ou da query) da barra de endereço, sem recarregar nem mexer no histórico do roteador. */
 function tirarCodigoDaUrl() {
   try {
     const url = new URL(window.location.href);
-    if (!url.searchParams.has("codigo")) return;
+    const noFragmento = new URLSearchParams(url.hash.replace(/^#/, "")).has("codigo");
+    if (!noFragmento && !url.searchParams.has("codigo")) return;
     url.searchParams.delete("codigo");
-    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`);
   } catch {
     // Sem History API: segue com o código na barra, que é como era.
   }
 }
 
-function estadoInicial(codigo: string | undefined, erro: "cancelado" | "falha" | undefined): Estado {
+function estadoInicial(
+  codigo: string | undefined,
+  erro: "cancelado" | "falha" | undefined,
+  comecouNesteNavegador: boolean
+): Estado {
   if (erro === "cancelado") return { tipo: "falha", texto: "Você cancelou a entrada com o Google." };
   if (erro === "falha") return { tipo: "falha", texto: FALHA_GENERICA };
   if (!codigo) {
@@ -87,14 +115,21 @@ function estadoInicial(codigo: string | undefined, erro: "cancelado" | "falha" |
       texto: "Não encontramos o código de entrada do Google nesta página. Volte para o login e tente novamente.",
     };
   }
+  // Sem o segredo da aba o servidor recusaria o código; poupa a ida e a mensagem fica a mesma.
+  if (!comecouNesteNavegador) return { tipo: "falha", texto: OUTRO_NAVEGADOR };
   return { tipo: "carregando" };
 }
 
 function RetornoGoogle() {
-  const { codigo, erro } = Route.useSearch();
+  const { codigo: codigoDaBusca, erro } = Route.useSearch();
   const navigate = useNavigate();
   const { iniciarSessao } = useSessao();
-  const [estado, setEstado] = useState<Estado>(() => estadoInicial(codigo, erro));
+  // Lido uma vez, antes de o código sair da barra de endereço.
+  const [inicial] = useState(() => {
+    const codigo = lerCodigoDaUrl(codigoDaBusca);
+    return { codigo, estado: estadoInicial(codigo, erro, lerVinculo() !== null) };
+  });
+  const [estado, setEstado] = useState<Estado>(inicial.estado);
   const [reativando, setReativando] = useState(false);
   // Em desenvolvimento o React monta duas vezes; sem isto o código seria trocado duas vezes.
   const jaTrocou = useRef(false);
@@ -106,20 +141,26 @@ function RetornoGoogle() {
       const retorno = await googleService.concluir(codigoDeEntrega, confirmarReativacao);
 
       if (retorno.desfecho === "conflito") {
+        limparVinculo();
         setEstado({ tipo: "conflito", email: retorno.email });
         return;
       }
 
-      // Sem conta ainda: vai direto montar a conta de candidato, sem tela intermediária. O código de
-      // entrega segue na URL do cadastro porque é ele que, no fim do wizard, vincula a conta Google
-      // à conta criada — o vínculo é feito pelo `sub` que o servidor reconfere, não por nada daqui.
+      // Sem conta ainda: vai direto montar a conta de candidato, sem tela intermediária. A prova do
+      // Google fica na aba, e não na URL: é ela que, no fim do wizard, vincula a conta Google à
+      // conta criada — o vínculo é feito pelo `sub` que o servidor reconfere, não por nada daqui.
       // `depois=empresa` preserva a intenção de quem entrou por "Sou empresa": ela veio dentro do
       // `state` assinado pelo backend, então não é um parâmetro que alguém troque no caminho.
       // `replace` evita que o botão "voltar" caia nesta tela de passagem.
       if (retorno.desfecho === "cadastrar") {
+        limparVinculo();
+        if (!guardarProva(retorno.prova)) {
+          setEstado({ tipo: "falha", texto: FALHA_GENERICA });
+          return;
+        }
         navigate({
           to: "/cadastro/candidato",
-          search: { google: retorno.codigo, depois: retorno.tipoConta === "empresa" ? "empresa" : undefined },
+          search: { google: true, depois: retorno.tipoConta === "empresa" ? "empresa" : undefined },
           replace: true,
         });
         return;
@@ -127,10 +168,14 @@ function RetornoGoogle() {
 
       const resultado = await iniciarSessao(retorno);
 
+      // Conta pausada é a única resposta em que a pessoa ainda reapresenta o código (o botão de
+      // reativar), então só nela o segredo da aba continua valendo.
       if ("contaPausada" in resultado) {
         setEstado({ tipo: "pausada" });
         return;
       }
+
+      limparVinculo();
 
       if ("emailNaoVerificado" in resultado) {
         setEstado({ tipo: "emailNaoVerificado", email: resultado.email });
@@ -141,19 +186,26 @@ function RetornoGoogle() {
       // `replace`: o botão "voltar" não pode reabrir esta tela de passagem e abrir outra sessão.
       navigate({ ...destinoAposEntrar(resultado), replace: true });
     } catch (falha) {
+      // Não há botão de "tentar de novo" aqui: a pessoa volta ao login e começa outro fluxo, com outro segredo.
+      limparVinculo();
       setEstado({ tipo: "falha", texto: mensagemDaFalha(falha) });
     }
   }
 
   useEffect(() => {
-    if (!codigo || estado.tipo !== "carregando" || jaTrocou.current) return;
-    jaTrocou.current = true;
-    codigoRef.current = codigo;
     tirarCodigoDaUrl();
-    void trocar(codigo);
-    // `trocar` só usa valores estáveis (`navigate`, `iniciarSessao`) e o `codigo` já lido.
+    // Um fluxo que já nasceu encerrado (cancelou, falhou, veio de outro navegador): o segredo não serve mais.
+    if (inicial.estado.tipo === "falha") limparVinculo();
+  }, [inicial]);
+
+  useEffect(() => {
+    if (!inicial.codigo || inicial.estado.tipo !== "carregando" || jaTrocou.current) return;
+    jaTrocou.current = true;
+    codigoRef.current = inicial.codigo;
+    void trocar(inicial.codigo);
+    // `trocar` só usa valores estáveis (`navigate`, `iniciarSessao`) e o código já lido.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codigo, estado.tipo]);
+  }, [inicial]);
 
   async function reativar() {
     if (!codigoRef.current || reativando) return;

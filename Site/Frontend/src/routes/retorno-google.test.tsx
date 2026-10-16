@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { webcrypto } from "node:crypto";
 import type { ReactNode } from "react";
 
 /**
@@ -9,6 +10,9 @@ import type { ReactNode } from "react";
  *
  * O "depois de autenticar" não é testado aqui: ele é `iniciarSessao`, do contexto da sessão (ver
  * `SessaoContext.test.tsx`), e a tela só decide o que mostrar e para onde ir com o que ele devolve.
+ *
+ * O segredo que amarra o retorno à aba (`lib/googleNavegador`) é o de verdade, no `sessionStorage`
+ * do jsdom: cada teste começa com a aba tendo iniciado um fluxo, salvo quando diz o contrário.
  */
 
 const { busca, navegar, iniciarSessao, concluir } = vi.hoisted(() => ({
@@ -28,12 +32,31 @@ vi.mock("@/hooks/useSessao", () => ({ useSessao: () => ({ iniciarSessao }) }));
 vi.mock("@/services/google.service", () => ({ default: { concluir } }));
 
 const { Route } = await import("./retorno-google");
+const { lerProva, lerVinculo, limparVinculo, prepararVinculo } = await import("@/lib/googleNavegador");
 const Tela = (Route as unknown as { component: () => ReactNode }).component;
 
-function abrir(parametros: { codigo?: string; erro?: string }) {
-  busca.codigo = parametros.codigo;
+/**
+ * Abre a tela como o backend a entrega: o código no fragmento (`#codigo=`) e o erro na query.
+ * `naQuery` simula o formato anterior, que a tela ainda aceita.
+ */
+function abrir(parametros: { codigo?: string; erro?: string; naQuery?: boolean }) {
+  const naQuery = parametros.naQuery === true;
+  busca.codigo = naQuery ? parametros.codigo : undefined;
   busca.erro = parametros.erro;
+
+  const url = new URL("/retorno-google", window.location.origin);
+  if (parametros.codigo && !naQuery) url.hash = `codigo=${parametros.codigo}`;
+  window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+
   return render(<Tela />);
+}
+
+/** Uma prova com validade, como o servidor a devolve: o Site só lê o `exp` e o perfil. */
+function provaDeTeste() {
+  const corpo = Buffer.from(
+    JSON.stringify({ perfil: { email: "ana@exemplo.com", nome: "Ana" }, exp: Math.floor(Date.now() / 1000) + 900 })
+  ).toString("base64url");
+  return `cabecalho.${corpo}.assinatura`;
 }
 
 /** O que o backend devolve em `entrar`: o usuário vem crua, com `tipoUsuario` (nunca `tipo`). */
@@ -57,13 +80,21 @@ const usuarioNormalizado = (extra: Record<string, unknown> = {}) => ({
 /** Erro como o axios o entrega: com a resposta do servidor. */
 const erroDoServidor = (status: number, mensagem: string) => ({ response: { status, data: { mensagem } } });
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  window.sessionStorage.clear();
   window.history.replaceState(null, "", "/retorno-google");
+  vi.stubGlobal("crypto", webcrypto);
+  // A aba começou um fluxo: o segredo que o servidor vai pedir junto com o código existe.
+  await prepararVinculo();
 });
 
 // O `vitest.config.ts` não liga `globals`, então o Testing Library não limpa a tela sozinho.
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe("quando o Google devolve um erro", () => {
   it("mostra que a pessoa cancelou, sem trocar nenhum código", () => {
@@ -85,6 +116,31 @@ describe("quando o Google devolve um erro", () => {
     abrir({ erro: "cancelado" });
     expect(screen.getByRole("heading", { name: "Não deu certo" })).toHaveFocus();
   });
+
+  it("esquece o segredo da aba: o fluxo terminou", () => {
+    abrir({ erro: "cancelado" });
+    expect(lerVinculo()).toBeNull();
+  });
+});
+
+// Achado 3 da auditoria: o código só vale no navegador que começou o fluxo.
+describe("quando este navegador não começou o fluxo", () => {
+  beforeEach(() => {
+    limparVinculo();
+  });
+
+  it("explica o que houve e não chama o servidor", () => {
+    abrir({ codigo: "codigo-de-entrega" });
+
+    expect(screen.getByText(/não começou neste navegador/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Voltar para o login" })).toHaveAttribute("href", "/entrar");
+    expect(concluir).not.toHaveBeenCalled();
+  });
+
+  it("tira o código da barra de endereço mesmo assim", () => {
+    abrir({ codigo: "codigo-de-entrega" });
+    expect(window.location.hash).toBe("");
+  });
 });
 
 describe("enquanto confirma", () => {
@@ -98,14 +154,34 @@ describe("enquanto confirma", () => {
     expect(concluir).toHaveBeenCalledWith("codigo-de-entrega", false);
   });
 
-  it("tira o código da barra de endereço assim que o lê", () => {
-    window.history.replaceState(null, "", "/retorno-google?codigo=codigo-de-entrega");
+  it("lê o código do fragmento da URL, que é onde o backend o coloca (achado 13)", () => {
+    concluir.mockReturnValue(new Promise(() => undefined));
+
+    abrir({ codigo: "codigo-do-fragmento" });
+
+    expect(concluir).toHaveBeenCalledWith("codigo-do-fragmento", false);
+  });
+
+  it("tira o código do fragmento da barra de endereço assim que o lê", () => {
     concluir.mockReturnValue(new Promise(() => undefined));
 
     abrir({ codigo: "codigo-de-entrega" });
 
-    expect(window.location.search).not.toContain("codigo");
+    expect(window.location.hash).toBe("");
+    expect(window.location.search).toBe("");
     expect(window.location.pathname).toBe("/retorno-google");
+  });
+
+  it("ainda aceita o formato anterior, com o código na query, e também o tira da barra", () => {
+    window.history.replaceState(null, "", "/retorno-google?codigo=codigo-antigo");
+    concluir.mockReturnValue(new Promise(() => undefined));
+
+    busca.codigo = "codigo-antigo";
+    busca.erro = undefined;
+    render(<Tela />);
+
+    expect(concluir).toHaveBeenCalledWith("codigo-antigo", false);
+    expect(window.location.search).not.toContain("codigo");
   });
 
   it("sem código e sem erro, explica o que houve em vez de ficar carregando para sempre", () => {
@@ -126,6 +202,15 @@ describe("desfecho entrar", () => {
     await waitFor(() => expect(navegar).toHaveBeenCalled());
     expect(iniciarSessao).toHaveBeenCalledWith(sessaoDoBackend());
     expect(navegar).toHaveBeenCalledWith({ to: "/feed", replace: true });
+  });
+
+  it("esquece o segredo da aba depois de entrar: o código foi gasto", async () => {
+    concluir.mockResolvedValue(sessaoDoBackend());
+    iniciarSessao.mockResolvedValue(usuarioNormalizado());
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(lerVinculo()).toBeNull();
   });
 
   it("leva quem não terminou o cadastro a retomá-lo (achado 5)", async () => {
@@ -162,6 +247,14 @@ describe("desfecho entrar", () => {
     expect(await screen.findByText(/Não foi possível concluir a entrada com o Google/)).toBeInTheDocument();
     expect(iniciarSessao).not.toHaveBeenCalled();
     expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it("esquece o segredo da aba quando a troca falha: o caminho é voltar ao login e começar outro fluxo", async () => {
+    concluir.mockRejectedValue(erroDoServidor(400, "Este código do Google já foi usado. Entre com o Google de novo."));
+    abrir({ codigo: "c" });
+
+    expect(await screen.findByText(/já foi usado/)).toBeInTheDocument();
+    expect(lerVinculo()).toBeNull();
   });
 
   it("mostra o motivo que o servidor mandou para uma conta bloqueada (achado 4)", async () => {
@@ -202,6 +295,25 @@ describe("desfecho entrar com conta pausada (achado 4)", () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
+  // O servidor não gasta o código nesta resposta, e reativar o reenvia com o mesmo segredo.
+  it("mantém o segredo da aba enquanto a pessoa decide reativar", async () => {
+    abrir({ codigo: "c" });
+
+    await screen.findByRole("heading", { name: "Sua conta está pausada" });
+    expect(lerVinculo()).not.toBeNull();
+  });
+
+  it("esquece o segredo da aba depois que a reativação conclui", async () => {
+    concluir.mockResolvedValueOnce(sessaoDoBackend());
+    iniciarSessao.mockResolvedValueOnce(usuarioNormalizado());
+    abrir({ codigo: "c" });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Reativar minha conta" }));
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(lerVinculo()).toBeNull();
+  });
+
   it("reativa reenviando o mesmo código com a confirmação, e segue ao destino", async () => {
     concluir.mockResolvedValueOnce(sessaoDoBackend());
     iniciarSessao.mockResolvedValueOnce(usuarioNormalizado());
@@ -239,6 +351,15 @@ describe("desfecho entrar com e-mail por confirmar", () => {
     expect(screen.getByText(/rh@empresa\.com/)).toBeInTheDocument();
     expect(navegar).not.toHaveBeenCalled();
   });
+
+  it("esquece o segredo da aba: não há o que reapresentar", async () => {
+    concluir.mockResolvedValue({ desfecho: "entrar", emailNaoVerificado: true, email: "rh@empresa.com" });
+    iniciarSessao.mockResolvedValue({ emailNaoVerificado: true, email: "rh@empresa.com" });
+    abrir({ codigo: "c" });
+
+    await screen.findByRole("heading", { name: "Confirme seu e-mail" });
+    expect(lerVinculo()).toBeNull();
+  });
 });
 
 describe("desfecho conflito", () => {
@@ -252,6 +373,14 @@ describe("desfecho conflito", () => {
     expect(iniciarSessao).not.toHaveBeenCalled();
   });
 
+  it("esquece o segredo da aba: o conflito gastou o código", async () => {
+    concluir.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
+    abrir({ codigo: "c" });
+
+    await screen.findByRole("heading", { name: "Esta conta já existe no ACESSO" });
+    expect(lerVinculo()).toBeNull();
+  });
+
   it("não promete uma tela de vincular que não existe", async () => {
     concluir.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
     abrir({ codigo: "c" });
@@ -262,35 +391,62 @@ describe("desfecho conflito", () => {
 });
 
 describe("desfecho cadastrar", () => {
-  it("segue ao cadastro de candidato levando o código, sem deixar a passagem no histórico", async () => {
-    concluir.mockResolvedValue({
-      desfecho: "cadastrar",
-      tipoConta: null,
-      perfil: { email: "ana@exemplo.com", nome: "Ana" },
-      codigo: "codigo-do-cadastro",
-    });
+  const cadastrar = (extra: Record<string, unknown> = {}, prova = provaDeTeste()) => ({
+    desfecho: "cadastrar",
+    tipoConta: null,
+    perfil: { email: "ana@exemplo.com", nome: "Ana" },
+    prova,
+    ...extra,
+  });
+
+  it("segue ao cadastro de candidato sem deixar a passagem no histórico", async () => {
+    concluir.mockResolvedValue(cadastrar());
     abrir({ codigo: "c" });
 
     await waitFor(() => expect(navegar).toHaveBeenCalled());
     expect(navegar).toHaveBeenCalledWith({
       to: "/cadastro/candidato",
-      search: { google: "codigo-do-cadastro", depois: undefined },
+      search: { google: true, depois: undefined },
       replace: true,
     });
     expect(iniciarSessao).not.toHaveBeenCalled();
   });
 
-  it("preserva a intenção de seguir para o cadastro da empresa", async () => {
-    concluir.mockResolvedValue({
-      desfecho: "cadastrar",
-      tipoConta: "empresa",
-      perfil: { email: "ana@exemplo.com", nome: "Ana" },
-      codigo: "codigo-do-cadastro",
-    });
+  it("guarda a prova na aba, e não na URL do cadastro (achado 13)", async () => {
+    const prova = provaDeTeste();
+    concluir.mockResolvedValue(cadastrar({}, prova));
     abrir({ codigo: "c" });
 
     await waitFor(() => expect(navegar).toHaveBeenCalled());
-    expect(navegar.mock.calls[0][0].search).toEqual({ google: "codigo-do-cadastro", depois: "empresa" });
+    expect(lerProva()).toBe(prova);
+    expect(JSON.stringify(navegar.mock.calls[0][0])).not.toContain(prova);
+  });
+
+  it("esquece o segredo da aba: o código foi gasto", async () => {
+    concluir.mockResolvedValue(cadastrar());
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(lerVinculo()).toBeNull();
+  });
+
+  it("não segue ao cadastro se a aba não consegue guardar a prova", async () => {
+    concluir.mockResolvedValue(cadastrar());
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("cheio", "QuotaExceededError");
+    });
+    abrir({ codigo: "c" });
+
+    expect(await screen.findByText(/Não foi possível concluir a entrada com o Google/)).toBeInTheDocument();
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it("preserva a intenção de seguir para o cadastro da empresa", async () => {
+    concluir.mockResolvedValue(cadastrar({ tipoConta: "empresa" }));
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(navegar.mock.calls[0][0].search).toEqual({ google: true, depois: "empresa" });
   });
 
   it("mostra a recusa do servidor quando o Google não confirmou o e-mail, antes de pedir qualquer dado", async () => {

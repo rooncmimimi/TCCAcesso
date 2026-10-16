@@ -113,9 +113,25 @@ router.get("/google/callback", GoogleAuthController.callback);
 // O Site troca o código de entrega por sessão, por conflito ou pelo próximo passo do cadastro.
 router.post("/google/concluir", limiteAutenticacao, GoogleAuthController.concluir);
 
-// Vincula a conta Google a quem já entrou com senha — único caminho de vínculo para conta que já
-// existe, e por isso exige sessão.
-router.post("/google/vincular", autenticacaoMiddleware, GoogleAuthController.vincular);
+/* Contas conectadas (Configurações → Segurança): vincular e desvincular o Google de quem já tem conta. */
+
+// Situação do Google nesta conta: recurso disponível, conta elegível (candidato) e vinculada ou não.
+router.get("/google/conta", autenticacaoMiddleware, GoogleAuthController.conta);
+
+// Passo 1: confirma a senha e devolve a URL do Google. Exige sessão.
+router.post(
+    "/google/vincular/iniciar",
+    autenticacaoMiddleware,
+    limiteAutenticacao,
+    GoogleAuthController.iniciarVinculo
+);
+
+// Passo 2: o código de volta do Google, só para a sessão que o pediu — único caminho de vínculo para
+// conta que já existe.
+router.post("/google/vincular", autenticacaoMiddleware, limiteAutenticacao, GoogleAuthController.vincular);
+
+// Desvincula, também com a senha atual.
+router.delete("/google/vinculo", autenticacaoMiddleware, limiteAutenticacao, GoogleAuthController.desvincular);
 
 router.get("/me", autenticacaoMiddleware, AutenticacaoController.perfilAtual);
 

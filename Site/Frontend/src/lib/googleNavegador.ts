@@ -113,6 +113,37 @@ export function limparVinculo(): void {
 }
 
 /**
+ * O código de entrega que o backend deixa no **fragmento** da URL (`#codigo=`), ou `undefined`. O
+ * fragmento não é enviado a servidor nenhum, nem aos logs da hospedagem.
+ */
+export function lerCodigoDoFragmento(): string | undefined {
+  try {
+    return new URLSearchParams(window.location.hash.replace(/^#/, "")).get("codigo") || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Tira da barra de endereço o código (do fragmento e da query) e as chaves da query indicadas, sem
+ * recarregar a página nem mexer no histórico do roteador. O código traz e-mail e nome do Google, e
+ * não há por que deixá-lo no histórico do navegador.
+ */
+export function tirarCodigoDaUrl(chavesDaQuery: string[] = ["codigo"]): void {
+  try {
+    const url = new URL(window.location.href);
+    const noFragmento = new URLSearchParams(url.hash.replace(/^#/, "")).has("codigo");
+    const naQuery = chavesDaQuery.filter((chave) => url.searchParams.has(chave));
+    if (!noFragmento && naQuery.length === 0) return;
+
+    for (const chave of naQuery) url.searchParams.delete(chave);
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`);
+  } catch {
+    // Sem History API: segue com o código na barra, que é como era.
+  }
+}
+
+/**
  * Lê o corpo de um JWT **sem verificar a assinatura** — só para mostrar nome e e-mail e saber quando
  * o token vence. Quem confere a assinatura é o servidor, quando o token volta.
  *

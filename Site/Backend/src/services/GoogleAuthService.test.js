@@ -32,11 +32,18 @@ vi.mock("google-auth-library", () => ({
     })
 }));
 
+const { comSenha } = vi.hoisted(() => ({ comSenha: { findByPk: vi.fn() } }));
+
 vi.mock("../models/index.js", () => ({
-    Usuario: { findOne: vi.fn(), findByPk: vi.fn() }
+    Usuario: { findOne: vi.fn(), findByPk: vi.fn(), scope: vi.fn(() => comSenha) }
 }));
 
+vi.mock("./EmailService.js", () => ({ default: { disponivel: vi.fn(), enviar: vi.fn() } }));
+vi.mock("./NotificacaoService.js", () => ({ default: { criar: vi.fn() } }));
+
 const { Usuario } = await import("../models/index.js");
+const { default: EmailService } = await import("./EmailService.js");
+const { default: NotificacaoService } = await import("./NotificacaoService.js");
 const { default: GoogleAuthService } = await import("./GoogleAuthService.js");
 
 const CONFIG_PADRAO = { ...env.google };
@@ -46,7 +53,10 @@ const VINCULO = "ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0";
 const gerar = (extra = {}) => GoogleAuthService.gerarUrlDeAutorizacao({ vinculo: VINCULO, ...extra });
 
 beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    Usuario.scope.mockReturnValue(comSenha);
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
     env.google = { ...CONFIG_PADRAO };
     clienteGoogle.generateAuthUrl.mockReturnValue("https://accounts.google.com/o/oauth2/v2/auth?x=1");
 });
@@ -123,6 +133,28 @@ describe("gerarUrlDeAutorizacao", () => {
         expect(statusDe(() => GoogleAuthService.gerarUrlDeAutorizacao())).toBe(400);
     });
 
+    it("não grava intenção nem usuário no state de um login comum", () => {
+        const conteudo = jwt.verify(gerar().state, SEGREDO);
+        expect(conteudo).not.toHaveProperty("intencao");
+        expect(conteudo).not.toHaveProperty("usuarioId");
+    });
+
+    // Etapa 5: vincular um Google a uma conta que já existe.
+    it("grava a intenção de vincular e o id de quem pediu no state assinado", () => {
+        const conteudo = jwt.verify(gerar({ intencao: "vincular", usuarioId: "u1" }).state, SEGREDO);
+        expect(conteudo).toMatchObject({ intencao: "vincular", usuarioId: "u1", vinculo: VINCULO });
+    });
+
+    it.each([
+        ["intenção sem usuário", { intencao: "vincular" }],
+        ["usuário sem intenção", { usuarioId: "u1" }],
+        ["intenção desconhecida", { intencao: "promover", usuarioId: "u1" }],
+        ["usuário vazio", { intencao: "vincular", usuarioId: "" }]
+    ])("recusa com 400 %s", (_nome, extra) => {
+        expect(statusDe(() => gerar(extra))).toBe(400);
+        expect(clienteGoogle.generateAuthUrl).not.toHaveBeenCalled();
+    });
+
     it.each(["administrador", "candidato ", "EMPRESA", "x"])("recusa tipoConta %j com 400", (tipoConta) => {
         expect(statusDe(() => gerar({ tipoConta }))).toBe(400);
     });
@@ -161,6 +193,19 @@ describe("lerState", () => {
 
     it("recusa um state sem o vínculo com o navegador (achado 3)", () => {
         expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", tipoConta: null })))).toBe(400);
+    });
+
+    it("devolve a intenção de vincular e o usuário quando o state os traz", () => {
+        const conteudo = GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO, intencao: "vincular", usuarioId: "u1" }));
+        expect(conteudo).toMatchObject({ intencao: "vincular", usuarioId: "u1" });
+    });
+
+    it.each([
+        ["intenção sem usuário", { intencao: "vincular" }],
+        ["usuário sem intenção", { usuarioId: "u1" }],
+        ["intenção desconhecida", { intencao: "promover", usuarioId: "u1" }]
+    ])("recusa um state com %s", (_nome, extra) => {
+        expect(statusDe(() => GoogleAuthService.lerState(assinar({ nonce: "n1", vinculo: VINCULO, ...extra })))).toBe(400);
     });
 
     it("recusa um state com vínculo mal formado", () => {
@@ -326,33 +371,247 @@ describe("resolver", () => {
     });
 });
 
+const perfilGoogle = { sub: "sub-1", email: "ana@gmail.com", emailVerificado: true, nome: "Ana" };
+
+/** Uma conta como o modelo a devolve, com `update` que grava os campos. */
+const conta = (extra = {}) => {
+    const usuario = { id: "u1", nome: "Ana", email: "ana@exemplo.com", tipoUsuario: "candidato", googleId: null, ...extra };
+    usuario.update = vi.fn(async (campos) => Object.assign(usuario, campos));
+    return usuario;
+};
+
+describe("situacao", () => {
+    it("diz se o recurso existe aqui, se a conta é elegível e se já tem Google", async () => {
+        Usuario.findByPk.mockResolvedValue(conta({ googleId: "sub-1" }));
+        await expect(GoogleAuthService.situacao("u1")).resolves.toEqual({ disponivel: true, elegivel: true, vinculado: true });
+    });
+
+    it.each(["empresa", "administrador"])("conta de %s não é elegível", async (tipoUsuario) => {
+        Usuario.findByPk.mockResolvedValue(conta({ tipoUsuario }));
+        await expect(GoogleAuthService.situacao("u1")).resolves.toMatchObject({ elegivel: false, vinculado: false });
+    });
+
+    it("nunca devolve o sub, só se há vínculo", async () => {
+        Usuario.findByPk.mockResolvedValue(conta({ googleId: "sub-secreto" }));
+        expect(JSON.stringify(await GoogleAuthService.situacao("u1"))).not.toContain("sub-secreto");
+    });
+
+    it("avisa quando o recurso não está configurado, sem recusar", async () => {
+        env.google.clientSecret = null;
+        Usuario.findByPk.mockResolvedValue(conta());
+        await expect(GoogleAuthService.situacao("u1")).resolves.toMatchObject({ disponivel: false });
+    });
+
+    it("recusa com 404 o usuário que não existe", async () => {
+        Usuario.findByPk.mockResolvedValue(null);
+        await expect(GoogleAuthService.situacao("u1")).rejects.toMatchObject({ statusCode: 404 });
+    });
+});
+
+describe("conferirPodeVincular", () => {
+    it("aceita conta de candidato sem Google", async () => {
+        const usuario = conta();
+        Usuario.findByPk.mockResolvedValue(usuario);
+        await expect(GoogleAuthService.conferirPodeVincular("u1")).resolves.toBe(usuario);
+    });
+
+    it.each(["empresa", "administrador"])("recusa conta de %s com 403", async (tipoUsuario) => {
+        Usuario.findByPk.mockResolvedValue(conta({ tipoUsuario }));
+        await expect(GoogleAuthService.conferirPodeVincular("u1")).rejects.toMatchObject({
+            statusCode: 403,
+            message: expect.stringContaining("só para contas de candidato")
+        });
+    });
+
+    it("recusa com 409 a conta que já tem um Google, pedindo para desvincular antes", async () => {
+        Usuario.findByPk.mockResolvedValue(conta({ googleId: "sub-antigo" }));
+        await expect(GoogleAuthService.conferirPodeVincular("u1")).rejects.toMatchObject({
+            statusCode: 409,
+            message: expect.stringContaining("Desvincule")
+        });
+    });
+});
+
 describe("vincular", () => {
-    const perfil = { sub: "sub-1", email: "ana@exemplo.com", emailVerificado: true, nome: "Ana" };
+    beforeEach(() => {
+        Usuario.findOne.mockResolvedValue(null);
+        EmailService.disponivel.mockReturnValue(false);
+    });
 
     it("grava o sub na conta de quem está autenticado", async () => {
-        const update = vi.fn();
-        Usuario.findOne.mockResolvedValue(null);
-        Usuario.findByPk.mockResolvedValue({ id: "u1", update });
+        const usuario = conta();
+        Usuario.findByPk.mockResolvedValue(usuario);
 
-        await GoogleAuthService.vincular("u1", perfil);
-        expect(update).toHaveBeenCalledWith({ googleId: "sub-1" });
+        await GoogleAuthService.vincular("u1", perfilGoogle);
+
+        expect(usuario.update).toHaveBeenCalledWith({ googleId: "sub-1" });
     });
 
     it("recusa com 409 quando o sub já está em outra conta", async () => {
+        Usuario.findByPk.mockResolvedValue(conta());
         Usuario.findOne.mockResolvedValue({ id: "u2" });
-        await expect(GoogleAuthService.vincular("u1", perfil)).rejects.toMatchObject({ statusCode: 409 });
+
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).rejects.toMatchObject({ statusCode: 409 });
     });
 
-    it("aceita revincular o mesmo sub à mesma conta", async () => {
-        const update = vi.fn();
-        Usuario.findOne.mockResolvedValue({ id: "u1" });
-        Usuario.findByPk.mockResolvedValue({ id: "u1", update });
-        await expect(GoogleAuthService.vincular("u1", perfil)).resolves.toBeTruthy();
+    it("recusa com 409 quando o banco acusa o índice único (duas vinculações ao mesmo tempo)", async () => {
+        const usuario = conta();
+        usuario.update.mockRejectedValue(Object.assign(new Error("duplicado"), { name: "SequelizeUniqueConstraintError" }));
+        Usuario.findByPk.mockResolvedValue(usuario);
+
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).rejects.toMatchObject({ statusCode: 409 });
+    });
+
+    it("não esconde um erro de banco que não é de unicidade", async () => {
+        const usuario = conta();
+        usuario.update.mockRejectedValue(new Error("banco fora do ar"));
+        Usuario.findByPk.mockResolvedValue(usuario);
+
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).rejects.toThrow("banco fora do ar");
+    });
+
+    it.each(["empresa", "administrador"])("recusa conta de %s com 403, sem gravar", async (tipoUsuario) => {
+        const usuario = conta({ tipoUsuario });
+        Usuario.findByPk.mockResolvedValue(usuario);
+
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).rejects.toMatchObject({ statusCode: 403 });
+        expect(usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("recusa outro Google quando a conta já tem um, sem trocar o vínculo em silêncio", async () => {
+        const usuario = conta({ googleId: "sub-antigo" });
+        Usuario.findByPk.mockResolvedValue(usuario);
+
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).rejects.toMatchObject({ statusCode: 409 });
+        expect(usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("aceita revincular o mesmo sub à mesma conta, sem avisar de novo", async () => {
+        const usuario = conta({ googleId: "sub-1" });
+        Usuario.findByPk.mockResolvedValue(usuario);
+
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).resolves.toBe(usuario);
+        expect(usuario.update).not.toHaveBeenCalled();
+        expect(NotificacaoService.criar).not.toHaveBeenCalled();
     });
 
     it("recusa com 404 quando o usuário não existe", async () => {
-        Usuario.findOne.mockResolvedValue(null);
         Usuario.findByPk.mockResolvedValue(null);
-        await expect(GoogleAuthService.vincular("u1", perfil)).rejects.toMatchObject({ statusCode: 404 });
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    // Achado 20: um segundo meio de entrar na conta é o que a pessoa mais precisa notar.
+    it("avisa a pessoa no Site", async () => {
+        Usuario.findByPk.mockResolvedValue(conta());
+
+        await GoogleAuthService.vincular("u1", perfilGoogle);
+
+        expect(NotificacaoService.criar).toHaveBeenCalledWith(
+            expect.objectContaining({ usuarioId: "u1", tipo: "sistema", subtipo: "google_vinculado", titulo: "Conta Google vinculada" })
+        );
+    });
+
+    it("avisa a pessoa por e-mail, para o endereço da conta (e não o do Google)", async () => {
+        Usuario.findByPk.mockResolvedValue(conta());
+        EmailService.disponivel.mockReturnValue(true);
+
+        await GoogleAuthService.vincular("u1", perfilGoogle);
+
+        expect(EmailService.enviar).toHaveBeenCalledWith(
+            expect.objectContaining({ para: "ana@exemplo.com", tag: "google-vinculado" })
+        );
+    });
+
+    it("não avisa quando a vinculação é recusada", async () => {
+        Usuario.findByPk.mockResolvedValue(conta());
+        Usuario.findOne.mockResolvedValue({ id: "u2" });
+
+        await GoogleAuthService.vincular("u1", perfilGoogle).catch(() => {});
+
+        expect(NotificacaoService.criar).not.toHaveBeenCalled();
+        expect(EmailService.enviar).not.toHaveBeenCalled();
+    });
+
+    it("conclui mesmo se o e-mail de aviso falhar, e registra a falha sem dados pessoais", async () => {
+        const usuario = conta();
+        Usuario.findByPk.mockResolvedValue(usuario);
+        EmailService.disponivel.mockReturnValue(true);
+        EmailService.enviar.mockRejectedValue(new Error("Brevo fora do ar"));
+
+        await expect(GoogleAuthService.vincular("u1", perfilGoogle)).resolves.toBe(usuario);
+
+        const registro = console.error.mock.calls.map(([linha]) => String(linha)).join("\n");
+        expect(registro).toContain("Brevo fora do ar");
+        expect(registro).not.toContain("ana@exemplo.com");
+    });
+
+    it("registra o vínculo no log só com o id da conta", async () => {
+        Usuario.findByPk.mockResolvedValue(conta());
+
+        await GoogleAuthService.vincular("u1", perfilGoogle);
+
+        const linha = String(console.info.mock.calls[0][0]);
+        expect(JSON.parse(linha)).toMatchObject({ acao: "google_vinculado", usuarioId: "u1" });
+        expect(linha).not.toContain("sub-1");
+        expect(linha).not.toContain("ana@");
+    });
+});
+
+describe("desvincular", () => {
+    beforeEach(() => {
+        EmailService.disponivel.mockReturnValue(false);
+    });
+
+    it("apaga o vínculo da conta", async () => {
+        const usuario = conta({ googleId: "sub-1", senhaHash: "hash" });
+        comSenha.findByPk.mockResolvedValue(usuario);
+
+        await GoogleAuthService.desvincular("u1");
+
+        expect(usuario.update).toHaveBeenCalledWith({ googleId: null });
+    });
+
+    it("recusa com 409 a conta que não tem Google", async () => {
+        const usuario = conta({ senhaHash: "hash" });
+        comSenha.findByPk.mockResolvedValue(usuario);
+
+        await expect(GoogleAuthService.desvincular("u1")).rejects.toMatchObject({ statusCode: 409 });
+        expect(usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("recusa com 409 desvincular quando a conta não tem senha: o Google seria o único jeito de entrar", async () => {
+        const usuario = conta({ googleId: "sub-1", senhaHash: null });
+        comSenha.findByPk.mockResolvedValue(usuario);
+
+        await expect(GoogleAuthService.desvincular("u1")).rejects.toMatchObject({
+            statusCode: 409,
+            message: expect.stringContaining("senha")
+        });
+        expect(usuario.update).not.toHaveBeenCalled();
+    });
+
+    it("recusa com 404 quando o usuário não existe", async () => {
+        comSenha.findByPk.mockResolvedValue(null);
+        await expect(GoogleAuthService.desvincular("u1")).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it("avisa a pessoa no Site e por e-mail", async () => {
+        comSenha.findByPk.mockResolvedValue(conta({ googleId: "sub-1", senhaHash: "hash" }));
+        EmailService.disponivel.mockReturnValue(true);
+
+        await GoogleAuthService.desvincular("u1");
+
+        expect(NotificacaoService.criar).toHaveBeenCalledWith(
+            expect.objectContaining({ usuarioId: "u1", subtipo: "google_desvinculado", titulo: "Conta Google desvinculada" })
+        );
+        expect(EmailService.enviar).toHaveBeenCalledWith(expect.objectContaining({ tag: "google-desvinculado" }));
+    });
+
+    it("não avisa quando o desvínculo é recusado", async () => {
+        comSenha.findByPk.mockResolvedValue(conta({ senhaHash: "hash" }));
+
+        await GoogleAuthService.desvincular("u1").catch(() => {});
+
+        expect(NotificacaoService.criar).not.toHaveBeenCalled();
     });
 });

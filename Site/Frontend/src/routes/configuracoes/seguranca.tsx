@@ -3,6 +3,7 @@ import { ArrowLeft, Lock } from "lucide-react";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
+import { SecaoContasConectadas } from "@/components/configuracoes/SecaoContasConectadas";
 import { SecaoSessoes } from "@/components/configuracoes/SecaoSessoes";
 
 export const Route = createFileRoute("/configuracoes/seguranca")({
@@ -40,6 +41,7 @@ function Seguranca() {
       </div>
 
       <div className="mt-6 space-y-4">
+        <SecaoContasConectadas />
         <SecaoSessoes />
       </div>
     </EstruturaApp>

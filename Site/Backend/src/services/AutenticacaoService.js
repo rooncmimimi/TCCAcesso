@@ -683,6 +683,28 @@ class AutenticacaoService {
     }
 
     /* Troca de senha */
+    /**
+     * Reautenticação: confere a senha de quem já tem sessão, antes de uma ação sensível (vincular ou
+     * desvincular o Google). Responde 403, e não 401: o Site trata 401 como sessão vencida e tenta
+     * renovar o token, e um erro de digitação não deve ter esse efeito.
+     */
+    async conferirSenhaAtual(usuarioId, senha) {
+        const usuario = await Usuario.scope("comSenha").findByPk(usuarioId);
+
+        if (!usuario) {
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
+        }
+
+        const confere =
+            typeof senha === "string" && senha !== "" && usuario.senhaHash
+                ? await compararSenha(senha, usuario.senhaHash)
+                : false;
+
+        if (!confere) {
+            throw ErroApi.acessoNegado("Senha incorreta.");
+        }
+    }
+
     async alterarSenha(usuarioId, senhaAtual, novaSenha) {
         const usuario = await Usuario.scope("comSenha").findByPk(usuarioId);
 

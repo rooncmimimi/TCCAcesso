@@ -34,7 +34,7 @@ const secoes = [
     itens: [
       { label: "Meus dados e perfil", to: "/configuracoes/conta" },
       { label: "Alterar senha", to: "/configuracoes/senha" },
-      { label: "Sessões ativas", to: "/configuracoes/seguranca" },
+      { label: "Sessões e contas conectadas", to: "/configuracoes/seguranca" },
     ],
   },
   {

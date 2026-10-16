@@ -9,6 +9,8 @@ import {
   CheckCheck,
   Heart,
   KeyRound,
+  Link2,
+  Link2Off,
   Mail,
   MessageCircle,
   MessageSquare,
@@ -86,6 +88,8 @@ const ICONE_POR_SUBTIPO: Record<string, LucideIcon> = {
   conta_reativada: ShieldCheck,
   email_confirmado: Mail,
   senha_alterada: KeyRound,
+  google_vinculado: Link2,
+  google_desvinculado: Link2Off,
   email_alterado: Mail,
 };
 

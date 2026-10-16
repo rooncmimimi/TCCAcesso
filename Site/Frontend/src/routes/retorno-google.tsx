@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, Loader2, Mail, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import type { AxiosError } from "axios";
 
 import { Logo } from "@/components/Logo";
 import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
@@ -11,9 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
-import { guardarProva, lerVinculo, limparVinculo } from "@/lib/googleNavegador";
-import googleService from "@/services/google.service";
-import { extrairMensagemErro } from "@/services/api";
+import {
+  guardarProva,
+  lerCodigoDoFragmento,
+  lerVinculo,
+  limparVinculo,
+  tirarCodigoDaUrl,
+} from "@/lib/googleNavegador";
+import googleService, { mensagemDeErroGoogle } from "@/services/google.service";
 
 /**
  * Retorno da autenticação do Google.
@@ -65,42 +69,14 @@ type Estado =
   | { tipo: "pausada" }
   | { tipo: "emailNaoVerificado"; email: string };
 
-/**
- * A mensagem do servidor só aparece para erro **da pessoa ou da conta** (4xx): "Conta bloqueada:
- * motivo", "Sessão do Google expirada", "O Google não confirmou o e-mail". Erro de servidor ou de
- * rede (sem resposta) fica com o texto genérico, que não vaza detalhe interno.
- */
-function mensagemDaFalha(erro: unknown): string {
-  const status = (erro as AxiosError | undefined)?.response?.status;
-  return status !== undefined && status >= 400 && status < 500 ? extrairMensagemErro(erro, FALHA_GENERICA) : FALHA_GENERICA;
-}
+const mensagemDaFalha = (erro: unknown) => mensagemDeErroGoogle(erro, FALHA_GENERICA);
 
 /**
  * O código de entrega, no fragmento (`#codigo=`), que é onde o backend o coloca. A query
  * (`?codigo=`) ainda é aceita: era o formato anterior, e um retorno em andamento durante a troca de
  * versão não deve quebrar.
  */
-function lerCodigoDaUrl(codigoDaBusca: string | undefined): string | undefined {
-  try {
-    const doFragmento = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("codigo");
-    return doFragmento || codigoDaBusca || undefined;
-  } catch {
-    return codigoDaBusca;
-  }
-}
-
-/** Tira o código (do fragmento ou da query) da barra de endereço, sem recarregar nem mexer no histórico do roteador. */
-function tirarCodigoDaUrl() {
-  try {
-    const url = new URL(window.location.href);
-    const noFragmento = new URLSearchParams(url.hash.replace(/^#/, "")).has("codigo");
-    if (!noFragmento && !url.searchParams.has("codigo")) return;
-    url.searchParams.delete("codigo");
-    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`);
-  } catch {
-    // Sem History API: segue com o código na barra, que é como era.
-  }
-}
+const lerCodigoDaUrl = (codigoDaBusca: string | undefined) => lerCodigoDoFragmento() || codigoDaBusca || undefined;
 
 function estadoInicial(
   codigo: string | undefined,
@@ -231,7 +207,7 @@ function RetornoGoogle() {
           ) : estado.tipo === "conflito" ? (
             <Aviso
               titulo="Esta conta já existe no ACESSO"
-              texto={`Já há uma conta com o e-mail ${estado.email}, criada com e-mail e senha. Entre com ela. Por segurança, o ACESSO não junta duas contas só porque o e-mail é igual.`}
+              texto={`Já há uma conta com o e-mail ${estado.email}, criada com e-mail e senha. Entre com ela. Se for uma conta de candidato, depois de entrar você pode vincular o Google em Configurações, Segurança, Contas conectadas. Por segurança, o ACESSO não junta duas contas só porque o e-mail é igual.`}
             >
               <Button asChild className="min-h-12 w-full text-base">
                 <Link to="/entrar">Entrar com e-mail e senha</Link>

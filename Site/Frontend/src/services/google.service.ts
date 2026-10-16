@@ -1,16 +1,36 @@
-import clienteApi from "@/services/api";
-import { corpoDoToken, lerVinculo, prepararVinculo } from "@/lib/googleNavegador";
+import type { AxiosError } from "axios";
+
+import clienteApi, { extrairMensagemErro } from "@/services/api";
+import { corpoDoToken, lerVinculo, limparVinculo, prepararVinculo } from "@/lib/googleNavegador";
 import type {
   RespostaLogin,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
-  Usuario,
 } from "@/types";
 
 /** Perfil que o Google de fato forneceu. Nada além disto é pré-preenchido no cadastro. */
 export interface PerfilGoogle {
   email: string | null;
   nome: string | null;
+}
+
+/** O que a tela Contas conectadas precisa saber sobre o Google desta conta. */
+export interface ContaGoogle {
+  /** O recurso está configurado neste ambiente. */
+  disponivel: boolean;
+  /** A conta pode ter Google vinculado (hoje, só conta de candidato). */
+  elegivel: boolean;
+  vinculado: boolean;
+}
+
+/**
+ * A mensagem do servidor só aparece para erro **da pessoa ou da conta** (4xx): "Senha incorreta",
+ * "Sessão do Google expirada", "Conta bloqueada: motivo". Erro de servidor ou de rede (sem resposta)
+ * fica com o texto padrão, que não vaza detalhe interno.
+ */
+export function mensagemDeErroGoogle(erro: unknown, padrao: string): string {
+  const status = (erro as AxiosError | undefined)?.response?.status;
+  return status !== undefined && status >= 400 && status < 500 ? extrairMensagemErro(erro, padrao) : padrao;
 }
 
 export type ResultadoGoogle =
@@ -77,13 +97,39 @@ export const googleService = {
     return data;
   },
 
-  /** Vincula a conta Google a quem já está autenticado por senha (saída do conflito). */
-  async vincular(codigo: string): Promise<Usuario> {
-    const { data } = await clienteApi.post<{ usuario: Usuario }>("/auth/google/vincular", {
-      codigo,
-      vinculo: lerVinculo() ?? undefined,
-    });
-    return data.usuario;
+  /** Situação do Google nesta conta, para a tela Contas conectadas (exige sessão). */
+  async conta(): Promise<ContaGoogle> {
+    const { data } = await clienteApi.get<ContaGoogle>("/auth/google/conta");
+    return { disponivel: data.disponivel, elegivel: data.elegivel, vinculado: data.vinculado };
+  },
+
+  /**
+   * Passo 1 de vincular o Google a quem já tem conta: confirma a senha atual no servidor e devolve a
+   * URL do Google. Como no login, começa um fluxo novo (segredo da aba); se o servidor recusar — senha
+   * errada, por exemplo —, o segredo é descartado.
+   */
+  async iniciarVinculo(senha: string): Promise<string> {
+    const vinculo = await prepararVinculo();
+    try {
+      const { data } = await clienteApi.post<{ url: string }>("/auth/google/vincular/iniciar", { senha, vinculo });
+      return data.url;
+    } catch (erro) {
+      limparVinculo();
+      throw erro;
+    }
+  },
+
+  /**
+   * Passo 2: o código de volta do Google, que só serve a esta sessão e a este navegador. A conta
+   * passa a poder entrar com o Google.
+   */
+  async vincular(codigo: string): Promise<void> {
+    await clienteApi.post("/auth/google/vincular", { codigo, vinculo: lerVinculo() ?? undefined });
+  },
+
+  /** Desfaz o vínculo; exige a senha atual. */
+  async desvincular(senha: string): Promise<void> {
+    await clienteApi.delete("/auth/google/vinculo", { data: { senha } });
   },
 };
 

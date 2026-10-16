@@ -53,6 +53,7 @@ vi.mock("../utils/modelosEmail.js", () => ({
 vi.mock("../utils/urlFrontend.js", () => ({ montarUrlFrontend: vi.fn(() => "https://site.exemplo/x") }));
 
 const { Usuario, Candidato, CodigoVerificacaoEmail } = await import("../models/index.js");
+const { compararSenha } = await import("../utils/bcrypt.js");
 const { default: SessaoService } = await import("./SessaoService.js");
 const { default: EmailService } = await import("./EmailService.js");
 const { default: AutenticacaoService } = await import("./AutenticacaoService.js");
@@ -260,6 +261,49 @@ describe("cadastrarCandidato com Google", () => {
             AutenticacaoService.cadastrarCandidato(dadosDoCadastro({ googleCodigo: naoVerificado }))
         ).rejects.toMatchObject({ statusCode: 400 });
         expect(Usuario.create).not.toHaveBeenCalled();
+    });
+});
+
+describe("conferirSenhaAtual (reautenticação antes de vincular ou desvincular o Google)", () => {
+    const comSenha = { findByPk: vi.fn() };
+
+    beforeEach(() => {
+        Usuario.scope.mockReturnValue(comSenha);
+        comSenha.findByPk.mockResolvedValue({ id: "u1", senhaHash: "hash-da-senha" });
+    });
+
+    it("aceita a senha certa", async () => {
+        compararSenha.mockResolvedValue(true);
+
+        await expect(AutenticacaoService.conferirSenhaAtual("u1", "Senha@1234")).resolves.toBeUndefined();
+        expect(compararSenha).toHaveBeenCalledWith("Senha@1234", "hash-da-senha");
+    });
+
+    it("recusa a senha errada com 403, e não 401, para o Site não tratar como sessão vencida", async () => {
+        compararSenha.mockResolvedValue(false);
+
+        await expect(AutenticacaoService.conferirSenhaAtual("u1", "errada")).rejects.toMatchObject({
+            statusCode: 403,
+            message: "Senha incorreta."
+        });
+    });
+
+    it.each([[undefined], [null], [""], [1234]])("recusa a senha %j sem nem comparar", async (senha) => {
+        await expect(AutenticacaoService.conferirSenhaAtual("u1", senha)).rejects.toMatchObject({ statusCode: 403 });
+        expect(compararSenha).not.toHaveBeenCalled();
+    });
+
+    it("recusa conta sem senha cadastrada, sem comparar", async () => {
+        comSenha.findByPk.mockResolvedValue({ id: "u1", senhaHash: null });
+
+        await expect(AutenticacaoService.conferirSenhaAtual("u1", "qualquer")).rejects.toMatchObject({ statusCode: 403 });
+        expect(compararSenha).not.toHaveBeenCalled();
+    });
+
+    it("recusa com 404 o usuário que não existe", async () => {
+        comSenha.findByPk.mockResolvedValue(null);
+
+        await expect(AutenticacaoService.conferirSenhaAtual("u1", "Senha@1234")).rejects.toMatchObject({ statusCode: 404 });
     });
 });
 

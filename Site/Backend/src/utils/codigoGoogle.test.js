@@ -13,12 +13,14 @@ vi.mock("../config/env.js", () => ({
 }));
 
 const {
+    INTENCAO_VINCULAR,
     SEGUNDOS_CODIGO_DE_ENTREGA,
     SEGUNDOS_PROVA,
     assinarCodigoDeEntrega,
     assinarProva,
     conferirVinculo,
     hashDoVinculo,
+    intencaoValida,
     lerCodigoDeEntrega,
     lerProva,
     vinculoValido
@@ -128,6 +130,49 @@ describe("código de entrega", () => {
 
     it("o código de entrega não serve como access token (falta o issuer)", () => {
         expect(() => verificarJwt(assinar())).toThrow();
+    });
+});
+
+// Etapa 5: vincular um Google a uma conta que já existe.
+describe("intenção de vincular no código de entrega", () => {
+    it("um código de login não carrega intenção nem usuário", () => {
+        const conteudo = lerCodigoDeEntrega(assinarCodigoDeEntrega({ perfil: PERFIL, tipoConta: null, vinculo: VINCULO }));
+        expect(conteudo.intencao).toBeNull();
+        expect(conteudo.usuarioId).toBeNull();
+    });
+
+    it("um código de vinculação carrega a intenção e o usuário que a pediu", () => {
+        const codigo = assinarCodigoDeEntrega({
+            perfil: PERFIL,
+            tipoConta: null,
+            vinculo: VINCULO,
+            intencao: INTENCAO_VINCULAR,
+            usuarioId: "u1"
+        });
+        expect(lerCodigoDeEntrega(codigo)).toMatchObject({ intencao: "vincular", usuarioId: "u1" });
+    });
+
+    it.each([
+        ["intenção sem usuário", { intencao: "vincular" }],
+        ["usuário sem intenção", { usuarioId: "u1" }],
+        ["intenção desconhecida", { intencao: "promover", usuarioId: "u1" }],
+        ["usuário que não é texto", { intencao: "vincular", usuarioId: 42 }]
+    ])("recusa o código com %s", (_nome, extra) => {
+        const adulterado = jwt.sign({ perfil: PERFIL, vinculo: VINCULO, ...extra }, SEGREDO, {
+            expiresIn: 60,
+            audience: "acesso:google:entrega",
+            jwtid: "x"
+        });
+        expect(statusDe(() => lerCodigoDeEntrega(adulterado))).toBe(400);
+    });
+
+    it("intencaoValida: ou os dois campos ou nenhum", () => {
+        expect(intencaoValida(null, null)).toBe(true);
+        expect(intencaoValida(undefined, undefined)).toBe(true);
+        expect(intencaoValida("vincular", "u1")).toBe(true);
+        expect(intencaoValida("vincular", null)).toBe(false);
+        expect(intencaoValida(null, "u1")).toBe(false);
+        expect(intencaoValida("vincular", "")).toBe(false);
     });
 });
 

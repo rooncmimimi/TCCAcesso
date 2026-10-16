@@ -164,4 +164,16 @@ const Usuario = sequelize.define(
     }
 );
 
+/**
+ * O `sub` do Google (`googleId`) é o identificador da conta Google da pessoa e não precisa sair do
+ * servidor: o Site só precisa saber **se** há um Google vinculado. Quando o campo foi carregado, a
+ * serialização troca o `sub` por `googleVinculado`; quando não foi (consultas que escolhem as
+ * colunas, como o autor de uma postagem), não acrescenta nada.
+ */
+Usuario.prototype.toJSON = function toJSON() {
+    const { googleId, ...dados } = this.get({ plain: true });
+
+    return googleId === undefined ? dados : { ...dados, googleVinculado: Boolean(googleId) };
+};
+
 export default Usuario;

@@ -6,11 +6,16 @@ import jwt from "jsonwebtoken";
 import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
 import { emailCanonico } from "../utils/email.js";
-import { vinculoValido } from "../utils/codigoGoogle.js";
+import { INTENCAO_VINCULAR, intencaoValida, vinculoValido } from "../utils/codigoGoogle.js";
+import { modeloContaGoogle } from "../utils/modelosEmail.js";
 import { Usuario } from "../models/index.js";
+import EmailService from "./EmailService.js";
+import NotificacaoService from "./NotificacaoService.js";
 
 const ESCOPOS = ["openid", "email", "profile"];
 const MINUTOS_VALIDADE_STATE = 10;
+
+const SO_CANDIDATO = "Entrar com o Google vale só para contas de candidato. Para esta conta, use e-mail e senha.";
 
 /**
  * Entrar e cadastrar com uma conta Google (OAuth 2.0 + OpenID Connect).
@@ -71,9 +76,17 @@ class GoogleAuthService {
      * começou o fluxo. Ele viaja no `state`, passa ao código de entrega e é conferido em
      * `concluir`: quem não é esse navegador não consegue trocar o código (o ataque de "login CSRF",
      * em que alguém leva a vítima a entrar na conta do atacante). É obrigatório.
+     *
+     * `intencao: "vincular"` com o `usuarioId` de quem já está autenticado é o fluxo de
+     * Configurações → Segurança: o `state` assinado leva as duas informações, e o retorno só serve
+     * a essa pessoa (ver `GoogleAuthController.vincular`).
      */
-    gerarUrlDeAutorizacao({ tipoConta = null, origem = null, vinculo = null } = {}) {
+    gerarUrlDeAutorizacao({ tipoConta = null, origem = null, vinculo = null, intencao = null, usuarioId = null } = {}) {
         this.garantirDisponivel();
+
+        if (!intencaoValida(intencao, usuarioId)) {
+            throw ErroApi.requisicaoInvalida("Pedido do Google inválido.");
+        }
 
         if (tipoConta && !["candidato", "empresa"].includes(tipoConta)) {
             throw ErroApi.requisicaoInvalida("Tipo de conta inválido.");
@@ -87,7 +100,13 @@ class GoogleAuthService {
 
         const nonce = crypto.randomBytes(16).toString("hex");
         const state = jwt.sign(
-            { nonce, tipoConta, vinculo, origem: this.origemDeRetorno(origem) },
+            {
+                nonce,
+                tipoConta,
+                vinculo,
+                origem: this.origemDeRetorno(origem),
+                ...(intencao ? { intencao, usuarioId } : {})
+            },
             env.jwt.secret,
             { expiresIn: `${MINUTOS_VALIDADE_STATE}m` }
         );
@@ -131,8 +150,8 @@ class GoogleAuthService {
         try {
             const conteudo = jwt.verify(state, env.jwt.secret);
 
-            if (!conteudo?.nonce || !vinculoValido(conteudo.vinculo)) {
-                throw new Error("state sem nonce ou sem vínculo com o navegador");
+            if (!conteudo?.nonce || !vinculoValido(conteudo.vinculo) || !intencaoValida(conteudo.intencao, conteudo.usuarioId)) {
+                throw new Error("state sem nonce, sem vínculo com o navegador ou com intenção inválida");
             }
 
             return conteudo;
@@ -228,28 +247,168 @@ class GoogleAuthService {
         return { desfecho: "cadastrar", perfil };
     }
 
-    /**
-     * Vincula a conta Google a um usuário **já autenticado por senha**.
-     *
-     * Este é o único caminho de vínculo para contas que já existem, e por isso exige sessão: quem
-     * prova ser dono da conta entrando com a senha é quem pode anexar um Google a ela.
-     */
-    async vincular(usuarioId, perfil) {
-        const jaUsado = await Usuario.findOne({ where: { googleId: perfil.sub } });
-
-        if (jaUsado && jaUsado.id !== usuarioId) {
-            throw ErroApi.conflito("Esta conta Google já está vinculada a outro usuário.");
-        }
-
+    async buscar(usuarioId) {
         const usuario = await Usuario.findByPk(usuarioId);
 
         if (!usuario) {
             throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
-        await usuario.update({ googleId: perfil.sub });
+        return usuario;
+    }
+
+    /** O que a tela Contas conectadas mostra: o recurso existe aqui, vale para esta conta, e já está vinculado? */
+    async situacao(usuarioId) {
+        const usuario = await this.buscar(usuarioId);
+
+        return {
+            disponivel: this.disponivel(),
+            elegivel: usuario.tipoUsuario === "candidato",
+            vinculado: Boolean(usuario.googleId)
+        };
+    }
+
+    /**
+     * Confere, antes de levar a pessoa ao Google, que esta conta pode receber um vínculo: só conta de
+     * candidato (o Google nasce como login de candidato; a conta de empresa é outra conta, com e-mail
+     * e senha próprios) e só uma por vez.
+     */
+    async conferirPodeVincular(usuarioId) {
+        const usuario = await this.buscar(usuarioId);
+
+        if (usuario.tipoUsuario !== "candidato") {
+            throw ErroApi.acessoNegado(SO_CANDIDATO);
+        }
+
+        if (usuario.googleId) {
+            throw ErroApi.conflito("Esta conta já tem um Google vinculado. Desvincule-o antes de vincular outro.");
+        }
 
         return usuario;
+    }
+
+    /**
+     * Vincula a conta Google a um usuário **já autenticado e que acabou de confirmar a senha**.
+     *
+     * Este é o único caminho de vínculo para contas que já existem. A senha é conferida antes de a
+     * pessoa sair para o Google (`GoogleAuthController.iniciarVinculo`), o `state` leva o id dela, e
+     * o código que volta só vale para ela (`GoogleAuthController.vincular`). Aqui ficam as regras
+     * da conta: só candidato, um Google por conta e um `sub` por conta. Avisa a pessoa, no Site e
+     * por e-mail, porque um segundo meio de entrar na conta é justamente o que ela precisa notar.
+     */
+    async vincular(usuarioId, perfil) {
+        const usuario = await this.buscar(usuarioId);
+
+        if (usuario.tipoUsuario !== "candidato") {
+            throw ErroApi.acessoNegado(SO_CANDIDATO);
+        }
+
+        // Repetir o mesmo vínculo não muda nada e não precisa de aviso.
+        if (usuario.googleId === perfil.sub) {
+            return usuario;
+        }
+
+        if (usuario.googleId) {
+            throw ErroApi.conflito("Esta conta já tem outro Google vinculado. Desvincule-o antes de vincular outro.");
+        }
+
+        const jaUsado = await Usuario.findOne({ where: { googleId: perfil.sub } });
+
+        if (jaUsado) {
+            throw ErroApi.conflito("Esta conta Google já está vinculada a outro usuário.");
+        }
+
+        try {
+            await usuario.update({ googleId: perfil.sub });
+        } catch (erro) {
+            // Duas contas vinculando o mesmo Google ao mesmo tempo: o índice único do banco decide.
+            if (erro?.name === "SequelizeUniqueConstraintError") {
+                throw ErroApi.conflito("Esta conta Google já está vinculada a outro usuário.");
+            }
+            throw erro;
+        }
+
+        await this.avisar(usuario, "vinculada");
+
+        return usuario;
+    }
+
+    /**
+     * Desfaz o vínculo. A senha já foi conferida por quem chama. Recusa se a conta não tiver senha,
+     * porque então o Google seria o único jeito de entrar e a pessoa se trancaria para fora.
+     */
+    async desvincular(usuarioId) {
+        const usuario = await Usuario.scope("comSenha").findByPk(usuarioId);
+
+        if (!usuario) {
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
+        }
+
+        if (!usuario.googleId) {
+            throw ErroApi.conflito("Esta conta não tem Google vinculado.");
+        }
+
+        if (!usuario.senhaHash) {
+            throw ErroApi.conflito("Defina uma senha antes de desvincular o Google, ou você perderia o acesso à conta.");
+        }
+
+        await usuario.update({ googleId: null });
+
+        await this.avisar(usuario, "desvinculada");
+
+        return usuario;
+    }
+
+    /**
+     * Aviso de segurança após vincular ou desvincular, no Site e por e-mail. Best-effort: nunca
+     * desfaz nem bloqueia a operação principal se o aviso falhar. O registro em log leva só o id.
+     */
+    async avisar(usuario, acao) {
+        const vinculada = acao === "vinculada";
+
+        console.info(
+            JSON.stringify({
+                nivel: "info",
+                servico: "GoogleAuthService",
+                acao: vinculada ? "google_vinculado" : "google_desvinculado",
+                usuarioId: usuario.id
+            })
+        );
+
+        await NotificacaoService.criar({
+            usuarioId: usuario.id,
+            tipo: "sistema",
+            titulo: vinculada ? "Conta Google vinculada" : "Conta Google desvinculada",
+            descricao: vinculada
+                ? "Agora você também pode entrar no ACESSO com o Google. Se não foi você, troque sua senha e contate o suporte."
+                : "Você não entra mais no ACESSO com o Google. Se não foi você, troque sua senha e contate o suporte.",
+            subtipo: vinculada ? "google_vinculado" : "google_desvinculado"
+        });
+
+        if (!EmailService.disponivel()) return;
+
+        const { assunto, html, texto } = modeloContaGoogle({ nome: usuario.nome, acao });
+
+        try {
+            await EmailService.enviar({
+                para: usuario.email,
+                nomeDestinatario: usuario.nome,
+                assunto,
+                html,
+                texto,
+                tag: vinculada ? "google-vinculado" : "google-desvinculado"
+            });
+        } catch (erro) {
+            console.error(
+                JSON.stringify({
+                    nivel: "error",
+                    servico: "GoogleAuthService",
+                    acao: "aviso_conta_google",
+                    usuarioId: usuario.id,
+                    motivo: erro?.message ?? String(erro)
+                })
+            );
+        }
     }
 }
 

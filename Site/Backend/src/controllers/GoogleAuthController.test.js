@@ -27,12 +27,15 @@ vi.mock("../services/GoogleAuthService.js", () => ({
         lerState: vi.fn(),
         perfilDoCodigo: vi.fn(),
         resolver: vi.fn(),
-        vincular: vi.fn()
+        situacao: vi.fn(),
+        conferirPodeVincular: vi.fn(),
+        vincular: vi.fn(),
+        desvincular: vi.fn()
     }
 }));
 
 vi.mock("../services/AutenticacaoService.js", () => ({
-    default: { entrarComUsuario: vi.fn(), perfilAtual: vi.fn() }
+    default: { entrarComUsuario: vi.fn(), conferirSenhaAtual: vi.fn() }
 }));
 
 const { default: GoogleAuthService } = await import("../services/GoogleAuthService.js");
@@ -63,8 +66,11 @@ const requisicao = (extra = {}) => ({
     ...extra
 });
 
-const codigoDeEntrega = ({ perfil = PERFIL, tipoConta = null, vinculo = VINCULO } = {}) =>
-    assinarCodigoDeEntrega({ perfil, tipoConta, vinculo });
+const codigoDeEntrega = ({ perfil = PERFIL, tipoConta = null, vinculo = VINCULO, intencao = null, usuarioId = null } = {}) =>
+    assinarCodigoDeEntrega({ perfil, tipoConta, vinculo, intencao, usuarioId });
+
+/** O código que o retorno do Google entrega na vinculação pedida pela sessão de `usuarioId`. */
+const codigoDeVinculacao = (usuarioId = "u1", extra = {}) => codigoDeEntrega({ intencao: "vincular", usuarioId, ...extra });
 
 /** O corpo que o Site manda: o código e o segredo do navegador que começou o fluxo. */
 const corpo = (extra = {}) => ({ codigo: codigoDeEntrega(), vinculo: SEGREDO_DO_NAVEGADOR, ...extra });
@@ -78,6 +84,14 @@ const concluir = async (body) => {
 };
 
 const erroDe = ({ next }) => next.mock.calls[0]?.[0];
+
+/** Chama `vincular` como a sessão de `usuario` (por padrão, u1). */
+const vincular = async (body, usuario = { id: "u1" }) => {
+    const res = resposta();
+    const next = vi.fn();
+    await GoogleAuthController.vincular(requisicao({ body, user: usuario }), res, next);
+    return { res, next };
+};
 
 beforeEach(() => {
     // reset (e não só clear): respostas `...Once` que sobrarem de um teste não vazam para o próximo.
@@ -197,6 +211,66 @@ describe("callback", () => {
         expect(conteudo.exp - conteudo.iat).toBe(120);
     });
 
+    describe("quando o fluxo é de vincular um Google a uma conta (etapa 5)", () => {
+        const estadoDeVinculacao = { nonce: "n1", tipoConta: null, vinculo: VINCULO, origem: "https://site.exemplo", intencao: "vincular", usuarioId: "u1" };
+
+        it("volta à tela de Segurança, e não à de login", async () => {
+            GoogleAuthService.lerState.mockReturnValue(estadoDeVinculacao);
+            GoogleAuthService.perfilDoCodigo.mockResolvedValue(PERFIL);
+            const res = resposta();
+
+            await GoogleAuthController.callback(requisicao({ query: { code: "c", state: "s" } }), res);
+
+            const destino = new URL(res.redirect.mock.calls[0][0]);
+            expect(destino.origin + destino.pathname).toBe("https://site.exemplo/configuracoes/seguranca");
+            expect(destino.hash).toMatch(/^#codigo=/);
+        });
+
+        it("o código leva a intenção e o id de quem pediu", async () => {
+            GoogleAuthService.lerState.mockReturnValue(estadoDeVinculacao);
+            GoogleAuthService.perfilDoCodigo.mockResolvedValue(PERFIL);
+            const res = resposta();
+
+            await GoogleAuthController.callback(requisicao({ query: { code: "c", state: "s" } }), res);
+
+            const codigo = new URL(res.redirect.mock.calls[0][0]).hash.slice("#codigo=".length);
+            expect(jwt.verify(codigo, SEGREDO, { audience: "acesso:google:entrega" })).toMatchObject({
+                intencao: "vincular",
+                usuarioId: "u1"
+            });
+        });
+
+        it("cancelar na tela do Google volta à tela de Segurança", async () => {
+            GoogleAuthService.lerState.mockReturnValue(estadoDeVinculacao);
+            const res = resposta();
+
+            await GoogleAuthController.callback(requisicao({ query: { error: "access_denied", state: "s" } }), res);
+
+            expect(res.redirect).toHaveBeenCalledWith("https://site.exemplo/configuracoes/seguranca?erro=cancelado");
+        });
+
+        it("uma falha na validação também volta à tela de Segurança, sem o motivo na URL", async () => {
+            GoogleAuthService.lerState.mockReturnValue(estadoDeVinculacao);
+            GoogleAuthService.perfilDoCodigo.mockRejectedValue(new Error("motivo-interno-secreto"));
+            const res = resposta();
+
+            await GoogleAuthController.callback(requisicao({ query: { code: "c", state: "s" } }), res);
+
+            expect(res.redirect).toHaveBeenCalledWith("https://site.exemplo/configuracoes/seguranca?erro=falha");
+        });
+
+        it("com o state inválido, cai na tela de login, que é o padrão seguro", async () => {
+            GoogleAuthService.lerState.mockImplementation(() => {
+                throw new Error("state inválido");
+            });
+            const res = resposta();
+
+            await GoogleAuthController.callback(requisicao({ query: { error: "access_denied", state: "x" } }), res);
+
+            expect(res.redirect).toHaveBeenCalledWith("https://site.exemplo/retorno-google?erro=cancelado");
+        });
+    });
+
     it("cada retorno gera um código diferente, com identificador próprio", async () => {
         GoogleAuthService.perfilDoCodigo.mockResolvedValue(PERFIL);
         const codigos = [];
@@ -235,6 +309,21 @@ describe("concluir", () => {
         const { next } = await concluir(corpo({ codigo: assinarProva(PERFIL) }));
         expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400 });
         expect(GoogleAuthService.resolver).not.toHaveBeenCalled();
+    });
+
+    // Etapa 5: um código pedido por quem já tem sessão, para vincular, não abre sessão de ninguém.
+    it("recusa um código de vinculação: ele não abre sessão, não cadastra e não é gasto", async () => {
+        const codigo = codigoDeVinculacao();
+
+        const recusado = await concluir({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
+
+        expect(erroDe(recusado)).toMatchObject({ statusCode: 400 });
+        expect(GoogleAuthService.resolver).not.toHaveBeenCalled();
+        expect(AutenticacaoService.entrarComUsuario).not.toHaveBeenCalled();
+
+        // Continua valendo para quem de fato o pediu.
+        const vinculado = await vincular({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
+        expect(vinculado.next).not.toHaveBeenCalled();
     });
 
     it("entrar: cria a sessão passando IP e navegador e devolve tokens", async () => {
@@ -478,21 +567,113 @@ describe("concluir — vínculo com o navegador (achado 3)", () => {
     });
 });
 
-describe("vincular", () => {
-    const vincular = async (body, usuario = { id: "u1" }) => {
+describe("conta", () => {
+    it("devolve a situação do Google desta conta", async () => {
+        GoogleAuthService.situacao.mockResolvedValue({ disponivel: true, elegivel: true, vinculado: false });
+        const res = resposta();
+
+        await GoogleAuthController.conta(requisicao({ user: { id: "u1" } }), res, vi.fn());
+
+        expect(GoogleAuthService.situacao).toHaveBeenCalledWith("u1");
+        expect(res.json).toHaveBeenCalledWith({ sucesso: true, disponivel: true, elegivel: true, vinculado: false });
+    });
+
+    it("entrega o erro ao middleware", async () => {
+        const erro = new Error("falhou");
+        GoogleAuthService.situacao.mockRejectedValue(erro);
+        const next = vi.fn();
+        await GoogleAuthController.conta(requisicao({ user: { id: "u1" } }), resposta(), next);
+        expect(next).toHaveBeenCalledWith(erro);
+    });
+});
+
+describe("iniciarVinculo (passo 1: confirma a senha e devolve a URL do Google)", () => {
+    const iniciar = async (body, usuario = { id: "u1" }, origem = "https://site.exemplo") => {
         const res = resposta();
         const next = vi.fn();
-        await GoogleAuthController.vincular(requisicao({ body, user: usuario }), res, next);
+        await GoogleAuthController.iniciarVinculo(requisicao({ body, user: usuario, get: vi.fn(() => origem) }), res, next);
         return { res, next };
     };
 
-    it("vincula o sub do código à conta da sessão, nunca a outra", async () => {
-        AutenticacaoService.perfilAtual.mockResolvedValue({ id: "u1" });
+    beforeEach(() => {
+        GoogleAuthService.gerarUrlDeAutorizacao.mockReturnValue({ url: "https://accounts.google.com/x", state: "s" });
+    });
 
-        const { res } = await vincular(corpo());
+    it("confere a senha e devolve a URL, com a intenção e o id de quem pediu", async () => {
+        const { res } = await iniciar({ senha: "Senha@1234", vinculo: VINCULO });
+
+        expect(AutenticacaoService.conferirSenhaAtual).toHaveBeenCalledWith("u1", "Senha@1234");
+        expect(GoogleAuthService.gerarUrlDeAutorizacao).toHaveBeenCalledWith({
+            intencao: "vincular",
+            usuarioId: "u1",
+            vinculo: VINCULO,
+            origem: "https://site.exemplo"
+        });
+        expect(res.json).toHaveBeenCalledWith({ sucesso: true, url: "https://accounts.google.com/x" });
+    });
+
+    it("com a senha errada não gera a URL do Google", async () => {
+        const recusa = Object.assign(new Error("Senha incorreta."), { statusCode: 403 });
+        AutenticacaoService.conferirSenhaAtual.mockRejectedValue(recusa);
+
+        const { next, res } = await iniciar({ senha: "errada", vinculo: VINCULO });
+
+        expect(next).toHaveBeenCalledWith(recusa);
+        expect(GoogleAuthService.gerarUrlDeAutorizacao).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+    });
+
+    it("confere a elegibilidade da conta antes de pedir a senha", async () => {
+        const recusa = Object.assign(new Error("só candidato"), { statusCode: 403 });
+        GoogleAuthService.conferirPodeVincular.mockRejectedValue(recusa);
+
+        const { next } = await iniciar({ senha: "Senha@1234", vinculo: VINCULO }, { id: "u9" });
+
+        expect(GoogleAuthService.conferirPodeVincular).toHaveBeenCalledWith("u9");
+        expect(next).toHaveBeenCalledWith(recusa);
+        expect(AutenticacaoService.conferirSenhaAtual).not.toHaveBeenCalled();
+    });
+
+    it("sem o vínculo do navegador, deixa o serviço recusar", async () => {
+        const recusa = Object.assign(new Error("sem navegador"), { statusCode: 400 });
+        GoogleAuthService.gerarUrlDeAutorizacao.mockImplementation(() => {
+            throw recusa;
+        });
+
+        const { next } = await iniciar({ senha: "Senha@1234" });
+
+        expect(GoogleAuthService.gerarUrlDeAutorizacao).toHaveBeenCalledWith(expect.objectContaining({ vinculo: null }));
+        expect(next).toHaveBeenCalledWith(recusa);
+    });
+
+    it("não devolve o state nem a senha", async () => {
+        const { res } = await iniciar({ senha: "Senha@1234", vinculo: VINCULO });
+        const corpo = JSON.stringify(res.json.mock.calls[0][0]);
+        expect(corpo).not.toContain('"s"');
+        expect(corpo).not.toContain("Senha@1234");
+    });
+});
+
+describe("vincular (passo 2: o código de volta do Google, só para a sessão que o pediu)", () => {
+    it("vincula o sub do código à conta da sessão, nunca a outra", async () => {
+        const { res } = await vincular(corpo({ codigo: codigoDeVinculacao("u1") }));
 
         expect(GoogleAuthService.vincular).toHaveBeenCalledWith("u1", PERFIL);
-        expect(res.json).toHaveBeenCalledWith({ sucesso: true, usuario: { id: "u1" } });
+        expect(res.json).toHaveBeenCalledWith({ sucesso: true, vinculado: true });
+    });
+
+    it("recusa um código de login (sem intenção de vincular): ele não serve para anexar um Google", async () => {
+        const { next } = await vincular(corpo({ codigo: codigoDeEntrega() }));
+
+        expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400 });
+        expect(GoogleAuthService.vincular).not.toHaveBeenCalled();
+    });
+
+    it("recusa o código de vinculação pedido por outra conta", async () => {
+        const { next } = await vincular(corpo({ codigo: codigoDeVinculacao("u2") }), { id: "u1" });
+
+        expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400 });
+        expect(GoogleAuthService.vincular).not.toHaveBeenCalled();
     });
 
     it("recusa código inválido com 400, sem tocar na conta", async () => {
@@ -502,14 +683,13 @@ describe("vincular", () => {
     });
 
     it("recusa o segredo de outro navegador, sem tocar na conta (achado 3)", async () => {
-        const { next } = await vincular(corpo({ vinculo: "segredo-de-outro-navegador" }));
+        const { next } = await vincular(corpo({ codigo: codigoDeVinculacao(), vinculo: "segredo-de-outro-navegador" }));
         expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400 });
         expect(GoogleAuthService.vincular).not.toHaveBeenCalled();
     });
 
     it("recusa o segundo uso do mesmo código", async () => {
-        AutenticacaoService.perfilAtual.mockResolvedValue({ id: "u1" });
-        const codigo = codigoDeEntrega();
+        const codigo = codigoDeVinculacao();
 
         await vincular({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
         const { next } = await vincular({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
@@ -518,27 +698,60 @@ describe("vincular", () => {
         expect(GoogleAuthService.vincular).toHaveBeenCalledTimes(1);
     });
 
-    it("um código gasto em `concluir` não serve em `vincular`, e vice-versa", async () => {
-        GoogleAuthService.resolver.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
-        AutenticacaoService.perfilAtual.mockResolvedValue({ id: "u1" });
-        const codigo = codigoDeEntrega();
+    it("um código gasto em `vincular` não serve em `concluir`", async () => {
+        const codigo = codigoDeVinculacao();
+        await vincular({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
 
-        await concluir({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
-        const { next } = await vincular({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
+        const recusado = await concluir({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
 
-        expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400 });
-        expect(GoogleAuthService.vincular).not.toHaveBeenCalled();
+        expect(erroDe(recusado)).toMatchObject({ statusCode: 400 });
+        expect(GoogleAuthService.resolver).not.toHaveBeenCalled();
     });
 
     it("um erro ao vincular (ex.: sub já em outra conta) não gasta o código", async () => {
         GoogleAuthService.vincular.mockRejectedValueOnce(Object.assign(new Error("já vinculado"), { statusCode: 409 }));
-        AutenticacaoService.perfilAtual.mockResolvedValue({ id: "u1" });
-        const codigo = codigoDeEntrega();
+        const codigo = codigoDeVinculacao();
 
         const falhou = await vincular({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
         expect(falhou.next.mock.calls[0][0]).toMatchObject({ statusCode: 409 });
 
         const tentativa = await vincular({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
         expect(tentativa.next).not.toHaveBeenCalled();
+    });
+});
+
+describe("desvincular", () => {
+    const desvincular = async (body, usuario = { id: "u1" }) => {
+        const res = resposta();
+        const next = vi.fn();
+        await GoogleAuthController.desvincular(requisicao({ body, user: usuario }), res, next);
+        return { res, next };
+    };
+
+    it("confere a senha e desfaz o vínculo da conta da sessão", async () => {
+        const { res } = await desvincular({ senha: "Senha@1234" });
+
+        expect(AutenticacaoService.conferirSenhaAtual).toHaveBeenCalledWith("u1", "Senha@1234");
+        expect(GoogleAuthService.desvincular).toHaveBeenCalledWith("u1");
+        expect(res.json).toHaveBeenCalledWith({ sucesso: true, vinculado: false });
+    });
+
+    it("com a senha errada não desvincula", async () => {
+        const recusa = Object.assign(new Error("Senha incorreta."), { statusCode: 403 });
+        AutenticacaoService.conferirSenhaAtual.mockRejectedValue(recusa);
+
+        const { next } = await desvincular({ senha: "errada" });
+
+        expect(next).toHaveBeenCalledWith(recusa);
+        expect(GoogleAuthService.desvincular).not.toHaveBeenCalled();
+    });
+
+    it("entrega ao middleware a recusa do serviço (sem Google, sem senha cadastrada)", async () => {
+        const recusa = Object.assign(new Error("sem senha"), { statusCode: 409 });
+        GoogleAuthService.desvincular.mockRejectedValue(recusa);
+
+        const { next } = await desvincular({ senha: "Senha@1234" });
+
+        expect(next).toHaveBeenCalledWith(recusa);
     });
 });

@@ -4,6 +4,7 @@ import GoogleAuthService from "../services/GoogleAuthService.js";
 import AutenticacaoService from "../services/AutenticacaoService.js";
 import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 import {
+    INTENCAO_VINCULAR,
     assinarCodigoDeEntrega,
     assinarProva,
     conferirVinculo,
@@ -12,6 +13,11 @@ import {
 import { codigosDeEntregaUsados } from "../utils/usoUnico.js";
 
 const CODIGO_JA_USADO = "Este código do Google já foi usado. Entre com o Google de novo.";
+const CODIGO_DE_OUTRO_FLUXO =
+    "Este retorno do Google não é para esta ação. Volte e comece de novo pelo botão do Google.";
+
+/** Onde o navegador volta no fim do fluxo: a tela de login, ou a de Segurança quando é vinculação. */
+const rotaDeRetorno = (intencao) => (intencao === INTENCAO_VINCULAR ? "/configuracoes/seguranca" : "/retorno-google");
 
 /**
  * Fluxo de entrar/cadastrar com Google.
@@ -55,18 +61,21 @@ class GoogleAuthController {
 
     /** Para onde o Google manda o navegador de volta. Sempre termina num redirecionamento ao Site. */
     async callback(req, res) {
-        // O Google devolve o `state` inclusive quando a pessoa cancela, então a origem de retorno é
-        // lida antes de qualquer desvio: sem isso, cancelar em desenvolvimento jogaria a pessoa no
-        // site publicado. Só cai no padrão quando o `state` não veio ou não é válido.
+        // O Google devolve o `state` inclusive quando a pessoa cancela, então a origem e a tela de
+        // retorno são lidas antes de qualquer desvio: sem isso, cancelar em desenvolvimento jogaria a
+        // pessoa no site publicado, e cancelar uma vinculação a jogaria na tela de login. Só cai no
+        // padrão quando o `state` não veio ou não é válido.
         let origem = env.frontendUrl;
+        let rota = rotaDeRetorno(null);
         try {
             const previa = GoogleAuthService.lerState(req.query.state);
             if (previa.origem) origem = previa.origem;
+            rota = rotaDeRetorno(previa.intencao);
         } catch {
             // `state` ausente ou inválido: segue com a origem padrão e o erro aparece abaixo.
         }
 
-        const comErro = (erro) => `${origem}/retorno-google?${new URLSearchParams({ erro }).toString()}`;
+        const comErro = (erro) => `${origem}${rota}?${new URLSearchParams({ erro }).toString()}`;
 
         // A pessoa cancelou na tela do Google, ou o Google recusou o pedido.
         if (req.query.error) {
@@ -74,14 +83,14 @@ class GoogleAuthController {
         }
 
         try {
-            const { nonce, tipoConta, vinculo } = GoogleAuthService.lerState(req.query.state);
+            const { nonce, tipoConta, vinculo, intencao, usuarioId } = GoogleAuthService.lerState(req.query.state);
             const perfil = await GoogleAuthService.perfilDoCodigo(req.query.code, nonce);
 
-            const codigo = assinarCodigoDeEntrega({ perfil, tipoConta, vinculo });
+            const codigo = assinarCodigoDeEntrega({ perfil, tipoConta, vinculo, intencao, usuarioId });
 
             // No fragmento, e não na query: o fragmento não é enviado ao servidor do Site nem entra
             // nos logs dele, e o Site o apaga da barra de endereço assim que o lê.
-            return res.redirect(`${origem}/retorno-google#codigo=${codigo}`);
+            return res.redirect(`${origem}${rota}#codigo=${codigo}`);
         } catch (erro) {
             // O motivo nunca vai para a URL — o Site mostra uma mensagem genérica —, mas vai para o
             // log do servidor: sem isso, uma falha aqui é indistinguível de outra e só resta
@@ -120,6 +129,12 @@ class GoogleAuthController {
 
         try {
             const conteudo = lerCodigoDeEntrega(req.body.codigo);
+
+            // Um código de vinculação é de quem já tem sessão e não abre uma nova.
+            if (conteudo.intencao) {
+                throw ErroApi.requisicaoInvalida(CODIGO_DE_OUTRO_FLUXO);
+            }
+
             conferirVinculo(conteudo.vinculo, req.body.vinculo);
 
             if (!codigosDeEntregaUsados.reservar(conteudo.jti, conteudo.exp)) {
@@ -181,18 +196,59 @@ class GoogleAuthController {
         }
     }
 
+    /** O que a tela Contas conectadas mostra sobre o Google desta conta. */
+    async conta(req, res, next) {
+        try {
+            const situacao = await GoogleAuthService.situacao(req.user.id);
+
+            return res.status(200).json({ sucesso: true, ...situacao });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     /**
-     * Vincula a conta Google a quem já está autenticado por senha.
+     * Primeiro passo de vincular um Google a uma conta que já existe: a pessoa confirma a senha e só
+     * então recebe a URL do Google. É o caminho de saída do `conflito`: entra com a senha e anexa o
+     * Google. Uma sessão roubada sozinha não basta para anexar um segundo meio de entrada.
      *
-     * É o caminho de saída do `conflito`: a pessoa entra normalmente e então anexa o Google. Exige
-     * sessão justamente para provar que a conta é dela, e o código passa pelas mesmas conferências
-     * do `concluir` (vínculo com o navegador e uso único).
+     * A senha é conferida **aqui**, antes de sair para o Google; o `state` assinado leva o id de quem
+     * pediu e a intenção "vincular", e `vincular` (abaixo) só aceita esse código para essa pessoa.
+     */
+    async iniciarVinculo(req, res, next) {
+        try {
+            await GoogleAuthService.conferirPodeVincular(req.user.id);
+            await AutenticacaoService.conferirSenhaAtual(req.user.id, req.body.senha);
+
+            const { url } = GoogleAuthService.gerarUrlDeAutorizacao({
+                intencao: INTENCAO_VINCULAR,
+                usuarioId: req.user.id,
+                vinculo: req.body.vinculo || null,
+                origem: req.get('origin') || null
+            });
+
+            return res.status(200).json({ sucesso: true, url });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /**
+     * Segundo passo: o Site apresenta o código de volta do Google. Além das conferências do
+     * `concluir` (assinatura, vínculo com o navegador, uso único), o código tem de ser de
+     * **vinculação** e ter sido pedido por **esta** sessão: um código de login, ou o de outra pessoa,
+     * não vincula nada.
      */
     async vincular(req, res, next) {
         let reservado = null;
 
         try {
             const conteudo = lerCodigoDeEntrega(req.body.codigo);
+
+            if (conteudo.intencao !== INTENCAO_VINCULAR || conteudo.usuarioId !== req.user.id) {
+                throw ErroApi.requisicaoInvalida(CODIGO_DE_OUTRO_FLUXO);
+            }
+
             conferirVinculo(conteudo.vinculo, req.body.vinculo);
 
             if (!codigosDeEntregaUsados.reservar(conteudo.jti, conteudo.exp)) {
@@ -201,14 +257,25 @@ class GoogleAuthController {
             reservado = conteudo.jti;
 
             await GoogleAuthService.vincular(req.user.id, conteudo.perfil);
-            const usuario = await AutenticacaoService.perfilAtual(req.user.id);
 
-            return res.status(200).json({ sucesso: true, usuario });
+            return res.status(200).json({ sucesso: true, vinculado: true });
         } catch (erro) {
             if (reservado) {
                 codigosDeEntregaUsados.liberar(reservado);
             }
 
+            return next(erro);
+        }
+    }
+
+    /** Desfaz o vínculo, também com a senha atual. */
+    async desvincular(req, res, next) {
+        try {
+            await AutenticacaoService.conferirSenhaAtual(req.user.id, req.body.senha);
+            await GoogleAuthService.desvincular(req.user.id);
+
+            return res.status(200).json({ sucesso: true, vinculado: false });
+        } catch (erro) {
             return next(erro);
         }
     }

@@ -21,6 +21,13 @@ import ErroApi from "./ErroApi.js";
 export const SEGUNDOS_CODIGO_DE_ENTREGA = 120;
 export const SEGUNDOS_PROVA = 15 * 60;
 
+/**
+ * O fluxo de vincular um Google a uma conta que já existe (Configurações → Segurança) usa o mesmo
+ * caminho do login, mas o `state` e o código de entrega levam esta intenção e o id de quem pediu.
+ * Assim um código de login não vincula nada, e um código de vinculação não abre sessão.
+ */
+export const INTENCAO_VINCULAR = "vincular";
+
 const AUDIENCIA_ENTREGA = "acesso:google:entrega";
 const AUDIENCIA_PROVA = "acesso:google:prova";
 
@@ -50,21 +57,33 @@ export function conferirVinculo(hashNoCodigo, segredoApresentado) {
     }
 }
 
-export function assinarCodigoDeEntrega({ perfil, tipoConta, vinculo }) {
-    return jwt.sign({ perfil, tipoConta, vinculo }, env.jwt.secret, {
+/** `intencao` e `usuarioId` andam juntos: ou os dois (vinculação) ou nenhum (login e cadastro). */
+export const intencaoValida = (intencao, usuarioId) =>
+    intencao == null ? usuarioId == null : intencao === INTENCAO_VINCULAR && typeof usuarioId === "string" && usuarioId !== "";
+
+export function assinarCodigoDeEntrega({ perfil, tipoConta, vinculo, intencao = null, usuarioId = null }) {
+    return jwt.sign({ perfil, tipoConta, vinculo, intencao, usuarioId }, env.jwt.secret, {
         expiresIn: SEGUNDOS_CODIGO_DE_ENTREGA,
         audience: AUDIENCIA_ENTREGA,
         jwtid: crypto.randomUUID()
     });
 }
 
-/** Lê o código de entrega e devolve o conteúdo (`perfil`, `tipoConta`, `vinculo`, `jti`, `exp`). */
+/**
+ * Lê o código de entrega e devolve o conteúdo (`perfil`, `tipoConta`, `vinculo`, `intencao`,
+ * `usuarioId`, `jti`, `exp`).
+ */
 export function lerCodigoDeEntrega(codigo) {
     try {
         const conteudo = jwt.verify(codigo, env.jwt.secret, { audience: AUDIENCIA_ENTREGA });
 
-        if (!conteudo?.perfil?.sub || !vinculoValido(conteudo.vinculo) || !conteudo.jti) {
-            throw new Error("código sem perfil, vínculo ou identificador");
+        if (
+            !conteudo?.perfil?.sub ||
+            !vinculoValido(conteudo.vinculo) ||
+            !conteudo.jti ||
+            !intencaoValida(conteudo.intencao, conteudo.usuarioId)
+        ) {
+            throw new Error("código sem perfil, vínculo, identificador ou com intenção inválida");
         }
 
         return conteudo;

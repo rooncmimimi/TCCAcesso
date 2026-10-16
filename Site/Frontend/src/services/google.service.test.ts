@@ -7,11 +7,14 @@ import { webcrypto } from "node:crypto";
  * verdade.
  */
 
-const { get, post } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
+const { get, post, apagar } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), apagar: vi.fn() }));
 
-vi.mock("@/services/api", () => ({ default: { get, post } }));
+vi.mock("@/services/api", async (original) => ({
+  ...(await original<typeof import("@/services/api")>()),
+  default: { get, post, delete: apagar },
+}));
 
-const { googleService, perfilDaProvaGoogle } = await import("./google.service");
+const { googleService, mensagemDeErroGoogle, perfilDaProvaGoogle } = await import("./google.service");
 const { hashDoVinculo, lerVinculo, limparVinculo, ErroGoogleNavegador } = await import("@/lib/googleNavegador");
 
 beforeEach(() => {
@@ -107,9 +110,76 @@ describe("vincular", () => {
     await googleService.urlDeAutorizacao();
     const segredo = lerVinculo();
 
-    await expect(googleService.vincular("codigo")).resolves.toEqual({ id: "u1" });
+    await expect(googleService.vincular("codigo")).resolves.toBeUndefined();
 
     expect(post).toHaveBeenCalledWith("/auth/google/vincular", { codigo: "codigo", vinculo: segredo });
+  });
+});
+
+describe("conta", () => {
+  it("devolve a situação do Google nesta conta", async () => {
+    get.mockResolvedValue({ data: { sucesso: true, disponivel: true, elegivel: true, vinculado: false } });
+
+    await expect(googleService.conta()).resolves.toEqual({ disponivel: true, elegivel: true, vinculado: false });
+    expect(get).toHaveBeenCalledWith("/auth/google/conta");
+  });
+});
+
+describe("iniciarVinculo (passo 1: senha atual e URL do Google)", () => {
+  it("manda a senha e o hash do segredo da aba, e devolve a URL do Google", async () => {
+    post.mockResolvedValue({ data: { url: "https://accounts.google.com/y" } });
+
+    await expect(googleService.iniciarVinculo("Senha@1234")).resolves.toBe("https://accounts.google.com/y");
+
+    const [rota, corpo] = post.mock.calls[0];
+    const segredo = lerVinculo()!;
+    expect(rota).toBe("/auth/google/vincular/iniciar");
+    expect(corpo.senha).toBe("Senha@1234");
+    expect(corpo.vinculo).toBe(await hashDoVinculo(segredo));
+    expect(JSON.stringify(corpo)).not.toContain(segredo);
+  });
+
+  it("descarta o segredo da aba quando o servidor recusa (senha errada)", async () => {
+    post.mockRejectedValue({ response: { status: 403, data: { mensagem: "Senha incorreta." } } });
+
+    await expect(googleService.iniciarVinculo("errada")).rejects.toBeDefined();
+
+    expect(lerVinculo()).toBeNull();
+  });
+
+  it("não chama o servidor, nem manda a senha, se o navegador não consegue guardar o segredo", async () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("cheio", "QuotaExceededError");
+    });
+
+    await expect(googleService.iniciarVinculo("Senha@1234")).rejects.toBeInstanceOf(ErroGoogleNavegador);
+    expect(post).not.toHaveBeenCalled();
+  });
+});
+
+describe("desvincular", () => {
+  it("manda a senha no corpo do DELETE", async () => {
+    apagar.mockResolvedValue({ data: { sucesso: true } });
+
+    await googleService.desvincular("Senha@1234");
+
+    expect(apagar).toHaveBeenCalledWith("/auth/google/vinculo", { data: { senha: "Senha@1234" } });
+  });
+});
+
+describe("mensagemDeErroGoogle", () => {
+  it("mostra a mensagem do servidor para erro da pessoa ou da conta (4xx)", () => {
+    expect(mensagemDeErroGoogle({ response: { status: 403, data: { mensagem: "Senha incorreta." } } }, "padrão")).toBe(
+      "Senha incorreta."
+    );
+  });
+
+  it.each([[500], [503]])("não mostra a mensagem de um erro %i do servidor", (status) => {
+    expect(mensagemDeErroGoogle({ response: { status, data: { mensagem: "detalhe interno" } } }, "padrão")).toBe("padrão");
+  });
+
+  it("usa o padrão quando não houve resposta (rede)", () => {
+    expect(mensagemDeErroGoogle(new Error("rede"), "padrão")).toBe("padrão");
   });
 });
 

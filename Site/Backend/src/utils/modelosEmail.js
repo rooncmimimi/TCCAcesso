@@ -227,6 +227,33 @@ export function modeloEmpresaSuspensa({ nome, motivo }) {
     return { assunto, html, texto };
 }
 
+/** E-mail de aviso quando um Google é vinculado à conta ou desvinculado dela. */
+export function modeloContaGoogle({ nome, acao }) {
+    const vinculada = acao === "vinculada";
+    const assunto = vinculada
+        ? "Um Google foi vinculado à sua conta — ACESSO"
+        : "O Google foi desvinculado da sua conta — ACESSO";
+    const titulo = vinculada ? "Conta Google vinculada" : "Conta Google desvinculada";
+    const frase = vinculada
+        ? "Uma conta Google foi vinculada à sua conta ACESSO. A partir de agora, ela também serve para entrar."
+        : "O Google foi desvinculado da sua conta ACESSO. Você entra apenas com e-mail e senha.";
+    const corpoHtml = `
+      <p style="margin:0;">${escaparHtml(frase)}</p>
+      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Se você não fez isso, troque sua senha imediatamente, encerre as outras sessões em Configurações e entre em contato com o suporte do ACESSO.</p>
+    `;
+    const html = layoutBase({
+        titulo,
+        saudacao: nome ? `Olá, ${nome}!` : "Olá!",
+        corpoHtml
+    });
+    const texto =
+        `${assunto}\n\n` +
+        `${frase}\n` +
+        `Se você não fez isso, troque sua senha imediatamente, encerre as outras sessões em Configurações e contate o suporte.`;
+
+    return { assunto, html, texto };
+}
+
 /** E-mail de aviso após troca de senha bem-sucedida. */
 export function modeloSenhaAlterada({ nome }) {
     const assunto = "Sua senha foi alterada — ACESSO";

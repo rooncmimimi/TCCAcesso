@@ -29,7 +29,11 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/hooks/useSessao", () => ({ useSessao: () => ({ iniciarSessao }) }));
-vi.mock("@/services/google.service", () => ({ default: { concluir } }));
+// O resto do módulo (como `mensagemDeErroGoogle`) é o de verdade; só o serviço HTTP é simulado.
+vi.mock("@/services/google.service", async (original) => ({
+  ...(await original<typeof import("@/services/google.service")>()),
+  default: { concluir },
+}));
 
 const { Route } = await import("./retorno-google");
 const { lerProva, lerVinculo, limparVinculo, prepararVinculo } = await import("@/lib/googleNavegador");
@@ -381,12 +385,13 @@ describe("desfecho conflito", () => {
     expect(lerVinculo()).toBeNull();
   });
 
-  it("não promete uma tela de vincular que não existe", async () => {
+  // Achado 7: a tela que o texto promete agora existe (Configurações, Segurança, Contas conectadas).
+  it("aponta para a tela onde o Google pode ser vinculado depois de entrar com a senha", async () => {
     concluir.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
     abrir({ codigo: "c" });
 
     await screen.findByRole("heading", { name: "Esta conta já existe no ACESSO" });
-    expect(screen.queryByText(/vincular o Google nas configurações/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/vincular o Google em Configurações, Segurança, Contas conectadas/)).toBeInTheDocument();
   });
 });
 

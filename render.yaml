@@ -49,3 +49,13 @@ services:
         sync: false
       - key: BREVO_REMETENTE_NOME
         value: ACESSO
+      # "Continuar com Google". Sem as três, o backend responde `disponivel: false` e o botão não
+      # aparece no Site. O passo a passo no Google Cloud Console está em Site/Backend/.env.example;
+      # o GOOGLE_REDIRECT_URI é https://<este-servico>.onrender.com/api/auth/google/callback e
+      # precisa ser idêntico ao cadastrado lá.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false

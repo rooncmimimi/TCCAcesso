@@ -1,5 +1,5 @@
 /**
- * Termos de Uso e Aviso de Privacidade do ACESSO.
+ * Termos de Uso e Política de Privacidade do ACESSO.
  *
  * O conteúdo descreve o que a plataforma realmente faz: cada dado citado existe no banco, cada
  * serviço externo citado está configurado, e cada direito descrito corresponde a uma tela ou a um
@@ -13,7 +13,7 @@
  * depois qual texto cada pessoa aceitou. **Mude a versão sempre que mudar o conteúdo** — senão o
  * registro de aceite passa a apontar para um texto que não é mais o que foi aceito.
  */
-export const VERSAO_DOCUMENTOS = "2026-10-13";
+export const VERSAO_DOCUMENTOS = "2026-10-20";
 
 /** Quando `true`, as telas avisam que o documento ainda não vale. */
 export const CONTEUDO_PENDENTE = false;
@@ -82,7 +82,7 @@ export const TERMOS_DE_USO: DocumentoLegal = {
       paragrafos: [
         "Você pode pausar a conta a qualquer momento: ela deixa de aparecer para outras pessoas e é reativada quando você entrar de novo e confirmar.",
         "Você também pode excluir a conta definitivamente. A exclusão apaga seu perfil, currículo, candidaturas, publicações, mensagens e preferências. É irreversível.",
-        "Podem permanecer, pelo tempo necessário: registros que a lei obrigue a guardar, e dados estritamente necessários à defesa em processo. O detalhe está no Aviso de Privacidade.",
+        "Podem permanecer, pelo tempo necessário: registros que a lei obrigue a guardar, e dados estritamente necessários à defesa em processo. O detalhe está na Política de Privacidade.",
       ],
     },
     {
@@ -97,9 +97,9 @@ export const TERMOS_DE_USO: DocumentoLegal = {
     {
       titulo: "8. Mudanças nestes Termos",
       paragrafos: [
-        "Estes Termos podem mudar. Cada versão tem um identificador, e o ACESSO registra qual versão você aceitou e quando.",
-        "Quando houver mudança relevante, você será avisado na plataforma e precisará aceitar a nova versão para continuar usando.",
-        "Continuar usando a plataforma depois do aviso significa concordar com a versão nova.",
+        "Estes Termos podem mudar. Cada versão tem um identificador, e o ACESSO registra qual versão você aceitou ao criar a conta e quando.",
+        "Quando houver mudança relevante, o ACESSO avisará pelo e-mail cadastrado ou na própria plataforma, informando a data em que a nova versão passa a valer.",
+        "Continuar usando a plataforma depois dessa data significa concordar com a versão nova. Se você não concordar, pode excluir a conta, como descrito no item 6.",
       ],
     },
     {
@@ -112,9 +112,9 @@ export const TERMOS_DE_USO: DocumentoLegal = {
   ],
 };
 
-export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
+export const POLITICA_DE_PRIVACIDADE: DocumentoLegal = {
   chave: "privacidade",
-  titulo: "Aviso de Privacidade",
+  titulo: "Política de Privacidade",
   resumo: `Como o ACESSO trata os seus dados pessoais. Versão ${VERSAO_DOCUMENTOS}.`,
   secoes: [
     {
@@ -127,7 +127,7 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
     {
       titulo: "2. Quais dados são coletados",
       paragrafos: [
-        "Ao criar a conta: nome completo, e-mail, telefone, CPF, país, data de nascimento, cidade e estado, além da senha, que é guardada apenas como hash e nunca em texto.",
+        "Ao criar a conta: nome completo, e-mail, telefone, CPF, data de nascimento, cidade e estado, além da senha, que é guardada apenas como hash e nunca em texto. O cadastro não pergunta o país: o ACESSO registra o Brasil em todas as contas.",
         "No perfil profissional, se você quiser preencher: título profissional, escolaridade, resumo, experiências, formações, habilidades, certificados, LinkedIn, GitHub, disponibilidade, pretensão salarial, foto e capa.",
         "Currículo: o arquivo que você enviar, quando enviar. É opcional.",
         "Declaração de deficiência e necessidades de acessibilidade, se você quiser declarar. São dados sensíveis e recebem o tratamento descrito no item 4.",
@@ -140,19 +140,19 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
     {
       titulo: "3. Por que cada dado é pedido, e com qual base legal",
       paragrafos: [
-        "Executar o contrato (art. 7º, V): nome, e-mail, senha, telefone, localidade, perfil profissional, currículo, candidaturas e mensagens. Sem eles a plataforma não funciona.",
-        "Cumprir obrigação legal e prevenir fraude (art. 7º, II e art. 11, II, 'g'): CPF e CNPJ, guardados cifrados, para evitar contas duplicadas e confirmar que a empresa existe.",
-        "Consentimento (art. 7º, I e art. 11, I): declaração de deficiência, necessidades de acessibilidade e data de nascimento quando usada para vagas afirmativas. Você escolhe informar, e pode retirar a qualquer momento.",
-        "Legítimo interesse (art. 7º, IX): segurança da conta, moderação de conteúdo, registros de auditoria e melhoria da plataforma.",
+        "Executar o contrato (art. 7º, V): nome, e-mail, senha, telefone, data de nascimento, localidade, perfil profissional, currículo, candidaturas e mensagens. Sem eles a plataforma não funciona; por isso são obrigatórios no cadastro os dados da conta e os dados pessoais, e opcionais o currículo e a foto.",
+        "Legítimo interesse (art. 7º, IX): CPF e CNPJ, guardados cifrados, para evitar contas duplicadas e confirmar que a empresa existe; e também segurança da conta, moderação de conteúdo, registros de auditoria e melhoria da plataforma.",
+        "Consentimento (art. 7º, I e art. 11, I): declaração de deficiência e demais informações sensíveis que você escolher colocar no perfil. Você escolhe informar, e pode retirar a qualquer momento.",
       ],
     },
     {
       titulo: "4. Dados sensíveis: deficiência e acessibilidade",
       paragrafos: [
         "Declarar deficiência é sempre opcional. A plataforma funciona sem essa informação.",
-        "A declaração serve para cruzar o seu perfil com vagas afirmativas e para adaptar a experiência às suas necessidades. Não é usada para pontuar, classificar ou restringir o seu acesso a nada.",
-        "Empresas só veem essa informação quando você se candidata a uma vaga delas, e apenas para conduzir aquele processo seletivo. Nunca em listagens abertas nem em busca de talentos.",
-        "Você pode remover a declaração a qualquer momento no seu perfil, e ela deixa de ser considerada imediatamente.",
+        "A deficiência que você declara faz parte do seu perfil: ela aparece na seção de deficiências e fica visível para quem puder ver o seu perfil, inclusive empresas. Se não quiser que apareça, não declare, ou remova a declaração.",
+        "O ACESSO não usa a declaração para pontuar ou classificar candidaturas.",
+        "As preferências de acessibilidade da plataforma (contraste, tamanho de letra, leitura por voz, VLibras e semelhantes) são outra coisa: ficam na sua conta só para a tela abrir do jeito que você configurou, e não são exibidas no seu perfil.",
+        "Você pode remover a declaração de deficiência a qualquer momento no seu perfil, e ela deixa de aparecer imediatamente.",
       ],
     },
     {
@@ -161,7 +161,8 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
         "Empresas: quando você se candidata a uma vaga, a empresa daquela vaga recebe seu perfil, seu currículo e os dados necessários ao processo. Sem candidatura, uma empresa vê apenas o que o seu perfil mostra publicamente.",
         "Outras pessoas: o que você publica na comunidade e o seu perfil público ficam visíveis para quem suas configurações de privacidade permitirem. Você controla isso em Configurações › Privacidade.",
         "Provedores de infraestrutura, que tratam dados apenas para operar o serviço: Supabase (banco de dados e armazenamento de arquivos), Render (servidor da aplicação), Vercel (hospedagem do site), Brevo (envio de e-mails de confirmação e recuperação de senha) e Expo (entrega de notificações push).",
-        "Google: apenas se você optar por entrar com uma conta Google. O ACESSO recebe do Google o identificador da conta, o e-mail e o nome, e envia a ele apenas o necessário para a autenticação.",
+        "Google (entrar com a conta Google): apenas se você optar por esse caminho. O ACESSO recebe do Google o identificador da conta, o e-mail e o nome, e envia a ele apenas o necessário para a autenticação.",
+        "Fontes de letra e VLibras: ao abrir o Site, o seu navegador busca as fontes de letra no Google Fonts e a fonte para dislexia no CDNFonts, e esses serviços recebem o seu endereço IP e dados técnicos do navegador, como acontece em qualquer pedido pela internet. Se você ativar o VLibras nas preferências de acessibilidade, o navegador também carrega o tradutor de Libras do Governo Federal (vlibras.gov.br), que passa a receber esses mesmos dados técnicos.",
         "IBGE: a lista de cidades é consultada no serviço público do IBGE para o preenchimento de localidade. Nenhum dado seu é enviado nessa consulta.",
         "Descrição automática de imagens: se você pedir uma sugestão de texto alternativo para uma imagem, aquela imagem é enviada a um serviço externo de inteligência artificial (OpenRouter) só para gerar a sugestão. É uma ação sua, nunca automática, e nenhum outro dado do seu perfil acompanha a imagem.",
         "Autoridades: mediante ordem judicial ou requisição legal, na medida exigida.",
@@ -204,10 +205,10 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       ],
     },
     {
-      titulo: "10. Mudanças neste Aviso",
+      titulo: "10. Mudanças nesta Política",
       paragrafos: [
-        "Este Aviso pode mudar. Cada versão tem um identificador, e o ACESSO registra qual versão você aceitou e quando.",
-        "Mudanças relevantes são comunicadas na plataforma antes de passarem a valer.",
+        "Esta Política pode mudar. Cada versão tem um identificador, e o ACESSO registra qual versão você aceitou ao criar a conta e quando.",
+        "Mudanças relevantes são comunicadas pelo e-mail cadastrado ou na plataforma, com a data em que passam a valer.",
       ],
     },
   ],
@@ -215,5 +216,5 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
 
 export const DOCUMENTOS: Record<DocumentoLegal["chave"], DocumentoLegal> = {
   termos: TERMOS_DE_USO,
-  privacidade: AVISO_DE_PRIVACIDADE,
+  privacidade: POLITICA_DE_PRIVACIDADE,
 };

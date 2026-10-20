@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import type { Candidato } from "@/types";
+import { useT } from "@/i18n";
 
 /**
  * Deficiências vinculadas ao candidato: "quando aplicável", conforme o próprio
@@ -38,6 +39,10 @@ export function SecaoDeficiencias({
   candidato: Candidato;
   somenteLeitura?: boolean;
 }) {
+  const t = useT();
+  const td = t.perfilItens.deficiencias;
+  // O catálogo vem do banco em português; o que não estiver no dicionário aparece como veio.
+  const nomeDe = (nome: string) => td.catalogo[nome] ?? nome;
   const [aberto, setAberto] = useState(false);
   const [deficienciaId, setDeficienciaId] = useState<string>("");
   const queryClient = useQueryClient();
@@ -55,21 +60,21 @@ export function SecaoDeficiencias({
     mutationFn: (payload: { deficienciaId: string; observacoes?: string }) =>
       perfilService.adicionarDeficiencia(candidato.id, payload),
     onSuccess: () => {
-      toast.success("Deficiência adicionada ao perfil.");
+      toast.success(td.adicionada);
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
       setAberto(false);
       setDeficienciaId("");
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível adicionar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, td.erroAdicionar)),
   });
 
   const remover = useMutation({
     mutationFn: (id: string) => perfilService.removerDeficiencia(candidato.id, id),
     onSuccess: () => {
-      toast.success("Deficiência removida do perfil.");
+      toast.success(td.removida);
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, td.erroRemover)),
   });
 
   function enviar(evento: React.FormEvent<HTMLFormElement>) {
@@ -90,35 +95,35 @@ export function SecaoDeficiencias({
     <section aria-labelledby="secao-deficiencias" className="border-t pt-6">
       <div className="flex items-center justify-between gap-3">
         <h2 id="secao-deficiencias" className="text-lg font-bold">
-          Informações de acessibilidade
+          {td.titulo}
         </h2>
         {somenteLeitura ? null : (
           <Dialog open={aberto} onOpenChange={setAberto}>
             <DialogTrigger asChild>
               <Button type="button" size="sm" variant="outline" className="min-h-9 gap-1">
-                <Plus className="size-4" aria-hidden="true" /> Adicionar
+                <Plus className="size-4" aria-hidden="true" /> {td.adicionar}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Adicionar deficiência ao perfil</DialogTitle>
+                <DialogTitle>{td.dialogTitulo}</DialogTitle>
               </DialogHeader>
               <form onSubmit={enviar} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="deficienciaId">Deficiência</Label>
+                  <Label htmlFor="deficienciaId">{td.deficiencia}</Label>
                   <Select value={deficienciaId} onValueChange={setDeficienciaId}>
                     <SelectTrigger id="deficienciaId">
-                      <SelectValue placeholder="Selecione uma opção" />
+                      <SelectValue placeholder={td.escolha} />
                     </SelectTrigger>
                     <SelectContent>
                       {disponiveis.length === 0 ? (
                         <SelectItem value="_vazio" disabled>
-                          Nenhuma opção disponível
+                          {td.nenhumaOpcao}
                         </SelectItem>
                       ) : (
                         disponiveis.map((d) => (
                           <SelectItem key={d.id} value={d.id}>
-                            {d.nome}
+                            {nomeDe(d.nome)}
                           </SelectItem>
                         ))
                       )}
@@ -126,16 +131,16 @@ export function SecaoDeficiencias({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações (opcional)</Label>
+                  <Label htmlFor="observacoes">{td.observacoes}</Label>
                   <Textarea id="observacoes" name="observacoes" rows={3} maxLength={1000} />
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-                    Cancelar
+                    {t.comum.cancelar}
                   </Button>
                   <Button type="submit" disabled={!deficienciaId || adicionar.isPending} className="min-h-11 gap-2">
                     {adicionar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                    Adicionar
+                    {td.adicionar}
                   </Button>
                 </DialogFooter>
               </form>
@@ -146,19 +151,18 @@ export function SecaoDeficiencias({
 
       {vinculadas.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          Nenhuma informação de acessibilidade cadastrada. Adicionar é opcional e ajuda empresas a oferecer os
-          recursos certos.
+          {td.vazio}
         </p>
       ) : (
         <ul className="mt-3 flex flex-wrap gap-2">
           {vinculadas.map((d) => (
             <li key={d.id}>
               <Badge variant="secondary" className="min-h-9 gap-2 px-3 text-sm font-semibold">
-                {d.nome}
+                {nomeDe(d.nome)}
                 {somenteLeitura ? null : (
                   <button
                     type="button"
-                    aria-label={`Remover ${d.nome}`}
+                    aria-label={td.removerAria(nomeDe(d.nome))}
                     // Chip compacto (Badge min-h-9) não comporta um alvo de
                     // 44px sem ficar maior que o próprio chip: a margem
                     // negativa expande a área de toque real (mín. 24px, piso

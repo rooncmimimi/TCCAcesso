@@ -1,4 +1,5 @@
 import { formatarData } from "@/utils/formatacao";
+import { dic } from "@/i18n";
 import type { RecursoPerfil } from "@/services/perfil.service";
 import type { Certificado, Experiencia, Formacao, Habilidade } from "@/types";
 
@@ -17,7 +18,7 @@ export function linhaSecundaria(recurso: RecursoPerfil, item: RegistroPerfil): s
   if (recurso === "experiencias") {
     const e = item as Experiencia;
     const periodo = e.atual
-      ? `${formatarData(e.dataInicio)} — atual`
+      ? dic().perfilItens.recursos.periodoAtual(formatarData(e.dataInicio))
       : `${formatarData(e.dataInicio)} — ${e.dataFim ? formatarData(e.dataFim) : "?"}`;
     return `${e.empresa} · ${periodo}`;
   }

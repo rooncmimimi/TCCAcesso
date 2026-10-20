@@ -2,14 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Card } from "@/components/ui/card";
 import { VagasTabela } from "@/components/admin/VagasTabela";
+import { dic, metaPagina, useT } from "@/i18n";
 
 export const Route = createFileRoute("/admin/vagas")({
   head: () => ({
     meta: [
-      { title: "Vagas — Administração ACESSO" },
-      { name: "description", content: "Modere e oculte vagas publicadas na plataforma ACESSO." },
-      { property: "og:title", content: "Vagas — Administração ACESSO" },
-      { property: "og:description", content: "Moderação de vagas publicadas." },
+      ...metaPagina(dic().admin.meta.vagas).meta,
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -18,9 +16,11 @@ export const Route = createFileRoute("/admin/vagas")({
 });
 
 function AdminVagas() {
+  const t = useT();
+
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-extrabold">Vagas</h1>
+      <h1 className="text-3xl font-extrabold">{t.admin.paginas.vagas}</h1>
       <Card className="overflow-hidden p-0 shadow-none">
         <VagasTabela />
       </Card>

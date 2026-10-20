@@ -11,24 +11,16 @@ import { useVoz } from "@/hooks/useVoz";
 import { useSessao } from "@/hooks/useSessao";
 import acessibilidadeService, { preferenciasDaApi, preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
+import { metaPagina, dic, useT } from "@/i18n";
 
 export const Route = createFileRoute("/configuracoes/acessibilidade")({
-  head: () => ({
-    meta: [
-      { title: "Configurações de acessibilidade — ACESSO" },
-      {
-        name: "description",
-        content:
-          "Ajuste contraste, tipografia, espaçamentos, cursor, voz e VLibras com pré-visualização em tempo real.",
-      },
-      { property: "og:title", content: "Configurações de acessibilidade — ACESSO" },
-      { property: "og:description", content: "Personalize a acessibilidade e veja as mudanças na hora." },
-    ],
-  }),
+  head: () => metaPagina(dic().configuracoes.acessibilidade.meta),
   component: ConfiguracoesAcessibilidade,
 });
 
 function ConfiguracoesAcessibilidade() {
+  const t = useT();
+  const ta = t.configuracoes.acessibilidade;
   const { rascunho, definir, salvar, descartar, restaurar, alterado } = useAcessibilidade();
   const { limparEscolha } = useVoz();
   const { usuario, autenticado } = useSessao();
@@ -58,13 +50,9 @@ function ConfiguracoesAcessibilidade() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Configurações de acessibilidade</h1>
+      <h1 className="text-3xl font-extrabold">{ta.titulo}</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">
-        Todas as mudanças aparecem imediatamente na tela. Teste à vontade e salve quando estiver do
-        seu jeito.{" "}
-        {usuario
-          ? "Ao salvar, as preferências ficam vinculadas à sua conta."
-          : "Sem login, as preferências ficam salvas neste dispositivo."}
+        {ta.texto} {usuario ? ta.comConta : ta.semConta}
       </p>
 
       <Card className="mt-6 shadow-card">
@@ -84,19 +72,19 @@ function ConfiguracoesAcessibilidade() {
               try {
                 await acessibilidadeService.salvar(preferenciasParaApi(rascunho));
 
-                toast.success("Preferências de acessibilidade salvas na sua conta.");
+                toast.success(ta.salvoConta);
               } catch (erro) {
-                toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. Ficou salvo neste dispositivo."));
+                toast.error(extrairMensagemErro(erro, ta.erroSalvar));
               } finally {
                 setSalvando(false);
               }
             } else {
-              toast.success("Preferências de acessibilidade salvas neste dispositivo.");
+              toast.success(ta.salvoDispositivo);
             }
           }}
         >
           {salvando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Save aria-hidden="true" />}
-          Salvar preferências
+          {ta.salvar}
         </Button>
         <Button
           variant="outline"
@@ -104,7 +92,7 @@ function ConfiguracoesAcessibilidade() {
           disabled={!alterado}
           onClick={() => descartar()}
         >
-          <Undo2 aria-hidden="true" /> Descartar alterações
+          <Undo2 aria-hidden="true" /> {ta.descartar}
         </Button>
         <Button
           variant="ghost"
@@ -118,16 +106,16 @@ function ConfiguracoesAcessibilidade() {
               try {
                 await acessibilidadeService.restaurar();
               } catch (erro) {
-                toast.error(extrairMensagemErro(erro, "Não foi possível redefinir na sua conta."));
+                toast.error(extrairMensagemErro(erro, ta.erroRedefinir));
               } finally {
                 setRestaurando(false);
               }
             }
-            toast.info("Preferências redefinidas. A pergunta sobre voz será feita novamente.");
+            toast.info(ta.redefinido);
           }}
         >
           {restaurando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RotateCcw aria-hidden="true" />}
-          Redefinir tudo
+          {ta.redefinir}
         </Button>
       </div>
     </EstruturaApp>

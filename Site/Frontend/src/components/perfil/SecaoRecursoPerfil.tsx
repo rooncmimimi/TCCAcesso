@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
+import { useT } from "@/i18n";
 import { FormularioRecursoDialog } from "./FormularioRecursoDialog";
 import { linhaPrincipal, linhaSecundaria, type RegistroPerfil as Registro } from "./formatacaoRecurso";
 
@@ -38,6 +39,8 @@ export function SecaoRecursoPerfil({
   itens?: Registro[];
   somenteLeitura?: boolean;
 }) {
+  const t = useT();
+  const tr = t.perfilItens.recursos;
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
@@ -51,10 +54,10 @@ export function SecaoRecursoPerfil({
   const remover = useMutation({
     mutationFn: (id: string) => perfilService.removerRecurso(recurso, id),
     onSuccess: () => {
-      toast.success("Registro removido.");
+      toast.success(tr.removido);
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso", recurso] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tr.erroRemover)),
   });
 
   if (somenteLeitura && (lista?.length ?? 0) === 0) {
@@ -70,7 +73,7 @@ export function SecaoRecursoPerfil({
         {somenteLeitura ? null : (
           <FormularioRecursoDialog recurso={recurso}>
             <Button type="button" size="sm" variant="outline" className="min-h-9 gap-1">
-              <Plus className="size-4" aria-hidden="true" /> Adicionar
+              <Plus className="size-4" aria-hidden="true" /> {tr.adicionar}
             </Button>
           </FormularioRecursoDialog>
         )}
@@ -78,16 +81,16 @@ export function SecaoRecursoPerfil({
 
       {somenteLeitura ? null : isLoading ? (
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando…
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {tr.carregando}
         </div>
       ) : isError ? (
         <p role="alert" className="py-3 text-sm text-destructive">
-          Não foi possível carregar essa seção.
+          {tr.erro}
         </p>
       ) : null}
 
       {!somenteLeitura && !isLoading && !isError && (!lista || lista.length === 0) ? (
-        <p className="py-3 text-sm text-muted-foreground">Nada cadastrado ainda.</p>
+        <p className="py-3 text-sm text-muted-foreground">{tr.nada}</p>
       ) : null}
 
       {lista && lista.length > 0 ? (
@@ -106,7 +109,7 @@ export function SecaoRecursoPerfil({
                       size="icon"
                       variant="ghost"
                       className="min-h-11 min-w-11"
-                      aria-label={`Editar ${linhaPrincipal(recurso, item)}`}
+                      aria-label={tr.editarAria(linhaPrincipal(recurso, item))}
                     >
                       <Pencil className="size-4" aria-hidden="true" />
                     </Button>
@@ -118,22 +121,21 @@ export function SecaoRecursoPerfil({
                         size="icon"
                         variant="ghost"
                         className="min-h-11 min-w-11 text-destructive hover:text-destructive"
-                        aria-label={`Remover ${linhaPrincipal(recurso, item)}`}
+                        aria-label={tr.removerAria(linhaPrincipal(recurso, item))}
                       >
                         <Trash2 className="size-4" aria-hidden="true" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Remover este registro?</AlertDialogTitle>
+                        <AlertDialogTitle>{tr.removerTitulo}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          "{linhaPrincipal(recurso, item)}" será removido do seu perfil. Essa ação não pode ser
-                          desfeita.
+                          {tr.removerTexto(linhaPrincipal(recurso, item))}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => remover.mutate(item.id)}>Remover</AlertDialogAction>
+                        <AlertDialogCancel>{t.comum.cancelar}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => remover.mutate(item.id)}>{t.comum.remover}</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

@@ -9,6 +9,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { postagensService } from "@/services/postagens.service";
 import { useVoz } from "@/hooks/useVoz";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { useT } from "@/i18n";
 
 type Modo = "escolha" | "ia" | "manual";
 
@@ -29,7 +30,7 @@ export function CampoDescricaoImagem({
   value,
   onChange,
   obterImagem,
-  rotulo = "Descrição da imagem (opcional)",
+  rotulo,
 }: {
   id: string;
   value: string;
@@ -37,6 +38,9 @@ export function CampoDescricaoImagem({
   obterImagem: () => Promise<File | Blob>;
   rotulo?: string;
 }) {
+  const t = useT();
+  const td = t.feed.descricaoImagem;
+  const rotuloFinal = rotulo ?? td.rotuloPadrao;
   const [modo, setModo] = useState<Modo>(value ? "manual" : "escolha");
   const idAnuncio = useId();
   const { falar } = useVoz();
@@ -56,7 +60,7 @@ export function CampoDescricaoImagem({
       // na tela. Nunca fala sozinho se a pessoa desligou esse recurso.
       // Não é um toast: nenhuma duplicação possível aqui.
       if (preferencias.screenReader) {
-        falar(`Sugestão da inteligência artificial: ${descricao}`);
+        falar(td.sugestaoFalada(descricao));
       }
     },
   });
@@ -65,7 +69,7 @@ export function CampoDescricaoImagem({
     return (
       <div className="space-y-2">
         <p id={`${id}-legenda`} className="text-xs font-semibold">
-          Como você deseja descrever esta imagem?
+          {td.comoDescrever}
         </p>
         <div role="group" aria-labelledby={`${id}-legenda`} className="flex flex-wrap gap-2">
           <Button
@@ -78,7 +82,7 @@ export function CampoDescricaoImagem({
               sugerir.mutate();
             }}
           >
-            <Sparkles className="size-3.5" aria-hidden="true" /> Descrever com IA
+            <Sparkles className="size-3.5" aria-hidden="true" /> {td.descreverIA}
           </Button>
           <Button
             type="button"
@@ -87,7 +91,7 @@ export function CampoDescricaoImagem({
             className="h-9 gap-1.5 text-xs"
             onClick={() => setModo("manual")}
           >
-            <Pencil className="size-3.5" aria-hidden="true" /> Escrever minha própria descrição
+            <Pencil className="size-3.5" aria-hidden="true" /> {td.escreverPropria}
           </Button>
         </div>
       </div>
@@ -98,16 +102,12 @@ export function CampoDescricaoImagem({
     return (
       <div className="space-y-2">
         <div id={idAnuncio} role="status" aria-live="polite" className="sr-only">
-          {sugerir.isPending
-            ? "Gerando sugestão de descrição da imagem. Aguarde."
-            : sugerir.isSuccess
-              ? "Sugestão de descrição gerada. Revise o texto antes de confirmar."
-              : ""}
+          {sugerir.isPending ? td.gerando : sugerir.isSuccess ? td.gerada : ""}
         </div>
 
         {sugerir.isPending && (
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> Gerando sugestão de descrição…
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> {td.gerandoVisivel}
           </p>
         )}
 
@@ -115,15 +115,15 @@ export function CampoDescricaoImagem({
           <div role="alert" className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-2">
             <p className="flex items-start gap-1.5 text-xs text-destructive">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Não foi possível gerar a descrição automaticamente. Você pode escrever uma descrição manualmente.
+              {td.erroGerar}
             </p>
             <p className="text-[11px] text-muted-foreground">{extrairMensagemErro(sugerir.error, "")}</p>
             <div className="flex gap-2">
               <Button type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={() => sugerir.mutate()}>
-                <RefreshCw className="size-3.5" aria-hidden="true" /> Tentar novamente
+                <RefreshCw className="size-3.5" aria-hidden="true" /> {t.comum.tentarNovamente}
               </Button>
               <Button type="button" size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setModo("manual")}>
-                Escrever minha própria descrição
+                {td.escreverPropria}
               </Button>
             </div>
           </div>
@@ -132,7 +132,7 @@ export function CampoDescricaoImagem({
         {sugerir.isSuccess && (
           <div className="space-y-1.5">
             <Label htmlFor={id} className="text-xs font-semibold">
-              Sugestão da IA — revise antes de confirmar
+              {td.sugestaoLabel}
             </Label>
             <Input
               id={id}
@@ -151,7 +151,7 @@ export function CampoDescricaoImagem({
                 disabled={sugerir.isPending}
                 onClick={() => sugerir.mutate()}
               >
-                <RefreshCw className="size-3.5" aria-hidden="true" /> Gerar novamente
+                <RefreshCw className="size-3.5" aria-hidden="true" /> {td.gerarNovamente}
               </Button>
               <Button
                 type="button"
@@ -163,7 +163,7 @@ export function CampoDescricaoImagem({
                   setModo("manual");
                 }}
               >
-                <X className="size-3.5" aria-hidden="true" /> Escrever minha própria
+                <X className="size-3.5" aria-hidden="true" /> {td.escreverPropriaCurto}
               </Button>
             </div>
           </div>
@@ -176,13 +176,13 @@ export function CampoDescricaoImagem({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-semibold">
-        {rotulo}
+        {rotuloFinal}
       </Label>
       <Input
         id={id}
         value={value}
         maxLength={500}
-        placeholder="Descreva o que aparece nesta imagem para pessoas que utilizam leitores de tela"
+        placeholder={td.placeholderManual}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 text-xs"
       />
@@ -193,7 +193,7 @@ export function CampoDescricaoImagem({
         className="h-auto p-0 text-xs font-semibold"
         onClick={() => setModo("escolha")}
       >
-        <Sparkles className="size-3.5" aria-hidden="true" /> Descrever com IA em vez disso
+        <Sparkles className="size-3.5" aria-hidden="true" /> {td.iaEmVezDisso}
       </Button>
     </div>
   );

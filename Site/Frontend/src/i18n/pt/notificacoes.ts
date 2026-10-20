@@ -1,0 +1,30 @@
+/** Central de notificações. Título e descrição de cada item vêm prontos do servidor. */
+export const notificacoes = {
+  meta: {
+    titulo: "Notificações — ACESSO",
+    descricao: "Acompanhe candidaturas, vagas compatíveis e novidades da sua rede na plataforma ACESSO.",
+    descricaoSocial: "Novidades sobre suas candidaturas e vagas.",
+  },
+  titulo: "Notificações",
+  carregando: "Carregando…",
+  naoLidas: (n: number) => `${n} não lida${n === 1 ? "" : "s"}`,
+  nenhumaNaoLida: "Nenhuma notificação não lida.",
+  marcarTodas: "Marcar todas como lidas",
+  todasMarcadas: "Todas as notificações foram marcadas como lidas.",
+  carregandoAria: "Carregando notificações",
+  erro: "Não foi possível carregar suas notificações.",
+  vazio: "Você ainda não tem notificações.",
+  lida: "lida",
+  naoLida: "não lida",
+  rotuloItem: (titulo: string, descricao: string, tempo: string, estado: string) =>
+    `${titulo}. ${descricao} ${tempo} — ${estado}.`,
+  marcarLida: (titulo: string) => `Marcar "${titulo}" como lida`,
+  remover: (titulo: string) => `Remover "${titulo}"`,
+  removida: "Notificação removida.",
+  aceitar: "Aceitar",
+  recusar: "Recusar",
+  solicitacaoAceita: "Solicitação aceita",
+  solicitacaoRecusada: "Solicitação recusada",
+  erroAceitar: "Não foi possível aceitar a solicitação.",
+  erroRecusar: "Não foi possível recusar a solicitação.",
+};

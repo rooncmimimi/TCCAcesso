@@ -1,0 +1,81 @@
+/** Perfil pessoal e de empresa, aviso de aprovação e bloqueio. */
+export const perfil = {
+  pessoal: {
+    usuario: "Usuário",
+    editarPerfil: "Editar perfil",
+    adicionarTitulo: "Adicionar título profissional",
+    perfilProfissional: "Perfil profissional",
+    administrador: "Administrador do ACESSO",
+    seguidores: "seguidores",
+    seguindo: "seguindo",
+    sobreMim: "Sobre mim",
+    preferenciasTitulo: "Preferências de acessibilidade",
+    nenhumaPreferencia: "Nenhuma preferência de acessibilidade ativada.",
+    ajustarPreferencias: "Ajustar preferências de acessibilidade",
+    chips: {
+      voz: "Leitura por voz",
+      libras: "Libras (VLibras)",
+      contraste: "Alto contraste",
+      dislexia: "Fonte para dislexia",
+    },
+    carregandoProfissional: "Carregando perfil profissional…",
+    curriculo: "Currículo",
+    enviadoEm: (data: string) => ` · enviado em ${data}`,
+    nenhumCurriculo: "Nenhum currículo enviado ainda.",
+    atualizarCurriculo: "Atualizar currículo",
+    enviarCurriculo: "Enviar currículo",
+    importarDados: "Importar dados do currículo",
+    experiencia: "Experiência profissional",
+    formacao: "Formação acadêmica",
+    habilidades: "Habilidades",
+    certificados: "Certificados",
+    publicacoes: "Publicações",
+    curriculoEnviado: "Currículo enviado.",
+    erroEnviarCurriculo: "Não foi possível enviar o currículo.",
+    erroTipoCurriculo: "Envie um arquivo PDF, DOC ou DOCX.",
+  },
+  empresa: {
+    carregando: "Carregando perfil da empresa…",
+    erroProprio: "Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde.",
+    editar: "Editar perfil da empresa",
+    aprovada: "Aprovada",
+    site: "Site",
+    seguidores: (n: number) => `${n} seguidores`,
+    sobre: "Sobre a empresa",
+    cultura: "Cultura de inclusão",
+    vagasPublicadas: "Vagas publicadas",
+    carregandoVagas: "Carregando vagas…",
+    nenhumaVaga: "Nenhuma vaga publicada ainda.",
+    localNaoInformado: "Local não informado",
+  },
+  aviso: {
+    tituloPendente: "Sua empresa está em análise",
+    tituloSuspensa: "Conta empresarial suspensa",
+    tituloReprovada: "Seu cadastro empresarial não foi aprovado",
+    motivo: "Motivo",
+    falaPendente:
+      "Sua empresa está em análise. Seu cadastro foi recebido e está aguardando a aprovação de um administrador do ACESSO. Você receberá uma notificação quando a análise for concluída.",
+    falaSuspensa: (motivo: string) =>
+      `Conta empresarial suspensa. Sua empresa foi suspensa pela moderação do ACESSO.${motivo ? ` Motivo: ${motivo}` : ""}`,
+    falaReprovada: (motivo: string) =>
+      `Seu cadastro empresarial não foi aprovado.${motivo ? ` Motivo: ${motivo}` : ""}`,
+    textoPendente:
+      "Seu cadastro foi recebido e está aguardando a aprovação de um administrador do ACESSO. Você receberá uma notificação quando a análise for concluída. Enquanto isso, publicar vagas, editar o perfil da empresa e visualizar candidaturas ficam indisponíveis.",
+    textoSuspensa:
+      "Sua empresa foi suspensa pela moderação do ACESSO. Enquanto a suspensão estiver ativa, o acesso à plataforma permanece bloqueado.",
+    textoReprovada:
+      "A equipe do ACESSO analisou seu cadastro e ele não foi aprovado. Os recursos empresariais (publicar vagas, editar o perfil, visualizar candidaturas) ficam indisponíveis enquanto esse status não mudar.",
+  },
+  bloquear: {
+    maisOpcoes: "Mais opções",
+    bloquearUsuario: "Bloquear usuário",
+    denunciarEmpresa: "Denunciar empresa",
+    denunciarUsuario: "Denunciar usuário",
+    titulo: (nome: string) => `Bloquear ${nome}?`,
+    texto: (nome: string) =>
+      `${nome} não vai mais conseguir ver seu perfil, seguir você ou enviar mensagens — e o mesmo vale para você em relação a ${nome}. Você pode desbloquear depois em Configurações → Privacidade.`,
+    bloqueado: (nome: string) => `${nome} foi bloqueado(a).`,
+    erro: "Não foi possível bloquear este usuário.",
+    bloquear: "Bloquear",
+  },
+};

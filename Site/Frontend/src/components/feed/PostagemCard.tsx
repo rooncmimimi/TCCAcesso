@@ -27,6 +27,7 @@ import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
 import { urlArquivo } from "@/utils/arquivos";
 import { formatarTempoRelativo } from "@/utils/formatacao";
+import { useT } from "@/i18n";
 import type { PostagemCompleta } from "@/types";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
@@ -48,6 +49,8 @@ export function PostagemCard({
   postagem: PostagemCompleta;
   mostrarComentariosAbertos?: boolean;
 }) {
+  const t = useT();
+  const tc = t.feed.card;
   const { usuario } = useSessao();
   const autor = postagem.usuario ?? postagem.autor;
   const ehAutor = autor?.id === usuario?.id;
@@ -82,24 +85,24 @@ export function PostagemCard({
             <LinkAutor
               autorId={autor?.id}
               className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              ariaLabel={`Ver perfil de ${autor?.nome ?? "usuário"}`}
+              ariaLabel={tc.verPerfilDe(autor?.nome ?? t.feed.usuarioMin)}
             >
               <Avatar className="size-11">
                 <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
                 <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-                  {iniciaisDoNome(autor?.nome ?? "Usuário")}
+                  {iniciaisDoNome(autor?.nome ?? t.feed.usuarioMai)}
                 </AvatarFallback>
               </Avatar>
             </LinkAutor>
             <div className="min-w-0">
               <h2 id={`autor-${postagem.id}`} className="truncate text-base font-bold">
                 <LinkAutor autorId={autor?.id} className="hover:underline focus-visible:underline">
-                  {autor?.nome ?? "Usuário"}
+                  {autor?.nome ?? t.feed.usuarioMai}
                 </LinkAutor>
               </h2>
               <p className="truncate text-sm text-muted-foreground">
                 {formatarTempoRelativo(postagem.criadoEm ?? postagem.criadoEm)}
-                {postagem.editadoEm ? " · editado" : ""}
+                {postagem.editadoEm ? tc.editado : ""}
               </p>
             </div>
             {usuario && (
@@ -110,7 +113,7 @@ export function PostagemCard({
                     variant="ghost"
                     size="icon"
                     className="min-h-11 min-w-11"
-                    aria-label="Mais opções da publicação"
+                    aria-label={tc.maisOpcoes}
                   >
                     <MoreVertical className="size-4" aria-hidden="true" />
                   </Button>
@@ -118,31 +121,30 @@ export function PostagemCard({
                 <DropdownMenuContent align="end">
                   {ehAutor ? (
                     <>
-                      <DropdownMenuItem onSelect={() => setEditando(true)}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setEditando(true)}>{t.comum.editar}</DropdownMenuItem>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onSelect={(e) => e.preventDefault()}
                           >
-                            Excluir
+                            {t.comum.excluir}
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir publicação?</AlertDialogTitle>
+                            <AlertDialogTitle>{tc.excluirTitulo}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. A publicação, seus anexos, curtidas e comentários
-                              serão removidos permanentemente.
+                              {tc.excluirTexto}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+                            <AlertDialogCancel className="min-h-11">{t.comum.cancelar}</AlertDialogCancel>
                             <AlertDialogAction
                               className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               onClick={() => remover.mutate(postagem.id)}
                             >
-                              Excluir
+                              {t.comum.excluir}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -153,7 +155,7 @@ export function PostagemCard({
                       className="text-destructive focus:text-destructive"
                       onSelect={() => setDenunciando(true)}
                     >
-                      Denunciar
+                      {tc.denunciar}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -176,7 +178,7 @@ export function PostagemCard({
           {editando ? (
             <div className="mt-4 space-y-2">
               <label htmlFor={`editar-${postagem.id}`} className="sr-only">
-                Editar publicação
+                {tc.editarPublicacao}
               </label>
               <Textarea
                 id={`editar-${postagem.id}`}
@@ -191,7 +193,7 @@ export function PostagemCard({
                   onClick={salvarEdicao}
                   disabled={atualizar.isPending || !textoEdicao.trim()}
                 >
-                  Salvar
+                  {t.comum.salvar}
                 </Button>
                 <Button
                   variant="outline"
@@ -202,7 +204,7 @@ export function PostagemCard({
                     setTextoEdicao(postagem.conteudo);
                   }}
                 >
-                  Cancelar
+                  {t.comum.cancelar}
                 </Button>
               </div>
             </div>
@@ -217,38 +219,36 @@ export function PostagemCard({
               variant="ghost"
               className="min-h-11 gap-2"
               aria-pressed={Boolean(postagem.curtidoPorMim)}
-              aria-label={`${postagem.curtidoPorMim ? "Descurtir" : "Curtir"} publicação de ${autor?.nome ?? "usuário"}. ${postagem.totalCurtidas ?? 0} curtida${(postagem.totalCurtidas ?? 0) === 1 ? "" : "s"}.`}
+              aria-label={tc.curtirAria(Boolean(postagem.curtidoPorMim), autor?.nome ?? t.feed.usuarioMin, postagem.totalCurtidas ?? 0)}
               onClick={() => curtir.mutate(postagem.id)}
             >
               <ThumbsUp
                 className={`size-4 ${postagem.curtidoPorMim ? "fill-primary text-primary" : ""}`}
                 aria-hidden="true"
               />
-              <span aria-hidden="true">Curtir ({postagem.totalCurtidas ?? 0})</span>
+              <span aria-hidden="true">{tc.curtirBotao(postagem.totalCurtidas ?? 0)}</span>
             </Button>
             <Button
               variant="ghost"
               className="min-h-11 gap-2"
               aria-expanded={comentariosAbertos}
-              aria-label={`${comentariosAbertos ? "Fechar" : "Abrir"} comentários. ${postagem.totalComentarios ?? 0} comentário${(postagem.totalComentarios ?? 0) === 1 ? "" : "s"}.`}
+              aria-label={tc.comentariosAria(comentariosAbertos, postagem.totalComentarios ?? 0)}
               onClick={() => setComentariosAbertos((v) => !v)}
             >
               <MessageCircle className="size-4" aria-hidden="true" />
-              <span aria-hidden="true">
-                Comentar ({postagem.totalComentarios ?? 0})
-              </span>
+              <span aria-hidden="true">{tc.comentarBotao(postagem.totalComentarios ?? 0)}</span>
             </Button>
             {postagem.compartilhadaPorMim ? (
               <Button
                 variant="ghost"
                 className="min-h-11 gap-2"
-                aria-label="Desfazer compartilhamento desta publicação."
+                aria-label={tc.desfazerAria}
                 onClick={() =>
                   desfazerCompartilhamento.mutate({ id: postagem.id, postagemId: postagem.id })
                 }
               >
                 <Undo2 className="size-4" aria-hidden="true" />
-                <span aria-hidden="true">Desfazer compartilhamento</span>
+                <span aria-hidden="true">{tc.desfazer}</span>
               </Button>
             ) : (
               <CompartilharDialog
@@ -257,12 +257,10 @@ export function PostagemCard({
                   <Button
                     variant="ghost"
                     className="min-h-11 gap-2"
-                    aria-label={`Compartilhar publicação de ${autor?.nome ?? "usuário"}. ${postagem.totalCompartilhamentos ?? 0} compartilhamento${(postagem.totalCompartilhamentos ?? 0) === 1 ? "" : "s"}.`}
+                    aria-label={tc.compartilharAria(autor?.nome ?? t.feed.usuarioMin, postagem.totalCompartilhamentos ?? 0)}
                   >
                     <Share2 className="size-4" aria-hidden="true" />
-                    <span aria-hidden="true">
-                      Compartilhar ({postagem.totalCompartilhamentos ?? 0})
-                    </span>
+                    <span aria-hidden="true">{tc.compartilharBotao(postagem.totalCompartilhamentos ?? 0)}</span>
                   </Button>
                 }
               />
@@ -271,9 +269,9 @@ export function PostagemCard({
               <Link
                 to="/postagem/$postagemId"
                 params={{ postagemId: postagem.id }}
-                aria-label={`Ver publicação completa de ${autor?.nome ?? "usuário"}.`}
+                aria-label={tc.verPublicacaoAria(autor?.nome ?? t.feed.usuarioMin)}
               >
-                Ver publicação
+                {tc.verPublicacao}
               </Link>
             </Button>
           </footer>

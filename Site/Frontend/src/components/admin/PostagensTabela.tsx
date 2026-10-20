@@ -23,6 +23,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { useSessao } from "@/hooks/useSessao";
 import { listarPostagens, removerPostagem, type PostagemAdmin } from "@/services/admin.service";
 import { formatarDataHora } from "@/utils/formatacao";
+import { dic, useT } from "@/i18n";
 
 type RespostaLista = Awaited<ReturnType<typeof listarPostagens>>;
 
@@ -35,6 +36,8 @@ function removerDaResposta(atual: RespostaLista | undefined, id: string): Respos
 
 /** Publicações para moderação, com busca, paginação e remoção otimista. */
 export function PostagensTabela() {
+  const t = useT();
+  const tp = t.admin.postagens;
   const { usuario } = useSessao();
   const queryClient = useQueryClient();
 
@@ -60,7 +63,7 @@ export function PostagensTabela() {
       queryClient.setQueryData<RespostaLista>(chaveConsulta, (atual) => removerDaResposta(atual, postagem.id));
       return { anterior };
     },
-    onSuccess: () => toast.success("Publicação removida."),
+    onSuccess: () => toast.success(dic().admin.postagens.removida),
     onError: (erro, _postagem, contexto) => {
       const status = (erro as AxiosError)?.response?.status;
 
@@ -68,7 +71,8 @@ export function PostagensTabela() {
       // resultado que o admin queria já é verdade no servidor; mantém a
       // remoção otimista, só avisa em tom neutro, sem desfazer.
       if (status === 409 || status === 404) {
-        toast.info(status === 409 ? "Esta publicação já havia sido removida." : "Esta publicação não existe mais.");
+        const textos = dic().admin.postagens;
+        toast.info(status === 409 ? textos.jaRemovida : textos.naoExiste);
         return;
       }
 
@@ -76,7 +80,7 @@ export function PostagensTabela() {
       if (contexto?.anterior) {
         queryClient.setQueryData(chaveConsulta, contexto.anterior);
       }
-      toast.error(extrairMensagemErro(erro, "Não foi possível remover a publicação."));
+      toast.error(extrairMensagemErro(erro, dic().admin.postagens.erroRemover));
     },
     onSettled: () => {
       setAlvo(null);
@@ -110,9 +114,9 @@ export function PostagensTabela() {
   if (isError) {
     return (
       <div className="flex flex-col items-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar as publicações.</p>
+        <p className="text-sm text-muted-foreground">{tp.erro}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t.comum.tentarNovamente}
         </Button>
       </div>
     );
@@ -124,40 +128,40 @@ export function PostagensTabela() {
     <div>
       <form className="flex flex-wrap items-end gap-3 p-4" onSubmit={buscar}>
         <div className="min-w-56">
-          <Label htmlFor="filtro-postagens">Buscar por conteúdo</Label>
+          <Label htmlFor="filtro-postagens">{tp.buscarLabel}</Label>
           <Input
             id="filtro-postagens"
             value={busca}
             onChange={(evento) => setBusca(evento.target.value)}
-            placeholder="Ex.: palavra na publicação"
+            placeholder={tp.buscarPlaceholder}
             className="mt-1"
           />
         </div>
         <Button type="submit" className="min-h-11 gap-1.5">
-          <Search className="size-4" aria-hidden="true" /> Buscar
+          <Search className="size-4" aria-hidden="true" /> {t.admin.comum.buscar}
         </Button>
       </form>
 
       {postagens.length === 0 ? (
         <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
           <FileText className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhuma publicação encontrada.</p>
+          <p className="text-sm">{tp.vazio}</p>
         </div>
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Autor</TableHead>
-                <TableHead>Conteúdo</TableHead>
-                <TableHead>Publicada em</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{t.admin.comum.autor}</TableHead>
+                <TableHead>{tp.colunas.conteudo}</TableHead>
+                <TableHead>{tp.colunas.publicadaEm}</TableHead>
+                <TableHead className="text-right">{t.admin.comum.acoes}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {postagens.map((postagem) => (
                 <TableRow key={postagem.id}>
-                  <TableCell className="font-medium">{postagem.usuario?.nome ?? "—"}</TableCell>
+                  <TableCell className="font-medium">{postagem.usuario?.nome ?? t.comum.semValor}</TableCell>
                   <TableCell className="max-w-md">
                     <p className="line-clamp-2 text-sm text-muted-foreground">{postagem.conteudo}</p>
                   </TableCell>
@@ -168,18 +172,18 @@ export function PostagensTabela() {
                         size="sm"
                         variant="ghost"
                         onClick={() => setDetalhe(postagem)}
-                        aria-label={`Ver detalhes da publicação de ${postagem.usuario?.nome ?? "usuário"}`}
+                        aria-label={tp.verDetalhesAria(postagem.usuario?.nome ?? t.admin.comum.usuarioGenerico)}
                       >
-                        <Eye className="size-4" aria-hidden="true" /> Ver detalhes
+                        <Eye className="size-4" aria-hidden="true" /> {t.admin.comum.verDetalhes}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setAlvo(postagem)}
-                        aria-label={`Remover publicação de ${postagem.usuario?.nome ?? "usuário"}`}
+                        aria-label={tp.removerAria(postagem.usuario?.nome ?? t.admin.comum.usuarioGenerico)}
                       >
-                        <Trash2 className="size-4" aria-hidden="true" /> Remover
+                        <Trash2 className="size-4" aria-hidden="true" /> {t.admin.comum.remover}
                       </Button>
                     </div>
                   </TableCell>
@@ -202,9 +206,9 @@ export function PostagensTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo="Remover publicação"
-        descricao="Esta ação remove a publicação do feed. Deseja continuar?"
-        textoConfirmar="Remover"
+        titulo={tp.dialogoRemover.titulo}
+        descricao={tp.dialogoRemover.texto}
+        textoConfirmar={t.admin.comum.remover}
         destrutivo
         carregando={mutacao.isPending}
         onConfirmar={() => alvo && mutacao.mutate(alvo)}

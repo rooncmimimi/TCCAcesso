@@ -11,14 +11,10 @@ import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
 import notificacoesService from "@/services/notificacoes.service";
 import type { PreferenciasNotificacao } from "@/types";
+import { metaPagina, dic, useT } from "@/i18n";
 
 export const Route = createFileRoute("/configuracoes/notificacoes")({
-  head: () => ({
-    meta: [
-      { title: "Notificações — ACESSO" },
-      { name: "description", content: "Escolha quais notificações você quer receber no ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().configuracoes.notificacoes.meta),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <PreferenciasNotificacaoPagina />
@@ -28,25 +24,12 @@ export const Route = createFileRoute("/configuracoes/notificacoes")({
 
 const CHAVE = ["notificacoes", "preferencias"] as const;
 
-const ITENS: { chave: keyof PreferenciasNotificacao; titulo: string; descricao: string }[] = [
-  {
-    chave: "vagasCandidaturas",
-    titulo: "Vagas e candidaturas",
-    descricao: "Novas candidaturas recebidas e atualizações de status das suas candidaturas.",
-  },
-  {
-    chave: "mensagens",
-    titulo: "Mensagens",
-    descricao: "Avisos de novas mensagens no chat.",
-  },
-  {
-    chave: "publicacoesComentarios",
-    titulo: "Publicações e comentários",
-    descricao: "Curtidas, comentários e compartilhamentos nas suas publicações.",
-  },
-];
+// Títulos e descrições vêm do dicionário (`configuracoes.notificacoes.itens`).
+const ITENS = ["vagasCandidaturas", "mensagens", "publicacoesComentarios"] as const satisfies readonly (keyof PreferenciasNotificacao)[];
 
 function PreferenciasNotificacaoPagina() {
+  const t = useT();
+  const tn = t.configuracoes.notificacoes;
   const queryClient = useQueryClient();
 
   const { data: preferencias, isLoading, isError, refetch } = useQuery({
@@ -66,7 +49,7 @@ function PreferenciasNotificacaoPagina() {
     },
     onError: (erro, _payload, contexto) => {
       if (contexto?.anterior) queryClient.setQueryData(CHAVE, contexto.anterior);
-      toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência."));
+      toast.error(extrairMensagemErro(erro, tn.erroSalvar));
     },
   });
 
@@ -76,7 +59,7 @@ function PreferenciasNotificacaoPagina() {
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para configurações
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t.configuracoes.voltarParaConfiguracoes}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">
@@ -84,10 +67,9 @@ function PreferenciasNotificacaoPagina() {
           <Bell className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Notificações</h1>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{tn.titulo}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Escolha quais notificações você quer receber. Avisos importantes da sua conta continuam sendo
-            enviados mesmo com tudo desligado.
+            {tn.texto}
           </p>
         </div>
       </div>
@@ -96,29 +78,29 @@ function PreferenciasNotificacaoPagina() {
         <CardContent className="divide-y p-0">
           {isLoading ? (
             <div role="status" aria-live="polite" className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando preferências…
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {tn.carregando}
             </div>
           ) : isError ? (
             <div role="alert" className="space-y-2 p-5 text-sm text-destructive">
-              <p>Não foi possível carregar suas preferências.</p>
+              <p>{tn.erroCarregar}</p>
               <button type="button" className="font-semibold underline" onClick={() => refetch()}>
-                Tentar novamente
+                {t.comum.tentarNovamente}
               </button>
             </div>
           ) : (
-            ITENS.map((item) => (
-              <div key={item.chave} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-5">
+            ITENS.map((chave) => (
+              <div key={chave} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-5">
                 <div className="min-w-0">
-                  <Label htmlFor={`pref-${item.chave}`} className="font-semibold">
-                    {item.titulo}
+                  <Label htmlFor={`pref-${chave}`} className="font-semibold">
+                    {tn.itens[chave].titulo}
                   </Label>
-                  <p className="text-sm text-muted-foreground">{item.descricao}</p>
+                  <p className="text-sm text-muted-foreground">{tn.itens[chave].descricao}</p>
                 </div>
                 <Switch
-                  id={`pref-${item.chave}`}
-                  checked={preferencias?.[item.chave] ?? true}
-                  onCheckedChange={(valor) => atualizar.mutate({ [item.chave]: valor })}
-                  aria-label={`${item.titulo}${preferencias?.[item.chave] ? ", ativado" : ", desativado"}`}
+                  id={`pref-${chave}`}
+                  checked={preferencias?.[chave] ?? true}
+                  onCheckedChange={(valor) => atualizar.mutate({ [chave]: valor })}
+                  aria-label={`${tn.itens[chave].titulo}${preferencias?.[chave] ? tn.ativado : tn.desativado}`}
                 />
               </div>
             ))

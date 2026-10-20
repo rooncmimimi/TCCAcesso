@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import type { RascunhoCurriculo } from "@/types";
+import { useT } from "@/i18n";
 
 interface ItemExperiencia {
   incluir: boolean;
@@ -64,6 +65,8 @@ export function ImportarCurriculoDialog({
   candidatoId: string;
   children: ReactNode;
 }) {
+  const t = useT();
+  const ti = t.importarCurriculo;
   const [aberto, setAberto] = useState(false);
   const [rascunho, setRascunho] = useState<RascunhoCurriculo | null>(null);
   const [experiencias, setExperiencias] = useState<ItemExperiencia[]>([]);
@@ -105,7 +108,7 @@ export function ImportarCurriculoDialog({
       );
       setHabilidades(dados.habilidades.map((nome) => ({ incluir: true, nome })));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível extrair o currículo.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, ti.erroExtrair)),
   });
 
   const confirmar = useMutation({
@@ -157,18 +160,14 @@ export function ImportarCurriculoDialog({
     onSuccess: ({ salvos, ignorados }) => {
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso"] });
       if (salvos === 0) {
-        toast.warning("Nada foi salvo — marque ao menos um item e preencha os campos obrigatórios.");
+        toast.warning(ti.nadaSalvo);
         return;
       }
-      toast.success(
-        ignorados > 0
-          ? `${salvos} ${salvos === 1 ? "item adicionado" : "itens adicionados"} ao perfil. ${ignorados} ${ignorados === 1 ? "item foi ignorado" : "itens foram ignorados"} por falta de campo obrigatório (cargo/empresa/data ou instituição/curso).`
-          : `${salvos} ${salvos === 1 ? "item adicionado" : "itens adicionados"} ao perfil.`,
-      );
+      toast.success(ti.salvos(salvos, ignorados));
       setAberto(false);
       resetar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar os itens confirmados.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, ti.erroSalvar)),
   });
 
   function aoSelecionarArquivo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -177,7 +176,7 @@ export function ImportarCurriculoDialog({
     if (!arquivo) return;
 
     if (!TIPOS_ACEITOS.includes(arquivo.type)) {
-      toast.error("Envie um arquivo PDF ou DOCX.");
+      toast.error(ti.erroTipo);
       return;
     }
 
@@ -195,11 +194,8 @@ export function ImportarCurriculoDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Importar dados do currículo</DialogTitle>
-          <DialogDescription>
-            Extração automática por palavras-chave, sem inteligência artificial. Nada é salvo até você revisar e
-            confirmar.
-          </DialogDescription>
+          <DialogTitle>{ti.titulo}</DialogTitle>
+          <DialogDescription>{ti.descricao}</DialogDescription>
         </DialogHeader>
 
         {!rascunho ? (
@@ -211,12 +207,12 @@ export function ImportarCurriculoDialog({
               {extrair.isPending ? (
                 <>
                   <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-                  Extraindo texto do arquivo…
+                  {ti.extraindo}
                 </>
               ) : (
                 <>
                   <FileUp className="size-6" aria-hidden="true" />
-                  Clique para escolher um PDF ou DOCX
+                  {ti.escolher}
                 </>
               )}
             </label>
@@ -230,8 +226,7 @@ export function ImportarCurriculoDialog({
             />
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Arquivos .doc (formato antigo do Word) e PDFs escaneados (imagem) não são suportados — use PDF com
-              texto selecionável ou DOCX.
+              {ti.avisoFormatos}
             </p>
           </div>
         ) : (
@@ -242,10 +237,10 @@ export function ImportarCurriculoDialog({
 
             {(rascunho.email || rascunho.telefone || rascunho.linkedin || rascunho.github) && (
               <div className="text-sm text-muted-foreground">
-                <p className="font-semibold text-foreground">Contato encontrado (não é salvo automaticamente):</p>
+                <p className="font-semibold text-foreground">{ti.contatoEncontrado}</p>
                 <ul className="mt-1 space-y-0.5">
-                  {rascunho.email && <li>E-mail: {rascunho.email}</li>}
-                  {rascunho.telefone && <li>Telefone: {rascunho.telefone}</li>}
+                  {rascunho.email && <li>{ti.email}: {rascunho.email}</li>}
+                  {rascunho.telefone && <li>{ti.telefone}: {rascunho.telefone}</li>}
                   {rascunho.linkedin && <li>LinkedIn: {rascunho.linkedin}</li>}
                   {rascunho.github && <li>GitHub: {rascunho.github}</li>}
                 </ul>
@@ -254,7 +249,7 @@ export function ImportarCurriculoDialog({
 
             {experiencias.length > 0 && (
               <fieldset className="space-y-3">
-                <legend className="text-sm font-bold">Experiências encontradas</legend>
+                <legend className="text-sm font-bold">{ti.experienciasEncontradas}</legend>
                 {experiencias.map((item, indice) => (
                   <div key={indice} className="space-y-2 rounded-lg border p-3">
                     <label className="flex items-center gap-2 text-sm font-semibold">
@@ -266,12 +261,12 @@ export function ImportarCurriculoDialog({
                           )
                         }
                       />
-                      Incluir esta experiência
+                      {ti.incluirExperiencia}
                     </label>
                     {item.incluir && (
                       <div className="grid gap-2 sm:grid-cols-2">
                         <Input
-                          placeholder="Cargo (obrigatório)"
+                          placeholder={ti.cargoObrigatorio}
                           value={item.cargo}
                           onChange={(e) =>
                             setExperiencias((atuais) =>
@@ -280,7 +275,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <Input
-                          placeholder="Empresa (obrigatório)"
+                          placeholder={ti.empresaObrigatoria}
                           value={item.empresa}
                           onChange={(e) =>
                             setExperiencias((atuais) =>
@@ -289,7 +284,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <div className="space-y-1">
-                          <Label className="text-xs">Data de início (obrigatório)</Label>
+                          <Label className="text-xs">{ti.inicioObrigatorio}</Label>
                           <Input
                             type="date"
                             value={item.dataInicio}
@@ -301,7 +296,7 @@ export function ImportarCurriculoDialog({
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Data de término</Label>
+                          <Label className="text-xs">{ti.termino}</Label>
                           <Input
                             type="date"
                             disabled={item.atual}
@@ -322,7 +317,7 @@ export function ImportarCurriculoDialog({
                               )
                             }
                           />
-                          Emprego atual
+                          {ti.empregoAtual}
                         </label>
                         <Textarea
                           className="sm:col-span-2"
@@ -343,7 +338,7 @@ export function ImportarCurriculoDialog({
 
             {formacoes.length > 0 && (
               <fieldset className="space-y-3">
-                <legend className="text-sm font-bold">Formações encontradas</legend>
+                <legend className="text-sm font-bold">{ti.formacoesEncontradas}</legend>
                 {formacoes.map((item, indice) => (
                   <div key={indice} className="space-y-2 rounded-lg border p-3">
                     <label className="flex items-center gap-2 text-sm font-semibold">
@@ -355,12 +350,12 @@ export function ImportarCurriculoDialog({
                           )
                         }
                       />
-                      Incluir esta formação
+                      {ti.incluirFormacao}
                     </label>
                     {item.incluir && (
                       <div className="grid gap-2 sm:grid-cols-2">
                         <Input
-                          placeholder="Instituição (obrigatório)"
+                          placeholder={ti.instituicaoObrigatoria}
                           value={item.instituicao}
                           onChange={(e) =>
                             setFormacoes((atuais) =>
@@ -369,7 +364,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <Input
-                          placeholder="Curso (obrigatório)"
+                          placeholder={ti.cursoObrigatorio}
                           value={item.curso}
                           onChange={(e) =>
                             setFormacoes((atuais) =>
@@ -378,7 +373,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <div className="space-y-1">
-                          <Label className="text-xs">Conclusão (ou prevista)</Label>
+                          <Label className="text-xs">{ti.conclusao}</Label>
                           <Input
                             type="date"
                             disabled={item.emAndamento}
@@ -399,7 +394,7 @@ export function ImportarCurriculoDialog({
                               )
                             }
                           />
-                          Em andamento
+                          {ti.emAndamento}
                         </label>
                         <Textarea
                           className="sm:col-span-2"
@@ -420,7 +415,7 @@ export function ImportarCurriculoDialog({
 
             {habilidades.length > 0 && (
               <fieldset className="space-y-2">
-                <legend className="text-sm font-bold">Habilidades encontradas</legend>
+                <legend className="text-sm font-bold">{ti.habilidadesEncontradas}</legend>
                 <ul className="flex flex-wrap gap-2">
                   {habilidades.map((item, indice) => (
                     <li key={indice}>
@@ -449,8 +444,7 @@ export function ImportarCurriculoDialog({
 
             {experiencias.length === 0 && formacoes.length === 0 && habilidades.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Não foi possível identificar seções de experiência, formação ou habilidades neste arquivo — tente
-                um currículo com esses títulos de seção mais explícitos, ou preencha manualmente no perfil.
+                {ti.nadaIdentificado}
               </p>
             )}
           </div>
@@ -458,7 +452,7 @@ export function ImportarCurriculoDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-            Cancelar
+            {t.comum.cancelar}
           </Button>
           {rascunho && (
             <Button
@@ -468,7 +462,7 @@ export function ImportarCurriculoDialog({
               onClick={() => confirmar.mutate()}
             >
               {confirmar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Confirmar e salvar itens marcados
+              {ti.confirmar}
             </Button>
           )}
         </DialogFooter>

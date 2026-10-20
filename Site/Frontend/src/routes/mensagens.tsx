@@ -19,24 +19,24 @@ import {
   ouvirEvento,
   sairDaConversa,
 } from "@/services/socket";
+import { dic, useT } from "@/i18n";
 import type { Conversa, Mensagem } from "@/lib/tiposApi";
 
 export const Route = createFileRoute("/mensagens")({
   validateSearch: z.object({ conversaId: z.string().uuid().optional() }),
-  head: () => ({
-    meta: [
-      { title: "Mensagens — ACESSO" },
-      {
-        name: "description",
-        content:
-          "Converse em tempo real com empresas parceiras sobre vagas e processos seletivos inclusivos.",
-      },
-      { property: "og:title", content: "Mensagens — ACESSO" },
-      { property: "og:description", content: "Suas conversas com empresas inclusivas." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => {
+    const m = dic().mensagens.meta;
+    return {
+      meta: [
+        { title: m.titulo },
+        { name: "description", content: m.descricao },
+        { property: "og:title", content: m.titulo },
+        { property: "og:description", content: m.descricaoSocial },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary" },
+      ],
+    };
+  },
   component: PaginaMensagens,
 });
 
@@ -49,6 +49,7 @@ function PaginaMensagens() {
 }
 
 function Mensagens() {
+  const tm = useT().mensagens;
   const { usuario } = useSessao();
   const { conversaId } = Route.useSearch();
   const queryClient = useQueryClient();
@@ -138,7 +139,7 @@ function Mensagens() {
       void queryClient.invalidateQueries({ queryKey: ["mensagens", selecionadaId] });
       void queryClient.invalidateQueries({ queryKey: ["conversas"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível enviar a mensagem.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tm.erroEnviar)),
   });
 
   function selecionar(conversa: Conversa) {
@@ -148,9 +149,9 @@ function Mensagens() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Mensagens</h1>
+      <h1 className="text-3xl font-extrabold">{tm.titulo}</h1>
       <p className="mt-2 text-muted-foreground">
-        Conversas em tempo real com empresas e candidatos.
+        {tm.intro}
       </p>
 
       <Card className="mt-6 grid h-[70vh] grid-cols-1 overflow-hidden p-0 shadow-card md:grid-cols-[320px_minmax(0,1fr)]">
@@ -190,7 +191,7 @@ function Mensagens() {
               className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground"
             >
               <MessagesSquare className="size-10" aria-hidden="true" />
-              <p className="text-sm">Selecione uma conversa para ver as mensagens.</p>
+              <p className="text-sm">{tm.selecioneConversa}</p>
             </div>
           )}
         </div>

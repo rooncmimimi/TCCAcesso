@@ -21,12 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
+import { rotuloOuValor } from "@/components/admin/rotulos";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import denunciaService, {
-  MOTIVO_ROTULO,
   type EntidadeDenunciaTipo,
   type StatusDenuncia,
 } from "@/services/denuncia.service";
+import { useT } from "@/i18n";
+import { formatarDataLocal } from "@/utils/formatacao";
 
 const STATUS_OPCOES: (StatusDenuncia | "todos")[] = [
   "todos",
@@ -47,14 +49,6 @@ const TIPO_OPCOES: (EntidadeDenunciaTipo | "todos")[] = [
   "empresa",
 ];
 
-const STATUS_ROTULO: Record<StatusDenuncia, string> = {
-  pendente: "Pendente",
-  em_analise: "Em análise",
-  resolvida: "Resolvida",
-  rejeitada: "Rejeitada",
-  arquivada: "Arquivada",
-};
-
 const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neutro"> = {
   pendente: "atencao",
   em_analise: "atencao",
@@ -63,17 +57,10 @@ const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neu
   arquivada: "neutro",
 };
 
-const TIPO_ROTULO: Record<EntidadeDenunciaTipo, string> = {
-  postagem: "Postagem",
-  comentario: "Comentário",
-  usuario: "Usuário",
-  mensagem: "mensagem",
-  vaga: "vaga",
-  empresa: "Empresa",
-};
-
 /** Fila de denúncias, com filtros por status e tipo e link para o detalhe de cada uma. */
 export function DenunciasTabela() {
+  const t = useT();
+  const td = t.admin.denuncias;
   const [pagina, setPagina] = useState(1);
   const [status, setStatus] = useState<(typeof STATUS_OPCOES)[number]>("todos");
   const [tipo, setTipo] = useState<(typeof TIPO_OPCOES)[number]>("todos");
@@ -102,13 +89,13 @@ export function DenunciasTabela() {
               setPagina(1);
             }}
           >
-            <SelectTrigger aria-label="Filtrar por status">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger aria-label={td.filtroStatusAria}>
+              <SelectValue placeholder={td.statusPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {STATUS_OPCOES.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {item === "todos" ? "Todos os status" : STATUS_ROTULO[item]}
+                  {item === "todos" ? td.todosStatus : td.status[item]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -122,13 +109,13 @@ export function DenunciasTabela() {
               setPagina(1);
             }}
           >
-            <SelectTrigger aria-label="Filtrar por tipo de entidade">
-              <SelectValue placeholder="Tipo" />
+            <SelectTrigger aria-label={td.filtroTipoAria}>
+              <SelectValue placeholder={td.tipoPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {TIPO_OPCOES.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {item === "todos" ? "Todos os tipos" : TIPO_ROTULO[item]}
+                  {item === "todos" ? td.todosTipos : td.tipos[item]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -144,47 +131,47 @@ export function DenunciasTabela() {
         </div>
       ) : isError ? (
         <div className="flex flex-col items-center gap-3 p-8 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar as denúncias.</p>
+          <p className="text-sm text-muted-foreground">{td.erro}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t.comum.tentarNovamente}
           </Button>
         </div>
       ) : denuncias.length === 0 ? (
         <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
           <Flag className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhuma denúncia encontrada com esses filtros.</p>
+          <p className="text-sm">{td.vazio}</p>
         </div>
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Motivo</TableHead>
-                <TableHead>Denunciante</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{td.colunas.tipo}</TableHead>
+                <TableHead>{td.colunas.motivo}</TableHead>
+                <TableHead>{td.colunas.denunciante}</TableHead>
+                <TableHead>{td.colunas.status}</TableHead>
+                <TableHead>{td.colunas.data}</TableHead>
+                <TableHead className="text-right">{t.admin.comum.acoes}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {denuncias.map((denuncia) => (
                 <TableRow key={denuncia.id}>
-                  <TableCell>{TIPO_ROTULO[denuncia.entidadeTipo] ?? denuncia.entidadeTipo}</TableCell>
-                  <TableCell>{MOTIVO_ROTULO[denuncia.motivo] ?? denuncia.motivo}</TableCell>
-                  <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? "Usuário removido"}</TableCell>
+                  <TableCell>{rotuloOuValor(td.tipos, denuncia.entidadeTipo)}</TableCell>
+                  <TableCell>{rotuloOuValor(t.moderacao.motivos, denuncia.motivo)}</TableCell>
+                  <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? t.admin.comum.usuarioRemovido}</TableCell>
                   <TableCell>
                     <StatusBadge tom={STATUS_TOM[denuncia.status]}>
-                      {STATUS_ROTULO[denuncia.status]}
+                      {rotuloOuValor(td.status, denuncia.status)}
                     </StatusBadge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(denuncia.criadoEm).toLocaleDateString("pt-BR")}
+                    {formatarDataLocal(denuncia.criadoEm)}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild size="sm" variant="outline">
                       <Link to="/admin/denuncias/$denunciaId" params={{ denunciaId: denuncia.id }}>
-                        Ver detalhes
+                        {t.admin.comum.verDetalhes}
                       </Link>
                     </Button>
                   </TableCell>

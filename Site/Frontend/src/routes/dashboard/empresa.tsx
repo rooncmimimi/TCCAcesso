@@ -11,18 +11,11 @@ import { CandidaturasDaVaga } from "@/components/dashboard/CandidaturasDaVaga";
 import { AvisoAprovacaoEmpresa } from "@/components/perfil/AvisoAprovacaoEmpresa";
 import { dashboardService } from "@/services/dashboard.service";
 import { empresasService } from "@/services/empresas.service";
+import { dic, metaPagina, useT } from "@/i18n";
 import type { Vaga } from "@/types";
 
 export const Route = createFileRoute("/dashboard/empresa")({
-  head: () => ({
-    meta: [
-      { title: "Painel da empresa — ACESSO" },
-      {
-        name: "description",
-        content: "Acompanhe vagas publicadas, candidaturas recebidas e seguidores da sua empresa.",
-      },
-    ],
-  }),
+  head: () => metaPagina(dic().dashboard.meta.empresa),
   component: () => (
     <GuardaAcesso tipos={["empresa"]}>
       <PainelEmpresa />
@@ -31,6 +24,8 @@ export const Route = createFileRoute("/dashboard/empresa")({
 });
 
 function PainelEmpresa() {
+  const t = useT();
+  const td = t.dashboard;
   const [vagaSelecionada, setVagaSelecionada] = useState<Vaga | null>(null);
 
   const {
@@ -50,14 +45,14 @@ function PainelEmpresa() {
 
   const porStatus = data?.candidaturasPorStatus ?? {};
   const resumoTextual = Object.entries(porStatus)
-    .map(([status, total]) => `${status}: ${total}`)
+    .map(([status, total]) => `${(t.status as Record<string, string>)[status] ?? status}: ${total}`)
     .join(", ");
 
   if (carregandoEmpresa) {
     return (
       <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando painel da empresa…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {td.empresa.carregando}
         </div>
       </EstruturaApp>
     );
@@ -67,7 +62,7 @@ function PainelEmpresa() {
     return (
       <EstruturaApp>
         <div role="alert" className="py-10 text-sm text-destructive">
-          Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde.
+          {td.empresa.erroEmpresa}
         </div>
       </EstruturaApp>
     );
@@ -83,34 +78,34 @@ function PainelEmpresa() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Painel da empresa</h1>
+      <h1 className="text-3xl font-extrabold">{td.empresa.titulo}</h1>
       <p className="mt-2 text-muted-foreground">
-        Gerencie suas vagas publicadas e acompanhe as candidaturas recebidas.
+        {td.empresa.intro}
       </p>
 
       {isLoading ? (
         <div role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando suas métricas…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {td.carregandoMetricas}
         </div>
       ) : isError ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
-          <p>Não foi possível carregar suas métricas.</p>
+          <p>{td.erroMetricas}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t.comum.tentarNovamente}
           </Button>
         </div>
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricaCard titulo="Vagas publicadas" valor={data?.vagas ?? 0} icon={Briefcase} />
-            <MetricaCard titulo="Vagas abertas" valor={data?.vagasAbertas ?? 0} icon={ClipboardList} />
-            <MetricaCard titulo="Candidaturas recebidas" valor={data?.candidaturas ?? 0} icon={ClipboardList} />
-            <MetricaCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
+            <MetricaCard titulo={td.empresa.publicadas} valor={data?.vagas ?? 0} icon={Briefcase} />
+            <MetricaCard titulo={td.empresa.abertas} valor={data?.vagasAbertas ?? 0} icon={ClipboardList} />
+            <MetricaCard titulo={td.empresa.recebidas} valor={data?.candidaturas ?? 0} icon={ClipboardList} />
+            <MetricaCard titulo={td.empresa.seguidores} valor={data?.seguidores ?? 0} icon={Users} />
           </div>
 
           {resumoTextual ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Resumo das candidaturas recebidas por status: {resumoTextual}.
+              {td.empresa.resumoStatus(resumoTextual)}
             </p>
           ) : null}
         </>
@@ -125,7 +120,7 @@ function PainelEmpresa() {
           <CandidaturasDaVaga vaga={vagaSelecionada} />
         ) : (
           <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            Selecione uma vaga para ver as candidaturas recebidas.
+            {td.empresa.selecioneVaga}
           </div>
         )}
       </div>

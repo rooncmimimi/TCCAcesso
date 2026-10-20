@@ -15,6 +15,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/utils/arquivos";
 import type { SugestaoPerfil } from "@/types";
+import { useT } from "@/i18n";
 
 /** Lista de seguidores/seguindo de um usuário, aberta a partir dos contadores do perfil. */
 export function ListaSeguidoresDialog({
@@ -28,6 +29,8 @@ export function ListaSeguidoresDialog({
   total: number;
   children: React.ReactNode;
 }) {
+  const t = useT();
+  const ts = t.perfilItens.seguidores;
   const [aberto, setAberto] = useState(false);
   const { usuario } = useSessao();
 
@@ -45,22 +48,22 @@ export function ListaSeguidoresDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[80dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{modo === "seguidores" ? "Seguidores" : "Seguindo"}</DialogTitle>
+          <DialogTitle>{modo === "seguidores" ? ts.seguidores : ts.seguindo}</DialogTitle>
         </DialogHeader>
 
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t.comum.carregando}
           </div>
         ) : isError ? (
           <p role="alert" className="py-4 text-sm text-destructive">
-            Não foi possível carregar a lista.
+            {ts.erro}
           </p>
         ) : !data || data.dados.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
             <Users className="size-8" aria-hidden="true" />
             <p className="text-sm">
-              {modo === "seguidores" ? "Ninguém segue este perfil ainda." : "Ainda não segue ninguém."}
+              {modo === "seguidores" ? ts.ninguemSegue : ts.naoSegueNinguem}
             </p>
           </div>
         ) : (
@@ -91,7 +94,7 @@ export function ListaSeguidoresDialog({
 
         {total > (data?.dados.length ?? 0) && !isLoading && !isError ? (
           <p className="pt-2 text-center text-xs text-muted-foreground">
-            Mostrando {data?.dados.length ?? 0} de {total}.
+            {ts.mostrando(data?.dados.length ?? 0, total)}
           </p>
         ) : null}
       </DialogContent>

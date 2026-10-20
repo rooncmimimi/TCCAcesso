@@ -31,16 +31,17 @@ export const ACAO_POR_TIPO: Partial<Record<EntidadeDenunciaTipo, string>> = {
   empresa: "suspender",
 };
 
-export const MOTIVO_ROTULO: Record<MotivoDenuncia, string> = {
-  spam: "Spam",
-  conteudo_ofensivo: "Conteúdo ofensivo",
-  discurso_odio: "Discurso de ódio",
-  assedio: "Assédio",
-  fraude: "Fraude",
-  informacao_falsa: "Informação falsa",
-  conteudo_inadequado: "Conteúdo inadequado",
-  outro: "Outro",
-};
+/** Motivos aceitos pelo backend; os rótulos de cada um ficam no dicionário (`moderacao.motivos`). */
+export const MOTIVOS_DENUNCIA: MotivoDenuncia[] = [
+  "spam",
+  "conteudo_ofensivo",
+  "discurso_odio",
+  "assedio",
+  "fraude",
+  "informacao_falsa",
+  "conteudo_inadequado",
+  "outro",
+];
 
 export interface Denuncia {
   id: string;

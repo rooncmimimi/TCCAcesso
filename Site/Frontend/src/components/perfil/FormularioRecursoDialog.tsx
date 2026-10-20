@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
+import { useT } from "@/i18n";
 
 /** União "achatada" dos 4 formatos de recurso: cada campo pode não existir no registro atual. */
 type Registro = {
@@ -42,13 +43,6 @@ type Registro = {
   nome?: string;
 };
 
-const TITULOS: Record<RecursoPerfil, string> = {
-  experiencias: "experiência",
-  formacoes: "formação",
-  certificados: "certificado",
-  habilidades: "habilidade",
-};
-
 /** Formulário de criação/edição para os 4 tipos de recurso do perfil (experiência, formação, certificado, habilidade). */
 export function FormularioRecursoDialog({
   recurso,
@@ -59,6 +53,8 @@ export function FormularioRecursoDialog({
   registro?: Registro;
   children: ReactNode;
 }) {
+  const t = useT();
+  const tf = t.perfilItens.formulario;
   const [aberto, setAberto] = useState(false);
   const [atual, setAtual] = useState(Boolean(registro?.atual));
   const [emAndamento, setEmAndamento] = useState(Boolean(registro?.emAndamento));
@@ -80,11 +76,11 @@ export function FormularioRecursoDialog({
         ? perfilService.atualizarRecurso(recurso, registro!.id!, payload)
         : perfilService.criarRecurso(recurso, payload),
     onSuccess: () => {
-      toast.success(editando ? "Registro atualizado." : "Registro adicionado.");
+      toast.success(editando ? tf.atualizado : tf.adicionado);
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso", recurso] });
       setAberto(false);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tf.erroSalvar)),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -135,11 +131,11 @@ export function FormularioRecursoDialog({
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {editando ? `Editar ${TITULOS[recurso]}` : `Adicionar ${TITULOS[recurso]}`}
+            {editando ? tf.editar(tf.titulos[recurso]) : tf.adicionar(tf.titulos[recurso])}
           </DialogTitle>
           <DialogDescription>
-            Essas informações aparecem no seu perfil público. Campos com <span aria-hidden="true">*</span>
-            <span className="sr-only">asterisco</span> são obrigatórios.
+            {tf.descAntes} <span aria-hidden="true">*</span>
+            <span className="sr-only">{tf.asteriscoSr}</span> {tf.descDepois}
           </DialogDescription>
         </DialogHeader>
 
@@ -148,40 +144,40 @@ export function FormularioRecursoDialog({
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="cargo">Cargo <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="cargo">{tf.cargo} <span aria-hidden="true">*</span></Label>
                   <Input id="cargo" name="cargo" required minLength={2} maxLength={150} defaultValue={registro?.cargo ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="empresa">Empresa <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="empresa">{tf.empresa} <span aria-hidden="true">*</span></Label>
                   <Input id="empresa" name="empresa" required minLength={2} maxLength={150} defaultValue={registro?.empresa ?? ""} />
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="local">Local</Label>
+                  <Label htmlFor="local">{tf.local}</Label>
                   <Input id="local" name="local" maxLength={150} defaultValue={registro?.local ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="modalidade">Modalidade</Label>
-                  <Input id="modalidade" name="modalidade" maxLength={50} placeholder="Presencial, remoto…" defaultValue={registro?.modalidade ?? ""} />
+                  <Label htmlFor="modalidade">{tf.modalidade}</Label>
+                  <Input id="modalidade" name="modalidade" maxLength={50} placeholder={tf.modalidadeExemplo} defaultValue={registro?.modalidade ?? ""} />
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="dataInicio">Início <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="dataInicio">{tf.inicio} <span aria-hidden="true">*</span></Label>
                   <Input id="dataInicio" name="dataInicio" type="date" required defaultValue={registro?.dataInicio?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dataFim">Fim</Label>
+                  <Label htmlFor="dataFim">{tf.fim}</Label>
                   <Input id="dataFim" name="dataFim" type="date" disabled={atual} defaultValue={registro?.dataFim?.slice(0, 10) ?? ""} />
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
-                <Label htmlFor="atual" className="cursor-pointer">Trabalho atualmente aqui</Label>
+                <Label htmlFor="atual" className="cursor-pointer">{tf.trabalhoAtual}</Label>
                 <Switch id="atual" checked={atual} onCheckedChange={setAtual} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
+                <Label htmlFor="descricao">{tf.descricao}</Label>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
               </div>
             </>
@@ -191,34 +187,34 @@ export function FormularioRecursoDialog({
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="instituicao">Instituição <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="instituicao">{tf.instituicao} <span aria-hidden="true">*</span></Label>
                   <Input id="instituicao" name="instituicao" required minLength={2} maxLength={180} defaultValue={registro?.instituicao ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="curso">Curso <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="curso">{tf.curso} <span aria-hidden="true">*</span></Label>
                   <Input id="curso" name="curso" required minLength={2} maxLength={180} defaultValue={registro?.curso ?? ""} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nivel">Nível</Label>
-                <Input id="nivel" name="nivel" maxLength={80} placeholder="Técnico, graduação, pós…" defaultValue={registro?.nivel ?? ""} />
+                <Label htmlFor="nivel">{tf.nivel}</Label>
+                <Input id="nivel" name="nivel" maxLength={80} placeholder={tf.nivelFormacaoExemplo} defaultValue={registro?.nivel ?? ""} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="dataInicio">Início</Label>
+                  <Label htmlFor="dataInicio">{tf.inicio}</Label>
                   <Input id="dataInicio" name="dataInicio" type="date" defaultValue={registro?.dataInicio?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dataFim">Conclusão</Label>
+                  <Label htmlFor="dataFim">{tf.conclusao}</Label>
                   <Input id="dataFim" name="dataFim" type="date" disabled={emAndamento} defaultValue={registro?.dataFim?.slice(0, 10) ?? ""} />
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
-                <Label htmlFor="emAndamento" className="cursor-pointer">Em andamento</Label>
+                <Label htmlFor="emAndamento" className="cursor-pointer">{tf.emAndamento}</Label>
                 <Switch id="emAndamento" checked={emAndamento} onCheckedChange={setEmAndamento} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
+                <Label htmlFor="descricao">{tf.descricao}</Label>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
               </div>
             </>
@@ -227,25 +223,25 @@ export function FormularioRecursoDialog({
           {recurso === "certificados" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="titulo">Título <span aria-hidden="true">*</span></Label>
+                <Label htmlFor="titulo">{tf.titulo} <span aria-hidden="true">*</span></Label>
                 <Input id="titulo" name="titulo" required minLength={2} maxLength={180} defaultValue={registro?.titulo ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="instituicao">Instituição emissora</Label>
+                <Label htmlFor="instituicao">{tf.instituicaoEmissora}</Label>
                 <Input id="instituicao" name="instituicao" maxLength={180} defaultValue={registro?.instituicao ?? ""} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="emitidoEm">Emitido em</Label>
+                  <Label htmlFor="emitidoEm">{tf.emitidoEm}</Label>
                   <Input id="emitidoEm" name="emitidoEm" type="date" defaultValue={registro?.emitidoEm?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="expiraEm">Expira em</Label>
+                  <Label htmlFor="expiraEm">{tf.expiraEm}</Label>
                   <Input id="expiraEm" name="expiraEm" type="date" defaultValue={registro?.expiraEm?.slice(0, 10) ?? ""} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="credencialUrl">Link da credencial</Label>
+                <Label htmlFor="credencialUrl">{tf.linkCredencial}</Label>
                 <Input id="credencialUrl" name="credencialUrl" type="url" maxLength={500} defaultValue={registro?.credencialUrl ?? ""} />
               </div>
             </>
@@ -254,23 +250,23 @@ export function FormularioRecursoDialog({
           {recurso === "habilidades" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="nome">Habilidade <span aria-hidden="true">*</span></Label>
+                <Label htmlFor="nome">{tf.habilidade} <span aria-hidden="true">*</span></Label>
                 <Input id="nome" name="nome" required minLength={2} maxLength={80} defaultValue={registro?.nome ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nivel">Nível</Label>
-                <Input id="nivel" name="nivel" maxLength={80} placeholder="Básico, intermediário, avançado…" defaultValue={registro?.nivel ?? ""} />
+                <Label htmlFor="nivel">{tf.nivel}</Label>
+                <Input id="nivel" name="nivel" maxLength={80} placeholder={tf.nivelHabilidadeExemplo} defaultValue={registro?.nivel ?? ""} />
               </div>
             </>
           )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t.comum.cancelar}
             </Button>
             <Button type="submit" disabled={salvar.isPending} className="min-h-11 gap-2">
               {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Salvar
+              {t.comum.salvar}
             </Button>
           </DialogFooter>
         </form>

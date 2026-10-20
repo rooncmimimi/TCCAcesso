@@ -31,15 +31,9 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { extrairMensagemErro } from "@/services/api";
 import vagasService from "@/services/vagas.service";
 import { formatarData, formatarSalario } from "@/utils/formatacao";
-import { ROTULO_CONTRATO } from "./constantesVaga";
+import { useT } from "@/i18n";
 import { EditarVagaDialog } from "./EditarVagaDialog";
-import type { ContratoVaga, StatusVaga, Vaga } from "@/types";
-
-const MENSAGEM_STATUS: Record<StatusVaga, string> = {
-  aberta: "Vaga reaberta.",
-  pausada: "Vaga arquivada.",
-  encerrada: "Vaga encerrada.",
-};
+import type { StatusVaga, Vaga } from "@/types";
 
 /** Card de gestão de uma vaga: dados principais + ações (editar, arquivar, reabrir, encerrar, excluir). */
 export function VagaEmpresaCard({
@@ -51,6 +45,8 @@ export function VagaEmpresaCard({
   selecionada: boolean;
   onVerCandidaturas: (vaga: Vaga) => void;
 }) {
+  const t = useT();
+  const td = t.dashboard.vagaCard;
   const queryClient = useQueryClient();
 
   const invalidarListas = () => {
@@ -64,19 +60,19 @@ export function VagaEmpresaCard({
   const alterarStatus = useMutation({
     mutationFn: (status: StatusVaga) => vagasService.alterarStatus(vaga.id, status),
     onSuccess: (_dados, status) => {
-      toast.success(MENSAGEM_STATUS[status]);
+      toast.success(td.statusAlterado[status]);
       invalidarListas();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível alterar o status da vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, td.erroStatus)),
   });
 
   const remover = useMutation({
     mutationFn: () => vagasService.remover(vaga.id),
     onSuccess: () => {
-      toast.success("Vaga excluída.");
+      toast.success(td.excluida);
       invalidarListas();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, td.erroExcluir)),
   });
 
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
@@ -94,21 +90,20 @@ export function VagaEmpresaCard({
                   <MapPin className="size-3.5 shrink-0" aria-hidden="true" /> {local}
                 </span>
               ) : null}
-              <span>{vaga.modalidade}</span>
-              {vaga.contrato ? <span>{ROTULO_CONTRATO[vaga.contrato as ContratoVaga]}</span> : null}
+              <span>{t.vagas.modalidade[vaga.modalidade] ?? vaga.modalidade}</span>
+              {vaga.contrato ? <span>{t.vagas.contrato[vaga.contrato] ?? vaga.contrato}</span> : null}
               <span>{formatarSalario(typeof vaga.salario === "string" ? Number(vaga.salario) : vaga.salario)}</span>
             </p>
             {publicadaEm ? (
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="size-3.5 shrink-0" aria-hidden="true" /> Publicada em {formatarData(publicadaEm)}
+                <Calendar className="size-3.5 shrink-0" aria-hidden="true" /> {td.publicadaEm(formatarData(publicadaEm))}
               </p>
             ) : null}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
             <StatusBadge status={vaga.status} />
             <Badge variant="outline" className="gap-1 font-medium">
-              <Users className="size-3.5" aria-hidden="true" /> {vaga.totalCandidaturas ?? 0}{" "}
-              {vaga.totalCandidaturas === 1 ? "candidatura" : "candidaturas"}
+              <Users className="size-3.5" aria-hidden="true" /> {td.candidaturas(vaga.totalCandidaturas ?? 0)}
             </Badge>
           </div>
         </div>
@@ -120,18 +115,18 @@ export function VagaEmpresaCard({
             className="min-h-9 gap-1"
             onClick={() => onVerCandidaturas(vaga)}
           >
-            <Users className="size-4" aria-hidden="true" /> Candidaturas
+            <Users className="size-4" aria-hidden="true" /> {td.verCandidaturas}
           </Button>
 
           <Button asChild size="sm" variant="outline" className="min-h-9 gap-1">
             <Link to="/vaga/$vagaId" params={{ vagaId: vaga.id }}>
-              <Eye className="size-4" aria-hidden="true" /> Ver detalhes
+              <Eye className="size-4" aria-hidden="true" /> {td.verDetalhes}
             </Link>
           </Button>
 
           <EditarVagaDialog vaga={vaga}>
             <Button size="sm" variant="outline" className="min-h-9 gap-1">
-              <Pencil className="size-4" aria-hidden="true" /> Editar
+              <Pencil className="size-4" aria-hidden="true" /> {td.editar}
             </Button>
           </EditarVagaDialog>
 
@@ -144,7 +139,7 @@ export function VagaEmpresaCard({
                 disabled={alterarStatus.isPending}
                 onClick={() => alterarStatus.mutate("pausada")}
               >
-                <Archive className="size-4" aria-hidden="true" /> Arquivar
+                <Archive className="size-4" aria-hidden="true" /> {td.arquivar}
               </Button>
               <Button
                 size="sm"
@@ -153,7 +148,7 @@ export function VagaEmpresaCard({
                 disabled={alterarStatus.isPending}
                 onClick={() => alterarStatus.mutate("encerrada")}
               >
-                <XCircle className="size-4" aria-hidden="true" /> Encerrar
+                <XCircle className="size-4" aria-hidden="true" /> {td.encerrar}
               </Button>
             </>
           ) : (
@@ -164,7 +159,7 @@ export function VagaEmpresaCard({
               disabled={alterarStatus.isPending}
               onClick={() => alterarStatus.mutate("aberta")}
             >
-              <RotateCcw className="size-4" aria-hidden="true" /> Reabrir
+              <RotateCcw className="size-4" aria-hidden="true" /> {td.reabrir}
             </Button>
           )}
 
@@ -176,7 +171,7 @@ export function VagaEmpresaCard({
               disabled={alterarStatus.isPending}
               onClick={() => alterarStatus.mutate("encerrada")}
             >
-              <XCircle className="size-4" aria-hidden="true" /> Encerrar
+              <XCircle className="size-4" aria-hidden="true" /> {td.encerrar}
             </Button>
           ) : null}
 
@@ -186,26 +181,26 @@ export function VagaEmpresaCard({
                 size="sm"
                 variant="outline"
                 className="min-h-9 gap-1 text-destructive hover:text-destructive"
-                aria-label={`Excluir vaga ${vaga.titulo}`}
+                aria-label={td.excluirAria(vaga.titulo)}
               >
-                <Trash2 className="size-4" aria-hidden="true" /> Excluir
+                <Trash2 className="size-4" aria-hidden="true" /> {td.excluir}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Excluir esta vaga?</AlertDialogTitle>
+                <AlertDialogTitle>{td.excluirTitulo}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Essa ação não pode ser desfeita e pode afetar dados relacionados à vaga, como candidaturas recebidas.
-                  {vaga.totalCandidaturas ? ` Esta vaga tem ${vaga.totalCandidaturas} candidatura(s) registrada(s).` : ""}
+                  {td.excluirTexto}
+                  {vaga.totalCandidaturas ? td.excluirComCandidaturas(vaga.totalCandidaturas) : ""}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t.comum.cancelar}</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={() => remover.mutate()}
                 >
-                  Excluir vaga
+                  {td.excluirConfirmar}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

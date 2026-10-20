@@ -8,9 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { urlArquivo } from "@/utils/arquivos";
 import { seguidoresService } from "@/services/empresas.service";
+import { useT } from "@/i18n";
 
 /** Prévia compacta de "Descobrir" na barra lateral do feed: só 3 pessoas, com link para a página completa. */
 export function SugestoesResumo() {
+  const t = useT();
   const { data, isLoading } = useQuery({
     queryKey: ["descobrir-pessoas-resumo"],
     queryFn: () => seguidoresService.sugestoes(3),
@@ -22,13 +24,13 @@ export function SugestoesResumo() {
     <Card className="shadow-card">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Compass className="size-4 text-primary" aria-hidden="true" /> Pessoas para conhecer
+          <Compass className="size-4 text-primary" aria-hidden="true" /> {t.feed.sugestoes.titulo}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando…
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t.comum.carregando}
           </div>
         ) : (
           <ul className="space-y-2">
@@ -52,7 +54,7 @@ export function SugestoesResumo() {
           </ul>
         )}
         <Button asChild variant="ghost" size="sm" className="w-full">
-          <Link to="/descobrir">Ver mais sugestões</Link>
+          <Link to="/descobrir">{t.feed.sugestoes.verMais}</Link>
         </Button>
       </CardContent>
     </Card>

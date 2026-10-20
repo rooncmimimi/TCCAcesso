@@ -1,14 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PaginaDocumentoLegal } from "@/components/legal/PaginaDocumentoLegal";
-import { POLITICA_DE_PRIVACIDADE } from "@/dados/documentosLegais";
+import { dic, metaPagina } from "@/i18n";
 
 export const Route = createFileRoute("/privacidade")({
-  head: () => ({
-    meta: [
-      { title: "Política de Privacidade — ACESSO" },
-      { name: "description", content: "Como o ACESSO trata os seus dados pessoais." },
-    ],
-  }),
-  component: () => <PaginaDocumentoLegal doc={POLITICA_DE_PRIVACIDADE} />,
+  head: () => metaPagina(dic().legal.privacidade.meta),
+  component: () => <PaginaDocumentoLegal chave="privacidade" />,
 });

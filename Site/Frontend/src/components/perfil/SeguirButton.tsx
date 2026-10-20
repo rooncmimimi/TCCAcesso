@@ -6,6 +6,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { cn } from "@/lib/utils";
 import type { ResumoSeguidores } from "@/types";
 import { toast } from "sonner";
+import { dic, useT } from "@/i18n";
 
 type Acao = "seguir" | "deixar-de-seguir" | "solicitar" | "cancelar-solicitacao";
 
@@ -21,31 +22,32 @@ interface Estado {
  * seguir e deixar de seguir, sem solicitação.
  */
 function resolverEstado(resumo: ResumoSeguidores | undefined, tipo: "usuario" | "empresa"): Estado {
+  const ts = dic().perfilItens.seguir;
   const seguindo = Boolean(resumo?.seguindoEsteUsuario);
 
   if (tipo === "empresa") {
     return seguindo
-      ? { rotulo: "Seguindo", acao: "deixar-de-seguir", variant: "outline", icon: UserCheck }
-      : { rotulo: "Seguir", acao: "seguir", variant: "default", icon: UserPlus };
+      ? { rotulo: ts.seguindo, acao: "deixar-de-seguir", variant: "outline", icon: UserCheck }
+      : { rotulo: ts.seguir, acao: "seguir", variant: "default", icon: UserPlus };
   }
 
   if (seguindo) {
-    return { rotulo: "Deixar de seguir", acao: "deixar-de-seguir", variant: "outline", icon: UserCheck };
+    return { rotulo: ts.deixarDeSeguir, acao: "deixar-de-seguir", variant: "outline", icon: UserCheck };
   }
 
   const perfilPrivado = resumo?.perfilPublico === false;
 
   if (!perfilPrivado) {
     return resumo?.elesSeguemVoce
-      ? { rotulo: "Seguir de volta", acao: "seguir", variant: "default", icon: UserPlus }
-      : { rotulo: "Seguir", acao: "seguir", variant: "default", icon: UserPlus };
+      ? { rotulo: ts.seguirDeVolta, acao: "seguir", variant: "default", icon: UserPlus }
+      : { rotulo: ts.seguir, acao: "seguir", variant: "default", icon: UserPlus };
   }
 
   if (resumo?.solicitacaoPendente) {
-    return { rotulo: "Solicitação enviada", acao: "cancelar-solicitacao", variant: "outline", icon: Clock };
+    return { rotulo: ts.solicitacaoEnviada, acao: "cancelar-solicitacao", variant: "outline", icon: Clock };
   }
 
-  return { rotulo: "Solicitar para seguir", acao: "solicitar", variant: "default", icon: UserPlus };
+  return { rotulo: ts.solicitar, acao: "solicitar", variant: "default", icon: UserPlus };
 }
 
 /** Botão de seguir/deixar de seguir/solicitar, com atualização otimista, para usuários ou empresas. */
@@ -61,6 +63,7 @@ export function SeguirButton({
   /** Classes extras de layout (ex.: `w-full` em cartões); nunca substitui as classes de estado do botão. */
   className?: string;
 }) {
+  const ts = useT().perfilItens.seguir;
   const queryClient = useQueryClient();
   const resumo = queryClient.getQueryData<ResumoSeguidores>(chaveResumo);
   const { rotulo, acao, variant, icon: Icone } = resolverEstado(resumo, tipo);
@@ -110,7 +113,7 @@ export function SeguirButton({
     },
     onError: (erro, _v, contexto) => {
       if (contexto?.anterior) queryClient.setQueryData(chaveResumo, contexto.anterior);
-      toast.error(extrairMensagemErro(erro, "Não foi possível concluir a ação."));
+      toast.error(extrairMensagemErro(erro, ts.erro));
     },
     onSuccess: (resultado, acaoExecutada) => {
       queryClient.setQueryData<ResumoSeguidores>(chaveResumo, (atual) => {
@@ -132,11 +135,11 @@ export function SeguirButton({
       });
 
       if (acaoExecutada === "cancelar-solicitacao") {
-        toast.success("Solicitação cancelada.");
+        toast.success(ts.canceladaAviso);
       } else if (acaoExecutada === "solicitar" && !resultado.seguindo) {
-        toast.success("Solicitação enviada.");
+        toast.success(ts.enviadaAviso);
       } else {
-        toast.success(resultado.seguindo ? "Agora você está seguindo." : "Você deixou de seguir.");
+        toast.success(resultado.seguindo ? ts.agoraSeguindo : ts.deixouDeSeguir);
       }
     },
   });

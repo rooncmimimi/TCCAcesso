@@ -8,6 +8,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { rotuloOuValor } from "@/components/admin/rotulos";
+import { useT } from "@/i18n";
 import type { CandidaturaPorStatus } from "@/services/admin.service";
 
 // As variáveis `--chart-*` guardam valores `oklch(...)` (ver `styles/globals.css`), então são
@@ -21,22 +23,26 @@ const CORES = [
   "var(--chart-5)",
 ];
 
-const configVisaoGeral = {
-  total: { label: "Total", color: "var(--chart-1)" },
-} satisfies ChartConfig;
-
-const configCandidaturas = {
-  total: { label: "Candidaturas", color: "var(--chart-2)" },
-} satisfies ChartConfig;
-
 type RelatoriosChartsProps = {
   visaoGeral: { categoria: string; total: number }[];
   candidaturasPorStatus: CandidaturaPorStatus[];
 };
 
 export function GraficosRelatorios({ visaoGeral, candidaturasPorStatus }: RelatoriosChartsProps) {
+  const t = useT();
+  const tg = t.admin.relatorios.graficos;
+
+  const configVisaoGeral = {
+    total: { label: tg.serieTotal, color: "var(--chart-1)" },
+  } satisfies ChartConfig;
+
+  const configCandidaturas = {
+    total: { label: tg.serieCandidaturas, color: "var(--chart-2)" },
+  } satisfies ChartConfig;
+
+  // O rótulo traduzido entra no próprio dado: a legenda e o tooltip do gráfico leem `status`.
   const dadosCandidaturas = candidaturasPorStatus.map((item) => ({
-    status: item.status,
+    status: rotuloOuValor(t.status, item.status),
     total: Number(item.total),
   }));
 
@@ -44,7 +50,7 @@ export function GraficosRelatorios({ visaoGeral, candidaturasPorStatus }: Relato
     <div className="grid gap-4 lg:grid-cols-2">
       <Card className="shadow-none">
         <CardHeader>
-          <CardTitle className="text-base">Visão geral da plataforma</CardTitle>
+          <CardTitle className="text-base">{tg.visaoGeralTitulo}</CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={configVisaoGeral} className="max-h-72 w-full">
@@ -69,13 +75,11 @@ export function GraficosRelatorios({ visaoGeral, candidaturasPorStatus }: Relato
 
       <Card className="shadow-none">
         <CardHeader>
-          <CardTitle className="text-base">Candidaturas por status</CardTitle>
+          <CardTitle className="text-base">{tg.candidaturasTitulo}</CardTitle>
         </CardHeader>
         <CardContent>
           {dadosCandidaturas.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              Ainda não há candidaturas registradas.
-            </p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{tg.semCandidaturas}</p>
           ) : (
             <ChartContainer config={configCandidaturas} className="max-h-72 w-full">
               <PieChart>

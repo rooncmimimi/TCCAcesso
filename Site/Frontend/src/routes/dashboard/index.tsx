@@ -2,19 +2,16 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { useSessao } from "@/hooks/useSessao";
+import { dic, metaPagina, useT } from "@/i18n";
 
 export const Route = createFileRoute("/dashboard/")({
-  head: () => ({
-    meta: [
-      { title: "Painel — ACESSO" },
-      { name: "description", content: "Acesse seu painel de métricas na plataforma ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().dashboard.meta.painel),
   component: RedirecionarDashboard,
 });
 
 /** Encaminha o usuário autenticado ao painel correspondente ao seu tipo de conta. */
 function RedirecionarDashboard() {
+  const t = useT();
   const { usuario, inicializado, autenticado } = useSessao();
 
   if (!inicializado) {
@@ -26,7 +23,7 @@ function RedirecionarDashboard() {
           className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-muted-foreground"
         >
           <Loader2 className="size-8 animate-spin" aria-hidden="true" />
-          <p>Carregando sua sessão…</p>
+          <p>{t.dashboard.carregandoSessao}</p>
         </div>
       </EstruturaApp>
     );

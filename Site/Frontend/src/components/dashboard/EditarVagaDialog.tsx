@@ -20,15 +20,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import vagasService from "@/services/vagas.service";
+import { useT } from "@/i18n";
 import {
   CONTRATOS,
   ICONE_RECURSO_ACESSIBILIDADE,
   MODALIDADES,
   PUBLICO_ALVO,
   RECURSOS_ACESSIBILIDADE,
-  ROTULO_CONTRATO,
-  ROTULO_PUBLICO_ALVO,
-  ROTULO_RECURSO_ACESSIBILIDADE,
 } from "./constantesVaga";
 import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "@/types";
 
@@ -38,6 +36,8 @@ import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "@/types";
  * empresa (`garantirDono` + `garantirEmpresaAprovada`).
  */
 export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: ReactNode }) {
+  const t = useT();
+  const tf = t.dashboard.formulario;
   const [aberto, setAberto] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<PublicoAlvoVaga>(vaga.publicoAlvo ?? "pcd");
   const [recursosAcessibilidade, setRecursosAcessibilidade] = useState<RecursoAcessibilidadeVaga[]>(
@@ -64,13 +64,13 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
     mutationFn: (payload: Record<string, unknown>) => vagasService.atualizar(vaga.id, payload),
     onSuccess: () => {
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Vaga atualizada com sucesso.");
+      toast.success(tf.atualizada);
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["vaga", vaga.id] });
       void queryClient.invalidateQueries({ queryKey: ["vagas"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar a vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tf.erroAtualizar)),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -101,13 +101,13 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Editar vaga</DialogTitle>
-          <DialogDescription>Atualize as informações desta vaga.</DialogDescription>
+          <DialogTitle>{tf.editarTitulo}</DialogTitle>
+          <DialogDescription>{tf.editarDescricao}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={enviar} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor={`titulo-${vaga.id}`}>Título da vaga</Label>
+            <Label htmlFor={`titulo-${vaga.id}`}>{tf.titulo}</Label>
             <Input
               id={`titulo-${vaga.id}`}
               name="titulo"
@@ -119,7 +119,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`descricao-${vaga.id}`}>Descrição</Label>
+            <Label htmlFor={`descricao-${vaga.id}`}>{tf.descricao}</Label>
             <Textarea
               id={`descricao-${vaga.id}`}
               name="descricao"
@@ -128,23 +128,23 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               rows={5}
               defaultValue={vaga.descricao}
             />
-            <p className="text-xs text-muted-foreground">Mínimo de 20 caracteres.</p>
+            <p className="text-xs text-muted-foreground">{tf.minimo20}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor={`requisitos-${vaga.id}`}>Requisitos</Label>
+              <Label htmlFor={`requisitos-${vaga.id}`}>{tf.requisitos}</Label>
               <Textarea id={`requisitos-${vaga.id}`} name="requisitos" rows={3} defaultValue={vaga.requisitos ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`beneficios-${vaga.id}`}>Benefícios</Label>
+              <Label htmlFor={`beneficios-${vaga.id}`}>{tf.beneficios}</Label>
               <Textarea id={`beneficios-${vaga.id}`} name="beneficios" rows={3} defaultValue={vaga.beneficios ?? ""} />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor={`modalidade-${vaga.id}`}>Modalidade</Label>
+              <Label htmlFor={`modalidade-${vaga.id}`}>{tf.modalidade}</Label>
               <select
                 id={`modalidade-${vaga.id}`}
                 name="modalidade"
@@ -153,13 +153,13 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               >
                 {MODALIDADES.map((m) => (
                   <option key={m} value={m}>
-                    {m}
+                    {t.vagas.modalidade[m]}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`contrato-${vaga.id}`}>Contrato</Label>
+              <Label htmlFor={`contrato-${vaga.id}`}>{tf.contrato}</Label>
               <select
                 id={`contrato-${vaga.id}`}
                 name="contrato"
@@ -168,13 +168,13 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               >
                 {CONTRATOS.map((c) => (
                   <option key={c} value={c}>
-                    {ROTULO_CONTRATO[c]}
+                    {t.vagas.contrato[c]}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`salario-${vaga.id}`}>Salário (R$)</Label>
+              <Label htmlFor={`salario-${vaga.id}`}>{tf.salario}</Label>
               <Input
                 id={`salario-${vaga.id}`}
                 name="salario"
@@ -187,18 +187,18 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor={`cidade-${vaga.id}`}>Cidade</Label>
+              <Label htmlFor={`cidade-${vaga.id}`}>{tf.cidade}</Label>
               <CidadeAutocomplete
                 id={`cidade-${vaga.id}`}
                 name="cidade"
                 value={cidade}
                 onChange={setCidade}
                 estado={estado}
-                aria-label="Cidade"
+                aria-label={tf.cidade}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`estado-${vaga.id}`}>Estado (UF)</Label>
+              <Label htmlFor={`estado-${vaga.id}`}>{tf.estado}</Label>
               <Input
                 id={`estado-${vaga.id}`}
                 name="estado"
@@ -209,18 +209,18 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`cargaHoraria-${vaga.id}`}>Carga horária</Label>
+              <Label htmlFor={`cargaHoraria-${vaga.id}`}>{tf.cargaHoraria}</Label>
               <Input
                 id={`cargaHoraria-${vaga.id}`}
                 name="cargaHoraria"
-                placeholder="40h semanais"
+                placeholder={tf.cargaHorariaExemplo}
                 defaultValue={vaga.cargaHoraria ?? ""}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`publicoAlvo-${vaga.id}`}>Público da vaga</Label>
+            <Label htmlFor={`publicoAlvo-${vaga.id}`}>{tf.publicoAlvo}</Label>
             <select
               id={`publicoAlvo-${vaga.id}`}
               value={publicoAlvo}
@@ -229,14 +229,14 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
             >
               {PUBLICO_ALVO.map((p) => (
                 <option key={p} value={p}>
-                  {ROTULO_PUBLICO_ALVO[p]}
+                  {t.vagas.publicoAlvo[p]}
                 </option>
               ))}
             </select>
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Recursos de acessibilidade desta vaga</legend>
+            <legend className="text-sm font-medium">{tf.recursos}</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               {RECURSOS_ACESSIBILIDADE.filter((r) => r !== "outro").map((recurso) => {
                 const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
@@ -251,7 +251,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
                       onCheckedChange={(c) => alternarRecurso(recurso, Boolean(c))}
                     />
                     <Icone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <span className="min-w-0 truncate">{ROTULO_RECURSO_ACESSIBILIDADE[recurso]}</span>
+                    <span className="min-w-0 truncate">{t.vagas.recursos[recurso]}</span>
                   </label>
                 );
               })}
@@ -259,23 +259,23 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           </fieldset>
 
           <div className="space-y-2">
-            <Label htmlFor={`acessibilidade-${vaga.id}`}>Detalhes adicionais de acessibilidade</Label>
+            <Label htmlFor={`acessibilidade-${vaga.id}`}>{tf.detalhes}</Label>
             <Textarea
               id={`acessibilidade-${vaga.id}`}
               name="acessibilidade"
               rows={3}
-              placeholder="Descreva qualquer recurso que não esteja na lista acima"
+              placeholder={tf.detalhesExemplo}
               defaultValue={vaga.acessibilidade ?? ""}
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t.comum.cancelar}
             </Button>
             <Button type="submit" disabled={salvar.isPending} className="min-h-11 gap-2">
               {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Salvar alterações
+              {tf.salvarAlteracoes}
             </Button>
           </DialogFooter>
         </form>

@@ -10,7 +10,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CONTEUDO_PENDENTE, DOCUMENTOS, type DocumentoLegal } from "@/dados/documentosLegais";
+import { CONTEUDO_PENDENTE, obterDocumento, type ChaveDocumento, type DocumentoLegal } from "@/dados/documentosLegais";
+import { useIdioma, useT } from "@/i18n";
 
 /**
  * Abre um documento legal para leitura sem sair do formulário.
@@ -31,12 +32,14 @@ export function DocumentoLegalDialog({
   documento,
   children,
 }: {
-  documento: DocumentoLegal["chave"];
+  documento: ChaveDocumento;
   /** O texto clicável que abre o documento. */
   children: ReactNode;
 }) {
   const [aberto, setAberto] = useState(false);
-  const doc = DOCUMENTOS[documento];
+  const { idioma } = useIdioma();
+  const t = useT().legal.ui;
+  const doc = obterDocumento(documento, idioma);
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
@@ -67,11 +70,11 @@ export function DocumentoLegalDialog({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4">
           <Button asChild variant="ghost" className="min-h-11 gap-1.5">
             <a href={`/${doc.chave === "termos" ? "termos" : "privacidade"}`} target="_blank" rel="noreferrer">
-              Abrir em nova aba <ExternalLink className="size-4" aria-hidden="true" />
+              {t.abrirNovaAba} <ExternalLink className="size-4" aria-hidden="true" />
             </a>
           </Button>
           <Button type="button" className="min-h-11" onClick={() => setAberto(false)}>
-            Voltar ao cadastro
+            {t.voltarCadastro}
           </Button>
         </div>
       </DialogContent>
@@ -81,8 +84,14 @@ export function DocumentoLegalDialog({
 
 /** Corpo do documento, compartilhado entre o diálogo e a página inteira. */
 export function CorpoDocumento({ doc }: { doc: DocumentoLegal }) {
+  const t = useT().legal.ui;
   return (
     <>
+      {t.notaReferencia ? (
+        <p role="note" className="mb-5 rounded-lg border border-border bg-secondary p-3 text-sm text-muted-foreground">
+          {t.notaReferencia}
+        </p>
+      ) : null}
       {CONTEUDO_PENDENTE && (
         <div
           role="note"
@@ -90,9 +99,7 @@ export function CorpoDocumento({ doc }: { doc: DocumentoLegal }) {
         >
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
           <p className="text-sm">
-            <strong className="font-bold">Documento ainda não publicado.</strong> O texto oficial do{" "}
-            {doc.titulo.toLowerCase()} está em elaboração. O que você lê abaixo é apenas a relação dos
-            assuntos que ele vai cobrir — não é um contrato e não tem valor jurídico.
+            <strong className="font-bold">{t.pendenteTitulo}</strong> {t.pendenteTexto(doc.titulo)}
           </p>
         </div>
       )}

@@ -9,14 +9,10 @@ import { perfilService } from "@/services/perfil.service";
 import { empresasService } from "@/services/empresas.service";
 import { PerfilPessoal } from "@/components/perfil/PerfilPessoal";
 import { PerfilEmpresa } from "@/components/perfil/PerfilEmpresa";
+import { metaPagina, dic, useT } from "@/i18n";
 
 export const Route = createFileRoute("/perfil/$usuarioId")({
-  head: () => ({
-    meta: [
-      { title: "Perfil — ACESSO" },
-      { name: "description", content: "Perfil profissional acessível no ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().perfilRotas.terceiro),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <PerfilDeTerceiro />
@@ -38,6 +34,7 @@ export const Route = createFileRoute("/perfil/$usuarioId")({
  * próprio perfil), então reaproveitamos ele em vez de criar um componente novo.
  */
 function PerfilDeTerceiro() {
+  const t = useT().perfilRotas;
   const { usuarioId } = Route.useParams();
   const { usuario } = useSessao();
 
@@ -85,7 +82,7 @@ function PerfilDeTerceiro() {
     return (
       <EstruturaApp>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
-          Este perfil não está disponível.
+          {t.indisponivel}
         </div>
       </EstruturaApp>
     );
@@ -94,7 +91,7 @@ function PerfilDeTerceiro() {
   return (
     <EstruturaApp>
       <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil…
+        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t.carregando}
       </div>
     </EstruturaApp>
   );

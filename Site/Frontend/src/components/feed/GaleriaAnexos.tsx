@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { urlArquivo } from "@/utils/arquivos";
 import { CampoDescricaoImagem } from "./CampoDescricaoImagem";
 import { LightboxMidia } from "./LightboxMidia";
+import { useT } from "@/i18n";
 import { useAtualizarDescricaoAnexo } from "./hooks";
 import type { AnexoPostagem } from "@/types";
 
@@ -25,6 +26,8 @@ function DescricaoAnexo({
   postagemId: string;
   editavel: boolean;
 }) {
+  const t = useT();
+  const tg = t.feed.galeria;
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState(anexo.descricao ?? "");
   const atualizar = useAtualizarDescricaoAnexo();
@@ -38,17 +41,17 @@ function DescricaoAnexo({
             value={rascunho}
             onChange={setRascunho}
             obterImagem={() => fetch(urlArquivo(anexo.url) ?? "").then((resposta) => resposta.blob())}
-            rotulo="Descrição do anexo"
+            rotulo={tg.descricaoAnexo}
           />
         ) : (
           <Input
             value={rascunho}
             maxLength={MAX_DESCRICAO}
             autoFocus
-            placeholder="Descreva o que aparece para pessoas que utilizam leitores de tela"
+            placeholder={tg.placeholderDescricao}
             onChange={(e) => setRascunho(e.target.value)}
             className="h-8 text-xs"
-            aria-label={`Descrição acessível do anexo ${anexo.nomeOriginal ?? ""}`}
+            aria-label={tg.descricaoAcessivelAria(anexo.nomeOriginal ?? "")}
           />
         )}
         <div className="flex items-center gap-1.5">
@@ -64,20 +67,20 @@ function DescricaoAnexo({
               )
             }
           >
-            Salvar
+            {t.comum.salvar}
           </Button>
           <Button
             type="button"
             variant="ghost"
             size="sm"
             className="h-8 shrink-0 gap-1 px-2 text-xs"
-            aria-label="Cancelar edição da descrição"
+            aria-label={tg.cancelarEdicaoAria}
             onClick={() => {
               setRascunho(anexo.descricao ?? "");
               setEditando(false);
             }}
           >
-            <X className="size-3.5" aria-hidden="true" /> Cancelar
+            <X className="size-3.5" aria-hidden="true" /> {t.comum.cancelar}
           </Button>
         </div>
       </div>
@@ -89,16 +92,16 @@ function DescricaoAnexo({
   return (
     <div className="mt-1.5 flex items-start justify-between gap-2">
       <p className="min-w-0 text-xs text-muted-foreground">
-        {anexo.descricao || (editavel ? "Sem descrição — adicione uma para leitores de tela." : "")}
+        {anexo.descricao || (editavel ? tg.semDescricao : "")}
       </p>
       {editavel && (
         <button
           type="button"
           onClick={() => setEditando(true)}
           className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-          aria-label={`Editar descrição do anexo ${anexo.nomeOriginal ?? ""}`}
+          aria-label={tg.editarDescricaoAria(anexo.nomeOriginal ?? "")}
         >
-          <Pencil className="size-3" aria-hidden="true" /> {anexo.descricao ? "Editar" : "Adicionar"}
+          <Pencil className="size-3" aria-hidden="true" /> {anexo.descricao ? t.comum.editar : tg.adicionar}
         </button>
       )}
     </div>
@@ -120,6 +123,8 @@ export function GaleriaAnexos({
   postagemId?: string;
   editavel?: boolean;
 }) {
+  const t = useT();
+  const tg = t.feed.galeria;
   const [lightbox, setLightbox] = useState<{ itens: AnexoPostagem[]; indice: number } | null>(null);
   // Elemento que abriu o lightbox, para onde o foco volta ao fechar. O retorno é feito
   // explicitamente (`onCloseAutoFocus`), porque a devolução automática de foco do Radix não
@@ -144,7 +149,7 @@ export function GaleriaAnexos({
       {imagens.length > 0 && (
         <ul
           className={`grid gap-2 ${imagens.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
-          aria-label="Imagens anexadas à publicação"
+          aria-label={tg.imagensAria}
         >
           {imagens.map((imagem) => (
             <li key={imagem.id}>
@@ -152,11 +157,11 @@ export function GaleriaAnexos({
                 type="button"
                 onClick={(e) => abrirLightbox(imagem, e.currentTarget)}
                 className="block w-full overflow-hidden rounded-xl border border-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-                aria-label={`Ampliar imagem${imagem.descricao ? `: ${imagem.descricao}` : ""}`}
+                aria-label={tg.ampliarImagem(imagem.descricao ?? "")}
               >
                 <img
                   src={urlArquivo(imagem.url)}
-                  alt={imagem.descricao || imagem.nomeOriginal || "Imagem sem descrição fornecida pelo autor da publicação"}
+                  alt={imagem.descricao || imagem.nomeOriginal || tg.imagemSemDescricao}
                   className="max-h-96 w-full object-cover"
                   loading="lazy"
                 />
@@ -170,7 +175,7 @@ export function GaleriaAnexos({
       )}
 
       {videos.length > 0 && (
-        <ul className="space-y-2" aria-label="Vídeos anexados à publicação">
+        <ul className="space-y-2" aria-label={tg.videosAria}>
           {videos.map((video) => (
             <li key={video.id}>
               <div className="relative overflow-hidden rounded-xl border border-border bg-black">
@@ -178,17 +183,17 @@ export function GaleriaAnexos({
                   src={urlArquivo(video.url)}
                   controls
                   preload="metadata"
-                  aria-label={video.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
+                  aria-label={video.descricao || tg.videoSemDescricao}
                   className="max-h-96 w-full"
                 >
-                  Seu navegador não suporta a reprodução deste vídeo.
+                  {tg.navegadorSemVideo}
                 </video>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   className="absolute right-2 top-2 min-h-11 min-w-11 rounded-full bg-background/80 hover:bg-background"
-                  aria-label={`Ampliar vídeo${video.descricao ? `: ${video.descricao}` : ""}`}
+                  aria-label={tg.ampliarVideo(video.descricao ?? "")}
                   onClick={(e) => abrirLightbox(video, e.currentTarget)}
                 >
                   <Maximize2 className="size-4" aria-hidden="true" />
@@ -203,7 +208,7 @@ export function GaleriaAnexos({
       )}
 
       {documentos.length > 0 && (
-        <ul className="space-y-2" aria-label="Documentos anexados à publicação">
+        <ul className="space-y-2" aria-label={tg.documentosAria}>
           {documentos.map((documento) => (
             <li key={documento.id}>
               <a
@@ -213,7 +218,7 @@ export function GaleriaAnexos({
                 className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
               >
                 <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
-                <span className="truncate">{documento.nomeOriginal ?? "Documento anexado"}</span>
+                <span className="truncate">{documento.nomeOriginal ?? tg.documentoAnexado}</span>
               </a>
             </li>
           ))}

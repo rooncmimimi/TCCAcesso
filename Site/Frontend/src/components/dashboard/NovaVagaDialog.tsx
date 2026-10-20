@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
 import vagasService from "@/services/vagas.service";
+import { useT } from "@/i18n";
 import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga } from "@/types";
 import {
   CONTRATOS,
@@ -27,9 +28,6 @@ import {
   MODALIDADES,
   PUBLICO_ALVO,
   RECURSOS_ACESSIBILIDADE,
-  ROTULO_CONTRATO,
-  ROTULO_PUBLICO_ALVO,
-  ROTULO_RECURSO_ACESSIBILIDADE,
 } from "./constantesVaga";
 
 /**
@@ -37,6 +35,8 @@ import {
  * Os campos e limites espelham o validador do backend.
  */
 export function NovaVagaDialog() {
+  const t = useT();
+  const tf = t.dashboard.formulario;
   const [aberto, setAberto] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<PublicoAlvoVaga>("pcd");
   const [recursosAcessibilidade, setRecursosAcessibilidade] = useState<RecursoAcessibilidadeVaga[]>([]);
@@ -55,13 +55,13 @@ export function NovaVagaDialog() {
   const criar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => vagasService.criar(payload),
     onSuccess: (vaga) => {
-      toast.success(`Vaga "${vaga.titulo}" publicada com sucesso.`);
+      toast.success(tf.publicada(vaga.titulo));
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-empresa"] });
       void queryClient.invalidateQueries({ queryKey: ["vagas"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível publicar a vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tf.erroPublicar)),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -96,44 +96,44 @@ export function NovaVagaDialog() {
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild>
         <Button size="sm" className="min-h-11 gap-1">
-          <Plus className="size-4" aria-hidden="true" /> Nova vaga
+          <Plus className="size-4" aria-hidden="true" /> {tf.novaVaga}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Publicar nova vaga</DialogTitle>
+          <DialogTitle>{tf.publicarTitulo}</DialogTitle>
           <DialogDescription>
-            Descreva a oportunidade e os recursos de acessibilidade disponíveis.
+            {tf.publicarDescricao}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={enviar} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="titulo">Título da vaga</Label>
+            <Label htmlFor="titulo">{tf.titulo}</Label>
             <Input id="titulo" name="titulo" required minLength={5} maxLength={200} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descricao">Descrição</Label>
+            <Label htmlFor="descricao">{tf.descricao}</Label>
             <Textarea id="descricao" name="descricao" required minLength={20} rows={5} />
-            <p className="text-xs text-muted-foreground">Mínimo de 20 caracteres.</p>
+            <p className="text-xs text-muted-foreground">{tf.minimo20}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="requisitos">Requisitos</Label>
+              <Label htmlFor="requisitos">{tf.requisitos}</Label>
               <Textarea id="requisitos" name="requisitos" rows={3} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="beneficios">Benefícios</Label>
+              <Label htmlFor="beneficios">{tf.beneficios}</Label>
               <Textarea id="beneficios" name="beneficios" rows={3} />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="modalidade">Modalidade</Label>
+              <Label htmlFor="modalidade">{tf.modalidade}</Label>
               <select
                 id="modalidade"
                 name="modalidade"
@@ -142,13 +142,13 @@ export function NovaVagaDialog() {
               >
                 {MODALIDADES.map((m) => (
                   <option key={m} value={m}>
-                    {m}
+                    {t.vagas.modalidade[m]}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contrato">Contrato</Label>
+              <Label htmlFor="contrato">{tf.contrato}</Label>
               <select
                 id="contrato"
                 name="contrato"
@@ -157,31 +157,31 @@ export function NovaVagaDialog() {
               >
                 {CONTRATOS.map((c) => (
                   <option key={c} value={c}>
-                    {ROTULO_CONTRATO[c]}
+                    {t.vagas.contrato[c]}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salario">Salário (R$)</Label>
+              <Label htmlFor="salario">{tf.salario}</Label>
               <Input id="salario" name="salario" inputMode="decimal" placeholder="2500.00" />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
+              <Label htmlFor="cidade">{tf.cidade}</Label>
               <CidadeAutocomplete
                 id="cidade"
                 name="cidade"
                 value={cidade}
                 onChange={setCidade}
                 estado={estado}
-                aria-label="Cidade"
+                aria-label={tf.cidade}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="estado">Estado (UF)</Label>
+              <Label htmlFor="estado">{tf.estado}</Label>
               <Input
                 id="estado"
                 name="estado"
@@ -192,13 +192,13 @@ export function NovaVagaDialog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cargaHoraria">Carga horária</Label>
-              <Input id="cargaHoraria" name="cargaHoraria" placeholder="40h semanais" />
+              <Label htmlFor="cargaHoraria">{tf.cargaHoraria}</Label>
+              <Input id="cargaHoraria" name="cargaHoraria" placeholder={tf.cargaHorariaExemplo} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="publicoAlvo">Público da vaga</Label>
+            <Label htmlFor="publicoAlvo">{tf.publicoAlvo}</Label>
             <select
               id="publicoAlvo"
               value={publicoAlvo}
@@ -207,14 +207,14 @@ export function NovaVagaDialog() {
             >
               {PUBLICO_ALVO.map((p) => (
                 <option key={p} value={p}>
-                  {ROTULO_PUBLICO_ALVO[p]}
+                  {t.vagas.publicoAlvo[p]}
                 </option>
               ))}
             </select>
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Recursos de acessibilidade desta vaga</legend>
+            <legend className="text-sm font-medium">{tf.recursos}</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               {RECURSOS_ACESSIBILIDADE.filter((r) => r !== "outro").map((recurso) => {
                 const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
@@ -229,7 +229,7 @@ export function NovaVagaDialog() {
                       onCheckedChange={(c) => alternarRecurso(recurso, Boolean(c))}
                     />
                     <Icone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <span className="min-w-0 truncate">{ROTULO_RECURSO_ACESSIBILIDADE[recurso]}</span>
+                    <span className="min-w-0 truncate">{t.vagas.recursos[recurso]}</span>
                   </label>
                 );
               })}
@@ -237,22 +237,22 @@ export function NovaVagaDialog() {
           </fieldset>
 
           <div className="space-y-2">
-            <Label htmlFor="acessibilidade">Detalhes adicionais de acessibilidade</Label>
+            <Label htmlFor="acessibilidade">{tf.detalhes}</Label>
             <Textarea
               id="acessibilidade"
               name="acessibilidade"
               rows={3}
-              placeholder="Descreva qualquer recurso que não esteja na lista acima"
+              placeholder={tf.detalhesExemplo}
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t.comum.cancelar}
             </Button>
             <Button type="submit" disabled={criar.isPending} className="min-h-11 gap-2">
               {criar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Publicar vaga
+              {tf.publicar}
             </Button>
           </DialogFooter>
         </form>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { extrairMensagemErro } from "@/services/api";
 import { urlArquivo } from "@/utils/arquivos";
 import { toast } from "sonner";
+import { useT } from "@/i18n";
 
 // Mesmo limite padrão do backend (MAX_UPLOAD_BYTES, ver src/config/env.js):
 // checar aqui evita que o usuário espere o upload todo só pra descobrir,
@@ -18,7 +19,7 @@ export function FotoUploader({
   fallback,
   onEnviar,
   tamanho = "size-24",
-  rotulo = "Alterar foto",
+  rotulo,
 }: {
   nome: string;
   fotoUrl?: string | null;
@@ -27,25 +28,27 @@ export function FotoUploader({
   tamanho?: string;
   rotulo?: string;
 }) {
+  const tu = useT().perfilItens.upload;
+  const rotuloFinal = rotulo ?? tu.alterarFoto;
   const inputRef = useRef<HTMLInputElement>(null);
   const [enviando, setEnviando] = useState(false);
 
   async function tratarArquivo(arquivo: File | undefined) {
     if (!arquivo) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(arquivo.type)) {
-      toast.error("Formato inválido. Envie uma imagem PNG, JPEG ou WEBP.");
+      toast.error(tu.formatoInvalido);
       return;
     }
     if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
-      toast.error("Imagem muito grande. O tamanho máximo permitido é 5 MB.");
+      toast.error(tu.grande);
       return;
     }
     try {
       setEnviando(true);
       await onEnviar(arquivo);
-      toast.success("Foto atualizada.");
+      toast.success(tu.fotoAtualizada);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível enviar a foto."));
+      toast.error(extrairMensagemErro(erro, tu.erroFoto));
     } finally {
       setEnviando(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -55,7 +58,7 @@ export function FotoUploader({
   return (
     <div className="relative inline-block">
       <Avatar className={`${tamanho} border-4 border-card`}>
-        <AvatarImage src={urlArquivo(fotoUrl ?? undefined)} alt={`Foto de ${nome}`} />
+        <AvatarImage src={urlArquivo(fotoUrl ?? undefined)} alt={tu.fotoDe(nome)} />
         <AvatarFallback className="bg-primary-soft text-2xl font-bold text-primary">
           {fallback}
         </AvatarFallback>
@@ -74,7 +77,7 @@ export function FotoUploader({
         size="icon"
         variant="secondary"
         className="absolute -bottom-1 -right-1 min-h-11 min-w-11 rounded-full border-2 border-card shadow"
-        aria-label={rotulo}
+        aria-label={rotuloFinal}
         disabled={enviando}
         onClick={() => inputRef.current?.click()}
       >

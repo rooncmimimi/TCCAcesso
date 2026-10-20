@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/i18n";
 import { useCompartilharPostagem } from "./hooks";
 
 function urlDaPostagem(postagemId: string): string {
@@ -21,6 +22,8 @@ function urlDaPostagem(postagemId: string): string {
 
 /** Diálogo de compartilhamento: recompartilhar no ACESSO, copiar link ou usar o compartilhamento nativo do sistema. */
 export function CompartilharDialog({ postagemId, trigger }: { postagemId: string; trigger: React.ReactNode }) {
+  const t = useT();
+  const tc = t.feed.compartilhar;
   const [aberto, setAberto] = useState(false);
   const [comentario, setComentario] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
@@ -33,17 +36,17 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
       await navigator.clipboard.writeText(urlDaPostagem(postagemId));
       setLinkCopiado(true);
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Link copiado!");
+      toast.success(tc.linkCopiado);
       setTimeout(() => setLinkCopiado(false), 2000);
     } catch {
-      toast.error("Não foi possível copiar o link.");
+      toast.error(tc.erroCopiar);
     }
   }
 
   async function compartilharNativo() {
     try {
       await navigator.share({
-        title: "Publicação no ACESSO",
+        title: tc.tituloNativo,
         url: urlDaPostagem(postagemId),
       });
     } catch {
@@ -56,8 +59,8 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Compartilhar publicação</DialogTitle>
-          <DialogDescription>Recompartilhe no ACESSO, copie o link ou envie por outro aplicativo.</DialogDescription>
+          <DialogTitle>{tc.titulo}</DialogTitle>
+          <DialogDescription>{tc.descricao}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2 sm:grid-cols-2">
@@ -72,7 +75,7 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
             ) : (
               <Copy className="size-4" aria-hidden="true" />
             )}
-            {linkCopiado ? "Link copiado!" : "Copiar link"}
+            {linkCopiado ? tc.linkCopiado : tc.copiarLink}
           </Button>
 
           {podeCompartilharNativo ? (
@@ -82,20 +85,20 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
               className="min-h-11 justify-start gap-2"
               onClick={compartilharNativo}
             >
-              <Share2 className="size-4" aria-hidden="true" /> Compartilhar em outras redes
+              <Share2 className="size-4" aria-hidden="true" /> {tc.outrasRedes}
             </Button>
           ) : null}
         </div>
 
         <div className="mt-2 border-t pt-4">
           <label htmlFor="comentario-compartilhar" className="flex items-center gap-2 text-sm font-medium">
-            <Repeat2 className="size-4" aria-hidden="true" /> Compartilhar no ACESSO
+            <Repeat2 className="size-4" aria-hidden="true" /> {tc.noAcesso}
           </label>
           <Textarea
             id="comentario-compartilhar"
             value={comentario}
             onChange={(e) => setComentario(e.target.value)}
-            placeholder="O que você achou dessa publicação? (opcional)"
+            placeholder={tc.placeholder}
             className="mt-2 resize-none"
           />
         </div>
@@ -116,7 +119,7 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
               )
             }
           >
-            {compartilhar.isPending ? "Compartilhando…" : "Compartilhar no ACESSO"}
+            {compartilhar.isPending ? tc.compartilhando : tc.noAcesso}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,0 +1,27 @@
+/** Página "Minha atividade": resumo privado da presença da pessoa no ACESSO. */
+export const atividade = {
+  meta: {
+    titulo: "Minha atividade — ACESSO",
+    descricao: "Veja, só você, um resumo das suas candidaturas, vagas favoritas, seguidos e interações no feed.",
+  },
+  titulo: "Minha atividade",
+  intro: "Um resumo da sua presença no ACESSO. Esta página é privada — só você pode vê-la.",
+  carregando: "Carregando sua atividade…",
+  erro: "Não foi possível carregar sua atividade.",
+  pessoasSeguidas: "Pessoas que você segue",
+  verTudo: "Ver tudo",
+  nenhumaPessoa: "Você ainda não segue ninguém.",
+  verFeed: "Ver o feed",
+  empresasSeguidas: "Empresas que você segue",
+  nenhumaEmpresa: "Você ainda não segue nenhuma empresa.",
+  explorarVagas: "Explorar vagas",
+  empresaFallback: "Empresa",
+  interacoes: "Suas interações no feed",
+  curtidas: "Curtidas",
+  comentarios: "Comentários",
+  compartilhamentos: "Compartilhamentos",
+  semCurtidas: "Você ainda não curtiu nenhuma publicação.",
+  semComentarios: "Você ainda não comentou em nenhuma publicação.",
+  semCompartilhamentos: "Você ainda não compartilhou nenhuma publicação.",
+  publicacaoComAnexo: "Publicação com anexo",
+};

@@ -275,7 +275,7 @@ export function EtapaCurriculoPerfil({
             <SelectContent>
               {ESCOLARIDADES.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {item}
+                  {t.escolaridades[item] ?? item}
                 </SelectItem>
               ))}
             </SelectContent>

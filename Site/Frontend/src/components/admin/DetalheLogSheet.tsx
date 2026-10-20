@@ -6,32 +6,26 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { rotuloOuValor } from "@/components/admin/rotulos";
+import { useT, type Dicionario } from "@/i18n";
 import { formatarDataHora } from "@/utils/formatacao";
 import type { LogAdmin } from "@/services/admin.service";
 
-const ROTULOS_SNAPSHOT: Record<string, string> = {
-  id: "ID",
-  autorId: "ID do autor",
-  nomeAutor: "Autor",
-  conteudo: "Conteúdo",
-  midiaPorTipo: "Anexos por tipo",
-  totalAnexos: "Total de anexos",
-  totalCurtidas: "Curtidas",
-  totalComentarios: "Comentários",
-  publica: "Visível a visitantes anônimos",
-  criadaEm: "Criado em",
-  postagemId: "ID da publicação",
-  autorPostagemId: "ID do autor da publicação",
-  nomeAutorPostagem: "Autor da publicação",
-};
-
-function formatarValorSnapshot(chave: string, valor: unknown): string {
-  if (valor === null || valor === undefined || valor === "") return "—";
+function formatarValorSnapshot(t: Dicionario, chave: string, valor: unknown): string {
+  if (valor === null || valor === undefined || valor === "") return t.comum.semValor;
   if (chave === "criadaEm" && typeof valor === "string") return formatarDataHora(valor);
-  if (chave === "publica") return valor ? "Sim" : "Não";
+  if (chave === "publica") return valor ? t.comum.sim : t.comum.nao;
   if (chave === "midiaPorTipo" && typeof valor === "object") {
+    const midia: Record<string, unknown> = t.admin.logs.detalhe.midia;
     const entradas = Object.entries(valor as Record<string, number>);
-    return entradas.length ? entradas.map(([tipo, qtd]) => `${qtd} ${tipo}`).join(", ") : "Nenhum";
+    return entradas.length
+      ? entradas
+          .map(([tipo, qtd]) => {
+            const formatar = midia[tipo];
+            return typeof formatar === "function" ? (formatar as (n: number) => string)(qtd) : `${qtd} ${tipo}`;
+          })
+          .join(", ")
+      : t.admin.logs.detalhe.nenhum;
   }
   return String(valor);
 }
@@ -50,6 +44,8 @@ export function DetalheLogSheet({
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
 }) {
+  const t = useT();
+  const td = t.admin.logs.detalhe;
   const retrato = (log?.metadados?.retrato ?? null) as Record<string, unknown> | null;
 
   return (
@@ -64,27 +60,29 @@ export function DetalheLogSheet({
 
             <div className="mt-4 space-y-4 text-sm">
               <div className="flex flex-wrap gap-2">
-                {log.entidadeTipo && <Badge variant="outline">{log.entidadeTipo}</Badge>}
-                <Badge variant="secondary">Admin: {log.administrador?.nome ?? "Conta removida"}</Badge>
+                {log.entidadeTipo && (
+                  <Badge variant="outline">{rotuloOuValor(t.admin.logs.entidades, log.entidadeTipo)}</Badge>
+                )}
+                <Badge variant="secondary">{td.admin(log.administrador?.nome ?? t.admin.comum.contaRemovida)}</Badge>
               </div>
 
               <div>
-                <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">Descrição</h3>
-                <p>{log.descricao ?? "Sem descrição registrada."}</p>
+                <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">{td.descricao}</h3>
+                <p>{log.descricao ?? td.semDescricao}</p>
               </div>
 
               {retrato && (
                 <div>
                   <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">
-                    Registro no momento da ação
+                    {td.retrato}
                   </h3>
                   <dl className="space-y-1.5 rounded-lg border border-border p-3">
                     {Object.entries(retrato)
                       .filter(([chave]) => chave !== "conteudo")
                       .map(([chave, valor]) => (
                         <div key={chave} className="flex justify-between gap-3">
-                          <dt className="text-muted-foreground">{ROTULOS_SNAPSHOT[chave] ?? chave}</dt>
-                          <dd className="text-right font-medium">{formatarValorSnapshot(chave, valor)}</dd>
+                          <dt className="text-muted-foreground">{rotuloOuValor(td.campos, chave)}</dt>
+                          <dd className="text-right font-medium">{formatarValorSnapshot(t, chave, valor)}</dd>
                         </div>
                       ))}
                   </dl>
@@ -97,16 +95,16 @@ export function DetalheLogSheet({
               )}
 
               <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <p>IP: {log.ip ?? "—"}</p>
+                <p>{td.ip(log.ip ?? t.comum.semValor)}</p>
                 <p className="truncate" title={log.userAgent ?? undefined}>
-                  Dispositivo: {log.userAgent ?? "—"}
+                  {td.dispositivo(log.userAgent ?? t.comum.semValor)}
                 </p>
               </div>
 
               {log.metadados && (
                 <details className="rounded-lg border border-border p-3">
                   <summary className="cursor-pointer text-xs font-bold uppercase text-muted-foreground">
-                    Dados brutos registrados
+                    {td.dadosBrutos}
                   </summary>
                   <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs">
                     {JSON.stringify(log.metadados, null, 2)}

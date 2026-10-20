@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -39,6 +40,7 @@ const DialogContent = React.forwardRef<
   // (como o `LightboxMidia`) continua valendo: ele roda primeiro, e o `preventDefault()` impede
   // este retorno genérico.
   const gatilhoRef = React.useRef<HTMLElement | null>(null);
+  const fechar = useT().comum.fechar;
 
   return (
     <DialogPortal>
@@ -64,7 +66,7 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-          aria-label="Fechar"
+          aria-label={fechar}
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </DialogPrimitive.Close>

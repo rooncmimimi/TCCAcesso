@@ -2,14 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Card } from "@/components/ui/card";
 import { UsuariosTabela } from "@/components/admin/UsuariosTabela";
+import { dic, metaPagina, useT } from "@/i18n";
 
 export const Route = createFileRoute("/admin/usuarios/")({
   head: () => ({
     meta: [
-      { title: "Usuários — Administração ACESSO" },
-      { name: "description", content: "Bloqueie ou remova contas de usuários da plataforma ACESSO." },
-      { property: "og:title", content: "Usuários — Administração ACESSO" },
-      { property: "og:description", content: "Moderação de contas de usuários." },
+      ...metaPagina(dic().admin.meta.usuarios).meta,
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -18,9 +16,11 @@ export const Route = createFileRoute("/admin/usuarios/")({
 });
 
 function AdminUsuarios() {
+  const t = useT();
+
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-extrabold">Usuários</h1>
+      <h1 className="text-3xl font-extrabold">{t.admin.paginas.usuarios}</h1>
       <Card className="overflow-hidden p-0 shadow-none">
         <UsuariosTabela />
       </Card>

@@ -15,18 +15,11 @@ import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
 import { urlArquivo } from "@/utils/arquivos";
 import { atividadeService } from "@/services/atividade.service";
+import { dic, metaPagina, useT } from "@/i18n";
 import type { InteracaoFeedItem } from "@/types";
 
 export const Route = createFileRoute("/minha-atividade")({
-  head: () => ({
-    meta: [
-      { title: "Minha atividade — ACESSO" },
-      {
-        name: "description",
-        content: "Veja, só você, um resumo das suas candidaturas, vagas favoritas, seguidos e interações no feed.",
-      },
-    ],
-  }),
+  head: () => metaPagina(dic().atividade.meta),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <MinhaAtividade />
@@ -35,6 +28,8 @@ export const Route = createFileRoute("/minha-atividade")({
 });
 
 function MinhaAtividade() {
+  const t = useT();
+  const ta = t.atividade;
   const { usuario } = useSessao();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -44,20 +39,20 @@ function MinhaAtividade() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Minha atividade</h1>
+      <h1 className="text-3xl font-extrabold">{ta.titulo}</h1>
       <p className="mt-2 text-muted-foreground">
-        Um resumo da sua presença no ACESSO. Esta página é privada — só você pode vê-la.
+        {ta.intro}
       </p>
 
       {isLoading ? (
         <div role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando sua atividade…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {ta.carregando}
         </div>
       ) : isError || !data ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
-          <p>Não foi possível carregar sua atividade.</p>
+          <p>{ta.erro}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t.comum.tentarNovamente}
           </Button>
         </div>
       ) : (
@@ -67,11 +62,11 @@ function MinhaAtividade() {
 
           <Card className="shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-              <CardTitle className="text-lg">Pessoas que você segue</CardTitle>
+              <CardTitle className="text-lg">{ta.pessoasSeguidas}</CardTitle>
               {usuario && data.seguindo.pessoas.total > 0 ? (
                 <ListaSeguidoresDialog usuarioId={usuario.id} modo="seguindo" total={data.seguindo.pessoas.total}>
                   <Button variant="ghost" size="sm">
-                    Ver tudo
+                    {ta.verTudo}
                   </Button>
                 </ListaSeguidoresDialog>
               ) : null}
@@ -79,9 +74,9 @@ function MinhaAtividade() {
             <CardContent>
               {data.seguindo.pessoas.itens.length === 0 ? (
                 <p className="py-6 text-sm text-muted-foreground">
-                  Você ainda não segue ninguém.{" "}
+                  {ta.nenhumaPessoa}{" "}
                   <Link to="/feed" className="font-medium text-primary underline">
-                    Ver o feed
+                    {ta.verFeed}
                   </Link>
                 </p>
               ) : (
@@ -110,21 +105,21 @@ function MinhaAtividade() {
 
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg">Empresas que você segue</CardTitle>
+              <CardTitle className="text-lg">{ta.empresasSeguidas}</CardTitle>
             </CardHeader>
             <CardContent>
               {data.seguindo.empresas.itens.length === 0 ? (
                 <p className="py-6 text-sm text-muted-foreground">
-                  Você ainda não segue nenhuma empresa.{" "}
+                  {ta.nenhumaEmpresa}{" "}
                   <Link to="/vagas" className="font-medium text-primary underline">
-                    Explorar vagas
+                    {ta.explorarVagas}
                   </Link>
                 </p>
               ) : (
                 <ul className="divide-y">
                   {data.seguindo.empresas.itens.map((vinculo) => {
                     const empresa = vinculo.empresa;
-                    const nome = empresa?.nomeFantasia ?? empresa?.razaoSocial ?? "Empresa";
+                    const nome = empresa?.nomeFantasia ?? empresa?.razaoSocial ?? ta.empresaFallback;
                     return (
                       <li key={vinculo.id}>
                         <Link
@@ -150,29 +145,29 @@ function MinhaAtividade() {
 
           <Card className="shadow-none lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Suas interações no feed</CardTitle>
+              <CardTitle className="text-lg">{ta.interacoes}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-3">
               <ListaInteracao
-                titulo="Curtidas"
+                titulo={ta.curtidas}
                 icon={Heart}
                 itens={data.interacoesFeed.curtidas.itens}
                 total={data.interacoesFeed.curtidas.total}
-                vazio="Você ainda não curtiu nenhuma publicação."
+                vazio={ta.semCurtidas}
               />
               <ListaInteracao
-                titulo="Comentários"
+                titulo={ta.comentarios}
                 icon={MessageCircle}
                 itens={data.interacoesFeed.comentarios.itens}
                 total={data.interacoesFeed.comentarios.total}
-                vazio="Você ainda não comentou em nenhuma publicação."
+                vazio={ta.semComentarios}
               />
               <ListaInteracao
-                titulo="Compartilhamentos"
+                titulo={ta.compartilhamentos}
                 icon={Share2}
                 itens={data.interacoesFeed.compartilhamentos.itens}
                 total={data.interacoesFeed.compartilhamentos.total}
-                vazio="Você ainda não compartilhou nenhuma publicação."
+                vazio={ta.semCompartilhamentos}
               />
             </CardContent>
           </Card>
@@ -196,6 +191,8 @@ function ListaInteracao({
   total: number;
   vazio: string;
 }) {
+  const semTexto = useT().atividade.publicacaoComAnexo;
+
   return (
     <div>
       <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -212,7 +209,7 @@ function ListaInteracao({
                 params={{ postagemId: item.postagem?.id ?? "" }}
                 className="block truncate rounded-md px-2 py-1.5 text-sm hover:bg-secondary focus-visible:bg-secondary"
               >
-                {item.postagem?.conteudo?.trim() || "Publicação com anexo"}
+                {item.postagem?.conteudo?.trim() || semTexto}
               </Link>
             </li>
           ))}

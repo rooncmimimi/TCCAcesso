@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sheet";
 import { LogsTabela } from "@/components/admin/LogsTabela";
 import { formatarDataHora } from "@/utils/formatacao";
+import { useT } from "@/i18n";
 import type { ComentarioAdmin } from "@/services/admin.service";
 
 export function DetalheComentarioSheet({
@@ -18,7 +19,9 @@ export function DetalheComentarioSheet({
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
 }) {
-  const dataCriacao = comentario?.criadoEm ?? comentario?.criadoEm;
+  const t = useT().admin;
+  const td = t.comentarios.detalhe;
+  const dataCriacao = comentario?.criadoEm;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -26,9 +29,9 @@ export function DetalheComentarioSheet({
         {comentario && (
           <>
             <SheetHeader>
-              <SheetTitle>Comentário de {comentario.usuario?.nome ?? "usuário"}</SheetTitle>
+              <SheetTitle>{td.titulo(comentario.usuario?.nome ?? t.comum.usuarioGenerico)}</SheetTitle>
               <SheetDescription>
-                {dataCriacao ? `Comentado em ${formatarDataHora(dataCriacao)}` : "Data não registrada"}
+                {dataCriacao ? td.comentadoEm(formatarDataHora(dataCriacao)) : td.dataNaoRegistrada}
                 {comentario.usuario?.email ? ` · ${comentario.usuario.email}` : ""}
               </SheetDescription>
             </SheetHeader>
@@ -40,15 +43,15 @@ export function DetalheComentarioSheet({
 
               <div>
                 <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">
-                  Publicação relacionada
+                  {td.publicacaoRelacionada}
                 </h3>
                 <p className="line-clamp-3 text-muted-foreground">
-                  {comentario.postagem?.conteudo ?? "Publicação não disponível."}
+                  {comentario.postagem?.conteudo ?? td.publicacaoIndisponivel}
                 </p>
               </div>
 
               <div>
-                <h3 className="mb-2 text-sm font-bold">Histórico de moderação deste comentário</h3>
+                <h3 className="mb-2 text-sm font-bold">{td.historico}</h3>
                 <div className="rounded-lg border border-border">
                   <LogsTabela entidadeId={comentario.id} entidadeTipo="comentario" />
                 </div>

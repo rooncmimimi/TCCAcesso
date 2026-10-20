@@ -36,23 +36,23 @@ import { extrairMensagemErro } from "@/services/api";
 import { ouvirEvento } from "@/services/socket";
 import { formatarTempoRelativo } from "@/utils/formatacao";
 import { cn } from "@/lib/utils";
+import { dic, useT } from "@/i18n";
 import type { Notificacao } from "@/types";
 
 export const Route = createFileRoute("/notificacoes")({
-  head: () => ({
-    meta: [
-      { title: "Notificações — ACESSO" },
-      {
-        name: "description",
-        content:
-          "Acompanhe candidaturas, vagas compatíveis e novidades da sua rede na plataforma ACESSO.",
-      },
-      { property: "og:title", content: "Notificações — ACESSO" },
-      { property: "og:description", content: "Novidades sobre suas candidaturas e vagas." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => {
+    const m = dic().notificacoes.meta;
+    return {
+      meta: [
+        { title: m.titulo },
+        { name: "description", content: m.descricao },
+        { property: "og:title", content: m.titulo },
+        { property: "og:description", content: m.descricaoSocial },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary" },
+      ],
+    };
+  },
   component: PaginaNotificacoes,
 });
 
@@ -135,6 +135,8 @@ function PaginaNotificacoes() {
 }
 
 function Notificacoes() {
+  const t = useT();
+  const tn = t.notificacoes;
   const queryClient = useQueryClient();
   // Idem para Aceitar/Recusar solicitação: guarda o resultado por
   // `entidadeId` (id da solicitação) pra nunca reprocessar a mesma.
@@ -168,7 +170,7 @@ function Notificacoes() {
   const marcarTodas = useMutation({
     mutationFn: () => notificacoesService.marcarTodas(),
     onSuccess: () => {
-      toast.success("Todas as notificações foram marcadas como lidas.");
+      toast.success(tn.todasMarcadas);
       invalidar();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
@@ -177,7 +179,7 @@ function Notificacoes() {
   const remover = useMutation({
     mutationFn: (id: string) => notificacoesService.remover(id),
     onSuccess: () => {
-      toast.success("Notificação removida.");
+      toast.success(tn.removida);
       invalidar();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
@@ -186,12 +188,12 @@ function Notificacoes() {
   const aceitarSolicitacao = useMutation({
     mutationFn: (solicitacaoId: string) => seguidoresService.aceitarSolicitacao(solicitacaoId),
     onSuccess: (_dados, solicitacaoId) => {
-      toast.success("Solicitação aceita.");
+      toast.success(tn.solicitacaoAceita + ".");
       setSolicitacoesProcessadas((atual) => new Map(atual).set(solicitacaoId, "aceita"));
       invalidar();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível aceitar a solicitação."));
+      toast.error(extrairMensagemErro(erro, tn.erroAceitar));
       // 404 aqui normalmente significa que a solicitação já foi processada
       // (corrida com outra aba, ou o solicitante cancelou): atualiza a
       // lista pra tirar os botões de uma solicitação que não existe mais.
@@ -202,12 +204,12 @@ function Notificacoes() {
   const recusarSolicitacao = useMutation({
     mutationFn: (solicitacaoId: string) => seguidoresService.recusarSolicitacao(solicitacaoId),
     onSuccess: (_dados, solicitacaoId) => {
-      toast.success("Solicitação recusada.");
+      toast.success(tn.solicitacaoRecusada + ".");
       setSolicitacoesProcessadas((atual) => new Map(atual).set(solicitacaoId, "recusada"));
       invalidar();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível recusar a solicitação."));
+      toast.error(extrairMensagemErro(erro, tn.erroRecusar));
       invalidar();
     },
   });
@@ -223,13 +225,13 @@ function Notificacoes() {
     <EstruturaApp>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold">Notificações</h1>
+          <h1 className="text-3xl font-extrabold">{tn.titulo}</h1>
           <p className="mt-1 text-muted-foreground" role="status" aria-live="polite">
             {isLoading
-              ? "Carregando…"
+              ? tn.carregando
               : naoLidas > 0
-                ? `${naoLidas} não lida${naoLidas === 1 ? "" : "s"}`
-                : "Nenhuma notificação não lida."}
+                ? tn.naoLidas(naoLidas)
+                : tn.nenhumaNaoLida}
           </p>
         </div>
         <Button
@@ -238,12 +240,12 @@ function Notificacoes() {
           disabled={naoLidas === 0 || marcarTodas.isPending}
           onClick={() => marcarTodas.mutate()}
         >
-          <CheckCheck className="size-4" aria-hidden="true" /> Marcar todas como lidas
+          <CheckCheck className="size-4" aria-hidden="true" /> {tn.marcarTodas}
         </Button>
       </div>
 
       {isLoading && (
-        <ul className="mt-6 space-y-3" aria-label="Carregando notificações">
+        <ul className="mt-6 space-y-3" aria-label={tn.carregandoAria}>
           {[1, 2, 3].map((i) => (
             <li key={i}>
               <Skeleton className="h-20 w-full rounded-xl" />
@@ -254,9 +256,9 @@ function Notificacoes() {
 
       {isError && (
         <div role="alert" className="mt-6 space-y-3 rounded-xl border border-destructive/40 p-6">
-          <p className="text-sm">Não foi possível carregar suas notificações.</p>
+          <p className="text-sm">{tn.erro}</p>
           <Button variant="outline" onClick={() => refetch()}>
-            Tentar novamente
+            {t.comum.tentarNovamente}
           </Button>
         </div>
       )}
@@ -264,7 +266,7 @@ function Notificacoes() {
       {!isLoading && !isError && notificacoes.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border p-10 text-center text-muted-foreground">
           <BellOff className="size-8" aria-hidden="true" />
-          <p className="text-sm">Você ainda não tem notificações.</p>
+          <p className="text-sm">{tn.vazio}</p>
         </div>
       )}
 
@@ -274,11 +276,11 @@ function Notificacoes() {
             const Icon = iconeDe(n);
             const destino = destinoDe(n);
             const tempo = formatarTempoRelativo(n.criadoEm);
-            const estadoLida = n.lida ? "lida" : "não lida";
+            const estadoLida = n.lida ? tn.lida : tn.naoLida;
             const resultadoSolicitacao = n.entidadeId
               ? solicitacoesProcessadas.get(n.entidadeId)
               : undefined;
-            const labelConteudo = `${n.titulo}. ${n.descricao ?? ""} ${tempo} — ${estadoLida}.`;
+            const labelConteudo = tn.rotuloItem(n.titulo, n.descricao ?? "", tempo, estadoLida);
 
             const conteudo = (
               <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
@@ -336,7 +338,7 @@ function Notificacoes() {
                             size="sm"
                             variant="ghost"
                             className="min-h-11"
-                            aria-label={`Marcar "${n.titulo}" como lida`}
+                            aria-label={tn.marcarLida(n.titulo)}
                             disabled={marcarUma.isPending}
                             onClick={() => marcarUma.mutate(n.id)}
                           >
@@ -347,7 +349,7 @@ function Notificacoes() {
                           size="sm"
                           variant="ghost"
                           className="min-h-11 text-destructive"
-                          aria-label={`Remover "${n.titulo}"`}
+                          aria-label={tn.remover(n.titulo)}
                           disabled={remover.isPending}
                           onClick={() => remover.mutate(n.id)}
                         >
@@ -362,7 +364,7 @@ function Notificacoes() {
                       {n.subtipo === "solicitacao_seguimento" && n.entidadeId && (
                         resultadoSolicitacao ? (
                           <span className="text-xs font-medium text-muted-foreground">
-                            {resultadoSolicitacao === "aceita" ? "Solicitação aceita" : "Solicitação recusada"}
+                            {resultadoSolicitacao === "aceita" ? tn.solicitacaoAceita : tn.solicitacaoRecusada}
                           </span>
                         ) : (
                           <div className="flex gap-1">
@@ -373,7 +375,7 @@ function Notificacoes() {
                               disabled={aceitarSolicitacao.isPending || recusarSolicitacao.isPending}
                               onClick={() => n.entidadeId && aceitarSolicitacao.mutate(n.entidadeId)}
                             >
-                              Aceitar
+                              {tn.aceitar}
                             </Button>
                             <Button
                               size="sm"
@@ -382,7 +384,7 @@ function Notificacoes() {
                               disabled={aceitarSolicitacao.isPending || recusarSolicitacao.isPending}
                               onClick={() => n.entidadeId && recusarSolicitacao.mutate(n.entidadeId)}
                             >
-                              Recusar
+                              {tn.recusar}
                             </Button>
                           </div>
                         )

@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useSessao } from "@/hooks/useSessao";
 import { empresasService, seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/utils/arquivos";
+import { useT } from "@/i18n";
 import { EditarEmpresaDialog } from "./EditarEmpresaDialog";
 import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
@@ -25,6 +26,8 @@ import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
  * Com `usuarioId` de outra empresa: modo leitura pública, com botão de seguir.
  */
 export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
+  const t = useT();
+  const te = t.perfil.empresa;
   const { usuario } = useSessao();
 
   const proprioPerfil = !usuarioId || usuarioId === usuario?.id;
@@ -67,7 +70,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
     return (
       <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil da empresa…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {te.carregando}
         </div>
       </EstruturaApp>
     );
@@ -77,9 +80,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
     return (
       <EstruturaApp>
         <div role="alert" className="py-10 text-sm text-destructive">
-          {proprioPerfil
-            ? "Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde."
-            : "Este perfil não está disponível."}
+          {proprioPerfil ? te.erroProprio : t.perfilRotas.indisponivel}
         </div>
       </EstruturaApp>
     );
@@ -91,7 +92,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
       return (
         <EstruturaApp>
           <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
-            Este perfil não está disponível.
+            {t.perfilRotas.indisponivel}
           </div>
         </EstruturaApp>
       );
@@ -128,7 +129,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
             {proprioPerfil ? (
               <EditarEmpresaDialog empresa={empresa}>
                 <Button variant="outline" className="min-h-11 shrink-0">
-                  <Pencil aria-hidden="true" /> Editar perfil da empresa
+                  <Pencil aria-hidden="true" /> {te.editar}
                 </Button>
               </EditarEmpresaDialog>
             ) : (
@@ -151,14 +152,14 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-extrabold">{nome}</h1>
-            <StatusBadge tom="sucesso">Aprovada</StatusBadge>
+            <StatusBadge tom="sucesso">{te.aprovada}</StatusBadge>
             {empresa.empresaVerificada && (
               <span
                 className="inline-flex items-center gap-1 text-primary"
-                title="Empresa verificada pelo ACESSO"
+                title={t.comum.empresaVerificadaTitulo}
               >
                 <BadgeCheck className="size-5" aria-hidden="true" />
-                <span className="sr-only">Empresa verificada</span>
+                <span className="sr-only">{t.comum.empresaVerificada}</span>
               </span>
             )}
           </div>
@@ -178,11 +179,11 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                 rel="noreferrer noopener"
                 className="flex items-center gap-1 font-medium text-primary hover:underline"
               >
-                <Globe className="size-4" aria-hidden="true" /> Site
+                <Globe className="size-4" aria-hidden="true" /> {te.site}
               </a>
             ) : null}
             <span className="flex items-center gap-1">
-              <Users className="size-4" aria-hidden="true" /> {resumo?.totalSeguidores ?? 0} seguidores
+              <Users className="size-4" aria-hidden="true" /> {te.seguidores(resumo?.totalSeguidores ?? 0)}
             </span>
           </div>
         </CardContent>
@@ -193,13 +194,13 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
           <CardContent className="space-y-4 p-5 sm:p-6">
             {empresa.descricao ? (
               <div>
-                <h2 className="text-lg font-bold">Sobre a empresa</h2>
+                <h2 className="text-lg font-bold">{te.sobre}</h2>
                 <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{empresa.descricao}</p>
               </div>
             ) : null}
             {empresa.culturaInclusiva ? (
               <div>
-                <h2 className="text-lg font-bold">Cultura de inclusão</h2>
+                <h2 className="text-lg font-bold">{te.cultura}</h2>
                 <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{empresa.culturaInclusiva}</p>
               </div>
             ) : null}
@@ -209,13 +210,13 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
 
       <Card className="mt-4 shadow-card">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-lg font-bold">Vagas publicadas</h2>
+          <h2 className="text-lg font-bold">{te.vagasPublicadas}</h2>
           {carregandoVagas ? (
             <div role="status" aria-live="polite" className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando vagas…
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {te.carregandoVagas}
             </div>
           ) : !vagas || vagas.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">Nenhuma vaga publicada ainda.</p>
+            <p className="mt-2 text-sm text-muted-foreground">{te.nenhumaVaga}</p>
           ) : (
             <ul className="mt-3 divide-y">
               {vagas.map((vaga) => (
@@ -229,11 +230,11 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                       {vaga.titulo}
                     </Link>
                     <p className="text-sm text-muted-foreground">
-                      {vaga.cidade ?? "Local não informado"} · {vaga.modalidade}
+                      {vaga.cidade ?? te.localNaoInformado} · {t.vagas.modalidade[vaga.modalidade] ?? vaga.modalidade}
                     </p>
                   </div>
                   <Badge variant={vaga.status === "aberta" ? "default" : "secondary"} className="shrink-0 font-medium">
-                    {vaga.status}
+                    {t.status[vaga.status as keyof typeof t.status] ?? vaga.status}
                   </Badge>
                 </li>
               ))}
@@ -246,7 +247,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
         <CardContent className="p-5 sm:p-6">
           {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
               data. */}
-          <h2 className="mb-4 text-lg font-bold">Publicações</h2>
+          <h2 className="mb-4 text-lg font-bold">{t.perfil.pessoal.publicacoes}</h2>
           <LinhaDoTempoUsuario usuarioId={empresa.usuarioId ?? ""} />
         </CardContent>
       </Card>

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { perfilService } from "@/services/perfil.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useT } from "@/i18n";
 
 /**
  * Botões "Visualizar currículo" e "Baixar currículo", usados no próprio perfil, no perfil de outra
@@ -16,6 +17,7 @@ import { extrairMensagemErro } from "@/services/api";
  * backend reautoriza cada chamada.
  */
 export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
+  const tc = useT().perfilItens.curriculo;
   const [visualizando, setVisualizando] = useState(false);
   const [baixando, setBaixando] = useState(false);
 
@@ -41,7 +43,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
       }
     } catch (erro) {
       aba?.close();
-      toast.error(extrairMensagemErro(erro, "Não foi possível abrir o currículo."));
+      toast.error(extrairMensagemErro(erro, tc.erroAbrir));
     } finally {
       setVisualizando(false);
     }
@@ -61,7 +63,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
       link.click();
       link.remove();
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível baixar o currículo."));
+      toast.error(extrairMensagemErro(erro, tc.erroBaixar));
     } finally {
       setBaixando(false);
     }
@@ -76,14 +78,14 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
         className="min-h-9 gap-1.5"
         disabled={visualizando}
         onClick={visualizar}
-        aria-label="Visualizar currículo"
+        aria-label={tc.visualizar}
       >
         {visualizando ? (
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         ) : (
           <Eye className="size-4" aria-hidden="true" />
         )}
-        Visualizar currículo
+        {tc.visualizar}
       </Button>
       <Button
         type="button"
@@ -92,14 +94,14 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
         className="min-h-9 gap-1.5"
         disabled={baixando}
         onClick={baixar}
-        aria-label="Baixar currículo"
+        aria-label={tc.baixar}
       >
         {baixando ? (
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         ) : (
           <Download className="size-4" aria-hidden="true" />
         )}
-        Baixar currículo
+        {tc.baixar}
       </Button>
     </div>
   );

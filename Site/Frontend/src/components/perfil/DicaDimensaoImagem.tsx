@@ -7,12 +7,15 @@
  * - Banner: `CapaUploader` renderiza `h-32 sm:h-40` em largura total;
  *   proporção ~4:1, a mesma de 1584×396.
  */
+import { useT } from "@/i18n";
+
 export function DicaDimensaoImagem({ tipo }: { tipo: "foto" | "banner" }) {
+  const tu = useT().perfilItens.upload;
   const recomendado = tipo === "foto" ? "400 × 400 px" : "1584 × 396 px";
 
   return (
     <p className="mt-1.5 text-xs text-muted-foreground">
-      Recomendado: {recomendado} · Formatos: JPG, PNG ou WEBP · Tamanho máximo: 5 MB
+      {tu.dica(recomendado)}
     </p>
   );
 }

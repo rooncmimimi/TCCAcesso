@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { extrairMensagemErro } from "@/services/api";
 import { ouvirEvento } from "@/services/socket";
+import { dic } from "@/i18n";
 import postagensService, { type FiltroFeed, type NovaPostagem } from "@/services/postagens.service";
 import type { Paginado } from "@/services/http";
 import type { ComentarioCompleto, PostagemCompleta } from "@/types";
@@ -165,9 +166,9 @@ export function useCriarPostagem() {
     mutationFn: (payload: NovaPostagem) => postagensService.criar(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["postagens"] });
-      toast.success("Publicação criada com sucesso.");
+      toast.success(dic().feed.toasts.criada);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível publicar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroCriar)),
   });
 }
 
@@ -181,9 +182,9 @@ export function useAtualizarPostagem() {
         atualizarPostagemNoCacheFeed(atual, postagemAtualizada.id, () => postagemAtualizada),
       );
       queryClient.setQueryData(["postagem", postagemAtualizada.id], postagemAtualizada);
-      toast.success("Publicação atualizada.");
+      toast.success(dic().feed.toasts.atualizada);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível editar a publicação.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroEditar)),
   });
 }
 
@@ -197,9 +198,9 @@ export function useAtualizarDescricaoAnexo() {
         atualizarPostagemNoCacheFeed(atual, postagemAtualizada.id, () => postagemAtualizada),
       );
       queryClient.setQueryData(["postagem", postagemAtualizada.id], postagemAtualizada);
-      toast.success("Descrição da imagem atualizada.");
+      toast.success(dic().feed.toasts.descricaoAtualizada);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar a descrição.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroDescricao)),
   });
 }
 
@@ -211,9 +212,9 @@ export function useRemoverPostagem() {
       queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
         removerPostagemDoCacheFeed(atual, id),
       );
-      toast.success("Publicação excluída.");
+      toast.success(dic().feed.toasts.excluida);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a publicação.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroExcluir)),
   });
 }
 
@@ -256,7 +257,7 @@ export function useAlternarCurtida() {
       if (contexto?.anteriorDetalhe) {
         queryClient.setQueryData(["postagem", postagemId], contexto.anteriorDetalhe);
       }
-      toast.error(extrairMensagemErro(erro, "Não foi possível curtir a publicação."));
+      toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroCurtir));
     },
     onSuccess: (resultado, postagemId) => {
       const aplicar = (postagem: PostagemCompleta) => ({
@@ -291,7 +292,7 @@ export function useCriarComentario(postagemId: string) {
         atual ? { ...atual, totalComentarios: (atual.totalComentarios ?? 0) + 1 } : atual,
       );
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível enviar o comentário.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroComentar)),
   });
 }
 
@@ -307,9 +308,9 @@ export function useRemoverComentario(postagemId: string) {
           totalComentarios: Math.max(0, (postagem.totalComentarios ?? 0) - 1),
         })),
       );
-      toast.success("Comentário excluído.");
+      toast.success(dic().feed.toasts.comentarioExcluido);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir o comentário.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroExcluirComentario)),
   });
 }
 
@@ -331,9 +332,9 @@ export function useCompartilharPostagem() {
         atual ? aplicar(atual) : atual,
       );
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Publicação compartilhada.");
+      toast.success(dic().feed.toasts.compartilhada);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível compartilhar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroCompartilhar)),
   });
 }
 
@@ -353,9 +354,9 @@ export function useDesfazerCompartilhamento() {
       queryClient.setQueryData<PostagemCompleta>(["postagem", variaveis.postagemId], (atual) =>
         atual ? aplicar(atual) : atual,
       );
-      toast.success("Compartilhamento desfeito.");
+      toast.success(dic().feed.toasts.descompartilhada);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível desfazer o compartilhamento.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().feed.toasts.erroDescompartilhar)),
   });
 }
 

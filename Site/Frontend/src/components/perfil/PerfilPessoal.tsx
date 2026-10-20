@@ -25,6 +25,7 @@ import { perfilService } from "@/services/perfil.service";
 import { seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/utils/arquivos";
 import { formatarData } from "@/utils/formatacao";
+import { useT } from "@/i18n";
 import { EditarPerfilDialog } from "./EditarPerfilDialog";
 import { SeguirButton } from "./SeguirButton";
 import { EnviarMensagemButton } from "./EnviarMensagemButton";
@@ -49,6 +50,8 @@ const TIPOS_CURRICULO_ACEITOS = [
  * Com `usuarioId` de outra pessoa: modo leitura, com botão de seguir no lugar de editar.
  */
 export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
+  const t = useT();
+  const tp = t.perfil.pessoal;
   const { usuario } = useSessao();
   const { preferencias } = useAcessibilidade();
 
@@ -93,10 +96,10 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   const enviarCurriculo = useMutation({
     mutationFn: (arquivo: File) => perfilService.enviarCurriculo(meuCandidato!.id, arquivo),
     onSuccess: () => {
-      toast.success("Currículo enviado.");
+      toast.success(tp.curriculoEnviado);
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível enviar o currículo.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tp.erroEnviarCurriculo)),
   });
 
   function aoEnviarCurriculo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -104,7 +107,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     evento.target.value = "";
     if (!arquivo) return;
     if (!TIPOS_CURRICULO_ACEITOS.includes(arquivo.type)) {
-      toast.error("Envie um arquivo PDF, DOC ou DOCX.");
+      toast.error(tp.erroTipoCurriculo);
       return;
     }
     enviarCurriculo.mutate(arquivo);
@@ -116,7 +119,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     return (
       <EstruturaApp>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
-          Este perfil não está disponível.
+          {t.perfilRotas.indisponivel}
         </div>
       </EstruturaApp>
     );
@@ -129,7 +132,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     return (
       <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t.perfilRotas.carregando}
         </div>
       </EstruturaApp>
     );
@@ -139,7 +142,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   const ehCandidato = proprioPerfil ? usuario?.tipo === "candidato" : Boolean(candidatoAlheio);
   const carregandoCandidato = proprioPerfil && carregandoMeuCandidato;
 
-  const nome = proprioPerfil ? usuario!.nome : candidato?.usuario?.nome ?? usuarioGenerico?.nome ?? "Usuário";
+  const nome = proprioPerfil ? usuario!.nome : candidato?.usuario?.nome ?? usuarioGenerico?.nome ?? tp.usuario;
   const fotoPerfil = proprioPerfil
     ? usuario!.fotoPerfil
     : candidato?.usuario?.fotoPerfil ?? usuarioGenerico?.fotoPerfil;
@@ -152,10 +155,10 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   // `PainelAcessibilidade.tsx`).
   const chipsAcessibilidade = proprioPerfil
     ? [
-        { ativo: preferencias.screenReader, icon: Ear, label: "Leitura por voz" },
-        { ativo: preferencias.vlibras, icon: Accessibility, label: "Libras (VLibras)" },
-        { ativo: preferencias.highContrast, icon: Contrast, label: "Alto contraste" },
-        { ativo: preferencias.dyslexiaFont, icon: Sparkles, label: "Fonte para dislexia" },
+        { ativo: preferencias.screenReader, icon: Ear, label: tp.chips.voz },
+        { ativo: preferencias.vlibras, icon: Accessibility, label: tp.chips.libras },
+        { ativo: preferencias.highContrast, icon: Contrast, label: tp.chips.contraste },
+        { ativo: preferencias.dyslexiaFont, icon: Sparkles, label: tp.chips.dislexia },
       ].filter((c) => c.ativo)
     : [];
 
@@ -179,7 +182,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
             {proprioPerfil ? (
               <EditarPerfilDialog candidato={ehCandidato ? candidato : null}>
                 <Button variant="outline" className="min-h-11 shrink-0">
-                  <Pencil aria-hidden="true" /> Editar perfil
+                  <Pencil aria-hidden="true" /> {tp.editarPerfil}
                 </Button>
               </EditarPerfilDialog>
             ) : (
@@ -209,15 +212,15 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                 type="button"
                 className="text-sm font-semibold text-primary underline-offset-2 hover:underline"
               >
-                Adicionar título profissional
+                {tp.adicionarTitulo}
               </button>
             </EditarPerfilDialog>
           ) : ehCandidato ? (
             // Perfil de terceiro sem título: texto neutro, nunca uma
             // chamada de ação que não pertence a quem está visitando.
-            <p className="text-muted-foreground">Perfil profissional</p>
+            <p className="text-muted-foreground">{tp.perfilProfissional}</p>
           ) : (
-            <p className="text-muted-foreground">Administrador do ACESSO</p>
+            <p className="text-muted-foreground">{tp.administrador}</p>
           )}
           {ehCandidato && candidato?.cidade ? (
             <p className="text-sm text-muted-foreground">
@@ -228,12 +231,12 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
             <ListaSeguidoresDialog usuarioId={alvoId} modo="seguidores" total={resumoSeguidores?.totalSeguidores ?? 0}>
               <button type="button" className="font-semibold hover:underline focus-visible:underline">
-                {resumoSeguidores?.totalSeguidores ?? 0} <span className="font-normal text-muted-foreground">seguidores</span>
+                {resumoSeguidores?.totalSeguidores ?? 0} <span className="font-normal text-muted-foreground">{tp.seguidores}</span>
               </button>
             </ListaSeguidoresDialog>
             <ListaSeguidoresDialog usuarioId={alvoId} modo="seguindo" total={resumoSeguidores?.totalSeguindo ?? 0}>
               <button type="button" className="font-semibold hover:underline focus-visible:underline">
-                {resumoSeguidores?.totalSeguindo ?? 0} <span className="font-normal text-muted-foreground">seguindo</span>
+                {resumoSeguidores?.totalSeguindo ?? 0} <span className="font-normal text-muted-foreground">{tp.seguindo}</span>
               </button>
             </ListaSeguidoresDialog>
           </div>
@@ -243,7 +246,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
       {ehCandidato && candidato?.biografia ? (
         <Card className="mt-4 shadow-card">
           <CardContent className="p-5 sm:p-6">
-            <h2 className="text-lg font-bold">Sobre mim</h2>
+            <h2 className="text-lg font-bold">{tp.sobreMim}</h2>
             <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{candidato.biografia}</p>
           </CardContent>
         </Card>
@@ -252,9 +255,9 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
       {proprioPerfil ? (
         <Card className="mt-4 shadow-card">
           <CardContent className="p-5 sm:p-6">
-            <h2 className="text-lg font-bold">Preferências de acessibilidade</h2>
+            <h2 className="text-lg font-bold">{tp.preferenciasTitulo}</h2>
             {chipsAcessibilidade.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">Nenhuma preferência de acessibilidade ativada.</p>
+              <p className="mt-2 text-sm text-muted-foreground">{tp.nenhumaPreferencia}</p>
             ) : (
               <ul className="mt-3 flex flex-wrap gap-2">
                 {chipsAcessibilidade.map((c) => (
@@ -268,7 +271,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
             )}
             <Button asChild variant="link" className="mt-4 h-11 px-0 font-semibold">
               <Link to="/configuracoes/acessibilidade">
-                <Accessibility aria-hidden="true" /> Ajustar preferências de acessibilidade
+                <Accessibility aria-hidden="true" /> {tp.ajustarPreferencias}
               </Link>
             </Button>
           </CardContent>
@@ -278,7 +281,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
       {ehCandidato ? (
         carregandoCandidato ? (
           <div role="status" aria-live="polite" className="mt-4 flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil profissional…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {tp.carregandoProfissional}
           </div>
         ) : candidato ? (
           <Card className="mt-4 shadow-card">
@@ -286,18 +289,18 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
               {proprioPerfil && (
                 <section aria-labelledby="secao-curriculo" className="border-t pt-6 first:border-t-0 first:pt-0">
                   <h2 id="secao-curriculo" className="text-lg font-bold">
-                    Currículo
+                    {tp.curriculo}
                   </h2>
                   {candidato.curriculoNome ? (
                     <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                       <FileText className="size-4 shrink-0" aria-hidden="true" />
                       {candidato.curriculoNome}
                       {candidato.curriculoAtualizadoEm
-                        ? ` · enviado em ${formatarData(candidato.curriculoAtualizadoEm)}`
+                        ? tp.enviadoEm(formatarData(candidato.curriculoAtualizadoEm))
                         : ""}
                     </p>
                   ) : (
-                    <p className="mt-1 text-sm text-muted-foreground">Nenhum currículo enviado ainda.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{tp.nenhumCurriculo}</p>
                   )}
                   {candidato.curriculoNome ? (
                     <div className="mt-3">
@@ -314,7 +317,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                       ) : (
                         <Upload className="size-4" aria-hidden="true" />
                       )}
-                      {candidato.curriculoNome ? "Atualizar currículo" : "Enviar currículo"}
+                      {candidato.curriculoNome ? tp.atualizarCurriculo : tp.enviarCurriculo}
                     </label>
                     <input
                       id="input-enviar-curriculo"
@@ -326,7 +329,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                     />
                     <ImportarCurriculoDialog candidatoId={candidato.id}>
                       <Button type="button" variant="outline" size="sm" className="min-h-9 gap-1.5">
-                        <Sparkles className="size-4" aria-hidden="true" /> Importar dados do currículo
+                        <Sparkles className="size-4" aria-hidden="true" /> {tp.importarDados}
                       </Button>
                     </ImportarCurriculoDialog>
                   </div>
@@ -342,7 +345,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                 // sem revelar se existe ou não um currículo.
                 <section aria-labelledby="secao-curriculo-terceiro" className="border-t pt-6 first:border-t-0 first:pt-0">
                   <h2 id="secao-curriculo-terceiro" className="text-lg font-bold">
-                    Currículo
+                    {tp.curriculo}
                   </h2>
                   <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                     <FileText className="size-4 shrink-0" aria-hidden="true" />
@@ -356,25 +359,25 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
               <SecaoDeficiencias candidato={candidato} somenteLeitura={!proprioPerfil} />
               <SecaoRecursoPerfil
                 recurso="experiencias"
-                titulo="Experiência profissional"
+                titulo={tp.experiencia}
                 itens={candidato.experiencias}
                 somenteLeitura={!proprioPerfil}
               />
               <SecaoRecursoPerfil
                 recurso="formacoes"
-                titulo="Formação acadêmica"
+                titulo={tp.formacao}
                 itens={candidato.formacoes}
                 somenteLeitura={!proprioPerfil}
               />
               <SecaoRecursoPerfil
                 recurso="habilidades"
-                titulo="Habilidades"
+                titulo={tp.habilidades}
                 itens={candidato.habilidades}
                 somenteLeitura={!proprioPerfil}
               />
               <SecaoRecursoPerfil
                 recurso="certificados"
-                titulo="Certificados"
+                titulo={tp.certificados}
                 itens={candidato.certificados}
                 somenteLeitura={!proprioPerfil}
               />
@@ -387,7 +390,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
         <CardContent className="p-5 sm:p-6">
           {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
               data. */}
-          <h2 className="mb-4 text-lg font-bold">Publicações</h2>
+          <h2 className="mb-4 text-lg font-bold">{tp.publicacoes}</h2>
           <LinhaDoTempoUsuario usuarioId={alvoId} />
         </CardContent>
       </Card>

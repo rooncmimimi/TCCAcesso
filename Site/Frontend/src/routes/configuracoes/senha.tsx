@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -15,34 +15,27 @@ import { Label } from "@/components/ui/label";
 import { autenticacaoService } from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useSessao } from "@/hooks/useSessao";
+import { metaPagina, regraSenha, dic, useT, type Dicionario } from "@/i18n";
 
-const esquema = z
-  .object({
-    senhaAtual: z.string().min(1, "Informe sua senha atual."),
-    novaSenha: z
-      .string()
-      .min(8, "A senha deve ter entre 8 e 72 caracteres.")
-      .max(72, "A senha deve ter entre 8 e 72 caracteres.")
-      .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
-      .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
-      .regex(/\d/, "A senha deve conter ao menos um número.")
-      .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial."),
-    confirmarSenha: z.string().min(1, "Confirme a nova senha."),
-  })
-  .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
-    message: "As senhas não coincidem.",
-    path: ["confirmarSenha"],
-  });
+function criarEsquema(t: Dicionario) {
+  const v = t.validacao;
 
-type Formulario = z.infer<typeof esquema>;
+  return z
+    .object({
+      senhaAtual: z.string().min(1, t.configuracoes.senha.erroSenhaAtual),
+      novaSenha: regraSenha(v),
+      confirmarSenha: z.string().min(1, v.confirmeNovaSenha),
+    })
+    .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
+      message: v.senhasNaoCoincidem,
+      path: ["confirmarSenha"],
+    });
+}
+
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 export const Route = createFileRoute("/configuracoes/senha")({
-  head: () => ({
-    meta: [
-      { title: "Alterar senha — ACESSO" },
-      { name: "description", content: "Altere a senha da sua conta ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().configuracoes.senha.meta),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <AlterarSenha />
@@ -51,6 +44,9 @@ export const Route = createFileRoute("/configuracoes/senha")({
 });
 
 function AlterarSenha() {
+  const t = useT();
+  const ts = t.configuracoes.senha;
+  const esquema = useMemo(() => criarEsquema(t), [t]);
   const navigate = useNavigate();
   const { sair } = useSessao();
   const [enviando, setEnviando] = useState(false);
@@ -75,10 +71,10 @@ function AlterarSenha() {
       // conta, como na redefinição por código.
       await sair();
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Senha alterada com sucesso. Entre novamente com a nova senha.");
+      toast.success(ts.sucesso);
       void navigate({ to: "/entrar" });
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível alterar a senha.");
+      const mensagem = extrairMensagemErro(erro, ts.erro);
       setError("senhaAtual", { message: mensagem });
       toast.error(mensagem);
     } finally {
@@ -92,7 +88,7 @@ function AlterarSenha() {
         to="/configuracoes/conta"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+        <ArrowLeft className="size-4" aria-hidden="true" /> {ts.voltar}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">
@@ -100,10 +96,9 @@ function AlterarSenha() {
           <ShieldCheck className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Alterar senha</h1>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{ts.titulo}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Depois de trocar a senha, você continua conectado aqui, mas os outros dispositivos precisam entrar
-            novamente.
+            {ts.texto}
           </p>
         </div>
       </div>
@@ -112,7 +107,7 @@ function AlterarSenha() {
         <CardContent className="p-5 sm:p-6">
           <form className="space-y-4" onSubmit={aoEnviar} noValidate>
             <div className="space-y-2">
-              <Label htmlFor="senhaAtual">Senha atual</Label>
+              <Label htmlFor="senhaAtual">{ts.senhaAtual}</Label>
               <PasswordInput
                 id="senhaAtual"
                 autoComplete="current-password"
@@ -129,7 +124,7 @@ function AlterarSenha() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="novaSenha">Nova senha</Label>
+              <Label htmlFor="novaSenha">{ts.novaSenha}</Label>
               <PasswordInput
                 id="novaSenha"
                 autoComplete="new-password"
@@ -144,13 +139,13 @@ function AlterarSenha() {
                 </p>
               ) : (
                 <p id="novaSenha-dica" className="text-xs text-muted-foreground">
-                  Mínimo de 8 caracteres, com maiúscula, minúscula, número e símbolo.
+                  {ts.dica}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmarSenha">Confirmar nova senha</Label>
+              <Label htmlFor="confirmarSenha">{ts.confirmar}</Label>
               <PasswordInput
                 id="confirmarSenha"
                 autoComplete="new-password"
@@ -169,10 +164,10 @@ function AlterarSenha() {
             <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
               {enviando ? (
                 <>
-                  <Loader2 className="animate-spin" aria-hidden="true" /> Salvando…
+                  <Loader2 className="animate-spin" aria-hidden="true" /> {ts.salvando}
                 </>
               ) : (
-                "Salvar nova senha"
+                ts.salvar
               )}
             </Button>
           </form>

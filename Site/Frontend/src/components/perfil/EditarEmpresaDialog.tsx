@@ -31,9 +31,13 @@ import { FotoUploader } from "./FotoUploader";
 import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
 import { PORTES_EMPRESA } from "@/utils/formatacao";
 import type { Empresa } from "@/types";
+import { useT } from "@/i18n";
 
 /** Edição do perfil empresarial. O backend recusa a chamada se a empresa não estiver aprovada. */
 export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; children: ReactNode }) {
+  const t = useT();
+  const te = t.perfilEdicao;
+  const tm = te.empresa;
   const [aberto, setAberto] = useState(false);
   const [porte, setPorte] = useState<string>(empresa.porte ?? "");
   const [cidade, setCidade] = useState(empresa.cidade ?? "");
@@ -56,19 +60,19 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
     mutationFn: (payload: Record<string, unknown>) => empresasService.atualizar(empresa.id, payload),
     onSuccess: () => {
       void invalidarEmpresa();
-      toast.success("Perfil da empresa atualizado.");
+      toast.success(tm.atualizado);
       setAberto(false);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil da empresa.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tm.erro)),
   });
 
   const removerBanner = useMutation({
     mutationFn: () => empresasService.atualizar(empresa.id, { capa: null }),
     onSuccess: () => {
       void invalidarEmpresa();
-      toast.success("Banner removido.");
+      toast.success(te.bannerRemovido);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, te.erroRemoverBanner)),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -96,13 +100,13 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Editar perfil da empresa</DialogTitle>
-          <DialogDescription>Essas informações aparecem no perfil público da sua empresa.</DialogDescription>
+          <DialogTitle>{tm.titulo}</DialogTitle>
+          <DialogDescription>{tm.descricao}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <p className="mb-2 text-sm font-medium">Banner</p>
+            <p className="mb-2 text-sm font-medium">{te.banner}</p>
             <div className="overflow-hidden rounded-lg border">
               <CapaUploader
                 capaUrl={empresa.capa}
@@ -122,18 +126,18 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
                 disabled={removerBanner.isPending}
                 onClick={() => removerBanner.mutate()}
               >
-                <Trash2 className="size-4" aria-hidden="true" /> Remover banner
+                <Trash2 className="size-4" aria-hidden="true" /> {te.removerBanner}
               </Button>
             ) : null}
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium">Logo</p>
+            <p className="mb-2 text-sm font-medium">{tm.logo}</p>
             <FotoUploader
               nome={empresa.nomeFantasia || empresa.razaoSocial}
               fotoUrl={empresa.logo}
               fallback={<Building2 className="size-8" aria-hidden="true" />}
-              rotulo="Alterar logo"
+              rotulo={tm.alterarLogo}
               onEnviar={async (arquivo) => {
                 await empresasService.atualizarLogo(empresa.id, arquivo);
                 await invalidarEmpresa();
@@ -146,7 +150,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
         <form onSubmit={enviar} className="space-y-4 border-t pt-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="razaoSocial">Razão social</Label>
+              <Label htmlFor="razaoSocial">{tm.razaoSocial}</Label>
               <Input
                 id="razaoSocial"
                 name="razaoSocial"
@@ -157,43 +161,43 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nomeFantasia">Nome fantasia</Label>
+              <Label htmlFor="nomeFantasia">{tm.nomeFantasia}</Label>
               <Input id="nomeFantasia" name="nomeFantasia" maxLength={200} defaultValue={empresa.nomeFantasia ?? ""} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descricao">Descrição</Label>
+            <Label htmlFor="descricao">{tm.descricaoCampo}</Label>
             <Textarea id="descricao" name="descricao" rows={4} maxLength={4000} defaultValue={empresa.descricao ?? ""} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="culturaInclusiva">Cultura de inclusão</Label>
+            <Label htmlFor="culturaInclusiva">{tm.cultura}</Label>
             <Textarea
               id="culturaInclusiva"
               name="culturaInclusiva"
               rows={3}
               maxLength={4000}
-              placeholder="Como a empresa apoia profissionais PCD e pessoas 50+"
+              placeholder={tm.culturaExemplo}
               defaultValue={empresa.culturaInclusiva ?? ""}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="setor">Setor</Label>
+              <Label htmlFor="setor">{tm.setor}</Label>
               <Input id="setor" name="setor" maxLength={120} defaultValue={empresa.setor ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="porte">Porte</Label>
+              <Label htmlFor="porte">{tm.porte}</Label>
               <Select value={porte} onValueChange={setPorte}>
                 <SelectTrigger id="porte">
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={tm.porteEscolha} />
                 </SelectTrigger>
                 <SelectContent>
                   {PORTES_EMPRESA.map((p) => (
                     <SelectItem key={p.valor} value={p.valor}>
-                      {p.rotulo}
+                      {t.comum.portes[p.valor]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -202,24 +206,24 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="site">Site</Label>
+            <Label htmlFor="site">{tm.site}</Label>
             <Input id="site" name="site" type="url" defaultValue={empresa.site ?? ""} />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
+              <Label htmlFor="cidade">{tm.cidade}</Label>
               <CidadeAutocomplete
                 id="cidade"
                 name="cidade"
                 value={cidade}
                 onChange={setCidade}
                 estado={estado}
-                aria-label="Cidade"
+                aria-label={te.cidadeAria}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="estado">Estado (UF)</Label>
+              <Label htmlFor="estado">{te.estadoUf}</Label>
               <Input
                 id="estado"
                 name="estado"
@@ -233,22 +237,22 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço</Label>
+              <Label htmlFor="endereco">{tm.endereco}</Label>
               <Input id="endereco" name="endereco" defaultValue={empresa.endereco ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cep">CEP</Label>
+              <Label htmlFor="cep">{tm.cep}</Label>
               <Input id="cep" name="cep" maxLength={8} placeholder="00000000" defaultValue={empresa.cep ?? ""} />
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t.comum.cancelar}
             </Button>
             <Button type="submit" disabled={salvar.isPending} className="min-h-11 gap-2">
               {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Salvar
+              {t.comum.salvar}
             </Button>
           </DialogFooter>
         </form>

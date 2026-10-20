@@ -2,39 +2,54 @@
  * Funções utilitárias de formatação usadas na interface.
  */
 
+import { dic, localeDoIdioma, obterIdioma } from "@/i18n";
 import type { PorteEmpresa } from "@/types";
 
-const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
+/**
+ * Os formatadores seguem o idioma escolhido no Site (`@/i18n`). São criados sob demanda e guardados
+ * por região, porque o idioma pode mudar com a página aberta: um formatador fixo no carregamento do
+ * módulo ficaria preso ao idioma daquela hora.
+ */
+const cacheFormatadores = new Map<string, object>();
 
-const formatadorData = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "long",
-  year: "numeric",
-});
+function formatadorDe<T extends object>(
+  chave: string,
+  criar: (locale: string) => T,
+): T {
+  const locale = localeDoIdioma(obterIdioma());
+  const completa = `${locale}|${chave}`;
+  let formatador = cacheFormatadores.get(completa) as T | undefined;
+  if (!formatador) {
+    formatador = criar(locale);
+    cacheFormatadores.set(completa, formatador);
+  }
+  return formatador;
+}
 
-const formatadorDataCurta = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
+const formatadorMoeda = () =>
+  formatadorDe("moeda", (locale) =>
+    new Intl.NumberFormat(locale, { style: "currency", currency: "BRL", maximumFractionDigits: 0 }),
+  );
 
-const formatadorHoraCurta = new Intl.DateTimeFormat("pt-BR", {
-  hour: "2-digit",
-  minute: "2-digit",
-});
+const formatadorData = () =>
+  formatadorDe("data", (locale) => new Intl.DateTimeFormat(locale, { day: "2-digit", month: "long", year: "numeric" }));
 
-/** Formata um salário em reais; retorna "A combinar" quando não informado. */
+const formatadorDataCurta = () =>
+  formatadorDe("data-curta", (locale) =>
+    new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric" }),
+  );
+
+const formatadorHoraCurta = () =>
+  formatadorDe("hora-curta", (locale) => new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }));
+
+/** Formata um salário em reais; retorna "A combinar" (no idioma atual) quando não informado. */
 export function formatarSalario(valor?: number | null): string {
-  if (valor === null || valor === undefined) return "A combinar";
-  return formatadorMoeda.format(valor);
+  if (valor === null || valor === undefined) return dic().comum.aCombinar;
+  return formatadorMoeda().format(valor);
 }
 
 /**
- * Formata uma data ISO por extenso, no padrão brasileiro.
+ * Formata uma data ISO por extenso, no padrão do idioma atual.
  *
  * Uma data pura (`AAAA-MM-DD`, sem hora, como o `dataInicio` de uma experiência ou
  * `dataNascimento`) representa um dia de calendário, não um instante: `new Date("2021-01-01")` a
@@ -55,7 +70,7 @@ export function formatarData(data?: string | Date | null): string {
   }
 
   if (Number.isNaN(referencia.getTime())) return "";
-  return formatadorData.format(referencia);
+  return formatadorData().format(referencia);
 }
 
 /**
@@ -66,7 +81,7 @@ export function formatarDataHora(data?: string | Date | null): string {
   if (!data) return "";
   const referencia = typeof data === "string" ? new Date(data) : data;
   if (Number.isNaN(referencia.getTime())) return "";
-  return `${formatadorDataCurta.format(referencia)} às ${formatadorHoraCurta.format(referencia)}`;
+  return dic().comum.dataHora(formatadorDataCurta().format(referencia), formatadorHoraCurta().format(referencia));
 }
 
 /** Retorna uma descrição relativa acessível, como "há 3 dias". */
@@ -84,7 +99,7 @@ export function formatarTempoRelativo(data?: string | Date | null): string {
     ["minute", 60],
   ];
 
-  const formatador = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+  const formatador = formatadorDe("relativo", (locale) => new Intl.RelativeTimeFormat(locale, { numeric: "auto" }));
 
   for (const [unidade, fator] of unidades) {
     if (Math.abs(segundos) >= fator) {
@@ -92,7 +107,46 @@ export function formatarTempoRelativo(data?: string | Date | null): string {
     }
   }
 
-  return "agora mesmo";
+  return dic().comum.agoraMesmo;
+}
+
+/** Data por extenso ("14 de outubro de 2026"), ou "—" quando vazia ou inválida. */
+export function formatarDataLonga(iso?: string | null): string {
+  if (!iso) return dic().comum.semValor;
+  const referencia = new Date(iso);
+  if (Number.isNaN(referencia.getTime())) return dic().comum.semValor;
+  return formatadorDe("data-longa", (locale) => new Intl.DateTimeFormat(locale, { dateStyle: "long" })).format(referencia);
+}
+
+/** Data e hora curtas, no idioma atual. Devolve o texto original quando a data é inválida. */
+export function formatarDataHoraCurta(iso: string): string {
+  const referencia = new Date(iso);
+  if (Number.isNaN(referencia.getTime())) return iso;
+  return formatadorDe("data-hora-curta", (locale) =>
+    new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }),
+  ).format(referencia);
+}
+
+/** Hora e minuto, no idioma atual (ex.: "14:05" ou "2:05 PM"). */
+export function formatarHoraCurta(data: string | Date): string {
+  return formatadorHoraCurta().format(new Date(data));
+}
+
+/** Dia e mês, no idioma atual (ex.: "20/10" ou "10/20"). */
+export function formatarDiaMes(data: string | Date): string {
+  return formatadorDe("dia-mes", (locale) => new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit" })).format(
+    new Date(data),
+  );
+}
+
+/** Só a data, no padrão do idioma atual (`toLocaleDateString`). */
+export function formatarDataLocal(data: string | Date): string {
+  return new Date(data).toLocaleDateString(localeDoIdioma(obterIdioma()));
+}
+
+/** Data e hora, no padrão do idioma atual (`toLocaleString`). */
+export function formatarDataHoraLocal(data: string | Date): string {
+  return new Date(data).toLocaleString(localeDoIdioma(obterIdioma()));
 }
 
 /** Gera as iniciais de um nome para uso em avatares. */
@@ -119,16 +173,16 @@ export function formatarTamanhoArquivo(bytes?: number | null): string {
 }
 
 /**
- * Rótulos dos portes de empresa, na ordem do menor para o maior.
+ * Portes de empresa, na ordem do menor para o maior.
  *
- * O banco guarda o valor cru (`media`); a tela mostra o nome escrito como se escreve em português
- * ("Média", "MEI" em caixa alta). Fica aqui, e não em cada tela, porque o cadastro e a edição do
- * perfil da empresa precisam oferecer exatamente as mesmas opções com os mesmos nomes.
+ * O banco guarda o valor cru (`media`); o nome mostrado vem do dicionário (`comum.portes`). A lista
+ * fica aqui, e não em cada tela, porque o cadastro e a edição do perfil da empresa precisam oferecer
+ * exatamente as mesmas opções na mesma ordem.
  */
-export const PORTES_EMPRESA: { valor: PorteEmpresa; rotulo: string }[] = [
-  { valor: "mei", rotulo: "MEI" },
-  { valor: "micro", rotulo: "Microempresa" },
-  { valor: "pequena", rotulo: "Pequena" },
-  { valor: "media", rotulo: "Média" },
-  { valor: "grande", rotulo: "Grande" },
+export const PORTES_EMPRESA: { valor: PorteEmpresa }[] = [
+  { valor: "mei" },
+  { valor: "micro" },
+  { valor: "pequena" },
+  { valor: "media" },
+  { valor: "grande" },
 ];

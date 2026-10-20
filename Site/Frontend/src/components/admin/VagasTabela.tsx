@@ -23,6 +23,9 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { useSessao } from "@/hooks/useSessao";
+import { dic, useT } from "@/i18n";
+import { extrairMensagemErro } from "@/services/api";
+import { rotuloOuValor } from "@/components/admin/rotulos";
 import {
   alterarStatusVaga,
   listarVagas,
@@ -40,6 +43,8 @@ const TOM: Record<VagaAdmin["status"], "sucesso" | "atencao" | "neutro"> = {
 
 /** Vagas publicadas, com mudança de status e remoção pela moderação. */
 export function VagasTabela() {
+  const t = useT();
+  const tv = t.admin.vagas;
   const { usuario } = useSessao();
 
   const queryClient = useQueryClient();
@@ -57,20 +62,20 @@ export function VagasTabela() {
     mutationFn: (payload: { id: string; status: VagaAdmin["status"] }) =>
       alterarStatusVaga(payload.id, payload.status),
     onSuccess: () => {
-      toast.success("Status da vaga atualizado.");
+      toast.success(dic().admin.vagas.statusAtualizado);
       queryClient.invalidateQueries({ queryKey: ["admin", "vagas"] });
     },
-    onError: (erro: Error) => toast.error(erro.message || "Não foi possível atualizar o status."),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().admin.vagas.erroStatus)),
   });
 
   const remocaoMutacao = useMutation({
     mutationFn: (vaga: VagaAdmin) => removerVaga(vaga.id),
     onSuccess: () => {
-      toast.success("Vaga removida.");
+      toast.success(dic().admin.vagas.removida);
       queryClient.invalidateQueries({ queryKey: ["admin", "vagas"] });
       setAlvo(null);
     },
-    onError: (erro: Error) => toast.error(erro.message || "Não foi possível remover a vaga."),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().admin.vagas.erroRemover)),
   });
 
   if (isLoading) {
@@ -86,9 +91,9 @@ export function VagasTabela() {
   if (isError) {
     return (
       <div className="flex flex-col items-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar as vagas.</p>
+        <p className="text-sm text-muted-foreground">{tv.erro}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t.comum.tentarNovamente}
         </Button>
       </div>
     );
@@ -100,7 +105,7 @@ export function VagasTabela() {
     return (
       <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
         <Briefcase className="size-8" aria-hidden="true" />
-        <p className="text-sm">Nenhuma vaga publicada até o momento.</p>
+        <p className="text-sm">{tv.vazio}</p>
       </div>
     );
   }
@@ -110,11 +115,11 @@ export function VagasTabela() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Vaga</TableHead>
-            <TableHead>Local</TableHead>
-            <TableHead>Situação</TableHead>
-            <TableHead>Alterar status</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+            <TableHead>{tv.colunas.vaga}</TableHead>
+            <TableHead>{tv.colunas.local}</TableHead>
+            <TableHead>{tv.colunas.situacao}</TableHead>
+            <TableHead>{tv.colunas.alterarStatus}</TableHead>
+            <TableHead className="text-right">{t.admin.comum.acoes}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -122,10 +127,11 @@ export function VagasTabela() {
             <TableRow key={vaga.id}>
               <TableCell className="font-medium">{vaga.titulo}</TableCell>
               <TableCell>
-                {[vaga.cidade, vaga.estado].filter(Boolean).join("/") || vaga.modalidade || "—"}
+                {[vaga.cidade, vaga.estado].filter(Boolean).join("/") ||
+                  (vaga.modalidade ? rotuloOuValor(t.vagas.modalidade, vaga.modalidade) : t.comum.semValor)}
               </TableCell>
               <TableCell>
-                <StatusBadge tom={TOM[vaga.status]}>{vaga.status}</StatusBadge>
+                <StatusBadge tom={TOM[vaga.status]}>{rotuloOuValor(t.status, vaga.status)}</StatusBadge>
               </TableCell>
               <TableCell>
                 <Select
@@ -134,13 +140,13 @@ export function VagasTabela() {
                     statusMutacao.mutate({ id: vaga.id, status: valor as VagaAdmin["status"] })
                   }
                 >
-                  <SelectTrigger className="w-36" aria-label={`Alterar status da vaga ${vaga.titulo}`}>
+                  <SelectTrigger className="w-36" aria-label={tv.alterarStatusAria(vaga.titulo)}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {status}
+                        {t.status[status]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -151,9 +157,9 @@ export function VagasTabela() {
                   size="sm"
                   variant="outline"
                   onClick={() => setAlvo(vaga)}
-                  aria-label={`Remover vaga ${vaga.titulo}`}
+                  aria-label={tv.removerAria(vaga.titulo)}
                 >
-                  <Trash2 className="size-4" aria-hidden="true" /> Remover
+                  <Trash2 className="size-4" aria-hidden="true" /> {t.admin.comum.remover}
                 </Button>
               </TableCell>
             </TableRow>
@@ -171,9 +177,9 @@ export function VagasTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo="Remover vaga"
-        descricao={`A vaga "${alvo?.titulo}" será removida da plataforma. Deseja continuar?`}
-        textoConfirmar="Remover"
+        titulo={tv.dialogoRemover.titulo}
+        descricao={tv.dialogoRemover.texto(alvo?.titulo ?? "")}
+        textoConfirmar={t.admin.comum.remover}
         destrutivo
         carregando={remocaoMutacao.isPending}
         onConfirmar={() => alvo && remocaoMutacao.mutate(alvo)}

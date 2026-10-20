@@ -12,14 +12,10 @@ import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { urlArquivo } from "@/utils/arquivos";
 import { iniciaisDoNome } from "@/utils/formatacao";
+import { metaPagina, dic, useT } from "@/i18n";
 
 export const Route = createFileRoute("/configuracoes/bloqueados")({
-  head: () => ({
-    meta: [
-      { title: "Usuários bloqueados — ACESSO" },
-      { name: "description", content: "Gerencie os usuários que você bloqueou no ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().configuracoes.bloqueados.meta),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <UsuariosBloqueados />
@@ -30,6 +26,8 @@ export const Route = createFileRoute("/configuracoes/bloqueados")({
 const CHAVE = ["usuarios", "bloqueados"] as const;
 
 function UsuariosBloqueados() {
+  const t = useT();
+  const tb = t.configuracoes.bloqueados;
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -42,10 +40,10 @@ function UsuariosBloqueados() {
     onSuccess: (_dados, usuarioId) => {
       const pessoa = data?.dados.find((u) => u.id === usuarioId);
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success(pessoa ? `${pessoa.nome} foi desbloqueado(a).` : "Usuário desbloqueado.");
+      toast.success(tb.desbloqueado(pessoa?.nome ?? ""));
       void queryClient.invalidateQueries({ queryKey: CHAVE });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível desbloquear este usuário.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tb.erroDesbloquear)),
   });
 
   const bloqueados = data?.dados ?? [];
@@ -56,31 +54,31 @@ function UsuariosBloqueados() {
         to="/configuracoes/privacidade"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t.comum.voltar}
       </Link>
 
-      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">Usuários bloqueados</h1>
+      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">{tb.titulo}</h1>
       <p className="text-sm text-muted-foreground sm:text-base">
-        Pessoas e empresas que não podem ver seu perfil, seguir você ou enviar mensagens.
+        {tb.texto}
       </p>
 
       <Card className="mt-6 shadow-none">
         <CardContent className="p-0">
           {isLoading ? (
             <div role="status" aria-live="polite" className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando…
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t.comum.carregando}
             </div>
           ) : isError ? (
             <div role="alert" className="space-y-2 p-5 text-sm text-destructive">
-              <p>Não foi possível carregar sua lista de bloqueados.</p>
+              <p>{tb.erroCarregar}</p>
               <Button variant="outline" size="sm" onClick={() => refetch()}>
-                Tentar novamente
+                {t.comum.tentarNovamente}
               </Button>
             </div>
           ) : bloqueados.length === 0 ? (
             <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground" role="status">
               <UserX className="size-8" aria-hidden="true" />
-              <p className="text-sm">Você não bloqueou ninguém.</p>
+              <p className="text-sm">{tb.vazio}</p>
             </div>
           ) : (
             <ul className="divide-y">
@@ -99,12 +97,12 @@ function UsuariosBloqueados() {
                     className="min-h-11"
                     disabled={desbloquear.isPending}
                     onClick={() => desbloquear.mutate(pessoa.id)}
-                    aria-label={`Desbloquear ${pessoa.nome}`}
+                    aria-label={tb.desbloquearAria(pessoa.nome)}
                   >
                     {desbloquear.isPending ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                     ) : (
-                      "Desbloquear"
+                      tb.desbloquear
                     )}
                   </Button>
                 </li>

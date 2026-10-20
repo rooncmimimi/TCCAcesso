@@ -25,6 +25,7 @@ import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 import type { EntidadeDenunciaTipo } from "@/services/denuncia.service";
+import { useT } from "@/i18n";
 
 /**
  * Menu "•••" do perfil de terceiro: bloquear (com confirmação) e denunciar.
@@ -45,6 +46,8 @@ export function BloquearUsuarioMenu({
   denunciaEntidadeTipo?: EntidadeDenunciaTipo;
   denunciaEntidadeId?: string;
 }) {
+  const t = useT();
+  const tb = t.perfil.bloquear;
   const navigate = useNavigate();
   const [confirmando, setConfirmando] = useState(false);
   const [denunciando, setDenunciando] = useState(false);
@@ -58,12 +61,12 @@ export function BloquearUsuarioMenu({
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(alvoUsuarioId),
     onSuccess: () => {
-      toast.success(`${nome} foi bloqueado(a).`);
+      toast.success(tb.bloqueado(nome));
       setConfirmando(false);
       void navigate({ to: "/feed" });
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível bloquear este usuário."));
+      toast.error(extrairMensagemErro(erro, tb.erro));
     },
   });
 
@@ -76,7 +79,7 @@ export function BloquearUsuarioMenu({
             variant="outline"
             size="icon"
             className="size-11 shrink-0"
-            aria-label="Mais opções"
+            aria-label={tb.maisOpcoes}
           >
             <MoreVertical aria-hidden="true" />
           </Button>
@@ -86,12 +89,12 @@ export function BloquearUsuarioMenu({
             className="gap-2 text-destructive focus:text-destructive"
             onSelect={() => setConfirmando(true)}
           >
-            <ShieldOff aria-hidden="true" className="size-4" /> Bloquear usuário
+            <ShieldOff aria-hidden="true" className="size-4" /> {tb.bloquearUsuario}
           </DropdownMenuItem>
           {denunciaEntidadeId && (
             <DropdownMenuItem className="gap-2" onSelect={() => setDenunciando(true)}>
-              <Flag aria-hidden="true" className="size-4" /> Denunciar{" "}
-              {denunciaEntidadeTipo === "empresa" ? "empresa" : "usuário"}
+              <Flag aria-hidden="true" className="size-4" />{" "}
+              {denunciaEntidadeTipo === "empresa" ? tb.denunciarEmpresa : tb.denunciarUsuario}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -116,14 +119,11 @@ export function BloquearUsuarioMenu({
           }}
         >
           <AlertDialogHeader>
-            <AlertDialogTitle>Bloquear {nome}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {nome} não vai mais conseguir ver seu perfil, seguir você ou enviar mensagens — e o mesmo vale para
-              você em relação a {nome}. Você pode desbloquear depois em Configurações → Privacidade.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{tb.titulo(nome)}</AlertDialogTitle>
+            <AlertDialogDescription>{tb.texto(nome)}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={bloquear.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={bloquear.isPending}>{t.comum.cancelar}</AlertDialogCancel>
             <AlertDialogAction
               className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={bloquear.isPending}
@@ -133,7 +133,7 @@ export function BloquearUsuarioMenu({
               }}
             >
               {bloquear.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Bloquear
+              {tb.bloquear}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

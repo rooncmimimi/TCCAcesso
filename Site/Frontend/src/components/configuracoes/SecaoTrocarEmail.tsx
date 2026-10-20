@@ -21,9 +21,12 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { extrairMensagemErro } from "@/services/api";
 import { autenticacaoService } from "@/services/autenticacao.service";
 import { useSessao } from "@/hooks/useSessao";
+import { useT } from "@/i18n";
 
 /** Troca de e-mail: senha atual + novo e-mail, depois confirma com o código enviado ao novo endereço. */
 export function SecaoTrocarEmail() {
+  const t = useT();
+  const te = t.configuracoes.trocarEmail;
   const { usuario, atualizar } = useSessao();
   const [aberto, setAberto] = useState(false);
   const [etapa, setEtapa] = useState<"pedido" | "confirmar">("pedido");
@@ -41,10 +44,10 @@ export function SecaoTrocarEmail() {
   const solicitar = useMutation({
     mutationFn: () => autenticacaoService.solicitarTrocaEmail(senhaAtual, novoEmail),
     onSuccess: () => {
-      toast.success("Código enviado para o novo e-mail.");
+      toast.success(te.codigoEnviado);
       setEtapa("confirmar");
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível solicitar a troca de e-mail.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, te.erroSolicitar)),
   });
 
   const confirmar = useMutation({
@@ -52,12 +55,12 @@ export function SecaoTrocarEmail() {
     onSuccess: (usuarioAtualizado) => {
       atualizar({ email: usuarioAtualizado.email });
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("E-mail atualizado com sucesso.");
+      toast.success(te.atualizado);
       setAberto(false);
       reiniciar();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Código inválido. Tente novamente."));
+      toast.error(extrairMensagemErro(erro, te.erroCodigo));
       setCodigo("");
     },
   });
@@ -65,11 +68,11 @@ export function SecaoTrocarEmail() {
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-lg">E-mail</CardTitle>
+        <CardTitle className="text-lg">{te.titulo}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          E-mail atual: <span className="font-medium text-foreground">{usuario?.email}</span>
+          {te.atual} <span className="font-medium text-foreground">{usuario?.email}</span>
         </p>
 
         <Dialog
@@ -81,17 +84,15 @@ export function SecaoTrocarEmail() {
         >
           <DialogTrigger asChild>
             <Button variant="outline" className="min-h-11 gap-2">
-              <Mail className="size-4" aria-hidden="true" /> Alterar e-mail
+              <Mail className="size-4" aria-hidden="true" /> {te.alterar}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             {etapa === "pedido" ? (
               <>
                 <DialogHeader>
-                  <DialogTitle>Alterar e-mail</DialogTitle>
-                  <DialogDescription>
-                    Confirme sua senha e informe o novo e-mail. Vamos enviar um código de confirmação para lá.
-                  </DialogDescription>
+                  <DialogTitle>{te.dialogTitulo}</DialogTitle>
+                  <DialogDescription>{te.dialogTexto}</DialogDescription>
                 </DialogHeader>
                 <form
                   className="space-y-4"
@@ -101,7 +102,7 @@ export function SecaoTrocarEmail() {
                   }}
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="senha-trocar-email">Senha atual</Label>
+                    <Label htmlFor="senha-trocar-email">{te.senhaAtual}</Label>
                     <PasswordInput
                       id="senha-trocar-email"
                       autoComplete="current-password"
@@ -111,7 +112,7 @@ export function SecaoTrocarEmail() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="novo-email">Novo e-mail</Label>
+                    <Label htmlFor="novo-email">{te.novoEmail}</Label>
                     <Input
                       id="novo-email"
                       type="email"
@@ -123,7 +124,7 @@ export function SecaoTrocarEmail() {
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-                      Cancelar
+                      {t.comum.cancelar}
                     </Button>
                     <Button
                       type="submit"
@@ -131,7 +132,7 @@ export function SecaoTrocarEmail() {
                       className="min-h-11 gap-2"
                     >
                       {solicitar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                      Enviar código
+                      {te.enviarCodigo}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -139,8 +140,8 @@ export function SecaoTrocarEmail() {
             ) : (
               <>
                 <DialogHeader>
-                  <DialogTitle>Confirme o novo e-mail</DialogTitle>
-                  <DialogDescription>Digite o código de 6 dígitos enviado para {novoEmail}.</DialogDescription>
+                  <DialogTitle>{te.confirmeTitulo}</DialogTitle>
+                  <DialogDescription>{te.confirmeTexto(novoEmail)}</DialogDescription>
                 </DialogHeader>
                 <form
                   className="space-y-4"
@@ -149,7 +150,7 @@ export function SecaoTrocarEmail() {
                     confirmar.mutate();
                   }}
                 >
-                  <Label htmlFor="codigo-trocar-email">Código de confirmação</Label>
+                  <Label htmlFor="codigo-trocar-email">{te.codigo}</Label>
                   <InputOTP id="codigo-trocar-email" maxLength={6} value={codigo} onChange={setCodigo}>
                     <InputOTPGroup>
                       {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -159,11 +160,11 @@ export function SecaoTrocarEmail() {
                   </InputOTP>
                   <DialogFooter className="pt-2">
                     <Button type="button" variant="outline" onClick={() => setEtapa("pedido")}>
-                      Voltar
+                      {t.comum.voltar}
                     </Button>
                     <Button type="submit" disabled={confirmar.isPending || codigo.length !== 6} className="min-h-11 gap-2">
                       {confirmar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                      Confirmar
+                      {te.confirmar}
                     </Button>
                   </DialogFooter>
                 </form>

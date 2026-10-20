@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Conversa } from "@/lib/tiposApi";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n";
 import { fotoParticipante, formatarDataRelativa, nomeParticipante, participanteOposto } from "./utils";
 
 type ListaConversasProps = {
@@ -29,6 +30,7 @@ export function ListaConversas({
   mensagemErro,
   onSelecionar,
 }: ListaConversasProps) {
+  const tl = useT().mensagens.lista;
   const [busca, setBusca] = useState("");
 
   const filtradas = conversas.filter((conversa) => {
@@ -38,10 +40,10 @@ export function ListaConversas({
   });
 
   return (
-    <nav aria-label="Lista de conversas" className="flex h-full flex-col">
+    <nav aria-label={tl.aria} className="flex h-full flex-col">
       <div className="border-b border-border p-3">
         <label htmlFor="buscar-conversas" className="sr-only">
-          Buscar conversas
+          {tl.buscar}
         </label>
         <div className="relative">
           <Search
@@ -52,7 +54,7 @@ export function ListaConversas({
             id="buscar-conversas"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar conversas…"
+            placeholder={tl.buscarPlaceholder}
             className="h-11 pl-9"
           />
         </div>
@@ -60,7 +62,7 @@ export function ListaConversas({
 
       <div className="flex-1 overflow-y-auto">
         {carregando && (
-          <ul className="space-y-1 p-2" aria-label="Carregando conversas">
+          <ul className="space-y-1 p-2" aria-label={tl.carregandoAria}>
             {[1, 2, 3, 4].map((i) => (
               <li key={i} className="flex items-center gap-3 p-2">
                 <Skeleton className="size-11 shrink-0 rounded-full" />
@@ -75,16 +77,14 @@ export function ListaConversas({
 
         {!carregando && erro && (
           <Alert variant="destructive" className="m-3">
-            <AlertTitle>Não foi possível carregar as conversas</AlertTitle>
-            <AlertDescription>{mensagemErro ?? "Tente novamente em instantes."}</AlertDescription>
+            <AlertTitle>{tl.erroTitulo}</AlertTitle>
+            <AlertDescription>{mensagemErro ?? tl.erroPadrao}</AlertDescription>
           </Alert>
         )}
 
         {!carregando && !erro && filtradas.length === 0 && (
           <p className="p-4 text-center text-sm text-muted-foreground" role="status">
-            {conversas.length === 0
-              ? "Você ainda não tem conversas. Candidate-se a uma vaga para começar a conversar com empresas."
-              : "Nenhuma conversa encontrada para essa busca."}
+            {conversas.length === 0 ? tl.vazio : tl.semResultado}
           </p>
         )}
 
@@ -116,13 +116,13 @@ export function ListaConversas({
                     <div className="min-w-0">
                       <p className={cn("truncate", naoLidas > 0 ? "font-extrabold" : "font-bold")}>{nome}</p>
                       <p className="truncate text-sm text-muted-foreground">
-                        {conversa.ultimaMensagemPrevia || "Sem mensagens ainda"}
+                        {conversa.ultimaMensagemPrevia || tl.semMensagens}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-xs text-muted-foreground">{formatarDataRelativa(conversa.atualizadoEm)}</p>
                       {naoLidas > 0 && (
-                        <Badge className="mt-1" aria-label={`${naoLidas} mensagens não lidas`}>
+                        <Badge className="mt-1" aria-label={tl.naoLidas(naoLidas)}>
                           {naoLidas}
                         </Badge>
                       )}

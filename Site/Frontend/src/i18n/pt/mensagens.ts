@@ -1,0 +1,43 @@
+/** Mensagens (chat) entre candidatos e empresas. */
+export const mensagens = {
+  meta: {
+    titulo: "Mensagens — ACESSO",
+    descricao: "Converse em tempo real com empresas parceiras sobre vagas e processos seletivos inclusivos.",
+    descricaoSocial: "Suas conversas com empresas inclusivas.",
+  },
+  titulo: "Mensagens",
+  intro: "Conversas em tempo real com empresas e candidatos.",
+  selecioneConversa: "Selecione uma conversa para ver as mensagens.",
+  erroEnviar: "Não foi possível enviar a mensagem.",
+  usuarioRemovido: "Usuário removido",
+  lista: {
+    aria: "Lista de conversas",
+    buscar: "Buscar conversas",
+    buscarPlaceholder: "Buscar conversas…",
+    carregandoAria: "Carregando conversas",
+    erroTitulo: "Não foi possível carregar as conversas",
+    erroPadrao: "Tente novamente em instantes.",
+    vazio: "Você ainda não tem conversas. Candidate-se a uma vaga para começar a conversar com empresas.",
+    semResultado: "Nenhuma conversa encontrada para essa busca.",
+    semMensagens: "Sem mensagens ainda",
+    naoLidas: (n: number) => `${n} ${n === 1 ? "mensagem não lida" : "mensagens não lidas"}`,
+  },
+  janela: {
+    conversaCom: (nome: string) => `Conversa com ${nome}`,
+    verPerfilDe: (nome: string) => `Ver perfil de ${nome}`,
+    digitando: "digitando…",
+    erroTitulo: "Não foi possível carregar as mensagens",
+    erroPadrao: "Tente novamente em instantes.",
+    vazio: (nome: string) => `Nenhuma mensagem ainda. Envie a primeira mensagem para ${nome}.`,
+    semParticipante: "Esta conversa não permite novas mensagens porque o outro usuário foi removido.",
+    escreva: "Escreva uma mensagem",
+    escrevaPlaceholder: "Escreva uma mensagem…",
+    enviar: "Enviar mensagem",
+  },
+  bolha: {
+    maisOpcoes: "Mais opções da mensagem",
+    denunciar: "Denunciar mensagem",
+    lida: "Mensagem lida",
+    enviada: "Mensagem enviada",
+  },
+};

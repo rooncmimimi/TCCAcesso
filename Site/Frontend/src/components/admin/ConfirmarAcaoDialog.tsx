@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 type ConfirmarAcaoDialogProps = {
   open: boolean;
@@ -32,11 +33,13 @@ export function ConfirmarAcaoDialog({
   onOpenChange,
   titulo,
   descricao,
-  textoConfirmar = "Confirmar",
+  textoConfirmar,
   destrutivo = false,
   carregando = false,
   onConfirmar,
 }: ConfirmarAcaoDialogProps) {
+  const t = useT();
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -45,7 +48,7 @@ export function ConfirmarAcaoDialog({
           <AlertDialogDescription>{descricao}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={carregando}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={carregando}>{t.comum.cancelar}</AlertDialogCancel>
           <AlertDialogAction
             disabled={carregando}
             onClick={(event) => {
@@ -54,7 +57,7 @@ export function ConfirmarAcaoDialog({
             }}
             className={cn(destrutivo && buttonVariants({ variant: "destructive" }))}
           >
-            {carregando ? "Aguarde…" : textoConfirmar}
+            {carregando ? t.admin.comum.aguarde : (textoConfirmar ?? t.comum.confirmar)}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

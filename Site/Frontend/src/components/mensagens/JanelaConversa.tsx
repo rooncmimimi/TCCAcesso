@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Conversa, Mensagem } from "@/lib/tiposApi";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
+import { useT } from "@/i18n";
 import { BolhaMensagem } from "./BolhaMensagem";
 import { fotoParticipante, nomeParticipante, participanteOposto } from "./utils";
 
@@ -36,6 +37,7 @@ export function JanelaConversa({
   onEnviar,
   onDigitando,
 }: JanelaConversaProps) {
+  const tj = useT().mensagens.janela;
   const [texto, setTexto] = useState("");
   const fimRef = useRef<HTMLDivElement | null>(null);
   const contato = participanteOposto(conversa, usuarioId);
@@ -45,8 +47,7 @@ export function JanelaConversa({
   // `usuarioA`/`usuarioB` como `null`). O histórico continua visível e só o envio fica bloqueado,
   // com o mesmo texto do backend, que também recusa o envio.
   const semParticipante = !contato;
-  const avisoSemParticipante =
-    "Esta conversa não permite novas mensagens porque o outro usuário foi removido.";
+  const avisoSemParticipante = tj.semParticipante;
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ block: "end" });
@@ -61,12 +62,12 @@ export function JanelaConversa({
   }
 
   return (
-    <section aria-label={`Conversa com ${nome}`} className="flex h-full flex-col">
+    <section aria-label={tj.conversaCom(nome)} className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border p-4">
         <LinkAutor
           autorId={contato?.id}
           className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          ariaLabel={`Ver perfil de ${nome}`}
+          ariaLabel={tj.verPerfilDe(nome)}
         >
           <Avatar className="size-10">
             {foto && <AvatarImage src={foto} alt="" />}
@@ -83,7 +84,7 @@ export function JanelaConversa({
           </p>
           {contatoDigitando && (
             <p className="text-xs font-medium text-primary" role="status" aria-live="polite">
-              digitando…
+              {tj.digitando}
             </p>
           )}
         </div>
@@ -102,14 +103,14 @@ export function JanelaConversa({
 
         {!carregando && erro && (
           <Alert variant="destructive">
-            <AlertTitle>Não foi possível carregar as mensagens</AlertTitle>
-            <AlertDescription>{mensagemErro ?? "Tente novamente em instantes."}</AlertDescription>
+            <AlertTitle>{tj.erroTitulo}</AlertTitle>
+            <AlertDescription>{mensagemErro ?? tj.erroPadrao}</AlertDescription>
           </Alert>
         )}
 
         {!carregando && !erro && mensagens.length === 0 && (
           <p className="p-4 text-center text-sm text-muted-foreground" role="status">
-            {semParticipante ? avisoSemParticipante : `Nenhuma mensagem ainda. Envie a primeira mensagem para ${nome}.`}
+            {semParticipante ? avisoSemParticipante : tj.vazio(nome)}
           </p>
         )}
 
@@ -130,7 +131,7 @@ export function JanelaConversa({
       ) : (
         <form onSubmit={enviarMensagem} className="flex items-end gap-2 border-t border-border p-3">
           <label htmlFor="mensagem-texto" className="sr-only">
-            Escreva uma mensagem
+            {tj.escreva}
           </label>
           <Textarea
             id="mensagem-texto"
@@ -145,10 +146,10 @@ export function JanelaConversa({
                 enviarMensagem(e);
               }
             }}
-            placeholder="Escreva uma mensagem…"
+            placeholder={tj.escrevaPlaceholder}
             className="min-h-12 flex-1 resize-none"
           />
-          <Button type="submit" className="h-12 shrink-0" disabled={!texto.trim() || enviando} aria-label="Enviar mensagem">
+          <Button type="submit" className="h-12 shrink-0" disabled={!texto.trim() || enviando} aria-label={tj.enviar}>
             <Send aria-hidden="true" />
           </Button>
         </form>

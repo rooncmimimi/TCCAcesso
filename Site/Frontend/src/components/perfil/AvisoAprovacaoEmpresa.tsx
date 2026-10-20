@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Ban, Hourglass, ShieldAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useT } from "@/i18n";
 
 type EmpresaStatus = {
   statusAprovacao?: string;
@@ -24,6 +25,7 @@ export function AvisoAprovacaoEmpresa({
   empresa: EmpresaStatus;
   acoes?: ReactNode;
 }) {
+  const ta = useT().perfil.aviso;
   const tituloRef = useRef<HTMLHeadingElement>(null);
 
   const status = empresa.statusAprovacao;
@@ -42,25 +44,17 @@ export function AvisoAprovacaoEmpresa({
     <ShieldAlert className="size-7" />
   );
 
-  const titulo = pendente
-    ? "Sua empresa está em análise"
-    : suspensa
-      ? "Conta empresarial suspensa"
-      : "Seu cadastro empresarial não foi aprovado";
+  const titulo = pendente ? ta.tituloPendente : suspensa ? ta.tituloSuspensa : ta.tituloReprovada;
 
   const motivo = suspensa ? empresa.motivoSuspensao : empresa.motivoReprovacao;
 
   const descricaoFalada = pendente
-    ? "Sua empresa está em análise. Seu cadastro foi recebido e está aguardando a aprovação de um administrador do ACESSO. Você receberá uma notificação quando a análise for concluída."
+    ? ta.falaPendente
     : suspensa
-      ? `Conta empresarial suspensa. Sua empresa foi suspensa pela moderação do ACESSO.${motivo ? ` Motivo: ${motivo}` : ""}`
-      : `Seu cadastro empresarial não foi aprovado.${motivo ? ` Motivo: ${motivo}` : ""}`;
+      ? ta.falaSuspensa(motivo ?? "")
+      : ta.falaReprovada(motivo ?? "");
 
-  const descricaoVisivel = pendente
-    ? "Seu cadastro foi recebido e está aguardando a aprovação de um administrador do ACESSO. Você receberá uma notificação quando a análise for concluída. Enquanto isso, publicar vagas, editar o perfil da empresa e visualizar candidaturas ficam indisponíveis."
-    : suspensa
-      ? "Sua empresa foi suspensa pela moderação do ACESSO. Enquanto a suspensão estiver ativa, o acesso à plataforma permanece bloqueado."
-      : "A equipe do ACESSO analisou seu cadastro e ele não foi aprovado. Os recursos empresariais (publicar vagas, editar o perfil, visualizar candidaturas) ficam indisponíveis enquanto esse status não mudar.";
+  const descricaoVisivel = pendente ? ta.textoPendente : suspensa ? ta.textoSuspensa : ta.textoReprovada;
 
   return (
     <Card className="mt-4 shadow-card">
@@ -87,7 +81,7 @@ export function AvisoAprovacaoEmpresa({
 
         {!pendente && motivo ? (
           <p className="max-w-md rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            <strong>Motivo:</strong> {motivo}
+            <strong>{ta.motivo}:</strong> {motivo}
           </p>
         ) : null}
 

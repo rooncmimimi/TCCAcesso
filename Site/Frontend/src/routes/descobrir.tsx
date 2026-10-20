@@ -14,6 +14,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { urlArquivo } from "@/utils/arquivos";
 import { seguidoresService } from "@/services/empresas.service";
 import { extrairMensagemErro } from "@/services/api";
+import { dic, metaPagina, useT } from "@/i18n";
 import type { SugestaoEmpresa, SugestaoPerfil } from "@/types";
 
 /**
@@ -28,15 +29,7 @@ const CHAVE_PESSOAS = ["descobrir-pessoas"] as const;
 const CHAVE_EMPRESAS = ["descobrir-empresas"] as const;
 
 export const Route = createFileRoute("/descobrir")({
-  head: () => ({
-    meta: [
-      { title: "Descobrir — ACESSO" },
-      {
-        name: "description",
-        content: "Encontre pessoas e empresas para seguir no ACESSO, com sugestões explicadas.",
-      },
-    ],
-  }),
+  head: () => metaPagina(dic().descobrir.meta),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <Descobrir />
@@ -45,6 +38,7 @@ export const Route = createFileRoute("/descobrir")({
 });
 
 function Descobrir() {
+  const td = useT().descobrir;
   const { usuario } = useSessao();
   const ehCandidato = usuario?.tipo === "candidato";
 
@@ -63,24 +57,23 @@ function Descobrir() {
     <EstruturaApp>
       <div className="flex items-center gap-2">
         <Compass className="size-7 text-primary" aria-hidden="true" />
-        <h1 className="text-3xl font-extrabold">Descobrir</h1>
+        <h1 className="text-3xl font-extrabold">{td.titulo}</h1>
       </div>
       <p className="mt-2 text-muted-foreground">
-        Sugestões de pessoas e empresas para seguir. Cada sugestão explica por que ela apareceu — nunca usamos
-        deficiência, diagnóstico ou outro dado sensível como critério.
+        {td.intro}
       </p>
 
       <section className="mt-8" aria-labelledby="titulo-pessoas">
         <h2 id="titulo-pessoas" className="flex items-center gap-2 text-xl font-bold">
-          <Users className="size-5 text-primary" aria-hidden="true" /> Pessoas
+          <Users className="size-5 text-primary" aria-hidden="true" /> {td.pessoas}
         </h2>
         <div className="mt-4">
           {pessoas.isLoading ? (
-            <EstadoCarregando texto="Procurando pessoas para você conhecer…" />
+            <EstadoCarregando texto={td.carregandoPessoas} />
           ) : pessoas.isError ? (
             <EstadoErro onTentar={() => pessoas.refetch()} />
           ) : !pessoas.data || pessoas.data.length === 0 ? (
-            <EstadoVazio texto="Sem sugestões de pessoas no momento. Interaja mais no feed para receber sugestões melhores." />
+            <EstadoVazio texto={td.vazioPessoas} />
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pessoas.data.map((pessoa) => (
@@ -96,15 +89,15 @@ function Descobrir() {
       {ehCandidato && (
         <section className="mt-10" aria-labelledby="titulo-empresas">
           <h2 id="titulo-empresas" className="flex items-center gap-2 text-xl font-bold">
-            <Building2 className="size-5 text-primary" aria-hidden="true" /> Empresas
+            <Building2 className="size-5 text-primary" aria-hidden="true" /> {td.empresas}
           </h2>
           <div className="mt-4">
             {empresas.isLoading ? (
-              <EstadoCarregando texto="Procurando empresas para você conhecer…" />
+              <EstadoCarregando texto={td.carregandoEmpresas} />
             ) : empresas.isError ? (
               <EstadoErro onTentar={() => empresas.refetch()} />
             ) : !empresas.data || empresas.data.length === 0 ? (
-              <EstadoVazio texto="Sem sugestões de empresas no momento. Favorite vagas para receber sugestões melhores." />
+              <EstadoVazio texto={td.vazioEmpresas} />
             ) : (
               <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {empresas.data.map((empresa) => (
@@ -130,11 +123,13 @@ function EstadoCarregando({ texto }: { texto: string }) {
 }
 
 function EstadoErro({ onTentar }: { onTentar: () => void }) {
+  const t = useT();
+
   return (
     <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-      <p>Não foi possível carregar as sugestões.</p>
+      <p>{t.descobrir.erro}</p>
       <Button variant="outline" size="sm" onClick={onTentar}>
-        Tentar novamente
+        {t.comum.tentarNovamente}
       </Button>
     </div>
   );
@@ -145,6 +140,8 @@ function EstadoVazio({ texto }: { texto: string }) {
 }
 
 function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
+  const td = useT().descobrir;
+
   // Preenche a chave de cache que o `SeguirButton` lê: é esta busca que diz se o perfil é público
   // ou privado, se já é seguido, se há solicitação pendente ou bloqueio. `sugestoesPessoas` já
   // exclui bloqueados e quem a pessoa segue; falta só o estado de privacidade e solicitação, que só
@@ -157,7 +154,7 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
   return (
     <Card className="h-full shadow-none">
       <CardContent className="flex h-full flex-col items-center gap-3 p-5 text-center">
-        <Link to="/perfil/$usuarioId" params={{ usuarioId: pessoa.id }} aria-label={`Ver perfil de ${pessoa.nome}`}>
+        <Link to="/perfil/$usuarioId" params={{ usuarioId: pessoa.id }} aria-label={td.verPerfilDe(pessoa.nome)}>
           <Avatar className="size-16">
             <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-lg font-bold text-primary">
@@ -190,24 +187,26 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
 }
 
 function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
+  const t = useT();
+  const td = t.descobrir;
   const queryClient = useQueryClient();
-  const nome = empresa.nomeFantasia ?? empresa.razaoSocial ?? "Empresa";
+  const nome = empresa.nomeFantasia ?? empresa.razaoSocial ?? td.empresaFallback;
 
   const seguir = useMutation({
     mutationFn: () => seguidoresService.alternarEmpresa(empresa.id),
     onSuccess: () => {
-      toast.success(`Agora você está seguindo ${nome}.`);
+      toast.success(td.seguindoAgora(nome));
       queryClient.setQueryData<SugestaoEmpresa[]>(CHAVE_EMPRESAS, (atual) =>
         atual?.filter((item) => item.id !== empresa.id),
       );
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível seguir esta empresa.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, td.erroSeguir)),
   });
 
   return (
     <Card className="h-full shadow-none">
       <CardContent className="flex h-full flex-col items-center gap-3 p-5 text-center">
-        <Link to="/perfil/$usuarioId" params={{ usuarioId: empresa.usuarioId ?? "" }} aria-label={`Ver perfil de ${nome}`}>
+        <Link to="/perfil/$usuarioId" params={{ usuarioId: empresa.usuarioId ?? "" }} aria-label={td.verPerfilDe(nome)}>
           <Avatar className="size-16 rounded-md">
             <AvatarImage src={urlArquivo(empresa.logo)} alt="" />
             <AvatarFallback className="rounded-md bg-primary-soft text-lg font-bold text-primary">
@@ -225,9 +224,9 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
               {nome}
             </Link>
             {empresa.empresaVerificada && (
-              <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+              <span className="inline-flex shrink-0 items-center text-primary" title={t.comum.empresaVerificadaTitulo}>
                 <BadgeCheck className="size-4" aria-hidden="true" />
-                <span className="sr-only">Empresa verificada</span>
+                <span className="sr-only">{t.comum.empresaVerificada}</span>
               </span>
             )}
           </span>
@@ -256,7 +255,7 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
           ) : (
             <UserPlus className="size-4" aria-hidden="true" />
           )}
-          Seguir
+          {td.seguir}
         </Button>
       </CardContent>
     </Card>

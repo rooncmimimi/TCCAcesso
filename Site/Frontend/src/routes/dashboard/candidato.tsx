@@ -8,17 +8,10 @@ import { MetricaCard } from "@/components/dashboard/MetricaCard";
 import { CandidaturasRecentes } from "@/components/dashboard/CandidaturasRecentes";
 import { VagasFavoritas } from "@/components/dashboard/VagasFavoritas";
 import { dashboardService } from "@/services/dashboard.service";
+import { dic, metaPagina, useT } from "@/i18n";
 
 export const Route = createFileRoute("/dashboard/candidato")({
-  head: () => ({
-    meta: [
-      { title: "Meu painel — ACESSO" },
-      {
-        name: "description",
-        content: "Acompanhe suas candidaturas, vagas favoritas e desempenho no ACESSO.",
-      },
-    ],
-  }),
+  head: () => metaPagina(dic().dashboard.meta.candidato),
   component: () => (
     <GuardaAcesso tipos={["candidato"]}>
       <PainelCandidato />
@@ -27,6 +20,8 @@ export const Route = createFileRoute("/dashboard/candidato")({
 });
 
 function PainelCandidato() {
+  const t = useT();
+  const td = t.dashboard;
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["metricas-candidato"],
     queryFn: () => dashboardService.candidato(),
@@ -34,39 +29,39 @@ function PainelCandidato() {
 
   const porStatus = data?.candidaturasPorStatus ?? {};
   const resumoTextual = Object.entries(porStatus)
-    .map(([status, total]) => `${status}: ${total}`)
+    .map(([status, total]) => `${(t.status as Record<string, string>)[status] ?? status}: ${total}`)
     .join(", ");
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Meu painel</h1>
+      <h1 className="text-3xl font-extrabold">{td.candidato.titulo}</h1>
       <p className="mt-2 text-muted-foreground">
-        Acompanhe suas candidaturas, vagas favoritas e sua presença na comunidade.
+        {td.candidato.intro}
       </p>
 
       {isLoading ? (
         <div role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando suas métricas…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {td.carregandoMetricas}
         </div>
       ) : isError ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
-          <p>Não foi possível carregar suas métricas.</p>
+          <p>{td.erroMetricas}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t.comum.tentarNovamente}
           </Button>
         </div>
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricaCard titulo="Candidaturas" valor={data?.candidaturas ?? 0} icon={FileText} />
-            <MetricaCard titulo="Vagas favoritas" valor={data?.vagasFavoritas ?? 0} icon={Bookmark} />
-            <MetricaCard titulo="Publicações" valor={data?.postagens ?? 0} icon={Briefcase} />
-            <MetricaCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
+            <MetricaCard titulo={td.candidato.candidaturas} valor={data?.candidaturas ?? 0} icon={FileText} />
+            <MetricaCard titulo={td.candidato.favoritas} valor={data?.vagasFavoritas ?? 0} icon={Bookmark} />
+            <MetricaCard titulo={td.candidato.publicacoes} valor={data?.postagens ?? 0} icon={Briefcase} />
+            <MetricaCard titulo={td.candidato.seguidores} valor={data?.seguidores ?? 0} icon={Users} />
           </div>
 
           {resumoTextual ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Resumo das suas candidaturas por status: {resumoTextual}.
+              {td.candidato.resumoStatus(resumoTextual)}
             </p>
           ) : null}
         </>

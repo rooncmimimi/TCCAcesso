@@ -18,10 +18,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { candidaturasService } from "@/services/dashboard.service";
+import { useT } from "@/i18n";
 import type { Candidatura } from "@/types";
 
 /** Lista as candidaturas recentes do candidato, com opção de cancelamento. */
 export function CandidaturasRecentes() {
+  const t = useT();
+  const td = t.dashboard;
   const [pagina, setPagina] = useState(1);
   const queryClient = useQueryClient();
 
@@ -36,35 +39,35 @@ export function CandidaturasRecentes() {
   const cancelar = useMutation({
     mutationFn: (id: string) => candidaturasService.cancelar(id),
     onSuccess: () => {
-      toast.success("Candidatura cancelada.");
+      toast.success(td.recentes.cancelada);
       queryClient.invalidateQueries({ queryKey: ["candidaturas", "minhas"] });
       queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
     },
-    onError: () => toast.error("Não foi possível cancelar a candidatura."),
+    onError: () => toast.error(td.recentes.erroCancelar),
   });
 
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-lg">Minhas candidaturas recentes</CardTitle>
+        <CardTitle className="text-lg">{td.recentes.titulo}</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando candidaturas…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {td.recentes.carregando}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-            <p>Não foi possível carregar suas candidaturas.</p>
+            <p>{td.recentes.erro}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t.comum.tentarNovamente}
             </Button>
           </div>
         ) : !data || data.dados.length === 0 ? (
           <p className="py-6 text-sm text-muted-foreground">
-            Você ainda não se candidatou a nenhuma vaga.{" "}
+            {td.recentes.vazio}{" "}
             <Link to="/vagas" className="font-medium text-primary underline">
-              Explorar vagas
+              {td.recentes.explorar}
             </Link>
           </p>
         ) : (
@@ -73,9 +76,9 @@ export function CandidaturasRecentes() {
               {data.dados.map((candidatura: Candidatura) => (
                 <li key={candidatura.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{candidatura.vaga?.titulo ?? "vaga"}</p>
+                    <p className="truncate font-semibold">{candidatura.vaga?.titulo ?? td.recentes.vagaFallback}</p>
                     <p className="truncate text-sm text-muted-foreground">
-                      {candidatura.vaga?.empresa?.nomeFantasia ?? candidatura.vaga?.empresa?.razaoSocial ?? "Empresa"}
+                      {candidatura.vaga?.empresa?.nomeFantasia ?? candidatura.vaga?.empresa?.razaoSocial ?? td.recentes.empresaFallback}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -87,23 +90,22 @@ export function CandidaturasRecentes() {
                             variant="ghost"
                             size="sm"
                             className="min-h-11 gap-1 text-destructive hover:text-destructive"
-                            aria-label={`Cancelar candidatura à vaga ${candidatura.vaga?.titulo ?? ""}`}
+                            aria-label={td.recentes.cancelarAria(candidatura.vaga?.titulo ?? "")}
                           >
-                            <XCircle className="size-4" aria-hidden="true" /> Cancelar
+                            <XCircle className="size-4" aria-hidden="true" /> {td.recentes.cancelar}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Cancelar candidatura?</AlertDialogTitle>
+                            <AlertDialogTitle>{td.recentes.confirmarTitulo}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Você está prestes a cancelar sua candidatura à vaga "
-                              {candidatura.vaga?.titulo}". Essa ação não pode ser desfeita.
+                              {td.recentes.confirmarTexto(candidatura.vaga?.titulo ?? "")}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Voltar</AlertDialogCancel>
+                            <AlertDialogCancel>{td.recentes.voltar}</AlertDialogCancel>
                             <AlertDialogAction onClick={() => cancelar.mutate(candidatura.id)}>
-                              Confirmar cancelamento
+                              {td.recentes.confirmarCancelamento}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -121,10 +123,10 @@ export function CandidaturasRecentes() {
                   disabled={pagina <= 1}
                   onClick={() => setPagina((p) => Math.max(1, p - 1))}
                 >
-                  Página anterior
+                  {td.paginacao.anterior}
                 </Button>
                 <span className="self-center text-sm text-muted-foreground">
-                  Página {data.pagina} de {data.totalPaginas}
+                  {td.paginacao.pagina(data.pagina, data.totalPaginas)}
                 </span>
                 <Button
                   variant="outline"
@@ -132,7 +134,7 @@ export function CandidaturasRecentes() {
                   disabled={pagina >= data.totalPaginas}
                   onClick={() => setPagina((p) => p + 1)}
                 >
-                  Próxima página
+                  {td.paginacao.proxima}
                 </Button>
               </div>
             ) : null}

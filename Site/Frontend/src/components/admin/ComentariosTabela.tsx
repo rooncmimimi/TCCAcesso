@@ -21,6 +21,7 @@ import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { DetalheComentarioSheet } from "@/components/admin/DetalheComentarioSheet";
 import { extrairMensagemErro } from "@/services/api";
 import { listarComentarios, removerComentario, type ComentarioAdmin } from "@/services/admin.service";
+import { dic, useT } from "@/i18n";
 
 type RespostaLista = Awaited<ReturnType<typeof listarComentarios>>;
 
@@ -32,6 +33,8 @@ function removerDaResposta(atual: RespostaLista | undefined, id: string): Respos
 
 /** Comentários para moderação, com busca por texto, paginação e remoção. */
 export function ComentariosTabela() {
+  const t = useT();
+  const tc = t.admin.comentarios;
   const queryClient = useQueryClient();
   const [pagina, setPagina] = useState(1);
   const [busca, setBusca] = useState("");
@@ -54,19 +57,20 @@ export function ComentariosTabela() {
       queryClient.setQueryData<RespostaLista>(chaveConsulta, (atual) => removerDaResposta(atual, id));
       return { anterior };
     },
-    onSuccess: () => toast.success("Comentário removido."),
+    onSuccess: () => toast.success(dic().admin.comentarios.removido),
     onError: (erro, _id, contexto) => {
       const status = (erro as AxiosError)?.response?.status;
 
       if (status === 409 || status === 404) {
-        toast.info(status === 409 ? "Este comentário já havia sido removido." : "Este comentário não existe mais.");
+        const textos = dic().admin.comentarios;
+        toast.info(status === 409 ? textos.jaRemovido : textos.naoExiste);
         return;
       }
 
       if (contexto?.anterior) {
         queryClient.setQueryData(chaveConsulta, contexto.anterior);
       }
-      toast.error(extrairMensagemErro(erro, "Não foi possível remover o comentário."));
+      toast.error(extrairMensagemErro(erro, dic().admin.comentarios.erroRemover));
     },
     onSettled: () => {
       setAlvo(null);
@@ -99,9 +103,9 @@ export function ComentariosTabela() {
   if (isError) {
     return (
       <div className="flex flex-col items-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar os comentários.</p>
+        <p className="text-sm text-muted-foreground">{tc.erro}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t.comum.tentarNovamente}
         </Button>
       </div>
     );
@@ -111,33 +115,33 @@ export function ComentariosTabela() {
     <div>
       <form className="flex flex-wrap items-end gap-3 p-4" onSubmit={buscar}>
         <div className="min-w-56">
-          <Label htmlFor="filtro-comentarios">Buscar por conteúdo</Label>
+          <Label htmlFor="filtro-comentarios">{tc.buscarLabel}</Label>
           <Input
             id="filtro-comentarios"
             value={busca}
             onChange={(evento) => setBusca(evento.target.value)}
-            placeholder="Ex.: palavra no comentário"
+            placeholder={tc.buscarPlaceholder}
             className="mt-1"
           />
         </div>
         <Button type="submit" className="min-h-11 gap-1.5">
-          <Search className="size-4" aria-hidden="true" /> Buscar
+          <Search className="size-4" aria-hidden="true" /> {t.admin.comum.buscar}
         </Button>
       </form>
 
       {comentarios.length === 0 ? (
         <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
           <MessageSquare className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhum comentário encontrado.</p>
+          <p className="text-sm">{tc.vazio}</p>
         </div>
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Autor</TableHead>
-                <TableHead>Comentário</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{t.admin.comum.autor}</TableHead>
+                <TableHead>{tc.colunas.comentario}</TableHead>
+                <TableHead className="text-right">{t.admin.comum.acoes}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -151,18 +155,18 @@ export function ComentariosTabela() {
                         size="sm"
                         variant="ghost"
                         onClick={() => setDetalhe(comentario)}
-                        aria-label={`Ver detalhes do comentário de ${comentario.usuario?.nome ?? "usuário"}`}
+                        aria-label={tc.verDetalhesAria(comentario.usuario?.nome ?? t.admin.comum.usuarioGenerico)}
                       >
-                        <Eye className="size-4" aria-hidden="true" /> Ver detalhes
+                        <Eye className="size-4" aria-hidden="true" /> {t.admin.comum.verDetalhes}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setAlvo(comentario)}
-                        aria-label="Remover comentário"
+                        aria-label={tc.removerAria}
                       >
-                        <Trash2 className="size-4" aria-hidden="true" /> Remover
+                        <Trash2 className="size-4" aria-hidden="true" /> {t.admin.comum.remover}
                       </Button>
                     </div>
                   </TableCell>
@@ -189,9 +193,9 @@ export function ComentariosTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo="Remover comentário"
-        descricao="Esta ação não pode ser desfeita. O comentário será removido permanentemente."
-        textoConfirmar="Remover"
+        titulo={tc.dialogoRemover.titulo}
+        descricao={tc.dialogoRemover.texto}
+        textoConfirmar={t.admin.comum.remover}
         destrutivo
         carregando={remover.isPending}
         onConfirmar={() => alvo && remover.mutate(alvo.id)}

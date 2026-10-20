@@ -19,23 +19,20 @@ import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { useSessao } from "@/hooks/useSessao";
 import type { PreferenciaMensagens } from "@/types";
+import { metaPagina, dic, useT } from "@/i18n";
 
-const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: string }[] = [
-  { value: "todos", label: "Todos" },
-  { value: "seguidores", label: "Apenas seguidores" },
-  { value: "seguindo", label: "Apenas pessoas que você segue" },
-  { value: "mutuo", label: "Apenas seguidores que você também segue" },
-  { value: "empresas", label: "Apenas empresas" },
-  { value: "ninguem", label: "Ninguém" },
+// Os rótulos de cada opção vêm do dicionário (`configuracoes.privacidade.opcoes`).
+const OPCOES_PREFERENCIA_MENSAGENS: PreferenciaMensagens[] = [
+  "todos",
+  "seguidores",
+  "seguindo",
+  "mutuo",
+  "empresas",
+  "ninguem",
 ];
 
 export const Route = createFileRoute("/configuracoes/privacidade")({
-  head: () => ({
-    meta: [
-      { title: "Privacidade — ACESSO" },
-      { name: "description", content: "Controle quem pode ver seu perfil e gerencie usuários bloqueados." },
-    ],
-  }),
+  head: () => metaPagina(dic().configuracoes.privacidade.meta),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <Privacidade />
@@ -44,6 +41,8 @@ export const Route = createFileRoute("/configuracoes/privacidade")({
 });
 
 function Privacidade() {
+  const t = useT();
+  const tp = t.configuracoes.privacidade;
   const { usuario, atualizar } = useSessao();
   const perfilPublico = usuario?.perfilPublico ?? true;
   const preferenciaMensagens = usuario?.preferenciaMensagens ?? "todos";
@@ -54,20 +53,18 @@ function Privacidade() {
     mutationFn: (valor: boolean) => bloqueioService.atualizarPrivacidade(valor),
     onSuccess: (resultado) => {
       atualizar({ perfilPublico: resultado.perfilPublico });
-      toast.success(
-        resultado.perfilPublico ? "Seu perfil agora é público." : "Seu perfil agora é privado.",
-      );
+      toast.success(resultado.perfilPublico ? tp.agoraPublico : tp.agoraPrivado);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tp.erroPreferencia)),
   });
 
   const atualizarMensagens = useMutation({
     mutationFn: (valor: PreferenciaMensagens) => bloqueioService.atualizarPreferenciaMensagens(valor),
     onSuccess: (resultado) => {
       atualizar({ preferenciaMensagens: resultado.preferenciaMensagens });
-      toast.success("Preferência de mensagens atualizada.");
+      toast.success(tp.mensagensAtualizada);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tp.erroPreferencia)),
   });
 
   return (
@@ -76,7 +73,7 @@ function Privacidade() {
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para configurações
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t.configuracoes.voltarParaConfiguracoes}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">
@@ -84,26 +81,23 @@ function Privacidade() {
           <ShieldCheck className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Privacidade</h1>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{tp.titulo}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Controle quem pode ver seu perfil e gerencie quem você bloqueou.
+            {tp.texto}
           </p>
         </div>
       </div>
 
       <Card className="mt-6 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Perfil</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{tp.perfil}</h2>
           <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <div className="min-w-0">
               <Label htmlFor="perfil-publico" className="font-semibold">
-                Perfil público
+                {tp.perfilPublico}
               </Label>
               <p className="text-sm text-muted-foreground">
-                Seu nome, foto e informações do perfil continuam visíveis para outras pessoas mesmo
-                desativado. O que muda são suas publicações: com o perfil privado, elas só ficam
-                visíveis para quem você aprovar como seguidor — outras pessoas veem um botão para
-                solicitar seguir você.
+                {tp.perfilPublicoTexto}
               </p>
             </div>
             <Switch
@@ -111,7 +105,7 @@ function Privacidade() {
               checked={perfilPublico}
               disabled={atualizarPrivacidade.isPending}
               onCheckedChange={(valor) => atualizarPrivacidade.mutate(valor)}
-              aria-label={`Perfil público, ${perfilPublico ? "ativado" : "desativado"}`}
+              aria-label={tp.perfilPublicoAria(perfilPublico)}
             />
           </div>
         </CardContent>
@@ -119,14 +113,13 @@ function Privacidade() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Mensagens</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{tp.mensagens}</h2>
           <div className="mt-3 space-y-2">
             <Label htmlFor="preferencia-mensagens" className="font-semibold">
-              Quem pode enviar novas mensagens para você?
+              {tp.quemEnvia}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Essa configuração controla quem pode iniciar novas conversas com você. Usuários
-              bloqueados nunca poderão iniciar uma conversa, independentemente desta opção.
+              {tp.quemEnviaTexto}
             </p>
             <Select
               value={preferenciaMensagens}
@@ -135,12 +128,12 @@ function Privacidade() {
             >
               <SelectTrigger id="preferencia-mensagens" className="mt-1 sm:max-w-sm">
                 <MessageSquare className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <SelectValue placeholder="Selecione" />
+                <SelectValue placeholder={tp.selecione} />
               </SelectTrigger>
               <SelectContent>
-                {OPCOES_PREFERENCIA_MENSAGENS.map((opcao) => (
-                  <SelectItem key={opcao.value} value={opcao.value}>
-                    {opcao.label}
+                {OPCOES_PREFERENCIA_MENSAGENS.map((valor) => (
+                  <SelectItem key={valor} value={valor}>
+                    {tp.opcoes[valor]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -151,7 +144,7 @@ function Privacidade() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Bloqueios</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{tp.bloqueios}</h2>
           <Link
             to="/configuracoes/bloqueados"
             className="mt-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg p-2 -m-2 hover:bg-secondary"
@@ -160,8 +153,8 @@ function Privacidade() {
               <UserX className="size-5 text-muted-foreground" />
             </span>
             <span className="min-w-0">
-              <span className="block font-semibold">Usuários bloqueados</span>
-              <span className="block text-sm text-muted-foreground">Gerencie os usuários que você bloqueou.</span>
+              <span className="block font-semibold">{tp.usuariosBloqueados}</span>
+              <span className="block text-sm text-muted-foreground">{tp.gerencieBloqueados}</span>
             </span>
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           </Link>

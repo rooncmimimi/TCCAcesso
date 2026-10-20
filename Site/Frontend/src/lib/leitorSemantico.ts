@@ -7,7 +7,11 @@
  * página inteira. As funções são puras (sem React nem efeitos), para serem testadas isoladamente.
  * Nunca falam id, UUID, URL, caminho de Storage, className, nome de componente ou atributo HTML
  * cru: só nome acessível, função e estado.
+ *
+ * As palavras de função e de estado ("botão", "desabilitado"…) vêm do dicionário do idioma ativo
+ * (`dic()`), lido a cada descrição: trocar o idioma muda a próxima frase falada, sem recarregar.
  */
+import { dic } from "@/i18n/dicionario";
 
 /** Controles interativos: sempre têm prioridade sobre uma imagem que porventura os envolva. */
 export const SELETOR_INTERATIVO =
@@ -80,6 +84,7 @@ function nomeAcessivel(el: HTMLElement): string | null {
 
 /** Palavra que descreve a função do elemento, nunca o tipo técnico/HTML. */
 function palavraFuncao(el: HTMLElement): string | null {
+  const f = dic().acessibilidade.leitor.funcao;
   const role = el.getAttribute("role");
   const tag = el.tagName;
 
@@ -87,27 +92,27 @@ function palavraFuncao(el: HTMLElement): string | null {
   // `<button role="switch">` (padrão do Radix, usado nos switches de Configurações) seria anunciado
   // como "botão", e um `<a role="menuitem">` como "link". Sem role reconhecido, vale a inferência
   // pela tag.
-  if (role === "switch") return "interruptor";
-  if (role === "menuitem") return "opção";
-  if (role === "option") return "opção";
-  if (role === "tab") return "aba";
-  if (role === "combobox") return "seletor";
-  if (role === "checkbox") return "caixa de seleção";
-  if (role === "radio") return "opção";
-  if (role === "button") return "botão";
-  if (role === "link") return "link";
+  if (role === "switch") return f.interruptor;
+  if (role === "menuitem") return f.opcao;
+  if (role === "option") return f.opcao;
+  if (role === "tab") return f.aba;
+  if (role === "combobox") return f.seletor;
+  if (role === "checkbox") return f.caixaSelecao;
+  if (role === "radio") return f.opcao;
+  if (role === "button") return f.botao;
+  if (role === "link") return f.link;
 
-  if (tag === "BUTTON") return "botão";
-  if (tag === "A" && el.hasAttribute("href")) return "link";
-  if (tag === "SELECT") return "seletor";
-  if (tag === "TEXTAREA") return "campo de texto";
+  if (tag === "BUTTON") return f.botao;
+  if (tag === "A" && el.hasAttribute("href")) return f.link;
+  if (tag === "SELECT") return f.seletor;
+  if (tag === "TEXTAREA") return f.campoTexto;
   if (tag === "INPUT") {
     const tipo = (el as HTMLInputElement).type;
-    if (tipo === "checkbox") return "caixa de seleção";
-    if (tipo === "radio") return "opção";
-    if (tipo === "file") return "campo de arquivo";
-    if (tipo === "submit" || tipo === "button") return "botão";
-    return "campo de texto";
+    if (tipo === "checkbox") return f.caixaSelecao;
+    if (tipo === "radio") return f.opcao;
+    if (tipo === "file") return f.campoArquivo;
+    if (tipo === "submit" || tipo === "button") return f.botao;
+    return f.campoTexto;
   }
   return null;
 }
@@ -124,30 +129,31 @@ function palavraFuncao(el: HTMLElement): string | null {
  * baixa o estado no próprio rótulo.
  */
 function estadoDoElemento(el: HTMLElement, nomeJaTemAriaLabel: boolean): string | null {
+  const e = dic().acessibilidade.leitor.estado;
   const partes: string[] = [];
 
   const desabilitado = (el as HTMLButtonElement).disabled || el.getAttribute("aria-disabled") === "true";
-  if (desabilitado) partes.push("desabilitado");
+  if (desabilitado) partes.push(e.desabilitado);
 
-  if (el.getAttribute("aria-busy") === "true") partes.push("carregando");
+  if (el.getAttribute("aria-busy") === "true") partes.push(e.carregando);
 
   const pressionado = el.getAttribute("aria-pressed");
-  if (pressionado === "true") partes.push("selecionado");
+  if (pressionado === "true") partes.push(e.selecionado);
 
   const expandido = el.getAttribute("aria-expanded");
-  if (expandido === "true") partes.push("expandido");
-  else if (expandido === "false") partes.push("recolhido");
+  if (expandido === "true") partes.push(e.expandido);
+  else if (expandido === "false") partes.push(e.recolhido);
 
   if (!nomeJaTemAriaLabel) {
     // Switch fala "ativado/desativado"; checkbox e radio falam "marcado/não marcado". O
     // `aria-checked` é o mesmo, mas a palavra depende do tipo de controle.
     const ehSwitch = el.getAttribute("role") === "switch";
     const marcado = el.getAttribute("aria-checked") ?? ((el as HTMLInputElement).type === "checkbox" ? String((el as HTMLInputElement).checked) : null);
-    if (marcado === "true") partes.push(ehSwitch ? "ativado" : "marcado");
-    else if (marcado === "false") partes.push(ehSwitch ? "desativado" : "não marcado");
+    if (marcado === "true") partes.push(ehSwitch ? e.ativado : e.marcado);
+    else if (marcado === "false") partes.push(ehSwitch ? e.desativado : e.naoMarcado);
   }
 
-  if (el.getAttribute("aria-invalid") === "true") partes.push("com erro");
+  if (el.getAttribute("aria-invalid") === "true") partes.push(e.comErro);
 
   return partes.length ? partes.join(", ") : null;
 }
@@ -170,7 +176,7 @@ function descricaoAssociada(el: HTMLElement): string | null {
 
   if (!texto) return null;
 
-  return el.getAttribute("aria-invalid") === "true" ? `Erro: ${texto}` : texto;
+  return el.getAttribute("aria-invalid") === "true" ? dic().acessibilidade.leitor.erro(texto) : texto;
 }
 
 /**
@@ -181,7 +187,7 @@ function descricaoAssociada(el: HTMLElement): string | null {
 function descreverImagem(el: HTMLImageElement): string | null {
   const alt = el.getAttribute("alt");
   if (!alt || !alt.trim()) return null;
-  return `Imagem: ${alt.trim()}.`;
+  return dic().acessibilidade.leitor.imagem(alt.trim());
 }
 
 /**

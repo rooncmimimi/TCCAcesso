@@ -13,18 +13,12 @@ import { useSessao } from "@/hooks/useSessao";
 import vagasService from "@/services/vagas.service";
 import dashboardService from "@/services/dashboard.service";
 import { extrairMensagemErro } from "@/services/api";
+import { metaPagina, dic, useT } from "@/i18n";
 
 export const Route = createFileRoute("/vagas")({
   head: () => ({
     meta: [
-      { title: "Vagas inclusivas — ACESSO" },
-      {
-        name: "description",
-        content:
-          "Busque vagas com recursos de acessibilidade declarados por empresas verificadas na plataforma ACESSO.",
-      },
-      { property: "og:title", content: "Vagas inclusivas — ACESSO" },
-      { property: "og:description", content: "Oportunidades para PCD e profissionais 50+." },
+      ...metaPagina(dic().vagasPagina.lista.meta).meta,
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -41,6 +35,8 @@ const FILTROS_INICIAIS: FiltrosVagasEstado = {
 };
 
 function Vagas() {
+  const t = useT();
+  const tv = t.vagasPagina.lista;
   const { usuario } = useSessao();
   const queryClient = useQueryClient();
   const [rascunho, setRascunho] = useState<FiltrosVagasEstado>(FILTROS_INICIAIS);
@@ -76,7 +72,7 @@ function Vagas() {
   const favoritar = useMutation({
     mutationFn: (vagaId: string) => vagasService.favoritar(vagaId),
     onSuccess: (resultado) => {
-      toast.success(resultado.favoritada ? "Vaga favoritada." : "Vaga removida dos favoritos.");
+      toast.success(resultado.favoritada ? tv.favoritada : tv.removidaFavoritos);
       // Há duas chaves de query para favoritos: `["dashboard", "favoritos"]` (esta tela e o detalhe
       // da vaga, lista simples) e `["vagas-favoritas", pagina]` (widget do painel, paginado). São
       // buscas diferentes do mesmo dado, então as duas são invalidadas, em vez de unificadas com
@@ -99,13 +95,9 @@ function Vagas() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Vagas inclusivas</h1>
+      <h1 className="text-3xl font-extrabold">{tv.titulo}</h1>
       <p className="mt-2 text-muted-foreground" role="status" aria-live="polite">
-        {isLoading
-          ? "Carregando oportunidades…"
-          : `${data?.total ?? 0} oportunidade${(data?.total ?? 0) === 1 ? "" : "s"} publicada${
-              (data?.total ?? 0) === 1 ? "" : "s"
-            }.`}
+        {isLoading ? tv.carregando : tv.total(data?.total ?? 0)}
       </p>
 
       <div className="mt-6">
@@ -113,7 +105,7 @@ function Vagas() {
       </div>
 
       {isLoading && (
-        <ul className="mt-6 space-y-4" aria-label="Carregando vagas">
+        <ul className="mt-6 space-y-4" aria-label={tv.carregandoAria}>
           {[1, 2, 3].map((i) => (
             <li key={i}>
               <Skeleton className="h-44 w-full rounded-xl" />
@@ -124,9 +116,9 @@ function Vagas() {
 
       {isError && (
         <div role="alert" className="mt-6 space-y-3 rounded-xl border border-destructive/40 p-6">
-          <p className="text-sm">Não foi possível carregar as vagas.</p>
+          <p className="text-sm">{tv.erro}</p>
           <Button variant="outline" onClick={() => refetch()}>
-            Tentar novamente
+            {t.comum.tentarNovamente}
           </Button>
         </div>
       )}
@@ -134,7 +126,7 @@ function Vagas() {
       {!isLoading && !isError && vagas.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border p-10 text-center text-muted-foreground">
           <Briefcase className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhuma vaga encontrada com esses filtros.</p>
+          <p className="text-sm">{tv.vazio}</p>
         </div>
       )}
 
@@ -148,7 +140,7 @@ function Vagas() {
                 favoritando={favoritar.isPending && favoritar.variables === vaga.id}
                 onFavoritar={() => {
                   if (!ehCandidato) {
-                    toast.info("Entre com uma conta de candidato para favoritar vagas.");
+                    toast.info(tv.entreParaFavoritar);
                     return;
                   }
                   favoritar.mutate(vaga.id);
@@ -162,10 +154,10 @@ function Vagas() {
       {(data?.totalPaginas ?? 1) > 1 && (
         <div className="mt-6 flex items-center justify-between gap-3">
           <Button variant="outline" disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
-            Página anterior
+            {tv.paginaAnterior}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Página {data?.pagina} de {data?.totalPaginas}
+            {t.comum.pagina(data?.pagina ?? 1, data?.totalPaginas ?? 1)}
             {isFetching && <Loader2 className="ml-2 inline size-4 animate-spin" aria-hidden="true" />}
           </p>
           <Button
@@ -173,7 +165,7 @@ function Vagas() {
             disabled={pagina >= (data?.totalPaginas ?? 1)}
             onClick={() => setPagina((p) => p + 1)}
           >
-            Próxima página
+            {tv.proximaPagina}
           </Button>
         </div>
       )}

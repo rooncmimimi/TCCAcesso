@@ -1,16 +1,10 @@
 /**
  * Textos do fluxo de cadastro em português, inglês e espanhol.
  *
- * É um dicionário próprio e deliberadamente pequeno, não uma arquitetura de i18n: o projeto não tem
- * nenhuma (nem biblioteca, nem locale, nem contexto de idioma), e montar uma para traduzir só o
- * cadastro seria carregar peso que o resto do site ainda não usa. Quando a tradução do site inteiro
- * entrar, este arquivo vira o primeiro conjunto de chaves dela.
- *
- * O idioma **não** é salvo na conta, por decisão do produto: nada fora do cadastro está traduzido,
- * então uma preferência gravada não teria onde ser honrada depois do login.
- *
  * O idioma é o do Site inteiro (`@/i18n`): o seletor fica no topo de todas as páginas, e este
- * dicionário cobre só as telas do cadastro de candidato.
+ * dicionário cobre só as telas do cadastro de candidato (as demais telas usam `src/i18n/<idioma>`).
+ * A escolha é gravada na conta ao concluir o cadastro, para os e-mails e as mensagens do servidor
+ * seguirem o mesmo idioma.
  *
  * As mensagens de erro moram aqui junto dos rótulos de propósito. Traduzir só o rótulo e deixar o
  * erro em português deixaria a tela meio traduzida justamente na hora em que a pessoa mais precisa
@@ -93,6 +87,16 @@ const pt = {
   tituloProfissionalAjuda: "Como você se apresenta profissionalmente. Ex.: Analista de Marketing.",
   escolaridade: "Escolaridade",
   escolaridadeSelecione: "Selecione",
+  escolaridades: {
+    "Ensino fundamental": "Ensino fundamental",
+    "Ensino médio": "Ensino médio",
+    "Ensino técnico": "Ensino técnico",
+    "Ensino superior cursando": "Ensino superior cursando",
+    "Ensino superior completo": "Ensino superior completo",
+    "Pós-graduação": "Pós-graduação",
+    Mestrado: "Mestrado",
+    Doutorado: "Doutorado",
+  } as Record<string, string>,
   biografia: "Resumo profissional",
   biografiaAjuda: "Alguns parágrafos sobre sua trajetória, o que você faz e o que procura.",
   experiencias: "Experiências profissionais",
@@ -221,6 +225,16 @@ const en: Textos = {
   tituloProfissionalAjuda: "How you introduce yourself professionally. E.g. Marketing Analyst.",
   escolaridade: "Education level",
   escolaridadeSelecione: "Select",
+  escolaridades: {
+    "Ensino fundamental": "Primary education",
+    "Ensino médio": "High school",
+    "Ensino técnico": "Vocational / technical education",
+    "Ensino superior cursando": "Undergraduate (in progress)",
+    "Ensino superior completo": "Undergraduate (completed)",
+    "Pós-graduação": "Postgraduate",
+    Mestrado: "Master's degree",
+    Doutorado: "Doctorate",
+  },
   biografia: "Professional summary",
   biografiaAjuda: "A few lines about your background, what you do and what you are looking for.",
   experiencias: "Work experience",
@@ -346,6 +360,16 @@ const es: Textos = {
   tituloProfissionalAjuda: "Cómo te presentas profesionalmente. Ej.: Analista de Marketing.",
   escolaridade: "Nivel de estudios",
   escolaridadeSelecione: "Selecciona",
+  escolaridades: {
+    "Ensino fundamental": "Educación primaria",
+    "Ensino médio": "Educación secundaria",
+    "Ensino técnico": "Educación técnica",
+    "Ensino superior cursando": "Educación superior en curso",
+    "Ensino superior completo": "Educación superior completa",
+    "Pós-graduação": "Posgrado",
+    Mestrado: "Maestría",
+    Doutorado: "Doctorado",
+  },
   biografia: "Resumen profesional",
   biografiaAjuda: "Unas líneas sobre tu trayectoria, lo que haces y lo que buscas.",
   experiencias: "Experiencia laboral",

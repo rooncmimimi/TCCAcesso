@@ -1,0 +1,30 @@
+import type { Dicionario } from "../dicionario";
+
+export const notificacoes: Dicionario["notificacoes"] = {
+  meta: {
+    titulo: "Notificaciones — ACESSO",
+    descricao: "Sigue postulaciones, vacantes compatibles y novedades de tu red en la plataforma ACESSO.",
+    descricaoSocial: "Novedades sobre tus postulaciones y vacantes.",
+  },
+  titulo: "Notificaciones",
+  carregando: "Cargando…",
+  naoLidas: (n) => `${n} no leída${n === 1 ? "" : "s"}`,
+  nenhumaNaoLida: "No hay notificaciones sin leer.",
+  marcarTodas: "Marcar todas como leídas",
+  todasMarcadas: "Todas las notificaciones se marcaron como leídas.",
+  carregandoAria: "Cargando notificaciones",
+  erro: "No se pudieron cargar tus notificaciones.",
+  vazio: "Aún no tienes notificaciones.",
+  lida: "leída",
+  naoLida: "no leída",
+  rotuloItem: (titulo, descricao, tempo, estado) => `${titulo}. ${descricao} ${tempo} — ${estado}.`,
+  marcarLida: (titulo) => `Marcar "${titulo}" como leída`,
+  remover: (titulo) => `Eliminar "${titulo}"`,
+  removida: "Notificación eliminada.",
+  aceitar: "Aceptar",
+  recusar: "Rechazar",
+  solicitacaoAceita: "Solicitud aceptada",
+  solicitacaoRecusada: "Solicitud rechazada",
+  erroAceitar: "No se pudo aceptar la solicitud.",
+  erroRecusar: "No se pudo rechazar la solicitud.",
+};

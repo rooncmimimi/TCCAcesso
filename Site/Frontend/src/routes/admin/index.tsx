@@ -5,18 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GraficosRelatorios } from "@/components/admin/GraficosRelatorios";
+import { rotuloOuValor } from "@/components/admin/rotulos";
 import { obterRelatorios } from "@/services/admin.service";
+import { dic, localeDoIdioma, metaPagina, useIdioma, useT } from "@/i18n";
+import { formatarDataHoraLocal } from "@/utils/formatacao";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Relatórios administrativos — ACESSO" },
-      {
-        name: "description",
-        content: "Métricas de usuários, empresas, vagas e candidaturas da plataforma ACESSO.",
-      },
-      { property: "og:title", content: "Relatórios administrativos — ACESSO" },
-      { property: "og:description", content: "Indicadores da plataforma em tempo real." },
+      ...metaPagina(dic().admin.meta.relatorios).meta,
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -24,16 +21,16 @@ export const Route = createFileRoute("/admin/")({
   component: RelatoriosAdmin,
 });
 
-const CARTOES: { chave: keyof RelatoriosTotais; rotulo: string }[] = [
-  { chave: "usuarios", rotulo: "Usuários" },
-  { chave: "candidatos", rotulo: "Candidatos" },
-  { chave: "empresas", rotulo: "Empresas" },
-  { chave: "empresasPendentes", rotulo: "Empresas pendentes" },
-  { chave: "vagas", rotulo: "Vagas" },
-  { chave: "vagasAbertas", rotulo: "Vagas abertas" },
-  { chave: "candidaturas", rotulo: "Candidaturas" },
-  { chave: "postagens", rotulo: "Publicações" },
-  { chave: "usuariosBloqueados", rotulo: "Usuários bloqueados" },
+const CARTOES: (keyof RelatoriosTotais)[] = [
+  "usuarios",
+  "candidatos",
+  "empresas",
+  "empresasPendentes",
+  "vagas",
+  "vagasAbertas",
+  "candidaturas",
+  "postagens",
+  "usuariosBloqueados",
   // Não há indicador de "Contratações": o número viria das candidaturas aprovadas, mas o ACESSO só
   // aproxima empresa e candidato e não confirma contratação, então o indicador prometeria um dado
   // que a plataforma não tem. O backend ainda envia o campo; ele só não é exibido.
@@ -52,6 +49,10 @@ type RelatoriosTotais = {
 };
 
 function RelatoriosAdmin() {
+  const t = useT();
+  const tr = t.admin.relatorios;
+  const { idioma } = useIdioma();
+  const numero = new Intl.NumberFormat(localeDoIdioma(idioma));
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "relatorios"],
     queryFn: () => obterRelatorios(),
@@ -73,9 +74,9 @@ function RelatoriosAdmin() {
   if (isError || !data) {
     return (
       <div role="alert" className="space-y-3 rounded-xl border border-destructive/40 p-6">
-        <p className="text-sm">Não foi possível carregar os relatórios.</p>
+        <p className="text-sm">{tr.erro}</p>
         <Button variant="outline" onClick={() => refetch()}>
-          Tentar novamente
+          {t.comum.tentarNovamente}
         </Button>
       </div>
     );
@@ -83,31 +84,31 @@ function RelatoriosAdmin() {
 
   const totais = data.totais;
   const visaoGeral = [
-    { categoria: "Candidatos", total: totais.candidatos },
-    { categoria: "Empresas", total: totais.empresas },
-    { categoria: "Vagas", total: totais.vagas },
-    { categoria: "Candidaturas", total: totais.candidaturas },
-    { categoria: "Publicações", total: totais.postagens },
+    { categoria: tr.visaoGeral.candidatos, total: totais.candidatos },
+    { categoria: tr.visaoGeral.empresas, total: totais.empresas },
+    { categoria: tr.visaoGeral.vagas, total: totais.vagas },
+    { categoria: tr.visaoGeral.candidaturas, total: totais.candidaturas },
+    { categoria: tr.visaoGeral.postagens, total: totais.postagens },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-extrabold">Relatórios</h1>
+        <h1 className="text-3xl font-extrabold">{tr.titulo}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Atualizado em {new Date(data.atualizadoEm).toLocaleString("pt-BR")}
+          {tr.atualizadoEm(formatarDataHoraLocal(data.atualizadoEm))}
         </p>
       </div>
 
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {CARTOES.map(({ chave, rotulo }) => (
+        {CARTOES.map((chave) => (
           <li key={chave}>
             <Card className="shadow-none">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{rotulo}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{tr.cartoes[chave]}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-extrabold">{totais[chave] ?? 0}</p>
+                <p className="text-3xl font-extrabold">{numero.format(Number(totais[chave] ?? 0))}</p>
               </CardContent>
             </Card>
           </li>
@@ -119,14 +120,18 @@ function RelatoriosAdmin() {
       {data.deficienciasMaisComuns.length > 0 && (
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-base">Deficiências mais declaradas</CardTitle>
+            <CardTitle className="text-base">{tr.deficienciasTitulo}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
               {data.deficienciasMaisComuns.map((item) => (
                 <li key={item.deficienciaId} className="flex justify-between text-sm">
-                  <span>{item.deficiencia?.nome ?? "Não informada"}</span>
-                  <span className="font-bold">{item.total}</span>
+                  <span>
+                    {item.deficiencia?.nome
+                      ? rotuloOuValor(t.perfilItens.deficiencias.catalogo, item.deficiencia.nome)
+                      : tr.deficienciaNaoInformada}
+                  </span>
+                  <span className="font-bold">{numero.format(Number(item.total))}</span>
                 </li>
               ))}
             </ul>

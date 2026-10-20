@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { type PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
 import { useVoz } from "@/hooks/useVoz";
+import { useT } from "@/i18n";
 
 type ToggleKey = {
   [K in keyof PreferenciasAcessibilidade]: PreferenciasAcessibilidade[K] extends boolean ? K : never;
@@ -119,34 +120,28 @@ function SliderRow({
 /** Amostra que reage imediatamente às preferências escolhidas. */
 export function PreviaAcessibilidade() {
   const { falar } = useVoz();
+  const t = useT().acessibilidade.painel;
   return (
     <Card className="border-dashed shadow-none">
       <CardContent className="space-y-3 p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          Pré-visualização em tempo real
+          {t.previaTitulo}
         </p>
-        <h3 className="text-lg font-extrabold">Assistente Administrativo Jr — Vaga PCD</h3>
-        <p className="text-sm text-muted-foreground">
-          Grupo Aurora · Híbrido · São Paulo, SP. Ambiente acessível, com intérprete de Libras e
-          suporte a leitor de tela.
-        </p>
+        <h3 className="text-lg font-extrabold">{t.previaVaga}</h3>
+        <p className="text-sm text-muted-foreground">{t.previaDescricao}</p>
         <div className="flex flex-wrap gap-2 pt-1">
           <button
             type="button"
             className="min-h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
-            onClick={() =>
-              falar(
-                "Exemplo de leitura por voz do ACESSO. Assistente Administrativo Júnior, vaga inclusiva no Grupo Aurora.",
-              )
-            }
+            onClick={() => falar(t.previaFalada)}
           >
-            Testar leitura em voz alta
+            {t.testarLeitura}
           </button>
           <button
             type="button"
             className="min-h-11 rounded-lg border border-input px-4 text-sm font-semibold"
           >
-            Botão de exemplo (teste o foco com Tab)
+            {t.botaoExemplo}
           </button>
         </div>
       </CardContent>
@@ -160,6 +155,7 @@ export function PreviaAcessibilidade() {
  */
 export function PainelAcessibilidade() {
   const { preferencias, definir } = useAcessibilidade();
+  const t = useT().acessibilidade.painel;
 
   return (
     <div className="space-y-6">
@@ -167,33 +163,33 @@ export function PainelAcessibilidade() {
 
       <section aria-labelledby="grupo-visual" className="space-y-3">
         <h3 id="grupo-visual" className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-          Visual
+          {t.grupoVisual}
         </h3>
         <ToggleRow
           id="a11y-contrast"
           icon={Contrast}
-          titulo="Alto contraste"
-          descricao="Aumenta o contraste entre textos, bordas e fundos."
+          titulo={t.altoContraste.titulo}
+          descricao={t.altoContraste.descricao}
           chave="highContrast"
         />
         <ToggleRow
           id="a11y-dark"
           icon={Moon}
-          titulo="Modo escuro"
-          descricao="Reduz o brilho da tela em ambientes com pouca luz."
+          titulo={t.modoEscuro.titulo}
+          descricao={t.modoEscuro.descricao}
           chave="darkMode"
         />
         <ToggleRow
           id="a11y-dyslexia"
           icon={Type}
-          titulo="Fonte para dislexia"
-          descricao="Tipografia com letras mais distinguíveis entre si."
+          titulo={t.fonteDislexia.titulo}
+          descricao={t.fonteDislexia.descricao}
           chave="dyslexiaFont"
         />
         <SliderRow
           id="a11y-font"
           icon={Type}
-          titulo="Tamanho da fonte"
+          titulo={t.tamanhoFonte}
           valorTexto={`${Math.round(preferencias.fontScale * 100)}%`}
           min={0.875}
           max={1.6}
@@ -204,8 +200,8 @@ export function PainelAcessibilidade() {
         <SliderRow
           id="a11y-letter"
           icon={Waves}
-          titulo="Espaçamento entre letras"
-          valorTexto={`${preferencias.letterSpacing.toFixed(3)} em`}
+          titulo={t.espacamentoLetras}
+          valorTexto={t.unidadeEm(preferencias.letterSpacing.toFixed(3))}
           min={0}
           max={0.16}
           step={0.005}
@@ -215,7 +211,7 @@ export function PainelAcessibilidade() {
         <SliderRow
           id="a11y-line"
           icon={AlignVerticalSpaceAround}
-          titulo="Espaçamento entre linhas"
+          titulo={t.espacamentoLinhas}
           valorTexto={preferencias.lineHeight.toFixed(2)}
           min={1.3}
           max={2.4}
@@ -234,27 +230,27 @@ export function PainelAcessibilidade() {
           id="grupo-navegacao"
           className="text-sm font-bold uppercase tracking-wide text-muted-foreground"
         >
-          Navegação e interação
+          {t.grupoNavegacao}
         </h3>
         <ToggleRow
           id="a11y-cursor"
           icon={MousePointer2}
-          titulo="Cursor ampliado"
-          descricao="Ponteiro do mouse maior e com contorno reforçado."
+          titulo={t.cursor.titulo}
+          descricao={t.cursor.descricao}
           chave="bigCursor"
         />
         <ToggleRow
           id="a11y-motion"
           icon={Sparkles}
-          titulo="Reduzir animações"
-          descricao="Remove transições e movimentos que podem causar desconforto."
+          titulo={t.animacoes.titulo}
+          descricao={t.animacoes.descricao}
           chave="reduceMotion"
         />
         <ToggleRow
           id="a11y-focus"
           icon={Target}
-          titulo="Destaque de foco do teclado"
-          descricao="Contorno bem visível no elemento em foco."
+          titulo={t.foco.titulo}
+          descricao={t.foco.descricao}
           chave="focusHighlight"
         />
       </section>
@@ -264,19 +260,19 @@ export function PainelAcessibilidade() {
           id="grupo-assistivo"
           className="text-sm font-bold uppercase tracking-wide text-muted-foreground"
         >
-          Recursos assistivos
+          {t.grupoAssistivo}
         </h3>
         <ToggleRow
           id="a11y-voice"
           icon={Volume2}
-          titulo="Leitura por voz"
-          descricao="Lê em voz alta os elementos ao navegar pelo site."
+          titulo={t.leituraVoz.titulo}
+          descricao={t.leituraVoz.descricao}
           chave="screenReader"
         />
         <SliderRow
           id="a11y-rate"
           icon={Eye}
-          titulo="Velocidade da voz"
+          titulo={t.velocidadeVoz}
           valorTexto={`${preferencias.speechRate.toFixed(1)}x`}
           min={0.6}
           max={1.8}
@@ -287,8 +283,8 @@ export function PainelAcessibilidade() {
         <ToggleRow
           id="a11y-vlibras"
           icon={Languages}
-          titulo="VLibras (Libras)"
-          descricao="Tradutor oficial do Governo Federal, disponível em todas as páginas."
+          titulo={t.vlibras.titulo}
+          descricao={t.vlibras.descricao}
           chave="vlibras"
         />
       </section>

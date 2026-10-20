@@ -1,0 +1,30 @@
+import type { Dicionario } from "../dicionario";
+
+export const notificacoes: Dicionario["notificacoes"] = {
+  meta: {
+    titulo: "Notifications — ACESSO",
+    descricao: "Follow applications, matching jobs and news from your network on the ACESSO platform.",
+    descricaoSocial: "News about your applications and jobs.",
+  },
+  titulo: "Notifications",
+  carregando: "Loading…",
+  naoLidas: (n) => `${n} unread`,
+  nenhumaNaoLida: "No unread notifications.",
+  marcarTodas: "Mark all as read",
+  todasMarcadas: "All notifications were marked as read.",
+  carregandoAria: "Loading notifications",
+  erro: "We couldn't load your notifications.",
+  vazio: "You don't have any notifications yet.",
+  lida: "read",
+  naoLida: "unread",
+  rotuloItem: (titulo, descricao, tempo, estado) => `${titulo}. ${descricao} ${tempo} — ${estado}.`,
+  marcarLida: (titulo) => `Mark "${titulo}" as read`,
+  remover: (titulo) => `Remove "${titulo}"`,
+  removida: "Notification removed.",
+  aceitar: "Accept",
+  recusar: "Decline",
+  solicitacaoAceita: "Request accepted",
+  solicitacaoRecusada: "Request declined",
+  erroAceitar: "We couldn't accept the request.",
+  erroRecusar: "We couldn't decline the request.",
+};

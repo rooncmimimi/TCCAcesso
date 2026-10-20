@@ -22,6 +22,7 @@ import { formatarTempoRelativo } from "@/utils/formatacao";
 import type { ComentarioCompleto } from "@/types";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
+import { useT } from "@/i18n";
 import { useComentarios, useCriarComentario, useRemoverComentario } from "./hooks";
 
 function LinhaComentario({
@@ -33,6 +34,8 @@ function LinhaComentario({
   postagemId: string;
   aoResponder?: (comentario: ComentarioCompleto) => void;
 }) {
+  const t = useT();
+  const tc = t.feed.comentarios;
   const { usuario } = useSessao();
   const autor = comentario.usuario ?? comentario.autor;
   const remover = useRemoverComentario(postagemId);
@@ -45,12 +48,12 @@ function LinhaComentario({
         <LinkAutor
           autorId={autor?.id}
           className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          ariaLabel={`Ver perfil de ${autor?.nome ?? "usuário"}`}
+          ariaLabel={t.feed.card.verPerfilDe(autor?.nome ?? t.feed.usuarioMin)}
         >
           <Avatar className="size-8">
             <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-              {iniciaisDoNome(autor?.nome ?? "Usuário")}
+              {iniciaisDoNome(autor?.nome ?? t.feed.usuarioMai)}
             </AvatarFallback>
           </Avatar>
         </LinkAutor>
@@ -58,7 +61,7 @@ function LinhaComentario({
           <div className="rounded-xl bg-secondary px-3 py-2">
             <p className="text-sm font-bold">
               <LinkAutor autorId={autor?.id} className="hover:underline focus-visible:underline">
-                {autor?.nome ?? "Usuário"}
+                {autor?.nome ?? t.feed.usuarioMai}
               </LinkAutor>
             </p>
             <p className="text-sm leading-relaxed">{comentario.comentario}</p>
@@ -71,7 +74,7 @@ function LinhaComentario({
                 className="min-h-6 font-semibold hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
                 onClick={() => aoResponder(comentario)}
               >
-                Responder
+                {tc.responder}
               </button>
             )}
             {podeExcluir && (
@@ -80,25 +83,25 @@ function LinhaComentario({
                   <button
                     type="button"
                     className="flex min-h-6 items-center gap-1 font-semibold text-destructive hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-                    aria-label="Excluir comentário"
+                    aria-label={tc.excluirAria}
                   >
-                    <Trash2 className="size-3.5" aria-hidden="true" /> Excluir
+                    <Trash2 className="size-3.5" aria-hidden="true" /> {t.comum.excluir}
                   </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir comentário?</AlertDialogTitle>
+                    <AlertDialogTitle>{tc.excluirTitulo}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. O comentário será removido permanentemente.
+                      {tc.excluirTexto}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel className="min-h-11">{t.comum.cancelar}</AlertDialogCancel>
                     <AlertDialogAction
                       className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={() => remover.mutate(comentario.id)}
                     >
-                      Excluir
+                      {t.comum.excluir}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -110,7 +113,7 @@ function LinhaComentario({
                 className="min-h-6 font-semibold text-muted-foreground hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
                 onClick={() => setDenunciando(true)}
               >
-                Denunciar
+                {t.feed.card.denunciar}
               </button>
             )}
           </div>
@@ -127,7 +130,7 @@ function LinhaComentario({
           )}
 
           {comentario.respostas && comentario.respostas.length > 0 && (
-            <ul className="mt-3 space-y-3 border-l border-border pl-4" aria-label="Respostas">
+            <ul className="mt-3 space-y-3 border-l border-border pl-4" aria-label={tc.respostasAria}>
               {comentario.respostas.map((resposta) => (
                 <LinhaComentario key={resposta.id} comentario={resposta} postagemId={postagemId} />
               ))}
@@ -141,6 +144,8 @@ function LinhaComentario({
 
 /** Lista de comentários (com respostas de 1 nível) e formulário de novo comentário/resposta. */
 export function SecaoComentarios({ postagemId }: { postagemId: string }) {
+  const t = useT();
+  const tc = t.feed.comentarios;
   const { usuario } = useSessao();
   const { data, isLoading, isError } = useComentarios(postagemId);
   const criar = useCriarComentario(postagemId);
@@ -163,34 +168,34 @@ export function SecaoComentarios({ postagemId }: { postagemId: string }) {
 
   return (
     <div className="mt-4 border-t border-border pt-4">
-      <form onSubmit={aoEnviar} aria-label="Adicionar comentário" className="flex gap-3">
+      <form onSubmit={aoEnviar} aria-label={tc.formularioAria} className="flex gap-3">
         <Avatar className="size-8 shrink-0">
           <AvatarImage src={urlArquivo(usuario?.fotoPerfil)} alt="" />
           <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-            {iniciaisDoNome(usuario?.nome ?? "Visitante")}
+            {iniciaisDoNome(usuario?.nome ?? t.layout.visitante)}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
           {respondendoA && (
             <p className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-              Respondendo a {respondendoA.usuario?.nome ?? respondendoA.autor?.nome}
+              {tc.respondendoA(respondendoA.usuario?.nome ?? respondendoA.autor?.nome ?? "")}
               <button
                 type="button"
                 className="font-semibold underline"
                 onClick={() => setRespondendoA(null)}
               >
-                cancelar
+                {tc.cancelar}
               </button>
             </p>
           )}
           <label htmlFor={`comentario-${postagemId}`} className="sr-only">
-            Escreva um comentário
+            {tc.escrevaLabel}
           </label>
           <Textarea
             id={`comentario-${postagemId}`}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Escreva um comentário…"
+            placeholder={tc.escrevaPlaceholder}
             className="min-h-10 resize-none"
           />
           <Button
@@ -199,15 +204,15 @@ export function SecaoComentarios({ postagemId }: { postagemId: string }) {
             className="mt-2 min-h-9"
             disabled={!texto.trim() || criar.isPending}
           >
-            {criar.isPending ? "Enviando…" : respondendoA ? "Responder" : "Comentar"}
+            {criar.isPending ? t.comum.enviando : respondendoA ? tc.responder : tc.comentar}
           </Button>
         </div>
       </form>
 
-      {isLoading && <p className="mt-4 text-sm text-muted-foreground">Carregando comentários…</p>}
-      {isError && <p className="mt-4 text-sm text-destructive">Não foi possível carregar os comentários.</p>}
+      {isLoading && <p className="mt-4 text-sm text-muted-foreground">{tc.carregando}</p>}
+      {isError && <p className="mt-4 text-sm text-destructive">{tc.erro}</p>}
       {!isLoading && !isError && data && data.dados.length === 0 && (
-        <p className="mt-4 text-sm text-muted-foreground">Seja o primeiro a comentar.</p>
+        <p className="mt-4 text-sm text-muted-foreground">{tc.primeiro}</p>
       )}
 
       {!isLoading && data && data.dados.length > 0 && (

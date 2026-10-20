@@ -18,28 +18,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { rotuloOuValor } from "@/components/admin/rotulos";
+import { dic, metaPagina, useT } from "@/i18n";
 import { extrairMensagemErro } from "@/services/api";
 import denunciaService, {
   ACAO_POR_TIPO,
-  MOTIVO_ROTULO,
   type MensagemContexto,
   type StatusDenuncia,
 } from "@/services/denuncia.service";
+import { formatarDataHoraLocal } from "@/utils/formatacao";
 
 export const Route = createFileRoute("/admin/denuncias/$denunciaId")({
-  head: () => ({
-    meta: [{ title: "Detalhe da denúncia — Administração ACESSO" }],
-  }),
+  head: () => metaPagina(dic().admin.meta.denunciaDetalhe),
   component: AdminDenunciaDetalhe,
 });
-
-const STATUS_ROTULO: Record<StatusDenuncia, string> = {
-  pendente: "Pendente",
-  em_analise: "Em análise",
-  resolvida: "Resolvida",
-  rejeitada: "Rejeitada",
-  arquivada: "Arquivada",
-};
 
 const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neutro"> = {
   pendente: "atencao",
@@ -49,14 +41,10 @@ const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neu
   arquivada: "neutro",
 };
 
-const ACAO_ROTULO: Record<string, string> = {
-  bloquear: "bloquear este usuário",
-  remover: "remover este conteúdo",
-  ocultar: "ocultar esta vaga",
-  suspender: "suspender esta empresa",
-};
-
 function AdminDenunciaDetalhe() {
+  const t = useT();
+  const td = t.admin.denuncias;
+  const tdd = td.detalhe;
   const { denunciaId } = Route.useParams();
   const queryClient = useQueryClient();
   const [dialogoTransicao, setDialogoTransicao] = useState<"resolver" | "rejeitar" | "arquivar" | null>(
@@ -85,10 +73,10 @@ function AdminDenunciaDetalhe() {
   const atribuir = useMutation({
     mutationFn: () => denunciaService.atribuirDenuncia(denunciaId),
     onSuccess: () => {
-      toast.success("Denúncia atribuída a você.");
+      toast.success(dic().admin.denuncias.detalhe.atribuida);
       invalidar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro)),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().admin.comum.erroAcao)),
   });
 
   const acaoEsperada = denuncia ? ACAO_POR_TIPO[denuncia.entidadeTipo] : undefined;
@@ -107,12 +95,12 @@ function AdminDenunciaDetalhe() {
       return denunciaService.arquivarDenuncia(denunciaId, observacao.trim() || undefined);
     },
     onSuccess: () => {
-      toast.success("Denúncia atualizada.");
+      toast.success(dic().admin.denuncias.detalhe.atualizada);
       setDialogoTransicao(null);
       setObservacao("");
       invalidar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível concluir a ação.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().admin.comum.erroAcao)),
   });
 
   if (isLoading) {
@@ -127,9 +115,9 @@ function AdminDenunciaDetalhe() {
   if (isError || !denuncia) {
     return (
       <div role="alert" className="space-y-3 p-6 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar esta denúncia.</p>
+        <p className="text-sm text-muted-foreground">{tdd.erroCarregar}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t.comum.tentarNovamente}
         </Button>
       </div>
     );
@@ -143,51 +131,51 @@ function AdminDenunciaDetalhe() {
         to="/admin/denuncias"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para denúncias
+        <ArrowLeft className="size-4" aria-hidden="true" /> {tdd.voltar}
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold sm:text-3xl">Denúncia de {denuncia.entidadeTipo}</h1>
-        <StatusBadge tom={STATUS_TOM[denuncia.status]}>{STATUS_ROTULO[denuncia.status]}</StatusBadge>
+        <h1 className="text-2xl font-extrabold sm:text-3xl">
+          {tdd.titulo(rotuloOuValor(td.tipos, denuncia.entidadeTipo))}
+        </h1>
+        <StatusBadge tom={STATUS_TOM[denuncia.status]}>{rotuloOuValor(td.status, denuncia.status)}</StatusBadge>
       </div>
 
       <Card className="mt-4 shadow-none">
         <CardContent className="space-y-4 p-5 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Motivo</p>
-              <p className="mt-1 text-sm">{MOTIVO_ROTULO[denuncia.motivo]}</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{tdd.motivo}</p>
+              <p className="mt-1 text-sm">{rotuloOuValor(t.moderacao.motivos, denuncia.motivo)}</p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Denunciante</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{tdd.denunciante}</p>
               <p className="mt-1 text-sm">
                 {denuncia.denunciante
                   ? `${denuncia.denunciante.nome} (${denuncia.denunciante.email})`
-                  : "Usuário removido"}
+                  : t.admin.comum.usuarioRemovido}
               </p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Registrada em</p>
-              <p className="mt-1 text-sm">{new Date(denuncia.criadoEm).toLocaleString("pt-BR")}</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{tdd.registradaEm}</p>
+              <p className="mt-1 text-sm">{formatarDataHoraLocal(denuncia.criadoEm)}</p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Responsável</p>
-              <p className="mt-1 text-sm">{denuncia.administradorResponsavel?.nome ?? "Ninguém atribuído"}</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{tdd.responsavel}</p>
+              <p className="mt-1 text-sm">{denuncia.administradorResponsavel?.nome ?? tdd.ninguemAtribuido}</p>
             </div>
           </div>
 
           {denuncia.descricao && (
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">
-                Descrição do denunciante
-              </p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{tdd.descricaoDenunciante}</p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{denuncia.descricao}</p>
             </div>
           )}
 
           {denuncia.observacaoAdministrador && (
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Observação da moderação</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{tdd.observacaoModeracao}</p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{denuncia.observacaoAdministrador}</p>
             </div>
           )}
@@ -196,19 +184,17 @@ function AdminDenunciaDetalhe() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <p className="text-xs font-bold uppercase text-muted-foreground">Conteúdo denunciado</p>
+          <p className="text-xs font-bold uppercase text-muted-foreground">{tdd.conteudoDenunciado}</p>
           {denuncia.entidadeTipo === "mensagem" ? (
             <div className="mt-2">
-              <p className="text-sm text-muted-foreground">
-                O conteúdo de mensagens só pode ser consultado através do contexto da conversa.
-              </p>
+              <p className="text-sm text-muted-foreground">{tdd.mensagemAviso}</p>
               <Button
                 variant="outline"
                 size="sm"
                 className="mt-3 gap-2"
                 onClick={() => setContextoAberto(true)}
               >
-                <MessageSquareText className="size-4" aria-hidden="true" /> Ver contexto da mensagem
+                <MessageSquareText className="size-4" aria-hidden="true" /> {tdd.verContextoMensagem}
               </Button>
             </div>
           ) : denuncia.previaEntidade ? (
@@ -216,9 +202,7 @@ function AdminDenunciaDetalhe() {
               {JSON.stringify(denuncia.previaEntidade, null, 2)}
             </pre>
           ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Este conteúdo não existe mais ou já foi removido.
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">{tdd.conteudoInexistente}</p>
           )}
         </CardContent>
       </Card>
@@ -229,15 +213,15 @@ function AdminDenunciaDetalhe() {
             {denuncia.status === "pendente" && (
               <Button variant="outline" disabled={atribuir.isPending} onClick={() => atribuir.mutate()}>
                 {atribuir.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                Atribuir a mim
+                {tdd.atribuirMim}
               </Button>
             )}
-            <Button onClick={() => setDialogoTransicao("resolver")}>Resolver</Button>
+            <Button onClick={() => setDialogoTransicao("resolver")}>{tdd.resolver}</Button>
             <Button variant="outline" onClick={() => setDialogoTransicao("rejeitar")}>
-              Rejeitar
+              {tdd.rejeitar}
             </Button>
             <Button variant="outline" onClick={() => setDialogoTransicao("arquivar")}>
-              Arquivar
+              {tdd.arquivar}
             </Button>
           </CardContent>
         </Card>
@@ -256,16 +240,16 @@ function AdminDenunciaDetalhe() {
           <DialogHeader>
             <DialogTitle>
               {dialogoTransicao === "resolver"
-                ? "Resolver denúncia"
+                ? tdd.tituloResolver
                 : dialogoTransicao === "rejeitar"
-                  ? "Rejeitar denúncia"
-                  : "Arquivar denúncia"}
+                  ? tdd.tituloRejeitar
+                  : tdd.tituloArquivar}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="observacao-denuncia">Observação (opcional)</Label>
+              <Label htmlFor="observacao-denuncia">{tdd.observacao}</Label>
               <Textarea
                 id="observacao-denuncia"
                 value={observacao}
@@ -283,7 +267,7 @@ function AdminDenunciaDetalhe() {
                   onCheckedChange={(valor) => setComAcao(Boolean(valor))}
                 />
                 <Label htmlFor="com-acao" className="text-sm font-normal leading-snug">
-                  Também {ACAO_ROTULO[acaoEsperada] ?? acaoEsperada} ao resolver
+                  {tdd.tambemAcao(rotuloOuValor(tdd.acoes, acaoEsperada))}
                 </Label>
               </div>
             )}
@@ -299,11 +283,11 @@ function AdminDenunciaDetalhe() {
                 setObservacao("");
               }}
             >
-              Cancelar
+              {t.comum.cancelar}
             </Button>
             <Button type="button" disabled={transicao.isPending} onClick={() => transicao.mutate()}>
               {transicao.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Confirmar
+              {t.comum.confirmar}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -312,13 +296,13 @@ function AdminDenunciaDetalhe() {
       <Dialog open={contextoAberto} onOpenChange={setContextoAberto}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Contexto da mensagem denunciada</DialogTitle>
+            <DialogTitle>{tdd.contextoTitulo}</DialogTitle>
           </DialogHeader>
 
           {contexto.isLoading ? (
             <Skeleton className="h-40 w-full" />
           ) : contexto.isError ? (
-            <p className="text-sm text-destructive">Não foi possível carregar o contexto.</p>
+            <p className="text-sm text-destructive">{tdd.contextoErro}</p>
           ) : contexto.data ? (
             <ul className="space-y-2">
               {contexto.data.antes.map((m) => (
@@ -337,14 +321,16 @@ function AdminDenunciaDetalhe() {
 }
 
 function BolhaContexto({ mensagem, denunciada = false }: { mensagem: MensagemContexto; denunciada?: boolean }) {
+  const t = useT();
+
   return (
     <li
       className={`rounded-lg border p-3 text-sm ${denunciada ? "border-destructive bg-destructive/5" : "border-border"}`}
     >
       <p className="whitespace-pre-wrap break-words">{mensagem.conteudo}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {new Date(mensagem.criadoEm).toLocaleString("pt-BR")}
-        {denunciada ? " · mensagem denunciada" : ""}
+        {formatarDataHoraLocal(mensagem.criadoEm)}
+        {denunciada ? ` · ${t.admin.denuncias.detalhe.mensagemDenunciada}` : ""}
       </p>
     </li>
   );

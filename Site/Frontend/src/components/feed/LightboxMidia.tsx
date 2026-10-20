@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { urlArquivo } from "@/utils/arquivos";
 import postagensService from "@/services/postagens.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useT } from "@/i18n";
 import type { AnexoPostagem } from "@/types";
 
 /**
@@ -31,6 +32,9 @@ export function LightboxMidia({
   indiceInicial: number;
   postagemId?: string;
 }) {
+  const t = useT();
+  const tl = t.feed.lightbox;
+  const tg = t.feed.galeria;
   const [indice, setIndice] = useState(indiceInicial);
   const [baixando, setBaixando] = useState(false);
 
@@ -70,7 +74,7 @@ export function LightboxMidia({
       link.click();
       link.remove();
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível baixar o arquivo."));
+      toast.error(extrairMensagemErro(erro, tl.erroBaixar));
     } finally {
       setBaixando(false);
     }
@@ -95,9 +99,9 @@ export function LightboxMidia({
         {item && (
           <>
             <DialogTitle className="sr-only">
-              {item.tipo === "video" ? "Vídeo ampliado" : "Imagem ampliada"}
+              {item.tipo === "video" ? tl.videoAmpliado : tl.imagemAmpliada}
               {item.descricao ? `: ${item.descricao}` : ""}
-              {temVarios ? ` (${indice + 1} de ${itens.length})` : ""}
+              {temVarios ? ` (${tl.posicao(indice + 1, itens.length)})` : ""}
             </DialogTitle>
 
             <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-black">
@@ -108,7 +112,7 @@ export function LightboxMidia({
                     variant="ghost"
                     size="icon"
                     className="absolute left-2 top-1/2 z-10 min-h-11 min-w-11 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
-                    aria-label="Mídia anterior"
+                    aria-label={tl.anterior}
                     onClick={() => irPara(indice - 1)}
                   >
                     <ChevronLeft aria-hidden="true" />
@@ -118,7 +122,7 @@ export function LightboxMidia({
                     variant="ghost"
                     size="icon"
                     className="absolute right-2 top-1/2 z-10 min-h-11 min-w-11 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
-                    aria-label="Próxima mídia"
+                    aria-label={tl.proxima}
                     onClick={() => irPara(indice + 1)}
                   >
                     <ChevronRight aria-hidden="true" />
@@ -133,15 +137,15 @@ export function LightboxMidia({
                   controls
                   preload="metadata"
                   className="max-h-[75dvh] w-full"
-                  aria-label={item.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
+                  aria-label={item.descricao || tg.videoSemDescricao}
                 >
-                  Seu navegador não suporta a reprodução deste vídeo.
+                  {tg.navegadorSemVideo}
                 </video>
               ) : (
                 <img
                   key={item.id}
                   src={urlArquivo(item.url)}
-                  alt={item.descricao || item.nomeOriginal || "Imagem sem descrição fornecida pelo autor da publicação"}
+                  alt={item.descricao || item.nomeOriginal || tg.imagemSemDescricao}
                   className="max-h-[75dvh] w-full object-contain"
                 />
               )}
@@ -149,7 +153,7 @@ export function LightboxMidia({
 
             <div className="flex items-center justify-between gap-2">
               <p className="min-w-0 truncate text-sm text-muted-foreground" aria-hidden="true">
-                {item.descricao || (temVarios ? `${indice + 1} de ${itens.length}` : "")}
+                {item.descricao || (temVarios ? tl.posicao(indice + 1, itens.length) : "")}
               </p>
               {postagemId && (
                 <Button
@@ -159,14 +163,14 @@ export function LightboxMidia({
                   className="shrink-0 gap-1.5"
                   disabled={baixando}
                   onClick={baixar}
-                  aria-label={`Baixar ${item.tipo === "video" ? "vídeo" : "imagem"}${item.nomeOriginal ? `: ${item.nomeOriginal}` : ""}`}
+                  aria-label={tl.baixarAria(item.tipo === "video" ? tl.video : tl.imagem, item.nomeOriginal ?? "")}
                 >
                   {baixando ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   ) : (
                     <Download className="size-4" aria-hidden="true" />
                   )}
-                  Baixar
+                  {tl.baixar}
                 </Button>
               )}
             </div>

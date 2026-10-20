@@ -17,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { DetalheLogSheet } from "@/components/admin/DetalheLogSheet";
 import { listarLogs, type LogAdmin } from "@/services/admin.service";
+import { rotuloOuValor } from "@/components/admin/rotulos";
+import { useT } from "@/i18n";
 import { formatarDataHora } from "@/utils/formatacao";
 
 /**
@@ -28,6 +30,8 @@ export function LogsTabela({
   entidadeId,
   entidadeTipo,
 }: { entidadeId?: string; entidadeTipo?: string } = {}) {
+  const t = useT();
+  const tl = t.admin.logs;
   const [pagina, setPagina] = useState(1);
   const [acao, setAcao] = useState("");
   const [detalhe, setDetalhe] = useState<LogAdmin | null>(null);
@@ -57,17 +61,17 @@ export function LogsTabela({
           }}
         >
           <div className="min-w-56">
-            <Label htmlFor="filtro-acao">Ação</Label>
+            <Label htmlFor="filtro-acao">{tl.filtroAcao}</Label>
             <Input
               id="filtro-acao"
               value={acao}
               onChange={(evento) => setAcao(evento.target.value)}
-              placeholder="Ex.: BLOQUEAR_USUARIO"
+              placeholder={tl.filtroAcaoPlaceholder}
               className="mt-1"
             />
           </div>
           <Button type="submit" className="min-h-11">
-            Filtrar
+            {t.admin.comum.filtrar}
           </Button>
         </form>
       )}
@@ -80,27 +84,27 @@ export function LogsTabela({
         </div>
       ) : isError ? (
         <div className="flex flex-col items-center gap-3 p-8 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar os logs.</p>
+          <p className="text-sm text-muted-foreground">{tl.erro}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t.comum.tentarNovamente}
           </Button>
         </div>
       ) : logs.length === 0 ? (
         <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
           <ScrollText className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhum registro de auditoria encontrado.</p>
+          <p className="text-sm">{tl.vazio}</p>
         </div>
       ) : (
         <>
           <Table>
-            <caption className="sr-only">Registros de auditoria administrativa (somente leitura)</caption>
+            <caption className="sr-only">{tl.caption}</caption>
             <TableHeader>
               <TableRow>
-                <TableHead>Ação</TableHead>
-                <TableHead>Entidade</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead>{tl.colunas.acao}</TableHead>
+                <TableHead>{tl.colunas.entidade}</TableHead>
+                <TableHead>{tl.colunas.admin}</TableHead>
+                <TableHead>{tl.colunas.descricao}</TableHead>
+                <TableHead>{t.admin.comum.data}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,10 +127,10 @@ export function LogsTabela({
                     </button>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {log.entidadeTipo ?? "—"}
+                    {log.entidadeTipo ? rotuloOuValor(tl.entidades, log.entidadeTipo) : t.comum.semValor}
                   </TableCell>
-                  <TableCell>{log.administrador?.nome ?? "Conta removida"}</TableCell>
-                  <TableCell className="max-w-72 truncate">{log.descricao ?? "—"}</TableCell>
+                  <TableCell>{log.administrador?.nome ?? t.admin.comum.contaRemovida}</TableCell>
+                  <TableCell className="max-w-72 truncate">{log.descricao ?? t.comum.semValor}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatarDataHora(log.criadoEm)}
                   </TableCell>

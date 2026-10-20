@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect } from "vitest";
+import { definirIdioma } from "@/i18n/estado";
 import { descreverElemento, obterContextoDialogo, resolverAlvoFalavel } from "./leitorSemantico";
 
 /**
@@ -148,5 +149,32 @@ describe("resolverAlvoFalavel", () => {
         expect(resolverAlvoFalavel(div)).toBeNull();
 
         document.body.removeChild(div);
+    });
+});
+
+describe("descreverElemento — idioma do Site", () => {
+    afterEach(() => {
+        definirIdioma("pt");
+    });
+
+    it("usa as palavras de função e de estado do idioma ativo", () => {
+        const interruptor = document.createElement("button");
+        interruptor.setAttribute("role", "switch");
+        interruptor.setAttribute("title", "Email notifications");
+        interruptor.setAttribute("aria-checked", "false");
+
+        definirIdioma("en");
+        expect(descreverElemento(interruptor)).toBe("Email notifications, switch, off.");
+
+        definirIdioma("es");
+        expect(descreverElemento(interruptor)).toBe("Email notifications, interruptor, desactivado.");
+    });
+
+    it("descreve a imagem no idioma ativo", () => {
+        const img = document.createElement("img");
+        img.setAttribute("alt", "Maria's profile photo");
+
+        definirIdioma("en");
+        expect(descreverElemento(img)).toBe("Image: Maria's profile photo.");
     });
 });

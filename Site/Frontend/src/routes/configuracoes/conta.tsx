@@ -13,14 +13,11 @@ import { SecaoContaPerigo } from "@/components/configuracoes/SecaoContaPerigo";
 import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
 import { empresasService } from "@/services/empresas.service";
+import { formatarDataLonga } from "@/utils/formatacao";
+import { metaPagina, dic, useT } from "@/i18n";
 
 export const Route = createFileRoute("/configuracoes/conta")({
-  head: () => ({
-    meta: [
-      { title: "Conta — ACESSO" },
-      { name: "description", content: "Gerencie os dados da sua conta ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().configuracoes.conta.meta),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
       <Conta />
@@ -28,22 +25,9 @@ export const Route = createFileRoute("/configuracoes/conta")({
   ),
 });
 
-function formatarDataLonga(iso?: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(iso));
-  } catch {
-    return "—";
-  }
-}
-
-const RUBRICA_TIPO: Record<string, string> = {
-  candidato: "Pessoa candidata",
-  empresa: "Empresa",
-  administrador: "Administrador",
-};
-
 function Conta() {
+  const t = useT();
+  const tc = t.configuracoes.conta;
   const { usuario } = useSessao();
 
   const { data: candidato } = useQuery({
@@ -64,33 +48,33 @@ function Conta() {
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para configurações
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t.configuracoes.voltarParaConfiguracoes}
       </Link>
 
-      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">Conta</h1>
-      <p className="text-sm text-muted-foreground sm:text-base">Seus dados de acesso e informações da conta.</p>
+      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">{tc.titulo}</h1>
+      <p className="text-sm text-muted-foreground sm:text-base">{tc.subtitulo}</p>
 
       <div className="mt-6 space-y-4">
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg">Informações da conta</CardTitle>
+            <CardTitle className="text-lg">{tc.infoTitulo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <dl className="grid gap-3 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Nome</dt>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{tc.nome}</dt>
                 <dd className="font-medium">{usuario?.nome}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Tipo de conta</dt>
-                <dd className="font-medium">{usuario ? RUBRICA_TIPO[usuario.tipo] ?? usuario.tipo : "—"}</dd>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{tc.tipoConta}</dt>
+                <dd className="font-medium">{usuario ? tc.tipos[usuario.tipo] ?? usuario.tipo : t.comum.semValor}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Conta criada em</dt>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{tc.criadaEm}</dt>
                 <dd className="font-medium">{formatarDataLonga(usuario?.criadoEm ?? usuario?.criadoEm)}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Último acesso</dt>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{tc.ultimoAcesso}</dt>
                 <dd className="font-medium">{formatarDataLonga(usuario?.ultimoLogin)}</dd>
               </div>
             </dl>
@@ -98,13 +82,13 @@ function Conta() {
             {usuario?.tipo === "empresa" && empresa ? (
               <EditarEmpresaDialog empresa={empresa}>
                 <Button variant="outline" className="min-h-11 gap-2">
-                  <Pencil className="size-4" aria-hidden="true" /> Editar dados da empresa
+                  <Pencil className="size-4" aria-hidden="true" /> {tc.editarEmpresa}
                 </Button>
               </EditarEmpresaDialog>
             ) : usuario?.tipo === "candidato" ? (
               <EditarPerfilDialog candidato={candidato}>
                 <Button variant="outline" className="min-h-11 gap-2">
-                  <Pencil className="size-4" aria-hidden="true" /> Editar nome, telefone e localidade
+                  <Pencil className="size-4" aria-hidden="true" /> {tc.editarPessoa}
                 </Button>
               </EditarPerfilDialog>
             ) : null}
@@ -115,11 +99,11 @@ function Conta() {
 
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg">Senha</CardTitle>
+            <CardTitle className="text-lg">{tc.senha}</CardTitle>
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline" className="min-h-11">
-              <Link to="/configuracoes/senha">Alterar senha</Link>
+              <Link to="/configuracoes/senha">{tc.alterarSenha}</Link>
             </Button>
           </CardContent>
         </Card>

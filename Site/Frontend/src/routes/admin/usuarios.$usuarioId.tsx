@@ -6,24 +6,27 @@ import { ArrowLeft, ExternalLink, Trash2 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
-import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
+import { ExcluirContaDialog } from "@/components/admin/ExcluirContaDialog";
 import { LogsTabela } from "@/components/admin/LogsTabela";
+import { rotuloOuValor } from "@/components/admin/rotulos";
 import { useSessao } from "@/hooks/useSessao";
+import { dic, metaPagina, useT } from "@/i18n";
 import adminService from "@/services/admin.service";
-import denunciaService, { MOTIVO_ROTULO } from "@/services/denuncia.service";
+import { extrairMensagemErro } from "@/services/api";
+import denunciaService from "@/services/denuncia.service";
+import { formatarDataHoraLocal, formatarDataLocal } from "@/utils/formatacao";
 
 export const Route = createFileRoute("/admin/usuarios/$usuarioId")({
-  head: () => ({
-    meta: [{ title: "Detalhe do usuário — Administração ACESSO" }],
-  }),
+  head: () => metaPagina(dic().admin.meta.usuarioDetalhe),
   component: AdminUsuarioDetalhe,
 });
 
 function AdminUsuarioDetalhe() {
+  const t = useT();
+  const tu = t.admin.usuarios;
+  const td = tu.detalhe;
   const { usuarioId } = Route.useParams();
   const { usuario: usuarioLogado } = useSessao();
   const navigate = useNavigate();
@@ -45,11 +48,11 @@ function AdminUsuarioDetalhe() {
   const mutacaoExclusao = useMutation({
     mutationFn: () => adminService.removerUsuario(usuarioId, motivoExclusao.trim() || undefined),
     onSuccess: () => {
-      toast.success("Usuário excluído definitivamente.");
+      toast.success(dic().admin.usuarios.excluidoOk);
       queryClient.invalidateQueries({ queryKey: ["admin", "usuarios"] });
       void navigate({ to: "/admin/usuarios" });
     },
-    onError: (erro: Error) => toast.error(erro.message || "Não foi possível excluir esta conta."),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, dic().admin.usuarios.erroExcluir)),
   });
 
   if (isLoading) {
@@ -59,9 +62,9 @@ function AdminUsuarioDetalhe() {
   if (isError || !usuario) {
     return (
       <div role="alert" className="space-y-3 p-6 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar este usuário.</p>
+        <p className="text-sm text-muted-foreground">{td.erroCarregar}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t.comum.tentarNovamente}
         </Button>
       </div>
     );
@@ -73,27 +76,27 @@ function AdminUsuarioDetalhe() {
         to="/admin/usuarios"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para usuários
+        <ArrowLeft className="size-4" aria-hidden="true" /> {td.voltar}
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold sm:text-3xl">{usuario.nome}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge tom={usuario.ativo ? "sucesso" : "perigo"}>
-            {usuario.ativo ? "Ativo" : "Bloqueado"}
+            {usuario.ativo ? t.admin.comum.ativo : t.admin.comum.bloqueado}
           </StatusBadge>
           <Link
             to="/perfil/$usuarioId"
             params={{ usuarioId }}
             className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary"
           >
-            <ExternalLink className="size-4" aria-hidden="true" /> Ver perfil público
+            <ExternalLink className="size-4" aria-hidden="true" /> {td.verPerfilPublico}
           </Link>
           {/* Mesma restrição do backend (garantirAlvoDeAcaoAdministrativa):
               nunca oferecida contra a própria conta nem outra conta admin. */}
           {usuario.tipoUsuario !== "administrador" && usuario.id !== usuarioLogado?.id && (
             <Button variant="destructive" className="min-h-11" onClick={() => setExcluindo(true)}>
-              <Trash2 className="size-4" aria-hidden="true" /> Excluir conta
+              <Trash2 className="size-4" aria-hidden="true" /> {tu.excluirConta}
             </Button>
           )}
         </div>
@@ -102,23 +105,23 @@ function AdminUsuarioDetalhe() {
       <Card className="mt-4 shadow-none">
         <CardContent className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">E-mail</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{td.email}</p>
             <p className="mt-1 text-sm">{usuario.email}</p>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">Tipo</p>
-            <p className="mt-1 text-sm capitalize">{usuario.tipoUsuario}</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{td.tipo}</p>
+            <p className="mt-1 text-sm">{rotuloOuValor(tu.tipos, usuario.tipoUsuario)}</p>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">Cadastrado em</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{td.cadastradoEm}</p>
             <p className="mt-1 text-sm">
-              {usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString("pt-BR") : "—"}
+              {usuario.criadoEm ? formatarDataLocal(usuario.criadoEm) : t.comum.semValor}
             </p>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">Última atividade</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{td.ultimaAtividade}</p>
             <p className="mt-1 text-sm">
-              {usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString("pt-BR") : "Nunca acessou"}
+              {usuario.ultimoLogin ? formatarDataHoraLocal(usuario.ultimoLogin) : td.nuncaAcessou}
             </p>
           </div>
         </CardContent>
@@ -126,9 +129,9 @@ function AdminUsuarioDetalhe() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-lg font-bold">Denúncias recebidas</h2>
+          <h2 className="text-lg font-bold">{td.denunciasRecebidas}</h2>
           {!denunciasRecebidas || denunciasRecebidas.denuncias.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">Nenhuma denúncia contra este usuário.</p>
+            <p className="mt-2 text-sm text-muted-foreground">{td.semDenuncias}</p>
           ) : (
             <ul className="mt-3 space-y-2">
               {denunciasRecebidas.denuncias.map((denuncia) => (
@@ -138,9 +141,11 @@ function AdminUsuarioDetalhe() {
                     params={{ denunciaId: denuncia.id }}
                     className="font-semibold hover:underline"
                   >
-                    {MOTIVO_ROTULO[denuncia.motivo]}
+                    {rotuloOuValor(t.moderacao.motivos, denuncia.motivo)}
                   </Link>{" "}
-                  <span className="text-muted-foreground">— {denuncia.status}</span>
+                  <span className="text-muted-foreground">
+                    — {rotuloOuValor(t.admin.denuncias.status, denuncia.status)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -150,46 +155,21 @@ function AdminUsuarioDetalhe() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-0">
-          <h2 className="p-5 pb-0 text-lg font-bold sm:px-6 sm:pt-6">Histórico administrativo</h2>
+          <h2 className="p-5 pb-0 text-lg font-bold sm:px-6 sm:pt-6">{td.historico}</h2>
           <LogsTabela entidadeId={usuarioId} />
         </CardContent>
       </Card>
 
-      <ConfirmarAcaoDialog
-        open={excluindo}
-        onOpenChange={(aberto) => {
-          if (!aberto) {
-            setExcluindo(false);
-            setMotivoExclusao("");
-          }
-        }}
-        titulo="Excluir conta definitivamente"
-        descricao={
-          <div className="space-y-3">
-            <p>
-              Tem certeza que deseja excluir permanentemente a conta de{" "}
-              <strong>&quot;{usuario.nome}&quot;</strong> ({usuario.email})?
-            </p>
-            <p className="font-semibold text-destructive">
-              Esta ação é irreversível. Todos os dados da conta — perfil, publicações,
-              candidaturas, mensagens e arquivos enviados — serão apagados
-              definitivamente do banco de dados e não poderão ser recuperados.
-            </p>
-            <div>
-              <Label htmlFor="motivo-exclusao-detalhe">Motivo (opcional)</Label>
-              <Textarea
-                id="motivo-exclusao-detalhe"
-                value={motivoExclusao}
-                onChange={(evento) => setMotivoExclusao(evento.target.value)}
-                className="mt-1 min-h-20 resize-none"
-                placeholder="Registrado no log de auditoria administrativa"
-              />
-            </div>
-          </div>
-        }
-        textoConfirmar="Excluir definitivamente"
-        destrutivo
+      <ExcluirContaDialog
+        usuario={excluindo ? usuario : null}
+        idMotivo="motivo-exclusao-detalhe"
+        motivo={motivoExclusao}
+        onMotivoChange={setMotivoExclusao}
         carregando={mutacaoExclusao.isPending}
+        onFechar={() => {
+          setExcluindo(false);
+          setMotivoExclusao("");
+        }}
         onConfirmar={() => mutacaoExclusao.mutate()}
       />
     </>

@@ -24,12 +24,11 @@ import {
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import denunciaService, {
-  MOTIVO_ROTULO,
+  MOTIVOS_DENUNCIA,
   type EntidadeDenunciaTipo,
   type MotivoDenuncia,
 } from "@/services/denuncia.service";
-
-const MOTIVOS = Object.keys(MOTIVO_ROTULO) as MotivoDenuncia[];
+import { useT } from "@/i18n";
 
 /**
  * Diálogo genérico de denúncia, usado para postagem, comentário, usuário, empresa, vaga e mensagem.
@@ -72,6 +71,8 @@ export function DenunciarDialog({
    */
   aoFecharDevolverFoco?: () => void;
 }) {
+  const t = useT();
+  const td = t.moderacao.denunciar;
   const nomeParaBloqueio = autorNomeExibicao ?? nomeExibicao;
   const [motivo, setMotivo] = useState<MotivoDenuncia | "">("");
   const [descricao, setDescricao] = useState("");
@@ -97,7 +98,7 @@ export function DenunciarDialog({
       }),
     onSuccess: () => {
       // Os toasts já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Denúncia enviada. Nossa equipe vai analisar.");
+      toast.success(td.enviada);
       if (autorUsuarioId) {
         setOferecendoBloqueio(true);
       } else {
@@ -105,18 +106,18 @@ export function DenunciarDialog({
       }
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível enviar a denúncia."));
+      toast.error(extrairMensagemErro(erro, td.erroEnviar));
     },
   });
 
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(autorUsuarioId as string),
     onSuccess: () => {
-      toast.success(nomeParaBloqueio ? `${nomeParaBloqueio} foi bloqueado(a).` : "Usuário bloqueado.");
+      toast.success(td.bloqueado(nomeParaBloqueio ?? ""));
       fecharTudo();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível bloquear este usuário."));
+      toast.error(extrairMensagemErro(erro, td.erroBloquear));
     },
   });
 
@@ -135,16 +136,12 @@ export function DenunciarDialog({
         {oferecendoBloqueio ? (
           <>
             <DialogHeader>
-              <DialogTitle>Bloquear{nomeParaBloqueio ? ` ${nomeParaBloqueio}` : " este usuário"}?</DialogTitle>
-              <DialogDescription>
-                {nomeParaBloqueio ?? "Esta pessoa"} não vai mais conseguir ver seu perfil, seguir você ou enviar
-                mensagens — e o mesmo vale para você. Você pode desbloquear depois em Configurações →
-                Privacidade.
-              </DialogDescription>
+              <DialogTitle>{td.bloquearTitulo(nomeParaBloqueio ?? "")}</DialogTitle>
+              <DialogDescription>{td.bloquearTexto(nomeParaBloqueio ?? "")}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={fecharTudo} disabled={bloquear.isPending}>
-                Não, obrigado
+                {td.naoObrigado}
               </Button>
               <Button
                 type="button"
@@ -157,31 +154,28 @@ export function DenunciarDialog({
                 ) : (
                   <ShieldOff className="size-4" aria-hidden="true" />
                 )}
-                Bloquear
+                {td.bloquear}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Denunciar{nomeExibicao ? ` "${nomeExibicao}"` : ""}</DialogTitle>
-              <DialogDescription>
-                Conte para a moderação o que está errado. Denúncias falsas ou repetidas podem limitar o seu
-                acesso a esta função.
-              </DialogDescription>
+              <DialogTitle>{td.titulo(nomeExibicao ?? "")}</DialogTitle>
+              <DialogDescription>{td.descricao}</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="denuncia-motivo">Motivo</Label>
+                <Label htmlFor="denuncia-motivo">{td.motivo}</Label>
                 <Select value={motivo} onValueChange={(valor) => setMotivo(valor as MotivoDenuncia)}>
                   <SelectTrigger id="denuncia-motivo" className="mt-1">
-                    <SelectValue placeholder="Selecione um motivo" />
+                    <SelectValue placeholder={td.motivoEscolha} />
                   </SelectTrigger>
                   <SelectContent>
-                    {MOTIVOS.map((item) => (
+                    {MOTIVOS_DENUNCIA.map((item) => (
                       <SelectItem key={item} value={item}>
-                        {MOTIVO_ROTULO[item]}
+                        {t.moderacao.motivos[item]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -189,12 +183,12 @@ export function DenunciarDialog({
               </div>
 
               <div>
-                <Label htmlFor="denuncia-descricao">Descrição (opcional)</Label>
+                <Label htmlFor="denuncia-descricao">{td.descricaoLabel}</Label>
                 <Textarea
                   id="denuncia-descricao"
                   value={descricao}
                   onChange={(evento) => setDescricao(evento.target.value)}
-                  placeholder="Detalhe o que aconteceu, se quiser."
+                  placeholder={td.descricaoPlaceholder}
                   maxLength={1000}
                   className="mt-1 min-h-24 resize-none"
                 />
@@ -203,7 +197,7 @@ export function DenunciarDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={fecharTudo} disabled={enviar.isPending}>
-                Cancelar
+                {t.comum.cancelar}
               </Button>
               <Button
                 type="button"
@@ -212,7 +206,7 @@ export function DenunciarDialog({
                 onClick={() => enviar.mutate()}
               >
                 {enviar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                Enviar denúncia
+                {td.enviar}
               </Button>
             </DialogFooter>
           </>

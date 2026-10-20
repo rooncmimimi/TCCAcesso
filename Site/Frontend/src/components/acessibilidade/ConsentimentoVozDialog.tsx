@@ -16,9 +16,7 @@ import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { useSessao } from "@/hooks/useSessao";
 import acessibilidadeService, { preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
-
-const PERGUNTA =
-  "Olá! Bem-vindo ao ACESSO. Deseja utilizar o sistema de leitura por voz como padrão durante toda a sua navegação? Escolha sim ou não.";
+import { dic, useIdioma, useT } from "@/i18n";
 
 /**
  * Primeiro acesso: pergunta (em voz alta e visualmente) se a leitura por voz
@@ -29,6 +27,8 @@ export function ConsentimentoVozDialog() {
   const { inicializado, preferencias } = useAcessibilidade();
   const { suportado, falar, parar, definirEscolha } = useVoz();
   const { autenticado } = useSessao();
+  const t = useT().acessibilidade.consentimento;
+  const { idioma } = useIdioma();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -38,10 +38,13 @@ export function ConsentimentoVozDialog() {
     if (!inicializado || !suportado || preferencias.voiceConsent !== null) return;
     const timer = window.setTimeout(() => {
       setOpen(true);
-      falar(PERGUNTA);
+      // `dic()` na hora de falar: a pergunta sai no idioma de quando o diálogo abre.
+      falar(dic().acessibilidade.consentimento.pergunta);
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [inicializado, suportado, preferencias.voiceConsent, falar]);
+    // `idioma` nas dependências: trocar de idioma com a pergunta aberta repete a pergunta no idioma
+    // novo (a fala em andamento é interrompida pelo `VozProvider`).
+  }, [inicializado, suportado, preferencias.voiceConsent, falar, idioma]);
 
   if (!open) return null;
 
@@ -51,7 +54,7 @@ export function ConsentimentoVozDialog() {
     setOpen(false);
     if (valor === "accepted") {
       window.setTimeout(
-        () => falar("Leitura por voz ativada. Use a tecla Tab para navegar pelo site."),
+        () => falar(dic().acessibilidade.consentimento.ativada),
         250,
       );
     }
@@ -63,9 +66,7 @@ export function ConsentimentoVozDialog() {
       acessibilidadeService
         .salvar(preferenciasParaApi({ ...preferencias, screenReader: aceito, voiceConsent: aceito }))
         .catch((erro) => {
-          toast.error(
-            extrairMensagemErro(erro, "Não foi possível salvar essa escolha na sua conta. Ficou salva neste dispositivo."),
-          );
+          toast.error(extrairMensagemErro(erro, dic().acessibilidade.consentimento.erroSalvar));
         });
     }
   };
@@ -81,11 +82,10 @@ export function ConsentimentoVozDialog() {
             <Volume2 className="size-7" />
           </span>
           <AlertDialogTitle className="text-center text-2xl">
-            Deseja ativar a leitura por voz?
+            {t.titulo}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-base">
-            O ACESSO pode ler em voz alta os conteúdos enquanto você navega. Você pode alterar essa
-            escolha depois em Configurações de acessibilidade.
+            {t.descricao}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="sm:justify-center">
@@ -93,10 +93,10 @@ export function ConsentimentoVozDialog() {
             className="min-h-12 text-base"
             onClick={() => decidir("declined")}
           >
-            <VolumeX aria-hidden="true" /> Não, obrigado
+            <VolumeX aria-hidden="true" /> {t.nao}
           </AlertDialogCancel>
           <AlertDialogAction className="min-h-12 text-base" onClick={() => decidir("accepted")}>
-            <Volume2 aria-hidden="true" /> Sim, ativar leitura
+            <Volume2 aria-hidden="true" /> {t.sim}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

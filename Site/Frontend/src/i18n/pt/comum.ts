@@ -38,6 +38,10 @@ export const comum = {
   pagina: (n: number, total: number) => `Página ${n} de ${total}`,
   nunca: "Nunca",
   erroGenerico: "Algo deu errado. Tente novamente.",
+  mostrarSenha: "Mostrar senha",
+  ocultarSenha: "Ocultar senha",
+  avisos: "Avisos",
+  erroAcao: "Não foi possível concluir a ação.",
   empresaVerificada: "Empresa verificada",
   empresaVerificadaTitulo: "Empresa verificada pelo ACESSO",
   portes: {
@@ -47,4 +51,8 @@ export const comum = {
     media: "Média",
     grande: "Grande",
   },
+  aCombinar: "A combinar",
+  agoraMesmo: "agora mesmo",
+  dataHora: (data: string, hora: string) => `${data} às ${hora}`,
+  semValor: "—",
 };

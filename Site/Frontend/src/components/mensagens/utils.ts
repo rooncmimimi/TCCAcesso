@@ -1,4 +1,6 @@
+import { dic } from "@/i18n";
 import type { Conversa, ParticipanteConversa } from "@/lib/tiposApi";
+import { formatarDiaMes, formatarHoraCurta } from "@/utils/formatacao";
 
 /** Retorna o participante "do outro lado" da conversa em relação ao usuário logado. */
 export function participanteOposto(conversa: Conversa, usuarioId: string | null): ParticipanteConversa | undefined {
@@ -17,7 +19,7 @@ export function nomeParticipante(participante?: ParticipanteConversa): string {
     participante?.empresa?.nomeFantasia ||
     participante?.empresa?.razaoSocial ||
     participante?.nome ||
-    "Usuário removido"
+    dic().mensagens.usuarioRemovido
   );
 }
 
@@ -28,7 +30,7 @@ export function fotoParticipante(participante?: ParticipanteConversa): string | 
 export function formatarHora(data?: string): string {
   if (!data) return "";
   try {
-    return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(data));
+    return formatarHoraCurta(data);
   } catch {
     return "";
   }
@@ -40,5 +42,5 @@ export function formatarDataRelativa(data?: string): string {
   const agora = new Date();
   const mesmoDia = alvo.toDateString() === agora.toDateString();
   if (mesmoDia) return formatarHora(data);
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(alvo);
+  return formatarDiaMes(alvo);
 }

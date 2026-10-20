@@ -3,14 +3,17 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { CHAVE_ESCOLHA_VOZ } from "@/contexts/AcessibilidadeContext";
 import { type EscolhaVoz, type VozContextValue, VozContext } from "@/contexts/VozContext";
+import { localeDoIdioma, obterIdioma, useIdioma } from "@/i18n";
+import { escolherVoz } from "@/lib/vozFala";
 
 /**
- * Leitura por voz com a Web Speech API do navegador (`speechSynthesis`), em português e na
- * velocidade escolhida nas preferências. Também guarda a escolha do primeiro acesso (ver
- * `VozContext.ts`).
+ * Leitura por voz com a Web Speech API do navegador (`speechSynthesis`), no idioma do Site
+ * (pt-BR, en-US ou es-ES) e na velocidade escolhida nas preferências. Também guarda a escolha do
+ * primeiro acesso (ver `VozContext.ts`).
  */
 export function VozProvider({ children }: { children: ReactNode }) {
   const { preferencias, salvar } = useAcessibilidade();
+  const { idioma } = useIdioma();
   const [suportado, setSuportado] = useState(false);
   const [falando, setFalando] = useState(false);
   const [escolha, setChoiceState] = useState<EscolhaVoz>(null);
@@ -46,7 +49,11 @@ export function VozProvider({ children }: { children: ReactNode }) {
     if (!textoLimpo) return;
     if (opts?.interrupt !== false) window.speechSynthesis.cancel();
     const fala = new SpeechSynthesisUtterance(textoLimpo);
-    fala.lang = "pt-BR";
+    // Idioma lido na hora de falar (e não capturado), para a fala já sair no idioma novo.
+    const locale = localeDoIdioma(obterIdioma());
+    fala.lang = locale;
+    const voz = escolherVoz(window.speechSynthesis.getVoices(), locale);
+    if (voz) fala.voice = voz;
     fala.rate = velocidadeRef.current;
     fala.onstart = () => setFalando(true);
     fala.onend = () => setFalando(false);
@@ -84,6 +91,15 @@ export function VozProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => parar, [parar]);
+
+  // Uma fala em andamento está no idioma antigo: trocar de idioma a interrompe, em vez de deixá-la
+  // terminar numa língua que a tela já não mostra.
+  const idiomaAnterior = useRef(idioma);
+  useEffect(() => {
+    if (idiomaAnterior.current === idioma) return;
+    idiomaAnterior.current = idioma;
+    parar();
+  }, [idioma, parar]);
 
   const valorContexto = useMemo<VozContextValue>(
     () => ({ suportado, falando, escolha, perguntouNestaSessao, falar, parar, definirEscolha, limparEscolha }),

@@ -18,20 +18,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { extrairMensagemErro } from "@/services/api";
 import { autenticacaoService } from "@/services/autenticacao.service";
+import { formatarDataHoraCurta } from "@/utils/formatacao";
+import { dic, useT } from "@/i18n";
 
 const CHAVE_SESSOES = ["seguranca", "sessoes"] as const;
 
-function formatarDataHoraCurta(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
 /** Descrição curta do dispositivo/navegador a partir do user-agent, sem depender de libs novas. */
 function descreverDispositivo(userAgent?: string | null): string {
-  if (!userAgent) return "Dispositivo desconhecido";
+  if (!userAgent) return dic().configuracoes.sessoes.dispositivoDesconhecido;
   const ua = userAgent.toLowerCase();
   const navegador = ua.includes("edg/")
     ? "Edge"
@@ -41,7 +35,7 @@ function descreverDispositivo(userAgent?: string | null): string {
         ? "Firefox"
         : ua.includes("safari/")
           ? "Safari"
-          : "Navegador";
+          : dic().configuracoes.sessoes.navegador;
   const sistema = ua.includes("android")
     ? "Android"
     : ua.includes("iphone") || ua.includes("ipad")
@@ -58,6 +52,8 @@ function descreverDispositivo(userAgent?: string | null): string {
 
 /** Seção "Sessões ativas" da página Configurações → Segurança. */
 export function SecaoSessoes() {
+  const t = useT();
+  const ts = t.configuracoes.sessoes;
   const queryClient = useQueryClient();
 
   const { data: sessoes, isLoading, isError, refetch } = useQuery({
@@ -70,19 +66,19 @@ export function SecaoSessoes() {
   const encerrar = useMutation({
     mutationFn: (id: string) => autenticacaoService.encerrarSessao(id),
     onSuccess: () => {
-      toast.success("Sessão encerrada.");
+      toast.success(ts.encerrada);
       void atualizar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível encerrar a sessão.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, ts.erroEncerrar)),
   });
 
   const encerrarOutras = useMutation({
     mutationFn: () => autenticacaoService.encerrarOutrasSessoes(),
     onSuccess: () => {
-      toast.success("As outras sessões foram encerradas.");
+      toast.success(ts.outrasEncerradas);
       void atualizar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível encerrar as outras sessões.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, ts.erroEncerrarOutras)),
   });
 
   const outrasSessoes = (sessoes ?? []).filter((s) => !s.atual);
@@ -90,25 +86,24 @@ export function SecaoSessoes() {
   return (
     <Card className="shadow-none">
       <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
-        <CardTitle className="text-lg">Sessões ativas</CardTitle>
+        <CardTitle className="text-lg">{ts.titulo}</CardTitle>
         {outrasSessoes.length > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
-                <LogOut className="size-4" aria-hidden="true" /> Encerrar as outras
+                <LogOut className="size-4" aria-hidden="true" /> {ts.encerrarOutras}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Encerrar as outras sessões?</AlertDialogTitle>
+                <AlertDialogTitle>{ts.encerrarOutrasTitulo}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Todos os outros dispositivos conectados à sua conta precisarão entrar novamente. Esta sessão
-                  (a que você está usando agora) continua ativa.
+                  {ts.encerrarOutrasTexto}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => encerrarOutras.mutate()}>Encerrar as outras</AlertDialogAction>
+                <AlertDialogCancel>{t.comum.cancelar}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => encerrarOutras.mutate()}>{ts.encerrarOutras}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -117,17 +112,17 @@ export function SecaoSessoes() {
       <CardContent className="space-y-3">
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando sessões…
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {ts.carregando}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
-            <p>Não foi possível carregar suas sessões.</p>
+            <p>{ts.erroCarregar}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t.comum.tentarNovamente}
             </Button>
           </div>
         ) : !sessoes || sessoes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma sessão ativa encontrada.</p>
+          <p className="text-sm text-muted-foreground">{ts.nenhuma}</p>
         ) : (
           <ul className="space-y-2">
             {sessoes.map((sessao) => (
@@ -143,12 +138,12 @@ export function SecaoSessoes() {
                     {descreverDispositivo(sessao.userAgent)}
                     {sessao.atual && (
                       <Badge variant="secondary" className="font-medium">
-                        Esta sessão
+                        {ts.estaSessao}
                       </Badge>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Ativa desde {formatarDataHoraCurta(sessao.criadoEm)}
+                    {ts.ativaDesde(formatarDataHoraCurta(sessao.criadoEm))}
                     {sessao.ip ? ` · IP ${sessao.ip}` : ""}
                   </p>
                 </div>
@@ -159,9 +154,9 @@ export function SecaoSessoes() {
                     className="text-destructive hover:text-destructive"
                     disabled={encerrar.isPending}
                     onClick={() => encerrar.mutate(sessao.id)}
-                    aria-label={`Encerrar sessão em ${descreverDispositivo(sessao.userAgent)}`}
+                    aria-label={ts.encerrarAria(descreverDispositivo(sessao.userAgent))}
                   >
-                    Encerrar
+                    {ts.encerrar}
                   </Button>
                 )}
               </li>
@@ -171,7 +166,7 @@ export function SecaoSessoes() {
 
         {!isLoading && !isError && outrasSessoes.length === 0 && sessoes && sessoes.length > 0 && (
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" /> Nenhuma outra sessão ativa além desta.
+            <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" /> {ts.nenhumaOutra}
           </p>
         )}
       </CardContent>

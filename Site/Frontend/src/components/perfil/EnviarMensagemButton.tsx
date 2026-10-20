@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import mensagensService from "@/services/mensagens.service";
 import { extrairMensagemErro } from "@/services/api";
 import { toast } from "sonner";
+import { useT } from "@/i18n";
 
 /**
  * Abre (ou reabre) a conversa com o usuário deste perfil. Antes, consulta se é permitido, para
@@ -14,6 +15,7 @@ import { toast } from "sonner";
  * mostrar.
  */
 export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
+  const tm = useT().perfilItens.mensagem;
   const navigate = useNavigate();
 
   const consulta = useQuery({
@@ -27,14 +29,14 @@ export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
     onSuccess: (conversa) => {
       void navigate({ to: "/mensagens", search: { conversaId: conversa.id } });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível abrir a conversa.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, tm.erroAbrir)),
   });
 
   if (consulta.isLoading) {
     return (
       <Button type="button" variant="outline" className="min-h-11 gap-2" disabled aria-busy="true">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        Enviar mensagem
+        {tm.enviar}
       </Button>
     );
   }
@@ -56,10 +58,10 @@ export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
           onClick={(evento) => evento.preventDefault()}
         >
           <MessageSquareOff className="size-4" aria-hidden="true" />
-          Mensagens indisponíveis
+          {tm.indisponivel}
         </Button>
         <p id={`motivo-mensagem-${alvoId}`} className="max-w-64 text-right text-xs text-muted-foreground">
-          {motivo ?? "Não é possível enviar mensagens para este usuário."}
+          {motivo ?? tm.motivoPadrao}
         </p>
       </div>
     );
@@ -78,7 +80,7 @@ export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
       ) : (
         <MessageSquare className="size-4" aria-hidden="true" />
       )}
-      Enviar mensagem
+      {tm.enviar}
     </Button>
   );
 }

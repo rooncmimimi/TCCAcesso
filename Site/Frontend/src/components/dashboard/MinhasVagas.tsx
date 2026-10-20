@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { empresasService } from "@/services/empresas.service";
 import { NovaVagaDialog } from "@/components/dashboard/NovaVagaDialog";
 import { VagaEmpresaCard } from "@/components/dashboard/VagaEmpresaCard";
-import { ROTULO_STATUS_VAGA } from "@/components/dashboard/constantesVaga";
+import { useT } from "@/i18n";
 import type { StatusVaga, Vaga } from "@/types";
 
 /** Lista paginada de vagas de um status, com card de gestão para cada uma. */
@@ -20,6 +20,8 @@ function ListaVagasPorStatus({
   vagaSelecionada: string | null;
   onSelecionar: (vaga: Vaga) => void;
 }) {
+  const t = useT();
+  const td = t.dashboard;
   const [pagina, setPagina] = useState(1);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -30,7 +32,7 @@ function ListaVagasPorStatus({
   if (isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando vagas…
+        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {td.minhasVagas.carregando}
       </div>
     );
   }
@@ -38,21 +40,16 @@ function ListaVagasPorStatus({
   if (isError) {
     return (
       <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-        <p>Não foi possível carregar suas vagas.</p>
+        <p>{td.minhasVagas.erro}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t.comum.tentarNovamente}
         </Button>
       </div>
     );
   }
 
   if (!data || data.dados.length === 0) {
-    const mensagem: Record<StatusVaga, string> = {
-      aberta: "Você ainda não tem vagas ativas. Publique a primeira acima.",
-      pausada: "Nenhuma vaga arquivada por aqui.",
-      encerrada: "Nenhuma vaga encerrada por aqui.",
-    };
-    return <p className="py-6 text-sm text-muted-foreground">{mensagem[status]}</p>;
+    return <p className="py-6 text-sm text-muted-foreground">{td.minhasVagas.vazio[status]}</p>;
   }
 
   return (
@@ -67,10 +64,10 @@ function ListaVagasPorStatus({
       {data.totalPaginas > 1 ? (
         <div className="mt-4 flex justify-between gap-2">
           <Button variant="outline" size="sm" disabled={pagina <= 1} onClick={() => setPagina((p) => Math.max(1, p - 1))}>
-            Página anterior
+            {td.paginacao.anterior}
           </Button>
           <span className="self-center text-sm text-muted-foreground">
-            Página {data.pagina} de {data.totalPaginas}
+            {td.paginacao.pagina(data.pagina, data.totalPaginas)}
           </span>
           <Button
             variant="outline"
@@ -78,7 +75,7 @@ function ListaVagasPorStatus({
             disabled={pagina >= data.totalPaginas}
             onClick={() => setPagina((p) => p + 1)}
           >
-            Próxima página
+            {td.paginacao.proxima}
           </Button>
         </div>
       ) : null}
@@ -94,17 +91,19 @@ export function MinhasVagas({
   vagaSelecionada: string | null;
   onSelecionar: (vaga: Vaga) => void;
 }) {
+  const t = useT();
+
   return (
     <Card className="shadow-none">
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-        <CardTitle className="text-lg">Minhas vagas</CardTitle>
+        <CardTitle className="text-lg">{t.dashboard.minhasVagas.titulo}</CardTitle>
         <NovaVagaDialog />
       </CardHeader>
       <Tabs defaultValue="aberta" className="px-6 pb-6">
         <TabsList>
-          <TabsTrigger value="aberta">{ROTULO_STATUS_VAGA.aberta}</TabsTrigger>
-          <TabsTrigger value="pausada">{ROTULO_STATUS_VAGA.pausada}</TabsTrigger>
-          <TabsTrigger value="encerrada">{ROTULO_STATUS_VAGA.encerrada}</TabsTrigger>
+          <TabsTrigger value="aberta">{t.status.aberta}</TabsTrigger>
+          <TabsTrigger value="pausada">{t.status.pausada}</TabsTrigger>
+          <TabsTrigger value="encerrada">{t.status.encerrada}</TabsTrigger>
         </TabsList>
         <TabsContent value="aberta">
           <ListaVagasPorStatus status="aberta" vagaSelecionada={vagaSelecionada} onSelecionar={onSelecionar} />

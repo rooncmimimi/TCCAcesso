@@ -4,6 +4,8 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
+import { dic, obterIdioma } from "@/i18n";
+
 /** Chaves usadas para persistir os tokens JWT no navegador. */
 export const CHAVE_ACCESS_TOKEN = "acesso:accessToken";
 export const CHAVE_REFRESH_TOKEN = "acesso:refreshToken";
@@ -72,6 +74,8 @@ clienteApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);
   }
+  // O servidor escreve as mensagens de erro, de validação e os avisos no idioma da interface.
+  config.headers.set("Accept-Language", obterIdioma());
   return config;
 });
 
@@ -80,7 +84,7 @@ clienteApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
  * `mensagem`, porque nesse caso a `mensagem` geral é sempre "Erro de validação.". O backend usa o
  * mesmo formato em toda resposta de erro: `{ mensagem, erros: [{ campo, mensagem }] }`.
  */
-export function extrairMensagemErro(erro: unknown, padrao = "Não foi possível concluir a ação."): string {
+export function extrairMensagemErro(erro: unknown, padrao = dic().comum.erroAcao): string {
   const axiosErro = erro as AxiosError<{ mensagem?: string; message?: string; erros?: { campo?: string; mensagem?: string }[] }>;
   const dados = axiosErro?.response?.data;
   return (
@@ -117,7 +121,9 @@ async function chamarRefresh(refreshToken: string): Promise<string | null> {
     const { data } = await axios.post<{ token?: string; accessToken?: string; refreshToken: string }>(
       `${API_BASE_URL}/auth/refresh`,
       { refreshToken },
-      { timeout: 20_000 },
+      // Sem o interceptor da instância `clienteApi`, o idioma vai à mão: a recusa por conta
+      // bloqueada vem nesta resposta e é mostrada à pessoa.
+      { timeout: 20_000, headers: { "Accept-Language": obterIdioma() } },
     );
     const novo = data.token ?? data.accessToken ?? null;
     definirTokens(novo, data.refreshToken);

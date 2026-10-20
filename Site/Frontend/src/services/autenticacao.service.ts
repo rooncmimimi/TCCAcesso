@@ -1,3 +1,4 @@
+import { obterIdioma, type Idioma } from "@/i18n";
 import clienteApi, { definirTokens, limparTokens, obterRefreshToken } from "./api";
 import type {
   CredenciaisLogin,
@@ -32,7 +33,8 @@ export const autenticacaoService = {
   ): Promise<RespostaLogin | RespostaCadastroPendenteVerificacao> {
     const { data } = await clienteApi.post<RespostaLogin | RespostaCadastroPendenteVerificacao>(
       "/auth/register/candidato",
-      payload,
+      // A conta nasce no idioma em que a pessoa está vendo o cadastro.
+      { idioma: obterIdioma(), ...payload },
     );
     if ("token" in data) {
       definirTokens(data.token, data.refreshToken);
@@ -45,7 +47,7 @@ export const autenticacaoService = {
   ): Promise<RespostaLogin | RespostaCadastroPendenteVerificacao> {
     const { data } = await clienteApi.post<RespostaLogin | RespostaCadastroPendenteVerificacao>(
       "/auth/register/empresa",
-      payload,
+      { idioma: obterIdioma(), ...payload },
     );
     if ("token" in data) {
       definirTokens(data.token, data.refreshToken);
@@ -75,6 +77,14 @@ export const autenticacaoService = {
   async concluirCadastro(): Promise<Usuario> {
     const { data } = await clienteApi.post<{ usuario: Usuario }>("/auth/cadastro/concluir");
     return data.usuario;
+  },
+
+  /**
+   * Guarda na conta o idioma da interface, para os e-mails e avisos que o servidor envia por conta
+   * própria e para os outros aparelhos da pessoa. Chamada só quando ela escolhe o idioma.
+   */
+  async alterarIdioma(idioma: Idioma): Promise<void> {
+    await clienteApi.patch("/auth/idioma", { idioma });
   },
 
   async sair(): Promise<void> {

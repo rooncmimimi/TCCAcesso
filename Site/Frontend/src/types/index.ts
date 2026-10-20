@@ -1,3 +1,5 @@
+import type { Idioma } from "@/i18n/tipos";
+
 /** Perfis de usuário suportados pela plataforma. */
 export type TipoUsuario = "candidato" | "empresa" | "administrador";
 
@@ -33,6 +35,11 @@ export interface Usuario {
   cadastroConcluidoEm?: string | null;
   /** Só vem preenchido na resposta pro próprio dono (nunca em perfis de terceiros). */
   preferenciaMensagens?: PreferenciaMensagens;
+  /**
+   * Idioma da interface salvo na conta (`pt`, `en` ou `es`). Vem no login, no cadastro e em
+   * `/auth/me`; o `SessaoProvider` o adota ao entrar e o atualiza quando a pessoa troca de idioma.
+   */
+  idioma?: Idioma;
   /**
    * Só vem preenchido quando `tipo === "empresa"` (login/cadastro e
    * `/auth/me` já retornam esta associação); usado para decidir se a

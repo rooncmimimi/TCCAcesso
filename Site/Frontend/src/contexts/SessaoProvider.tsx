@@ -9,6 +9,7 @@ import acessibilidadeService, {
   preferenciasParaApi,
 } from "@/services/acessibilidade.service";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { aoEscolherIdioma, definirIdioma, ehIdioma, obterIdioma } from "@/i18n";
 import type { TipoUsuario, Usuario } from "@/types";
 import { type UsuarioSessao, type SessaoContextValue, SessaoContext } from "@/contexts/SessaoContext";
 
@@ -21,6 +22,17 @@ function normalizarUsuarioSessao(usuario: Usuario | (Usuario & Record<string, un
     cidade: (bruto.cidade as string | null) ?? null,
     onboarded: Boolean(bruto.onboarded ?? true),
   };
+}
+
+/**
+ * No login e ao recarregar a página, o idioma salvo na conta passa a valer na interface — é o que
+ * faz a escolha acompanhar a pessoa de um aparelho para outro. A origem `"conta"` impede que essa
+ * troca volte ao servidor como se a pessoa tivesse acabado de escolher (ver `i18n/estado.ts`).
+ */
+function adotarIdiomaDaConta(usuario: Usuario) {
+  if (ehIdioma(usuario.idioma) && usuario.idioma !== obterIdioma()) {
+    definirIdioma(usuario.idioma, "conta");
+  }
 }
 
 /**
@@ -44,6 +56,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     try {
       setCarregando(true);
       const perfil = await autenticacaoService.perfilAtual();
+      adotarIdiomaDaConta(perfil);
       setUsuario(normalizarUsuarioSessao(perfil));
       conectarSocket();
     } catch {
@@ -59,6 +72,16 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   }, [carregarPerfil]);
 
   useEffect(() => {
+    // Só a escolha feita na interface chega aqui (`origem: "usuario"`); adotar o idioma da conta não
+    // dispara este aviso, então não há laço. Falha em silêncio: o idioma já mudou na tela e a conta
+    // se acerta na próxima escolha.
+    return aoEscolherIdioma((novo) => {
+      if (!obterAccessToken()) return;
+      void autenticacaoService.alterarIdioma(novo).catch(() => {});
+    });
+  }, []);
+
+  useEffect(() => {
     // `motivo` só vem quando a sessão acabou por bloqueio da conta (ver `services/api.ts`); nesse
     // caso mostra a mensagem do backend, em vez do encerramento silencioso, que pareceria só uma
     // sessão expirada.
@@ -72,6 +95,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const aposAutenticar = useCallback((usuario: Usuario) => {
+    adotarIdiomaDaConta(usuario);
     const normalizado = normalizarUsuarioSessao(usuario);
     setUsuario(normalizado);
     conectarSocket();

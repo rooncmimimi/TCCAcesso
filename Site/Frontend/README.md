@@ -53,6 +53,7 @@ src/
 ├── components/   Componentes reutilizáveis (UI e acessibilidade)
 ├── contexts/     Providers de acessibilidade, voz e sessão
 ├── hooks/        Hooks personalizados
+├── i18n/         Idiomas do Site (pt, en, es): dicionários, estado e seletor
 ├── layouts/      Cabeçalho e casca da aplicação
 ├── lib/          Utilidades e dados de apoio
 ├── routes/       Páginas (roteamento por arquivos do TanStack Router)
@@ -64,6 +65,29 @@ src/
 
 > `src/routeTree.gen.ts` é gerado automaticamente pelo TanStack Router ao rodar
 > `npm run dev` ou `npm run build`.
+
+## Idiomas (pt, en, es)
+
+O Site inteiro está em português, inglês e espanhol, com o seletor de idioma no topo de todas as
+páginas. Não há biblioteca de i18n: são dicionários tipados em `src/i18n/`.
+
+- `src/i18n/pt/<área>.ts` é a fonte da verdade. O tipo do dicionário sai dele (`Dicionario`), e
+  `en/` e `es/` são declarados com esse tipo: esquecer uma chave, ou errar a assinatura de uma
+  função de texto, é erro de compilação (`npm run typecheck`).
+- Em componentes: `const t = useT()` e `t.<área>.<chave>`. Fora de componentes (título da página
+  no `head` da rota, avisos de serviços): `dic()` e `metaPagina(dic().<área>.meta)`.
+- Textos com número ou nome são funções (`t.comum.pagina(2, 5)`); plural e concordância ficam
+  dentro da função, em cada idioma.
+- Datas, números e moeda: use `utils/formatacao.ts`, que segue o idioma ativo.
+- Valores que vêm do backend (status, modalidade, contrato…) são traduzidos por mapas do dicionário,
+  com o valor cru como reserva. Texto escrito por pessoas (posts, currículo, descrições de vaga)
+  não é traduzido.
+- A escolha vale por navegador (`localStorage`) e, com a pessoa logada, também fica salva na conta
+  (`usuarios.idioma`), para o servidor responder e enviar e-mails no mesmo idioma. O cliente HTTP
+  manda o idioma no cabeçalho `Accept-Language`.
+- Termos de Uso e Política de Privacidade têm tradução completa em `src/i18n/<idioma>/legal.ts`;
+  o português prevalece em caso de divergência. Traduzir não muda a `VERSAO_DOCUMENTOS`.
+- `src/i18n/dicionario.test.ts` falha se uma tradução ficar vazia ou igual ao português.
 
 ## Deploy (Vercel)
 

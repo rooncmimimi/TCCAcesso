@@ -62,7 +62,7 @@ export interface Candidato {
   tituloProfissional?: string | null;
   cidade?: string | null;
   estado?: string | null;
-  /** Código ISO 3166-1 alpha-2 maiúsculo (`BR`), nunca o nome escrito. Ver `dados/paises.ts`. */
+  /** Código ISO 3166-1 alpha-2 maiúsculo (`BR`), nunca o nome escrito. Ver `dados/localidade.ts`. */
   pais?: string | null;
   endereco?: string | null;
   cep?: string | null;

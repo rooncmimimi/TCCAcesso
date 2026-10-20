@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm, type FieldPath, type Resolver } from "react-hook-form";
+import { useForm, type FieldPath } from "react-hook-form";
 import { Accessibility } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -19,13 +19,11 @@ import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
 import { EtapaCurriculoPerfil } from "@/components/cadastro/EtapaCurriculoPerfil";
 import { LegendaObrigatorio } from "@/components/cadastro/MarcaObrigatorio";
-import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
 import { PassosCadastro } from "@/components/cadastro/PassosCadastro";
 import { RequisitosSenha } from "@/components/cadastro/RequisitosSenha";
-import { SeletorIdioma } from "@/components/cadastro/SeletorIdioma";
 import { AceiteTermos, BotaoFinalizar, NavegacaoEtapa, TituloEtapa } from "@/components/cadastro/comuns";
-import { textosDoCadastro, type CodigoIdioma, type TextosCadastro } from "@/components/cadastro/idioma";
-import { ehCodigoDePais } from "@/dados/paises";
+import { textosDoCadastro, type TextosCadastro } from "@/components/cadastro/idioma";
+import { PAIS_PADRAO } from "@/dados/localidade";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
@@ -34,16 +32,14 @@ import { extrairMensagemErro } from "@/services/api";
 import { formatarCpf, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
 
 /**
- * Esquema do candidato montado a partir dos textos do idioma escolhido, para as mensagens de erro
- * acompanharem a tradução — errar em português numa tela em espanhol é justamente a hora em que a
- * pessoa mais precisa entender.
+ * Esquema do candidato, montado a partir dos textos do cadastro.
  *
  * **Todo campo aqui é obrigatório.** Os dois únicos opcionais do cadastro — foto de perfil e
- * currículo — não passam por este esquema; ficam na etapa 3, que tem validação própria.
+ * currículo — não passam por este esquema; ficam na etapa 3, que tem validação própria. O país não
+ * é perguntado: vai sempre como `PAIS_PADRAO` (ver `dados/localidade.ts`).
  */
 function criarEsquemaCandidato(t: TextosCadastro) {
   return z.object({
-    pais: z.string().trim().min(1, t.erroPais).refine(ehCodigoDePais, t.erroPaisLista),
     email: z.string().trim().min(1, t.erroEmail).email(t.erroEmailFormato).max(150),
     cpf: z
       .string()
@@ -82,12 +78,15 @@ function criarEsquemaCandidato(t: TextosCadastro) {
 type FormCandidato = z.infer<ReturnType<typeof criarEsquemaCandidato>>;
 /** Campos validados antes de liberar cada etapa do candidato. O índice é o da etapa. */
 const CAMPOS_CANDIDATO: FieldPath<FormCandidato>[][] = [
-  ["pais", "email", "cpf", "senha", "termos"],
+  ["email", "cpf", "senha", "termos"],
   ["nome", "telefone", "dataNascimento", "cidade", "estado"],
 ];
 
 /** Índices das etapas do candidato, para nenhum número solto ficar espalhado pelo arquivo. */
 const CANDIDATO = { CONTA: 0, DADOS: 1, PERFIL: 2, ACESSIBILIDADE: 3 } as const;
+
+/** O cadastro é só em português: não há seletor de idioma. */
+const TEXTOS = textosDoCadastro("pt");
 
 export const Route = createFileRoute("/cadastro/candidato")({
   validateSearch: z.object({
@@ -115,19 +114,7 @@ export const Route = createFileRoute("/cadastro/candidato")({
 function CadastroCandidato() {
   const { retomar, depois, google } = Route.useSearch();
   const { autenticado, usuario } = useSessao();
-  // O idioma vale só enquanto o cadastro durar: não é salvo na conta, porque nada fora deste fluxo
-  // está traduzido e uma preferência gravada não teria onde ser honrada depois do login.
-  const [idioma, setIdioma] = useState<CodigoIdioma>("pt");
-  const t = useMemo(() => textosDoCadastro(idioma), [idioma]);
-
-  // Mantém o `lang` do documento de acordo com a escolha: leitor de tela troca a pronúncia por ele.
-  useEffect(() => {
-    const anterior = document.documentElement.lang;
-    document.documentElement.lang = t.htmlLang;
-    return () => {
-      document.documentElement.lang = anterior;
-    };
-  }, [t.htmlLang]);
+  const t = TEXTOS;
 
   // Só retoma de verdade quem está logado como candidato e ainda não terminou o cadastro. Sem isso
   // um `?retomar=true` colado na barra levaria alguém deslogado a uma etapa que precisa de sessão.
@@ -135,21 +122,16 @@ function CadastroCandidato() {
 
   return (
     <AutenticacaoLayout className="max-w-lg">
-      {/* Quebra em duas linhas quando logo + idioma + acessibilidade não cabem (celular estreito),
-          em vez de espremer e cortar o último botão. */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+      <div className="mb-6 flex items-center justify-between gap-3">
         <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
           <Logo />
         </Link>
-        <div className="flex flex-1 items-center justify-end gap-2">
-          <SeletorIdioma idioma={idioma} aoTrocar={setIdioma} rotulo={t.idiomaRotulo} />
-          <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t.acessibilidade}>
-            <Link to="/configuracoes/acessibilidade">
-              <Accessibility aria-hidden="true" />
-              <span className="hidden sm:inline">{t.acessibilidade}</span>
-            </Link>
-          </Button>
-        </div>
+        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t.acessibilidade}>
+          <Link to="/configuracoes/acessibilidade">
+            <Accessibility aria-hidden="true" />
+            <span className="hidden sm:inline">{t.acessibilidade}</span>
+          </Link>
+        </Button>
       </div>
 
       <Card className="shadow-card">
@@ -210,23 +192,16 @@ function WizardCandidato({
     setPasso(novoPasso);
   }
 
-  // O esquema muda junto com o idioma; a ref deixa o resolver sempre enxergar o mais recente, para
-  // trocar de idioma no meio do formulário também trocar a língua das mensagens de erro.
   // Nome e e-mail que o Google já informou, para a pessoa não redigitar (e o e-mail bater com a
   // conta Google que está sendo vinculada).
   const doGoogle = useMemo(() => perfilDoCodigoGoogle(googleCodigo), [googleCodigo]);
 
   const esquema = useMemo(() => criarEsquemaCandidato(t), [t]);
-  const esquemaRef = useRef(esquema);
-  esquemaRef.current = esquema;
-  const resolver: Resolver<FormCandidato> = (valores, contexto, opcoes) =>
-    zodResolver(esquemaRef.current)(valores, contexto, opcoes);
 
   const form = useForm<FormCandidato>({
-    resolver,
+    resolver: zodResolver(esquema),
     mode: "onTouched",
     defaultValues: {
-      pais: "BR",
       email: doGoogle?.email ?? "",
       cpf: "",
       senha: "",
@@ -270,7 +245,7 @@ function WizardCandidato({
         senha: v.senha,
         telefone: somenteDigitos(v.telefone),
         cpf: somenteDigitos(v.cpf),
-        pais: v.pais,
+        pais: PAIS_PADRAO,
         dataNascimento: v.dataNascimento,
         cidade: v.cidade,
         estado: v.estado.toUpperCase(),
@@ -378,18 +353,6 @@ function WizardCandidato({
           <LegendaObrigatorio texto={t.legendaObrigatorio} />
 
           <div className="space-y-5">
-            <Campo id="pais" rotulo={t.pais} ajuda={t.paisAjuda} erro={erros.pais?.message} obrigatorio>
-              <PaisAutocomplete
-                id="pais"
-                valor={watch("pais") ?? ""}
-                aoMudar={(codigo) => setValue("pais", codigo, { shouldValidate: true })}
-                temErro={Boolean(erros.pais)}
-                descrito={descricao("pais", true, Boolean(erros.pais))}
-                desabilitado={enviando}
-                placeholder={t.paisBuscar}
-              />
-            </Campo>
-
             <Campo
               id="email-cadastro"
               rotulo={t.email}

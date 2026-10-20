@@ -9,6 +9,10 @@
  * O idioma **não** é salvo na conta, por decisão do produto: nada fora do cadastro está traduzido,
  * então uma preferência gravada não teria onde ser honrada depois do login.
  *
+ * Hoje o cadastro usa só o português (`textosDoCadastro("pt")`): o seletor de idioma saiu da tela.
+ * As versões em inglês e espanhol continuam aqui, sem uso, para quando o seletor ou a tradução do
+ * site voltarem — mantê-las exige acompanhar as chaves novas do português.
+ *
  * As mensagens de erro moram aqui junto dos rótulos de propósito. Traduzir só o rótulo e deixar o
  * erro em português deixaria a tela meio traduzida justamente na hora em que a pessoa mais precisa
  * entender o que fazer.
@@ -23,7 +27,6 @@ export type CodigoIdioma = (typeof IDIOMAS)[number]["codigo"];
 
 const pt = {
   htmlLang: "pt-BR",
-  idiomaRotulo: "Idioma",
   legendaObrigatorio: "Campo obrigatório",
   dicaObrigatorio: "Campo obrigatório",
 
@@ -49,9 +52,6 @@ const pt = {
 
   contaTitulo: "Crie sua conta",
   contaDescricao: "Só o essencial para começar. Os dados do seu perfil vêm depois.",
-  pais: "País onde você mora",
-  paisAjuda: "Define quais vagas e formatos de contratação fazem sentido para você.",
-  paisBuscar: "Digite para buscar",
   email: "E-mail",
   emailAjuda: "Use um e-mail que você acessa: é por ele que você entra na plataforma.",
   cpf: "CPF",
@@ -125,8 +125,6 @@ const pt = {
   acessDescricao:
     "Ajuste o que precisar e veja o resultado na hora. Você pode mudar tudo depois, em Configurações. Nada aqui é obrigatório.",
 
-  erroPais: "Escolha o país onde você mora.",
-  erroPaisLista: "Escolha um país da lista.",
   erroEmail: "Informe seu e-mail.",
   erroEmailFormato: "Digite um endereço de e-mail válido.",
   erroCpf: "Informe seu CPF.",
@@ -136,7 +134,7 @@ const pt = {
   erroSenhaMaiuscula: "A senha deve conter ao menos uma letra maiúscula.",
   erroSenhaNumero: "A senha deve conter ao menos um número.",
   erroSenhaEspecial: "A senha deve conter ao menos um caractere especial.",
-  erroTermos: "É preciso aceitar os Termos de Uso e o Aviso de Privacidade para criar a conta.",
+  erroTermos: "É preciso aceitar os Termos de Uso e a Política de Privacidade para criar a conta.",
   erroNome: "Informe seu nome completo (ao menos 3 caracteres).",
   erroTelefone: "Informe seu telefone.",
   erroTelefoneFormato: "Digite um telefone válido, com DDD.",
@@ -157,7 +155,6 @@ type Textos = typeof pt;
 
 const en: Textos = {
   htmlLang: "en",
-  idiomaRotulo: "Language",
   legendaObrigatorio: "Required field",
   dicaObrigatorio: "Required field",
 
@@ -183,9 +180,6 @@ const en: Textos = {
 
   contaTitulo: "Create your account",
   contaDescricao: "Just the essentials to get started. Your profile details come next.",
-  pais: "Country where you live",
-  paisAjuda: "It tells us which jobs and contract types make sense for you.",
-  paisBuscar: "Type to search",
   email: "Email",
   emailAjuda: "Use an email you can access: it is how you sign in to the platform.",
   cpf: "CPF (Brazilian tax ID)",
@@ -259,8 +253,6 @@ const en: Textos = {
   acessDescricao:
     "Adjust whatever you need and see the result right away. You can change everything later in Settings. Nothing here is required.",
 
-  erroPais: "Choose the country where you live.",
-  erroPaisLista: "Choose a country from the list.",
   erroEmail: "Enter your email.",
   erroEmailFormato: "Enter a valid email address.",
   erroCpf: "Enter your CPF.",
@@ -270,7 +262,7 @@ const en: Textos = {
   erroSenhaMaiuscula: "The password must contain at least one uppercase letter.",
   erroSenhaNumero: "The password must contain at least one number.",
   erroSenhaEspecial: "The password must contain at least one special character.",
-  erroTermos: "You must accept the Terms of Use and the Privacy Notice to create an account.",
+  erroTermos: "You must accept the Terms of Use and the Privacy Policy to create an account.",
   erroNome: "Enter your full name (at least 3 characters).",
   erroTelefone: "Enter your phone number.",
   erroTelefoneFormato: "Enter a valid phone number, including area code.",
@@ -288,7 +280,6 @@ const en: Textos = {
 
 const es: Textos = {
   htmlLang: "es",
-  idiomaRotulo: "Idioma",
   legendaObrigatorio: "Campo obligatorio",
   dicaObrigatorio: "Campo obligatorio",
 
@@ -314,9 +305,6 @@ const es: Textos = {
 
   contaTitulo: "Crea tu cuenta",
   contaDescricao: "Solo lo esencial para empezar. Los datos de tu perfil vienen después.",
-  pais: "País donde vives",
-  paisAjuda: "Define qué vacantes y formatos de contratación tienen sentido para ti.",
-  paisBuscar: "Escribe para buscar",
   email: "Correo electrónico",
   emailAjuda: "Usa un correo al que tengas acceso: es con él que entras en la plataforma.",
   cpf: "CPF (identificación fiscal brasileña)",
@@ -390,8 +378,6 @@ const es: Textos = {
   acessDescricao:
     "Ajusta lo que necesites y mira el resultado al instante. Puedes cambiarlo todo después, en Configuración. Nada aquí es obligatorio.",
 
-  erroPais: "Elige el país donde vives.",
-  erroPaisLista: "Elige un país de la lista.",
   erroEmail: "Introduce tu correo electrónico.",
   erroEmailFormato: "Introduce una dirección de correo válida.",
   erroCpf: "Introduce tu CPF.",
@@ -401,7 +387,7 @@ const es: Textos = {
   erroSenhaMaiuscula: "La contraseña debe contener al menos una letra mayúscula.",
   erroSenhaNumero: "La contraseña debe contener al menos un número.",
   erroSenhaEspecial: "La contraseña debe contener al menos un carácter especial.",
-  erroTermos: "Debes aceptar los Términos de Uso y el Aviso de Privacidad para crear la cuenta.",
+  erroTermos: "Debes aceptar los Términos de Uso y la Política de Privacidad para crear la cuenta.",
   erroNome: "Introduce tu nombre completo (al menos 3 caracteres).",
   erroTelefone: "Introduce tu teléfono.",
   erroTelefoneFormato: "Introduce un teléfono válido, con prefijo.",

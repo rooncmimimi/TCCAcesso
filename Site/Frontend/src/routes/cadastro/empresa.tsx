@@ -18,7 +18,6 @@ import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
 import { LegendaObrigatorio } from "@/components/cadastro/MarcaObrigatorio";
-import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
 import { PassosCadastro } from "@/components/cadastro/PassosCadastro";
 import { RequisitosSenha } from "@/components/cadastro/RequisitosSenha";
 import {
@@ -28,7 +27,7 @@ import {
   NavegacaoEtapa,
   TituloEtapa,
 } from "@/components/cadastro/comuns";
-import { ehCodigoDePais, PAIS_POR_CODIGO } from "@/dados/paises";
+import { PAIS_PADRAO } from "@/dados/localidade";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { extrairMensagemErro } from "@/services/api";
@@ -69,7 +68,6 @@ const esquemaEmpresa = z.object({
     ),
   senha: regraSenha,
 
-  pais: z.string().trim().optional().refine((v) => !v || ehCodigoDePais(v), "Escolha um país da lista."),
   cep: z
     .string()
     .trim()
@@ -100,7 +98,7 @@ const PASSOS = ["Empresa", "Responsável", "Endereço", "Apresentação", "Concl
 const CAMPOS: FieldPath<FormEmpresa>[][] = [
   ["cnpj", "razaoSocial", "nomeFantasia", "setor", "porte"],
   ["nome", "email", "telefone", "senha"],
-  ["pais", "cep", "estado", "cidade", "endereco"],
+  ["cep", "estado", "cidade", "endereco"],
   ["descricao", "site", "culturaInclusiva"],
   ["termos"],
 ];
@@ -243,7 +241,6 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       email: "",
       telefone: "",
       senha: "",
-      pais: "BR",
       cep: "",
       estado: "",
       cidade: "",
@@ -269,6 +266,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
         razaoSocial: v.razaoSocial,
         // Registra qual versão dos documentos legais a tela mostrou no momento do aceite.
         termosVersao: VERSAO_DOCUMENTOS,
+        // O cadastro não pergunta o país (ver `dados/localidade.ts`).
+        pais: PAIS_PADRAO,
       };
       for (const [chave, valor] of Object.entries({
         telefone: v.telefone ? somenteDigitos(v.telefone) : "",
@@ -282,7 +281,6 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
         cidade: v.cidade,
         cep: v.cep ? somenteDigitos(v.cep) : "",
         estado: v.estado ? v.estado.toUpperCase() : "",
-        pais: v.pais ? v.pais.toUpperCase() : "",
       })) {
         if (valor) payload[chave] = valor;
       }
@@ -509,17 +507,6 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
           />
 
           <div className="space-y-5">
-            <Campo id="pais-empresa" rotulo="País (opcional)" erro={erros.pais?.message}>
-              <PaisAutocomplete
-                id="pais-empresa"
-                valor={watch("pais") ?? ""}
-                aoMudar={(codigo) => setValue("pais", codigo, { shouldValidate: true })}
-                temErro={Boolean(erros.pais)}
-                descrito={descricao("pais-empresa", false, Boolean(erros.pais))}
-                desabilitado={enviando}
-              />
-            </Campo>
-
             <Campo id="cep" rotulo="CEP (opcional)" erro={erros.cep?.message}>
               <Input
                 id="cep"
@@ -702,7 +689,6 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
       passo: EMPRESA.ENDERECO,
       titulo: "Endereço",
       itens: [
-        ["País", valores.pais ? PAIS_POR_CODIGO.get(valores.pais) : ""],
         ["CEP", valores.cep],
         ["Cidade", valores.cidade],
         ["Estado", valores.estado],

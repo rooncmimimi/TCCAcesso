@@ -5,6 +5,7 @@ import NotificacaoService from "./NotificacaoService.js";
 import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import { tentarAvisarPorEmail } from "../utils/avisoEmail.js";
 import { modeloEmpresaSuspensa } from "../utils/modelosEmail.js";
+import { idiomaDoDestinatario } from "../i18n/idioma.js";
 
 /**
  * Painel administrativo: aprovação, verificação e suspensão de empresas.
@@ -185,14 +186,19 @@ class AdminEmpresaService {
         // garante que ela saiba o motivo mesmo sem abrir o painel. Enviado sem garantia, depois de
         // tudo já gravado.
         const usuarioDaEmpresa = await Usuario.findByPk(empresa.usuarioId, {
-            attributes: ["id", "nome", "email"]
+            attributes: ["id", "nome", "email", "idioma"]
         });
         if (usuarioDaEmpresa) {
             await tentarAvisarPorEmail({
                 usuarioId: usuarioDaEmpresa.id,
                 email: usuarioDaEmpresa.email,
                 nome: usuarioDaEmpresa.nome,
-                template: modeloEmpresaSuspensa({ nome: usuarioDaEmpresa.nome, motivo: motivo || null }),
+                // No idioma da conta atingida, nunca no de quem está moderando.
+                template: modeloEmpresaSuspensa({
+                    nome: usuarioDaEmpresa.nome,
+                    motivo: motivo || null,
+                    idioma: idiomaDoDestinatario(usuarioDaEmpresa)
+                }),
                 tag: "empresa-suspensa",
                 acao: "aviso_empresa_suspensa",
                 servico: "AdminEmpresaService"

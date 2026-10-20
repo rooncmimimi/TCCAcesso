@@ -213,7 +213,7 @@ class AdminController {
 
     async logs(req, res, next) {
         try {
-            const dados = await AdminAuditoriaService.listar(req.query);
+            const dados = await AdminAuditoriaService.listar(req.query, req.idioma);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);

@@ -14,6 +14,8 @@ import {
     Notificacao
 } from "../models/index.js";
 import ErroApi from "../utils/ErroApi.js";
+import { idiomaAtual } from "../i18n/idioma.js";
+import { traduzir } from "../i18n/traduzir.js";
 import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import { ehAdministrador } from "../utils/autorizacao.js";
 import NotificacaoService from "./NotificacaoService.js";
@@ -536,7 +538,7 @@ class SeguidorService {
      * comum. Nunca usa deficiência, diagnóstico ou qualquer dado de saúde, que nem são consultados
      * aqui.
      */
-    async sugestoesPessoas(solicitante, limite = 8) {
+    async sugestoesPessoas(solicitante, limite = 8, idioma = idiomaAtual()) {
         const limiteFinal = Math.min(Number(limite) || 8, 20);
 
         const [jaSeguidos, idsBloqueio, meuCandidato] = await Promise.all([
@@ -674,7 +676,8 @@ class SeguidorService {
             fotoPerfil: usuario.fotoPerfil,
             tipo: usuario.tipoUsuario,
             titulo: usuario.candidato?.tituloProfissional ?? null,
-            motivo: motivos[0] ?? "Novo no ACESSO"
+            // O motivo nasce em português e sai no idioma de quem pediu.
+            motivo: traduzir(motivos[0] ?? "Novo no ACESSO", idioma)
         }));
     }
 
@@ -682,8 +685,8 @@ class SeguidorService {
      * Sem chamador: a rota GET /seguir/sugestoes usa `sugestoesPessoas` direto, pelo
      * `SeguidorController.sugestoes`.
      */
-    async sugestoes(solicitante, limite = 5) {
-        return this.sugestoesPessoas(solicitante, limite);
+    async sugestoes(solicitante, limite = 5, idioma = idiomaAtual()) {
+        return this.sugestoesPessoas(solicitante, limite, idioma);
     }
 
     /*
@@ -691,7 +694,7 @@ class SeguidorService {
      * donas de vagas favoritadas, mesmo setor das empresas de interesse e mesma cidade do
      * candidato; nunca deficiência ou diagnóstico.
      */
-    async sugestoesEmpresas(solicitante, limite = 8) {
+    async sugestoesEmpresas(solicitante, limite = 8, idioma = idiomaAtual()) {
         const limiteFinal = Math.min(Number(limite) || 8, 20);
 
         const candidato = await Candidato.findOne({ where: { usuarioId: solicitante.id } });
@@ -782,7 +785,7 @@ class SeguidorService {
             cidade: empresa.cidade,
             descricao: empresa.descricao,
             empresaVerificada: empresa.empresaVerificada,
-            motivo: motivos[0] ?? "Empresa parceira do ACESSO"
+            motivo: traduzir(motivos[0] ?? "Empresa parceira do ACESSO", idioma)
         }));
     }
 }

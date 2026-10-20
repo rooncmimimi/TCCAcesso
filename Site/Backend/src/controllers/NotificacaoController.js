@@ -7,7 +7,7 @@ import NotificacaoPushService from "../services/NotificacaoPushService.js";
 class NotificacaoController {
     async listar(req, res, next) {
         try {
-            const dados = await NotificacaoService.listar(req.user, req.query);
+            const dados = await NotificacaoService.listar(req.user, req.query, req.idioma);
 
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
@@ -29,7 +29,8 @@ class NotificacaoController {
         try {
             const notificacao = await NotificacaoService.marcarComoLida(
                 req.params.id,
-                req.user
+                req.user,
+                req.idioma
             );
 
             return res.status(200).json({ sucesso: true, notificacao });

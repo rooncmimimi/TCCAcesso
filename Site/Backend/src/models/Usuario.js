@@ -1,6 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/bancoDeDados.js";
 import { resolverUrlExibicao } from "../utils/supabaseStorage.js";
+import { IDIOMAS } from "../i18n/idioma.js";
 
 /** Tabela `usuarios`: toda conta da plataforma (candidato, empresa ou administrador). */
 const Usuario = sequelize.define(
@@ -146,6 +147,17 @@ const Usuario = sequelize.define(
 
         termosVersao: {
             type: DataTypes.STRING(20)
+        },
+
+        // Idioma da interface escolhido pela pessoa. Define a língua do que o servidor escreve por
+        // conta própria (e-mails de moderação, push) e acompanha a conta entre aparelhos.
+        idioma: {
+            type: DataTypes.STRING(2),
+            allowNull: false,
+            defaultValue: "pt",
+            validate: {
+                isIn: [IDIOMAS]
+            }
         }
     },
     {

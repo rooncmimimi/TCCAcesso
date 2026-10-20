@@ -1,6 +1,7 @@
 import { verificarJwt, tokenAnteriorATrocaDeSenha } from "../utils/jwt.js";
 import { Usuario } from "../models/index.js";
 import ErroApi from "../utils/ErroApi.js";
+import { adotarIdiomaDaConta } from "../i18n/idioma.js";
 
 /**
  * Autenticação via Bearer Token (JWT).
@@ -36,6 +37,10 @@ const autenticacaoMiddleware = async (req, res, next) => {
         if (!usuario) {
             throw ErroApi.naoAutenticado("Usuário não encontrado.");
         }
+
+        // Sem `Accept-Language` na requisição (o app Android, por exemplo), vale o idioma da conta;
+        // antes dos portões abaixo, para que até a recusa por bloqueio saia no idioma certo.
+        adotarIdiomaDaConta(req, usuario);
 
         // `bloqueado` é checado antes de `ativo`: o bloqueio administrativo também desliga `ativo`,
         // e na ordem inversa toda conta bloqueada cairia no "Usuário desativado." genérico, sem

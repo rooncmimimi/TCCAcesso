@@ -3,6 +3,7 @@ import { urlPublica } from "../middlewares/uploadMiddleware.js";
 import { Candidato } from "../models/index.js";
 import ArmazenamentoService from "../services/ArmazenamentoService.js";
 import { contextoRequisicao } from "../utils/contextoRequisicao.js";
+import { traduzir } from "../i18n/traduzir.js";
 
 /**
  * Perfil de candidato (`/candidatos`), com currículo (envio, importação, URL assinada e download) e
@@ -178,7 +179,12 @@ class CandidatoController {
                 req.user
             );
 
-            return res.status(200).json({ sucesso: true, rascunho });
+            // O aviso do rascunho nasce em português e sai no idioma de quem enviou o arquivo (o contexto
+            // de idioma não sobrevive ao multer, por isso o idioma vem de `req`).
+            return res.status(200).json({
+                sucesso: true,
+                rascunho: { ...rascunho, aviso: traduzir(rascunho.aviso, req.idioma) }
+            });
         } catch (erro) {
             return next(erro);
         }

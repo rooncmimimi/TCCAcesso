@@ -7,6 +7,7 @@ import path from "node:path";
 import env from "./config/env.js";
 import routes from "./routes/index.js";
 import erroMiddleware from "./middlewares/erroMiddleware.js";
+import idiomaMiddleware, { contextoDeIdioma } from "./middlewares/idiomaMiddleware.js";
 import { limiteApi } from "./middlewares/limiteRequisicoesMiddleware.js";
 import ErroApi from "./utils/ErroApi.js";
 
@@ -21,6 +22,10 @@ app.use(
         crossOriginResourcePolicy: { policy: "cross-origin" }
     })
 );
+
+/* Idioma da requisição (pt, en, es) e tradução das mensagens da resposta; antes do CORS e dos
+   parsers para que até a recusa deles já saia no idioma certo. */
+app.use(idiomaMiddleware);
 
 app.use(
     cors({
@@ -39,6 +44,9 @@ app.use(
 /* Parsers */
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+/* Contexto de idioma para os services (e-mails, notificações): depois dos parsers, ver o middleware */
+app.use(contextoDeIdioma);
 
 /* Logs */
 app.use(morgan(env.isProducao ? "combined" : "dev"));

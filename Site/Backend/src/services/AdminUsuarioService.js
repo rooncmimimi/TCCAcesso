@@ -17,6 +17,7 @@ import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import ArmazenamentoService from "./ArmazenamentoService.js";
 import { tentarAvisarPorEmail } from "../utils/avisoEmail.js";
 import { modeloContaBloqueada } from "../utils/modelosEmail.js";
+import { idiomaDoDestinatario } from "../i18n/idioma.js";
 
 /**
  * Painel administrativo: moderação de usuários (bloqueio, exclusão
@@ -147,7 +148,12 @@ class AdminUsuarioService {
                 usuarioId: usuario.id,
                 email: usuario.email,
                 nome: usuario.nome,
-                template: modeloContaBloqueada({ nome: usuario.nome, motivo: motivo || null }),
+                // No idioma da conta bloqueada, nunca no de quem está moderando.
+                template: modeloContaBloqueada({
+                    nome: usuario.nome,
+                    motivo: motivo || null,
+                    idioma: idiomaDoDestinatario(usuario)
+                }),
                 tag: "conta-bloqueada",
                 acao: "aviso_conta_bloqueada",
                 servico: "AdminUsuarioService"

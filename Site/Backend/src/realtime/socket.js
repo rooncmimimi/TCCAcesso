@@ -3,6 +3,8 @@ import { Server } from "socket.io";
 import env from "../config/env.js";
 import { verificarJwt, tokenAnteriorATrocaDeSenha } from "../utils/jwt.js";
 import { Usuario, Conversa } from "../models/index.js";
+import { ehIdioma, IDIOMA_PADRAO } from "../i18n/idioma.js";
+import { traduzir } from "../i18n/traduzir.js";
 
 /**
  * Camada de tempo real (Socket.IO).
@@ -17,6 +19,21 @@ import { Usuario, Conversa } from "../models/index.js";
  */
 
 let io = null;
+
+/**
+ * Idioma das mensagens de erro do socket: o que o cliente declarou no handshake (`auth.idioma`) ou,
+ * quando não declarou, o salvo na conta. O socket não tem `Accept-Language` próprio.
+ */
+const idiomaDoSocket = (socket, usuario) => {
+    const pedido = socket.handshake.auth?.idioma;
+
+    if (ehIdioma(pedido)) return pedido;
+
+    return ehIdioma(usuario?.idioma) ? usuario.idioma : IDIOMA_PADRAO;
+};
+
+const erroTraduzido = (socket, usuario, mensagem) =>
+    new Error(traduzir(mensagem, idiomaDoSocket(socket, usuario)));
 
 export const salaUsuario = (usuarioId) => `usuario:${usuarioId}`;
 export const salaConversa = (conversaId) => `conversa:${conversaId}`;
@@ -70,7 +87,7 @@ export const iniciarSocket = (httpServer) => {
                 );
 
             if (!token) {
-                return next(new Error("Token não informado."));
+                return next(erroTraduzido(socket, null, "Token não informado."));
             }
 
             const payload = verificarJwt(token);
@@ -83,12 +100,13 @@ export const iniciarSocket = (httpServer) => {
                     "ativo",
                     "bloqueado",
                     "motivoBloqueio",
-                    "senhaAlteradaEm"
+                    "senhaAlteradaEm",
+                    "idioma"
                 ]
             });
 
             if (!usuario) {
-                return next(new Error("Sessão inválida."));
+                return next(erroTraduzido(socket, null, "Sessão inválida."));
             }
 
             // Mesma regra do `autenticacaoMiddleware`: token emitido antes da última troca de senha
@@ -96,7 +114,7 @@ export const iniciarSocket = (httpServer) => {
             // `codigo`, como o bloqueio, para o cliente encerrar a sessão em vez de reconectar com
             // um token que nunca mais vai ser aceito.
             if (tokenAnteriorATrocaDeSenha(payload, usuario)) {
-                const erro = new Error("Sua senha foi alterada. Entre novamente.");
+                const erro = erroTraduzido(socket, usuario, "Sua senha foi alterada. Entre novamente.");
                 erro.data = { codigo: "SENHA_ALTERADA" };
                 return next(erro);
             }
@@ -104,7 +122,9 @@ export const iniciarSocket = (httpServer) => {
             // Mesma distinção do REST: o bloqueio administrativo tem `err.data.codigo`, para o
             // cliente parar de reconectar em vez de insistir até esgotar as tentativas automáticas.
             if (usuario.bloqueado) {
-                const erro = new Error(
+                const erro = erroTraduzido(
+                    socket,
+                    usuario,
                     usuario.motivoBloqueio
                         ? `Sua conta foi bloqueada pela moderação do ACESSO. Motivo: ${usuario.motivoBloqueio}`
                         : "Sua conta foi bloqueada pela moderação do ACESSO."
@@ -114,7 +134,7 @@ export const iniciarSocket = (httpServer) => {
             }
 
             if (!usuario.ativo) {
-                return next(new Error("Sessão inválida."));
+                return next(erroTraduzido(socket, usuario, "Sessão inválida."));
             }
 
             socket.data.usuario = {
@@ -122,10 +142,11 @@ export const iniciarSocket = (httpServer) => {
                 nome: usuario.nome,
                 tipoUsuario: usuario.tipoUsuario
             };
+            socket.data.idioma = idiomaDoSocket(socket, usuario);
 
             return next();
         } catch {
-            return next(new Error("Falha na autenticação do socket."));
+            return next(erroTraduzido(socket, null, "Falha na autenticação do socket."));
         }
     });
 
@@ -149,7 +170,10 @@ export const iniciarSocket = (httpServer) => {
                 confirmar(
                     permitido
                         ? { permitido: true }
-                        : { permitido: false, mensagem: "Conversa não disponível." }
+                        : {
+                              permitido: false,
+                              mensagem: traduzir("Conversa não disponível.", socket.data.idioma)
+                          }
                 );
             }
         });

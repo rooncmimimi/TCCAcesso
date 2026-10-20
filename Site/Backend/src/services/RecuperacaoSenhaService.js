@@ -10,6 +10,7 @@ import AutenticacaoService from "./AutenticacaoService.js";
 import { modeloRecuperacaoSenha } from "../utils/modelosEmail.js";
 import { montarUrlFrontend } from "../utils/urlFrontend.js";
 import ErroApi from "../utils/ErroApi.js";
+import { idiomaDoDestinatario } from "../i18n/idioma.js";
 
 const MINUTOS_VALIDADE = 15;
 const MAX_TENTATIVAS = 5;
@@ -72,7 +73,9 @@ class RecuperacaoSenhaService {
                 // O link carrega o token (mecanismo principal), e não e-mail e código: um clique
                 // basta, e o código de 6 dígitos não aparece na URL, no histórico nem no referrer.
                 linkRedefinir: montarUrlFrontend("/redefinir-senha", { token }),
-                minutosValidade: MINUTOS_VALIDADE
+                minutosValidade: MINUTOS_VALIDADE,
+                // Quem pede a recuperação escolheu um idioma na tela agora: vale esse; sem ele, o da conta.
+                idioma: idiomaDoDestinatario(usuario, { daRequisicao: true })
             });
 
             try {

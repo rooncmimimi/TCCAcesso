@@ -3,6 +3,8 @@ import ErroApi from "../utils/ErroApi.js";
 import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import { emitirParaUsuario } from "../realtime/socket.js";
 import NotificacaoPushService from "./NotificacaoPushService.js";
+import { ehIdioma, idiomaAtual, IDIOMA_PADRAO } from "../i18n/idioma.js";
+import { traduzir } from "../i18n/traduzir.js";
 
 /**
  * Mapeia o tipo da notificação para a coluna de preferência correspondente.
@@ -25,6 +27,26 @@ const INCLUIR_ATOR = {
     as: "ator",
     attributes: ["id", "nome", "fotoPerfil"]
 };
+
+/**
+ * A notificação como objeto simples, com título e texto no idioma pedido.
+ *
+ * O texto fica gravado em português (é o que os services escrevem) e é traduzido na saída — na
+ * listagem, no tempo real e no push —, de modo que uma notificação antiga também aparece no idioma
+ * que a pessoa usa hoje. Texto sem tradução (o que alguém digitou, uma prévia de mensagem) sai
+ * como foi gravado.
+ */
+export function notificacaoNoIdioma(notificacao, idioma = idiomaAtual()) {
+    const dados = typeof notificacao?.toJSON === "function" ? notificacao.toJSON() : notificacao;
+
+    if (!dados) return dados;
+
+    return {
+        ...dados,
+        titulo: traduzir(dados.titulo, idioma),
+        descricao: traduzir(dados.descricao, idioma)
+    };
+}
 
 /**
  * Verifica se o usuário aceita notificações desse tipo.
@@ -130,9 +152,31 @@ class NotificacaoService {
     emitirNotificacaoCriada(notificacao, naoLidas) {
         if (!notificacao) return;
 
+        void this.entregar(notificacao, naoLidas);
+    }
+
+    /** Idioma salvo na conta de quem recebe; `pt` se a conta não existe mais ou a consulta falha. */
+    async idiomaDoDestinatario(usuarioId) {
+        try {
+            const usuario = await Usuario.findByPk(usuarioId, { attributes: ["idioma"] });
+
+            return ehIdioma(usuario?.idioma) ? usuario.idioma : IDIOMA_PADRAO;
+        } catch {
+            return IDIOMA_PADRAO;
+        }
+    }
+
+    /**
+     * Tempo real e push saem no idioma da conta de quem recebe — nunca no de quem agiu, que é
+     * quem está na requisição (quem curtiu não escolhe a língua do aviso de quem foi curtido).
+     */
+    async entregar(notificacao, naoLidas) {
+        const idioma = await this.idiomaDoDestinatario(notificacao.usuarioId);
+        const traduzida = notificacaoNoIdioma(notificacao, idioma);
+
         try {
             emitirParaUsuario(notificacao.usuarioId, "notificacao:nova", {
-                notificacao,
+                notificacao: traduzida,
                 naoLidas
             });
         } catch (erro) {
@@ -143,8 +187,8 @@ class NotificacaoService {
         // `notificacaoPermitida`; se chegou aqui, a notificação é permitida). O `data` leva o alvo
         // para o app abrir o conteúdo relacionado ao tocar no push.
         void NotificacaoPushService.enviarParaUsuario(notificacao.usuarioId, {
-            titulo: notificacao.titulo,
-            corpo: notificacao.descricao || "",
+            titulo: traduzida.titulo,
+            corpo: traduzida.descricao || "",
             dados: {
                 notificacaoId: notificacao.id,
                 entidadeTipo: notificacao.entidadeTipo || null,
@@ -158,7 +202,7 @@ class NotificacaoService {
         return Notificacao.count({ where: { usuarioId, lida: false } });
     }
 
-    async listar(solicitante, query) {
+    async listar(solicitante, query, idioma = idiomaAtual()) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const where = { usuarioId: solicitante.id };
@@ -179,7 +223,13 @@ class NotificacaoService {
             order: [["criadoEm", "DESC"]]
         });
 
-        return montarResposta("notificacoes", rows, count, pagina, limite);
+        return montarResposta(
+            "notificacoes",
+            rows.map((notificacao) => notificacaoNoIdioma(notificacao, idioma)),
+            count,
+            pagina,
+            limite
+        );
     }
 
     async contarNaoLidas(solicitante) {
@@ -190,7 +240,7 @@ class NotificacaoService {
         return { naoLidas: total };
     }
 
-    async marcarComoLida(id, solicitante) {
+    async marcarComoLida(id, solicitante, idioma = idiomaAtual()) {
         const notificacao = await Notificacao.findOne({
             where: { id, usuarioId: solicitante.id }
         });
@@ -207,7 +257,7 @@ class NotificacaoService {
             lida: true
         });
 
-        return notificacao;
+        return notificacaoNoIdioma(notificacao, idioma);
     }
 
     async marcarTodasComoLidas(solicitante) {

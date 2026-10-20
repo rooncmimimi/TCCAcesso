@@ -23,6 +23,7 @@ import {
 } from "../utils/modelosEmail.js";
 import { montarUrlFrontend } from "../utils/urlFrontend.js";
 import ErroApi from "../utils/ErroApi.js";
+import { ehIdioma, idiomaAtual, idiomaDoDestinatario } from "../i18n/idioma.js";
 
 const MINUTOS_VALIDADE_EMAIL = 15;
 const MAX_TENTATIVAS_EMAIL = 5;
@@ -104,6 +105,15 @@ class AutenticacaoService {
     }
 
     /**
+     * Idioma que a conta nasce com: o que a tela de cadastro mandou ou, sem ele, o da requisição.
+     * Nunca vem solto do cliente — valor fora de `pt`/`en`/`es` cai no idioma da requisição, que
+     * já é um idioma suportado.
+     */
+    idiomaDoCadastro(idioma) {
+        return ehIdioma(idioma) ? idioma : idiomaAtual();
+    }
+
+    /**
      * Lê o código de entrega do Google e devolve o `sub` verificado, para vincular no cadastro.
      *
      * O `sub` vem do token que **este servidor** assinou depois de verificar o ID token com o
@@ -144,7 +154,7 @@ class AutenticacaoService {
      * o uso da conta é o login (`entrar`), que não barra candidato por e-mail não confirmado.
      */
     async cadastrarCandidato(data, contexto = {}) {
-        const { nome, email, senha, telefone, cpf, pais, dataNascimento, cidade, estado, termosVersao, googleCodigo } = data;
+        const { nome, email, senha, telefone, cpf, pais, dataNascimento, cidade, estado, termosVersao, googleCodigo, idioma } = data;
 
         if (await this.buscarPorEmail(email)) {
             throw ErroApi.conflito("Este e-mail já está cadastrado.");
@@ -166,6 +176,7 @@ class AutenticacaoService {
                     telefone: telefone || null,
                     tipoUsuario: "candidato",
                     emailVerificado: false,
+                    idioma: this.idiomaDoCadastro(idioma),
                     ...this.registroDeAceite(termosVersao),
                     ...this.vinculoGoogle(googleCodigo)
                 },
@@ -255,7 +266,8 @@ class AutenticacaoService {
             cep,
             pais,
             culturaInclusiva,
-            termosVersao
+            termosVersao,
+            idioma
         } = data;
 
         if (await this.buscarPorEmail(email)) {
@@ -278,6 +290,7 @@ class AutenticacaoService {
                     telefone: telefone || null,
                     tipoUsuario: "empresa",
                     emailVerificado: !precisaConfirmarEmail,
+                    idioma: this.idiomaDoCadastro(idioma),
                     ...this.registroDeAceite(termosVersao)
                 },
                 { transaction }
@@ -357,7 +370,8 @@ class AutenticacaoService {
                 codigo
             }),
             codigo,
-            minutosValidade: MINUTOS_VALIDADE_EMAIL
+            minutosValidade: MINUTOS_VALIDADE_EMAIL,
+            idioma: idiomaDoDestinatario(usuario, { daRequisicao: true })
         });
 
         try {
@@ -693,7 +707,10 @@ class AutenticacaoService {
 
         if (!EmailService.disponivel()) return;
 
-        const { assunto, html, texto } = modeloSenhaAlterada({ nome: usuario.nome });
+        const { assunto, html, texto } = modeloSenhaAlterada({
+            nome: usuario.nome,
+            idioma: idiomaDoDestinatario(usuario, { daRequisicao: true })
+        });
 
         try {
             await EmailService.enviar({
@@ -715,6 +732,25 @@ class AutenticacaoService {
                 })
             );
         }
+    }
+
+    /**
+     * Salva o idioma da interface na conta. Chamada quando a pessoa troca de idioma logada; é o que
+     * faz a escolha valer em outro aparelho e define a língua dos e-mails e avisos que o servidor
+     * envia por conta própria.
+     */
+    async alterarIdioma(usuarioId, idioma) {
+        const usuario = await Usuario.findByPk(usuarioId);
+
+        if (!usuario) {
+            throw ErroApi.naoEncontrado("Usuário não encontrado.");
+        }
+
+        if (usuario.idioma !== idioma) {
+            await usuario.update({ idioma });
+        }
+
+        return { mensagem: "Idioma atualizado com sucesso.", idioma: usuario.idioma };
     }
 
     /* Pausar conta (pelo próprio usuário, independente do bloqueio administrativo) */
@@ -809,7 +845,8 @@ class AutenticacaoService {
             const { assunto, html, texto } = modeloConfirmacaoTrocaEmail({
                 nome: usuario.nome,
                 codigo,
-                minutosValidade: MINUTOS_VALIDADE_EMAIL
+                minutosValidade: MINUTOS_VALIDADE_EMAIL,
+                idioma: idiomaDoDestinatario(usuario, { daRequisicao: true })
             });
 
             try {

@@ -1,4 +1,5 @@
 import { body } from "express-validator";
+import { IDIOMAS } from "../i18n/idioma.js";
 
 /**
  * Regras de senha forte (OWASP ASVS 2.1): de 8 a 72 caracteres, com maiúscula, minúscula, número e
@@ -19,7 +20,12 @@ export const regrasSenha = (campo = "senha") =>
         .matches(/[^A-Za-z0-9]/)
         .withMessage("A senha deve conter ao menos um caractere especial.");
 
+const MENSAGEM_IDIOMA = "Idioma inválido. Use pt, en ou es.";
+
 const regrasComuns = [
+    // Idioma da interface no momento do cadastro, gravado na conta. Sem ele vale o da requisição.
+    body("idioma").optional({ values: "falsy" }).isIn(IDIOMAS).withMessage(MENSAGEM_IDIOMA),
+
     // Código de entrega do Google, quando o cadastro veio de "Continuar com Google". O servidor o
     // verifica; o cliente não tem como forjar o `sub` que ele carrega.
     body("googleCodigo").optional({ values: "falsy" }).isString(),
@@ -156,4 +162,13 @@ export const validarTrocaSenha = [
     body("senhaAtual").isString().notEmpty().withMessage("Informe a senha atual."),
 
     regrasSenha("novaSenha")
+];
+
+export const validarIdioma = [
+    body("idioma")
+        .isString()
+        .withMessage(MENSAGEM_IDIOMA)
+        .bail()
+        .isIn(IDIOMAS)
+        .withMessage(MENSAGEM_IDIOMA)
 ];

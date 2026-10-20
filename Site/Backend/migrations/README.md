@@ -9,6 +9,9 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 | `0002_catalogo_deficiencias.sql` | Preenche o catálogo `deficiencias`, que o candidato usa para se declarar PCD no perfil. |
 | `0003_remover_chatbot_e_administradores.sql` | Remove as tabelas do chatbot (`chatbot_conversas`, `chatbot_mensagens`), o enum `papel_chatbot` e a tabela `administradores`, que nenhum fluxo preenchia. |
 | `0004_pais_do_candidato_e_cadastro_concluido.sql` | Adiciona `candidatos.pais` (ISO 3166-1 alpha-2) e `usuarios.cadastro_concluido_em`, que sustentam o cadastro em etapas e a retomada depois da confirmação de e-mail. |
+| `0005_google_termos_e_pais_da_empresa.sql` | Adiciona `usuarios.google_id`, o registro do aceite dos documentos legais (`termos_aceitos_em`, `termos_versao`) e `empresas.pais`. |
+| `0006_vincular_empresa_a_conta_candidato.sql` | Adiciona `empresas.usuario_candidato_id`, o vínculo da empresa com a conta de candidato de quem a cadastrou. |
+| `0007_idioma_da_conta.sql` | Adiciona `usuarios.idioma` (`pt`, `en` ou `es`, padrão `pt`), que define a língua dos e-mails e avisos que o servidor envia por conta própria. |
 
 ## Como aplicar
 

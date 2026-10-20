@@ -87,7 +87,8 @@ class SeguidorController {
         try {
             const dados = await SeguidorService.sugestoesPessoas(
                 req.user,
-                req.query.limit
+                req.query.limit,
+                req.idioma
             );
 
             return res.status(200).json({ sucesso: true, sugestoes: dados });
@@ -100,7 +101,8 @@ class SeguidorController {
         try {
             const dados = await SeguidorService.sugestoesEmpresas(
                 req.user,
-                req.query.limit
+                req.query.limit,
+                req.idioma
             );
 
             return res.status(200).json({ sucesso: true, sugestoes: dados });

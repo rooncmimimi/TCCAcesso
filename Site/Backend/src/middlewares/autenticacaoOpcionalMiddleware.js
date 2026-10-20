@@ -1,5 +1,6 @@
 import { verificarJwt } from "../utils/jwt.js";
 import { Usuario } from "../models/index.js";
+import { adotarIdiomaDaConta } from "../i18n/idioma.js";
 
 /**
  * Variante opcional do `autenticacaoMiddleware`, para rotas públicas que precisam saber quem está
@@ -26,6 +27,7 @@ const autenticacaoOpcionalMiddleware = async (req, res, next) => {
 
         if (usuario && usuario.ativo && !usuario.bloqueado) {
             req.user = usuario;
+            adotarIdiomaDaConta(req, usuario);
         }
 
         return next();

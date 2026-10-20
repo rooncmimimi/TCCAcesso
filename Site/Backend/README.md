@@ -42,6 +42,7 @@ esteja ausente ou o `JWT_SECRET` tenha menos de 32 caracteres.
 src/
 ├── config/       Variáveis de ambiente, Sequelize e conexão
 ├── controllers/  Camada HTTP (request/response)
+├── i18n/         Idioma da requisição (pt, en, es) e catálogo de tradução das mensagens
 ├── middlewares/  Autenticação, RBAC, upload, erros, rate limit
 ├── models/       Models Sequelize e associações
 ├── routes/       Definição das rotas da API
@@ -54,6 +55,27 @@ src/
 
 Os arquivos enviados por upload são gravados na pasta definida em
 `UPLOAD_DIR` (padrão `uploads/`), criada automaticamente na primeira execução.
+
+## Idiomas (pt, en, es)
+
+O código escreve as mensagens em **português**; o servidor as traduz na saída. Nada de `if (idioma)`
+espalhado pelos services:
+
+- **Idioma da requisição**: vem do cabeçalho `Accept-Language` (o Site sempre o manda). Sem ele, vale o
+  idioma salvo na conta (`usuarios.idioma`, preenchido por `PATCH /api/auth/idioma` e no cadastro) —
+  é o caso do app Android, que não manda cabeçalho e continua em português. Sem conta, português.
+  Fica em `req.idioma` e num `AsyncLocalStorage` (`src/i18n/idioma.js`).
+- **Erros, validação e respostas**: o `idiomaMiddleware` embrulha `res.json` e traduz `mensagem` e
+  `erros[].mensagem`. O catálogo (`src/i18n/catalogo/*.js`, lista de `[pt, en, es]`) usa o texto em
+  português como chave; `{marcador}` captura partes variáveis (nome de campo, título de vaga) que voltam sem tradução;
+  `{=marcador}` traduz também o valor capturado (status, lista de campos) e `{#marcador}` casa só dígitos.
+  Texto sem entrada sai em português.
+- **Mensagem nova = entrada nova no catálogo.** `src/i18n/catalogo.test.js` varre o código atrás de
+  mensagens em português (erros, validadores, respostas, notificações) e falha se faltar a tradução.
+- **E-mails**: `utils/modelosEmail.js` (estrutura) + `utils/textosEmail.js` (textos pt/en/es). Os
+  avisos de moderação saem no idioma da conta atingida, nunca no de quem moderou.
+- **Notificações e log de auditoria** ficam gravados em português e são traduzidos na leitura, no
+  tempo real e no push (idioma da conta de quem recebe).
 
 ## Scripts
 

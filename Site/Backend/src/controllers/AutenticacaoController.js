@@ -115,6 +115,16 @@ class AutenticacaoController {
         }
     }
 
+    async alterarIdioma(req, res, next) {
+        try {
+            const resultado = await AutenticacaoService.alterarIdioma(req.user.id, req.body.idioma);
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async esqueciSenha(req, res, next) {
         try {
             const resultado = await RecuperacaoSenhaService.solicitar(

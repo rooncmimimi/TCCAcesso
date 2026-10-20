@@ -14,7 +14,8 @@ import {
     validarCadastroCandidato,
     validarCadastroEmpresa,
     validarLogin,
-    validarTrocaSenha
+    validarTrocaSenha,
+    validarIdioma
 } from "../validators/autenticacaoValidator.js";
 import {
     validarRefresh,
@@ -133,6 +134,15 @@ router.patch(
     validarTrocaSenha,
     validacaoMiddleware,
     AutenticacaoController.alterarSenha
+);
+
+// Salva o idioma da interface na conta (pt, en ou es).
+router.patch(
+    "/idioma",
+    autenticacaoMiddleware,
+    validarIdioma,
+    validacaoMiddleware,
+    AutenticacaoController.alterarIdioma
 );
 
 router.post("/logout", autenticacaoMiddleware, AutenticacaoController.sair);

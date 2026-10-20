@@ -4,13 +4,21 @@
  * variáveis CSS), para funcionar no Gmail, no Outlook e no Apple Mail. `COR_PRIMARIA` só dá
  * identidade visual ao e-mail e não precisa ser idêntica às cores do Site, que usam OKLCH, formato
  * que e-mails não renderizam.
+ *
+ * Cada modelo recebe `idioma` (`pt`, `en` ou `es`; padrão `pt`) e escolhe os textos em
+ * `textosEmail.js`; a estrutura é a mesma nos três idiomas. Quem chama decide o idioma:
+ * o da conta do destinatário (`usuarios.idioma`) ou, quando é ele mesmo quem acabou de pedir, o da
+ * requisição (ver `idiomaDoDestinatario` em `i18n/idioma.js`).
  */
+import { textosEmail } from "./textosEmail.js";
+
 const COR_PRIMARIA = "#2954d6";
 const COR_TEXTO = "#1f2430";
 const COR_TEXTO_SECUNDARIO = "#5b6270";
 const COR_FUNDO = "#f3f5fb";
 const COR_CARTAO = "#ffffff";
 const COR_BORDA = "#e2e5ee";
+
 
 /** Escapa qualquer valor dinâmico antes de ele entrar no HTML do e-mail. */
 function escaparHtml(texto) {
@@ -22,9 +30,11 @@ function escaparHtml(texto) {
 }
 
 /** Estrutura comum a todos os e-mails do ACESSO. */
-function layoutBase({ titulo, saudacao, corpoHtml, rodapeExtraHtml = "" }) {
+function layoutBase({ idioma, titulo, saudacao, corpoHtml, rodapeExtraHtml = "" }) {
+    const t = textosEmail(idioma);
+
     return `<!doctype html>
-<html lang="pt-BR">
+<html lang="${t.htmlLang}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -56,7 +66,7 @@ function layoutBase({ titulo, saudacao, corpoHtml, rodapeExtraHtml = "" }) {
             <td style="padding:24px 32px 32px 32px;border-top:1px solid ${COR_BORDA};margin-top:16px;">
               <p style="margin:16px 0 0 0;font-size:12px;color:${COR_TEXTO_SECUNDARIO};line-height:1.5;">
                 ${rodapeExtraHtml}
-                Este é um e-mail automático do ACESSO — plataforma de inclusão profissional. Se você não reconhece esta solicitação, apenas ignore esta mensagem.
+                ${escaparHtml(t.rodape)}
               </p>
             </td>
           </tr>
@@ -79,6 +89,17 @@ function botao(url, texto) {
 </table>`;
 }
 
+/** Código de 6 dígitos em destaque, centralizado. */
+const codigoEmDestaque = (codigo) =>
+    `<p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>`;
+
+/** Parágrafo secundário (cinza), usado para validade, avisos e orientações. */
+const paragrafoSecundario = (texto, margem = "16px 0 0 0") =>
+    `<p style="margin:${margem};color:${COR_TEXTO_SECUNDARIO};">${escaparHtml(texto)}</p>`;
+
+const paragrafo = (texto, margem = "0 0 16px 0") =>
+    `<p style="margin:${margem};">${escaparHtml(texto)}</p>`;
+
 /**
  * E-mail de confirmação de cadastro (candidato ou empresa).
  *
@@ -88,36 +109,32 @@ function botao(url, texto) {
  * texto de introdução e o rodapé ajustados para não mencionar um botão
  * que não existe.
  */
-export function modeloConfirmacaoCadastro({ nome, linkConfirmacao, codigo, minutosValidade }) {
-    const assunto = "Confirme seu e-mail — ACESSO";
+export function modeloConfirmacaoCadastro({ nome, linkConfirmacao, codigo, minutosValidade, idioma }) {
+    const t = textosEmail(idioma);
+    const c = t.confirmacaoCadastro;
     const corpoHtml = linkConfirmacao
         ? `
-      <p style="margin:0 0 16px 0;">Sua conta no ACESSO foi criada com sucesso. Para confirmar seu endereço de e-mail e liberar o acesso, clique no botão abaixo:</p>
-      ${botao(linkConfirmacao, "Confirmar meu e-mail")}
-      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Se o botão não funcionar, use este código na tela de confirmação: <strong style="letter-spacing:2px;color:${COR_TEXTO};">${escaparHtml(codigo)}</strong></p>
-      <p style="margin:8px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este link/código é válido por ${minutosValidade} minutos. Se você não criou esta conta, ignore este e-mail.</p>
+      ${paragrafo(c.introComLink)}
+      ${botao(linkConfirmacao, c.botao)}
+      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">${escaparHtml(c.codigoAlternativo)} <strong style="letter-spacing:2px;color:${COR_TEXTO};">${escaparHtml(codigo)}</strong></p>
+      ${paragrafoSecundario(c.validadeComLink(minutosValidade), "8px 0 0 0")}
     `
         : `
-      <p style="margin:0 0 16px 0;">Sua conta no ACESSO foi criada com sucesso. Para confirmar seu endereço de e-mail, use o código abaixo na tela de confirmação:</p>
-      <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
-      <p style="margin:8px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este código é válido por ${minutosValidade} minutos. Se você não criou esta conta, ignore este e-mail.</p>
+      ${paragrafo(c.introSemLink)}
+      ${codigoEmDestaque(codigo)}
+      ${paragrafoSecundario(c.validadeSemLink(minutosValidade), "8px 0 0 0")}
     `;
     const html = layoutBase({
-        titulo: "Bem-vindo ao ACESSO!",
-        saudacao: nome ? `Olá, ${nome}!` : "Olá!",
+        idioma,
+        titulo: c.titulo,
+        saudacao: t.ola(nome),
         corpoHtml
     });
     const texto = linkConfirmacao
-        ? `Bem-vindo ao ACESSO!\n\n` +
-          `Sua conta foi criada com sucesso. Para confirmar seu e-mail, acesse:\n${linkConfirmacao}\n\n` +
-          `Ou use o código ${codigo} na tela de confirmação (válido por ${minutosValidade} minutos).\n\n` +
-          `Se você não criou esta conta, ignore este e-mail.`
-        : `Bem-vindo ao ACESSO!\n\n` +
-          `Sua conta foi criada com sucesso. Use o código ${codigo} na tela de confirmação ` +
-          `(válido por ${minutosValidade} minutos).\n\n` +
-          `Se você não criou esta conta, ignore este e-mail.`;
+        ? c.textoComLink(linkConfirmacao, codigo, minutosValidade)
+        : c.textoSemLink(codigo, minutosValidade);
 
-    return { assunto, html, texto };
+    return { assunto: c.assunto, html, texto };
 }
 
 /**
@@ -130,74 +147,66 @@ export function modeloConfirmacaoCadastro({ nome, linkConfirmacao, codigo, minut
  * (é o único mecanismo que o aplicativo mobile usa), então o e-mail
  * continua completo e utilizável mesmo sem o botão.
  */
-export function modeloRecuperacaoSenha({ nome, codigo, linkRedefinir, minutosValidade }) {
-    const assunto = "Redefinição de senha — ACESSO";
+export function modeloRecuperacaoSenha({ nome, codigo, linkRedefinir, minutosValidade, idioma }) {
+    const t = textosEmail(idioma);
+    const c = t.recuperacaoSenha;
     const corpoHtml = `
-      <p style="margin:0 0 16px 0;">Recebemos uma solicitação para redefinir a senha da sua conta no ACESSO.</p>
-      ${linkRedefinir ? botao(linkRedefinir, "Redefinir minha senha") : ""}
-      <p style="margin:0 0 8px 0;color:${COR_TEXTO_SECUNDARIO};">${linkRedefinir ? "Se estiver no aplicativo ACESSO, use o código abaixo em vez do botão:" : "Use o código abaixo na tela de redefinição:"}</p>
-      <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
-      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Válido por ${minutosValidade} minutos. Se você não solicitou essa alteração, ignore este e-mail — sua senha continua a mesma.</p>
+      ${paragrafo(c.intro)}
+      ${linkRedefinir ? botao(linkRedefinir, c.botao) : ""}
+      ${paragrafoSecundario(linkRedefinir ? c.codigoComLink : c.codigoSemLink, "0 0 8px 0")}
+      ${codigoEmDestaque(codigo)}
+      ${paragrafoSecundario(c.validade(minutosValidade))}
     `;
     const html = layoutBase({
-        titulo: "Redefinição de senha",
-        saudacao: nome ? `Olá, ${nome}!` : "Olá!",
+        idioma,
+        titulo: c.titulo,
+        saudacao: t.ola(nome),
         corpoHtml
     });
-    const texto =
-        `Redefinição de senha — ACESSO\n\n` +
-        `Recebemos uma solicitação para redefinir sua senha.\n` +
-        (linkRedefinir ? `Acesse: ${linkRedefinir}\n\n` : "\n") +
-        `Se estiver no aplicativo ACESSO, use o código: ${codigo}\n\n` +
-        `Válido por ${minutosValidade} minutos. Se você não solicitou, ignore este e-mail.`;
 
-    return { assunto, html, texto };
+    return { assunto: c.assunto, html, texto: c.texto(linkRedefinir, codigo, minutosValidade) };
 }
 
 /** E-mail com o código de confirmação da troca de e-mail da conta. */
-export function modeloConfirmacaoTrocaEmail({ nome, codigo, minutosValidade }) {
-    const assunto = "Confirme seu novo e-mail — ACESSO";
+export function modeloConfirmacaoTrocaEmail({ nome, codigo, minutosValidade, idioma }) {
+    const t = textosEmail(idioma);
+    const c = t.trocaEmail;
     const corpoHtml = `
-      <p style="margin:0 0 16px 0;">Recebemos uma solicitação para trocar o e-mail da sua conta ACESSO para este endereço. Use o código abaixo para confirmar:</p>
-      <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
-      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este código é válido por ${minutosValidade} minutos. Se você não solicitou essa troca, ignore este e-mail — o endereço atual da sua conta continua o mesmo.</p>
+      ${paragrafo(c.intro)}
+      ${codigoEmDestaque(codigo)}
+      ${paragrafoSecundario(c.validade(minutosValidade))}
     `;
     const html = layoutBase({
-        titulo: "Confirme seu novo e-mail",
-        saudacao: nome ? `Olá, ${nome}!` : "Olá!",
+        idioma,
+        titulo: c.titulo,
+        saudacao: t.ola(nome),
         corpoHtml
     });
-    const texto =
-        `Confirme seu novo e-mail — ACESSO\n\n` +
-        `Use o código ${codigo} para confirmar a troca do e-mail da sua conta.\n` +
-        `Válido por ${minutosValidade} minutos. Se você não solicitou, ignore este e-mail.`;
 
-    return { assunto, html, texto };
+    return { assunto: c.assunto, html, texto: c.texto(codigo, minutosValidade) };
 }
 
 /**
  * Aviso de conta bloqueada pela moderação. O e-mail é necessário porque a pessoa bloqueada não
  * consegue mais entrar nem usar uma sessão aberta, então nunca veria a notificação dentro do app.
+ * O `motivo` é texto livre do moderador e sai como foi escrito, sem tradução.
  */
-export function modeloContaBloqueada({ nome, motivo }) {
-    const assunto = "Sua conta foi bloqueada — ACESSO";
+export function modeloContaBloqueada({ nome, motivo, idioma }) {
+    const t = textosEmail(idioma);
+    const c = t.contaBloqueada;
     const corpoHtml = `
-      <p style="margin:0 0 16px 0;">Sua conta no ACESSO foi bloqueada pela nossa equipe de moderação.</p>
-      ${motivo ? `<p style="margin:0 0 16px 0;"><strong>Motivo:</strong> ${escaparHtml(motivo)}</p>` : ""}
-      <p style="margin:0;color:${COR_TEXTO_SECUNDARIO};">Se você acredita que isso foi um engano, entre em contato com o suporte do ACESSO respondendo este e-mail.</p>
+      ${paragrafo(c.intro)}
+      ${motivo ? `<p style="margin:0 0 16px 0;"><strong>${escaparHtml(t.motivo)}</strong> ${escaparHtml(motivo)}</p>` : ""}
+      ${paragrafoSecundario(c.fim, "0")}
     `;
     const html = layoutBase({
-        titulo: "Sua conta foi bloqueada",
-        saudacao: nome ? `Olá, ${nome}.` : "Olá.",
+        idioma,
+        titulo: c.titulo,
+        saudacao: t.olaFormal(nome),
         corpoHtml
     });
-    const texto =
-        `Sua conta foi bloqueada — ACESSO\n\n` +
-        `Sua conta no ACESSO foi bloqueada pela nossa equipe de moderação.\n` +
-        (motivo ? `Motivo: ${motivo}\n\n` : "\n") +
-        `Se você acredita que isso foi um engano, entre em contato com o suporte respondendo este e-mail.`;
 
-    return { assunto, html, texto };
+    return { assunto: c.assunto, html, texto: c.texto(motivo) };
 }
 
 /**
@@ -206,43 +215,38 @@ export function modeloContaBloqueada({ nome, motivo }) {
  * mais criar ou editar vagas nem receber candidaturas; o e-mail garante que ela saiba o motivo
  * mesmo sem abrir o painel.
  */
-export function modeloEmpresaSuspensa({ nome, motivo }) {
-    const assunto = "Sua empresa foi suspensa — ACESSO";
+export function modeloEmpresaSuspensa({ nome, motivo, idioma }) {
+    const t = textosEmail(idioma);
+    const c = t.empresaSuspensa;
     const corpoHtml = `
-      <p style="margin:0 0 16px 0;">O cadastro da sua empresa no ACESSO foi suspenso pela nossa equipe de moderação. Enquanto a suspensão estiver ativa, não é possível publicar ou editar vagas, nem receber novas candidaturas — vagas e candidaturas já existentes continuam preservadas.</p>
-      ${motivo ? `<p style="margin:0 0 16px 0;"><strong>Motivo:</strong> ${escaparHtml(motivo)}</p>` : ""}
-      <p style="margin:0;color:${COR_TEXTO_SECUNDARIO};">Se você acredita que isso foi um engano, entre em contato com o suporte do ACESSO respondendo este e-mail.</p>
+      ${paragrafo(c.intro)}
+      ${motivo ? `<p style="margin:0 0 16px 0;"><strong>${escaparHtml(t.motivo)}</strong> ${escaparHtml(motivo)}</p>` : ""}
+      ${paragrafoSecundario(c.fim, "0")}
     `;
     const html = layoutBase({
-        titulo: "Sua empresa foi suspensa",
-        saudacao: nome ? `Olá, ${nome}.` : "Olá.",
+        idioma,
+        titulo: c.titulo,
+        saudacao: t.olaFormal(nome),
         corpoHtml
     });
-    const texto =
-        `Sua empresa foi suspensa — ACESSO\n\n` +
-        `O cadastro da sua empresa foi suspenso pela nossa equipe de moderação. Vagas e candidaturas já existentes continuam preservadas, mas não é possível publicar/editar vaga nem receber candidatura nova enquanto a suspensão estiver ativa.\n` +
-        (motivo ? `Motivo: ${motivo}\n\n` : "\n") +
-        `Se você acredita que isso foi um engano, entre em contato com o suporte respondendo este e-mail.`;
 
-    return { assunto, html, texto };
+    return { assunto: c.assunto, html, texto: c.texto(motivo) };
 }
 
 /** E-mail de aviso após troca de senha bem-sucedida. */
-export function modeloSenhaAlterada({ nome }) {
-    const assunto = "Sua senha foi alterada — ACESSO";
+export function modeloSenhaAlterada({ nome, idioma }) {
+    const t = textosEmail(idioma);
+    const c = t.senhaAlterada;
     const corpoHtml = `
-      <p style="margin:0;">A senha da sua conta ACESSO foi alterada com sucesso.</p>
-      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Se você não realizou essa alteração, troque sua senha imediatamente e entre em contato com o suporte do ACESSO.</p>
+      ${paragrafo(c.intro, "0")}
+      ${paragrafoSecundario(c.aviso)}
     `;
     const html = layoutBase({
-        titulo: "Sua senha foi alterada",
-        saudacao: nome ? `Olá, ${nome}!` : "Olá!",
+        idioma,
+        titulo: c.titulo,
+        saudacao: t.ola(nome),
         corpoHtml
     });
-    const texto =
-        `Sua senha foi alterada — ACESSO\n\n` +
-        `A senha da sua conta foi alterada com sucesso.\n` +
-        `Se você não realizou essa alteração, troque sua senha imediatamente e contate o suporte.`;
 
-    return { assunto, html, texto };
+    return { assunto: c.assunto, html, texto: c.texto };
 }

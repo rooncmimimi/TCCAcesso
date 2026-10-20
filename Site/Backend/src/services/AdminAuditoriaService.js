@@ -1,6 +1,8 @@
 import { Usuario } from "../models/index.js";
 import RegistroAuditoria from "../models/RegistroAuditoria.js";
 import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
+import { idiomaAtual } from "../i18n/idioma.js";
+import { traduzir } from "../i18n/traduzir.js";
 
 /**
  * Registro centralizado da auditoria administrativa, na tabela `registros_auditoria`, que é
@@ -40,9 +42,10 @@ class AdminAuditoriaService {
 
     /**
      * Leitura paginada/filtrável, usada só pelo visualizador de logs do
-     * painel administrativo (GET, somente leitura).
+     * painel administrativo (GET, somente leitura). A `descricao` fica gravada em português e sai
+     * no idioma de quem está lendo; o resto do registro não muda.
      */
-    async listar(query) {
+    async listar(query, idioma = idiomaAtual()) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const where = {};
@@ -65,7 +68,13 @@ class AdminAuditoriaService {
             order: [["criadoEm", "DESC"]]
         });
 
-        return montarResposta("logs", rows, count, pagina, limite);
+        const logs = rows.map((registro) => {
+            const dados = registro.toJSON();
+
+            return { ...dados, descricao: traduzir(dados.descricao, idioma) };
+        });
+
+        return montarResposta("logs", logs, count, pagina, limite);
     }
 }
 

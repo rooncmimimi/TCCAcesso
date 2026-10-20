@@ -9,21 +9,14 @@
  * O idioma **não** é salvo na conta, por decisão do produto: nada fora do cadastro está traduzido,
  * então uma preferência gravada não teria onde ser honrada depois do login.
  *
- * Hoje o cadastro usa só o português (`textosDoCadastro("pt")`): o seletor de idioma saiu da tela.
- * As versões em inglês e espanhol continuam aqui, sem uso, para quando o seletor ou a tradução do
- * site voltarem — mantê-las exige acompanhar as chaves novas do português.
+ * O idioma é o do Site inteiro (`@/i18n`): o seletor fica no topo de todas as páginas, e este
+ * dicionário cobre só as telas do cadastro de candidato.
  *
  * As mensagens de erro moram aqui junto dos rótulos de propósito. Traduzir só o rótulo e deixar o
  * erro em português deixaria a tela meio traduzida justamente na hora em que a pessoa mais precisa
  * entender o que fazer.
  */
-export const IDIOMAS = [
-  { codigo: "pt", nome: "Português" },
-  { codigo: "en", nome: "English" },
-  { codigo: "es", nome: "Español" },
-] as const;
-
-export type CodigoIdioma = (typeof IDIOMAS)[number]["codigo"];
+import type { Idioma } from "@/i18n";
 
 const pt = {
   htmlLang: "pt-BR",
@@ -403,9 +396,9 @@ const es: Textos = {
   erroCurriculo: "No fue posible leer este archivo. Prueba con otro o completa los campos manualmente.",
 };
 
-const DICIONARIOS: Record<CodigoIdioma, Textos> = { pt, en, es };
+const DICIONARIOS: Record<Idioma, Textos> = { pt, en, es };
 
-export function textosDoCadastro(idioma: CodigoIdioma): Textos {
+export function textosDoCadastro(idioma: Idioma): Textos {
   return DICIONARIOS[idioma] ?? pt;
 }
 

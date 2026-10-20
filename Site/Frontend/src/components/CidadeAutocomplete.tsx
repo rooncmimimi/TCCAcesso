@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { buscarCidadesPorUf, buscarTodasAsCidades } from "@/services/ibge.service";
 import { normalizarParaBusca } from "@/utils/texto";
+import { useT } from "@/i18n";
 
 const MAX_SUGESTOES = 8;
 
@@ -47,6 +48,7 @@ export function CidadeAutocomplete({
   /** Chamado quando Enter é pressionado sem nenhuma sugestão destacada (ex.: disparar a busca de um filtro). */
   onEnterSemSelecao?: () => void;
 }) {
+  const t = useT().cidade;
   const listboxId = useId();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -188,7 +190,7 @@ export function CidadeAutocomplete({
         <ul
           id={listboxId}
           role="listbox"
-          aria-label="Sugestões de cidade"
+          aria-label={t.sugestoesAria}
           className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
         >
           {sugestoesFiltradas.map((cidade, indice) => (
@@ -217,12 +219,12 @@ export function CidadeAutocomplete({
       {/* Nunca substitui nem apaga o texto digitado: só avisa que não bateu com nenhuma sugestão. */}
       {mostrarDica && (
         <p className="mt-1 text-xs text-muted-foreground">
-          Nenhuma sugestão encontrada — o texto digitado será salvo como está.
+          {t.nenhumaSugestao}
         </p>
       )}
       {aberto && erro && (
         <p className="mt-1 text-xs text-muted-foreground">
-          Não foi possível carregar sugestões de cidade agora. Você ainda pode digitar normalmente.
+          {t.erroSugestoes}
         </p>
       )}
     </div>

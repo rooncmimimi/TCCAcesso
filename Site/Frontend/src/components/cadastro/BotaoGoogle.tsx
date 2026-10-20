@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import googleService from "@/services/google.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useT } from "@/i18n";
 
 /** Logotipo oficial do Google, nas cores da marca. Decorativo: o texto do botão é quem nomeia. */
 function IconeGoogle() {
@@ -43,11 +44,12 @@ function IconeGoogle() {
  */
 export function BotaoGoogle({
   tipoConta,
-  rotulo = "Continuar com Google",
+  rotulo,
 }: {
   tipoConta?: "candidato" | "empresa";
   rotulo?: string;
 }) {
+  const t = useT().auth.google;
   const [disponivel, setDisponivel] = useState(false);
   const [indo, setIndo] = useState(false);
 
@@ -76,7 +78,7 @@ export function BotaoGoogle({
       const url = await googleService.urlDeAutorizacao(tipoConta);
       window.location.href = url;
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível abrir a autenticação do Google."));
+      toast.error(extrairMensagemErro(erro, t.erroAbrir));
       setIndo(false);
     }
   }
@@ -91,13 +93,13 @@ export function BotaoGoogle({
         onClick={ir}
       >
         {indo ? <Loader2 className="animate-spin" aria-hidden="true" /> : <IconeGoogle />}
-        {rotulo}
+        {rotulo ?? t.continuar}
       </Button>
 
       {/* Separador decorativo: o texto "ou" fica fora do fluxo de leitura dos leitores de tela. */}
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-border" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ou</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.ou}</span>
         <span className="h-px flex-1 bg-border" />
       </div>
     </div>
@@ -114,22 +116,24 @@ export function BotaoGoogle({
  * A confirmação é dita por texto, não por cor nem só pelo ícone — o ícone é decorativo.
  */
 export function ContaGoogleConfirmada({ email }: { email?: string | null }) {
+  const t = useT().auth.google;
+
   return (
     <div className="mb-6 flex items-start gap-3 rounded-xl border border-border bg-secondary px-4 py-3">
       <span className="mt-0.5 shrink-0">
         <IconeGoogle />
       </span>
       <p className="text-sm">
-        <span className="font-semibold">Conta Google confirmada.</span>{" "}
+        <span className="font-semibold">{t.confirmada}</span>{" "}
         {email ? (
           <>
-            Ela será vinculada a este cadastro: <strong className="font-semibold">{email}</strong>.
+            {t.vinculadaA} <strong className="font-semibold">{email}</strong>.
           </>
         ) : (
-          <>Ela será vinculada a este cadastro quando você terminar.</>
+          <>{t.vinculadaSemEmail}</>
         )}{" "}
         <span className="text-muted-foreground">
-          Defina também uma senha — com ela você entra mesmo sem o Google.
+          {t.definaSenha}
         </span>
       </p>
     </div>

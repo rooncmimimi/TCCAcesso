@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 import { Accessibility, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -33,47 +33,41 @@ import { useSessao } from "@/hooks/useSessao";
 import { extrairMensagemErro } from "@/services/api";
 import { formatarCep, formatarCnpj, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
 import { PORTES_EMPRESA } from "@/utils/formatacao";
-
-/** As mesmas cinco regras de `regrasSenha` no backend (`validators/autenticacaoValidator.js`). */
-const regraSenha = z
-  .string()
-  .min(8, "A senha deve ter entre 8 e 72 caracteres.")
-  .max(72, "A senha deve ter entre 8 e 72 caracteres.")
-  .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
-  .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
-  .regex(/\d/, "A senha deve conter ao menos um número.")
-  .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial.");
+import { metaPagina, regraSenha, SeletorIdioma, dic, useT, type Dicionario } from "@/i18n";
 
 /**
  * Cadastro institucional. Obrigatório é o que o backend exige hoje
  * (`validarCadastroEmpresa`): CNPJ, razão social, nome e e-mail do responsável e senha. O resto
  * compõe o perfil e fica opcional — não inventei exigência que o backend não faz.
  */
-const esquemaEmpresa = z.object({
-  cnpj: z.string().trim().refine((v) => somenteDigitos(v).length === 14, "Digite um CNPJ válido, com 14 números."),
-  razaoSocial: z.string().trim().min(3, "Informe a razão social (3 a 200 caracteres).").max(200),
+function criarEsquemaEmpresa(t: Dicionario) {
+  const e = t.cadastro.empresa.erros;
+
+  return z.object({
+  cnpj: z.string().trim().refine((v) => somenteDigitos(v).length === 14, e.cnpj),
+  razaoSocial: z.string().trim().min(3, e.razaoSocial).max(200),
   nomeFantasia: z.string().trim().max(200).optional(),
   setor: z.string().trim().max(120).optional(),
   porte: z.string().trim().optional(),
 
-  nome: z.string().trim().min(3, "Informe o nome de quem responde pela conta.").max(150),
-  email: z.string().trim().min(1, "Informe o e-mail.").email("Digite um endereço de e-mail válido.").max(150),
+  nome: z.string().trim().min(3, e.nome).max(150),
+  email: z.string().trim().min(1, e.email).email(e.emailFormato).max(150),
   telefone: z
     .string()
     .trim()
     .optional()
     .refine(
       (v) => !v || (somenteDigitos(v).length >= 10 && somenteDigitos(v).length <= 11),
-      "Digite um telefone válido, com DDD.",
+      e.telefone,
     ),
-  senha: regraSenha,
+  senha: regraSenha(t.validacao),
 
   cep: z
     .string()
     .trim()
     .optional()
-    .refine((v) => !v || somenteDigitos(v).length === 8, "Digite um CEP válido, com 8 números."),
-  estado: z.string().trim().optional().refine((v) => !v || v.length === 2, "Informe a UF com 2 letras."),
+    .refine((v) => !v || somenteDigitos(v).length === 8, e.cep),
+  estado: z.string().trim().optional().refine((v) => !v || v.length === 2, e.estado),
   cidade: z.string().trim().max(100).optional(),
   endereco: z.string().trim().max(255).optional(),
 
@@ -82,17 +76,16 @@ const esquemaEmpresa = z.object({
     .string()
     .trim()
     .optional()
-    .refine((v) => !v || /^https?:\/\/.+/i.test(v), "Digite uma URL completa, começando com http:// ou https://."),
+    .refine((v) => !v || /^https?:\/\/.+/i.test(v), e.site),
   culturaInclusiva: z.string().trim().max(4000).optional(),
 
   termos: z.literal(true, {
-    errorMap: () => ({ message: "É preciso aceitar os Termos de Uso e a Política de Privacidade para criar a conta." }),
+    errorMap: () => ({ message: e.termos }),
   }),
-});
+  });
+}
 
-type FormEmpresa = z.infer<typeof esquemaEmpresa>;
-
-const PASSOS = ["Empresa", "Responsável", "Endereço", "Apresentação", "Conclusão", "Acessibilidade"] as const;
+type FormEmpresa = z.infer<ReturnType<typeof criarEsquemaEmpresa>>;
 
 /** Campos validados antes de liberar cada etapa. O índice é o da etapa. */
 const CAMPOS: FieldPath<FormEmpresa>[][] = [
@@ -113,21 +106,13 @@ const EMPRESA = {
 } as const;
 
 export const Route = createFileRoute("/cadastro/empresa")({
-  head: () => ({
-    meta: [
-      { title: "Criar conta de empresa — ACESSO" },
-      {
-        name: "description",
-        content: "Crie o perfil institucional da sua empresa, divulgue vagas inclusivas e acompanhe candidaturas.",
-      },
-      { property: "og:title", content: "Criar conta de empresa — ACESSO" },
-      { property: "og:description", content: "Cadastro institucional na rede profissional inclusiva." },
-    ],
-  }),
+  head: () => metaPagina(dic().cadastro.empresa.meta),
   component: CadastroEmpresa,
 });
 
 function CadastroEmpresa() {
+  const t = useT();
+  const te = t.cadastro.empresa;
   const [emailPendente, setEmailPendente] = useState<string | null>(null);
   const { autenticado, usuario, inicializado } = useSessao();
 
@@ -137,31 +122,28 @@ function CadastroEmpresa() {
   if (inicializado && (!autenticado || usuario?.tipo !== "candidato")) {
     return (
       <AutenticacaoLayout className="max-w-lg">
-        <div className="mb-6">
-          <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link to="/" aria-label={t.auth.voltarInicioAria} className="inline-flex">
             <Logo />
           </Link>
+          <SeletorIdioma compacto id="seletor-idioma-empresa" />
         </div>
 
         <Card className="shadow-card">
           <CardContent className="p-6 sm:p-8">
-            <h1 className="text-xl font-extrabold">Primeiro, a sua conta pessoal</h1>
-            <p className="mt-3 text-sm text-muted-foreground">
-              No ACESSO a conta da empresa fica vinculada à conta de candidato de quem responde por
-              ela. Crie a sua conta pessoal — leva poucos minutos — e o cadastro da empresa continua
-              logo em seguida.
-            </p>
+            <h1 className="text-xl font-extrabold">{te.primeiro.titulo}</h1>
+            <p className="mt-3 text-sm text-muted-foreground">{te.primeiro.texto}</p>
 
             <Button asChild className="mt-6 min-h-12 w-full text-base">
               <Link to="/cadastro/candidato" search={{ depois: "empresa" }}>
-                Criar minha conta de candidato <ArrowRight aria-hidden="true" />
+                {te.primeiro.criar} <ArrowRight aria-hidden="true" />
               </Link>
             </Button>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              Já tem conta de candidato?{" "}
+              {te.primeiro.jaTem}{" "}
               <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
-                Entrar
+                {t.comum.entrar}
               </Link>
             </p>
           </CardContent>
@@ -173,15 +155,18 @@ function CadastroEmpresa() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between gap-3">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t.auth.voltarInicioAria} className="inline-flex">
           <Logo />
         </Link>
-        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
-          <Link to="/configuracoes/acessibilidade">
-            <Accessibility aria-hidden="true" />
-            <span className="hidden sm:inline">Acessibilidade</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <SeletorIdioma compacto id="seletor-idioma-empresa" />
+          <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t.layout.configuracoesAcessibilidade}>
+            <Link to="/configuracoes/acessibilidade">
+              <Accessibility aria-hidden="true" />
+              <span className="hidden sm:inline">{t.comum.acessibilidade}</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="shadow-card">
@@ -196,9 +181,9 @@ function CadastroEmpresa() {
 
       {!emailPendente && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Já tem uma conta?{" "}
+          {te.jaTemConta}{" "}
           <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
-            Entrar
+            {t.comum.entrar}
           </Link>
         </p>
       )}
@@ -219,6 +204,9 @@ function CadastroEmpresa() {
  */
 function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (email: string) => void }) {
   const { registrarEmpresa } = useSessao();
+  const t = useT();
+  const te = t.cadastro.empresa;
+  const PASSOS = te.passos;
   const [passo, setPasso] = useState<number>(EMPRESA.IDENTIFICACAO);
   const [enviando, setEnviando] = useState(false);
   const navegou = useRef(false);
@@ -228,8 +216,13 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
     setPasso(novoPasso);
   }
 
+  // O esquema muda junto com o idioma; a ref deixa o resolver sempre enxergar o mais recente.
+  const esquema = useMemo(() => criarEsquemaEmpresa(t), [t]);
+  const esquemaRef = useRef(esquema);
+  esquemaRef.current = esquema;
+
   const form = useForm<FormEmpresa>({
-    resolver: zodResolver(esquemaEmpresa),
+    resolver: (valores, contexto, opcoes) => zodResolver(esquemaRef.current)(valores, contexto, opcoes),
     mode: "onTouched",
     defaultValues: {
       cnpj: "",
@@ -292,10 +285,10 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
         return;
       }
 
-      toast.success("Conta criada com sucesso!");
+      toast.success(te.sucesso);
       irPara(EMPRESA.ACESSIBILIDADE);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível criar a conta agora."));
+      toast.error(extrairMensagemErro(erro, te.erro));
     } finally {
       setEnviando(false);
     }
@@ -328,8 +321,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.IDENTIFICACAO && (
         <>
           <TituloEtapa
-            titulo="Identificação da empresa"
-            descricao="Os dados que identificam a empresa publicamente e no cadastro."
+            titulo={te.identificacao.titulo}
+            descricao={te.identificacao.descricao}
             focar={navegou.current}
           />
           {/*
@@ -345,8 +338,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
           <div className="space-y-5">
             <Campo
               id="cnpj"
-              rotulo="CNPJ"
-              ajuda="Usado para confirmar que a empresa existe antes de liberar a publicação de vagas."
+              rotulo={te.identificacao.cnpj}
+              ajuda={te.identificacao.cnpjAjuda}
               erro={erros.cnpj?.message}
               obrigatorio
             >
@@ -365,7 +358,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="razao-social" rotulo="Razão social" erro={erros.razaoSocial?.message} obrigatorio>
+            <Campo id="razao-social" rotulo={te.identificacao.razaoSocial} erro={erros.razaoSocial?.message} obrigatorio>
               <Input
                 id="razao-social"
                 required
@@ -379,8 +372,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="nome-fantasia"
-              rotulo="Nome fantasia (opcional)"
-              ajuda="É esse nome que aparece em destaque nas vagas, quando preenchido."
+              rotulo={te.identificacao.nomeFantasia}
+              ajuda={te.identificacao.nomeFantasiaAjuda}
               erro={erros.nomeFantasia?.message}
             >
               <Input
@@ -392,26 +385,26 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="setor" rotulo="Setor de atuação (opcional)" erro={erros.setor?.message}>
+            <Campo id="setor" rotulo={te.identificacao.setor} erro={erros.setor?.message}>
               <Input
                 id="setor"
                 className="min-h-12"
-                placeholder="Ex.: Tecnologia, Saúde, Educação"
+                placeholder={te.identificacao.setorExemplo}
                 aria-invalid={Boolean(erros.setor)}
                 aria-describedby={descricao("setor", false, Boolean(erros.setor))}
                 {...register("setor")}
               />
             </Campo>
 
-            <Campo id="porte" rotulo="Porte da empresa (opcional)" erro={erros.porte?.message}>
+            <Campo id="porte" rotulo={te.identificacao.porte} erro={erros.porte?.message}>
               <Select value={watch("porte") ?? ""} onValueChange={(valor) => setValue("porte", valor)}>
                 <SelectTrigger id="porte" className="min-h-12 w-full">
-                  <SelectValue placeholder="Selecione o porte" />
+                  <SelectValue placeholder={te.identificacao.porteEscolha} />
                 </SelectTrigger>
                 <SelectContent>
                   {PORTES_EMPRESA.map((p) => (
                     <SelectItem key={p.valor} value={p.valor}>
-                      {p.rotulo}
+                      {t.comum.portes[p.valor]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -424,13 +417,13 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.RESPONSAVEL && (
         <>
           <TituloEtapa
-            titulo="Responsável pela conta"
-            descricao="Quem administra a conta da empresa no ACESSO e recebe as notificações."
+            titulo={te.responsavel.titulo}
+            descricao={te.responsavel.descricao}
           />
           <LegendaObrigatorio />
 
           <div className="space-y-5">
-            <Campo id="nome-responsavel" rotulo="Nome completo" erro={erros.nome?.message} obrigatorio>
+            <Campo id="nome-responsavel" rotulo={te.responsavel.nome} erro={erros.nome?.message} obrigatorio>
               <Input
                 id="nome-responsavel"
                 required
@@ -444,8 +437,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="email-empresa"
-              rotulo="E-mail profissional"
-              ajuda="É por ele que a empresa entra na plataforma e recebe o link de confirmação."
+              rotulo={te.responsavel.email}
+              ajuda={te.responsavel.emailAjuda}
               erro={erros.email?.message}
               obrigatorio
             >
@@ -463,7 +456,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="telefone-empresa"
-              rotulo="Telefone de contato (opcional)"
+              rotulo={te.responsavel.telefone}
               erro={erros.telefone?.message}
             >
               <Input
@@ -482,7 +475,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="senha-empresa" rotulo="Senha" erro={erros.senha?.message} obrigatorio>
+            <Campo id="senha-empresa" rotulo={te.responsavel.senha} erro={erros.senha?.message} obrigatorio>
               <PasswordInput
                 id="senha-empresa"
                 required
@@ -502,12 +495,12 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.ENDERECO && (
         <>
           <TituloEtapa
-            titulo="Endereço e contato institucional"
-            descricao="Onde a empresa fica. Ajuda a mostrar as vagas para quem está por perto."
+            titulo={te.endereco.titulo}
+            descricao={te.endereco.descricao}
           />
 
           <div className="space-y-5">
-            <Campo id="cep" rotulo="CEP (opcional)" erro={erros.cep?.message}>
+            <Campo id="cep" rotulo={te.endereco.cep} erro={erros.cep?.message}>
               <Input
                 id="cep"
                 inputMode="numeric"
@@ -524,20 +517,20 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             </Campo>
 
             <div className="grid gap-5 sm:grid-cols-[1fr_7rem]">
-              <Campo id="cidade-empresa" rotulo="Cidade (opcional)" erro={erros.cidade?.message}>
+              <Campo id="cidade-empresa" rotulo={te.endereco.cidade} erro={erros.cidade?.message}>
                 <CidadeAutocomplete
                   id="cidade-empresa"
                   name="cidade"
                   value={watch("cidade") ?? ""}
                   onChange={(valor) => setValue("cidade", valor, { shouldValidate: true })}
                   estado={watch("estado") ?? ""}
-                  aria-label="Cidade"
+                  aria-label={te.endereco.cidadeAria}
                   aria-invalid={Boolean(erros.cidade)}
                   className="min-h-12"
                 />
               </Campo>
 
-              <Campo id="estado-empresa" rotulo="Estado (UF)" erro={erros.estado?.message}>
+              <Campo id="estado-empresa" rotulo={te.endereco.estado} erro={erros.estado?.message}>
                 <Input
                   id="estado-empresa"
                   maxLength={2}
@@ -552,8 +545,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="endereco"
-              rotulo="Endereço (opcional)"
-              ajuda="Rua, número e complemento, se houver."
+              rotulo={te.endereco.endereco}
+              ajuda={te.endereco.enderecoAjuda}
               erro={erros.endereco?.message}
             >
               <Input
@@ -572,15 +565,15 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.APRESENTACAO && (
         <>
           <TituloEtapa
-            titulo="Apresentação da empresa"
-            descricao="O que as pessoas candidatas leem antes de decidir se candidatar."
+            titulo={te.apresentacao.titulo}
+            descricao={te.apresentacao.descricao}
           />
 
           <div className="space-y-5">
             <Campo
               id="descricao-empresa"
-              rotulo="Descrição institucional (opcional)"
-              ajuda="Em poucas linhas: o que a empresa faz, onde atua e qual o porte da operação."
+              rotulo={te.apresentacao.descricaoCampo}
+              ajuda={te.apresentacao.descricaoAjuda}
               erro={erros.descricao?.message}
             >
               <Textarea
@@ -595,8 +588,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="cultura-inclusiva"
-              rotulo="Cultura inclusiva (opcional)"
-              ajuda="Como a empresa pratica inclusão: acessibilidade do espaço, adaptações, programas afirmativos."
+              rotulo={te.apresentacao.cultura}
+              ajuda={te.apresentacao.culturaAjuda}
               erro={erros.culturaInclusiva?.message}
             >
               <Textarea
@@ -609,7 +602,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="site" rotulo="Site (opcional)" erro={erros.site?.message}>
+            <Campo id="site" rotulo={te.apresentacao.site} erro={erros.site?.message}>
               <Input
                 id="site"
                 type="url"
@@ -628,8 +621,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.CONCLUSAO && (
         <>
           <TituloEtapa
-            titulo="Revisão e aceite"
-            descricao="Confira os dados antes de criar a conta. Dá para voltar e corrigir qualquer etapa."
+            titulo={te.conclusao.titulo}
+            descricao={te.conclusao.descricao}
           />
 
           <Revisao valores={getValues()} aoEditar={irPara} />
@@ -645,8 +638,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             />
 
             <p className="rounded-lg bg-secondary px-4 py-3 text-sm text-muted-foreground">
-              Depois de criar a conta, confirme o e-mail para entrar. O cadastro passa por análise da
-              equipe do ACESSO antes de a empresa poder publicar vagas.
+              {te.conclusao.aviso}
             </p>
           </div>
         </>
@@ -655,7 +647,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       <NavegacaoEtapa
         primeiraEtapa={passo === EMPRESA.IDENTIFICACAO}
         enviando={enviando}
-        rotuloAvancar={passo === EMPRESA.CONCLUSAO ? "Criar conta" : "Continuar"}
+        rotuloAvancar={passo === EMPRESA.CONCLUSAO ? te.criarConta : t.comum.continuar}
         aoVoltar={() => irPara(passo - 1)}
       />
     </form>
@@ -664,44 +656,47 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
 /** Revisão da etapa 5: mostra o que foi preenchido e leva de volta à etapa certa para corrigir. */
 function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo: number) => void }) {
+  const t = useT();
+  const r = t.cadastro.empresa.revisao;
+
   const grupos = [
     {
       passo: EMPRESA.IDENTIFICACAO,
-      titulo: "Empresa",
+      titulo: r.grupos.empresa,
       itens: [
-        ["CNPJ", valores.cnpj],
-        ["Razão social", valores.razaoSocial],
-        ["Nome fantasia", valores.nomeFantasia],
-        ["Setor", valores.setor],
-        ["Porte", PORTES_EMPRESA.find((p) => p.valor === valores.porte)?.rotulo],
+        [r.cnpj, valores.cnpj],
+        [r.razaoSocial, valores.razaoSocial],
+        [r.nomeFantasia, valores.nomeFantasia],
+        [r.setor, valores.setor],
+        [r.porte, valores.porte ? t.comum.portes[valores.porte as keyof typeof t.comum.portes] : ""],
       ],
     },
     {
       passo: EMPRESA.RESPONSAVEL,
-      titulo: "Responsável",
+      titulo: r.grupos.responsavel,
       itens: [
-        ["Nome", valores.nome],
-        ["E-mail", valores.email],
-        ["Telefone", valores.telefone],
+        [r.nome, valores.nome],
+        [r.email, valores.email],
+        [r.telefone, valores.telefone],
       ],
     },
     {
       passo: EMPRESA.ENDERECO,
-      titulo: "Endereço",
+      titulo: r.grupos.endereco,
       itens: [
-        ["CEP", valores.cep],
-        ["Cidade", valores.cidade],
-        ["Estado", valores.estado],
-        ["Endereço", valores.endereco],
+        [r.cep, valores.cep],
+        [r.cidade, valores.cidade],
+        [r.estado, valores.estado],
+        [r.endereco, valores.endereco],
       ],
     },
     {
       passo: EMPRESA.APRESENTACAO,
-      titulo: "Apresentação",
+      titulo: r.grupos.apresentacao,
       itens: [
-        ["Descrição", valores.descricao],
-        ["Cultura inclusiva", valores.culturaInclusiva],
-        ["Site", valores.site],
+        [r.descricao, valores.descricao],
+        [r.cultura, valores.culturaInclusiva],
+        [r.site, valores.site],
       ],
     },
   ] as const;
@@ -712,7 +707,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
         const preenchidos = grupo.itens.filter(([, valor]) => String(valor ?? "").trim());
 
         return (
-          <section key={grupo.titulo} aria-labelledby={`revisao-${grupo.passo}`} className="rounded-xl border border-border p-4">
+          <section key={grupo.passo} aria-labelledby={`revisao-${grupo.passo}`} className="rounded-xl border border-border p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 id={`revisao-${grupo.passo}`} className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
                 {grupo.titulo}
@@ -723,7 +718,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
                 className="min-h-9 text-sm"
                 onClick={() => aoEditar(grupo.passo)}
               >
-                Editar
+                {r.editar}
               </Button>
             </div>
 
@@ -737,7 +732,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
                 ))}
               </dl>
             ) : (
-              <p className="text-sm text-muted-foreground">Nada preenchido nesta etapa.</p>
+              <p className="text-sm text-muted-foreground">{r.nada}</p>
             )}
           </section>
         );
@@ -745,4 +740,3 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
     </div>
   );
 }
-

@@ -5,6 +5,7 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { AvisoAprovacaoEmpresa } from "@/components/perfil/AvisoAprovacaoEmpresa";
 import { useSessao } from "@/hooks/useSessao";
+import { SeletorIdioma, useT } from "@/i18n";
 import type { Empresa } from "@/types";
 
 /**
@@ -16,6 +17,7 @@ import type { Empresa } from "@/types";
  */
 export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
   const { sair } = useSessao();
+  const t = useT();
   const navigate = useNavigate();
   const [verificando, setVerificando] = useState(false);
 
@@ -38,7 +40,10 @@ export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-background px-4 py-10">
-      <Logo />
+      <div className="flex w-full max-w-lg items-center justify-between gap-3">
+        <Logo />
+        <SeletorIdioma compacto id="seletor-idioma-status" />
+      </div>
 
       <main className="w-full max-w-lg">
         <AvisoAprovacaoEmpresa
@@ -48,12 +53,12 @@ export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
               {pendente ? (
                 <Button variant="outline" onClick={verificarStatus} disabled={verificando}>
                   <RefreshCcw className={verificando ? "size-4 animate-spin" : "size-4"} aria-hidden="true" />
-                  Verificar novamente
+                  {t.layout.statusEmpresa.verificarNovamente}
                 </Button>
               ) : null}
               <Button variant="destructive" onClick={() => void sairDaConta()}>
                 <LogOut className="size-4" aria-hidden="true" />
-                Sair da conta
+                {t.layout.statusEmpresa.sairDaConta}
               </Button>
             </>
           }
@@ -64,7 +69,7 @@ export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
         href="mailto:projetoacessoinclusivo@gmail.com"
         className="text-sm font-semibold text-muted-foreground underline-offset-2 hover:underline"
       >
-        Fale conosco
+        {t.layout.statusEmpresa.faleConosco}
       </a>
     </div>
   );

@@ -4,6 +4,7 @@ import { TelaStatusEmpresa } from "./TelaStatusEmpresa";
 import { SuporteRodape } from "@/components/SuporteRodape";
 import { ConsentimentoVozDialog } from "@/components/acessibilidade/ConsentimentoVozDialog";
 import { useSessao } from "@/hooks/useSessao";
+import { useT } from "@/i18n";
 
 /**
  * Estrutura das páginas do app: link para pular ao conteúdo, cabeçalho, conteúdo e rodapé de
@@ -12,6 +13,7 @@ import { useSessao } from "@/hooks/useSessao";
  */
 export function EstruturaApp({ children }: { children: ReactNode }) {
   const { usuario } = useSessao();
+  const t = useT();
 
   // Empresa pendente, reprovada ou suspensa nunca vê o app por trás desta tela: nem os links do
   // `CabecalhoApp`, nem o conteúdo da rota. A checagem fica neste ponto único, por onde passam
@@ -33,7 +35,7 @@ export function EstruturaApp({ children }: { children: ReactNode }) {
         href="#conteudo"
         className="sr-only-focusable absolute left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
       >
-        Pular para o conteúdo principal
+        {t.comum.pularParaConteudo}
       </a>
       <CabecalhoApp />
       <main id="conteudo" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6">

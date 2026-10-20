@@ -36,12 +36,13 @@ import notificacoesService from "@/services/notificacoes.service";
 import mensagensService from "@/services/mensagens.service";
 import { urlArquivo } from "@/utils/arquivos";
 import { ouvirEvento } from "@/services/socket";
+import { SeletorIdioma, useT } from "@/i18n";
 
 const nav = [
-  { to: "/feed", label: "Início", icon: Home },
-  { to: "/vagas", label: "Vagas", icon: Briefcase },
-  { to: "/mensagens", label: "Mensagens", icon: MessageSquare },
-  { to: "/notificacoes", label: "Notificações", icon: Bell },
+  { to: "/feed", chave: "inicio", icon: Home },
+  { to: "/vagas", chave: "vagas", icon: Briefcase },
+  { to: "/mensagens", chave: "mensagens", icon: MessageSquare },
+  { to: "/notificacoes", chave: "notificacoes", icon: Bell },
 ] as const;
 
 /**
@@ -51,6 +52,7 @@ const nav = [
  */
 export function CabecalhoApp() {
   const { usuario, autenticado, sair } = useSessao();
+  const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -108,19 +110,20 @@ export function CabecalhoApp() {
     return (
       <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link to="/" aria-label="ACESSO — página inicial" className="shrink-0">
+          <Link to="/" aria-label={t.layout.inicioAria} className="shrink-0">
             <Logo showWordmark={false} className="sm:hidden" />
             <Logo className="hidden sm:inline-flex" />
           </Link>
-          <nav aria-label="Navegação pública" className="flex items-center gap-1 sm:gap-2">
+          <nav aria-label={t.layout.navegacaoPublica} className="flex items-center gap-1 sm:gap-2">
+            <SeletorIdioma compacto />
             <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
-              <Link to="/vagas">Vagas</Link>
+              <Link to="/vagas">{t.layout.nav.vagas}</Link>
             </Button>
             <Button asChild variant="outline" className="min-h-11">
-              <Link to="/entrar">Entrar</Link>
+              <Link to="/entrar">{t.comum.entrar}</Link>
             </Button>
             <Button asChild className="min-h-11">
-              <Link to="/cadastro">Criar conta</Link>
+              <Link to="/cadastro">{t.comum.criarConta}</Link>
             </Button>
           </nav>
         </div>
@@ -131,14 +134,14 @@ export function CabecalhoApp() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-1 px-4 md:gap-3">
-        <Link to="/feed" aria-label="ACESSO — ir para o início" className="shrink-0">
+        <Link to="/feed" aria-label={t.layout.irParaInicioAria} className="shrink-0">
           <Logo showWordmark={false} className="sm:hidden" />
           <Logo className="hidden sm:inline-flex" />
         </Link>
 
         <BarraBusca />
 
-        <nav aria-label="Navegação principal" className="mx-auto">
+        <nav aria-label={t.layout.navegacaoPrincipal} className="mx-auto">
           <ul className="flex items-center gap-1 sm:gap-2">
             {nav.map((item) => {
               const active = pathname.startsWith(item.to);
@@ -168,10 +171,10 @@ export function CabecalhoApp() {
                         </Badge>
                       )}
                     </span>
-                    <span className="mt-0.5 hidden sm:inline">{item.label}</span>
+                    <span className="mt-0.5 hidden sm:inline">{t.layout.nav[item.chave]}</span>
                     <span className="sr-only sm:hidden">
-                      {item.label}
-                      {mostrarContador ? ` — ${contador} não lidas` : ""}
+                      {t.layout.nav[item.chave]}
+                      {mostrarContador ? ` — ${t.layout.naoLidas(contador)}` : ""}
                     </span>
                   </Link>
                 </li>
@@ -180,70 +183,72 @@ export function CabecalhoApp() {
           </ul>
         </nav>
 
+        <SeletorIdioma compacto className="ml-auto shrink-0" id="seletor-idioma-cabecalho" />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="ml-auto h-11 shrink-0 gap-2 px-2"
-              aria-label="Abrir menu do perfil"
+              className="h-11 shrink-0 gap-2 px-2"
+              aria-label={t.layout.menuPerfilAria}
             >
               <Avatar className="size-8">
                 <AvatarImage src={urlArquivo(usuario?.fotoPerfil)} alt="" />
                 <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-                  {iniciaisDoNome(usuario?.nome ?? "Visitante")}
+                  {iniciaisDoNome(usuario?.nome ?? t.layout.visitante)}
                 </AvatarFallback>
               </Avatar>
               <span className="hidden max-w-28 truncate text-sm font-semibold sm:inline">
-                {usuario?.nome?.split(" ")[0] ?? "Você"}
+                {usuario?.nome?.split(" ")[0] ?? t.layout.voce}
               </span>
               <ChevronDown className="size-4" aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuLabel className="space-y-0.5">
-              <p className="truncate text-sm font-bold">{usuario?.nome ?? "Visitante"}</p>
+              <p className="truncate text-sm font-bold">{usuario?.nome ?? t.layout.visitante}</p>
               <p className="truncate text-xs font-normal text-muted-foreground">
-                {usuario?.titulo ?? "Entre para personalizar sua experiência"}
+                {usuario?.titulo ?? t.layout.convite}
               </p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/perfil">
-                <User aria-hidden="true" /> Ver perfil
+                <User aria-hidden="true" /> {t.layout.verPerfil}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/minha-atividade">
-                <Activity aria-hidden="true" /> Minha atividade
+                <Activity aria-hidden="true" /> {t.layout.minhaAtividade}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/descobrir">
-                <Compass aria-hidden="true" /> Descobrir
+                <Compass aria-hidden="true" /> {t.layout.descobrir}
               </Link>
             </DropdownMenuItem>
             {(usuario?.tipo === "candidato" || usuario?.tipo === "empresa") && (
               <DropdownMenuItem asChild>
                 <Link to="/dashboard">
-                  <LayoutDashboard aria-hidden="true" /> Painel de indicadores
+                  <LayoutDashboard aria-hidden="true" /> {t.layout.painelIndicadores}
                 </Link>
               </DropdownMenuItem>
             )}
             {usuario?.tipo === "administrador" && (
               <DropdownMenuItem asChild>
                 <Link to="/admin">
-                  <ShieldCheck aria-hidden="true" /> Painel administrativo
+                  <ShieldCheck aria-hidden="true" /> {t.layout.painelAdministrativo}
                 </Link>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
               <Link to="/configuracoes/acessibilidade">
-                <Accessibility aria-hidden="true" /> Configurações de acessibilidade
+                <Accessibility aria-hidden="true" /> {t.layout.configuracoesAcessibilidade}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/configuracoes">
-                <Settings aria-hidden="true" /> Configurações
+                <Settings aria-hidden="true" /> {t.layout.configuracoes}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -253,7 +258,7 @@ export function CabecalhoApp() {
                 void sair().then(() => navigate({ to: "/" }));
               }}
             >
-              <LogOut aria-hidden="true" /> Sair
+              <LogOut aria-hidden="true" /> {t.comum.sair}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

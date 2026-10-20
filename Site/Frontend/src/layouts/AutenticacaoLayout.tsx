@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 /**
  * Layout das páginas de autenticação (entrar, cadastro, recuperar e redefinir senha, confirmar
@@ -20,13 +21,15 @@ export function AutenticacaoLayout({
    */
   className?: string;
 }) {
+  const t = useT();
+
   return (
     <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
       <a
         href="#conteudo"
         className="sr-only-focusable absolute left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
       >
-        Pular para o conteúdo principal
+        {t.comum.pularParaConteudo}
       </a>
       <div id="conteudo" tabIndex={-1} className={cn("w-full max-w-md outline-none", className)}>
         {children}

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { useSessao } from "@/hooks/useSessao";
+import { useT } from "@/i18n";
 import type { TipoUsuario } from "@/types";
 
 /**
@@ -18,6 +19,7 @@ export function GuardaAcesso({
   children: ReactNode;
 }) {
   const { usuario, inicializado, autenticado } = useSessao();
+  const t = useT();
 
   if (!inicializado) {
     return (
@@ -28,7 +30,7 @@ export function GuardaAcesso({
           className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-muted-foreground"
         >
           <Loader2 className="size-8 animate-spin" aria-hidden="true" />
-          <p>Carregando sua sessão…</p>
+          <p>{t.layout.carregandoSessao}</p>
         </div>
       </EstruturaApp>
     );

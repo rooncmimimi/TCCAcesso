@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm, type FieldPath } from "react-hook-form";
+import { useForm, type FieldPath, type Resolver } from "react-hook-form";
 import { Accessibility } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import { RequisitosSenha } from "@/components/cadastro/RequisitosSenha";
 import { AceiteTermos, BotaoFinalizar, NavegacaoEtapa, TituloEtapa } from "@/components/cadastro/comuns";
 import { textosDoCadastro, type TextosCadastro } from "@/components/cadastro/idioma";
 import { PAIS_PADRAO } from "@/dados/localidade";
+import { metaPagina, SeletorIdioma, dic, useIdioma, useT } from "@/i18n";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
@@ -85,8 +86,6 @@ const CAMPOS_CANDIDATO: FieldPath<FormCandidato>[][] = [
 /** Índices das etapas do candidato, para nenhum número solto ficar espalhado pelo arquivo. */
 const CANDIDATO = { CONTA: 0, DADOS: 1, PERFIL: 2, ACESSIBILIDADE: 3 } as const;
 
-/** O cadastro é só em português: não há seletor de idioma. */
-const TEXTOS = textosDoCadastro("pt");
 
 export const Route = createFileRoute("/cadastro/candidato")({
   validateSearch: z.object({
@@ -97,24 +96,16 @@ export const Route = createFileRoute("/cadastro/candidato")({
     /** Código de entrega do Google: vincula a conta Google à conta criada aqui. */
     google: z.string().optional(),
   }),
-  head: () => ({
-    meta: [
-      { title: "Criar conta de candidato — ACESSO" },
-      {
-        name: "description",
-        content: "Monte seu perfil profissional no ACESSO e configure a acessibilidade do seu jeito.",
-      },
-      { property: "og:title", content: "Criar conta de candidato — ACESSO" },
-      { property: "og:description", content: "Cadastro gratuito na rede profissional inclusiva." },
-    ],
-  }),
+  head: () => metaPagina(dic().cadastro.candidato.meta),
   component: CadastroCandidato,
 });
 
 function CadastroCandidato() {
   const { retomar, depois, google } = Route.useSearch();
   const { autenticado, usuario } = useSessao();
-  const t = TEXTOS;
+  const { idioma } = useIdioma();
+  const t = useMemo(() => textosDoCadastro(idioma), [idioma]);
+  const global = useT();
 
   // Só retoma de verdade quem está logado como candidato e ainda não terminou o cadastro. Sem isso
   // um `?retomar=true` colado na barra levaria alguém deslogado a uma etapa que precisa de sessão.
@@ -122,16 +113,21 @@ function CadastroCandidato() {
 
   return (
     <AutenticacaoLayout className="max-w-lg">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+      {/* Quebra em duas linhas quando logo + idioma + acessibilidade não cabem (celular estreito),
+          em vez de espremer e cortar o último botão. */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+        <Link to="/" aria-label={global.auth.voltarInicioAria} className="inline-flex">
           <Logo />
         </Link>
-        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t.acessibilidade}>
-          <Link to="/configuracoes/acessibilidade">
-            <Accessibility aria-hidden="true" />
-            <span className="hidden sm:inline">{t.acessibilidade}</span>
-          </Link>
-        </Button>
+        <div className="flex flex-1 items-center justify-end gap-2">
+          <SeletorIdioma id="seletor-idioma-cadastro" />
+          <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t.acessibilidade}>
+            <Link to="/configuracoes/acessibilidade">
+              <Accessibility aria-hidden="true" />
+              <span className="hidden sm:inline">{t.acessibilidade}</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="shadow-card">
@@ -196,10 +192,16 @@ function WizardCandidato({
   // conta Google que está sendo vinculada).
   const doGoogle = useMemo(() => perfilDoCodigoGoogle(googleCodigo), [googleCodigo]);
 
+  // O esquema muda junto com o idioma; a ref deixa o resolver sempre enxergar o mais recente, para
+  // trocar de idioma no meio do formulário também trocar a língua das mensagens de erro.
   const esquema = useMemo(() => criarEsquemaCandidato(t), [t]);
+  const esquemaRef = useRef(esquema);
+  esquemaRef.current = esquema;
+  const resolver: Resolver<FormCandidato> = (valores, contexto, opcoes) =>
+    zodResolver(esquemaRef.current)(valores, contexto, opcoes);
 
   const form = useForm<FormCandidato>({
-    resolver: zodResolver(esquema),
+    resolver,
     mode: "onTouched",
     defaultValues: {
       email: doGoogle?.email ?? "",

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AlertTriangle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,48 +14,49 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import {
+  metaPagina,
+  regraCodigo6,
+  regraEmail,
+  regraSenha,
+  SeletorIdioma,
+  dic,
+  useT,
+  type Dicionario,
+} from "@/i18n";
 
-// Mesmas regras de `configuracoes/senha.tsx`: as duas telas seguem a regra do backend
-// (`regrasSenha` em `autenticacaoValidator.js`).
-const regrasSenha = z
-  .string()
-  .min(8, "A senha deve ter entre 8 e 72 caracteres.")
-  .max(72, "A senha deve ter entre 8 e 72 caracteres.")
-  .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
-  .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
-  .regex(/\d/, "A senha deve conter ao menos um número.")
-  .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial.");
+// As mesmas regras de `configuracoes/senha.tsx` (ver `regraSenha` em `@/i18n`), que seguem o backend.
 
 /** Mecanismo principal: só a nova senha; o token (do link do e-mail) já identifica a solicitação sozinho. */
-const esquemaToken = z
-  .object({
-    novaSenha: regrasSenha,
-    confirmarSenha: z.string().min(1, "Confirme a nova senha."),
-  })
-  .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
-    message: "As senhas não coincidem.",
-    path: ["confirmarSenha"],
-  });
+function criarEsquemaToken(v: Dicionario["validacao"]) {
+  return z
+    .object({
+      novaSenha: regraSenha(v),
+      confirmarSenha: z.string().min(1, v.confirmeNovaSenha),
+    })
+    .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
+      message: v.senhasNaoCoincidem,
+      path: ["confirmarSenha"],
+    });
+}
 
 /** Fallback: código de 6 dígitos, único mecanismo usado pelo aplicativo mobile (sem deep link). */
-const esquemaCodigo = z
-  .object({
-    email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-    codigo: z
-      .string()
-      .trim()
-      .length(6, "O código deve ter 6 dígitos.")
-      .regex(/^\d{6}$/, "O código deve conter apenas números."),
-    novaSenha: regrasSenha,
-    confirmarSenha: z.string().min(1, "Confirme a nova senha."),
-  })
-  .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
-    message: "As senhas não coincidem.",
-    path: ["confirmarSenha"],
-  });
+function criarEsquemaCodigo(v: Dicionario["validacao"]) {
+  return z
+    .object({
+      email: regraEmail(v),
+      codigo: regraCodigo6(v),
+      novaSenha: regraSenha(v),
+      confirmarSenha: z.string().min(1, v.confirmeNovaSenha),
+    })
+    .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
+      message: v.senhasNaoCoincidem,
+      path: ["confirmarSenha"],
+    });
+}
 
-type FormularioToken = z.infer<typeof esquemaToken>;
-type FormularioCodigo = z.infer<typeof esquemaCodigo>;
+type FormularioToken = z.infer<ReturnType<typeof criarEsquemaToken>>;
+type FormularioCodigo = z.infer<ReturnType<typeof criarEsquemaCodigo>>;
 
 export const Route = createFileRoute("/redefinir-senha")({
   // `z.coerce.string()`, e não `z.string()`: o parser de search params do TanStack Router converte
@@ -66,12 +67,7 @@ export const Route = createFileRoute("/redefinir-senha")({
     email: z.string().optional(),
     codigo: z.coerce.string().optional(),
   }),
-  head: () => ({
-    meta: [
-      { title: "Redefinir senha — ACESSO" },
-      { name: "description", content: "Defina uma nova senha para sua conta ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().auth.redefinir.meta),
   component: RedefinirSenha,
 });
 
@@ -85,11 +81,16 @@ function RedefinirSenha() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const t = useT();
+
   return (
     <AutenticacaoLayout>
-      <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
-        <Logo />
-      </Link>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <Link to="/" aria-label={t.auth.voltarInicioAria} className="inline-flex">
+          <Logo />
+        </Link>
+        <SeletorIdioma compacto id="seletor-idioma-auth" />
+      </div>
       <Card className="shadow-card">
         <CardContent className="p-6">{children}</CardContent>
       </Card>
@@ -98,6 +99,9 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function FormularioComToken({ token }: { token: string }) {
+  const t = useT();
+  const tr = t.auth.redefinir;
+  const esquemaToken = useMemo(() => criarEsquemaToken(t.validacao), [t]);
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [linkInvalido, setLinkInvalido] = useState(false);
@@ -114,7 +118,7 @@ function FormularioComToken({ token }: { token: string }) {
     setEnviando(true);
     try {
       await autenticacaoService.redefinirSenha({ token, novaSenha: valores.novaSenha });
-      toast.success("Senha redefinida com sucesso! Faça login novamente.");
+      toast.success(tr.sucesso);
       navigate({ to: "/entrar" });
     } catch (erro) {
       // Qualquer rejeição do servidor aqui é "link inválido ou expirado"
@@ -122,7 +126,7 @@ function FormularioComToken({ token }: { token: string }) {
       // formulário por um estado próprio em vez de anexar o erro a um
       // campo, já que não há mais campo de código/e-mail para apontar.
       setLinkInvalido(true);
-      toast.error(extrairMensagemErro(erro, "Link inválido ou expirado."));
+      toast.error(extrairMensagemErro(erro, tr.linkInvalidoAviso));
     } finally {
       setEnviando(false);
     }
@@ -133,12 +137,12 @@ function FormularioComToken({ token }: { token: string }) {
       <Layout>
         <div role="alert" className="space-y-4 text-center">
           <AlertTriangle className="mx-auto size-10 text-destructive" aria-hidden="true" />
-          <h1 className="text-2xl font-extrabold">Link inválido ou expirado</h1>
+          <h1 className="text-2xl font-extrabold">{tr.linkInvalidoTitulo}</h1>
           <p className="text-sm text-muted-foreground">
-            Este link de redefinição já foi usado, expirou ou é inválido. Solicite um novo link para continuar.
+            {tr.linkInvalidoTexto}
           </p>
           <Button asChild className="min-h-12 w-full text-base">
-            <Link to="/recuperar-senha">Solicitar novo link</Link>
+            <Link to="/recuperar-senha">{tr.solicitarNovo}</Link>
           </Button>
         </div>
       </Layout>
@@ -147,11 +151,11 @@ function FormularioComToken({ token }: { token: string }) {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-extrabold">Redefinir senha</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Escolha uma nova senha para sua conta.</p>
+      <h1 className="text-2xl font-extrabold">{tr.titulo}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{tr.escolha}</p>
       <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
         <div className="space-y-2">
-          <Label htmlFor="nova-senha">Nova senha</Label>
+          <Label htmlFor="nova-senha">{tr.novaSenha}</Label>
           <PasswordInput
             id="nova-senha"
             autoComplete="new-password"
@@ -166,12 +170,12 @@ function FormularioComToken({ token }: { token: string }) {
             </p>
           ) : (
             <p id="nova-senha-dica" className="text-sm text-muted-foreground">
-              Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+              {t.validacao.dicaSenha}
             </p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+          <Label htmlFor="confirmar-senha">{tr.confirmarSenha}</Label>
           <PasswordInput
             id="confirmar-senha"
             autoComplete="new-password"
@@ -189,19 +193,19 @@ function FormularioComToken({ token }: { token: string }) {
         <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
           {enviando ? (
             <>
-              <Loader2 className="animate-spin" aria-hidden="true" /> Salvando…
+              <Loader2 className="animate-spin" aria-hidden="true" /> {tr.salvando}
             </>
           ) : (
             <>
-              <Check aria-hidden="true" /> Redefinir senha
+              <Check aria-hidden="true" /> {tr.titulo}
             </>
           )}
         </Button>
       </form>
       <p className="mt-6 text-sm text-muted-foreground">
-        Lembrou a senha?{" "}
+        {tr.lembrou}{" "}
         <Link to="/entrar" className="font-semibold text-primary underline">
-          Entrar
+          {t.comum.entrar}
         </Link>
       </p>
     </Layout>
@@ -209,6 +213,9 @@ function FormularioComToken({ token }: { token: string }) {
 }
 
 function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: string; codigoInicial?: string }) {
+  const t = useT();
+  const tr = t.auth.redefinir;
+  const esquemaCodigo = useMemo(() => criarEsquemaCodigo(t.validacao), [t]);
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const {
@@ -235,10 +242,10 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
         codigo: valores.codigo,
         novaSenha: valores.novaSenha,
       });
-      toast.success("Senha redefinida com sucesso! Faça login novamente.");
+      toast.success(tr.sucesso);
       navigate({ to: "/entrar" });
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível redefinir a senha.");
+      const mensagem = extrairMensagemErro(erro, tr.erro);
       // Anexa a mensagem ao campo do código (causa mais comum de rejeição:
       // código incorreto/expirado/já usado) e move o foco pra lá, pra
       // quem usa teclado ou o leitor de voz não precisar procurar onde
@@ -254,14 +261,11 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
 
   return (
     <Layout>
-      <h1 className="text-2xl font-extrabold">Redefinir senha</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Prefere usar o link enviado por e-mail? Ele é mais rápido — basta clicar em "Redefinir minha senha" na
-        mensagem que enviamos. Se estiver no aplicativo ACESSO, informe o código de 6 dígitos abaixo.
-      </p>
+      <h1 className="text-2xl font-extrabold">{tr.titulo}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{tr.textoCodigo}</p>
       <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
         <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
+          <Label htmlFor="email">{t.auth.email}</Label>
           <Input
             id="email"
             type="email"
@@ -278,7 +282,7 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="codigo">Código de verificação</Label>
+          <Label htmlFor="codigo">{tr.codigo}</Label>
           <Input
             id="codigo"
             inputMode="numeric"
@@ -295,7 +299,7 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="nova-senha">Nova senha</Label>
+          <Label htmlFor="nova-senha">{tr.novaSenha}</Label>
           <PasswordInput
             id="nova-senha"
             autoComplete="new-password"
@@ -310,12 +314,12 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
             </p>
           ) : (
             <p id="nova-senha-dica" className="text-sm text-muted-foreground">
-              Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+              {t.validacao.dicaSenha}
             </p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+          <Label htmlFor="confirmar-senha">{tr.confirmarSenha}</Label>
           <PasswordInput
             id="confirmar-senha"
             autoComplete="new-password"
@@ -333,19 +337,19 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
         <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
           {enviando ? (
             <>
-              <Loader2 className="animate-spin" aria-hidden="true" /> Salvando…
+              <Loader2 className="animate-spin" aria-hidden="true" /> {tr.salvando}
             </>
           ) : (
             <>
-              <Check aria-hidden="true" /> Redefinir senha
+              <Check aria-hidden="true" /> {tr.titulo}
             </>
           )}
         </Button>
       </form>
       <p className="mt-6 text-sm text-muted-foreground">
-        Lembrou a senha?{" "}
+        {tr.lembrou}{" "}
         <Link to="/entrar" className="font-semibold text-primary underline">
-          Entrar
+          {t.comum.entrar}
         </Link>
       </p>
     </Layout>

@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 /**
  * Indicador de progresso do cadastro.
@@ -29,16 +30,15 @@ export function PassosCadastro({
   /** Palavras de estado para leitor de tela, no idioma escolhido. */
   rotulos?: { concluida: string; atual: string; pendente: string; lista: string };
 }) {
+  const dp = useT().cadastro.passos;
   const total = passos.length;
   const numeroAtual = Math.min(atual + 1, total);
-  const texto = frase
-    ? frase(numeroAtual, total, passos[atual])
-    : `Etapa ${numeroAtual} de ${total} — ${passos[atual]}`;
+  const texto = (frase ?? dp.etapaDe)(numeroAtual, total, passos[atual]);
   const estados = rotulos ?? {
-    concluida: "concluída",
-    atual: "etapa atual",
-    pendente: "ainda não preenchida",
-    lista: "Etapas do cadastro",
+    concluida: dp.concluida,
+    atual: dp.atual,
+    pendente: dp.pendente,
+    lista: dp.lista,
   };
 
   return (

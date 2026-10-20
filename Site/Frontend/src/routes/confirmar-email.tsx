@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { CheckCircle2, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -13,19 +13,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import { metaPagina, regraCodigo6, regraEmail, SeletorIdioma, dic, useT, type Dicionario } from "@/i18n";
 
-const esquema = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-  // 6 dígitos, o mesmo tamanho gerado por `gerarCodigoNumerico(6)` no backend
-  // (`AutenticacaoService.enviarCodigoConfirmacaoCadastro`).
-  codigo: z
-    .string()
-    .trim()
-    .length(6, "O código deve ter 6 dígitos.")
-    .regex(/^\d{6}$/, "O código deve conter apenas números."),
-});
+function criarEsquema(v: Dicionario["validacao"]) {
+  return z.object({
+    email: regraEmail(v),
+    // 6 dígitos, o mesmo tamanho gerado por `gerarCodigoNumerico(6)` no backend
+    // (`AutenticacaoService.enviarCodigoConfirmacaoCadastro`).
+    codigo: regraCodigo6(v),
+  });
+}
 
-type Formulario = z.infer<typeof esquema>;
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 export const Route = createFileRoute("/confirmar-email")({
   // `z.coerce.string()`, e não `z.string()`: o parser de search params do TanStack Router converte
@@ -36,12 +35,7 @@ export const Route = createFileRoute("/confirmar-email")({
     email: z.string().optional(),
     codigo: z.coerce.string().optional(),
   }),
-  head: () => ({
-    meta: [
-      { title: "Confirmar e-mail — ACESSO" },
-      { name: "description", content: "Confirme seu endereço de e-mail para ativar sua conta no ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().auth.confirmar.meta),
   component: ConfirmarEmail,
 });
 
@@ -53,6 +47,9 @@ type Estado = "confirmando-link" | "formulario" | "sucesso";
  * confirma sozinho ao montar, ou digitar o código de 6 dígitos neste formulário.
  */
 function ConfirmarEmail() {
+  const t = useT();
+  const tc = t.auth.confirmar;
+  const esquema = useMemo(() => criarEsquema(t.validacao), [t]);
   const { email, codigo } = Route.useSearch();
   const [estado, setEstado] = useState<Estado>(email && codigo ? "confirmando-link" : "formulario");
   const [confirmando, setConfirmando] = useState(false);
@@ -79,7 +76,7 @@ function ConfirmarEmail() {
       await autenticacaoService.confirmarCadastro(valores.email, valores.codigo);
       setEstado("sucesso");
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível confirmar seu e-mail.");
+      const mensagem = extrairMensagemErro(erro, tc.erro);
       setEstado("formulario");
       setError("codigo", { message: mensagem });
       setFocus("codigo");
@@ -108,9 +105,9 @@ function ConfirmarEmail() {
     try {
       await autenticacaoService.reenviarConfirmacaoCadastro(emailAtual);
       setReenviado(true);
-      toast.success("Um novo código de confirmação foi enviado.");
+      toast.success(tc.reenviadoAviso);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível reenviar o código agora."));
+      toast.error(extrairMensagemErro(erro, tc.erroReenviar));
     } finally {
       setReenviando(false);
     }
@@ -118,9 +115,12 @@ function ConfirmarEmail() {
 
   return (
     <AutenticacaoLayout>
-        <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
-          <Logo />
-        </Link>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link to="/" aria-label={t.auth.voltarInicioAria} className="inline-flex">
+            <Logo />
+          </Link>
+          <SeletorIdioma compacto id="seletor-idioma-auth" />
+        </div>
         <Card className="shadow-card">
           <CardContent className="p-6">
             {estado === "confirmando-link" ? (
@@ -135,7 +135,7 @@ function ConfirmarEmail() {
                   aria-live="polite"
                   className="mt-4 text-xl font-extrabold outline-none"
                 >
-                  Confirmando seu e-mail…
+                  {tc.confirmando}
                 </h1>
               </div>
             ) : estado === "sucesso" ? (
@@ -144,18 +144,17 @@ function ConfirmarEmail() {
                   <CheckCircle2 className="size-10 text-primary" aria-hidden="true" />
                 </div>
                 <h1 ref={tituloRef} tabIndex={-1} className="mt-4 text-xl font-extrabold outline-none">
-                  E-mail confirmado com sucesso!
+                  {tc.sucesso}
                 </h1>
                 {/*
                   Sem prometer que acabou: quem confirma vindo do cadastro ainda tem as duas
                   últimas etapas pela frente, e o login leva direto para elas (`?retomar=true`).
                 */}
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Agora é só entrar. Se o seu cadastro ficou pela metade, continuamos de onde você
-                  parou.
+                  {tc.sucessoTexto}
                 </p>
                 <Button asChild className="mt-6 min-h-12 w-full text-base">
-                  <Link to="/entrar">Entrar no ACESSO</Link>
+                  <Link to="/entrar">{tc.entrarNoAcesso}</Link>
                 </Button>
               </div>
             ) : (
@@ -168,17 +167,16 @@ function ConfirmarEmail() {
                     <Mail className="size-5" />
                   </span>
                   <h1 ref={tituloRef} tabIndex={-1} className="text-xl font-extrabold outline-none">
-                    Confirme seu e-mail
+                    {tc.titulo}
                   </h1>
                 </div>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  Enviamos um código de confirmação de 6 dígitos para o seu e-mail. Digite o código recebido, ou use
-                  o botão de confirmação diretamente na mensagem.
+                  {tc.texto}
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={confirmar} noValidate>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
+                    <Label htmlFor="email">{t.auth.email}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -195,7 +193,7 @@ function ConfirmarEmail() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="codigo">Código de confirmação</Label>
+                    <Label htmlFor="codigo">{tc.codigo}</Label>
                     <Input
                       id="codigo"
                       inputMode="numeric"
@@ -215,30 +213,30 @@ function ConfirmarEmail() {
                   <Button type="submit" className="min-h-12 w-full text-base" disabled={confirmando}>
                     {confirmando ? (
                       <>
-                        <Loader2 className="animate-spin" aria-hidden="true" /> Confirmando…
+                        <Loader2 className="animate-spin" aria-hidden="true" /> {tc.confirmandoBotao}
                       </>
                     ) : (
-                      "Confirmar e-mail"
+                      tc.confirmarBotao
                     )}
                   </Button>
                 </form>
 
                 <div className="mt-6 space-y-2 text-sm text-muted-foreground">
                   <p>
-                    Não recebeu o código?{" "}
+                    {tc.naoRecebeu}{" "}
                     <button
                       type="button"
                       className="font-semibold text-primary underline disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={reenviando || reenviado}
                       onClick={() => void reenviar()}
                     >
-                      {reenviando ? "Reenviando…" : reenviado ? "Código reenviado" : "Reenviar código"}
+                      {reenviando ? tc.reenviando : reenviado ? tc.reenviado : tc.reenviar}
                     </button>
                   </p>
                   <p>
-                    Já confirmou?{" "}
+                    {tc.jaConfirmou}{" "}
                     <Link to="/entrar" className="font-semibold text-primary underline">
-                      Entrar
+                      {t.comum.entrar}
                     </Link>
                   </p>
                 </div>

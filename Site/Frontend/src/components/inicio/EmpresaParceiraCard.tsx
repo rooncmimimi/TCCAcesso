@@ -1,9 +1,11 @@
 import { BadgeCheck } from "lucide-react";
 import { urlArquivo } from "@/utils/arquivos";
+import { useT } from "@/i18n";
 import type { Empresa } from "@/types";
 
 /** Card de empresa parceira exibido na página inicial. */
 export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
+  const t = useT();
   const nome = empresa.nomeFantasia ?? empresa.razaoSocial;
   const logo = urlArquivo(empresa.logo);
 
@@ -12,7 +14,7 @@ export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
       {logo ? (
         <img
           src={logo}
-          alt={`Logo de ${nome}`}
+          alt={t.vagas.logoDe(nome)}
           className="size-11 shrink-0 rounded-lg object-cover"
         />
       ) : (
@@ -27,15 +29,15 @@ export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
         <span className="flex items-center gap-1 truncate font-bold">
           <span className="truncate">{nome}</span>
           {empresa.empresaVerificada && (
-            <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+            <span className="inline-flex shrink-0 items-center text-primary" title={t.comum.empresaVerificadaTitulo}>
               <BadgeCheck className="size-3.5" aria-hidden="true" />
-              <span className="sr-only">Empresa verificada</span>
+              <span className="sr-only">{t.comum.empresaVerificada}</span>
             </span>
           )}
         </span>
         <span className="block truncate text-sm text-muted-foreground">
-          {empresa.setor ?? "Empresa parceira"}
-          {typeof empresa.totalVagas === "number" ? ` · ${empresa.totalVagas} vagas` : ""}
+          {empresa.setor ?? t.vagas.empresaParceira}
+          {typeof empresa.totalVagas === "number" ? ` · ${t.vagas.totalVagas(empresa.totalVagas)}` : ""}
         </span>
       </span>
     </div>

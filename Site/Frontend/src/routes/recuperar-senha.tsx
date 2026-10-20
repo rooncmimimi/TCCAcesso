@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -13,24 +13,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import { metaPagina, regraEmail, SeletorIdioma, dic, useT, type Dicionario } from "@/i18n";
 
-const esquema = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-});
+function criarEsquema(v: Dicionario["validacao"]) {
+  return z.object({ email: regraEmail(v) });
+}
 
-type Formulario = z.infer<typeof esquema>;
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 export const Route = createFileRoute("/recuperar-senha")({
-  head: () => ({
-    meta: [
-      { title: "Recuperar senha — ACESSO" },
-      { name: "description", content: "Solicite um link para redefinir sua senha do ACESSO." },
-    ],
-  }),
+  head: () => metaPagina(dic().auth.recuperar.meta),
   component: RecuperarSenha,
 });
 
 function RecuperarSenha() {
+  const t = useT();
+  const tr = t.auth.recuperar;
+  const esquema = useMemo(() => criarEsquema(t.validacao), [t]);
   const [enviando, setEnviando] = useState(false);
   // O backend responde de forma genérica (não revela se o e-mail existe), então só resta mostrar
   // "e-mail enviado". A tela não leva a `/redefinir-senha`: o próximo passo é abrir o link recebido
@@ -48,7 +47,7 @@ function RecuperarSenha() {
       await autenticacaoService.esqueciSenha(valores.email);
       setEnviado(true);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível solicitar a recuperação de senha."));
+      toast.error(extrairMensagemErro(erro, tr.erro));
     } finally {
       setEnviando(false);
     }
@@ -56,35 +55,37 @@ function RecuperarSenha() {
 
   return (
     <AutenticacaoLayout>
-        <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
-          <Logo />
-        </Link>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link to="/" aria-label={t.auth.voltarInicioAria} className="inline-flex">
+            <Logo />
+          </Link>
+          <SeletorIdioma compacto id="seletor-idioma-auth" />
+        </div>
         <Card className="shadow-card">
           <CardContent className="p-6">
             {enviado ? (
               <div role="status" aria-live="polite" className="space-y-4 text-center">
                 <MailCheck className="mx-auto size-10 text-primary" aria-hidden="true" />
-                <h1 className="text-2xl font-extrabold">Verifique seu e-mail</h1>
+                <h1 className="text-2xl font-extrabold">{tr.verifique}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Se encontrarmos uma conta associada a este endereço, enviaremos um link para redefinir sua senha.
-                  Clique nele para continuar.
+                  {tr.enviado}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Está no aplicativo ACESSO?{" "}
+                  {tr.noApp}{" "}
                   <Link to="/redefinir-senha" className="font-semibold text-primary underline">
-                    Usar o código do e-mail
+                    {tr.usarCodigo}
                   </Link>
                 </p>
               </div>
             ) : (
               <>
-                <h1 className="text-2xl font-extrabold">Recuperar senha</h1>
+                <h1 className="text-2xl font-extrabold">{tr.titulo}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Informe seu e-mail para receber um link de redefinição de senha.
+                  {tr.texto}
                 </p>
                 <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
+                    <Label htmlFor="email">{t.auth.email}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -103,25 +104,25 @@ function RecuperarSenha() {
                   <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
                     {enviando ? (
                       <>
-                        <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                        <Loader2 className="animate-spin" aria-hidden="true" /> {t.comum.enviando}
                       </>
                     ) : (
                       <>
-                        Enviar link <ArrowRight aria-hidden="true" />
+                        {tr.enviarLink} <ArrowRight aria-hidden="true" />
                       </>
                     )}
                   </Button>
                 </form>
                 <p className="mt-6 text-sm text-muted-foreground">
-                  Já tem um código?{" "}
+                  {tr.jaTemCodigo}{" "}
                   <Link to="/redefinir-senha" className="font-semibold text-primary underline">
-                    Redefinir senha
+                    {tr.redefinir}
                   </Link>
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Lembrou a senha?{" "}
+                  {tr.lembrou}{" "}
                   <Link to="/entrar" className="font-semibold text-primary underline">
-                    Entrar
+                    {t.comum.entrar}
                   </Link>
                 </p>
               </>

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useSessao } from "@/hooks/useSessao";
 import googleService, { type ResultadoGoogle } from "@/services/google.service";
 import { definirTokens } from "@/services/api";
+import { metaPagina, SeletorIdioma, dic, useT } from "@/i18n";
 
 /**
  * Retorno da autenticação do Google.
@@ -34,21 +35,19 @@ export const Route = createFileRoute("/retorno-google")({
     codigo: z.string().optional(),
     erro: z.enum(["cancelado", "falha"]).optional(),
   }),
-  head: () => ({ meta: [{ title: "Entrando com Google — ACESSO" }] }),
+  head: () => metaPagina(dic().auth.google.retorno.meta),
   component: RetornoGoogle,
 });
 
 function RetornoGoogle() {
+  const t = useT();
+  const tg = t.auth.google.retorno;
   const { codigo, erro } = Route.useSearch();
   const navigate = useNavigate();
   const { recarregar } = useSessao();
   const [resultado, setResultado] = useState<ResultadoGoogle | null>(null);
   const [falha, setFalha] = useState<string | null>(
-    erro === "cancelado"
-      ? "Você cancelou a entrada com o Google."
-      : erro === "falha"
-        ? "Não foi possível concluir a entrada com o Google. Tente novamente."
-        : null,
+    erro === "cancelado" ? tg.cancelou : erro === "falha" ? tg.falha : null,
   );
   // Em desenvolvimento o React monta duas vezes; sem isto o código de uso único seria trocado duas
   // vezes e a segunda falharia.
@@ -95,39 +94,40 @@ function RetornoGoogle() {
         navigate({ to: usuario.tipo === "administrador" ? "/admin" : "/feed" });
       })
       .catch(() => {
-        setFalha("Não foi possível concluir a entrada com o Google. Tente novamente.");
+        setFalha(tg.falha);
       });
-  }, [codigo, falha, navigate, recarregar]);
+  }, [codigo, falha, navigate, recarregar, tg.falha]);
 
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t.auth.voltarInicioAria} className="inline-flex">
           <Logo />
         </Link>
+        <SeletorIdioma compacto id="seletor-idioma-auth" />
       </div>
 
       <Card className="shadow-card">
         <CardContent className="p-6 sm:p-8">
           {falha ? (
-            <Aviso titulo="Não deu certo" texto={falha}>
+            <Aviso titulo={tg.naoDeuCerto} texto={falha}>
               <Button asChild className="min-h-12 w-full text-base">
-                <Link to="/entrar">Voltar para o login</Link>
+                <Link to="/entrar">{tg.voltarLogin}</Link>
               </Button>
             </Aviso>
           ) : resultado?.desfecho === "conflito" ? (
             <Aviso
-              titulo="Esta conta já existe no ACESSO"
-              texto={`Já há uma conta com o e-mail ${resultado.email}, criada com senha. Entre com ela — depois você pode vincular o Google nas configurações. Vincular só porque o e-mail coincide deixaria sua conta exposta.`}
+              titulo={tg.jaExiste}
+              texto={tg.textoConflito(resultado.email)}
             >
               <Button asChild className="min-h-12 w-full text-base">
-                <Link to="/entrar">Entrar com e-mail e senha</Link>
+                <Link to="/entrar">{tg.entrarComSenha}</Link>
               </Button>
             </Aviso>
           ) : (
             <div className="flex items-center gap-3 py-6" role="status">
               <Loader2 className="size-5 animate-spin text-primary" aria-hidden="true" />
-              <p className="text-sm text-muted-foreground">Confirmando sua conta Google…</p>
+              <p className="text-sm text-muted-foreground">{tg.confirmando}</p>
             </div>
           )}
         </CardContent>

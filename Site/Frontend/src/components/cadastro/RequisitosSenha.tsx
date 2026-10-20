@@ -1,5 +1,6 @@
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 /**
  * Lista dos requisitos de senha, marcada em tempo real conforme a pessoa digita.
@@ -13,20 +14,21 @@ import { cn } from "@/lib/utils";
  * `polite` de propósito: `assertive` interromperia a digitação a cada tecla.
  */
 
+// Os rótulos de cada regra vêm do dicionário (`cadastro.requisitos.rotulos`), na mesma ordem.
 const REQUISITOS = [
-  { rotulo: "Pelo menos 8 caracteres", testar: (s: string) => s.length >= 8 && s.length <= 72 },
-  { rotulo: "Uma letra maiúscula", testar: (s: string) => /[A-Z]/.test(s) },
-  { rotulo: "Uma letra minúscula", testar: (s: string) => /[a-z]/.test(s) },
-  { rotulo: "Um número", testar: (s: string) => /\d/.test(s) },
-  { rotulo: "Um caractere especial", testar: (s: string) => /[^A-Za-z0-9]/.test(s) },
+  { testar: (s: string) => s.length >= 8 && s.length <= 72 },
+  { testar: (s: string) => /[A-Z]/.test(s) },
+  { testar: (s: string) => /[a-z]/.test(s) },
+  { testar: (s: string) => /\d/.test(s) },
+  { testar: (s: string) => /[^A-Za-z0-9]/.test(s) },
 ] as const;
 
 export function RequisitosSenha({
   id,
   senha,
   rotulos,
-  atendidoTexto = "atendido",
-  pendenteTexto = "ainda não atendido",
+  atendidoTexto,
+  pendenteTexto,
 }: {
   id: string;
   senha: string;
@@ -35,14 +37,18 @@ export function RequisitosSenha({
   atendidoTexto?: string;
   pendenteTexto?: string;
 }) {
+  const d = useT().cadastro.requisitos;
+  const textoAtendido = atendidoTexto ?? d.atendido;
+  const textoPendente = pendenteTexto ?? d.pendente;
+
   return (
     <ul id={id} aria-live="polite" className="space-y-1.5">
       {REQUISITOS.map((requisito, indice) => {
         const atendido = requisito.testar(senha);
-        const rotulo = rotulos?.[indice] ?? requisito.rotulo;
+        const rotulo = rotulos?.[indice] ?? d.rotulos[indice];
 
         return (
-          <li key={requisito.rotulo} className="flex items-center gap-2 text-sm">
+          <li key={indice} className="flex items-center gap-2 text-sm">
             <span
               aria-hidden="true"
               className={cn(
@@ -55,7 +61,7 @@ export function RequisitosSenha({
             <span className={atendido ? "font-medium text-foreground" : "text-muted-foreground"}>
               {rotulo}
             </span>
-            <span className="sr-only">{atendido ? atendidoTexto : pendenteTexto}</span>
+            <span className="sr-only">{atendido ? textoAtendido : textoPendente}</span>
           </li>
         );
       })}

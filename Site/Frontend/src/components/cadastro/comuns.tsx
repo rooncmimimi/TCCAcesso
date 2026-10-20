@@ -15,6 +15,7 @@ import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n";
 
 /**
  * Peças usadas pelos dois cadastros, que a partir da separação em `/cadastro/candidato` e
@@ -62,8 +63,8 @@ export function NavegacaoEtapa({
   rotuloAvancar,
   aoVoltar,
   acaoSecundaria,
-  rotuloVoltar = "Voltar",
-  rotuloEnviando = "Enviando…",
+  rotuloVoltar,
+  rotuloEnviando,
 }: {
   primeiraEtapa: boolean;
   enviando: boolean;
@@ -74,12 +75,16 @@ export function NavegacaoEtapa({
   rotuloVoltar?: string;
   rotuloEnviando?: string;
 }) {
+  const t = useT();
+  const textoVoltar = rotuloVoltar ?? t.comum.voltar;
+  const textoEnviando = rotuloEnviando ?? t.comum.enviando;
+
   return (
     <div className="mt-8 space-y-3">
       <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
         {enviando ? (
           <>
-            <Loader2 className="animate-spin" aria-hidden="true" /> {rotuloEnviando}
+            <Loader2 className="animate-spin" aria-hidden="true" /> {textoEnviando}
           </>
         ) : (
           <>
@@ -96,7 +101,7 @@ export function NavegacaoEtapa({
         )}
         {!primeiraEtapa && aoVoltar && (
           <Button type="button" variant="outline" className="min-h-11" onClick={aoVoltar} disabled={enviando}>
-            <ArrowLeft aria-hidden="true" /> {rotuloVoltar}
+            <ArrowLeft aria-hidden="true" /> {textoVoltar}
           </Button>
         )}
       </div>
@@ -137,13 +142,8 @@ export function AceiteTermos({
   obrigatorio?: boolean;
   dicaObrigatorio?: string;
 }) {
-  const t = textos ?? {
-    antes: "Li e aceito os",
-    linkUso: "Termos de Uso",
-    entre: "e a",
-    linkPrivacidade: "Política de Privacidade",
-    depois: "do ACESSO.",
-  };
+  const padrao = useT().cadastro.aceite;
+  const t = textos ?? padrao;
 
   return (
     <div className="space-y-2">
@@ -187,6 +187,7 @@ export function BotaoFinalizar({
 }) {
   const navigate = useNavigate();
   const { atualizar } = useSessao();
+  const dc = useT().cadastro;
   const [enviando, setEnviando] = useState(false);
 
   async function finalizar() {
@@ -212,7 +213,7 @@ export function BotaoFinalizar({
         </>
       ) : (
         <>
-          {seguirParaEmpresa ? "Continuar para o cadastro da empresa" : t.finalizar}{" "}
+          {seguirParaEmpresa ? dc.continuarParaEmpresa : t.finalizar}{" "}
           <ArrowRight aria-hidden="true" />
         </>
       )}
@@ -231,6 +232,7 @@ export function BotaoFinalizar({
 export function EtapaAcessibilidade({ passos, indice }: { passos: readonly string[]; indice: number }) {
   const navigate = useNavigate();
   const { atualizar } = useSessao();
+  const da = useT().cadastro.acessibilidade;
   const [enviando, setEnviando] = useState(false);
 
   async function finalizar() {
@@ -252,8 +254,8 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
     <div>
       <PassosCadastro passos={passos} atual={indice} />
       <TituloEtapa
-        titulo="Deixe o ACESSO do seu jeito"
-        descricao="Ajuste o que precisar e veja o resultado na hora. Você pode mudar tudo depois, em Configurações."
+        titulo={da.titulo}
+        descricao={da.descricao}
       />
 
       <PainelAcessibilidade />
@@ -261,11 +263,11 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
       <Button type="button" className="mt-8 min-h-12 w-full text-base" disabled={enviando} onClick={finalizar}>
         {enviando ? (
           <>
-            <Loader2 className="animate-spin" aria-hidden="true" /> Finalizando…
+            <Loader2 className="animate-spin" aria-hidden="true" /> {da.finalizando}
           </>
         ) : (
           <>
-            Finalizar cadastro <ArrowRight aria-hidden="true" />
+            {da.finalizar} <ArrowRight aria-hidden="true" />
           </>
         )}
       </Button>
@@ -286,6 +288,7 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
  * o cadastro **não** terminou. Fingir que tudo foi concluído aqui seria mentira.
  */
 export function ConfirmeSeuEmail({ email }: { email: string }) {
+  const dc = useT().cadastro.confirmeEmail;
   const [enviando, setEnviando] = useState(false);
   const [reenviado, setReenviado] = useState(false);
   const tituloRef = useRef<HTMLHeadingElement>(null);
@@ -299,9 +302,9 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
     try {
       await autenticacaoService.reenviarConfirmacaoCadastro(email);
       setReenviado(true);
-      toast.success("Um novo e-mail de confirmação foi enviado.");
+      toast.success(dc.reenviadoAviso);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível reenviar o e-mail agora."));
+      toast.error(extrairMensagemErro(erro, dc.erroReenviar));
     } finally {
       setEnviando(false);
     }
@@ -317,22 +320,20 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
           <Mail className="size-5" />
         </span>
         <h1 ref={tituloRef} tabIndex={-1} className="text-xl font-extrabold outline-none">
-          Falta confirmar seu e-mail
+          {dc.titulo}
         </h1>
       </div>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        Sua conta foi criada, mas o cadastro ainda não terminou. Enviamos um e-mail de confirmação
-        para <strong className="text-foreground">{email}</strong> — verifique a caixa de entrada e também a
-        pasta de spam.
+        {dc.antes} <strong className="text-foreground">{email}</strong> {dc.depois}
       </p>
 
-      <ol className="mt-5 space-y-3" aria-label="O que falta para terminar o cadastro">
+      <ol className="mt-5 space-y-3" aria-label={dc.listaAria}>
         {[
-          { feito: true, texto: "Dados da empresa" },
-          { feito: false, texto: "Confirmar o e-mail", agora: true },
-          { feito: false, texto: "Entrar na sua conta" },
-          { feito: false, texto: "Análise do cadastro pela equipe do ACESSO" },
+          { feito: true, texto: dc.itens[0] },
+          { feito: false, texto: dc.itens[1], agora: true },
+          { feito: false, texto: dc.itens[2] },
+          { feito: false, texto: dc.itens[3] },
         ].map((item, indice) => (
           <li key={item.texto} className="flex items-center gap-3 text-sm">
             <span
@@ -351,22 +352,21 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
             </span>
             {/* Estado em texto, nunca só pela cor nem pelo ✓. */}
             <span className="sr-only">
-              {item.feito ? "concluído" : item.agora ? "é o que falta agora" : "ainda não feito"}
+              {item.feito ? dc.concluido : item.agora ? dc.agora : dc.aindaNao}
             </span>
           </li>
         ))}
       </ol>
 
       <p className="mt-5 text-sm text-muted-foreground">
-        Prefere digitar o código de 6 dígitos que veio no e-mail? Você também pode{" "}
+        {dc.porCodigoAntes}{" "}
         <Link to="/confirmar-email" search={{ email }} className="font-semibold text-primary underline">
-          confirmar por código
+          {dc.porCodigoLink}
         </Link>
         .
       </p>
       <p className="mt-4 rounded-lg bg-primary-soft px-3 py-2 text-sm">
-        Depois de entrar, retomamos seu cadastro de onde você parou — nada do que você preencheu se
-        perde.
+        {dc.retomamos}
       </p>
 
       <Button
@@ -378,12 +378,12 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
       >
         {enviando ? (
           <>
-            <Loader2 className="animate-spin" aria-hidden="true" /> Reenviando…
+            <Loader2 className="animate-spin" aria-hidden="true" /> {dc.reenviando}
           </>
         ) : reenviado ? (
-          "E-mail reenviado"
+          dc.reenviado
         ) : (
-          "Reenviar e-mail"
+          dc.reenviar
         )}
       </Button>
     </div>

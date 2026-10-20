@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Accessibility, ArrowLeft, ArrowRight, Loader2, Mail, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -17,27 +17,27 @@ import { descricao } from "@/components/cadastro/descricao";
 import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import { metaPagina, regraEmail, SeletorIdioma, dic, useT, type Dicionario } from "@/i18n";
 
-const esquemaLogin = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-  senha: z.string().min(1, "Informe sua senha."),
-});
+function criarEsquemaLogin(v: Dicionario["validacao"]) {
+  return z.object({
+    email: regraEmail(v),
+    senha: z.string().min(1, v.informeSenha),
+  });
+}
 
-type FormularioLogin = z.infer<typeof esquemaLogin>;
+type FormularioLogin = z.infer<ReturnType<typeof criarEsquemaLogin>>;
 
 export const Route = createFileRoute("/entrar")({
-  head: () => ({
-    meta: [
-      { title: "Entrar — ACESSO" },
-      { name: "description", content: "Acesse sua conta ACESSO e continue sua jornada profissional inclusiva." },
-      { property: "og:title", content: "Entrar — ACESSO" },
-      { property: "og:description", content: "Acesse sua conta na rede profissional acessível." },
-    ],
-  }),
+  head: () => metaPagina(dic().auth.entrar.meta),
   component: Entrar,
 });
 
 function Entrar() {
+  const t = useT();
+  const ta = t.auth;
+  const te = ta.entrar;
+  const esquema = useMemo(() => criarEsquemaLogin(t.validacao), [t]);
   const { entrar } = useSessao();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
@@ -58,7 +58,7 @@ function Entrar() {
     setError,
     formState: { errors },
   } = useForm<FormularioLogin>({
-    resolver: zodResolver(esquemaLogin),
+    resolver: zodResolver(esquema),
     defaultValues: { email: "", senha: "" },
   });
 
@@ -88,7 +88,7 @@ function Entrar() {
         setEmailNaoVerificado(resultado.email);
         return;
       }
-      toast.success("Login realizado com sucesso!");
+      toast.success(te.sucesso);
 
       // Candidato que não terminou o cadastro volta de onde parou. É o caso normal de quem criou a
       // conta com confirmação de e-mail ativa: as duas últimas etapas exigem sessão e ficaram para
@@ -103,7 +103,7 @@ function Entrar() {
       // parecia que o login não tinha funcionado.
       navigate({ to: resultado.tipo === "administrador" ? "/admin" : "/feed" });
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível entrar. Verifique seus dados.");
+      const mensagem = extrairMensagemErro(erro, te.erro);
       setError("senha", { message: mensagem });
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.error(mensagem);
@@ -119,9 +119,9 @@ function Entrar() {
     try {
       await autenticacaoService.reenviarConfirmacaoCadastro(emailNaoVerificado);
       setReenviado(true);
-      toast.success("Um novo e-mail de confirmação foi enviado.");
+      toast.success(te.reenviadoAviso);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível reenviar o e-mail agora."));
+      toast.error(extrairMensagemErro(erro, te.erroReenviar));
     } finally {
       setReenviando(false);
     }
@@ -135,10 +135,10 @@ function Entrar() {
       if ("contaPausada" in resultado) return;
       // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
       // leitura.
-      toast.success("Conta reativada. Bem-vindo de volta!");
+      toast.success(te.reativada);
       navigate({ to: "/feed" });
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível reativar a conta.");
+      const mensagem = extrairMensagemErro(erro, te.erroReativar);
       toast.error(mensagem);
     } finally {
       setEnviando(false);
@@ -150,15 +150,18 @@ function Entrar() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={ta.voltarInicioAria} className="inline-flex">
           <Logo />
         </Link>
-        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
-          <Link to="/configuracoes/acessibilidade">
-            <Accessibility aria-hidden="true" />
-            <span className="hidden sm:inline">Acessibilidade</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <SeletorIdioma compacto id="seletor-idioma-entrar" />
+          <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t.layout.configuracoesAcessibilidade}>
+            <Link to="/configuracoes/acessibilidade">
+              <Accessibility aria-hidden="true" />
+              <span className="hidden sm:inline">{t.comum.acessibilidade}</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="shadow-card">
@@ -175,17 +178,17 @@ function Entrar() {
                 <h1
                   ref={tituloNaoVerificadoRef}
                   tabIndex={-1}
-                  data-speak="Confirme seu e-mail antes de entrar."
+                  data-speak={te.confirmeFala}
                   className="text-xl font-extrabold outline-none"
                 >
-                  Confirme seu e-mail
+                  {te.confirmeTitulo}
                 </h1>
               </div>
 
               <p className="mt-4 text-sm text-muted-foreground">
-                Enviamos um e-mail de confirmação para{" "}
-                <strong className="text-foreground">{emailNaoVerificado}</strong>. Verifique sua caixa de entrada e
-                também a pasta de spam, e clique no link antes de entrar.
+                {te.confirmeAntes}{" "}
+                <strong className="text-foreground">{emailNaoVerificado}</strong>
+                {te.confirmeDepois}
               </p>
 
               <Button
@@ -197,12 +200,12 @@ function Entrar() {
               >
                 {reenviando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Reenviando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {te.reenviando}
                   </>
                 ) : reenviado ? (
-                  "E-mail reenviado"
+                  te.reenviado
                 ) : (
-                  "Reenviar e-mail"
+                  te.reenviar
                 )}
               </Button>
 
@@ -215,7 +218,7 @@ function Entrar() {
                   setReenviado(false);
                 }}
               >
-                <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+                <ArrowLeft className="size-4" aria-hidden="true" /> {t.comum.voltar}
               </Button>
             </>
           ) : contaPausadaPendente ? (
@@ -230,24 +233,24 @@ function Entrar() {
                 <h1
                   ref={tituloPausadaRef}
                   tabIndex={-1}
-                  data-speak="Sua conta está pausada. Deseja reativá-la agora?"
+                  data-speak={te.pausadaFala}
                   className="text-xl font-extrabold outline-none"
                 >
-                  Sua conta está pausada
+                  {te.pausadaTitulo}
                 </h1>
               </div>
 
               <p className="mt-4 text-sm text-muted-foreground">
-                Você pausou esta conta anteriormente. Deseja reativá-la e continuar?
+                {te.pausadaTexto}
               </p>
 
               <Button type="button" className="mt-6 min-h-12 w-full text-base" disabled={enviando} onClick={reativarConta}>
                 {enviando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Reativando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {te.reativando}
                   </>
                 ) : (
-                  "Reativar minha conta"
+                  te.reativar
                 )}
               </Button>
 
@@ -257,22 +260,22 @@ function Entrar() {
                 className="mt-2 min-h-11 w-full gap-2"
                 onClick={() => setContaPausadaPendente(null)}
               >
-                <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+                <ArrowLeft className="size-4" aria-hidden="true" /> {t.comum.voltar}
               </Button>
             </>
           ) : (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl font-extrabold">Entrar no ACESSO</h1>
+                <h1 className="text-2xl font-extrabold">{te.titulo}</h1>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  Suas preferências de acessibilidade acompanham sua conta.
+                  {te.subtitulo}
                 </p>
               </div>
 
               <BotaoGoogle />
 
               <form className="space-y-5" onSubmit={aoEnviar} noValidate>
-                <Campo id="email" rotulo="E-mail" erro={errors.email?.message}>
+                <Campo id="email" rotulo={ta.email} erro={errors.email?.message}>
                   <Input
                     id="email"
                     type="email"
@@ -286,11 +289,11 @@ function Entrar() {
 
                 <Campo
                   id="senha"
-                  rotulo="Senha"
+                  rotulo={ta.senha}
                   erro={errors.senha?.message}
                   acao={
                     <Link to="/recuperar-senha" className="text-sm font-semibold text-primary underline">
-                      Esqueceu a senha?
+                      {te.esqueceu}
                     </Link>
                   }
                 >
@@ -307,11 +310,11 @@ function Entrar() {
                 <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
                   {enviando ? (
                     <>
-                      <Loader2 className="animate-spin" aria-hidden="true" /> Entrando…
+                      <Loader2 className="animate-spin" aria-hidden="true" /> {te.entrando}
                     </>
                   ) : (
                     <>
-                      Entrar <ArrowRight aria-hidden="true" />
+                      {t.comum.entrar} <ArrowRight aria-hidden="true" />
                     </>
                   )}
                 </Button>
@@ -323,9 +326,9 @@ function Entrar() {
 
       {!emInterrupcao && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Ainda não tem uma conta?{" "}
+          {te.ainda}{" "}
           <Link to="/cadastro" className="font-semibold text-primary underline underline-offset-2">
-            Criar conta gratuita
+            {te.criarGratuita}
           </Link>
         </p>
       )}

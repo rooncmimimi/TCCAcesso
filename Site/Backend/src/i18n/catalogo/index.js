@@ -4,6 +4,14 @@ import geral from "./geral.js";
 import recursos from "./recursos.js";
 import social from "./social.js";
 import validacao from "./validacao.js";
+import cadastro from "./cadastro.js";
+import contaAdmin from "./contaAdmin.js";
+import contato from "./contato.js";
+import curriculo from "./curriculo.js";
+import denuncias from "./denuncias.js";
+import localidade from "./localidade.js";
+import midia from "./midia.js";
+import privacidade from "./privacidade.js";
 
 /**
  * Catálogo de tradução das mensagens do servidor: lista de `[pt, en, es]`. O texto em português é
@@ -17,5 +25,13 @@ export const CATALOGO = [
     ...validacao,
     ...recursos,
     ...social,
-    ...auditoria
+    ...auditoria,
+    ...cadastro,
+    ...contaAdmin,
+    ...contato,
+    ...curriculo,
+    ...denuncias,
+    ...localidade,
+    ...midia,
+    ...privacidade
 ];

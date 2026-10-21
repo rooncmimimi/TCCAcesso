@@ -37,7 +37,7 @@
     <string name="ajuda_senha">De 8 a 72 caracteres, com letra maiúscula, minúscula, número e símbolo (ex.: @, #, !).</string>
     <string name="rotulo_cidade">Cidade</string>
     <string name="ajuda_cidade">Usada para mostrar oportunidades perto de você.</string>
-    <string name="rotulo_data_nascimento">Data de nascimento (opcional)</string>
+    <string name="rotulo_data_nascimento">Data de nascimento</string>
     <string name="ajuda_data_nascimento">Formato dia/mês/ano, por exemplo 25/09/2000.</string>
     <string name="abrir_calendario">Escolher data no calendário</string>
     <string name="titulo_calendario_nascimento">Data de nascimento</string>
@@ -89,8 +89,9 @@
     <string name="cadastro_eu_sou">Eu sou</string>
     <string name="cadastro_tipo_pessoa">Pessoa candidata</string>
     <string name="cadastro_tipo_empresa">Empresa</string>
-    <string name="rotulo_telefone">Telefone com DDD (opcional)</string>
-    <string name="rotulo_cpf">CPF (opcional)</string>
+    <string name="rotulo_telefone">Telefone com DDD</string>
+    <string name="rotulo_telefone_opcional">Telefone com DDD (opcional)</string>
+    <string name="rotulo_cpf">CPF</string>
     <string name="rotulo_nome_responsavel">Nome da pessoa responsável</string>
     <string name="secao_dados_empresa">Dados da empresa</string>
     <string name="secao_localizacao">Localização (opcional)</string>

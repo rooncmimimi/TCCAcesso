@@ -69,6 +69,7 @@ public class ViewModelCadastro extends AndroidViewModel {
         public String telefone;
         public String cpf;
         public String cidade;
+        public String estado;
         public String dataNascimento;
         public boolean aceitouTermos;
     }
@@ -202,13 +203,16 @@ public class ViewModelCadastro extends AndroidViewModel {
         Map<String, String> erros = new LinkedHashMap<>();
         anotar(erros, Campos.NOME, Validador.validarNome(formulario.nome));
         anotar(erros, Campos.EMAIL, Validador.validarEmail(formulario.email));
-        anotar(erros, Campos.TELEFONE, Validador.validarTelefone(formulario.telefone));
-        anotar(erros, Campos.CPF, Validador.validarCpf(formulario.cpf));
+        // Telefone, CPF, data de nascimento, cidade e UF são obrigatórios: a API recusa sem eles.
+        anotar(erros, Campos.TELEFONE, Validador.validarTelefoneObrigatorio(formulario.telefone));
+        anotar(erros, Campos.CPF, Validador.validarCpfObrigatorio(formulario.cpf));
         anotar(erros, Campos.SENHA, Validador.validarNovaSenha(formulario.senha));
         anotar(erros, Campos.CONFIRMACAO_SENHA,
                 Validador.validarConfirmacaoSenha(formulario.senha, formulario.confirmacaoSenha));
         anotar(erros, Campos.CIDADE, Validador.validarCidade(formulario.cidade));
-        anotar(erros, Campos.DATA_NASCIMENTO, Validador.validarDataNascimento(formulario.dataNascimento, hoje));
+        anotar(erros, Campos.ESTADO, Validador.validarUfObrigatoria(formulario.estado));
+        anotar(erros, Campos.DATA_NASCIMENTO,
+                Validador.validarDataNascimentoObrigatoria(formulario.dataNascimento, hoje));
         anotar(erros, Campos.TERMOS, Validador.validarAceiteTermos(formulario.aceitouTermos));
         return erros;
     }
@@ -243,6 +247,7 @@ public class ViewModelCadastro extends AndroidViewModel {
         dados.telefone = digitosOuNulo(formulario.telefone);
         dados.cpf = digitosOuNulo(formulario.cpf);
         dados.cidade = formulario.cidade.trim();
+        dados.estado = formulario.estado.trim().toUpperCase(Locale.ROOT);
         LocalDate dataNascimento = Validador.converterDataBrasileira(formulario.dataNascimento);
         dados.dataNascimentoIso = dataNascimento != null ? dataNascimento.toString() : null;
         dados.aceitouTermos = formulario.aceitouTermos;

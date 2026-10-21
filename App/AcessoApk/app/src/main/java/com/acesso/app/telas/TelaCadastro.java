@@ -102,6 +102,8 @@ public class TelaCadastro extends AppCompatActivity {
         componentes.secaoEmpresa.setVisibility(empresa ? View.VISIBLE : View.GONE);
         componentes.avisoAprovacaoEmpresa.setVisibility(empresa ? View.VISIBLE : View.GONE);
         componentes.campoNomeCompleto.setHint(empresa ? R.string.rotulo_nome_responsavel : R.string.rotulo_nome_completo);
+        // O telefone é obrigatório para pessoa (a API exige) e continua opcional para empresa.
+        componentes.campoTelefone.setHint(empresa ? R.string.rotulo_telefone_opcional : R.string.rotulo_telefone);
     }
 
     private void prepararListaPorte(String porteSalvo) {
@@ -146,6 +148,7 @@ public class TelaCadastro extends AppCompatActivity {
             formulario.telefone = texto(componentes.entradaTelefone.getText());
             formulario.cpf = texto(componentes.entradaCpf.getText());
             formulario.cidade = texto(componentes.entradaCidade.getText());
+            formulario.estado = texto(componentes.entradaUfPessoa.getText());
             formulario.dataNascimento = texto(componentes.entradaDataNascimento.getText());
             formulario.senha = texto(componentes.entradaSenha.getText());
             formulario.confirmacaoSenha = texto(componentes.entradaConfirmacaoSenha.getText());
@@ -195,6 +198,7 @@ public class TelaCadastro extends AppCompatActivity {
         } else {
             campos.put(Campos.CPF, componentes.campoCpf);
             campos.put(Campos.CIDADE, componentes.campoCidade);
+            campos.put(Campos.ESTADO, componentes.campoUfPessoa);
             campos.put(Campos.DATA_NASCIMENTO, componentes.campoDataNascimento);
         }
         campos.put(Campos.SENHA, componentes.campoSenha);

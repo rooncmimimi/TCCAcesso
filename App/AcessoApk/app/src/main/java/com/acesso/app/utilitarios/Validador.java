@@ -110,12 +110,13 @@ public final class Validador {
         return null;
     }
 
+    /** Mesmo intervalo da API (autenticacaoValidator.js): 2 a 100 caracteres. */
     public static String validarCidade(String cidade) {
-        if (estaVazio(cidade)) {
-            return "Informe sua cidade.";
+        if (estaVazio(cidade) || cidade.trim().length() < 2) {
+            return "Informe a cidade onde você mora.";
         }
-        if (cidade.trim().length() > 120) {
-            return "A cidade pode ter no máximo 120 caracteres.";
+        if (cidade.trim().length() > 100) {
+            return "A cidade pode ter no máximo 100 caracteres.";
         }
         return null;
     }
@@ -138,12 +139,21 @@ public final class Validador {
         return null;
     }
 
+    /** Obrigatória no cadastro de pessoa: a API recusa o cadastro sem ela. */
+    public static String validarDataNascimentoObrigatoria(String dataNascimento, LocalDate hoje) {
+        if (estaVazio(dataNascimento)) {
+            return "Informe sua data de nascimento.";
+        }
+        return validarDataNascimento(dataNascimento, hoje);
+    }
+
     public static String validarAceiteTermos(boolean aceitou) {
         return aceitou ? null : "Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.";
     }
 
     // ---------------------------------------------------------------------
     // Campos opcionais do cadastro (iguais aos do Site). Vazio é aceito.
+    // As variantes "Obrigatorio/Obrigatoria" valem onde a API exige o campo (cadastro de pessoa).
 
     /** Telefone com DDD: 10 dígitos (fixo) ou 11 (celular). */
     public static String validarTelefone(String telefone) {
@@ -154,11 +164,19 @@ public final class Validador {
         return digitos == 10 || digitos == 11 ? null : "Informe o telefone com DDD, por exemplo: (11) 98765-4321";
     }
 
+    public static String validarTelefoneObrigatorio(String telefone) {
+        return estaVazio(telefone) ? "Informe seu telefone com DDD." : validarTelefone(telefone);
+    }
+
     public static String validarCpf(String cpf) {
         if (estaVazio(cpf)) {
             return null;
         }
         return digitosVerificadoresValidos(somenteDigitos(cpf), 11) ? null : "Informe um CPF válido.";
+    }
+
+    public static String validarCpfObrigatorio(String cpf) {
+        return estaVazio(cpf) ? "Informe seu CPF." : validarCpf(cpf);
     }
 
     // ---------------------------------------------------------------------
@@ -185,6 +203,10 @@ public final class Validador {
         }
         String sigla = uf.trim().toUpperCase(Locale.ROOT);
         return sigla.length() == 2 && UFS.contains(sigla) ? null : "Informe a UF com 2 letras, por exemplo: SP";
+    }
+
+    public static String validarUfObrigatoria(String uf) {
+        return estaVazio(uf) ? "Informe o estado (UF), por exemplo: SP" : validarUf(uf);
     }
 
     public static String validarCep(String cep) {

@@ -82,16 +82,28 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
         executar(executor, post("auth/login", corpo), retorno, RepositorioAutenticacaoApi::lerResultadoLogin);
     }
 
-    /** POST /api/auth/register/candidato { nome, email, senha, telefone?, cpf? } */
+    /**
+     * POST /api/auth/register/candidato { nome, email, senha, telefone, cpf, pais, dataNascimento,
+     * cidade, estado }. A API exige todos (autenticacaoValidator.validarCadastroCandidato).
+     */
     @Override
     public void cadastrarPessoa(DadosCadastroPessoa dados, RetornoRepositorio<ResultadoCadastro> retorno) {
+        executar(executor, post("auth/register/candidato", corpoCadastroPessoa(dados)), retorno,
+                RepositorioAutenticacaoApi::lerResultadoCadastro);
+    }
+
+    static JsonObject corpoCadastroPessoa(DadosCadastroPessoa dados) {
         JsonObject corpo = new JsonObject();
         corpo.addProperty("nome", dados.nome);
         corpo.addProperty("email", dados.email);
         corpo.addProperty("senha", dados.senha);
-        adicionarSePreenchido(corpo, "telefone", dados.telefone);
-        adicionarSePreenchido(corpo, "cpf", dados.cpf);
-        executar(executor, post("auth/register/candidato", corpo), retorno, RepositorioAutenticacaoApi::lerResultadoCadastro);
+        corpo.addProperty("telefone", dados.telefone);
+        corpo.addProperty("cpf", dados.cpf);
+        corpo.addProperty("pais", DadosCadastroPessoa.PAIS_PADRAO);
+        corpo.addProperty("dataNascimento", dados.dataNascimentoIso);
+        corpo.addProperty("cidade", dados.cidade);
+        corpo.addProperty("estado", dados.estado);
+        return corpo;
     }
 
     /** POST /api/auth/register/empresa (campos de autenticacaoValidator.validarCadastroEmpresa) */

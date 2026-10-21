@@ -95,6 +95,44 @@ public class ValidadorTeste {
         assertNull(Validador.validarCidade("São Paulo"));
     }
 
+    /** Mesmo intervalo da API (autenticacaoValidator.js): 2 a 100 caracteres. */
+    @Test
+    public void cidadeTemOsLimitesDaApi() {
+        assertNotNull(Validador.validarCidade("S"));
+        assertNull(Validador.validarCidade("Ibi"));
+        assertNull(Validador.validarCidade("a".repeat(100)));
+        assertNotNull(Validador.validarCidade("a".repeat(101)));
+    }
+
+    /** A API exige estes campos no cadastro de pessoa; vazio deixa de ser aceito, mas o formato continua valendo. */
+    @Test
+    public void variantesObrigatoriasDoCadastroDePessoa() {
+        assertEquals("Informe seu telefone com DDD.", Validador.validarTelefoneObrigatorio(" "));
+        assertNull(Validador.validarTelefoneObrigatorio("(11) 98765-4321"));
+        assertNotNull(Validador.validarTelefoneObrigatorio("98765-4321"));
+
+        assertEquals("Informe seu CPF.", Validador.validarCpfObrigatorio(""));
+        assertNull(Validador.validarCpfObrigatorio("529.982.247-25"));
+        assertNotNull(Validador.validarCpfObrigatorio("111.111.111-11"));
+
+        assertNotNull(Validador.validarUfObrigatoria(""));
+        assertNull(Validador.validarUfObrigatoria("sp"));
+        assertNotNull(Validador.validarUfObrigatoria("XX"));
+
+        assertEquals("Informe sua data de nascimento.", Validador.validarDataNascimentoObrigatoria(" ", HOJE));
+        assertNull(Validador.validarDataNascimentoObrigatoria("25/09/2000", HOJE));
+        assertNotNull(Validador.validarDataNascimentoObrigatoria("01/01/2020", HOJE));
+    }
+
+    /** As versões opcionais seguem aceitando vazio: são usadas onde a API não exige (empresa, vaga, perfil). */
+    @Test
+    public void variantesOpcionaisContinuamAceitandoVazio() {
+        assertNull(Validador.validarTelefone(""));
+        assertNull(Validador.validarCpf(""));
+        assertNull(Validador.validarUf(""));
+        assertNull(Validador.validarDataNascimento("", HOJE));
+    }
+
     @Test
     public void dataDeNascimentoOpcional() {
         assertNull(Validador.validarDataNascimento("", HOJE));

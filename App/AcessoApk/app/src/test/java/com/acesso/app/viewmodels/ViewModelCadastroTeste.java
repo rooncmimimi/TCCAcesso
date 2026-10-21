@@ -30,6 +30,7 @@ public class ViewModelCadastroTeste {
         formulario.telefone = "(11) 98765-4321";
         formulario.cpf = "529.982.247-25";
         formulario.cidade = " São Paulo ";
+        formulario.estado = " sp ";
         formulario.dataNascimento = "25/09/1970";
         formulario.aceitouTermos = true;
         return formulario;
@@ -83,19 +84,38 @@ public class ViewModelCadastroTeste {
         assertEquals("11987654321", dados.telefone);
         assertEquals("52998224725", dados.cpf);
         assertEquals("São Paulo", dados.cidade);
+        assertEquals("SP", dados.estado);
         assertEquals("1970-09-25", dados.dataNascimentoIso);
     }
 
+    /** A API recusa o cadastro de pessoa sem estes campos, então o app não deixa enviar vazio. */
     @Test
-    public void opcionaisVaziosDaPessoaViramNulos() {
+    public void pessoaSemOsCamposObrigatoriosDaApiNaoPodeEnviar() {
         ViewModelCadastro.FormularioPessoa formulario = pessoaValida();
         formulario.telefone = "";
         formulario.cpf = " ";
+        formulario.cidade = "";
+        formulario.estado = "";
         formulario.dataNascimento = "";
-        DadosCadastroPessoa dados = ViewModelCadastro.montarDadosPessoa(formulario);
-        assertNull(dados.telefone);
-        assertNull(dados.cpf);
-        assertNull(dados.dataNascimentoIso);
+        Map<String, String> erros = ViewModelCadastro.validarPessoa(formulario, HOJE);
+
+        assertEquals(Arrays.asList(Campos.TELEFONE, Campos.CPF, Campos.CIDADE, Campos.ESTADO, Campos.DATA_NASCIMENTO),
+                new ArrayList<>(erros.keySet()));
+    }
+
+    @Test
+    public void estadoInvalidoDaPessoaEApontado() {
+        ViewModelCadastro.FormularioPessoa formulario = pessoaValida();
+        formulario.estado = "XX";
+        assertTrue(ViewModelCadastro.validarPessoa(formulario, HOJE).containsKey(Campos.ESTADO));
+    }
+
+    /** Telefone continua opcional no cadastro de empresa (a API só o exige da pessoa). */
+    @Test
+    public void telefoneDaEmpresaContinuaOpcional() {
+        ViewModelCadastro.FormularioEmpresa formulario = empresaValida();
+        formulario.telefone = "";
+        assertFalse(ViewModelCadastro.validarEmpresa(formulario).containsKey(Campos.TELEFONE));
     }
 
     @Test

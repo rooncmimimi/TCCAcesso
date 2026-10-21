@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.acesso.app.modelos.DadosCadastroPessoa;
 import com.acesso.app.modelos.ResultadoCadastro;
 import com.acesso.app.modelos.ResultadoLogin;
 import com.acesso.app.modelos.SessaoUsuario;
@@ -18,7 +19,9 @@ import com.google.gson.JsonParser;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.TreeSet;
 
 /**
  * Leitura das respostas da API do Site (formatos de AutenticacaoService.montarSessao,
@@ -84,6 +87,34 @@ public class RepositorioAutenticacaoApiTeste {
     public void contaDeAdministradorNaoEntraNoApp() {
         RepositorioAutenticacaoApi.lerResultadoLogin(json(
                 "{\"usuario\":{\"id\":\"a\",\"tipoUsuario\":\"administrador\"},\"token\":\"x\",\"refreshToken\":\"r\"}"));
+    }
+
+    /**
+     * Campos que POST /auth/register/candidato exige (validarCadastroCandidato em
+     * Site/Backend/src/validators/autenticacaoValidator.js). Faltando qualquer um, a API responde 422.
+     */
+    @Test
+    public void cadastroDePessoaEnviaTodosOsCamposQueAApiExige() {
+        DadosCadastroPessoa dados = new DadosCadastroPessoa();
+        dados.nome = "Joana Exemplo";
+        dados.email = "joana@acesso.test";
+        dados.senha = "Acesso@2026";
+        dados.telefone = "11987654321";
+        dados.cpf = "52998224725";
+        dados.cidade = "São Paulo";
+        dados.estado = "SP";
+        dados.dataNascimentoIso = "1970-09-25";
+
+        JsonObject corpo = RepositorioAutenticacaoApi.corpoCadastroPessoa(dados);
+
+        assertEquals(new TreeSet<>(Arrays.asList(
+                        "nome", "email", "senha", "telefone", "cpf", "pais", "dataNascimento", "cidade", "estado")),
+                new TreeSet<>(corpo.keySet()));
+        assertEquals("BR", corpo.get("pais").getAsString());
+        assertEquals("1970-09-25", corpo.get("dataNascimento").getAsString());
+        assertEquals("SP", corpo.get("estado").getAsString());
+        assertEquals("11987654321", corpo.get("telefone").getAsString());
+        assertEquals("52998224725", corpo.get("cpf").getAsString());
     }
 
     @Test

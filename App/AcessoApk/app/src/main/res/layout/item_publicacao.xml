@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Publicação do feed (como o PostagemCard do site), na ordem de uma rede profissional:
-     autor (abre o perfil), texto, contagens e a barra de ações -->
+     autor (abre o perfil) e menu da publicação própria, texto, imagens, contagens e a barra de ações -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Estilo.Acesso.Cartao"
@@ -19,41 +19,77 @@
         android:paddingBottom="4dp">
 
         <LinearLayout
-            android:id="@+id/linhaAutor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackground"
-            android:focusable="true"
             android:gravity="center_vertical"
-            android:minHeight="48dp"
             android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/textoIniciais"
-                style="@style/Estilo.Acesso.Avatar" />
-
             <LinearLayout
+                android:id="@+id/linhaAutor"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:background="?attr/selectableItemBackground"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/textoAutor"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceTitleSmall"
-                    android:textColor="@color/acesso_titulo"
-                    android:textStyle="bold" />
+                <FrameLayout
+                    android:layout_width="@dimen/tamanho_avatar"
+                    android:layout_height="@dimen/tamanho_avatar">
 
-                <TextView
-                    android:id="@+id/textoDetalhes"
-                    android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/textoIniciais"
+                        style="@style/Estilo.Acesso.Avatar" />
+
+                    <ImageView
+                        android:id="@+id/imagemAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/fundo_avatar"
+                        android:clipToOutline="true"
+                        android:contentDescription="@null"
+                        android:importantForAccessibility="no"
+                        android:outlineProvider="background"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="@color/acesso_texto_secundario" />
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/textoAutor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:textColor="@color/acesso_titulo"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/textoDetalhes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/acesso_texto_secundario" />
+                </LinearLayout>
             </LinearLayout>
+
+            <!-- Só nas publicações da própria conta -->
+            <ImageButton
+                android:id="@+id/botaoMais"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/publicacao_mais_opcoes"
+                android:src="@drawable/ic_mais"
+                android:visibility="gone"
+                app:tint="@color/acesso_texto_secundario" />
         </LinearLayout>
 
         <TextView
@@ -65,6 +101,13 @@
             android:lineSpacingMultiplier="1.15"
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:textColor="@color/acesso_texto" />
+
+        <!-- Imagens anexadas: cada uma com o texto alternativo escrito por quem publicou -->
+        <LinearLayout
+            android:id="@+id/listaImagens"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
 
         <TextView
             android:id="@+id/textoInteracoes"
@@ -86,14 +129,30 @@
             android:importantForAccessibility="no" />
 
         <!-- Barra de ações -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/botaoCurtir"
-            style="@style/Estilo.Acesso.BotaoTexto"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/publicacao_curtir"
-            android:textColor="@color/acesso_texto_secundario"
-            app:icon="@drawable/ic_favorito_contorno"
-            app:iconTint="@color/acesso_texto_secundario" />
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botaoCurtir"
+                style="@style/Estilo.Acesso.BotaoTexto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/publicacao_curtir"
+                android:textColor="@color/acesso_texto_secundario"
+                app:icon="@drawable/ic_favorito_contorno"
+                app:iconTint="@color/acesso_texto_secundario" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botaoComentar"
+                style="@style/Estilo.Acesso.BotaoTexto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/publicacao_comentar"
+                android:textColor="@color/acesso_texto_secundario"
+                app:icon="@drawable/ic_comentario"
+                app:iconTint="@color/acesso_texto_secundario" />
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

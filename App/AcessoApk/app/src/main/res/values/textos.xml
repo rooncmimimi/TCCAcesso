@@ -215,7 +215,6 @@
     <string name="perfil_secao_conta">Conta</string>
     <string name="perfil_secao_app">Aplicativo</string>
     <string name="perfil_editar">Editar perfil</string>
-    <string name="perfil_editar_pendente">A edição do perfil depende da integração com a API do ACESSO (PUT /api/usuarios/:id). Por enquanto, edite pelo site.</string>
     <string name="perfil_acessibilidade">Acessibilidade do celular</string>
     <string name="perfil_termos">Termos e privacidade</string>
     <string name="perfil_fale_conosco">Fale conosco</string>

@@ -32,6 +32,20 @@ public class PerfilConta {
     public String statusEmpresa;
     public boolean empresaVerificada;
 
+    /** Id do registro de candidato ou de empresa: as rotas de edição usam este, não o id da conta. */
+    public String registroId;
+    /** Pessoa: foto e capa da conta. Empresa: logo e capa da empresa. Podem ser nulas. */
+    public String fotoUrl;
+    public String capaUrl;
+
+    // Valores soltos (sem juntar), para preencher o formulário de edição.
+    /** Pessoa: nome da conta. Empresa: nome fantasia (nulo se não tem). */
+    public String nomeEditavel;
+    public String tituloProfissional;
+    public String setor;
+    public String cidade;
+    public String estado;
+
     /** Pessoa: biografia. Empresa: descrição. */
     public String sobre;
     /** Só empresa. */

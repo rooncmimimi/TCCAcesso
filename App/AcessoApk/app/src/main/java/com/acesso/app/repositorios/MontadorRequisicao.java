@@ -4,6 +4,8 @@ import com.acesso.app.servicos.ClienteHttp;
 import com.google.gson.JsonObject;
 
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
@@ -27,6 +29,23 @@ final class MontadorRequisicao {
 
     Request post(String caminho, String token, JsonObject corpo) {
         return construir(caminho, token).post(json(corpo)).build();
+    }
+
+    Request put(String caminho, String token, JsonObject corpo) {
+        return construir(caminho, token).put(json(corpo)).build();
+    }
+
+    Request delete(String caminho, String token) {
+        return construir(caminho, token).delete().build();
+    }
+
+    /** PATCH multipart com um único arquivo no campo {@code campo} (como o FormData do site). */
+    Request patchArquivo(String caminho, String token, String campo, String nomeArquivo, String tipo, byte[] bytes) {
+        RequestBody corpo = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart(campo, nomeArquivo, RequestBody.create(bytes, MediaType.get(tipo)))
+                .build();
+        return construir(caminho, token).patch(corpo).build();
     }
 
     /** PATCH sem corpo (ex.: marcar como lida): a API não lê nada além da rota. */

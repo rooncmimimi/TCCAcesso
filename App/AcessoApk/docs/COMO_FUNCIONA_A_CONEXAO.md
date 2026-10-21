@@ -109,4 +109,4 @@ Duas formas de configurar (qualquer uma):
 | Chat (`/conversas`: lista, abrir, pode-iniciar, mensagens, enviar, marcar lidas, não lidas) | `RepositorioMensagensApi`, testado **só com servidor falso**. Sem Socket.IO: a conversa aberta consulta a API a cada 5 s |
 | Notificações (`/notificacoes`: lista, não lidas, marcar uma/todas) | `RepositorioNotificacoesApi`, testado **só com servidor falso** |
 | Contra a API real (Render) | Só leitura conferida: `/health` 200, `/vagas` e `/publico/home` 200 (consultam o banco), rotas protegidas 401 sem token. **Fluxos com login não testados** (exigem contas reais) |
-| Comentar, editar perfil, editar/excluir publicação, seguir | Não implementado no app (existem na API e no site) |
+| Comentar (com respostas), editar/excluir a própria publicação, seguir (pessoa e empresa, com pedido em perfil privado), editar perfil, foto/capa/logo (upload multipart), imagens do feed | `RepositorioSocialApi` e `RepositorioConteudoApi`. Testado com servidor falso **e** num servidor Express de teste que usa o middleware de upload real do backend (ver CONTINUIDADE.md) |

@@ -126,11 +126,14 @@ final class LeitoresConteudoApi {
         publicacao.curtidas = inteiro(json, "totalCurtidas");
         publicacao.comentarios = inteiro(json, "totalComentarios");
         publicacao.curtidoPorMim = booleano(json, "curtidoPorMim");
+        publicacao.editada = texto(json, "editadoEm") != null;
+        publicacao.anexos = LeitoresSocialApi.anexosDeImagem(json);
         JsonObject autor = objeto(json, "usuario");
         if (autor != null) {
             publicacao.autorId = texto(autor, "id");
             publicacao.nomeAutor = texto(autor, "nome");
             publicacao.tipoAutor = TipoConta.doCodigo(texto(autor, "tipoUsuario"));
+            publicacao.fotoAutorUrl = texto(autor, "fotoPerfil");
         }
         return publicacao;
     }
@@ -235,10 +238,17 @@ final class LeitoresConteudoApi {
         JsonObject usuario = objeto(dados, "usuario");
         String nomeDaConta = texto(usuario, "nome");
         perfil.usuarioId = texto(dados, "usuarioId") != null ? texto(dados, "usuarioId") : texto(usuario, "id");
+        perfil.registroId = texto(dados, "id");
+        perfil.cidade = texto(dados, "cidade");
+        perfil.estado = texto(dados, "estado");
         String local = local(texto(dados, "cidade"), texto(dados, "estado"));
         if (empresa) {
             String nomeDaEmpresa = nomeDaEmpresa(dados);
             perfil.nome = nomeDaEmpresa == null || nomeDaEmpresa.trim().isEmpty() ? nomeDaConta : nomeDaEmpresa;
+            perfil.nomeEditavel = texto(dados, "nomeFantasia");
+            perfil.fotoUrl = texto(dados, "logo");
+            perfil.capaUrl = texto(dados, "capa");
+            perfil.setor = texto(dados, "setor");
             perfil.statusEmpresa = texto(dados, "statusAprovacao");
             perfil.empresaVerificada = booleano(dados, "empresaVerificada");
             perfil.detalhe = juntar(texto(dados, "setor"), local);
@@ -257,6 +267,10 @@ final class LeitoresConteudoApi {
             }
         } else {
             perfil.nome = nomeDaConta;
+            perfil.nomeEditavel = nomeDaConta;
+            perfil.fotoUrl = texto(usuario, "fotoPerfil");
+            perfil.capaUrl = texto(usuario, "capaPerfil");
+            perfil.tituloProfissional = texto(dados, "tituloProfissional");
             perfil.detalhe = juntar(texto(dados, "tituloProfissional"), local);
             perfil.sobre = texto(dados, "biografia");
             for (JsonElement item : lista(dados, "habilidades")) {
@@ -551,15 +565,15 @@ final class LeitoresConteudoApi {
         return fantasia != null && !fantasia.trim().isEmpty() ? fantasia : texto(empresa, "razaoSocial");
     }
 
-    private static String local(String cidade, String estado) {
+    static String local(String cidade, String estado) {
         return juntar(cidade, estado, " - ");
     }
 
-    private static String juntar(String a, String b) {
+    static String juntar(String a, String b) {
         return juntar(a, b, " · ");
     }
 
-    private static String juntar(String a, String b, String separador) {
+    static String juntar(String a, String b, String separador) {
         boolean temA = a != null && !a.trim().isEmpty();
         boolean temB = b != null && !b.trim().isEmpty();
         if (temA && temB) {
@@ -577,22 +591,22 @@ final class LeitoresConteudoApi {
         }
     }
 
-    private static JsonArray lista(JsonObject json, String chave) {
+    static JsonArray lista(JsonObject json, String chave) {
         JsonElement elemento = json == null ? null : json.get(chave);
         return elemento != null && elemento.isJsonArray() ? elemento.getAsJsonArray() : new JsonArray();
     }
 
-    private static JsonObject objeto(JsonObject json, String chave) {
+    static JsonObject objeto(JsonObject json, String chave) {
         JsonElement elemento = json == null ? null : json.get(chave);
         return elemento != null && elemento.isJsonObject() ? elemento.getAsJsonObject() : null;
     }
 
-    private static String texto(JsonObject json, String chave) {
+    static String texto(JsonObject json, String chave) {
         JsonElement elemento = json == null ? null : json.get(chave);
         return elemento != null && elemento.isJsonPrimitive() ? elemento.getAsString() : null;
     }
 
-    private static int inteiro(JsonObject json, String chave) {
+    static int inteiro(JsonObject json, String chave) {
         JsonElement elemento = json == null ? null : json.get(chave);
         if (elemento == null || !elemento.isJsonPrimitive()) {
             return 0;
@@ -604,7 +618,7 @@ final class LeitoresConteudoApi {
         }
     }
 
-    private static boolean booleano(JsonObject json, String chave) {
+    static boolean booleano(JsonObject json, String chave) {
         JsonElement elemento = json == null ? null : json.get(chave);
         return elemento != null && elemento.isJsonPrimitive() && elemento.getAsBoolean();
     }

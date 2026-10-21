@@ -17,6 +17,7 @@ import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.telas.TelaCandidaturas;
 import com.acesso.app.telas.TelaConversas;
+import com.acesso.app.telas.TelaEditarPerfil;
 import com.acesso.app.telas.TelaTermos;
 import com.acesso.app.telas.TelaVaga;
 import com.acesso.app.utilitarios.AtalhosSistema;
@@ -56,8 +57,10 @@ public class FragmentoPerfil extends Fragment {
         componentes.botaoCandidaturas.setVisibility(sessao != null && sessao.ehEmpresa() ? View.GONE : View.VISIBLE);
         componentes.botaoCandidaturas.setOnClickListener(v -> TelaCandidaturas.abrir(requireContext()));
         componentes.botaoMensagens.setOnClickListener(v -> TelaConversas.abrir(requireContext()));
-        componentes.botaoEditarPerfil.setOnClickListener(v ->
-                MensagemStatus.mostrarAviso(componentes.mensagemStatus, getString(R.string.perfil_editar_pendente)));
+        componentes.botaoEditarPerfil.setOnClickListener(v -> TelaEditarPerfil.abrir(requireContext()));
+        viewModelPerfil.getResumo().observe(getViewLifecycleOwner(), resumo -> {
+            ExibidorPerfil.seguidores(componentes.cabecalho, resumo, sessao != null && sessao.ehEmpresa());
+        });
         componentes.botaoSair.setOnClickListener(v -> confirmarSaida());
         componentes.botaoAcessibilidade.setOnClickListener(v ->
                 AtalhosSistema.abrirConfiguracoesAcessibilidade(requireContext()));
@@ -69,6 +72,15 @@ public class FragmentoPerfil extends Fragment {
             }
         });
         return componentes.getRoot();
+    }
+
+    /** Volta da edição do perfil (ou de outra tela): mostra o que foi alterado. */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (!isHidden() && viewModelPerfil != null) {
+            viewModelPerfil.carregar();
+        }
     }
 
     /** A aba fica no FragmentManager: a cada volta a ela, busca de novo os dados da conta. */
@@ -105,6 +117,9 @@ public class FragmentoPerfil extends Fragment {
         ExibidorPerfil.cabecalho(componentes.cabecalho, nome,
                 perfilServidor != null ? perfilServidor.detalhe : null,
                 sessao.getEmail(), sessao.getTipoConta(), statusEmpresa);
+        ExibidorPerfil.imagens(componentes.cabecalho, perfilServidor != null ? perfilServidor.fotoUrl : null,
+                perfilServidor != null ? perfilServidor.capaUrl : null);
+        ExibidorPerfil.seguidores(componentes.cabecalho, viewModelPerfil.getResumo().getValue(), sessao.ehEmpresa());
         if (perfilServidor != null) {
             perfilServidor.tipoConta = sessao.getTipoConta();
             ExibidorPerfil.secoes(componentes.secoes, perfilServidor, true, getLayoutInflater(),

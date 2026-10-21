@@ -15,6 +15,17 @@ public class Publicacao {
     public int curtidas;
     public int comentarios;
     public boolean curtidoPorMim;
+    public String fotoAutorUrl;
+    public boolean editada;
+    /** Imagens anexadas (outras mídias não aparecem no app). */
+    public java.util.List<Anexo> anexos = new java.util.ArrayList<>();
+
+    /** Imagem da publicação; {@code descricao} é o texto alternativo escrito por quem publicou. */
+    public static class Anexo {
+        public String id;
+        public String url;
+        public String descricao;
+    }
 
     /** Resposta de POST /postagens/:id/curtidas (curtir e descurtir são a mesma rota). */
     public static class Curtida {

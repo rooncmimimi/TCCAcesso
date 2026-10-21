@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.acesso.app.modelos.Publicacao;
 import com.acesso.app.repositorios.FabricaRepositorios;
 import com.acesso.app.repositorios.RepositorioConteudo;
+import com.acesso.app.repositorios.RepositorioSocial;
 import com.acesso.app.repositorios.RetornoRepositorio;
 import com.acesso.app.utilitarios.GerenciadorSessao;
 
@@ -20,6 +21,7 @@ import java.util.function.Consumer;
 public class ViewModelInicio extends AndroidViewModel {
 
     private final RepositorioConteudo repositorio;
+    private final RepositorioSocial social;
     private final GerenciadorSessao gerenciadorSessao;
     private boolean desatualizado;
     private final MutableLiveData<EstadoConteudo<List<Publicacao>>> publicacoes = new MutableLiveData<>();
@@ -28,6 +30,7 @@ public class ViewModelInicio extends AndroidViewModel {
         super(aplicacao);
         gerenciadorSessao = new GerenciadorSessao(aplicacao);
         repositorio = FabricaRepositorios.conteudo(aplicacao);
+        social = FabricaRepositorios.social(aplicacao);
     }
 
     public LiveData<EstadoConteudo<List<Publicacao>>> getPublicacoes() {
@@ -71,6 +74,59 @@ public class ViewModelInicio extends AndroidViewModel {
                 aoFalhar.accept(mensagem);
             }
         });
+    }
+
+    /** Troca o texto da própria publicação (PUT /postagens/:id) e mostra o novo texto na hora se a API aceitar. */
+    public void editar(Publicacao publicacao, String conteudo, Runnable aoConcluir, Consumer<String> aoFalhar) {
+        social.editarPublicacao(gerenciadorSessao.obter(), publicacao.id, conteudo, new RetornoRepositorio<Void>() {
+            @Override
+            public void aoConcluir(Void resultado) {
+                publicacao.conteudo = conteudo;
+                publicacao.editada = true;
+                publicacoes.setValue(publicacoes.getValue());
+                aoConcluir.run();
+            }
+
+            @Override
+            public void aoFalhar(String mensagem) {
+                aoFalhar.accept(mensagem);
+            }
+        });
+    }
+
+    /** Exclui a própria publicação (DELETE /postagens/:id) e a tira da lista se a API aceitar. */
+    public void excluir(Publicacao publicacao, Runnable aoConcluir, Consumer<String> aoFalhar) {
+        social.excluirPublicacao(gerenciadorSessao.obter(), publicacao.id, new RetornoRepositorio<Void>() {
+            @Override
+            public void aoConcluir(Void resultado) {
+                EstadoConteudo<List<Publicacao>> atual = publicacoes.getValue();
+                if (atual != null && atual.dados != null) {
+                    List<Publicacao> restantes = new java.util.ArrayList<>(atual.dados);
+                    restantes.remove(publicacao);
+                    publicacoes.setValue(EstadoConteudo.pronto(restantes));
+                }
+                aoConcluir.run();
+            }
+
+            @Override
+            public void aoFalhar(String mensagem) {
+                aoFalhar.accept(mensagem);
+            }
+        });
+    }
+
+    /** A tela de comentários voltou com o total real: corrige a contagem do cartão. */
+    public void definirTotalComentarios(String publicacaoId, int total) {
+        EstadoConteudo<List<Publicacao>> atual = publicacoes.getValue();
+        if (atual == null || atual.dados == null || total < 0) {
+            return;
+        }
+        for (Publicacao publicacao : atual.dados) {
+            if (publicacao.id != null && publicacao.id.equals(publicacaoId)) {
+                publicacao.comentarios = total;
+            }
+        }
+        publicacoes.setValue(atual);
     }
 
     public void carregar() {

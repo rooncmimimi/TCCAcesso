@@ -92,6 +92,17 @@
             android:name=".telas.TelaCandidaturas"
             android:exported="false" />
 
+        <!-- adjustResize: a barra de comentar fica acima do teclado (MargensSistema) -->
+        <activity
+            android:name=".telas.TelaComentarios"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".telas.TelaEditarPerfil"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Empresa logada aguardando aprovação, reprovada ou suspensa -->
         <activity
             android:name=".telas.TelaStatusEmpresa"

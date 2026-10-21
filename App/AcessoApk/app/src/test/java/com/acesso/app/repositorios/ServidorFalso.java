@@ -36,6 +36,7 @@ final class ServidorFalso {
         String metodo;
         String alvo;
         String autorizacao;
+        String tipoConteudo;
         String corpo;
     }
 
@@ -116,6 +117,9 @@ final class ServidorFalso {
             String minuscula = linha.toLowerCase();
             if (minuscula.startsWith("authorization:")) {
                 pedido.autorizacao = linha.substring(linha.indexOf(':') + 1).trim();
+            }
+            if (minuscula.startsWith("content-type:")) {
+                pedido.tipoConteudo = linha.substring(linha.indexOf(':') + 1).trim();
             }
             if (minuscula.startsWith("content-length:")) {
                 tamanho = Integer.parseInt(linha.substring(linha.indexOf(':') + 1).trim());

@@ -45,7 +45,27 @@
                     layout="@layout/componente_cabecalho_perfil" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoSeguir"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:minHeight="@dimen/altura_botao"
+                    android:text="@string/perfil_seguir"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/textoPerfilPrivado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/perfil_perfil_privado"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/acesso_texto_secundario"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/botaoMensagem"
+                    style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"

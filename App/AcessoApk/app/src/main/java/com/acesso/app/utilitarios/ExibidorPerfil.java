@@ -9,6 +9,7 @@ import com.acesso.app.databinding.ComponenteCabecalhoPerfilBinding;
 import com.acesso.app.databinding.ComponenteSecoesPerfilBinding;
 import com.acesso.app.databinding.ItemVagaBinding;
 import com.acesso.app.modelos.PerfilConta;
+import com.acesso.app.modelos.ResumoSeguidores;
 import com.acesso.app.modelos.TipoConta;
 import com.acesso.app.modelos.Vaga;
 
@@ -58,6 +59,44 @@ public final class ExibidorPerfil {
             }
         }
         cabecalho.cabecalhoPerfil.setContentDescription(descricao);
+    }
+
+    /** Foto (ou logo) e capa do perfil sobre as iniciais e o raio, quando existem. */
+    public static void imagens(ComponenteCabecalhoPerfilBinding cabecalho, String fotoUrl, String capaUrl) {
+        Context contexto = cabecalho.getRoot().getContext();
+        float densidade = contexto.getResources().getDisplayMetrics().density;
+        ExibidorImagem.avatar(cabecalho.imagemAvatar, fotoUrl, (int) (96 * densidade));
+        ExibidorImagem.capa(cabecalho.imagemCapa, capaUrl, contexto.getResources().getDisplayMetrics().widthPixels);
+    }
+
+    /**
+     * "12 seguidores · 7 seguindo" (empresa: só seguidores). Entra também na descrição lida pelo leitor de tela.
+     * {@code resumo} nulo esconde a linha.
+     */
+    public static void seguidores(ComponenteCabecalhoPerfilBinding cabecalho, ResumoSeguidores resumo, boolean empresa) {
+        Context contexto = cabecalho.getRoot().getContext();
+        CharSequence anterior = cabecalho.textoSeguidores.getText();
+        CharSequence descricao = cabecalho.cabecalhoPerfil.getContentDescription();
+        if (descricao != null && anterior != null && anterior.length() > 0) {
+            String sufixo = ", " + anterior;
+            if (descricao.toString().endsWith(sufixo)) {
+                descricao = descricao.subSequence(0, descricao.length() - sufixo.length());
+            }
+        }
+        if (resumo == null) {
+            cabecalho.textoSeguidores.setVisibility(View.GONE);
+            cabecalho.textoSeguidores.setText(null);
+            cabecalho.cabecalhoPerfil.setContentDescription(descricao);
+            return;
+        }
+        String texto = empresa
+                ? contexto.getResources().getQuantityString(R.plurals.perfil_seguidores, resumo.totalSeguidores, resumo.totalSeguidores)
+                : contexto.getString(R.string.perfil_seguidores_seguindo,
+                        contexto.getResources().getQuantityString(R.plurals.perfil_seguidores, resumo.totalSeguidores, resumo.totalSeguidores),
+                        resumo.totalSeguindo);
+        cabecalho.textoSeguidores.setText(texto);
+        cabecalho.textoSeguidores.setVisibility(View.VISIBLE);
+        cabecalho.cabecalhoPerfil.setContentDescription((descricao == null ? "" : descricao + ", ") + texto);
     }
 
     /**

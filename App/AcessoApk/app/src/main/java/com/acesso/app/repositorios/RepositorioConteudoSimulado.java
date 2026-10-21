@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.acesso.app.modelos.Candidatura;
+import com.acesso.app.modelos.EdicaoPerfil;
 import com.acesso.app.modelos.ItemBusca;
 import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.Publicacao;
@@ -38,8 +39,19 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
     @Override
     public void listarPublicacoes(SessaoUsuario sessao, RetornoRepositorio<List<Publicacao>> retorno) {
         responder(() -> {
-            List<Publicacao> publicacoes = publicacoesDemonstracao();
+            List<Publicacao> publicacoes = new ArrayList<>(publicacoesDemonstracao());
+            publicacoes.add(0, publicacaoPropria(sessao));
+            publicacoes.removeIf(p -> RepositorioSocialSimulado.excluida(p.id));
             for (Publicacao publicacao : publicacoes) {
+                String editado = RepositorioSocialSimulado.conteudoEditado(publicacao.id);
+                if (editado != null) {
+                    publicacao.conteudo = editado;
+                    publicacao.editada = true;
+                }
+                int comentarios = RepositorioSocialSimulado.totalComentarios(publicacao.id);
+                if (comentarios >= 0) {
+                    publicacao.comentarios = comentarios;
+                }
                 if (curtidas.contains(publicacao.id)) {
                     publicacao.curtidoPorMim = true;
                     publicacao.curtidas++;
@@ -174,6 +186,7 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
                                          String conteudo) {
         Publicacao publicacao = new Publicacao();
         publicacao.id = autor + quando;
+        publicacao.autorId = autor;
         publicacao.nomeAutor = autor;
         publicacao.tipoAutor = tipo;
         publicacao.quando = quando;
@@ -199,6 +212,14 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
             PerfilConta perfil = new PerfilConta();
             perfil.nome = sessao != null ? sessao.getNome() : null;
             perfil.statusEmpresa = sessao != null ? sessao.getStatusEmpresa() : null;
+            perfil.usuarioId = sessao != null ? sessao.getIdUsuario() : null;
+            perfil.registroId = RepositorioSocialSimulado.REGISTRO_PROPRIO;
+            perfil.tipoConta = sessao != null ? sessao.getTipoConta() : TipoConta.PESSOA;
+            perfil.nomeEditavel = perfil.nome;
+            EdicaoPerfil edicao = RepositorioSocialSimulado.perfilEditado();
+            if (edicao != null) {
+                aplicarEdicao(perfil, edicao);
+            }
             retorno.aoConcluir(perfil);
         });
     }
@@ -206,7 +227,17 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
     /** Os itens de demonstração não têm conta por trás: não há perfil de outra pessoa para abrir. */
     @Override
     public void carregarPerfilDeUsuario(SessaoUsuario sessao, String usuarioId, RetornoRepositorio<PerfilConta> retorno) {
-        RepositorioConteudoPendente.avisar(retorno, "no modo demonstração não há perfis de outras pessoas.");
+        responder(() -> {
+            PerfilConta perfil = new PerfilConta();
+            perfil.usuarioId = usuarioId;
+            perfil.registroId = "registro-" + usuarioId;
+            perfil.nome = usuarioId;
+            perfil.nomeEditavel = usuarioId;
+            perfil.tipoConta = usuarioId.contains("Ltda") ? TipoConta.EMPRESA : TipoConta.PESSOA;
+            perfil.detalhe = "Perfil fictício de demonstração";
+            perfil.sobre = "Esta conta existe só no modo demonstração.";
+            retorno.aoConcluir(perfil);
+        });
     }
 
     @Override
@@ -260,6 +291,33 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
             }
             retorno.aoConcluir(curtida);
         });
+    }
+
+    /** Publicação fictícia da própria conta, para poder editar e excluir no modo demonstração. */
+    private static Publicacao publicacaoPropria(SessaoUsuario sessao) {
+        Publicacao publicacao = publicacao(sessao != null && sessao.getNome() != null ? sessao.getNome() : "Você",
+                sessao != null ? sessao.getTipoConta() : TipoConta.PESSOA, "agora mesmo", 0, 0,
+                "Minha primeira publicação no ACESSO. Toque em ... para editar ou excluir.");
+        publicacao.id = RepositorioSocialSimulado.PUBLICACAO_PROPRIA;
+        publicacao.autorId = sessao != null ? sessao.getIdUsuario() : null;
+        return publicacao;
+    }
+
+    private static void aplicarEdicao(PerfilConta perfil, EdicaoPerfil edicao) {
+        if (edicao.nome != null && !edicao.nome.trim().isEmpty()) {
+            perfil.nome = edicao.nome.trim();
+            perfil.nomeEditavel = perfil.nome;
+        }
+        perfil.tituloProfissional = edicao.tituloProfissional;
+        perfil.cidade = edicao.cidade;
+        perfil.estado = edicao.estado;
+        perfil.setor = edicao.setor;
+        perfil.sobre = edicao.sobre;
+        perfil.culturaInclusiva = edicao.culturaInclusiva;
+        perfil.site = edicao.site;
+        perfil.detalhe = LeitoresConteudoApi.juntar(
+                perfil.tipoConta == TipoConta.EMPRESA ? edicao.setor : edicao.tituloProfissional,
+                LeitoresConteudoApi.local(edicao.cidade, edicao.estado));
     }
 
     private void responder(Runnable resposta) {

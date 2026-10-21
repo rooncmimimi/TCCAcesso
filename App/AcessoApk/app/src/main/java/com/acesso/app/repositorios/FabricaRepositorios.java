@@ -41,6 +41,18 @@ public final class FabricaRepositorios {
         }
     }
 
+    /** Comentários, seguir, edição de perfil e envio de imagens: reais na API, de mentira na demonstração. */
+    public static RepositorioSocial social(Context contexto) {
+        switch (fonteAtiva()) {
+            case FONTE_API:
+                return new RepositorioSocialApi(contexto);
+            case FONTE_SIMULADA:
+                return new RepositorioSocialSimulado();
+            default:
+                return new RepositorioSocialPendente();
+        }
+    }
+
     /** Conversas existem só na API do ACESSO: nas outras fontes a tela avisa que a integração está pendente. */
     public static RepositorioMensagens mensagens(Context contexto) {
         return FONTE_API.equals(fonteAtiva()) ? new RepositorioMensagensApi(contexto) : new RepositorioMensagensPendente();

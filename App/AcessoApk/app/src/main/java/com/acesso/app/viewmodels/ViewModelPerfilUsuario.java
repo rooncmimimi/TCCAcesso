@@ -14,6 +14,8 @@ import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.repositorios.FabricaRepositorios;
 import com.acesso.app.repositorios.RepositorioConteudo;
 import com.acesso.app.repositorios.RepositorioMensagens;
+import com.acesso.app.repositorios.RepositorioSocial;
+import com.acesso.app.modelos.ResumoSeguidores;
 import com.acesso.app.repositorios.RetornoRepositorio;
 import com.acesso.app.utilitarios.GerenciadorSessao;
 
@@ -25,6 +27,10 @@ public class ViewModelPerfilUsuario extends AndroidViewModel {
 
     private final RepositorioConteudo conteudo;
     private final RepositorioMensagens mensagens;
+    private final RepositorioSocial social;
+    private final MutableLiveData<EstadoConteudo<ResumoSeguidores>> resumo = new MutableLiveData<>();
+    /** Seguir ou deixar de seguir em andamento: o botão fica desativado. */
+    private final MutableLiveData<Boolean> alternando = new MutableLiveData<>(false);
     private final GerenciadorSessao gerenciadorSessao;
     private final MutableLiveData<EstadoConteudo<PerfilConta>> perfil = new MutableLiveData<>();
     private final MutableLiveData<PermissaoConversa> permissao = new MutableLiveData<>();
@@ -37,10 +43,19 @@ public class ViewModelPerfilUsuario extends AndroidViewModel {
         gerenciadorSessao = new GerenciadorSessao(aplicacao);
         conteudo = FabricaRepositorios.conteudo(aplicacao);
         mensagens = FabricaRepositorios.mensagens(aplicacao);
+        social = FabricaRepositorios.social(aplicacao);
     }
 
     public LiveData<EstadoConteudo<PerfilConta>> getPerfil() {
         return perfil;
+    }
+
+    public LiveData<EstadoConteudo<ResumoSeguidores>> getResumo() {
+        return resumo;
+    }
+
+    public LiveData<Boolean> getAlternando() {
+        return alternando;
     }
 
     public LiveData<PermissaoConversa> getPermissao() {
@@ -62,6 +77,7 @@ public class ViewModelPerfilUsuario extends AndroidViewModel {
             @Override
             public void aoConcluir(PerfilConta resultado) {
                 perfil.setValue(EstadoConteudo.pronto(resultado));
+                carregarResumo(sessao, resultado);
             }
 
             @Override
@@ -85,6 +101,53 @@ public class ViewModelPerfilUsuario extends AndroidViewModel {
                 }
             });
         }
+    }
+
+    private void carregarResumo(SessaoUsuario sessao, PerfilConta alvo) {
+        // Seguir é entre contas: o próprio perfil não tem botão, e só candidatos seguem empresas.
+        if (sessao == null || alvo.usuarioId == null || alvo.usuarioId.equalsIgnoreCase(sessao.getIdUsuario())) {
+            resumo.setValue(null);
+            return;
+        }
+        social.carregarResumoSeguidores(sessao, alvo, new RetornoRepositorio<ResumoSeguidores>() {
+            @Override
+            public void aoConcluir(ResumoSeguidores resultado) {
+                resumo.setValue(EstadoConteudo.pronto(resultado));
+            }
+
+            @Override
+            public void aoFalhar(String mensagem) {
+                // Sem o resumo, o perfil continua útil; só o botão Seguir deixa de aparecer.
+                resumo.setValue(EstadoConteudo.comMensagem(mensagem));
+            }
+        });
+    }
+
+    /** Seguir ou deixar de seguir (ou pedir/cancelar o pedido, em perfil privado). */
+    public void alternarSeguir(java.util.function.BiConsumer<ResumoSeguidores, ResumoSeguidores> aoConcluir,
+                              java.util.function.Consumer<String> aoFalhar) {
+        EstadoConteudo<PerfilConta> estadoPerfil = perfil.getValue();
+        EstadoConteudo<ResumoSeguidores> estadoResumo = resumo.getValue();
+        if (estadoPerfil == null || estadoPerfil.dados == null || estadoResumo == null || estadoResumo.dados == null
+                || Boolean.TRUE.equals(alternando.getValue())) {
+            return;
+        }
+        alternando.setValue(true);
+        social.alternarSeguir(gerenciadorSessao.obter(), estadoPerfil.dados, estadoResumo.dados,
+                new RetornoRepositorio<ResumoSeguidores>() {
+                    @Override
+                    public void aoConcluir(ResumoSeguidores resultado) {
+                        alternando.setValue(false);
+                        resumo.setValue(EstadoConteudo.pronto(resultado));
+                        aoConcluir.accept(estadoResumo.dados, resultado);
+                    }
+
+                    @Override
+                    public void aoFalhar(String mensagem) {
+                        alternando.setValue(false);
+                        aoFalhar.accept(mensagem);
+                    }
+                });
     }
 
     public void recarregar() {

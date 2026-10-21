@@ -49,6 +49,19 @@ configuração, o login mostra "O app ainda não foi configurado com o Supabase.
   fictícias), telas no emulador `Medium_Phone` em modo demonstração.
 - **Pendente:** testar chat, notificações e candidatura com contas reais pela API (`FONTE_AUTENTICACAO=api`).
 
+### Perfil, fotos, comentários e seguir (21/10/2026, não commitado)
+
+- **Upload de imagem não existia no app** (sem seletor, sem biblioteca de imagens, avatares só com iniciais). Agora:
+  `PreparadorImagem` (seletor do sistema `PickVisualMedia`, sem permissão; corrige rotação, reduz para 1024/1920 px e comprime em JPEG < 4 MB),
+  `RepositorioSocialApi.enviarImagem` (PATCH multipart: `/usuarios/:id/foto|capa` na pessoa, `/empresas/:id/logo|capa` na empresa — mesmas rotas do site),
+  `CarregadorImagem` (OkHttp + cache LRU; URLs `/uploads/...` relativas são resolvidas contra o servidor da API; só http/https; o token nunca vai junto).
+- Telas: `TelaEditarPerfil` (fotos enviadas ao escolher; dados em Salvar; pergunta antes de descartar), `TelaComentarios` (lista com respostas, comentar, responder, excluir os próprios),
+  menu ⋮ nas próprias publicações (editar/excluir), imagens anexadas no feed com o texto alternativo do autor, botão Seguir + contadores no perfil.
+- Verificado: 170 testes JUnit, `lintDebug` sem erros. No emulador (API 30) contra um servidor Express de teste, fora do repositório,
+  que reimplementa o contrato da API e **reaproveita o `uploadMiddleware.js` real do backend**: login, feed com imagem, comentar, editar post, trocar foto (PNG → JPEG aceito pelo multer/assinatura real, gravado em disco e reexibido após reinstalar e reabrir o app), seguir, fonte 1,5×.
+- **Não verificado:** nada disso contra a API do Render com contas reais (sem credenciais aqui; o app só foi apontado ao servidor de teste); upload com Supabase Storage (URLs públicas absolutas, ramo coberto só por teste unitário); excluir publicação no emulador (coberto por teste unitário); capa e logo de empresa no emulador; perfil privado e pedido de seguir no emulador (só testes); TalkBack.
+- **Ainda fora do app (existe no site/API):** anexar imagens ao criar publicação (`POST /postagens` multipart com `descricoesAnexos`), editar experiências/formação/competências, listas de seguidores/seguindo, aceitar pedidos de seguir, bloquear/denunciar, privacidade, currículo, edição de comentário.
+
 ## 2. O que foi verificado no emulador (modo demonstração)
 
 Visto de fato, com capturas de tela, no `Small_Phone` (720×1280, API 30):

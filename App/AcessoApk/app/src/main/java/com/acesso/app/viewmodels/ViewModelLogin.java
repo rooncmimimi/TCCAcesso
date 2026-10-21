@@ -33,6 +33,7 @@ public class ViewModelLogin extends AndroidViewModel {
     private final MutableLiveData<Boolean> carregando = new MutableLiveData<>(false);
     private final MutableLiveData<SessaoUsuario> sessaoAutenticada = new MutableLiveData<>();
     private final MutableLiveData<Boolean> perguntarReativacao = new MutableLiveData<>(false);
+    private final MutableLiveData<String> emailParaConfirmar = new MutableLiveData<>();
 
     /** Guardados só em memória, enquanto a pergunta "reativar a conta?" está na tela. */
     private String emailPendente;
@@ -67,6 +68,18 @@ public class ViewModelLogin extends AndroidViewModel {
 
     public LiveData<Boolean> devePerguntarReativacao() {
         return perguntarReativacao;
+    }
+
+    /**
+     * E-mail da conta que precisa ser confirmado, quando a fonte confirma por código: a tela abre a
+     * confirmação e depois chama {@link #confirmacaoAberta()}, para não abrir de novo ao girar.
+     */
+    public LiveData<String> getEmailParaConfirmar() {
+        return emailParaConfirmar;
+    }
+
+    public void confirmacaoAberta() {
+        emailParaConfirmar.setValue(null);
     }
 
     public void entrar(String email, String senha) {
@@ -119,7 +132,12 @@ public class ViewModelLogin extends AndroidViewModel {
                         break;
                     case EMAIL_NAO_CONFIRMADO:
                     default:
+                        // A mensagem fica na tela para quem voltar da confirmação sem concluir.
                         mensagemErro.setValue(EMAIL_NAO_CONFIRMADO);
+                        if (repositorioAutenticacao.confirmaEmailPorCodigo()) {
+                            String emailDaConta = resultado.getEmail();
+                            emailParaConfirmar.setValue(emailDaConta != null && !emailDaConta.isEmpty() ? emailDaConta : email);
+                        }
                         break;
                 }
             }

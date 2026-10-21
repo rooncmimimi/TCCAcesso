@@ -124,6 +124,18 @@ public class ValidadorTeste {
         assertNotNull(Validador.validarDataNascimentoObrigatoria("01/01/2020", HOJE));
     }
 
+    /** sessaoValidator.validarConfirmarCadastro da API: exatamente 6 dígitos numéricos. */
+    @Test
+    public void codigoDeConfirmacaoDeEmailTemSeisDigitos() {
+        assertEquals("Digite o código que enviamos para o seu e-mail.", Validador.validarCodigoEmail(" "));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("12345"));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("1234567"));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("12a456"));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("12 456"));
+        assertNull(Validador.validarCodigoEmail("123456"));
+        assertNull(Validador.validarCodigoEmail(" 001234 "));
+    }
+
     /** As versões opcionais seguem aceitando vazio: são usadas onde a API não exige (empresa, vaga, perfil). */
     @Test
     public void variantesOpcionaisContinuamAceitandoVazio() {

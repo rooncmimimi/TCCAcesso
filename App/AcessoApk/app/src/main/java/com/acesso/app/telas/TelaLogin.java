@@ -6,6 +6,8 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -27,6 +29,13 @@ public class TelaLogin extends AppCompatActivity {
 
     private TelaLoginBinding componentes;
     private ViewModelLogin viewModel;
+    /** Confirmação de e-mail por código: com RESULT_OK a conta já pode entrar, então é só tocar em Entrar. */
+    private final ActivityResultLauncher<Intent> confirmacaoEmail = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), resultado -> {
+                if (resultado.getResultCode() == RESULT_OK) {
+                    MensagemStatus.mostrarSucesso(componentes.mensagemStatus, getString(R.string.login_email_confirmado));
+                }
+            });
 
     @Override
     protected void onCreate(Bundle estadoSalvo) {
@@ -96,6 +105,14 @@ public class TelaLogin extends AppCompatActivity {
         viewModel.devePerguntarReativacao().observe(this, perguntar -> {
             if (perguntar) {
                 perguntarReativacao();
+            }
+        });
+
+        viewModel.getEmailParaConfirmar().observe(this, emailDaConta -> {
+            if (emailDaConta != null) {
+                viewModel.confirmacaoAberta();
+                // Sem código recente: quem chega do login pede um novo se precisar.
+                confirmacaoEmail.launch(TelaConfirmarEmail.intencao(this, emailDaConta, false));
             }
         });
     }

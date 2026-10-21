@@ -48,6 +48,24 @@ public interface RepositorioAutenticacao {
         retorno.aoConcluir(sessao.getStatusEmpresa());
     }
 
+    /**
+     * true quando a fonte confirma o e-mail digitando o código de 6 dígitos que chega por e-mail
+     * (API do Site). Nas outras, a confirmação é por link e o app só orienta a pessoa.
+     */
+    default boolean confirmaEmailPorCodigo() {
+        return false;
+    }
+
+    /** Confirma o e-mail com o código recebido. Só vale quando {@link #confirmaEmailPorCodigo()} é true. */
+    default void confirmarEmail(String email, String codigo, RetornoRepositorio<Void> retorno) {
+        retorno.aoFalhar("Esta forma de login não confirma o e-mail por código.");
+    }
+
+    /** Pede um código novo. A resposta é sempre genérica: não revela se a conta existe. */
+    default void reenviarCodigoEmail(String email, RetornoRepositorio<Void> retorno) {
+        retorno.aoFalhar("Esta forma de login não confirma o e-mail por código.");
+    }
+
     void enviarLinkNovaSenha(String email, RetornoRepositorio<Void> retorno);
 
     /** Troca a senha usando o token que veio no link de recuperação. */

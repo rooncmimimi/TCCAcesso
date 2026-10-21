@@ -50,6 +50,20 @@
     <string name="cadastro_confirmar_email_mensagem">Sua conta foi criada. Enviamos um link de confirmação para o seu e-mail. Depois de confirmar, volte aqui e entre.</string>
     <string name="acao_ir_para_login">Ir para o login</string>
 
+    <!-- Confirmação de e-mail por código -->
+    <string name="confirmar_email_titulo">Confirme seu e-mail</string>
+    <string name="confirmar_email_introducao">Enviamos um código de 6 dígitos para %1$s. Digite-o abaixo para ativar a conta. O código vale por 15 minutos.</string>
+    <string name="rotulo_codigo_email">Código de 6 dígitos</string>
+    <string name="acao_confirmar_email">Confirmar e-mail</string>
+    <string name="acao_confirmando">Confirmando…</string>
+    <string name="acao_reenviar_codigo">Reenviar código</string>
+    <string name="acao_reenviar_codigo_espera">Reenviar código em %1$d s</string>
+    <string name="confirmar_email_reenviado">Pronto! Se a conta ainda não estiver confirmada, você vai receber um código novo em alguns minutos. Confira também a caixa de spam.</string>
+    <string name="confirmar_email_sucesso_titulo">E-mail confirmado</string>
+    <string name="confirmar_email_sucesso_mensagem">Tudo certo! Agora você já pode entrar com a sua conta.</string>
+    <string name="acao_continuar">Continuar</string>
+    <string name="login_email_confirmado">E-mail confirmado! Agora é só tocar em Entrar.</string>
+
     <!-- Recuperação de senha -->
     <string name="esqueci_titulo">Recuperar senha</string>
     <string name="esqueci_introducao">Digite o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.</string>

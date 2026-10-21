@@ -117,6 +117,16 @@ public class RepositorioAutenticacaoApiTeste {
         assertEquals("52998224725", corpo.get("cpf").getAsString());
     }
 
+    /** O servidor normaliza o e-mail, mas o app já manda limpo; o código vai como texto, sem espaços. */
+    @Test
+    public void confirmacaoDeEmailEnviaEmailELimpoECodigoComoTexto() {
+        JsonObject corpo = RepositorioAutenticacaoApi.corpoConfirmacaoEmail(" Rh@Empresa.Test ", " 001234 ");
+        assertEquals(new TreeSet<>(Arrays.asList("email", "codigo")), new TreeSet<>(corpo.keySet()));
+        assertEquals("rh@empresa.test", corpo.get("email").getAsString());
+        assertTrue(corpo.get("codigo").getAsJsonPrimitive().isString());
+        assertEquals("001234", corpo.get("codigo").getAsString());
+    }
+
     @Test
     public void cadastroComConfirmacaoDeEmailPendente() {
         ResultadoCadastro resultado = RepositorioAutenticacaoApi.lerResultadoCadastro(

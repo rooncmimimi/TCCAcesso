@@ -86,6 +86,17 @@ public final class Validador {
         return null;
     }
 
+    /** Código de confirmação de e-mail: exatamente 6 dígitos (sessaoValidator.validarConfirmarCadastro da API). */
+    public static String validarCodigoEmail(String codigo) {
+        if (estaVazio(codigo)) {
+            return "Digite o código que enviamos para o seu e-mail.";
+        }
+        String digitos = codigo.trim();
+        return digitos.length() == 6 && digitos.chars().allMatch(c -> c >= '0' && c <= '9')
+                ? null
+                : "O código deve ter 6 dígitos.";
+    }
+
     public static String validarConfirmacaoSenha(String senha, String confirmacao) {
         if (confirmacao == null || confirmacao.isEmpty()) {
             return "Repita a senha para confirmar.";

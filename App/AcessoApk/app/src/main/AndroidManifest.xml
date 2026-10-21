@@ -39,6 +39,11 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".telas.TelaConfirmarEmail"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Abre pelo link do e-mail de recuperação de senha -->
         <activity
             android:name=".telas.TelaNovaSenha"

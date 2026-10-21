@@ -19,6 +19,7 @@ import com.google.gson.JsonParser;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.function.Supplier;
 
 import okhttp3.Request;
@@ -154,6 +155,33 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
                 token -> ClienteApi.requisicaoAutenticada("auth/me", token).get().build(),
                 retorno,
                 RepositorioAutenticacaoApi::lerStatusEmpresa);
+    }
+
+    @Override
+    public boolean confirmaEmailPorCodigo() {
+        return true;
+    }
+
+    /** POST /api/auth/cadastro/confirmar-email { email, codigo }. Não devolve sessão: depois é só entrar. */
+    @Override
+    public void confirmarEmail(String email, String codigo, RetornoRepositorio<Void> retorno) {
+        executar(executor, post("auth/cadastro/confirmar-email", corpoConfirmacaoEmail(email, codigo)), retorno,
+                json -> null);
+    }
+
+    /** POST /api/auth/cadastro/reenviar-confirmacao { email }. Espera de 60 s entre envios, no servidor. */
+    @Override
+    public void reenviarCodigoEmail(String email, RetornoRepositorio<Void> retorno) {
+        JsonObject corpo = new JsonObject();
+        corpo.addProperty("email", email.trim().toLowerCase(Locale.ROOT));
+        executar(executor, post("auth/cadastro/reenviar-confirmacao", corpo), retorno, json -> null);
+    }
+
+    static JsonObject corpoConfirmacaoEmail(String email, String codigo) {
+        JsonObject corpo = new JsonObject();
+        corpo.addProperty("email", email.trim().toLowerCase(Locale.ROOT));
+        corpo.addProperty("codigo", codigo.trim());
+        return corpo;
     }
 
     /**

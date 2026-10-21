@@ -38,6 +38,8 @@ public class RepositorioAutenticacaoSimulado implements RepositorioAutenticacao 
     public static final String EMAIL_PAUSADO = "pausado@acesso.test";
     /** Simula queda de conexão com o servidor. */
     public static final String EMAIL_FALHA_REDE = "falha.rede@acesso.test";
+    /** Único código que a confirmação de e-mail aceita no modo demonstração. */
+    public static final String CODIGO_DEMONSTRACAO = "123456";
 
     private static final long ATRASO_MILLIS = 900;
     private static final long VALIDADE_SESSAO_MILLIS = 30 * 60 * 1000;
@@ -100,6 +102,28 @@ public class RepositorioAutenticacaoSimulado implements RepositorioAutenticacao 
     public void renovarSessao(SessaoUsuario sessao, RetornoRepositorio<SessaoUsuario> retorno) {
         responder(() -> retorno.aoConcluir(criarSessao(sessao.getEmail(), sessao.getNome(),
                 sessao.getTipoConta(), sessao.getStatusEmpresa())));
+    }
+
+    @Override
+    public boolean confirmaEmailPorCodigo() {
+        return true;
+    }
+
+    /** Só {@link #CODIGO_DEMONSTRACAO} confirma; qualquer outro recebe a mesma mensagem da API. */
+    @Override
+    public void confirmarEmail(String email, String codigo, RetornoRepositorio<Void> retorno) {
+        responder(() -> {
+            if (CODIGO_DEMONSTRACAO.equals(codigo.trim())) {
+                retorno.aoConcluir(null);
+            } else {
+                retorno.aoFalhar("Código inválido ou expirado.");
+            }
+        });
+    }
+
+    @Override
+    public void reenviarCodigoEmail(String email, RetornoRepositorio<Void> retorno) {
+        responder(() -> retorno.aoConcluir(null));
     }
 
     @Override

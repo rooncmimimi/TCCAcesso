@@ -47,6 +47,17 @@ public final class Navegacao {
         origem.finish();
     }
 
+    /**
+     * Depois de criar a conta de pessoa vindo de "Sou empresa": a área da pessoa fica embaixo (Voltar
+     * leva a ela, não ao login) e o cadastro da empresa abre por cima, já com a conta logada.
+     */
+    public static void abrirAreaEContinuarComEmpresa(Activity origem) {
+        Intent area = new Intent(origem, TelaPrincipal.class);
+        area.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        origem.startActivities(new Intent[]{area, TelaCadastro.intencaoParaEmpresa(origem)});
+        origem.finish();
+    }
+
     /** Ao sair da conta ou perder a sessão: volta para a apresentação, sem nada da área logada na pilha. */
     public static void voltarParaApresentacao(Activity origem, String aviso) {
         Intent intencao = new Intent(origem, TelaApresentacao.class);
@@ -60,9 +71,18 @@ public final class Navegacao {
 
     /** Abre o login com a apresentação embaixo (Voltar no login leva à apresentação). */
     public static void abrirLoginDoZero(Activity origem) {
+        abrirLoginDoZero(origem, null);
+    }
+
+    /** Igual a {@link #abrirLoginDoZero(Activity)}, com o campo de e-mail já preenchido (se informado). */
+    public static void abrirLoginDoZero(Activity origem, String email) {
         Intent apresentacao = new Intent(origem, TelaApresentacao.class);
         apresentacao.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        origem.startActivities(new Intent[]{apresentacao, new Intent(origem, TelaLogin.class)});
+        Intent login = new Intent(origem, TelaLogin.class);
+        if (email != null && !email.isEmpty()) {
+            login.putExtra(TelaLogin.EXTRA_EMAIL, email);
+        }
+        origem.startActivities(new Intent[]{apresentacao, login});
         origem.finish();
     }
 

@@ -59,10 +59,25 @@
     <string name="acao_reenviar_codigo">Reenviar código</string>
     <string name="acao_reenviar_codigo_espera">Reenviar código em %1$d s</string>
     <string name="confirmar_email_reenviado">Pronto! Se a conta ainda não estiver confirmada, você vai receber um código novo em alguns minutos. Confira também a caixa de spam.</string>
-    <string name="confirmar_email_sucesso_titulo">E-mail confirmado</string>
-    <string name="confirmar_email_sucesso_mensagem">Tudo certo! Agora você já pode entrar com a sua conta.</string>
-    <string name="acao_continuar">Continuar</string>
     <string name="login_email_confirmado">E-mail confirmado! Agora é só tocar em Entrar.</string>
+
+    <!-- Cadastro de empresa a partir da conta de pessoa (a API do Site exige essa conta) -->
+    <string name="cadastro_portao_titulo">Primeiro, a sua conta pessoal</string>
+    <string name="cadastro_portao_mensagem">No ACESSO a conta da empresa fica vinculada à conta de candidato de quem responde por ela. Crie a sua conta pessoal — leva poucos minutos — e o cadastro da empresa continua logo em seguida.</string>
+    <string name="acao_criar_conta_candidato">Criar minha conta de candidato</string>
+    <string name="acao_ja_tenho_conta_candidato">Já tenho conta de candidato: entrar</string>
+    <string name="cadastro_depois_empresa">Depois de criar a sua conta pessoal, você segue para o cadastro da empresa.</string>
+    <string name="cadastro_empresa_vinculada">A empresa fica vinculada à sua conta de candidato (%1$s). A conta da empresa tem login próprio.</string>
+    <string name="perfil_cadastrar_empresa">Cadastrar minha empresa</string>
+    <string name="cadastro_email_pendente_titulo">Falta confirmar o e-mail</string>
+    <string name="cadastro_email_pendente_mensagem">A conta da empresa foi criada, mas só entra depois de confirmar o e-mail %1$s. Você pode confirmar agora ou depois, ao entrar com a conta da empresa.</string>
+    <string name="acao_confirmar_agora">Confirmar agora</string>
+    <string name="acao_depois">Depois</string>
+    <string name="cadastro_email_confirmado_titulo">E-mail confirmado</string>
+    <string name="cadastro_email_confirmado_mensagem_pessoa">A conta da empresa já pode entrar. Ela tem login próprio: saia da sua conta pessoal e entre com o e-mail e a senha da empresa.</string>
+    <string name="cadastro_email_confirmado_mensagem">A conta da empresa já pode entrar com o e-mail e a senha que você cadastrou.</string>
+    <string name="acao_entrar_com_empresa">Entrar com a empresa</string>
+    <string name="acao_agora_nao">Agora não</string>
 
     <!-- Recuperação de senha -->
     <string name="esqueci_titulo">Recuperar senha</string>

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.acesso.app.modelos.DadosCadastroEmpresa;
 import com.acesso.app.modelos.DadosCadastroPessoa;
 import com.acesso.app.modelos.ResultadoCadastro;
 import com.acesso.app.modelos.ResultadoLogin;
@@ -125,6 +126,48 @@ public class RepositorioAutenticacaoApiTeste {
         assertEquals("rh@empresa.test", corpo.get("email").getAsString());
         assertTrue(corpo.get("codigo").getAsJsonPrimitive().isString());
         assertEquals("001234", corpo.get("codigo").getAsString());
+    }
+
+    /**
+     * Campos de POST /auth/register/empresa (validarCadastroEmpresa). O vínculo com a conta de candidato
+     * (usuarioCandidatoId) vem do token, nunca do corpo: a API trata campo enviado como alegação, não prova.
+     */
+    @Test
+    public void cadastroDeEmpresaEnviaSoOsCamposDaApiEOmiteOsVazios() {
+        DadosCadastroEmpresa dados = new DadosCadastroEmpresa();
+        dados.nome = "Carlos Responsável";
+        dados.email = "rh@empresa.test";
+        dados.senha = "Acesso@2026";
+        dados.cnpj = "11222333000181";
+        dados.razaoSocial = "Empresa Exemplo Ltda";
+        dados.porte = "pequena";
+        dados.cidade = "Campinas";
+        dados.estado = "SP";
+        dados.telefone = null;
+        dados.nomeFantasia = "";
+
+        JsonObject corpo = RepositorioAutenticacaoApi.corpoCadastroEmpresa(dados);
+
+        assertEquals(new TreeSet<>(Arrays.asList(
+                        "nome", "email", "senha", "cnpj", "razaoSocial", "porte", "cidade", "estado")),
+                new TreeSet<>(corpo.keySet()));
+        assertFalse(corpo.has("usuarioCandidatoId"));
+    }
+
+    @Test
+    public void cadastroPendenteTrazOEmailParaConfirmar() {
+        ResultadoCadastro resultado = RepositorioAutenticacaoApi.lerResultadoCadastro(
+                json("{\"sucesso\":true,\"pendenteVerificacaoEmail\":true,\"email\":\"rh@empresa.test\"}"));
+        assertTrue(resultado.precisaConfirmarEmail());
+        assertEquals("rh@empresa.test", resultado.getEmail());
+    }
+
+    @Test
+    public void cadastroPendenteSemEmailNaRespostaNaoQuebra() {
+        ResultadoCadastro resultado = RepositorioAutenticacaoApi.lerResultadoCadastro(
+                json("{\"pendenteVerificacaoEmail\":true}"));
+        assertTrue(resultado.precisaConfirmarEmail());
+        assertNull(resultado.getEmail());
     }
 
     @Test

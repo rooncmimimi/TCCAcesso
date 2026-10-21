@@ -15,6 +15,7 @@ import com.acesso.app.repositorios.FabricaRepositorios;
 import com.acesso.app.repositorios.RepositorioAutenticacao;
 import com.acesso.app.repositorios.RetornoRepositorio;
 import com.acesso.app.utilitarios.GerenciadorSessao;
+import com.acesso.app.utilitarios.ModoCadastroEmpresa;
 import com.acesso.app.utilitarios.Validador;
 
 import java.time.LocalDate;
@@ -103,7 +104,13 @@ public class ViewModelCadastro extends AndroidViewModel {
     private final MutableLiveData<String> mensagemErro = new MutableLiveData<>();
     private final MutableLiveData<Boolean> carregando = new MutableLiveData<>(false);
     private final MutableLiveData<Desfecho> desfecho = new MutableLiveData<>(Desfecho.NENHUM);
+    private final MutableLiveData<Boolean> emailConfirmado = new MutableLiveData<>(false);
     private SessaoUsuario sessaoCriada;
+    /** E-mail da conta criada que falta confirmar; null se a fonte não informou (confirmação por link). */
+    private String emailPendente;
+    private boolean confirmacaoOferecida;
+    /** A pessoa veio de "Sou empresa" sem conta: depois do cadastro de pessoa segue para o da empresa. */
+    private boolean continuarComEmpresa;
 
     public ViewModelCadastro(@NonNull Application aplicacao) {
         super(aplicacao);
@@ -130,6 +137,62 @@ public class ViewModelCadastro extends AndroidViewModel {
     /** Só existe quando o desfecho é AUTENTICADO. */
     public SessaoUsuario getSessaoCriada() {
         return sessaoCriada;
+    }
+
+    /** Situação do cadastro de empresa para a conta que está logada agora (ver {@link ModoCadastroEmpresa}). */
+    public ModoCadastroEmpresa getModoEmpresa() {
+        return ModoCadastroEmpresa.de(repositorioAutenticacao.empresaExigeContaDePessoa(), gerenciadorSessao.obter());
+    }
+
+    /** A conta logada agora, ou null. */
+    public SessaoUsuario getSessaoAtual() {
+        return gerenciadorSessao.obter();
+    }
+
+    /** Só existe quando o desfecho é CONFIRMAR_EMAIL e a fonte informou o e-mail. */
+    public String getEmailPendente() {
+        return emailPendente;
+    }
+
+    public boolean confirmaEmailPorCodigo() {
+        return repositorioAutenticacao.confirmaEmailPorCodigo();
+    }
+
+    public LiveData<Boolean> getEmailConfirmado() {
+        return emailConfirmado;
+    }
+
+    public void marcarEmailConfirmado() {
+        emailConfirmado.setValue(true);
+    }
+
+    /**
+     * true uma única vez por cadastro: a tela abre a confirmação por conta própria na primeira vez e,
+     * depois disso (rotação, voltar da confirmação), deixa a pessoa decidir pelos botões.
+     */
+    public boolean tomarOfertaDeConfirmacao() {
+        if (confirmacaoOferecida) {
+            return false;
+        }
+        confirmacaoOferecida = true;
+        return true;
+    }
+
+    public boolean deveContinuarComEmpresa() {
+        return continuarComEmpresa;
+    }
+
+    public void definirContinuarComEmpresa(boolean continuar) {
+        continuarComEmpresa = continuar;
+    }
+
+    /** Encerra a conta logada (como o botão Sair do perfil), para entrar com outra. */
+    public void sairDaContaAtual() {
+        SessaoUsuario atual = gerenciadorSessao.obter();
+        if (atual != null) {
+            repositorioAutenticacao.sair(atual);
+        }
+        gerenciadorSessao.limpar();
     }
 
     /** Ao trocar entre pessoa e empresa, os erros do outro formulário saem da tela. */
@@ -173,6 +236,7 @@ public class ViewModelCadastro extends AndroidViewModel {
             public void aoConcluir(ResultadoCadastro resultado) {
                 carregando.setValue(false);
                 if (resultado.precisaConfirmarEmail()) {
+                    emailPendente = resultado.getEmail();
                     desfecho.setValue(Desfecho.CONFIRMAR_EMAIL);
                 } else {
                     sessaoCriada = resultado.getSessao();

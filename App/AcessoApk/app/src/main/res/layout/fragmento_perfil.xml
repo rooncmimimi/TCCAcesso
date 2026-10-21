@@ -60,6 +60,13 @@
                     app:icon="@drawable/ic_editar" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoCadastrarEmpresa"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/perfil_cadastrar_empresa"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_empresa" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/botaoSair"
                     style="@style/Estilo.Acesso.ItemMenu"
                     android:text="@string/acao_sair"

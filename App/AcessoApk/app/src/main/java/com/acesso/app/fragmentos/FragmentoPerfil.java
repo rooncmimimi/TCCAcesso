@@ -15,6 +15,7 @@ import com.acesso.app.R;
 import com.acesso.app.databinding.FragmentoPerfilBinding;
 import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.SessaoUsuario;
+import com.acesso.app.telas.TelaCadastro;
 import com.acesso.app.telas.TelaCandidaturas;
 import com.acesso.app.telas.TelaConversas;
 import com.acesso.app.telas.TelaEditarPerfil;
@@ -56,6 +57,10 @@ public class FragmentoPerfil extends Fragment {
         // Candidaturas são da pessoa candidata; a empresa acompanha as recebidas no Painel.
         componentes.botaoCandidaturas.setVisibility(sessao != null && sessao.ehEmpresa() ? View.GONE : View.VISIBLE);
         componentes.botaoCandidaturas.setOnClickListener(v -> TelaCandidaturas.abrir(requireContext()));
+        // A conta de empresa nasce de uma conta de pessoa (regra da API): o atalho fica aqui, na conta da pessoa.
+        componentes.botaoCadastrarEmpresa.setVisibility(viewModelSessao.podeCadastrarEmpresa(sessao) ? View.VISIBLE : View.GONE);
+        componentes.botaoCadastrarEmpresa.setOnClickListener(v ->
+                startActivity(TelaCadastro.intencaoParaEmpresa(requireContext())));
         componentes.botaoMensagens.setOnClickListener(v -> TelaConversas.abrir(requireContext()));
         componentes.botaoEditarPerfil.setOnClickListener(v -> TelaEditarPerfil.abrir(requireContext()));
         viewModelPerfil.getResumo().observe(getViewLifecycleOwner(), resumo -> {

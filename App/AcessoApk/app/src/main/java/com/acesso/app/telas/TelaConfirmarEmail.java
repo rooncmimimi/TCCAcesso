@@ -14,7 +14,6 @@ import com.acesso.app.databinding.TelaConfirmarEmailBinding;
 import com.acesso.app.utilitarios.MargensSistema;
 import com.acesso.app.utilitarios.MensagemStatus;
 import com.acesso.app.viewmodels.ViewModelConfirmarEmail;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
  * Confirmação do e-mail com o código de 6 dígitos que a API envia (cadastro de empresa e login de
@@ -110,7 +109,9 @@ public class TelaConfirmarEmail extends AppCompatActivity {
 
         viewModel.foiConfirmado().observe(this, confirmado -> {
             if (confirmado) {
-                avisarConfirmacao();
+                // Quem abriu mostra o aviso e decide o próximo passo.
+                setResult(RESULT_OK);
+                finish();
             }
         });
     }
@@ -124,17 +125,5 @@ public class TelaConfirmarEmail extends AppCompatActivity {
         componentes.botaoReenviar.setText(esperando
                 ? getString(R.string.acao_reenviar_codigo_espera, segundos)
                 : getString(R.string.acao_reenviar_codigo));
-    }
-
-    private void avisarConfirmacao() {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.confirmar_email_sucesso_titulo)
-                .setMessage(R.string.confirmar_email_sucesso_mensagem)
-                .setCancelable(false)
-                .setPositiveButton(R.string.acao_continuar, (dialogo, botao) -> {
-                    setResult(RESULT_OK);
-                    finish();
-                })
-                .show();
     }
 }

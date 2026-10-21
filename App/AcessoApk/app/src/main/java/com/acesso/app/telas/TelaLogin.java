@@ -27,6 +27,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
  */
 public class TelaLogin extends AppCompatActivity {
 
+    /** E-mail para já deixar preenchido (ex.: o da empresa recém-criada). Opcional. */
+    public static final String EXTRA_EMAIL = "email";
+
     private TelaLoginBinding componentes;
     private ViewModelLogin viewModel;
     /** Confirmação de e-mail por código: com RESULT_OK a conta já pode entrar, então é só tocar em Entrar. */
@@ -50,6 +53,11 @@ public class TelaLogin extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(ViewModelLogin.class);
         observarViewModel();
+
+        String emailInicial = getIntent().getStringExtra(EXTRA_EMAIL);
+        if (estadoSalvo == null && emailInicial != null) {
+            componentes.entradaEmail.setText(emailInicial);
+        }
 
         componentes.botaoEntrar.setOnClickListener(v -> enviar());
         // Envia pelo botão do teclado virtual e também pelo Enter de um teclado físico.

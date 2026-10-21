@@ -107,9 +107,32 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
         return corpo;
     }
 
-    /** POST /api/auth/register/empresa (campos de autenticacaoValidator.validarCadastroEmpresa) */
+    @Override
+    public boolean empresaExigeContaDePessoa() {
+        return true;
+    }
+
+    /**
+     * POST /api/auth/register/empresa (campos de autenticacaoValidator.validarCadastroEmpresa), em nome da
+     * conta de candidato logada: a API recusa sem sessão de candidato (401) e tira o vínculo do token,
+     * nunca do corpo. Por isso vai com o token e renova a sessão sozinha se ela tiver vencido.
+     */
     @Override
     public void cadastrarEmpresa(DadosCadastroEmpresa dados, RetornoRepositorio<ResultadoCadastro> retorno) {
+        if (!ClienteApi.estaConfigurada()) {
+            executorSessao.falhar(retorno, new FalhaHttp("O endereço da API ainda não foi configurado (URL_API). Veja o README."));
+            return;
+        }
+        JsonObject corpo = corpoCadastroEmpresa(dados);
+        executorSessao.executarComSessao(
+                token -> ClienteApi.requisicaoAutenticada("auth/register/empresa", token)
+                        .post(RequestBody.create(corpo.toString(), ClienteHttp.TIPO_JSON))
+                        .build(),
+                retorno,
+                RepositorioAutenticacaoApi::lerResultadoCadastro);
+    }
+
+    static JsonObject corpoCadastroEmpresa(DadosCadastroEmpresa dados) {
         JsonObject corpo = new JsonObject();
         corpo.addProperty("nome", dados.nome);
         corpo.addProperty("email", dados.email);
@@ -126,7 +149,7 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
         adicionarSePreenchido(corpo, "estado", dados.estado);
         adicionarSePreenchido(corpo, "endereco", dados.endereco);
         adicionarSePreenchido(corpo, "cep", dados.cep);
-        executar(executor, post("auth/register/empresa", corpo), retorno, RepositorioAutenticacaoApi::lerResultadoCadastro);
+        return corpo;
     }
 
     /**
@@ -234,7 +257,7 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
     /** { usuario, token, refreshToken } | { pendenteVerificacaoEmail, email } */
     static ResultadoCadastro lerResultadoCadastro(JsonObject json) {
         if (verdadeiro(json, "pendenteVerificacaoEmail")) {
-            return new ResultadoCadastro(null);
+            return ResultadoCadastro.pendenteDeConfirmacao(texto(json, "email"));
         }
         return new ResultadoCadastro(lerSessao(json, null));
     }

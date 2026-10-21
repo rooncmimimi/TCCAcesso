@@ -85,6 +85,12 @@ public class RepositorioAutenticacaoSimulado implements RepositorioAutenticacao 
         });
     }
 
+    /** Como a API do Site, o demonstrativo só deixa criar empresa a partir de uma conta de pessoa. */
+    @Override
+    public boolean empresaExigeContaDePessoa() {
+        return true;
+    }
+
     /** Empresa nova nasce "pendente", como no Site: a moderação precisa aprovar. */
     @Override
     public void cadastrarEmpresa(DadosCadastroEmpresa dados, RetornoRepositorio<ResultadoCadastro> retorno) {

@@ -31,7 +31,19 @@ public interface RepositorioAutenticacao {
 
     void cadastrarPessoa(DadosCadastroPessoa dados, RetornoRepositorio<ResultadoCadastro> retorno);
 
+    /**
+     * Cadastra a empresa. Quando {@link #empresaExigeContaDePessoa()} é true, é feito em nome da
+     * conta de pessoa que está logada (o token vai no cabeçalho e é dele que a API tira o vínculo).
+     */
     void cadastrarEmpresa(DadosCadastroEmpresa dados, RetornoRepositorio<ResultadoCadastro> retorno);
+
+    /**
+     * true quando a conta de empresa só pode ser criada por quem já tem conta de pessoa logada
+     * (regra da API do Site). Nas outras fontes o cadastro de empresa é livre.
+     */
+    default boolean empresaExigeContaDePessoa() {
+        return false;
+    }
 
     /**
      * Gera uma sessão nova a partir do token de renovação. Se a sessão não vale mais

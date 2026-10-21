@@ -13,6 +13,7 @@ import com.acesso.app.repositorios.RepositorioAutenticacao;
 import com.acesso.app.repositorios.RenovadorSessao;
 import com.acesso.app.repositorios.RetornoRepositorio;
 import com.acesso.app.utilitarios.GerenciadorSessao;
+import com.acesso.app.utilitarios.ModoCadastroEmpresa;
 
 /**
  * Cuida da sessão nas telas da área logada (TelaPrincipal e TelaStatusEmpresa):
@@ -118,6 +119,15 @@ public class ViewModelSessao extends AndroidViewModel {
                 consultandoEmpresa = false;
             }
         });
+    }
+
+    /**
+     * true para a conta de pessoa quando a fonte só cria empresa a partir de uma conta de pessoa: o Perfil
+     * oferece "Cadastrar minha empresa". Empresa e fontes sem essa regra não mostram o atalho.
+     */
+    public boolean podeCadastrarEmpresa(SessaoUsuario conta) {
+        return ModoCadastroEmpresa.de(repositorioAutenticacao.empresaExigeContaDePessoa(), conta)
+                == ModoCadastroEmpresa.COM_CONTA_DE_PESSOA;
     }
 
     public void sair() {

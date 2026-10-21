@@ -15,6 +15,11 @@
     <dimen name="altura_fundo_raio_topo">220dp</dimen>
     <dimen name="altura_esmaecimento_raio">120dp</dimen>
 
+    <!-- Área logada -->
+    <dimen name="tamanho_avatar">44dp</dimen>
+    <dimen name="tamanho_avatar_perfil">72dp</dimen>
+    <dimen name="espaco_cartoes">12dp</dimen>
+
     <!-- Tela de apresentação -->
     <dimen name="apresentacao_margem">20dp</dimen>
     <dimen name="apresentacao_altura_botao_cabecalho">48dp</dimen>

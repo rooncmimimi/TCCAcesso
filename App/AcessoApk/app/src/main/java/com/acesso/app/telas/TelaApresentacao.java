@@ -1,9 +1,7 @@
 package com.acesso.app.telas;
 
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.text.Annotation;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -19,39 +17,31 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.acesso.app.BuildConfig;
 import com.acesso.app.R;
 import com.acesso.app.databinding.TelaApresentacaoBinding;
-import com.acesso.app.utilitarios.GerenciadorApresentacao;
+import com.acesso.app.modelos.SessaoUsuario;
+import com.acesso.app.utilitarios.AtalhosSistema;
 import com.acesso.app.utilitarios.GerenciadorSessao;
+import com.acesso.app.utilitarios.Navegacao;
 
 /**
- * Primeira tela do app: apresenta o ACESSO na primeira vez que ele é aberto.
- * Depois de concluída (ou se já houver sessão salva), segue direto para a TelaLogin,
- * que continua cuidando do login automático.
+ * Porta de entrada do app. Com sessão salva, segue direto para a área da conta
+ * (a apresentação não aparece para quem já entrou). Sem sessão, sempre aparece,
+ * com os caminhos para entrar ou criar conta.
+ *
+ * Login e cadastro abrem por cima dela (sem finish): Voltar retorna para cá.
  */
 public class TelaApresentacao extends AppCompatActivity {
 
-    /**
-     * Só no build de debug: força a apresentação mesmo já tendo sido vista.
-     * adb shell am start -n com.acesso.app/.telas.TelaApresentacao --ez mostrar_apresentacao true
-     */
-    public static final String EXTRA_MOSTRAR_APRESENTACAO = "mostrar_apresentacao";
-
     private static final float ESCALA_MAXIMA_TITULO = 1.3f;
-
-    private GerenciadorApresentacao gerenciadorApresentacao;
 
     @Override
     protected void onCreate(Bundle estadoSalvo) {
         super.onCreate(estadoSalvo);
-        gerenciadorApresentacao = new GerenciadorApresentacao(this);
 
-        boolean forcarApresentacao = BuildConfig.DEBUG
-                && getIntent().getBooleanExtra(EXTRA_MOSTRAR_APRESENTACAO, false);
-        boolean temSessao = new GerenciadorSessao(this).obter() != null;
-        if (!forcarApresentacao && (gerenciadorApresentacao.foiConcluida() || temSessao)) {
-            seguirParaApp(false);
+        SessaoUsuario sessao = new GerenciadorSessao(this).obter();
+        if (sessao != null) {
+            Navegacao.abrirAreaAutenticada(this, sessao);
             return;
         }
 
@@ -62,35 +52,19 @@ public class TelaApresentacao extends AppCompatActivity {
         componentes.titulo.setText(colorirDestaques(getText(R.string.apresentacao_titulo)));
         limitarCrescimentoTitulo(componentes.titulo);
 
-        componentes.botaoEntrar.setOnClickListener(v -> seguirParaApp(false));
-        componentes.botaoCriarConta.setOnClickListener(v -> seguirParaApp(true));
-        componentes.botaoQueroVagas.setOnClickListener(v -> seguirParaApp(true));
-        // Ainda não existe cadastro específico de empresa: usa o cadastro atual
-        componentes.botaoSouEmpresa.setOnClickListener(v -> seguirParaApp(true));
-        componentes.botaoConfigurarAcessibilidade.setOnClickListener(v -> abrirConfiguracoesAcessibilidade());
-    }
-
-    /**
-     * Marca a apresentação como vista e abre a TelaLogin. Para criar conta, a
-     * TelaCadastro abre por cima do login, então "Voltar" leva ao login.
-     */
-    private void seguirParaApp(boolean abrirCadastro) {
-        gerenciadorApresentacao.marcarComoConcluida();
-        Intent login = new Intent(this, TelaLogin.class);
-        if (abrirCadastro) {
-            startActivities(new Intent[]{login, new Intent(this, TelaCadastro.class)});
-        } else {
-            startActivity(login);
+        String aviso = getIntent().getStringExtra(Navegacao.EXTRA_AVISO);
+        if (aviso != null && !aviso.isEmpty()) {
+            componentes.textoAviso.setText(aviso);
+            componentes.textoAviso.setVisibility(View.VISIBLE);
         }
-        finish();
-    }
 
-    private void abrirConfiguracoesAcessibilidade() {
-        try {
-            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-        } catch (ActivityNotFoundException semTela) {
-            startActivity(new Intent(Settings.ACTION_SETTINGS));
-        }
+        componentes.botaoEntrar.setOnClickListener(v -> startActivity(new Intent(this, TelaLogin.class)));
+        componentes.botaoCriarConta.setOnClickListener(v -> startActivities(Navegacao.loginECadastro(this, false)));
+        componentes.botaoQueroVagas.setOnClickListener(v -> startActivities(Navegacao.loginECadastro(this, false)));
+        // "Sou empresa" abre o cadastro já com "Empresa" escolhido.
+        componentes.botaoSouEmpresa.setOnClickListener(v -> startActivities(Navegacao.loginECadastro(this, true)));
+        componentes.botaoConfigurarAcessibilidade.setOnClickListener(v ->
+                AtalhosSistema.abrirConfiguracoesAcessibilidade(this));
     }
 
     /**

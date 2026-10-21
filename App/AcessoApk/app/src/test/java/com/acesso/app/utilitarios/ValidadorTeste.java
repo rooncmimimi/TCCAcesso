@@ -3,6 +3,7 @@ package com.acesso.app.utilitarios;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -26,19 +27,59 @@ public class ValidadorTeste {
         assertNull(Validador.validarSenhaLogin("x"));
     }
 
+    /** Mesmas regras de regrasSenha (autenticacaoValidator.js da API): 8 a 72, maiúscula, minúscula, número e símbolo. */
     @Test
-    public void novaSenhaPrecisaDeTamanhoLetrasENumeros() {
-        assertNotNull(Validador.validarNovaSenha("abc123"));
-        assertNotNull(Validador.validarNovaSenha("abcdefgh"));
-        assertNotNull(Validador.validarNovaSenha("12345678"));
-        assertNull(Validador.validarNovaSenha("acesso2026"));
+    public void novaSenhaSegueAsRegrasDaApi() {
+        assertNotNull(Validador.validarNovaSenha(""));
+        assertNotNull(Validador.validarNovaSenha("Ab1@"));
+        assertNotNull(Validador.validarNovaSenha("A1@" + "a".repeat(70)));
+        assertEquals("A senha deve conter ao menos uma letra minúscula.", Validador.validarNovaSenha("ACESSO@2026"));
+        assertEquals("A senha deve conter ao menos uma letra maiúscula.", Validador.validarNovaSenha("acesso@2026"));
+        assertEquals("A senha deve conter ao menos um número.", Validador.validarNovaSenha("Acesso@acesso"));
+        assertTrue(Validador.validarNovaSenha("acesso2026A").startsWith("A senha deve conter ao menos um caractere especial"));
+        assertNull(Validador.validarNovaSenha("Acesso@2026"));
+        assertNull(Validador.validarNovaSenha("Senha forte 1"));
     }
 
     @Test
     public void confirmacaoDeSenha() {
-        assertNotNull(Validador.validarConfirmacaoSenha("acesso2026", ""));
-        assertEquals("As senhas não são iguais.", Validador.validarConfirmacaoSenha("acesso2026", "acesso2025"));
-        assertNull(Validador.validarConfirmacaoSenha("acesso2026", "acesso2026"));
+        assertNotNull(Validador.validarConfirmacaoSenha("Acesso@2026", ""));
+        assertEquals("As senhas não são iguais.", Validador.validarConfirmacaoSenha("Acesso@2026", "Acesso@2025"));
+        assertNull(Validador.validarConfirmacaoSenha("Acesso@2026", "Acesso@2026"));
+    }
+
+    @Test
+    public void cpfOpcionalComDigitoVerificador() {
+        assertNull(Validador.validarCpf(""));
+        assertNull(Validador.validarCpf("529.982.247-25"));
+        assertNotNull(Validador.validarCpf("529.982.247-26"));
+        assertNotNull(Validador.validarCpf("111.111.111-11"));
+        assertNotNull(Validador.validarCpf("1234"));
+    }
+
+    @Test
+    public void cnpjObrigatorioComDigitoVerificador() {
+        assertNotNull(Validador.validarCnpj(""));
+        assertNull(Validador.validarCnpj("11.222.333/0001-81"));
+        assertNotNull(Validador.validarCnpj("11.222.333/0001-82"));
+        assertNotNull(Validador.validarCnpj("00.000.000/0000-00"));
+    }
+
+    @Test
+    public void camposOpcionaisDaEmpresa() {
+        assertNull(Validador.validarTelefone(""));
+        assertNull(Validador.validarTelefone("(11) 98765-4321"));
+        assertNull(Validador.validarTelefone("(11) 3456-7890"));
+        assertNotNull(Validador.validarTelefone("98765-4321"));
+        assertNull(Validador.validarUf("sp"));
+        assertNotNull(Validador.validarUf("XX"));
+        assertNotNull(Validador.validarUf("S"));
+        assertNull(Validador.validarCep("01310-100"));
+        assertNotNull(Validador.validarCep("0131"));
+        assertNull(Validador.validarSite("https://acesso.org.br"));
+        assertNotNull(Validador.validarSite("acesso.org.br"));
+        assertNull(Validador.validarTamanhoMaximo("Tecnologia", 120));
+        assertNotNull(Validador.validarTamanhoMaximo("x".repeat(121), 120));
     }
 
     @Test
@@ -52,6 +93,56 @@ public class ValidadorTeste {
     public void cidadeObrigatoria() {
         assertNotNull(Validador.validarCidade(" "));
         assertNull(Validador.validarCidade("São Paulo"));
+    }
+
+    /** Mesmo intervalo da API (autenticacaoValidator.js): 2 a 100 caracteres. */
+    @Test
+    public void cidadeTemOsLimitesDaApi() {
+        assertNotNull(Validador.validarCidade("S"));
+        assertNull(Validador.validarCidade("Ibi"));
+        assertNull(Validador.validarCidade("a".repeat(100)));
+        assertNotNull(Validador.validarCidade("a".repeat(101)));
+    }
+
+    /** A API exige estes campos no cadastro de pessoa; vazio deixa de ser aceito, mas o formato continua valendo. */
+    @Test
+    public void variantesObrigatoriasDoCadastroDePessoa() {
+        assertEquals("Informe seu telefone com DDD.", Validador.validarTelefoneObrigatorio(" "));
+        assertNull(Validador.validarTelefoneObrigatorio("(11) 98765-4321"));
+        assertNotNull(Validador.validarTelefoneObrigatorio("98765-4321"));
+
+        assertEquals("Informe seu CPF.", Validador.validarCpfObrigatorio(""));
+        assertNull(Validador.validarCpfObrigatorio("529.982.247-25"));
+        assertNotNull(Validador.validarCpfObrigatorio("111.111.111-11"));
+
+        assertNotNull(Validador.validarUfObrigatoria(""));
+        assertNull(Validador.validarUfObrigatoria("sp"));
+        assertNotNull(Validador.validarUfObrigatoria("XX"));
+
+        assertEquals("Informe sua data de nascimento.", Validador.validarDataNascimentoObrigatoria(" ", HOJE));
+        assertNull(Validador.validarDataNascimentoObrigatoria("25/09/2000", HOJE));
+        assertNotNull(Validador.validarDataNascimentoObrigatoria("01/01/2020", HOJE));
+    }
+
+    /** sessaoValidator.validarConfirmarCadastro da API: exatamente 6 dígitos numéricos. */
+    @Test
+    public void codigoDeConfirmacaoDeEmailTemSeisDigitos() {
+        assertEquals("Digite o código que enviamos para o seu e-mail.", Validador.validarCodigoEmail(" "));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("12345"));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("1234567"));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("12a456"));
+        assertEquals("O código deve ter 6 dígitos.", Validador.validarCodigoEmail("12 456"));
+        assertNull(Validador.validarCodigoEmail("123456"));
+        assertNull(Validador.validarCodigoEmail(" 001234 "));
+    }
+
+    /** As versões opcionais seguem aceitando vazio: são usadas onde a API não exige (empresa, vaga, perfil). */
+    @Test
+    public void variantesOpcionaisContinuamAceitandoVazio() {
+        assertNull(Validador.validarTelefone(""));
+        assertNull(Validador.validarCpf(""));
+        assertNull(Validador.validarUf(""));
+        assertNull(Validador.validarDataNascimento("", HOJE));
     }
 
     @Test

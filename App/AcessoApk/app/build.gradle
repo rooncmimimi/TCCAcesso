@@ -10,6 +10,21 @@ if (arquivoPropriedadesLocais.exists()) {
     arquivoPropriedadesLocais.withInputStream { propriedadesLocais.load(it) }
 }
 
+// Lê primeiro da linha de comando (-PNOME=valor) e depois do local.properties.
+def configuracao = { String nome, String padrao ->
+    def valor = (project.findProperty(nome) ?: propriedadesLocais.getProperty(nome, padrao)).toString().trim()
+    valor.isEmpty() ? padrao : valor  // linha em branco no local.properties conta como "não definido"
+}
+
+// De onde vem o login: "api" (padrão: API Express do Site, Site/Backend, publicada no Render),
+// "supabase" (login direto pelo Supabase Auth, exige URL_SUPABASE e CHAVE_ANONIMA_SUPABASE) ou
+// "simulada" (respostas falsas, só no build de debug, para testar a navegação sem servidor).
+// Veja docs/PLANEJAMENTO_BACKEND.md.
+def fonteAutenticacao = configuracao('FONTE_AUTENTICACAO', 'api')
+if (!['supabase', 'api', 'simulada'].contains(fonteAutenticacao)) {
+    throw new GradleException("FONTE_AUTENTICACAO inválida: '${fonteAutenticacao}'. Use supabase, api ou simulada.")
+}
+
 android {
     namespace 'com.acesso.app'
     compileSdk 35
@@ -23,6 +38,10 @@ android {
 
         buildConfigField 'String', 'URL_SUPABASE', "\"${propriedadesLocais.getProperty('URL_SUPABASE', '')}\""
         buildConfigField 'String', 'CHAVE_ANONIMA_SUPABASE', "\"${propriedadesLocais.getProperty('CHAVE_ANONIMA_SUPABASE', '')}\""
+        buildConfigField 'String', 'FONTE_AUTENTICACAO', "\"${fonteAutenticacao}\""
+        // Endereço base da API do Site, terminando em /api. O padrão é a API publicada no Render (HTTPS);
+        // para uma API local no emulador, use URL_API=http://10.0.2.2:3000/api. Não é segredo.
+        buildConfigField 'String', 'URL_API', "\"${configuracao('URL_API', 'https://acesso-backend.onrender.com/api')}\""
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }

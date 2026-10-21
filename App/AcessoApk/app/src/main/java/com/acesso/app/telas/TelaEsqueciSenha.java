@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.acesso.app.R;
 import com.acesso.app.databinding.TelaEsqueciSenhaBinding;
+import com.acesso.app.utilitarios.MargensSistema;
 import com.acesso.app.utilitarios.MensagemStatus;
 import com.acesso.app.viewmodels.ViewModelEsqueciSenha;
 
@@ -20,6 +21,7 @@ public class TelaEsqueciSenha extends AppCompatActivity {
         super.onCreate(estadoSalvo);
         componentes = TelaEsqueciSenhaBinding.inflate(getLayoutInflater());
         setContentView(componentes.getRoot());
+        MargensSistema.aplicar(this, componentes.getRoot());
 
         viewModel = new ViewModelProvider(this).get(ViewModelEsqueciSenha.class);
 

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos das áreas de rede profissional: notificações, mensagens, detalhe da vaga, perfis e candidaturas -->
+<resources>
+    <!-- Navegação e cabeçalho -->
+    <string name="aba_notificacoes">Notificações</string>
+    <string name="cabecalho_mensagens">Mensagens</string>
+    <plurals name="cabecalho_mensagens_nao_lidas">
+        <item quantity="one">Mensagens, %d mensagem não lida</item>
+        <item quantity="other">Mensagens, %d mensagens não lidas</item>
+    </plurals>
+
+    <!-- Notificações -->
+    <string name="notificacoes_titulo">Notificações</string>
+    <string name="notificacoes_marcar_todas">Marcar todas como lidas</string>
+    <string name="notificacoes_vazio">Você não tem notificações. Candidaturas, mensagens e curtidas aparecem aqui.</string>
+    <string name="notificacao_nao_lida">Não lida</string>
+
+    <!-- Mensagens -->
+    <string name="mensagens_titulo">Mensagens</string>
+    <string name="mensagens_nova">Nova mensagem</string>
+    <string name="mensagens_vazio">Nenhuma conversa ainda. Abra o perfil de uma pessoa ou empresa e toque em \"Mensagem\".</string>
+    <string name="mensagens_sem_previa">Conversa iniciada</string>
+    <string name="mensagens_usuario_removido">Usuário removido</string>
+    <plurals name="mensagens_nao_lidas">
+        <item quantity="one">%d não lida</item>
+        <item quantity="other">%d não lidas</item>
+    </plurals>
+    <string name="conversa_campo">Escreva uma mensagem</string>
+    <string name="conversa_enviar">Enviar mensagem</string>
+    <string name="conversa_vazia">Nenhuma mensagem ainda. Diga olá!</string>
+    <string name="conversa_somente_leitura">A outra conta foi removida. O histórico continua aqui, mas não é possível enviar novas mensagens.</string>
+    <string name="conversa_voce">Você</string>
+    <string name="conversa_lida">Lida</string>
+    <string name="conversa_enviada">Enviada</string>
+    <string name="conversa_abrir_perfil">Abrir o perfil de %1$s</string>
+
+    <!-- Detalhe da vaga -->
+    <string name="vaga_titulo_tela">Vaga</string>
+    <string name="vaga_candidatar">Candidatar-se</string>
+    <string name="vaga_candidatando">Enviando candidatura…</string>
+    <string name="vaga_candidatura_enviada">Candidatura enviada</string>
+    <string name="vaga_candidatura_sucesso">Candidatura enviada! A empresa foi avisada e você acompanha a situação em Perfil > Minhas candidaturas.</string>
+    <string name="vaga_candidatura_dialogo_titulo">Candidatar-se a esta vaga</string>
+    <string name="vaga_candidatura_dialogo_texto">Se quiser, escreva uma apresentação para a empresa. Seu perfil vai junto com a candidatura.</string>
+    <string name="vaga_candidatura_mensagem">Apresentação (opcional)</string>
+    <string name="vaga_candidatura_confirmar">Enviar candidatura</string>
+    <string name="vaga_nao_aberta">Esta vaga não está recebendo candidaturas no momento.</string>
+    <string name="vaga_publicada">Publicada %1$s</string>
+    <string name="vaga_secao_descricao">Sobre a vaga</string>
+    <string name="vaga_secao_requisitos">Requisitos</string>
+    <string name="vaga_secao_beneficios">Benefícios</string>
+    <string name="vaga_secao_detalhes">Detalhes</string>
+    <string name="vaga_secao_acessibilidade">Recursos de acessibilidade</string>
+    <string name="vaga_salario">Salário: %1$s</string>
+    <string name="vaga_carga_horaria">Carga horária: %1$s</string>
+    <string name="vaga_contrato">Contrato: %1$s</string>
+    <string name="vaga_publico">Público: %1$s</string>
+    <string name="vaga_ver_empresa">Ver perfil da empresa</string>
+    <string name="status_vaga_aberta">Aberta</string>
+    <string name="status_vaga_pausada">Pausada</string>
+    <string name="status_vaga_encerrada">Encerrada</string>
+
+    <!-- Perfis -->
+    <string name="perfil_titulo_tela">Perfil</string>
+    <string name="perfil_acao_mensagem">Mensagem</string>
+    <string name="perfil_abrindo_conversa">Abrindo conversa…</string>
+    <string name="perfil_secao_sobre">Sobre</string>
+    <string name="perfil_secao_competencias">Competências</string>
+    <string name="perfil_secao_experiencia">Experiência</string>
+    <string name="perfil_secao_formacao">Formação</string>
+    <string name="perfil_secao_cultura">Cultura inclusiva</string>
+    <string name="perfil_secao_informacoes">Informações</string>
+    <string name="perfil_secao_vagas_abertas">Vagas abertas</string>
+    <string name="perfil_porte">Tamanho: %1$s</string>
+    <string name="perfil_site">Site: %1$s</string>
+    <string name="perfil_sem_informacoes">Este perfil ainda não tem informações profissionais.</string>
+    <string name="perfil_proprio_sem_informacoes">Seu perfil ainda não tem informações profissionais. Complete pelo site para aparecer melhor nas buscas das empresas.</string>
+    <string name="perfil_minhas_candidaturas">Minhas candidaturas</string>
+    <string name="perfil_mensagens">Mensagens</string>
+
+    <!-- Candidaturas -->
+    <string name="candidaturas_titulo">Minhas candidaturas</string>
+    <string name="candidaturas_vazio">Você ainda não se candidatou a nenhuma vaga. Encontre oportunidades na aba Vagas.</string>
+    <string name="candidatura_status">Situação: %1$s</string>
+    <string name="candidatura_enviada_quando">Enviada %1$s</string>
+    <string name="status_candidatura_pendente">enviada</string>
+    <string name="status_candidatura_visualizada">visualizada pela empresa</string>
+    <string name="status_candidatura_em_analise">em análise</string>
+    <string name="status_candidatura_aprovada">aprovada</string>
+    <string name="status_candidatura_rejeitada">não selecionada</string>
+    <string name="status_candidatura_cancelada">cancelada</string>
+
+    <!-- Feed -->
+    <string name="publicacao_curtir">Curtir</string>
+    <string name="publicacao_curtido">Curtido</string>
+    <string name="publicacao_abrir_autor">Abrir o perfil de %1$s</string>
+</resources>

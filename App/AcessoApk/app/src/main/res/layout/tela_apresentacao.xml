@@ -120,6 +120,14 @@
                 android:paddingEnd="@dimen/apresentacao_margem"
                 android:paddingBottom="32dp">
 
+                <!-- Aviso ao voltar da área logada (ex.: sessão expirada). Preenchido em TelaApresentacao. -->
+                <TextView
+                    android:id="@+id/textoAviso"
+                    style="@style/Estilo.Acesso.Aviso"
+                    android:layout_marginBottom="16dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:visibility="gone" />
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

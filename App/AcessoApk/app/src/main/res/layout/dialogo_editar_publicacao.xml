@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Diálogo para editar o texto da própria publicação (PUT /api/postagens/:id, até 3000 caracteres) -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="24dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="24dp">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/campoTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/publicacao_editar_campo"
+        app:counterEnabled="true"
+        app:counterMaxLength="3000">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/entradaTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top|start"
+            android:inputType="textMultiLine|textCapSentences"
+            android:minLines="4" />
+    </com.google.android.material.textfield.TextInputLayout>
+</FrameLayout>

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Editar perfil: foto e capa (enviadas ao escolher) e os dados do perfil (enviados em Salvar).
+     Pessoa edita nome, título, sobre, cidade e estado; empresa edita nome da empresa, setor, descrição,
+     cultura inclusiva, site, cidade e estado (campos iguais aos do diálogo de edição do site). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/barraSuperior"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/voltar"
+        app:navigationIcon="@drawable/ic_voltar"
+        app:title="@string/editar_perfil_titulo" />
+
+    <ScrollView
+        android:id="@+id/rolagem"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/margem_tela"
+            android:paddingEnd="@dimen/margem_tela"
+            android:paddingBottom="@dimen/margem_tela">
+
+            <include
+                android:id="@+id/estado"
+                layout="@layout/componente_estado_conteudo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:id="@+id/conteudo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:text="@string/editar_perfil_imagens"
+                    android:textAppearance="@style/Texto.Acesso.TituloSecao" />
+
+                <!-- Capa atual (decorativa; o botão abaixo diz o que faz) -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="120dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@color/acesso_container_primaria">
+
+                    <ImageView
+                        android:id="@+id/imagemCapa"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/editar_capa_atual"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoAlterarCapa"
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:minHeight="@dimen/altura_botao"
+                    android:text="@string/editar_capa"
+                    app:icon="@drawable/ic_camera" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="72dp"
+                        android:layout_height="72dp">
+
+                        <TextView
+                            android:id="@+id/textoIniciais"
+                            style="@style/Estilo.Acesso.Avatar"
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:textSize="26sp" />
+
+                        <ImageView
+                            android:id="@+id/imagemAvatar"
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:background="@drawable/fundo_avatar"
+                            android:clipToOutline="true"
+                            android:contentDescription="@string/editar_foto_atual"
+                            android:outlineProvider="background"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
+                    </FrameLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/botaoAlterarFoto"
+                        style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:minHeight="@dimen/altura_botao"
+                        android:text="@string/editar_foto"
+                        app:icon="@drawable/ic_camera" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textoDicaImagem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/editar_imagem_dica"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/acesso_texto_secundario" />
+
+                <TextView
+                    android:id="@+id/mensagemImagem"
+                    style="@style/Estilo.Acesso.MensagemStatus" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:accessibilityHeading="true"
+                    android:text="@string/editar_perfil_dados"
+                    android:textAppearance="@style/Texto.Acesso.TituloSecao" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoNome"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_nome">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaNome"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textPersonName|textCapWords"
+                        android:maxLength="150"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoTitulo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_titulo_profissional">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaTitulo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textCapSentences"
+                        android:maxLength="120"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoSetor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_setor"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaSetor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textCapSentences"
+                        android:maxLength="120"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoSobre"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_sobre_pessoa"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="2000">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaSobre"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="4" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoCultura"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_cultura"
+                    android:visibility="gone"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="4000">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaCultura"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="3" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoSite"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_site"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaSite"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textUri"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoCidade"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_cidade">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaCidade"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionNext"
+                        android:inputType="textCapWords"
+                        android:maxLength="100"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/campoEstado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:hint="@string/editar_estado">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/entradaEstado"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionDone"
+                        android:inputType="textCapCharacters"
+                        android:maxLength="2"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:id="@+id/mensagemStatus"
+                    style="@style/Estilo.Acesso.MensagemStatus" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoSalvar"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/altura_botao"
+                    android:layout_marginTop="@dimen/espaco_campos"
+                    android:text="@string/editar_salvar" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

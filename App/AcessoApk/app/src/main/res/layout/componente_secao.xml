@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Seção em cartão (Sobre, Experiência, Requisitos...): título e um dos três conteúdos (texto, selos
+     ou lista). Preenchida por utilitarios/ExibidorSecoes; sem conteúdo, o cartão inteiro some. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Estilo.Acesso.Cartao"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/espaco_cartoes"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tituloSecao"
+            android:accessibilityHeading="true"
+            style="@style/Estilo.Acesso.TituloCartao" />
+
+        <TextView
+            android:id="@+id/textoSecao"
+            style="@style/Estilo.Acesso.TextoCorpo"
+            android:visibility="gone" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/grupoSelosSecao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            app:chipSpacingHorizontal="6dp"
+            app:chipSpacingVertical="6dp" />
+
+        <LinearLayout
+            android:id="@+id/listaSecao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="@drawable/divisor_lista"
+            android:orientation="vertical"
+            android:showDividers="middle"
+            android:visibility="gone" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

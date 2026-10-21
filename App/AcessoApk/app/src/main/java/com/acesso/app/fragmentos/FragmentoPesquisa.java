@@ -17,12 +17,14 @@ import com.acesso.app.R;
 import com.acesso.app.databinding.FragmentoPesquisaBinding;
 import com.acesso.app.databinding.ItemResultadoBuscaBinding;
 import com.acesso.app.modelos.ItemBusca;
+import com.acesso.app.telas.TelaPerfilUsuario;
+import com.acesso.app.telas.TelaVaga;
 import com.acesso.app.utilitarios.ExibidorEstado;
 import com.acesso.app.viewmodels.ViewModelPesquisa;
 
 import java.util.List;
 
-/** Aba Pesquisa: busca pessoas, empresas ou vagas (como a página /descobrir do site). */
+/** Pesquisa de pessoas, empresas ou vagas (como a página /descobrir do site), na TelaPesquisa. */
 public class FragmentoPesquisa extends Fragment {
 
     private FragmentoPesquisaBinding componentes;
@@ -93,6 +95,12 @@ public class FragmentoPesquisa extends Fragment {
             boolean temSubtitulo = item.subtitulo != null && !item.subtitulo.isEmpty();
             linha.textoSubtitulo.setText(item.subtitulo);
             linha.textoSubtitulo.setVisibility(temSubtitulo ? View.VISIBLE : View.GONE);
+            // Pessoa e empresa abrem o perfil (de onde dá para mandar mensagem); vaga abre o detalhe.
+            if (item.categoria == ItemBusca.Categoria.VAGAS) {
+                linha.conteudoItem.setOnClickListener(v -> TelaVaga.abrir(requireContext(), item.id));
+            } else if (item.usuarioId != null) {
+                linha.conteudoItem.setOnClickListener(v -> TelaPerfilUsuario.abrir(requireContext(), item.usuarioId));
+            }
             componentes.listaResultados.addView(linha.getRoot());
         }
     }

@@ -15,18 +15,21 @@ import com.acesso.app.R;
 import com.acesso.app.databinding.FragmentoPerfilBinding;
 import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.SessaoUsuario;
+import com.acesso.app.telas.TelaCandidaturas;
+import com.acesso.app.telas.TelaConversas;
 import com.acesso.app.telas.TelaTermos;
+import com.acesso.app.telas.TelaVaga;
 import com.acesso.app.utilitarios.AtalhosSistema;
+import com.acesso.app.utilitarios.ExibidorPerfil;
 import com.acesso.app.utilitarios.MensagemStatus;
-import com.acesso.app.utilitarios.Rotulos;
 import com.acesso.app.viewmodels.EstadoConteudo;
 import com.acesso.app.viewmodels.ViewModelPerfil;
 import com.acesso.app.viewmodels.ViewModelSessao;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
- * Aba Perfil: quem está logado, atalhos da conta e do app, e o botão Sair.
- * Junta o perfil e as configurações do site numa lista, que é o padrão no celular.
+ * Aba Perfil: o perfil profissional da conta (cabeçalho e seções, como o perfil do site) e, abaixo,
+ * atalhos da conta e do app e o botão Sair. Enquanto o servidor não responde, mostra o que está na sessão.
  */
 public class FragmentoPerfil extends Fragment {
 
@@ -48,6 +51,11 @@ public class FragmentoPerfil extends Fragment {
         viewModelPerfil.getPerfil().observe(getViewLifecycleOwner(), this::aoMudarPerfil);
         viewModelPerfil.carregar();
 
+        SessaoUsuario sessao = viewModelSessao.getSessao().getValue();
+        // Candidaturas são da pessoa candidata; a empresa acompanha as recebidas no Painel.
+        componentes.botaoCandidaturas.setVisibility(sessao != null && sessao.ehEmpresa() ? View.GONE : View.VISIBLE);
+        componentes.botaoCandidaturas.setOnClickListener(v -> TelaCandidaturas.abrir(requireContext()));
+        componentes.botaoMensagens.setOnClickListener(v -> TelaConversas.abrir(requireContext()));
         componentes.botaoEditarPerfil.setOnClickListener(v ->
                 MensagemStatus.mostrarAviso(componentes.mensagemStatus, getString(R.string.perfil_editar_pendente)));
         componentes.botaoSair.setOnClickListener(v -> confirmarSaida());
@@ -90,33 +98,18 @@ public class FragmentoPerfil extends Fragment {
         String nomeBase = perfilServidor != null && perfilServidor.nome != null && !perfilServidor.nome.trim().isEmpty()
                 ? perfilServidor.nome
                 : sessao.getNome();
-        String nome = nomeBase != null && !nomeBase.trim().isEmpty()
-                ? nomeBase.trim()
-                : sessao.getEmail();
-        componentes.textoIniciais.setText(Rotulos.iniciais(nome));
-        componentes.textoNome.setText(nome);
-        componentes.textoEmail.setText(sessao.getEmail());
-        componentes.textoTipoConta.setText(sessao.ehEmpresa() ? R.string.tipo_conta_empresa : R.string.tipo_conta_pessoa);
-
+        String nome = nomeBase != null && !nomeBase.trim().isEmpty() ? nomeBase.trim() : sessao.getEmail();
         String statusEmpresa = perfilServidor != null && perfilServidor.statusEmpresa != null
                 ? perfilServidor.statusEmpresa
                 : sessao.getStatusEmpresa();
-        int status = Rotulos.de(statusEmpresa);
-        if (sessao.ehEmpresa() && status != 0) {
-            componentes.textoStatusEmpresa.setText(getString(R.string.perfil_status_empresa, getString(status)));
-            componentes.textoStatusEmpresa.setVisibility(View.VISIBLE);
-        } else if (!sessao.ehEmpresa() && perfilServidor != null && perfilServidor.detalhe != null) {
-            // Pessoa: a mesma etiqueta mostra o cargo e a cidade que o servidor devolveu.
-            componentes.textoStatusEmpresa.setText(perfilServidor.detalhe);
-            componentes.textoStatusEmpresa.setVisibility(View.VISIBLE);
-        } else {
-            componentes.textoStatusEmpresa.setVisibility(View.GONE);
+        ExibidorPerfil.cabecalho(componentes.cabecalho, nome,
+                perfilServidor != null ? perfilServidor.detalhe : null,
+                sessao.getEmail(), sessao.getTipoConta(), statusEmpresa);
+        if (perfilServidor != null) {
+            perfilServidor.tipoConta = sessao.getTipoConta();
+            ExibidorPerfil.secoes(componentes.secoes, perfilServidor, true, getLayoutInflater(),
+                    vaga -> TelaVaga.abrir(requireContext(), vaga.id));
         }
-        // O TalkBack lê o cartão inteiro de uma vez: "Nome, e-mail, tipo de conta".
-        componentes.cabecalhoPerfil.setContentDescription(nome + ", " + sessao.getEmail() + ", "
-                + componentes.textoTipoConta.getText()
-                + (componentes.textoStatusEmpresa.getVisibility() == View.VISIBLE
-                ? ", " + componentes.textoStatusEmpresa.getText() : ""));
     }
 
     private void confirmarSaida() {

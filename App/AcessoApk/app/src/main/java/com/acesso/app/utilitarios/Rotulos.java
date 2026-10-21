@@ -62,6 +62,40 @@ public final class Rotulos {
         }
     }
 
+    /**
+     * Situação de uma candidatura (STATUS_CANDIDATURA do backend). Separado de {@link #de}, porque
+     * "aprovada" e "pendente" também são situações de empresa, com outro texto.
+     */
+    @StringRes
+    public static int statusCandidatura(String valor) {
+        if (valor == null) {
+            return 0;
+        }
+        switch (valor) {
+            case "pendente": return R.string.status_candidatura_pendente;
+            case "visualizada": return R.string.status_candidatura_visualizada;
+            case "em_analise": return R.string.status_candidatura_em_analise;
+            case "aprovada": return R.string.status_candidatura_aprovada;
+            case "rejeitada": return R.string.status_candidatura_rejeitada;
+            case "cancelada": return R.string.status_candidatura_cancelada;
+            default: return 0;
+        }
+    }
+
+    /** Situação de uma vaga: aberta, pausada ou encerrada. */
+    @StringRes
+    public static int statusVaga(String valor) {
+        if ("aberta".equals(valor)) return R.string.status_vaga_aberta;
+        if ("pausada".equals(valor)) return R.string.status_vaga_pausada;
+        if ("encerrada".equals(valor)) return R.string.status_vaga_encerrada;
+        return 0;
+    }
+
+    /** Número do selo de não lidas: "1" a "99", depois "99+". */
+    public static String contador(int total) {
+        return total > 99 ? "99+" : String.valueOf(total);
+    }
+
     /** Iniciais para o avatar sem foto: "Joana Exemplo" -> "JE" (como iniciaisDoNome do site). */
     public static String iniciais(String nome) {
         if (nome == null || nome.trim().isEmpty()) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Aba Perfil: dados da conta e atalhos (perfil + configurações do site, em lista) -->
+<!-- Aba Perfil: cabeçalho e seções profissionais (como o perfil do site) e, abaixo, atalhos da conta e do app -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -11,77 +11,14 @@
         android:orientation="vertical"
         android:padding="@dimen/margem_tela">
 
-        <com.google.android.material.card.MaterialCardView
-            style="@style/Estilo.Acesso.Cartao"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+        <include
+            android:id="@+id/cabecalho"
+            layout="@layout/componente_cabecalho_perfil" />
 
-            <LinearLayout
-                android:id="@+id/cabecalhoPerfil"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clipToPadding="false"
-                android:focusable="true"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <!-- Capa com o efeito de raios da identidade visual (decorativa para o TalkBack) -->
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="88dp"
-                    android:layout_marginStart="-20dp"
-                    android:layout_marginTop="-20dp"
-                    android:layout_marginEnd="-20dp"
-                    android:background="@color/acesso_container_primaria"
-                    android:importantForAccessibility="noHideDescendants">
-
-                    <ImageView
-                        style="@style/Estilo.Acesso.FundoRaio"
-                        android:layout_width="match_parent"
-                        android:contentDescription="@null"
-                        android:layout_height="match_parent" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/textoIniciais"
-                    style="@style/Estilo.Acesso.Avatar"
-                    android:layout_width="@dimen/tamanho_avatar_perfil"
-                    android:layout_height="@dimen/tamanho_avatar_perfil"
-                    android:layout_marginTop="-40dp"
-                    android:background="@drawable/fundo_avatar_perfil"
-                    android:textSize="26sp" />
-
-                <TextView
-                    android:id="@+id/textoNome"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:accessibilityHeading="true"
-                    android:gravity="center"
-                    android:textAppearance="@style/Texto.Acesso.TituloTela" />
-
-                <TextView
-                    android:id="@+id/textoEmail"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:gravity="center"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="@color/acesso_texto_secundario" />
-
-                <TextView
-                    android:id="@+id/textoTipoConta"
-                    style="@style/Estilo.Acesso.Selo.Destaque"
-                    android:layout_marginTop="12dp" />
-
-                <TextView
-                    android:id="@+id/textoStatusEmpresa"
-                    style="@style/Estilo.Acesso.Selo"
-                    android:layout_marginTop="8dp"
-                    android:visibility="gone" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        <!-- Sobre, competências, experiência e formação, como o perfil do site -->
+        <include
+            android:id="@+id/secoes"
+            layout="@layout/componente_secoes_perfil" />
 
         <TextView
             android:layout_width="match_parent"
@@ -103,6 +40,18 @@
                 android:divider="@drawable/divisor_lista"
                 android:orientation="vertical"
                 android:showDividers="middle">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoCandidaturas"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/perfil_minhas_candidaturas"
+                    app:icon="@drawable/ic_vaga" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoMensagens"
+                    style="@style/Estilo.Acesso.ItemMenu"
+                    android:text="@string/perfil_mensagens"
+                    app:icon="@drawable/ic_mensagem" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/botaoEditarPerfil"

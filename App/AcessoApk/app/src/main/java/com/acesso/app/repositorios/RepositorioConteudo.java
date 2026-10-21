@@ -1,5 +1,6 @@
 package com.acesso.app.repositorios;
 
+import com.acesso.app.modelos.Candidatura;
 import com.acesso.app.modelos.ItemBusca;
 import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.Publicacao;
@@ -37,6 +38,27 @@ public interface RepositorioConteudo {
     /** POST /api/vagas (só empresa aprovada) */
     void criarVaga(SessaoUsuario sessao, Vaga vaga, RetornoRepositorio<Void> retorno);
 
-    /** GET /api/candidatos/me (pessoa) ou GET /api/empresas/me (empresa): só leitura. */
+    /**
+     * Perfil da conta logada: GET /api/perfil/candidatos/usuario/:id (pessoa, com experiências, formação e
+     * competências) ou GET /api/empresas/me (empresa). Só leitura.
+     */
     void carregarPerfil(SessaoUsuario sessao, RetornoRepositorio<PerfilConta> retorno);
+
+    /**
+     * Perfil de outra conta: GET /api/perfil/usuario/:id para saber o tipo e, em seguida,
+     * GET /api/perfil/candidatos/usuario/:id ou GET /api/empresas/usuario/:id.
+     */
+    void carregarPerfilDeUsuario(SessaoUsuario sessao, String usuarioId, RetornoRepositorio<PerfilConta> retorno);
+
+    /** GET /api/vagas/:id */
+    void obterVaga(SessaoUsuario sessao, String vagaId, RetornoRepositorio<Vaga> retorno);
+
+    /** POST /api/vagas/:vagaId/candidaturas { mensagem? } (só pessoa candidata; a API recusa repetida com 409). */
+    void candidatar(SessaoUsuario sessao, String vagaId, String mensagem, RetornoRepositorio<Void> retorno);
+
+    /** GET /api/candidaturas/minhas */
+    void listarCandidaturas(SessaoUsuario sessao, RetornoRepositorio<List<Candidatura>> retorno);
+
+    /** POST /api/postagens/:id/curtidas: a mesma rota curte e descurte. */
+    void curtir(SessaoUsuario sessao, String publicacaoId, RetornoRepositorio<Publicacao.Curtida> retorno);
 }

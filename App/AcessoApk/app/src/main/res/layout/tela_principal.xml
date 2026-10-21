@@ -68,6 +68,29 @@
             android:textColor="@color/acesso_texto_secundario"
             app:drawableStartCompat="@drawable/ic_pesquisa"
             app:drawableTint="@color/acesso_texto_secundario" />
+
+        <!-- Mensagens no canto direito, com o número de não lidas (como em redes profissionais) -->
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp">
+
+            <ImageButton
+                android:id="@+id/botaoMensagens"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cabecalho_mensagens"
+                android:src="@drawable/ic_mensagem"
+                app:tint="@color/acesso_texto_secundario" />
+
+            <TextView
+                android:id="@+id/seloMensagens"
+                style="@style/Estilo.Acesso.Contador"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
+        </FrameLayout>
     </LinearLayout>
 
     <FrameLayout

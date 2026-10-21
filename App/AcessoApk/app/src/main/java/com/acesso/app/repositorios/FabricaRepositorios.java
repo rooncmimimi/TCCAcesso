@@ -41,6 +41,17 @@ public final class FabricaRepositorios {
         }
     }
 
+    /** Conversas existem só na API do ACESSO: nas outras fontes a tela avisa que a integração está pendente. */
+    public static RepositorioMensagens mensagens(Context contexto) {
+        return FONTE_API.equals(fonteAtiva()) ? new RepositorioMensagensApi(contexto) : new RepositorioMensagensPendente();
+    }
+
+    /** Notificações existem só na API do ACESSO, como as conversas. */
+    public static RepositorioNotificacoes notificacoes(Context contexto) {
+        return FONTE_API.equals(fonteAtiva())
+                ? new RepositorioNotificacoesApi(contexto) : new RepositorioNotificacoesPendente();
+    }
+
     /** true quando as respostas são simuladas: as telas mostram o aviso "Modo demonstração". */
     public static boolean modoDemonstracao() {
         return FONTE_SIMULADA.equals(fonteAtiva());

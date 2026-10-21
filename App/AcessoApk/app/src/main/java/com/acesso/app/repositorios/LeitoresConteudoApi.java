@@ -1,7 +1,12 @@
 package com.acesso.app.repositorios;
 
+import com.acesso.app.modelos.Candidatura;
+import com.acesso.app.modelos.Conversa;
 import com.acesso.app.modelos.ItemBusca;
+import com.acesso.app.modelos.Mensagem;
+import com.acesso.app.modelos.Notificacao;
 import com.acesso.app.modelos.PerfilConta;
+import com.acesso.app.modelos.PermissaoConversa;
 import com.acesso.app.modelos.Publicacao;
 import com.acesso.app.modelos.ResumoEmpresa;
 import com.acesso.app.modelos.TipoConta;
@@ -10,16 +15,22 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Converte o JSON da API do Site (Site/Backend) nos modelos do app e os modelos no corpo
  * das requisições. Não usa nada do Android, então é testado só com JUnit.
  *
  * Formatos conferidos no código do backend: VagaService.listar / buscarPorEmpresaAutenticada,
- * PostagemService.listar e decorar, BuscaService.buscar, DashboardService.empresa e
+ * PostagemService.listar e decorar, BuscaService.buscar, DashboardService.empresa,
+ * PerfilCandidatoService.perfilCompleto (com candidatoPrivacidade.js), EmpresaService.buscarPorUsuarioPublico,
+ * CandidaturaService.listarDoCandidato, ConversaService, NotificacaoService e
  * paginacao.js (envelope {total, pagina, limite, totalPaginas, <chave>[]}).
  */
 final class LeitoresConteudoApi {
@@ -55,12 +66,45 @@ final class LeitoresConteudoApi {
                 vaga.recursosAcessibilidade.add(recurso.getAsString());
             }
         }
+        vaga.requisitos = texto(json, "requisitos");
+        vaga.beneficios = texto(json, "beneficios");
+        vaga.salario = moeda(texto(json, "salario"));
+        vaga.cargaHoraria = texto(json, "cargaHoraria");
         JsonObject empresa = objeto(json, "empresa");
         if (empresa != null) {
             vaga.nomeEmpresa = nomeDaEmpresa(empresa);
             vaga.empresaVerificada = booleano(empresa, "empresaVerificada");
+            vaga.empresaUsuarioId = texto(empresa, "usuarioId");
         }
         return vaga;
+    }
+
+    /** GET /vagas/:id: { vaga: {..., empresa: {..., usuarioId}} }. */
+    static Vaga vagaDetalhe(JsonObject json, long agora) {
+        JsonObject dados = objeto(json, "vaga");
+        if (dados == null) {
+            throw new ExecutorHttp.ErroAmigavel("Vaga não encontrada.");
+        }
+        Vaga vaga = vaga(dados);
+        vaga.quando = TempoRelativo.formatar(texto(dados, "criadoEm"), agora);
+        return vaga;
+    }
+
+    /** DECIMAL(10,2) chega como texto ("3500.00"): vira "R$ 3.500,00". Valor inválido ou zero fica de fora. */
+    static String moeda(String valor) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            BigDecimal numero = new BigDecimal(valor.trim());
+            if (numero.signum() <= 0) {
+                return null;
+            }
+            // O formato brasileiro separa "R$" do valor com espaço não separável; troca por espaço comum.
+            return NumberFormat.getCurrencyInstance(new Locale("pt", "BR")).format(numero).replace(' ', ' ');
+        } catch (NumberFormatException erro) {
+            return null;
+        }
     }
 
     /** GET /postagens: { postagens: [...] }. {@code agora} em milissegundos, para "há 2 horas". */
@@ -81,8 +125,10 @@ final class LeitoresConteudoApi {
         publicacao.quando = TempoRelativo.formatar(texto(json, "criadoEm"), agora);
         publicacao.curtidas = inteiro(json, "totalCurtidas");
         publicacao.comentarios = inteiro(json, "totalComentarios");
+        publicacao.curtidoPorMim = booleano(json, "curtidoPorMim");
         JsonObject autor = objeto(json, "usuario");
         if (autor != null) {
+            publicacao.autorId = texto(autor, "id");
             publicacao.nomeAutor = texto(autor, "nome");
             publicacao.tipoAutor = TipoConta.doCodigo(texto(autor, "tipoUsuario"));
         }
@@ -113,6 +159,7 @@ final class LeitoresConteudoApi {
                     if (TipoConta.EMPRESA.getCodigo().equals(texto(item, "tipoUsuario"))) {
                         continue;
                     }
+                    resultado.usuarioId = texto(item, "id");
                     resultado.titulo = texto(item, "nome");
                     JsonObject candidato = objeto(item, "candidato");
                     resultado.subtitulo = candidato == null ? null
@@ -120,6 +167,7 @@ final class LeitoresConteudoApi {
                             local(texto(candidato, "cidade"), texto(candidato, "estado")));
                     break;
                 case EMPRESAS:
+                    resultado.usuarioId = texto(item, "usuarioId");
                     resultado.titulo = nomeDaEmpresa(item);
                     resultado.subtitulo = juntar(texto(item, "setor"),
                             local(texto(item, "cidade"), texto(item, "estado")));
@@ -170,27 +218,291 @@ final class LeitoresConteudoApi {
     }
 
     /**
-     * GET /candidatos/me ({ candidato: { tituloProfissional, cidade, estado, usuario: { nome } } }) ou
-     * GET /empresas/me ({ empresa: { nomeFantasia, razaoSocial, statusAprovacao, usuario: { nome } } }).
-     * CPF, CNPJ, endereço, CEP e demais campos do cadastro são ignorados de propósito.
+     * Perfil de pessoa ou de empresa.
+     * Pessoa: GET /perfil/candidatos/usuario/:id ({ candidato: { usuarioId, tituloProfissional, biografia, cidade,
+     * estado, usuario: { id, nome }, experiencias[], formacoes[], habilidades[] } }).
+     * Empresa: GET /empresas/me ou /empresas/usuario/:id ({ empresa: { usuarioId, nomeFantasia, razaoSocial,
+     * descricao, culturaInclusiva, setor, porte, site, cidade, estado, statusAprovacao, usuario: { nome }, vagas[] } }).
+     * CPF, CNPJ, endereço, CEP, currículo e necessidades de acessibilidade são ignorados de propósito.
      */
     static PerfilConta perfil(JsonObject json, boolean empresa) {
         JsonObject dados = objeto(json, empresa ? "empresa" : "candidato");
         PerfilConta perfil = new PerfilConta();
+        perfil.tipoConta = empresa ? TipoConta.EMPRESA : TipoConta.PESSOA;
         if (dados == null) {
             return perfil;
         }
-        String nomeDaConta = texto(objeto(dados, "usuario"), "nome");
+        JsonObject usuario = objeto(dados, "usuario");
+        String nomeDaConta = texto(usuario, "nome");
+        perfil.usuarioId = texto(dados, "usuarioId") != null ? texto(dados, "usuarioId") : texto(usuario, "id");
+        String local = local(texto(dados, "cidade"), texto(dados, "estado"));
         if (empresa) {
             String nomeDaEmpresa = nomeDaEmpresa(dados);
             perfil.nome = nomeDaEmpresa == null || nomeDaEmpresa.trim().isEmpty() ? nomeDaConta : nomeDaEmpresa;
             perfil.statusEmpresa = texto(dados, "statusAprovacao");
+            perfil.empresaVerificada = booleano(dados, "empresaVerificada");
+            perfil.detalhe = juntar(texto(dados, "setor"), local);
+            perfil.sobre = texto(dados, "descricao");
+            perfil.culturaInclusiva = texto(dados, "culturaInclusiva");
+            perfil.site = texto(dados, "site");
+            perfil.porte = texto(dados, "porte");
+            for (JsonElement item : lista(dados, "vagas")) {
+                if (item.isJsonObject()) {
+                    Vaga vaga = vaga(item.getAsJsonObject());
+                    vaga.nomeEmpresa = perfil.nome;
+                    vaga.empresaVerificada = perfil.empresaVerificada;
+                    vaga.empresaUsuarioId = perfil.usuarioId;
+                    perfil.vagasAbertas.add(vaga);
+                }
+            }
         } else {
             perfil.nome = nomeDaConta;
-            perfil.detalhe = juntar(texto(dados, "tituloProfissional"),
-                    local(texto(dados, "cidade"), texto(dados, "estado")));
+            perfil.detalhe = juntar(texto(dados, "tituloProfissional"), local);
+            perfil.sobre = texto(dados, "biografia");
+            for (JsonElement item : lista(dados, "habilidades")) {
+                String nome = item.isJsonObject() ? texto(item.getAsJsonObject(), "nome") : null;
+                if (nome != null && !nome.trim().isEmpty()) {
+                    perfil.habilidades.add(nome.trim());
+                }
+            }
+            for (JsonElement item : lista(dados, "experiencias")) {
+                if (item.isJsonObject()) {
+                    JsonObject experiencia = item.getAsJsonObject();
+                    perfil.experiencias.add(itemCurriculo(texto(experiencia, "cargo"),
+                            juntar(texto(experiencia, "empresa"), texto(experiencia, "local")),
+                            periodo(texto(experiencia, "dataInicio"), texto(experiencia, "dataFim"),
+                                    booleano(experiencia, "atual")),
+                            texto(experiencia, "descricao")));
+                }
+            }
+            for (JsonElement item : lista(dados, "formacoes")) {
+                if (item.isJsonObject()) {
+                    JsonObject formacao = item.getAsJsonObject();
+                    perfil.formacoes.add(itemCurriculo(texto(formacao, "curso"), texto(formacao, "instituicao"),
+                            periodo(texto(formacao, "dataInicio"), texto(formacao, "dataFim"),
+                                    booleano(formacao, "emAndamento")),
+                            texto(formacao, "descricao")));
+                }
+            }
         }
         return perfil;
+    }
+
+    /** GET /perfil/usuario/:id: { usuario: { id, nome, tipoUsuario } }. Só o tipo da conta interessa. */
+    static TipoConta tipoDoUsuario(JsonObject json) {
+        JsonObject usuario = objeto(json, "usuario");
+        if (usuario == null) {
+            throw new ExecutorHttp.ErroAmigavel("Perfil não encontrado.");
+        }
+        return TipoConta.doCodigo(texto(usuario, "tipoUsuario"));
+    }
+
+    private static PerfilConta.ItemCurriculo itemCurriculo(String titulo, String subtitulo, String periodo,
+                                                           String descricao) {
+        PerfilConta.ItemCurriculo item = new PerfilConta.ItemCurriculo();
+        item.titulo = titulo;
+        item.subtitulo = subtitulo;
+        item.periodo = periodo;
+        item.descricao = descricao;
+        return item;
+    }
+
+    private static final String[] MESES = {
+            "jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"};
+
+    /** "2020-03-01" e "2022-11-30" -> "mar/2020 – nov/2022"; em andamento -> "mar/2020 – atual". */
+    static String periodo(String inicio, String fim, boolean atual) {
+        String textoInicio = mesAno(inicio);
+        String textoFim = atual ? "atual" : mesAno(fim);
+        if (textoInicio == null) {
+            return textoFim;
+        }
+        return textoFim == null ? textoInicio : textoInicio + " – " + textoFim;
+    }
+
+    private static String mesAno(String data) {
+        if (data == null || data.length() < 10) {
+            return null;
+        }
+        try {
+            LocalDate dia = LocalDate.parse(data.substring(0, 10));
+            return MESES[dia.getMonthValue() - 1] + "/" + dia.getYear();
+        } catch (RuntimeException erro) {
+            return null;
+        }
+    }
+
+    /** GET /candidaturas/minhas: { candidaturas: [{ id, status, criadoEm, vaga: { id, titulo, empresa } }] }. */
+    static List<Candidatura> candidaturas(JsonObject json, long agora) {
+        List<Candidatura> lista = new ArrayList<>();
+        for (JsonElement item : lista(json, "candidaturas")) {
+            if (!item.isJsonObject()) {
+                continue;
+            }
+            JsonObject dados = item.getAsJsonObject();
+            Candidatura candidatura = new Candidatura();
+            candidatura.id = texto(dados, "id");
+            candidatura.status = texto(dados, "status");
+            candidatura.quando = TempoRelativo.formatar(texto(dados, "criadoEm"), agora);
+            JsonObject vaga = objeto(dados, "vaga");
+            candidatura.vagaId = vaga != null ? texto(vaga, "id") : texto(dados, "vagaId");
+            if (vaga != null) {
+                candidatura.tituloVaga = texto(vaga, "titulo");
+                JsonObject empresa = objeto(vaga, "empresa");
+                candidatura.nomeEmpresa = empresa == null ? null : nomeDaEmpresa(empresa);
+            }
+            lista.add(candidatura);
+        }
+        return lista;
+    }
+
+    /** Corpo de POST /vagas/:vagaId/candidaturas. A mensagem é opcional (até 2000 caracteres). */
+    static JsonObject corpoCandidatura(String mensagem) {
+        JsonObject corpo = new JsonObject();
+        adicionar(corpo, "mensagem", mensagem);
+        return corpo;
+    }
+
+    /** POST /postagens/:id/curtidas: { curtido, totalCurtidas }. */
+    static Publicacao.Curtida curtida(JsonObject json) {
+        Publicacao.Curtida curtida = new Publicacao.Curtida();
+        curtida.curtido = booleano(json, "curtido");
+        curtida.total = inteiro(json, "totalCurtidas");
+        return curtida;
+    }
+
+    // --- Mensagens (ConversaService) ---
+
+    /** GET /conversas: { conversas: [{ id, usuarioAId, usuarioBId, usuarioA, usuarioB, ultimaMensagemPrevia, ... }] }. */
+    static List<Conversa> conversas(JsonObject json, String meuId, long agora) {
+        List<Conversa> lista = new ArrayList<>();
+        for (JsonElement item : lista(json, "conversas")) {
+            if (item.isJsonObject()) {
+                lista.add(conversa(item.getAsJsonObject(), meuId, agora));
+            }
+        }
+        return lista;
+    }
+
+    /** POST /conversas e GET /conversas/:id: { conversa: {...} }. */
+    static Conversa conversaUnica(JsonObject json, String meuId, long agora) {
+        JsonObject dados = objeto(json, "conversa");
+        if (dados == null) {
+            throw new ExecutorHttp.ErroAmigavel("Conversa não encontrada.");
+        }
+        return conversa(dados, meuId, agora);
+    }
+
+    /**
+     * Uma conversa do ponto de vista de {@code meuId}: o "outro" é o participante que não é a conta logada.
+     * O par fica em ordem canônica no banco (usuarioAId &lt; usuarioBId), então a conta logada pode estar
+     * em qualquer um dos lados.
+     */
+    static Conversa conversa(JsonObject json, String meuId, long agora) {
+        Conversa conversa = new Conversa();
+        conversa.id = texto(json, "id");
+        boolean euSouA = meuId != null && meuId.equalsIgnoreCase(texto(json, "usuarioAId"));
+        conversa.outroUsuarioId = texto(json, euSouA ? "usuarioBId" : "usuarioAId");
+        JsonObject outro = objeto(json, euSouA ? "usuarioB" : "usuarioA");
+        if (outro != null) {
+            conversa.tipoOutro = TipoConta.doCodigo(texto(outro, "tipoUsuario"));
+            JsonObject empresa = objeto(outro, "empresa");
+            String nomeEmpresa = empresa == null ? null : nomeDaEmpresa(empresa);
+            conversa.nomeOutro = nomeEmpresa != null && !nomeEmpresa.trim().isEmpty() ? nomeEmpresa : texto(outro, "nome");
+        }
+        conversa.previa = texto(json, "ultimaMensagemPrevia");
+        conversa.quando = TempoRelativo.formatar(texto(json, "ultimaMensagemEm"), agora);
+        conversa.naoLidas = inteiro(json, "mensagensNaoLidas");
+        return conversa;
+    }
+
+    /** GET /conversas/:id/mensagens: { mensagens: [...] } em ordem de envio (a mais antiga primeiro). */
+    static List<Mensagem> mensagens(JsonObject json) {
+        List<Mensagem> lista = new ArrayList<>();
+        for (JsonElement item : lista(json, "mensagens")) {
+            if (item.isJsonObject()) {
+                lista.add(mensagem(item.getAsJsonObject()));
+            }
+        }
+        return lista;
+    }
+
+    /** POST /conversas/:id/mensagens: { mensagem: {...} }. */
+    static Mensagem mensagemEnviada(JsonObject json) {
+        JsonObject dados = objeto(json, "mensagem");
+        if (dados == null) {
+            throw new ExecutorHttp.ErroAmigavel("A mensagem não foi confirmada pelo servidor.");
+        }
+        return mensagem(dados);
+    }
+
+    static Mensagem mensagem(JsonObject json) {
+        Mensagem mensagem = new Mensagem();
+        mensagem.id = texto(json, "id");
+        mensagem.remetenteId = texto(json, "remetenteId");
+        mensagem.conteudo = texto(json, "conteudo");
+        mensagem.lida = booleano(json, "lida");
+        mensagem.enviadaEm = instante(texto(json, "criadoEm"));
+        return mensagem;
+    }
+
+    /** Corpo de POST /conversas/:id/mensagens (1 a 2000 caracteres). */
+    static JsonObject corpoMensagem(String conteudo) {
+        JsonObject corpo = new JsonObject();
+        corpo.addProperty("conteudo", conteudo);
+        return corpo;
+    }
+
+    /** Corpo de POST /conversas: abre (ou recupera) a conversa com {@code usuarioId}. */
+    static JsonObject corpoConversa(String usuarioId) {
+        JsonObject corpo = new JsonObject();
+        corpo.addProperty("usuarioId", usuarioId);
+        return corpo;
+    }
+
+    /** GET /conversas/pode-iniciar/:usuarioId: { permitido, motivo? }. */
+    static PermissaoConversa permissao(JsonObject json) {
+        PermissaoConversa permissao = new PermissaoConversa();
+        permissao.permitido = booleano(json, "permitido");
+        permissao.motivo = texto(json, "motivo");
+        return permissao;
+    }
+
+    /** GET /conversas/nao-lidas e GET /notificacoes/nao-lidas: { naoLidas }. */
+    static Integer naoLidas(JsonObject json) {
+        return inteiro(json, "naoLidas");
+    }
+
+    /** Envelope de paginacao.js. */
+    static int totalPaginas(JsonObject json) {
+        return inteiro(json, "totalPaginas");
+    }
+
+    // --- Notificações (NotificacaoService) ---
+
+    /** GET /notificacoes: { notificacoes: [{ id, tipo, subtipo, titulo, descricao, lida, criadoEm, ator }] }. */
+    static List<Notificacao> notificacoes(JsonObject json, long agora) {
+        List<Notificacao> lista = new ArrayList<>();
+        for (JsonElement item : lista(json, "notificacoes")) {
+            if (!item.isJsonObject()) {
+                continue;
+            }
+            JsonObject dados = item.getAsJsonObject();
+            Notificacao notificacao = new Notificacao();
+            notificacao.id = texto(dados, "id");
+            notificacao.tipo = texto(dados, "tipo");
+            notificacao.subtipo = texto(dados, "subtipo");
+            notificacao.titulo = texto(dados, "titulo");
+            notificacao.descricao = texto(dados, "descricao");
+            notificacao.lida = booleano(dados, "lida");
+            notificacao.quando = TempoRelativo.formatar(texto(dados, "criadoEm"), agora);
+            notificacao.entidadeTipo = texto(dados, "entidadeTipo");
+            notificacao.entidadeId = texto(dados, "entidadeId");
+            notificacao.atorId = texto(dados, "atorId");
+            notificacao.atorNome = texto(objeto(dados, "ator"), "nome");
+            lista.add(notificacao);
+        }
+        return lista;
     }
 
     /** Corpo de POST /vagas. Campos vazios ficam de fora (a API usa os padrões dela). */
@@ -222,6 +534,17 @@ final class LeitoresConteudoApi {
     }
 
     // --- auxiliares de leitura tolerantes a campo ausente ou null ---
+
+    private static long instante(String iso) {
+        if (iso == null) {
+            return 0;
+        }
+        try {
+            return Instant.parse(iso).toEpochMilli();
+        } catch (RuntimeException erro) {
+            return 0;
+        }
+    }
 
     private static String nomeDaEmpresa(JsonObject empresa) {
         String fantasia = texto(empresa, "nomeFantasia");

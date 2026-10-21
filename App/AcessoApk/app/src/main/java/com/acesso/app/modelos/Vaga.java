@@ -14,7 +14,16 @@ public class Vaga {
     public String titulo;
     public String descricao;
     public String nomeEmpresa;
+    /** Conta (usuário) da empresa: abre o perfil dela. Só vem no detalhe da vaga. */
+    public String empresaUsuarioId;
     public boolean empresaVerificada;
+    /** Só no detalhe (GET /vagas/:id). */
+    public String requisitos;
+    public String beneficios;
+    public String salario;
+    public String cargaHoraria;
+    /** Texto pronto para exibir, ex.: "há 2 dias". */
+    public String quando;
     /** presencial, hibrido ou remoto. */
     public String modalidade;
     /** clt, pj, estagio, jovem_aprendiz ou temporario. */

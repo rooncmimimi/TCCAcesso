@@ -321,18 +321,30 @@ public class RepositorioConteudoApiTeste {
             "aprovada", "token-de-teste", "renovacao-de-teste", System.currentTimeMillis() + 3_600_000, "api");
 
     @Test
-    public void perfilDaPessoaPedeCandidatosMeSoComLeitura() throws Exception {
-        respostas.put("GET /api/candidatos/me", new Resposta(200, "{\"sucesso\":true,\"candidato\":{"
-                + "\"tituloProfissional\":\"Analista\",\"cidade\":\"Recife\",\"estado\":\"PE\","
-                + "\"usuario\":{\"nome\":\"Ana Falsa\"}}}"));
+    public void perfilDaPessoaPedeOPerfilConsolidadoComExperienciasEFormacao() throws Exception {
+        respostas.put("GET /api/perfil/candidatos/usuario/u1", new Resposta(200, "{\"sucesso\":true,\"candidato\":{"
+                + "\"usuarioId\":\"u1\",\"tituloProfissional\":\"Analista\",\"cidade\":\"Recife\",\"estado\":\"PE\","
+                + "\"biografia\":\"Gosto de dados.\",\"usuario\":{\"id\":\"u1\",\"nome\":\"Ana Falsa\"},"
+                + "\"habilidades\":[{\"nome\":\"Excel\"},{\"nome\":\" \"}],"
+                + "\"experiencias\":[{\"cargo\":\"Analista\",\"empresa\":\"Empresa Falsa\",\"dataInicio\":\"2020-03-01\","
+                + "\"atual\":true}],"
+                + "\"formacoes\":[{\"curso\":\"ADS\",\"instituicao\":\"Fatec Falsa\",\"dataInicio\":\"2016-02-01\","
+                + "\"dataFim\":\"2018-12-15\",\"emAndamento\":false}]}}"));
         Anotador<com.acesso.app.modelos.PerfilConta> anotador = new Anotador<>();
 
         repositorio(true).carregarPerfil(SESSAO, anotador);
 
-        assertEquals("Ana Falsa", anotador.aguardar().nome);
+        com.acesso.app.modelos.PerfilConta perfil = anotador.aguardar();
+        assertEquals("Ana Falsa", perfil.nome);
+        assertEquals("Analista · Recife - PE", perfil.detalhe);
+        assertEquals("Gosto de dados.", perfil.sobre);
+        assertEquals(Collections.singletonList("Excel"), perfil.habilidades);
+        assertEquals("mar/2020 – atual", perfil.experiencias.get(0).periodo);
+        assertEquals("Empresa Falsa", perfil.experiencias.get(0).subtitulo);
+        assertEquals("fev/2016 – dez/2018", perfil.formacoes.get(0).periodo);
         assertEquals(1, pedidos.size());
         assertEquals("GET", pedidos.get(0).metodo);
-        assertEquals("/api/candidatos/me", pedidos.get(0).alvo);
+        assertEquals("/api/perfil/candidatos/usuario/u1", pedidos.get(0).alvo);
         assertEquals("Bearer token-de-teste", pedidos.get(0).autorizacao);
     }
 
@@ -352,7 +364,7 @@ public class RepositorioConteudoApiTeste {
 
     @Test
     public void perfilNaoEncontradoChegaComAMensagemDaApi() throws Exception {
-        respostas.put("GET /api/candidatos/me", new Resposta(404,
+        respostas.put("GET /api/perfil/candidatos/usuario/u1", new Resposta(404,
                 "{\"sucesso\":false,\"mensagem\":\"Perfil de candidato não encontrado.\"}"));
         Anotador<com.acesso.app.modelos.PerfilConta> anotador = new Anotador<>();
 
@@ -360,6 +372,128 @@ public class RepositorioConteudoApiTeste {
 
         assertNull(anotador.aguardar());
         assertEquals("Perfil de candidato não encontrado.", anotador.mensagem);
+    }
+
+    @Test
+    public void perfilDeOutraContaDescobreOTipoEDepoisBuscaAEmpresa() throws Exception {
+        respostas.put("GET /api/perfil/usuario/e9", new Resposta(200,
+                "{\"sucesso\":true,\"usuario\":{\"id\":\"e9\",\"nome\":\"Resp\",\"tipoUsuario\":\"empresa\"}}"));
+        respostas.put("GET /api/empresas/usuario/e9", new Resposta(200, "{\"sucesso\":true,\"empresa\":{"
+                + "\"usuarioId\":\"e9\",\"nomeFantasia\":\"Empresa Falsa\",\"setor\":\"Tecnologia\",\"porte\":\"media\","
+                + "\"descricao\":\"Somos inclusivos.\",\"vagas\":[{\"id\":\"v1\",\"titulo\":\"Analista\",\"status\":\"aberta\"}]}}"));
+        Anotador<com.acesso.app.modelos.PerfilConta> anotador = new Anotador<>();
+
+        repositorio(true).carregarPerfilDeUsuario(SESSAO, "e9", anotador);
+
+        com.acesso.app.modelos.PerfilConta perfil = anotador.aguardar();
+        assertEquals(TipoConta.EMPRESA, perfil.tipoConta);
+        assertEquals("Empresa Falsa", perfil.nome);
+        assertEquals("e9", perfil.usuarioId);
+        assertEquals("Tecnologia", perfil.detalhe);
+        assertEquals("Somos inclusivos.", perfil.sobre);
+        assertEquals("Empresa Falsa", perfil.vagasAbertas.get(0).nomeEmpresa);
+        assertEquals(2, pedidos.size());
+        assertEquals("/api/empresas/usuario/e9", pedidos.get(1).alvo);
+    }
+
+    @Test
+    public void perfilDeContaInexistenteChegaComAMensagemDaApi() throws Exception {
+        respostas.put("GET /api/perfil/usuario/u7", new Resposta(404,
+                "{\"sucesso\":false,\"mensagem\":\"Usuário não encontrado.\"}"));
+        Anotador<com.acesso.app.modelos.PerfilConta> anotador = new Anotador<>();
+
+        repositorio(true).carregarPerfilDeUsuario(SESSAO, "u7", anotador);
+
+        assertNull(anotador.aguardar());
+        assertEquals("Usuário não encontrado.", anotador.mensagem);
+        assertEquals("a segunda chamada não deve acontecer", 1, pedidos.size());
+    }
+
+    @Test
+    public void idComBarraNaoMontaOutraRota() throws Exception {
+        Anotador<Vaga> anotador = new Anotador<>();
+
+        repositorio(true).obterVaga(SESSAO, "../usuarios", anotador);
+
+        assertNull(anotador.aguardar());
+        assertNotNull(anotador.mensagem);
+        assertTrue(pedidos.isEmpty());
+    }
+
+    @Test
+    public void detalheDaVagaLeOsCamposEAContaDaEmpresa() throws Exception {
+        respostas.put("GET /api/vagas/v1", new Resposta(200, "{\"sucesso\":true,\"vaga\":{\"id\":\"v1\","
+                + "\"titulo\":\"Analista\",\"requisitos\":\"Excel\",\"salario\":\"3500.00\",\"cargaHoraria\":\"40h\","
+                + "\"status\":\"aberta\",\"criadoEm\":\"2026-10-12T12:00:00.000Z\","
+                + "\"empresa\":{\"usuarioId\":\"e9\",\"nomeFantasia\":\"Empresa Falsa\",\"empresaVerificada\":true}}}"));
+        Anotador<Vaga> anotador = new Anotador<>();
+
+        repositorio(true).obterVaga(SESSAO, "v1", anotador);
+
+        Vaga vaga = anotador.aguardar();
+        assertEquals("Excel", vaga.requisitos);
+        assertEquals("R$ 3.500,00", vaga.salario);
+        assertEquals("40h", vaga.cargaHoraria);
+        assertEquals("e9", vaga.empresaUsuarioId);
+        assertTrue(vaga.empresaVerificada);
+        assertEquals("há 2 dias", vaga.quando);
+    }
+
+    @Test
+    public void candidatarEnviaAApresentacaoParaAVaga() throws Exception {
+        respostas.put("POST /api/vagas/v1/candidaturas", new Resposta(201, "{\"sucesso\":true,\"candidatura\":{}}"));
+        Anotador<Void> anotador = new Anotador<>();
+
+        repositorio(true).candidatar(SESSAO, "v1", "Tenho experiência.", anotador);
+
+        anotador.aguardar();
+        assertNull(anotador.mensagem);
+        assertEquals("POST", pedidos.get(0).metodo);
+        assertEquals("{\"mensagem\":\"Tenho experiência.\"}", pedidos.get(0).corpo);
+    }
+
+    @Test
+    public void candidaturaRepetidaChegaComAMensagemDaApi() throws Exception {
+        respostas.put("POST /api/vagas/v1/candidaturas", new Resposta(409,
+                "{\"sucesso\":false,\"mensagem\":\"Você já se candidatou a esta vaga.\"}"));
+        Anotador<Void> anotador = new Anotador<>();
+
+        repositorio(true).candidatar(SESSAO, "v1", "", anotador);
+
+        anotador.aguardar();
+        assertEquals("Você já se candidatou a esta vaga.", anotador.mensagem);
+        assertEquals("apresentação vazia não vai no corpo", "{}", pedidos.get(0).corpo);
+    }
+
+    @Test
+    public void minhasCandidaturasLeVagaEmpresaESituacao() throws Exception {
+        respostas.put("GET /api/candidaturas/minhas", new Resposta(200, "{\"sucesso\":true,\"candidaturas\":[{"
+                + "\"id\":\"c1\",\"status\":\"em_analise\",\"criadoEm\":\"2026-10-11T12:00:00.000Z\","
+                + "\"vaga\":{\"id\":\"v1\",\"titulo\":\"Analista\",\"empresa\":{\"razaoSocial\":\"Falsa Ltda\"}}}]}"));
+        Anotador<List<com.acesso.app.modelos.Candidatura>> anotador = new Anotador<>();
+
+        repositorio(true).listarCandidaturas(SESSAO, anotador);
+
+        com.acesso.app.modelos.Candidatura candidatura = anotador.aguardar().get(0);
+        assertEquals("v1", candidatura.vagaId);
+        assertEquals("Analista", candidatura.tituloVaga);
+        assertEquals("Falsa Ltda", candidatura.nomeEmpresa);
+        assertEquals("em_analise", candidatura.status);
+        assertEquals("há 3 dias", candidatura.quando);
+    }
+
+    @Test
+    public void curtirUsaARotaDeCurtidasELeOTotal() throws Exception {
+        respostas.put("POST /api/postagens/p1/curtidas", new Resposta(200,
+                "{\"sucesso\":true,\"curtido\":true,\"totalCurtidas\":5}"));
+        Anotador<Publicacao.Curtida> anotador = new Anotador<>();
+
+        repositorio(true).curtir(SESSAO, "p1", anotador);
+
+        Publicacao.Curtida curtida = anotador.aguardar();
+        assertTrue(curtida.curtido);
+        assertEquals(5, curtida.total);
+        assertEquals("Bearer token-de-teste", pedidos.get(0).autorizacao);
     }
 
     @Test

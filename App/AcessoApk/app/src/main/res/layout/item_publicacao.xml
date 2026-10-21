@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Publicação do feed (como o PostagemCard do site) -->
+<!-- Publicação do feed (como o PostagemCard do site), na ordem de uma rede profissional:
+     autor (abre o perfil), texto, contagens e a barra de ações -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Estilo.Acesso.Cartao"
@@ -11,14 +12,20 @@
         android:id="@+id/conteudoItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:focusable="true"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp">
 
         <LinearLayout
+            android:id="@+id/linhaAutor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:focusable="true"
             android:gravity="center_vertical"
+            android:minHeight="48dp"
             android:orientation="horizontal">
 
             <TextView
@@ -54,16 +61,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:focusable="true"
             android:lineSpacingMultiplier="1.15"
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:textColor="@color/acesso_texto" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="12dp"
-            android:background="@color/acesso_borda"
-            android:importantForAccessibility="no" />
 
         <TextView
             android:id="@+id/textoInteracoes"
@@ -72,9 +73,27 @@
             android:layout_marginTop="12dp"
             android:drawablePadding="6dp"
             android:gravity="center_vertical"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="@color/acesso_texto_secundario"
             app:drawableStartCompat="@drawable/ic_favorito"
             app:drawableTint="@color/acesso_erro" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/acesso_borda"
+            android:importantForAccessibility="no" />
+
+        <!-- Barra de ações -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/botaoCurtir"
+            style="@style/Estilo.Acesso.BotaoTexto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/publicacao_curtir"
+            android:textColor="@color/acesso_texto_secundario"
+            app:icon="@drawable/ic_favorito_contorno"
+            app:iconTint="@color/acesso_texto_secundario" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

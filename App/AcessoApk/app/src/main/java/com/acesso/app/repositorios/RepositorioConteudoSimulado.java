@@ -3,6 +3,7 @@ package com.acesso.app.repositorios;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.acesso.app.modelos.Candidatura;
 import com.acesso.app.modelos.ItemBusca;
 import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.Publicacao;
@@ -13,8 +14,11 @@ import com.acesso.app.modelos.Vaga;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * SIMULAÇÃO - DADOS FICTÍCIOS.
@@ -28,17 +32,32 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
     private static final long ATRASO_MILLIS = 600;
 
     private final Handler threadPrincipal = new Handler(Looper.getMainLooper());
+    /** Publicações curtidas nesta execução (nada é salvo). */
+    private static final Set<String> curtidas = new HashSet<>();
 
     @Override
     public void listarPublicacoes(SessaoUsuario sessao, RetornoRepositorio<List<Publicacao>> retorno) {
-        responder(() -> retorno.aoConcluir(Arrays.asList(
+        responder(() -> {
+            List<Publicacao> publicacoes = publicacoesDemonstracao();
+            for (Publicacao publicacao : publicacoes) {
+                if (curtidas.contains(publicacao.id)) {
+                    publicacao.curtidoPorMim = true;
+                    publicacao.curtidas++;
+                }
+            }
+            retorno.aoConcluir(publicacoes);
+        });
+    }
+
+    private static List<Publicacao> publicacoesDemonstracao() {
+        return Arrays.asList(
                 publicacao("Empresa Exemplo Ltda", TipoConta.EMPRESA, "há 1 hora", 24, 3,
                         "Estamos com vagas abertas para analista de suporte, com intérprete de Libras "
                                 + "nas entrevistas e jornada adaptável. Confira na aba Vagas!"),
                 publicacao("Joana Exemplo", TipoConta.PESSOA, "há 3 horas", 12, 5,
                         "Terminei hoje o curso de acessibilidade digital. Obrigada a todo mundo que indicou!"),
                 publicacao("Carlos Demonstração", TipoConta.PESSOA, "ontem", 40, 8,
-                        "Aos 54 anos, voltei ao mercado como coordenador de logística. Nunca é tarde."))));
+                        "Aos 54 anos, voltei ao mercado como coordenador de logística. Nunca é tarde."));
     }
 
     @Override
@@ -181,6 +200,65 @@ public class RepositorioConteudoSimulado implements RepositorioConteudo {
             perfil.nome = sessao != null ? sessao.getNome() : null;
             perfil.statusEmpresa = sessao != null ? sessao.getStatusEmpresa() : null;
             retorno.aoConcluir(perfil);
+        });
+    }
+
+    /** Os itens de demonstração não têm conta por trás: não há perfil de outra pessoa para abrir. */
+    @Override
+    public void carregarPerfilDeUsuario(SessaoUsuario sessao, String usuarioId, RetornoRepositorio<PerfilConta> retorno) {
+        RepositorioConteudoPendente.avisar(retorno, "no modo demonstração não há perfis de outras pessoas.");
+    }
+
+    @Override
+    public void obterVaga(SessaoUsuario sessao, String vagaId, RetornoRepositorio<Vaga> retorno) {
+        responder(() -> {
+            for (Vaga vaga : vagasDemonstracao()) {
+                if (vaga.id.equals(vagaId)) {
+                    vaga.requisitos = "Experiência com atendimento ao público. Conhecimento básico de informática.";
+                    vaga.beneficios = "Vale-refeição, plano de saúde e auxílio home office.";
+                    vaga.quando = "há 2 dias";
+                    retorno.aoConcluir(vaga);
+                    return;
+                }
+            }
+            retorno.aoFalhar("Vaga não encontrada.");
+        });
+    }
+
+    @Override
+    public void candidatar(SessaoUsuario sessao, String vagaId, String mensagem, RetornoRepositorio<Void> retorno) {
+        responder(() -> retorno.aoConcluir(null));
+    }
+
+    @Override
+    public void listarCandidaturas(SessaoUsuario sessao, RetornoRepositorio<List<Candidatura>> retorno) {
+        responder(() -> {
+            Candidatura candidatura = new Candidatura();
+            candidatura.id = "demonstracao";
+            candidatura.vagaId = "Analista de suporte";
+            candidatura.tituloVaga = "Analista de suporte";
+            candidatura.nomeEmpresa = "Empresa Exemplo Ltda";
+            candidatura.status = "em_analise";
+            candidatura.quando = "há 3 dias";
+            retorno.aoConcluir(Collections.singletonList(candidatura));
+        });
+    }
+
+    @Override
+    public void curtir(SessaoUsuario sessao, String publicacaoId, RetornoRepositorio<Publicacao.Curtida> retorno) {
+        responder(() -> {
+            Publicacao.Curtida curtida = new Publicacao.Curtida();
+            // Já curtida: descurte. Senão, curte. Como na API, a mesma ação alterna.
+            curtida.curtido = !curtidas.remove(publicacaoId);
+            if (curtida.curtido) {
+                curtidas.add(publicacaoId);
+            }
+            for (Publicacao publicacao : publicacoesDemonstracao()) {
+                if (publicacao.id.equals(publicacaoId)) {
+                    curtida.total = publicacao.curtidas + (curtida.curtido ? 1 : 0);
+                }
+            }
+            retorno.aoConcluir(curtida);
         });
     }
 

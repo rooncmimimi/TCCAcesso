@@ -70,6 +70,10 @@
             android:text="@string/inicio_publicacoes_titulo"
             android:textAppearance="@style/Texto.Acesso.TituloSecao" />
 
+        <TextView
+            android:id="@+id/mensagemStatus"
+            style="@style/Estilo.Acesso.MensagemStatus" />
+
         <include
             android:id="@+id/estado"
             layout="@layout/componente_estado_conteudo"

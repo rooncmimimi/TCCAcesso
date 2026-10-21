@@ -281,6 +281,38 @@
         <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
     </style>
 
+    <!-- Selo com o número de não lidas (ícone de mensagens, conversas) -->
+    <style name="Estilo.Acesso.Contador" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">20dp</item>
+        <item name="android:minHeight">20dp</item>
+        <item name="android:background">@drawable/fundo_contador</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">5dp</item>
+        <item name="android:paddingEnd">5dp</item>
+        <item name="android:textColor">@color/acesso_sobre_primaria</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <!-- Cartão de seção de perfil e de vaga (Sobre, Experiência...): título + conteúdo -->
+    <style name="Estilo.Acesso.TituloCartao" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAppearance">@style/Texto.Acesso.TituloSecao</item>
+    </style>
+
+    <style name="Estilo.Acesso.TextoCorpo" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:lineSpacingMultiplier">1.15</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">@color/acesso_texto</item>
+    </style>
+
     <!-- Mensagem de status (erro, sucesso ou carregando). O TalkBack lê
          automaticamente quando o texto muda (accessibilityLiveRegion). -->
     <style name="Estilo.Acesso.MensagemStatus" parent="">

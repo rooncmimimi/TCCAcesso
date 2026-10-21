@@ -64,6 +64,34 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Telas abertas por cima da área logada (TelaAutenticada confere a sessão) -->
+        <activity
+            android:name=".telas.TelaPesquisa"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".telas.TelaVaga"
+            android:exported="false" />
+
+        <activity
+            android:name=".telas.TelaPerfilUsuario"
+            android:exported="false" />
+
+        <activity
+            android:name=".telas.TelaConversas"
+            android:exported="false" />
+
+        <!-- adjustResize: a barra de escrever fica acima do teclado (MargensSistema) -->
+        <activity
+            android:name=".telas.TelaConversa"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".telas.TelaCandidaturas"
+            android:exported="false" />
+
         <!-- Empresa logada aguardando aprovação, reprovada ou suspensa -->
         <activity
             android:name=".telas.TelaStatusEmpresa"

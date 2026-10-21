@@ -20,14 +20,12 @@ import com.acesso.app.modelos.ResumoEmpresa;
 import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.modelos.Vaga;
 import com.acesso.app.telas.TelaPrincipal;
+import com.acesso.app.telas.TelaVaga;
+import com.acesso.app.utilitarios.CartaoVaga;
 import com.acesso.app.utilitarios.ExibidorEstado;
 import com.acesso.app.utilitarios.GerenciadorSessao;
-import com.acesso.app.utilitarios.Rotulos;
 import com.acesso.app.viewmodels.ViewModelOportunidades;
-import com.google.android.material.chip.Chip;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Aba Oportunidades. Pessoa vê a busca de vagas; empresa vê o painel com
@@ -191,52 +189,9 @@ public class FragmentoOportunidades extends Fragment {
 
     private View criarItemVaga(Vaga vaga, boolean mostrarCandidaturas) {
         ItemVagaBinding item = ItemVagaBinding.inflate(inflador, componentes.listaVagas, false);
-        item.textoTitulo.setText(vaga.titulo);
-        item.textoIniciaisEmpresa.setText(Rotulos.iniciais(vaga.nomeEmpresa));
-        item.textoEmpresa.setText(vaga.nomeEmpresa);
-        if (vaga.empresaVerificada) {
-            item.textoEmpresa.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_verificado, 0);
-            item.textoEmpresa.setContentDescription(vaga.nomeEmpresa + ", " + getString(R.string.vaga_empresa_verificada));
-        }
-
-        List<String> local = new ArrayList<>();
-        if (Rotulos.de(vaga.modalidade) != 0) local.add(getString(Rotulos.de(vaga.modalidade)));
-        if (vaga.cidade != null) local.add(vaga.estado != null ? vaga.cidade + " - " + vaga.estado : vaga.cidade);
-        item.textoLocal.setText(local.isEmpty() ? getString(R.string.vaga_local_nao_informado) : String.join(" · ", local));
-        item.textoDescricao.setText(vaga.descricao);
-
-        if (vaga.publicoAlvo != null && !"geral".equals(vaga.publicoAlvo)) {
-            adicionarSelo(item, getString(Rotulos.de(vaga.publicoAlvo)), true);
-        }
-        if (Rotulos.de(vaga.contrato) != 0) {
-            adicionarSelo(item, getString(Rotulos.de(vaga.contrato)), false);
-        }
-        // Como no site: até 3 recursos no cartão, sem o genérico "outro".
-        int recursos = 0;
-        for (String recurso : vaga.recursosAcessibilidade) {
-            if (!"outro".equals(recurso) && Rotulos.de(recurso) != 0 && recursos < 3) {
-                adicionarSelo(item, getString(Rotulos.de(recurso)), false);
-                recursos++;
-            }
-        }
-        if (mostrarCandidaturas) {
-            item.textoCandidaturas.setText(getString(R.string.vaga_candidaturas, vaga.totalCandidaturas));
-            item.textoCandidaturas.setVisibility(View.VISIBLE);
-        }
+        CartaoVaga.preencher(item, vaga, mostrarCandidaturas);
+        item.conteudoItem.setOnClickListener(v -> TelaVaga.abrir(requireContext(), vaga.id));
         return item.getRoot();
-    }
-
-    /** Selo informativo (não clicável) dentro do cartão da vaga. */
-    private void adicionarSelo(ItemVagaBinding item, String texto, boolean destaque) {
-        Chip selo = new Chip(requireContext());
-        selo.setText(texto);
-        selo.setClickable(false);
-        selo.setFocusable(false);
-        selo.setEnsureMinTouchTargetSize(false);
-        selo.setChipBackgroundColorResource(destaque ? R.color.acesso_container_primaria : R.color.acesso_fundo_secundario);
-        selo.setTextColor(requireContext().getColor(destaque ? R.color.acesso_sobre_container_primaria : R.color.acesso_texto));
-        selo.setChipStrokeWidth(0);
-        item.grupoSelos.addView(selo);
     }
 
     private void esconderTeclado() {

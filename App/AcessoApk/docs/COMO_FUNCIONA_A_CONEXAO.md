@@ -105,5 +105,8 @@ Duas formas de configurar (qualquer uma):
 |---|---|
 | Login, cadastro, renovação de token, sair, status da empresa, recuperar senha | Código pronto e testado **só com servidor falso** |
 | Feed, vagas, pesquisa, painel, publicar, criar vaga | Código pronto e testado **só com servidor falso** |
-| Contra a API real | **Nada testado ainda** (falta o endereço público ou o `.env` para rodar local) |
-| Perfil (dados do servidor), candidatura, curtir/comentar, editar/excluir | Não implementado |
+| Detalhe da vaga, candidatura, minhas candidaturas, curtir, perfil próprio e de outras contas | Código pronto e testado **só com servidor falso** |
+| Chat (`/conversas`: lista, abrir, pode-iniciar, mensagens, enviar, marcar lidas, não lidas) | `RepositorioMensagensApi`, testado **só com servidor falso**. Sem Socket.IO: a conversa aberta consulta a API a cada 5 s |
+| Notificações (`/notificacoes`: lista, não lidas, marcar uma/todas) | `RepositorioNotificacoesApi`, testado **só com servidor falso** |
+| Contra a API real (Render) | Só leitura conferida: `/health` 200, `/vagas` e `/publico/home` 200 (consultam o banco), rotas protegidas 401 sem token. **Fluxos com login não testados** (exigem contas reais) |
+| Comentar, editar perfil, editar/excluir publicação, seguir | Não implementado no app (existem na API e no site) |

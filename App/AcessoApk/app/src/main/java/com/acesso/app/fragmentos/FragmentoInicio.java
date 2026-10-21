@@ -1,5 +1,6 @@
 package com.acesso.app.fragmentos;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,9 +17,11 @@ import com.acesso.app.databinding.ItemPublicacaoBinding;
 import com.acesso.app.modelos.Publicacao;
 import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.modelos.TipoConta;
+import com.acesso.app.telas.TelaPerfilUsuario;
 import com.acesso.app.telas.TelaPrincipal;
 import com.acesso.app.utilitarios.ExibidorEstado;
 import com.acesso.app.utilitarios.GerenciadorSessao;
+import com.acesso.app.utilitarios.MensagemStatus;
 import com.acesso.app.utilitarios.Rotulos;
 import com.acesso.app.viewmodels.ViewModelInicio;
 
@@ -82,7 +85,33 @@ public class FragmentoInicio extends Fragment {
             item.textoConteudo.setText(publicacao.conteudo);
             item.textoInteracoes.setText(getString(R.string.publicacao_contagem,
                     publicacao.curtidas, publicacao.comentarios));
+
+            // Autor: abre o perfil (o próprio, na aba Perfil). Sem conta conhecida, a linha só informa.
+            if (publicacao.autorId != null) {
+                item.linhaAutor.setContentDescription(getString(R.string.publicacao_abrir_autor, publicacao.nomeAutor)
+                        + ", " + item.textoDetalhes.getText());
+                item.linhaAutor.setOnClickListener(v -> abrirAutor(publicacao.autorId));
+            } else {
+                item.linhaAutor.setBackground(null);
+            }
+
+            // Curtir: ícone cheio e texto "Curtido" quando já curtiu (não depende só da cor).
+            item.botaoCurtir.setText(publicacao.curtidoPorMim ? R.string.publicacao_curtido : R.string.publicacao_curtir);
+            item.botaoCurtir.setIconResource(publicacao.curtidoPorMim ? R.drawable.ic_favorito : R.drawable.ic_favorito_contorno);
+            int cor = requireContext().getColor(publicacao.curtidoPorMim ? R.color.acesso_erro : R.color.acesso_texto_secundario);
+            item.botaoCurtir.setIconTint(ColorStateList.valueOf(cor));
+            item.botaoCurtir.setOnClickListener(v -> viewModel.curtir(publicacao, erro ->
+                    MensagemStatus.mostrarErro(componentes.mensagemStatus, erro)));
             componentes.listaPublicacoes.addView(item.getRoot());
+        }
+    }
+
+    private void abrirAutor(String autorId) {
+        SessaoUsuario sessao = new GerenciadorSessao(requireContext()).obter();
+        if (sessao != null && autorId.equalsIgnoreCase(sessao.getIdUsuario())) {
+            ((TelaPrincipal) requireActivity()).abrirPerfil();
+        } else {
+            TelaPerfilUsuario.abrir(requireContext(), autorId);
         }
     }
 

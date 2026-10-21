@@ -68,8 +68,7 @@
     <!-- Navegação principal -->
     <string name="aba_inicio">Início</string>
     <string name="aba_oportunidades">Vagas</string>
-    <string name="aba_criar">Criar</string>
-    <string name="aba_pesquisa">Pesquisa</string>
+    <string name="aba_criar">Publicar</string>
     <string name="aba_perfil">Perfil</string>
     <string name="acao_sair">Sair da conta</string>
     <string name="sair_confirmar_titulo">Sair da conta?</string>

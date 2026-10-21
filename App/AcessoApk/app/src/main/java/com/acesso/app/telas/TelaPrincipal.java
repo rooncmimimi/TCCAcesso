@@ -16,20 +16,24 @@ import com.acesso.app.R;
 import com.acesso.app.databinding.TelaPrincipalBinding;
 import com.acesso.app.fragmentos.FragmentoCriar;
 import com.acesso.app.fragmentos.FragmentoInicio;
+import com.acesso.app.fragmentos.FragmentoNotificacoes;
 import com.acesso.app.fragmentos.FragmentoOportunidades;
 import com.acesso.app.fragmentos.FragmentoPerfil;
-import com.acesso.app.fragmentos.FragmentoPesquisa;
 import com.acesso.app.modelos.SessaoUsuario;
 import com.acesso.app.repositorios.FabricaRepositorios;
 import com.acesso.app.utilitarios.MargensSistema;
 import com.acesso.app.utilitarios.Navegacao;
 import com.acesso.app.utilitarios.Rotulos;
+import com.acesso.app.viewmodels.ViewModelContadores;
 import com.acesso.app.viewmodels.ViewModelSessao;
+import com.google.android.material.badge.BadgeDrawable;
 
 /**
- * Área logada (pessoa ou empresa aprovada), com a barra de abas embaixo.
+ * Área logada (pessoa ou empresa aprovada), organizada como uma rede profissional: cabeçalho com o avatar
+ * (abre o Perfil), o campo de busca (abre a Pesquisa) e o ícone de Mensagens com as não lidas; embaixo, as
+ * abas Início, Vagas, Publicar, Notificações e Perfil.
  * Só abre com sessão: sem ela, ou com a sessão encerrada, volta para a apresentação.
- * Para empresa, a aba Oportunidades vira "Painel" (como /dashboard/empresa no site).
+ * Para empresa, a aba Vagas vira "Painel" (como /dashboard/empresa no site).
  *
  * As abas ficam todas no FragmentManager e só são mostradas ou escondidas: trocar de aba não recria a
  * tela, então rolagem, texto digitado e resultados da pesquisa continuam como estavam.
@@ -38,6 +42,7 @@ public class TelaPrincipal extends AppCompatActivity {
 
     private TelaPrincipalBinding componentes;
     private ViewModelSessao viewModelSessao;
+    private ViewModelContadores contadores;
     /**
      * Pedido feito por outra aba: abrir a aba Criar já no formulário de vaga ("Publicar nova vaga") ou de
      * publicação ("Escrever publicação"). Nulo quando a pessoa só tocou na aba, que mantém o que estava aberto.
@@ -79,11 +84,15 @@ public class TelaPrincipal extends AppCompatActivity {
             componentes.navegacaoInferior.getMenu().findItem(R.id.aba_oportunidades).setTitle(R.string.aba_painel);
         }
 
-        // Cabeçalho compacto: o avatar leva ao Perfil e o campo de busca à Pesquisa.
+        // Cabeçalho compacto: o avatar leva ao Perfil, o campo de busca à Pesquisa e o ícone às Mensagens.
         componentes.botaoAvatar.setOnClickListener(v ->
                 componentes.navegacaoInferior.setSelectedItemId(R.id.aba_perfil));
-        componentes.botaoBuscaRapida.setOnClickListener(v ->
-                componentes.navegacaoInferior.setSelectedItemId(R.id.aba_pesquisa));
+        componentes.botaoBuscaRapida.setOnClickListener(v -> TelaPesquisa.abrir(this));
+        componentes.botaoMensagens.setOnClickListener(v -> TelaConversas.abrir(this));
+
+        contadores = new ViewModelProvider(this).get(ViewModelContadores.class);
+        contadores.getMensagensNaoLidas().observe(this, this::mostrarMensagensNaoLidas);
+        contadores.getNotificacoesNaoLidas().observe(this, this::mostrarNotificacoesNaoLidas);
 
         componentes.navegacaoInferior.setOnItemSelectedListener(item -> {
             mostrarAba(item.getItemId());
@@ -124,6 +133,11 @@ public class TelaPrincipal extends AppCompatActivity {
         if (estadoSalvo == null) {
             mostrarAba(R.id.aba_inicio);
         }
+    }
+
+    /** Chamado quando a própria conta aparece num cartão (ex.: autor de uma publicação). */
+    public void abrirPerfil() {
+        componentes.navegacaoInferior.setSelectedItemId(R.id.aba_perfil);
     }
 
     /** Chamado por Início ("Escrever publicação") e pelo Painel ("Publicar nova vaga"). */
@@ -169,8 +183,8 @@ public class TelaPrincipal extends AppCompatActivity {
             return new FragmentoOportunidades();
         } else if (idAba == R.id.aba_criar) {
             return FragmentoCriar.novaInstancia(Boolean.TRUE.equals(pedidoDeCriacao));
-        } else if (idAba == R.id.aba_pesquisa) {
-            return new FragmentoPesquisa();
+        } else if (idAba == R.id.aba_notificacoes) {
+            return new FragmentoNotificacoes();
         } else if (idAba == R.id.aba_perfil) {
             return new FragmentoPerfil();
         }
@@ -182,11 +196,11 @@ public class TelaPrincipal extends AppCompatActivity {
     }
 
     /**
-     * O cabeçalho com avatar e busca fica nas abas de conteúdo. Na Pesquisa e no Perfil ele repetiria
-     * o que a própria tela já mostra, e com o teclado aberto o espaço é do formulário.
+     * O cabeçalho com avatar, busca e mensagens fica nas abas de conteúdo (Início, Vagas, Notificações). Em
+     * Publicar o espaço é do formulário, e no Perfil ele repetiria o que a própria tela já mostra.
      */
     private void atualizarCabecalho() {
-        boolean tela = abaAtual != R.id.aba_pesquisa && abaAtual != R.id.aba_perfil;
+        boolean tela = abaAtual != R.id.aba_criar && abaAtual != R.id.aba_perfil;
         componentes.cabecalhoPrincipal.setVisibility(tela && !tecladoAberto ? View.VISIBLE : View.GONE);
     }
 
@@ -198,5 +212,28 @@ public class TelaPrincipal extends AppCompatActivity {
         abaAtual = componentes.navegacaoInferior.getSelectedItemId();
         atualizarCabecalho();
         viewModelSessao.verificar();
+        contadores.atualizar();
+    }
+
+    private void mostrarMensagensNaoLidas(Integer total) {
+        int naoLidas = total != null ? total : 0;
+        componentes.seloMensagens.setText(Rotulos.contador(naoLidas));
+        componentes.seloMensagens.setVisibility(naoLidas > 0 ? View.VISIBLE : View.GONE);
+        componentes.botaoMensagens.setContentDescription(naoLidas > 0
+                ? getResources().getQuantityString(R.plurals.cabecalho_mensagens_nao_lidas, naoLidas, naoLidas)
+                : getString(R.string.cabecalho_mensagens));
+    }
+
+    private void mostrarNotificacoesNaoLidas(Integer total) {
+        int naoLidas = total != null ? total : 0;
+        if (naoLidas > 0) {
+            BadgeDrawable selo = componentes.navegacaoInferior.getOrCreateBadge(R.id.aba_notificacoes);
+            selo.setBackgroundColor(getColor(R.color.acesso_erro));
+            selo.setBadgeTextColor(getColor(R.color.acesso_sobre_primaria));
+            selo.setMaxCharacterCount(3);
+            selo.setNumber(naoLidas);
+        } else {
+            componentes.navegacaoInferior.removeBadge(R.id.aba_notificacoes);
+        }
     }
 }

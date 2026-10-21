@@ -6,6 +6,8 @@ public class ItemBusca {
     public enum Categoria { PESSOAS, EMPRESAS, VAGAS }
 
     public String id;
+    /** Pessoas e empresas: a conta (usuário) que abre o perfil. Vagas: nulo. */
+    public String usuarioId;
     public Categoria categoria;
     public String titulo;
     public String subtitulo;

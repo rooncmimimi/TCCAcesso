@@ -3,6 +3,7 @@ package com.acesso.app.repositorios;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.acesso.app.modelos.Candidatura;
 import com.acesso.app.modelos.ItemBusca;
 import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.Publicacao;
@@ -23,8 +24,6 @@ public class RepositorioConteudoPendente implements RepositorioConteudo {
 
     /** Começo de toda mensagem desta classe, para a tela reconhecer que não é um erro de rede. */
     public static final String PREFIXO = "Integração pendente";
-
-    private final Handler threadPrincipal = new Handler(Looper.getMainLooper());
 
     @Override
     public void listarPublicacoes(SessaoUsuario sessao, RetornoRepositorio<List<Publicacao>> retorno) {
@@ -63,10 +62,45 @@ public class RepositorioConteudoPendente implements RepositorioConteudo {
 
     @Override
     public void carregarPerfil(SessaoUsuario sessao, RetornoRepositorio<PerfilConta> retorno) {
-        pendente(retorno, "Os dados do perfil virão da API do ACESSO (GET /api/candidatos/me ou /api/empresas/me).");
+        pendente(retorno, "Os dados do perfil virão da API do ACESSO "
+                + "(GET /api/perfil/candidatos/usuario/:id ou /api/empresas/me).");
+    }
+
+    @Override
+    public void carregarPerfilDeUsuario(SessaoUsuario sessao, String usuarioId, RetornoRepositorio<PerfilConta> retorno) {
+        pendente(retorno, "Os perfis virão da API do ACESSO (GET /api/perfil/usuario/:id).");
+    }
+
+    @Override
+    public void obterVaga(SessaoUsuario sessao, String vagaId, RetornoRepositorio<Vaga> retorno) {
+        pendente(retorno, "Os detalhes da vaga virão da API do ACESSO (GET /api/vagas/:id).");
+    }
+
+    @Override
+    public void candidatar(SessaoUsuario sessao, String vagaId, String mensagem, RetornoRepositorio<Void> retorno) {
+        pendente(retorno, "A candidatura depende da API do ACESSO (POST /api/vagas/:id/candidaturas). Nada foi enviado.");
+    }
+
+    @Override
+    public void listarCandidaturas(SessaoUsuario sessao, RetornoRepositorio<List<Candidatura>> retorno) {
+        pendente(retorno, "As candidaturas virão da API do ACESSO (GET /api/candidaturas/minhas).");
+    }
+
+    @Override
+    public void curtir(SessaoUsuario sessao, String publicacaoId, RetornoRepositorio<Publicacao.Curtida> retorno) {
+        pendente(retorno, "Curtir depende da API do ACESSO (POST /api/postagens/:id/curtidas).");
     }
 
     private <T> void pendente(RetornoRepositorio<T> retorno, String detalhe) {
-        threadPrincipal.post(() -> retorno.aoFalhar(PREFIXO + ": " + detalhe));
+        avisar(retorno, detalhe);
+    }
+
+    /** Responde "integração pendente" na thread principal (usado também por mensagens e notificações). */
+    static <T> void avisar(RetornoRepositorio<T> retorno, String detalhe) {
+        responder(() -> retorno.aoFalhar(PREFIXO + ": " + detalhe));
+    }
+
+    static void responder(Runnable resposta) {
+        new Handler(Looper.getMainLooper()).post(resposta);
     }
 }

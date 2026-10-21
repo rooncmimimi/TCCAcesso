@@ -35,6 +35,20 @@ Correção: as requisições passaram a ser montadas só depois da checagem, e a
 também endereços sem `http://`/`https://` (`ClienteHttp.enderecoValido`, com teste). Sem
 configuração, o login mostra "O app ainda não foi configurado com o Supabase. Veja o README."
 
+### Rede profissional, chat e notificações (21/10/2026, não commitado)
+
+- Navegação no estilo LinkedIn: cabeçalho (avatar → Perfil, busca → `TelaPesquisa`, ícone de mensagens
+  com não lidas) e abas Início · Vagas/Painel · Publicar · Notificações · Perfil.
+- Telas novas (todas herdam `TelaAutenticada`, que confere a sessão): `TelaVaga` (detalhe + candidatura),
+  `TelaPerfilUsuario` (perfil + botão Mensagem com `pode-iniciar`), `TelaConversas`, `TelaConversa`
+  (atualiza a cada 5 s enquanto visível), `TelaCandidaturas`, `TelaPesquisa`; aba `FragmentoNotificacoes`.
+- Perfil com Sobre, Competências, Experiência e Formação (`/perfil/candidatos/usuario/:id`).
+- Repositórios novos: `RepositorioMensagens*`, `RepositorioNotificacoes*` (fora da fonte `api`, avisam
+  "Integração pendente"); `MontadorRequisicao` compartilhado.
+- Verificado: 136 testes JUnit, `assembleDebug`, `lintDebug` (0 erros), 59 testes do backend (com variáveis
+  fictícias), telas no emulador `Medium_Phone` em modo demonstração.
+- **Pendente:** testar chat, notificações e candidatura com contas reais pela API (`FONTE_AUTENTICACAO=api`).
+
 ## 2. O que foi verificado no emulador (modo demonstração)
 
 Visto de fato, com capturas de tela, no `Small_Phone` (720×1280, API 30):

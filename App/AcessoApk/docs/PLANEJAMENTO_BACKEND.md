@@ -7,6 +7,12 @@ Tudo aqui foi conferido no código em 09/10/2026 (branch `app/telas-mobile-auten
 Quando algo for **proposta** (ainda não existe), está escrito assim. Os JSON de exemplo usam
 dados fictícios e estão marcados como **exemplo**.
 
+> **Atualização de 21/10/2026.** O cadastro e a confirmação de e-mail abaixo foram revisados contra
+> `origin/main`, cuja API mudou depois de 09/10 (campos obrigatórios no cadastro de pessoa; empresa só criada
+> por uma conta de candidato logada). O resto do documento continua sendo o retrato de 09/10 e está defasado em
+> pontos (por exemplo, o conteúdo das abas já vem da API). O estado atual e as pendências estão em
+> [`CONTINUIDADE.md`](../../../CONTINUIDADE.md).
+
 ---
 
 ## 1. Visão geral
@@ -69,14 +75,13 @@ dados fictícios e estão marcados como **exemplo**.
 1. **Testar a autenticação do app contra a API rodando** (passo a passo na seção 11).
 2. **Conteúdo pela API:** criar `RepositorioConteudoApi` (hoje as abas mostram "Integração
    pendente", sem inventar dados, fora do modo demonstração).
-3. **Confirmação de e-mail por código** no app (a API manda um código de 6 dígitos; o app hoje
-   só diz "confirme seu e-mail").
+3. ~~**Confirmação de e-mail por código** no app~~ — feita em 21/10 (`TelaConfirmarEmail`).
 4. **Recuperação de senha:** o link do e-mail da API abre a página do site
    (`/redefinir-senha?token=...`), não o app. Ver seção 8.4.
 5. **Status da empresa após renovar a sessão:** `/auth/refresh` não devolve a empresa; o app
    mantém o último status conhecido. Ver seção 8.3.
-6. **Cidade e data de nascimento do cadastro de pessoa:** o app pede esses campos, mas
-   `POST /api/auth/register/candidato` não os lê (ver seção 7).
+6. ~~**Cidade e data de nascimento do cadastro de pessoa**~~ — em `main` a API passou a **exigir** `telefone`,
+   `cpf`, `pais`, `dataNascimento`, `cidade` e `estado`, e o app passou a enviá-los (21/10).
 7. Armazenamento cifrado dos tokens (seção 9).
 
 ## 4. Como o login e o cadastro funcionam
@@ -91,6 +96,9 @@ dados fictícios e estão marcados como **exemplo**.
      **sem sessão** (`pendenteVerificacaoEmail: true`) e a pessoa precisa confirmar o e-mail.
    - Sem envio de e-mail: a conta já volta com sessão e o app entra direto.
 5. Empresa entra com status `pendente` e vê a **tela de empresa em análise** até ser aprovada.
+   Em `main`, **a empresa só é criada por quem está logado como candidato** (a API responde 401 sem sessão
+   e guarda o vínculo `usuario_candidato_id`, tirado do token). A empresa tem login próprio. No app: sem
+   conta, "Sou empresa" leva primeiro ao cadastro de pessoa; com conta, Perfil > "Cadastrar minha empresa".
 
 ### Login
 1. `POST /api/auth/login` com e-mail e senha.
@@ -152,8 +160,8 @@ Todas as rotas abaixo **existem** em `Site/Backend/src/routes`, com o prefixo `/
 | `POST /auth/logout` | Sair | Implementado, não testado com servidor |
 | `POST /auth/senha/esqueci` | Esqueci minha senha | Implementado, não testado com servidor |
 | `POST /auth/senha/redefinir` | Nova senha (`token`, `novaSenha`) | Implementado; o link do e-mail abre o site (seção 8.4) |
-| `POST /auth/cadastro/confirmar-email` | Confirmar e-mail (`email`, `codigo`) | **Falta tela no app** |
-| `POST /auth/cadastro/reenviar-confirmacao` | Reenviar código | **Falta no app** |
+| `POST /auth/cadastro/confirmar-email` | Confirmar e-mail (`email`, `codigo` de 6 dígitos) | `TelaConfirmarEmail`; não devolve sessão |
+| `POST /auth/cadastro/reenviar-confirmacao` | Reenviar código (espera de 60 s; resposta sempre genérica) | `TelaConfirmarEmail` |
 | `GET /auth/me` | Dados da conta, com `empresa` | **Falta no app** (útil para o status da empresa) |
 
 ### 6.2 Conteúdo (rotas existentes que o app ainda não chama)
@@ -174,9 +182,8 @@ Todas as rotas abaixo **existem** em `Site/Backend/src/routes`, com o prefixo `/
 Nenhuma rota nova é necessária para o login. As propostas são pequenas mudanças em rotas
 **existentes**, para a equipe decidir:
 
-- **Proposta A:** `POST /auth/register/candidato` aceitar `cidade`, `estado` e `dataNascimento`
-  (a tabela `candidatos` já tem as colunas `cidade`, `estado` e `data_nascimento`). Alternativa
-  sem mexer na API: o app deixa esses campos para depois, na edição do perfil.
+- **Proposta A** (superada em 21/10): `POST /auth/register/candidato` aceitar `cidade`, `estado` e
+  `dataNascimento`. Em `main` a rota já os lê e os **exige**; o app os envia.
 - **Proposta B:** `POST /auth/refresh` devolver também `usuario.empresa`, como o login faz.
   Alternativa sem mexer na API: o app chama `GET /auth/me` depois de renovar.
 

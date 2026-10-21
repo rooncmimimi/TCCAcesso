@@ -10,15 +10,20 @@ usadas e não podem ser trocados (ex.: `AppCompatActivity`, `onCreate`, `colorPr
 
 ## Estado atual
 
-- **Telas:** apresentação, login, cadastro de pessoa e de empresa, esqueci/nova senha, termos,
-  área logada com 5 abas (Início, Vagas — "Painel" para empresa —, Criar, Pesquisa, Perfil) e
-  tela de empresa em análise.
+- **Telas:** apresentação, login, cadastro de pessoa e de empresa, confirmação de e-mail por código,
+  esqueci/nova senha, termos, área logada com 5 abas (Início, Vagas — "Painel" para empresa —, Criar,
+  Notificações, Perfil), busca, vaga, perfil de outras pessoas, mensagens, candidaturas, comentários,
+  edição de perfil e tela de empresa em análise.
 - **Login:** três fontes, escolhidas por `FONTE_AUTENTICACAO` (ver abaixo). A padrão continua
   sendo o **Supabase Auth**, como o app já funcionava. A fonte **`api`** (mesma API do site) está
   implementada mas **ainda não foi testada com a API rodando**.
-- **Conteúdo das abas** (feed, vagas, painel, pesquisa, publicar): ainda não vem de servidor.
-  Fora do modo demonstração, cada aba avisa "Integração pendente" e qual rota da API vai usar —
-  o app não inventa dados.
+- **Conteúdo das abas** (feed, vagas, painel, pesquisa, publicar, perfil, mensagens, notificações): vem da
+  API do Site com a fonte `api`. Na fonte `supabase` as abas avisam "Integração pendente" e qual rota da API
+  vão usar — o app não inventa dados. Ainda **não foi testado contra a API real**.
+- **Cadastro:** segue o contrato da API em `main` — a pessoa informa telefone, CPF, data de nascimento,
+  cidade e UF; a **empresa só é criada a partir de uma conta de candidato logada** (como no site): sem conta,
+  "Sou empresa" explica e leva ao cadastro de pessoa, que depois continua no da empresa. Veja
+  [`CONTINUIDADE.md`](../../CONTINUIDADE.md).
 - Plano de integração com a API: [`docs/PLANEJAMENTO_BACKEND.md`](docs/PLANEJAMENTO_BACKEND.md).
 - Histórico e pendências entre sessões de trabalho: [`CONTINUIDADE.md`](../../CONTINUIDADE.md)
   na raiz do repositório.
@@ -54,8 +59,10 @@ release ignora esta opção (cai no Supabase).
 
 Contas de teste (senha `Acesso@2026`): `pessoa@acesso.test`, `empresa@acesso.test` (empresa
 aprovada), `empresa.pendente@acesso.test` (empresa em análise), `nao.confirmado@acesso.test`
-(e-mail não confirmado), `pausado@acesso.test` (conta pausada) e `falha.rede@acesso.test`
-(simula falta de internet). Um cadastro feito neste modo entra direto na área da conta.
+(e-mail não confirmado: o login abre a confirmação por código; o código é `123456`),
+`pausado@acesso.test` (conta pausada) e `falha.rede@acesso.test` (simula falta de internet). Um
+cadastro feito neste modo entra direto na área da conta. Como na API, a empresa só pode ser
+cadastrada por quem está logado como pessoa (Perfil > Cadastrar minha empresa).
 
 ## Comandos
 
@@ -76,7 +83,7 @@ O build e os testes funcionam offline (`--offline`) depois da primeira sincroniz
 
 - Ao abrir o app: **com sessão salva**, vai direto para a área da conta; **sem sessão**, mostra
   sempre a apresentação, com Entrar, Criar conta, "Quero encontrar vagas" e "Sou empresa" (abre
-  o cadastro já em Empresa).
+  o cadastro já em Empresa, que sem conta de pessoa mostra "Primeiro, a sua conta pessoal").
 - Login e cadastro abrem por cima da apresentação (Voltar retorna a ela).
 - Depois de entrar, a pilha de telas é apagada: Voltar não leva de volta ao login. Numa aba que
   não é a Início, Voltar leva à Início.
@@ -87,8 +94,8 @@ O build e os testes funcionam offline (`--offline`) depois da primeira sincroniz
 
 ```
 com.acesso.app
-├── telas         Apresentacao, Login, Cadastro, EsqueciSenha, NovaSenha, Termos,
-│                 Principal (abas) e StatusEmpresa
+├── telas         Apresentacao, Login, Cadastro, ConfirmarEmail, EsqueciSenha, NovaSenha, Termos,
+│                 Principal (abas), StatusEmpresa e as telas de rede (Vaga, Conversa, Comentarios...)
 ├── fragmentos    abas: Inicio, Oportunidades (Vagas/Painel), Criar, Pesquisa, Perfil
 ├── viewmodels    estado das telas, validação e chamadas aos repositórios
 ├── repositorios  RepositorioAutenticacao (interface) + Supabase, Api e Simulado;
@@ -133,5 +140,6 @@ usa as tabelas do site **pela API**, e a tabela `perfis` deixa de ser usada (ver
 
 Testes JUnit em `app/src/test`: validações (`ValidadorTeste`), navegação por tipo de conta
 (`NavegacaoTeste`), máscaras, tradução de erros do Supabase e da API, leitura das respostas da
-API de autenticação e validação/montagem dos dados do cadastro. No Android Studio: botão direito
+API de autenticação (inclusive o corpo exato enviado no cadastro), validação/montagem dos dados do
+cadastro e a regra do cadastro de empresa (`ModoCadastroEmpresaTeste`). No Android Studio: botão direito
 na pasta `test` > Run Tests, ou `./gradlew testDebugUnitTest`.

@@ -19,7 +19,11 @@ usadas e não podem ser trocados (ex.: `AppCompatActivity`, `onCreate`, `colorPr
   implementada mas **ainda não foi testada com a API rodando**.
 - **Conteúdo das abas** (feed, vagas, painel, pesquisa, publicar, perfil, mensagens, notificações): vem da
   API do Site com a fonte `api`. Na fonte `supabase` as abas avisam "Integração pendente" e qual rota da API
-  vão usar — o app não inventa dados. Ainda **não foi testado contra a API real**.
+  vão usar — o app não inventa dados. A comunicação foi testada contra a API real (backend de `main` com
+  PostgreSQL local) pelo `ContratoApiRealTeste`; as telas ainda não foram abertas em aparelho.
+- **Acessibilidade:** o app respeita os recursos do Android (TalkBack, fonte ampliada, contraste) e tem o guia
+  "Acessibilidade no seu celular" (Perfil e apresentação). Detalhes em
+  [`docs/ACESSIBILIDADE.md`](docs/ACESSIBILIDADE.md).
 - **Cadastro:** segue o contrato da API em `main` — a pessoa informa telefone, CPF, data de nascimento,
   cidade e UF; a **empresa só é criada a partir de uma conta de candidato logada** (como no site): sem conta,
   "Sou empresa" explica e leva ao cadastro de pessoa, que depois continua no da empresa. Veja
@@ -141,5 +145,11 @@ usa as tabelas do site **pela API**, e a tabela `perfis` deixa de ser usada (ver
 Testes JUnit em `app/src/test`: validações (`ValidadorTeste`), navegação por tipo de conta
 (`NavegacaoTeste`), máscaras, tradução de erros do Supabase e da API, leitura das respostas da
 API de autenticação (inclusive o corpo exato enviado no cadastro), validação/montagem dos dados do
-cadastro e a regra do cadastro de empresa (`ModoCadastroEmpresaTeste`). No Android Studio: botão direito
+cadastro e a regra do cadastro de empresa (`ModoCadastroEmpresaTeste`). `LayoutsAcessiveisTeste` confere
+regras de acessibilidade em todos os layouts (descrição de imagens e botões, texto em `sp`, toque de 48dp,
+campos com rótulo).
+
+`ContratoApiRealTeste` roda o código do app contra uma API de verdade e só executa com
+`ACESSO_API_TESTE_URL` (sem ela, os 14 testes aparecem como ignorados). Cria contas `@acesso.test`: use uma
+API local ou de teste, nunca a de produção. Passo a passo no `CONTINUIDADE.md` (seção "Como retomar"). No Android Studio: botão direito
 na pasta `test` > Run Tests, ou `./gradlew testDebugUnitTest`.

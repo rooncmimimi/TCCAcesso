@@ -1,18 +1,21 @@
 # Continuidade — app mobile, autenticação e integração com o back-end
 
-Registro para retomar o trabalho em outra sessão. Última atualização: 21/10/2026,
+Registro para retomar o trabalho em outra sessão. Última atualização: 27/10/2026,
 branch `app/telas-mobile-autenticacao`.
 
-> **O app compila**, os 185 testes JUnit passam e o `lintDebug` não tem erros (21/10/2026). Os
-> fluxos principais foram conferidos no emulador em modo demonstração em sessões anteriores; as
-> telas desta última sessão (seção "Alinhamento com o backend de `main`") **não** foram abertas
-> em emulador nem celular. A autenticação pela API do site (`FONTE_AUTENTICACAO=api`) ainda
-> **não** foi testada com a API rodando.
+> **O app compila**, 211 testes JUnit (197 passam; os 14 do contrato com a API real ficam ignorados sem
+> `ACESSO_API_TESTE_URL`) e o `lintDebug` não tem erros nem avisos de acessibilidade (27/10/2026).
+> **A comunicação com a API foi testada de verdade** (27/10): o código do app (corpos, leitores e
+> repositórios) contra o backend de `main` com PostgreSQL local — 14 de 14. A API publicada no Render
+> responde e está ligada ao banco. As telas das duas últimas sessões **não** foram abertas em emulador nem
+> celular (o ambiente não tinha virtualização).
 
 Documentos relacionados:
 - `App/AcessoApk/docs/PLANEJAMENTO_BACKEND.md` — como o app vai usar a API, endpoints reais,
   propostas e plano por etapas.
 - `App/AcessoApk/README.md` — como configurar, rodar e testar o app.
+- `App/AcessoApk/docs/ACESSIBILIDADE.md` — auditoria de acessibilidade, recursos do celular (Android e iOS)
+  separados do que o app precisa fazer, e roteiro de teste em aparelho.
 
 ## 1. Histórico
 
@@ -68,8 +71,8 @@ configuração, o login mostra "O app ainda não foi configurado com o Supabase.
 **O que motivou.** Esta branch parte de `012aa19` e está **12 commits à frente e 4 atrás de `main`**. As 4
 de `main` (`71adf89`, `782d498`, `397e49a`, `c41c9ff`, de 12 e 13/10) mexem em `Site/` e **mudaram o
 contrato de cadastro da API**, que o app consome (nenhuma delas toca em `App/`). O README da raiz diz que o
-push em `main` dispara o deploy no Render, então é esse o contrato de produção esperado (o `render.yaml` não
-define a branch e eu não conferi o painel do Render). A branch **não** recebeu esses commits (não houve
+push em `main` dispara o deploy no Render, então é esse o contrato de produção (conferido em 27/10: o serviço
+publica `main`, deploy ativo `c41c9ff`). A branch **não** recebeu esses commits (não houve
 merge); o contrato foi lido de `origin/main` com `git show`. Comparado com o app:
 
 | API em `main` | O app antes |
@@ -112,6 +115,42 @@ merge); o contrato foi lido de `origin/main` com `git show`. Comparado com o app
 5. A branch `claude/zealous-pasteur-2cu3a1` (20 e 21/10, ainda fora de `main`) traz idioma pt/en/es, mexe no
    cadastro do Site (`pais` some da tela e o Site manda `BR` fixo) e no backend. Rever o contrato quando entrar.
 
+### Conexão verificada, acessibilidade e logos (27/10/2026, commits `190c729` a `e2ca0e0`)
+
+**Stack real.** O app é Android nativo (Java + XML), não React Native/Expo, e não tem versão iOS.
+
+**Backend e banco — o que foi testado de fato:**
+- Backend de `main` (cópia em worktree, sem tocar na branch): `vitest` 59/59 com PostgreSQL 16 local (Docker).
+  As 6 migrations aplicam; para rodar fora do Supabase é preciso criar os papéis `anon`, `authenticated` e
+  `service_role` antes (o `scripts/migrar.js` faz `REVOKE ... FROM anon, authenticated` e, sem eles, **sai com
+  código 1 sem mostrar o erro**).
+- `ContratoApiRealTeste` (app) contra essa API: 14/14 — cadastro de pessoa e de empresa, login, renovação,
+  `/auth/me`, confirmação de e-mail (código errado, código curto, reenvio), feed (publicar, comentar, curtir,
+  editar, excluir), perfil (ler, editar, foto), logo da empresa, busca, notificações, mensagens, seguir,
+  empresa em análise sem vaga, vaga → candidatura → painel (empresa aprovada direto no banco, como faria a
+  moderação) e saída com revogação do refresh token. O log da API confirma cada chamada e os códigos.
+- Produção (somente leitura): Render publica `main` (`c41c9ff`, ativo), `/api/health` 200 depois de ~12 s
+  acordando (plano grátis), logs com "[DB] Banco conectado com sucesso". No Supabase "Acesso", as 6 migrations
+  estão registradas e as colunas novas existem. Um cadastro no formato antigo (que nada grava, senha inválida
+  de propósito) é recusado com erro em telefone, cpf, pais, dataNascimento, cidade e estado — confirma que o
+  app antigo não conseguiria cadastrar e que o corrigido envia o que a produção exige.
+- Achados no backend/infra (fora do app, para a equipe): **o serviço no Render usa `npm install` como build
+  (sem `npm run migrate`) e health check vazio**, diferente do `render.yaml`; migrations novas não serão
+  aplicadas sozinhas. Os logs de acesso guardam a URL de retorno do Google com o `code` de autorização.
+
+**Design.** Cartões de vaga e detalhe passam a mostrar o **logotipo da empresa** (`empresa.logo` já vinha da
+API e era ignorado); sem logo, as iniciais. Demais telas já seguiam o padrão de rede profissional (cabeçalho
+com avatar/busca/mensagens, 5 abas com rótulo, cartões, perfil com seções, estados de carregando/vazio/erro).
+
+**Acessibilidade** (detalhes em `docs/ACESSIBILIDADE.md`): contraste AA conferido por cálculo; botão Salvar
+da edição de perfil sem altura fixa; conversa anuncia mensagem recebida e detecta novas pelo id (a contagem
+falhava quando a janela de 2 páginas virava); guia **Acessibilidade no seu celular**; `LayoutsAcessiveisTeste`
+para não regredir; falso positivo `LabelFor` anotado. Corrigida também uma corrida em
+`RepositorioSocialApiTeste` (dois envios paralelos, ordem de chegada variável).
+
+**Não verificado:** nada em aparelho (TalkBack, fonte máxima, Acesso por voz); roteiro em
+`docs/ACESSIBILIDADE.md`.
+
 ## 2. O que foi verificado no emulador (modo demonstração)
 
 Visto de fato, com capturas de tela, no `Small_Phone` (720×1280, API 30):
@@ -134,23 +173,26 @@ fontes `supabase` e `api` com servidor real.
 
 ## 3. Pendências (ordem sugerida)
 
-Conferido no código em 21/10/2026 (a lista anterior estava defasada: conteúdo pela API, tokens cifrados no
-Keystore e status da empresa por `GET /auth/me` já existem).
+Conferido no código e na API em 27/10/2026.
 
-1. **Testar a fonte `api` com a API real** (local ou Render), incluindo o que a seção "Alinhamento com o backend
-   de `main`" não conseguiu abrir: cadastro de pessoa, portão e cadastro de empresa, confirmação de e-mail,
-   chat, notificações, candidatura, fotos. Passo a passo na seção 11 do planejamento.
-2. Resolver as **decisões em aberto** da seção 1 (termos, `/cadastro/concluir`, merge de `main`).
-3. Botão "Verificar novamente" na `TelaStatusEmpresa` (hoje ela consulta o status só ao abrir).
-4. Recuperação de senha com a fonte `api`: o link do e-mail abre o **site**; a `TelaNovaSenha` só entende o link
+1. **Testar em aparelho** (nada foi aberto em emulador/celular nas duas últimas sessões): roteiro em
+   `docs/ACESSIBILIDADE.md` (TalkBack, fonte máxima, Acesso por voz) e os fluxos novos (portão de empresa,
+   confirmação de e-mail, guia de acessibilidade, logos, aviso de mensagem nova).
+2. **Infra (equipe do backend):** alinhar o serviço do Render ao `render.yaml` (build com `npm run migrate`,
+   health check `/api/health`); tirar o `code` do Google dos logs de acesso; fazer o `migrar.js` mostrar o erro
+   quando falha fora do laço das migrations.
+3. Resolver as **decisões em aberto** da seção 1 (termos, `/cadastro/concluir`, merge de `main`) e a de
+   **Libras** (o site usa VLibras; o app não tem).
+4. Botão "Verificar novamente" na `TelaStatusEmpresa` (hoje ela consulta o status só ao abrir).
+5. Recuperação de senha com a fonte `api`: o link do e-mail abre o **site**; a `TelaNovaSenha` só entende o link
    do Supabase (`access_token`).
-5. Do que existe no site/API e não no app: anexar imagens ao criar publicação, editar experiências/formação/
-   competências, listas de seguidores/seguindo, aceitar pedidos de seguir, bloquear/denunciar, privacidade,
-   currículo, edição de comentário, login com Google.
-6. Ajustes visuais menores: dica da busca de vagas cortada com fonte grande; `termos_texto` cita o Supabase Auth
-   (precisa mudar quando a fonte padrão for `api`); `tela_cadastro.xml` passou de 80 views (aviso do lint).
-7. Testar em Android 15 (edge-to-edge obrigatório). Acessibilidade (TalkBack e recursos específicos) fica para a
-   etapa própria.
+6. Do que existe no site/API e não no app: anexar imagens (com texto alternativo) ao publicar, editar
+   experiências/formação/competências, listas de seguidores/seguindo, aceitar pedidos de seguir,
+   bloquear/denunciar, privacidade, currículo, edição de comentário, login com Google.
+7. Ajustes menores: `termos_texto` cita o Supabase Auth (mudar quando a fonte padrão for `api`);
+   `tela_cadastro.xml` passou de 80 views (aviso do lint); conferir em aparelho se a contagem "Reenviar código em
+   N s" é repetida pelo TalkBack a cada segundo.
+8. Testar em Android 15 (edge-to-edge obrigatório).
 
 ## 4. Como retomar
 
@@ -160,6 +202,25 @@ cd App/AcessoApk
 ./gradlew --offline testDebugUnitTest assembleDebug lintDebug
 ./gradlew installDebug -PFONTE_AUTENTICACAO=simulada   # emulador ligado
 ```
+
+**Contrato com a API real** (cria contas `@acesso.test`: use API local ou de teste, nunca a de produção):
+
+```bash
+# 1. PostgreSQL local (Docker Hub pode dar 429; o espelho do Google serve a mesma imagem oficial)
+docker run -d --name acesso-pg -e POSTGRES_PASSWORD=<senha local> -e POSTGRES_DB=acesso \
+  -p 127.0.0.1:55432:5432 mirror.gcr.io/library/postgres:16-alpine
+docker exec acesso-pg psql -U postgres -d acesso -c \
+  "create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;"
+# 2. API (Site/Backend de main) com DB_HOST=127.0.0.1 DB_PORT=55432 DB_NAME=acesso DB_USER=postgres
+#    DB_PASSWORD=<senha local> DB_SSL=false JWT_SECRET=<32+ caracteres> no .env
+npm ci && npm run migrate && npm start
+# 3. Testes do app (a empresa aprovada é opcional: libera vaga → candidatura)
+cd App/AcessoApk
+ACESSO_API_TESTE_URL=http://127.0.0.1:3000/api/ ./gradlew testDebugUnitTest --tests '*ContratoApiRealTeste'
+```
+
+Se a API responder 429 ("Muitas tentativas de autenticação"), é o limitador de login dela: espere ou
+reinicie a API local.
 
 Dicas do ambiente: o build e os testes rodam offline; o `lintDebug` precisa de internet na
 primeira vez (se o Maven Central responder `429 Too Many Requests`, é limite passageiro: repetir o comando).

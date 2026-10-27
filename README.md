@@ -67,12 +67,12 @@ workflow para o detalhamento de cada job.
 
 ## App Android
 
-O app fica em `App/AcessoApk`: Android nativo em Java. Hoje o login padrão
-ainda é o Supabase Auth; o caminho para usar a mesma API do site
-(`/api/auth`) já está no código e o plano de integração está em
-`App/AcessoApk/docs/PLANEJAMENTO_BACKEND.md`. Abra a pasta no Android Studio e
-siga o `App/AcessoApk/README.md`. O CI compila o APK de debug e roda os
-testes JUnit em todo push e pull request.
+O app fica em `App/AcessoApk`: Android nativo em Java (não há versão iOS). Por
+padrão ele usa a mesma API do site (`FONTE_AUTENTICACAO=api`, publicada no
+Render); a comunicação está coberta por um teste de contrato contra a API real
+(`ContratoApiRealTeste`). Abra a pasta no Android Studio e siga o
+`App/AcessoApk/README.md`; acessibilidade em `App/AcessoApk/docs/ACESSIBILIDADE.md`.
+O CI compila o APK de debug e roda os testes JUnit em todo push e pull request.
 
 ## Acessibilidade
 

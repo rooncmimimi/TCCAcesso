@@ -74,13 +74,18 @@ public class RepositorioAutenticacaoApi implements RepositorioAutenticacao {
     /** POST /api/auth/login { email, senha, confirmarReativacao? } */
     @Override
     public void entrar(String email, String senha, boolean confirmarReativacao, RetornoRepositorio<ResultadoLogin> retorno) {
+        executar(executor, post("auth/login", corpoLogin(email, senha, confirmarReativacao)), retorno,
+                RepositorioAutenticacaoApi::lerResultadoLogin);
+    }
+
+    static JsonObject corpoLogin(String email, String senha, boolean confirmarReativacao) {
         JsonObject corpo = new JsonObject();
         corpo.addProperty("email", email.trim());
         corpo.addProperty("senha", senha);
         if (confirmarReativacao) {
             corpo.addProperty("confirmarReativacao", true);
         }
-        executar(executor, post("auth/login", corpo), retorno, RepositorioAutenticacaoApi::lerResultadoLogin);
+        return corpo;
     }
 
     /**

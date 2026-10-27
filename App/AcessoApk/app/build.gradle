@@ -77,3 +77,11 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
 }
+
+// O teste de contrato com a API real (ContratoApiRealTeste) só roda com ACESSO_API_TESTE_URL. Sem declarar a
+// variável como entrada, o Gradle reaproveitaria o resultado anterior (testes ignorados) ao defini-la.
+// A senha da empresa de teste não entra aqui, para não ficar gravada no histórico do Gradle.
+tasks.withType(Test).configureEach {
+    inputs.property('ACESSO_API_TESTE_URL', System.getenv('ACESSO_API_TESTE_URL') ?: '')
+    inputs.property('ACESSO_API_TESTE_EMPRESA_EMAIL', System.getenv('ACESSO_API_TESTE_EMPRESA_EMAIL') ?: '')
+}

@@ -229,7 +229,7 @@
         <item name="drawableStartCompat">@drawable/ic_informacao</item>
     </style>
 
-    <!-- Quadrado com as iniciais da empresa no cartão da vaga (a API ainda não entrega o logotipo ao app) -->
+    <!-- Quadrado com as iniciais da empresa no cartão da vaga, quando ela não tem logotipo -->
     <style name="Estilo.Acesso.LogoEmpresa" parent="">
         <item name="android:layout_width">48dp</item>
         <item name="android:layout_height">48dp</item>

@@ -54,6 +54,15 @@ public class LeitoresConteudoApiTeste {
                 + "\"razaoSocial\":\"Falsa Ltda\"}}"));
         assertEquals("Falsa Ltda", vaga.nomeEmpresa);
         assertFalse(vaga.empresaVerificada);
+        assertNull("sem logo, o cartão mostra as iniciais", vaga.logoEmpresaUrl);
+    }
+
+    /** GET /vagas devolve empresa.logo (URL relativa /uploads/... ou do Supabase Storage). */
+    @Test
+    public void vagaTrazOLogotipoDaEmpresa() {
+        Vaga vaga = LeitoresConteudoApi.vaga(json("{\"id\":\"v1\",\"empresa\":{\"nomeFantasia\":\"Empresa Falsa\","
+                + "\"logo\":\"/uploads/logos/empresa.jpg\"}}"));
+        assertEquals("/uploads/logos/empresa.jpg", vaga.logoEmpresaUrl);
     }
 
     @Test

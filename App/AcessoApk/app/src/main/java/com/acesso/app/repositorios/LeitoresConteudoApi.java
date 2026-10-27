@@ -75,6 +75,7 @@ final class LeitoresConteudoApi {
             vaga.nomeEmpresa = nomeDaEmpresa(empresa);
             vaga.empresaVerificada = booleano(empresa, "empresaVerificada");
             vaga.empresaUsuarioId = texto(empresa, "usuarioId");
+            vaga.logoEmpresaUrl = texto(empresa, "logo");
         }
         return vaga;
     }
@@ -262,6 +263,7 @@ final class LeitoresConteudoApi {
                     vaga.nomeEmpresa = perfil.nome;
                     vaga.empresaVerificada = perfil.empresaVerificada;
                     vaga.empresaUsuarioId = perfil.usuarioId;
+                    vaga.logoEmpresaUrl = perfil.fotoUrl;
                     perfil.vagasAbertas.add(vaga);
                 }
             }

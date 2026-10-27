@@ -14,6 +14,8 @@ public class Vaga {
     public String titulo;
     public String descricao;
     public String nomeEmpresa;
+    /** Logotipo da empresa (empresa.logo); null quando a empresa não enviou. No lugar, as iniciais. */
+    public String logoEmpresaUrl;
     /** Conta (usuário) da empresa: abre o perfil dela. Só vem no detalhe da vaga. */
     public String empresaUsuarioId;
     public boolean empresaVerificada;

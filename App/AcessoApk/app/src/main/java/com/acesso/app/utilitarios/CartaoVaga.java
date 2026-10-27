@@ -25,6 +25,8 @@ public final class CartaoVaga {
         Context contexto = item.getRoot().getContext();
         item.textoTitulo.setText(vaga.titulo);
         item.textoIniciaisEmpresa.setText(Rotulos.iniciais(vaga.nomeEmpresa));
+        ExibidorImagem.logo(item.imagemLogoEmpresa, vaga.logoEmpresaUrl,
+                contexto.getResources().getDimensionPixelSize(R.dimen.tamanho_logo_empresa));
         item.textoEmpresa.setText(vaga.nomeEmpresa);
         if (vaga.empresaVerificada) {
             item.textoEmpresa.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_verificado, 0);

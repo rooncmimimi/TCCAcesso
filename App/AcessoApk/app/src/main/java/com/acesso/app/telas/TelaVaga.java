@@ -14,6 +14,7 @@ import com.acesso.app.databinding.TelaVagaBinding;
 import com.acesso.app.modelos.Vaga;
 import com.acesso.app.utilitarios.CartaoVaga;
 import com.acesso.app.utilitarios.ExibidorEstado;
+import com.acesso.app.utilitarios.ExibidorImagem;
 import com.acesso.app.utilitarios.ExibidorSecoes;
 import com.acesso.app.utilitarios.MargensSistema;
 import com.acesso.app.utilitarios.MensagemStatus;
@@ -86,6 +87,8 @@ public class TelaVaga extends TelaAutenticada {
         Vaga vaga = estado.dados;
         componentes.textoTitulo.setText(vaga.titulo);
         componentes.textoIniciaisEmpresa.setText(Rotulos.iniciais(vaga.nomeEmpresa));
+        ExibidorImagem.logo(componentes.imagemLogoEmpresa, vaga.logoEmpresaUrl,
+                getResources().getDimensionPixelSize(R.dimen.tamanho_logo_empresa_detalhe));
         componentes.botaoEmpresa.setText(vaga.nomeEmpresa);
         componentes.botaoEmpresa.setCompoundDrawablesRelativeWithIntrinsicBounds(
                 0, 0, vaga.empresaVerificada ? R.drawable.ic_verificado : 0, 0);

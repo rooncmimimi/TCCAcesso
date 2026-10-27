@@ -51,11 +51,28 @@
                         android:orientation="vertical"
                         android:padding="16dp">
 
-                        <TextView
-                            android:id="@+id/textoIniciaisEmpresa"
-                            style="@style/Estilo.Acesso.LogoEmpresa"
+                        <!-- Logotipo da empresa; sem logo (ou se o download falhar) ficam as iniciais. Decorativo para o
+                             TalkBack: o nome da empresa é lido logo ao lado. -->
+                        <FrameLayout
                             android:layout_width="56dp"
-                            android:layout_height="56dp" />
+                            android:layout_height="56dp"
+                            android:importantForAccessibility="noHideDescendants">
+
+                            <TextView
+                                android:id="@+id/textoIniciaisEmpresa"
+                                style="@style/Estilo.Acesso.LogoEmpresa"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent" />
+
+                            <ImageView
+                                android:id="@+id/imagemLogoEmpresa"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:background="@color/acesso_superficie"
+                                android:scaleType="fitCenter"
+                                android:visibility="gone" />
+                        </FrameLayout>
 
                         <TextView
                             android:id="@+id/textoTitulo"

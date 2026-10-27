@@ -31,6 +31,19 @@ public final class ExibidorImagem {
         carregar(imagem, url, ladoPx);
     }
 
+    /** Logotipo da empresa sobre as iniciais, com os mesmos cantos arredondados do quadrado das iniciais. */
+    public static void logo(ImageView imagem, String url, int ladoPx) {
+        float raio = 10 * imagem.getResources().getDisplayMetrics().density;
+        imagem.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline contorno) {
+                contorno.setRoundRect(0, 0, view.getWidth(), view.getHeight(), raio);
+            }
+        });
+        imagem.setClipToOutline(true);
+        carregar(imagem, url, ladoPx);
+    }
+
     /** Capa do perfil, sobre o raio decorativo. */
     public static void capa(ImageView imagem, String url, int ladoPx) {
         carregar(imagem, url, ladoPx);

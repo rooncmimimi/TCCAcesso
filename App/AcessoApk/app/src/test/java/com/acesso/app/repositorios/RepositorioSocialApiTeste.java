@@ -432,7 +432,21 @@ public class RepositorioSocialApiTeste {
         // O armazenamento em disco devolve um caminho relativo: o app o guarda como veio e resolve ao exibir.
         assertEquals("/uploads/empresas/l.jpg", logo.aguardar());
         assertEquals("https://cdn.test/e/c.jpg", capa.aguardar());
-        assertTrue(servidor.pedidos.get(0).corpo.contains("name=\"logo\""));
+        // Os dois envios correm em paralelo: a ordem de chegada ao servidor varia, então cada pedido é
+        // encontrado pelo caminho (supor que o do logo chega primeiro deixava o teste instável).
+        assertTrue(pedidoPara("/logo").corpo.contains("name=\"logo\""));
+        assertTrue(pedidoPara("/capa").corpo.contains("name=\"capa\""));
+    }
+
+    private ServidorFalso.Pedido pedidoPara(String fimDoCaminho) {
+        synchronized (servidor.pedidos) {
+            for (ServidorFalso.Pedido pedido : servidor.pedidos) {
+                if (pedido.alvo.endsWith(fimDoCaminho)) {
+                    return pedido;
+                }
+            }
+        }
+        throw new AssertionError("nenhum pedido para " + fimDoCaminho + ": " + servidor.pedidos.size() + " recebido(s)");
     }
 
     @Test

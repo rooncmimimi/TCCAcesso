@@ -22,6 +22,7 @@ import com.acesso.app.modelos.TipoConta;
 import com.acesso.app.utilitarios.ExibidorEstado;
 import com.acesso.app.utilitarios.MargensSistema;
 import com.acesso.app.utilitarios.MensagemStatus;
+import com.acesso.app.utilitarios.NovidadesConversa;
 import com.acesso.app.viewmodels.EstadoConteudo;
 import com.acesso.app.viewmodels.ViewModelConversa;
 
@@ -54,7 +55,7 @@ public class TelaConversa extends TelaAutenticada {
         }
     };
     private boolean somenteLeitura;
-    private int totalMostrado;
+    private final NovidadesConversa novidades = new NovidadesConversa();
 
     public static void abrir(Context contexto, String conversaId) {
         if (conversaId == null) {
@@ -158,23 +159,39 @@ public class TelaConversa extends TelaAutenticada {
                 getString(R.string.conversa_vazia), viewModel::tentarDeNovo);
         componentes.listaMensagens.removeAllViews();
         if (!temItens) {
-            totalMostrado = 0;
             return;
         }
-        // Só desce até o fim quando chegou mensagem nova (ou na primeira carga): quem está lendo o histórico
-        // não é puxado para baixo a cada atualização.
-        boolean chegouNova = estado.dados.size() > totalMostrado;
-        totalMostrado = estado.dados.size();
         String meuId = viewModel.getMeuId();
+        NovidadesConversa.Novidades novas = novidades.registrar(estado.dados, meuId);
         for (int i = 0; i < estado.dados.size(); i++) {
             Mensagem mensagem = estado.dados.get(i);
             boolean minha = mensagem.remetenteId != null && mensagem.remetenteId.equalsIgnoreCase(meuId);
             boolean ultimaMinha = minha && i == estado.dados.size() - 1;
             componentes.listaMensagens.addView(criarBalao(mensagem, minha, ultimaMinha));
         }
-        if (chegouNova) {
+        // Só desce até o fim quando chegou mensagem nova (ou na primeira carga): quem está lendo o histórico
+        // não é puxado para baixo a cada atualização.
+        if (novas.chegouMensagem) {
             rolarParaOFim();
         }
+        anunciarRecebidas(novas.recebidas);
+    }
+
+    /**
+     * A lista é redesenhada a cada 5 s sem tirar o foco do TalkBack de onde está; sem este aviso, quem não
+     * olha a tela só descobriria a resposta percorrendo a conversa. Sem leitor de tela, não faz nada.
+     */
+    private void anunciarRecebidas(List<Mensagem> recebidas) {
+        if (recebidas.isEmpty()) {
+            return;
+        }
+        String nome = String.valueOf(componentes.barraSuperior.getTitle());
+        String ultima = recebidas.get(recebidas.size() - 1).conteudo;
+        String aviso = recebidas.size() == 1
+                ? getString(R.string.conversa_anuncio_nova, nome, ultima)
+                : getResources().getQuantityString(R.plurals.conversa_anuncio_novas, recebidas.size(),
+                        recebidas.size(), nome, ultima);
+        componentes.listaMensagens.announceForAccessibility(aviso);
     }
 
     private View criarBalao(Mensagem mensagem, boolean minha, boolean mostrarLeitura) {

@@ -30,6 +30,12 @@
     <string name="conversa_vazia">Nenhuma mensagem ainda. Diga olá!</string>
     <string name="conversa_somente_leitura">A outra conta foi removida. O histórico continua aqui, mas não é possível enviar novas mensagens.</string>
     <string name="conversa_voce">Você</string>
+    <!-- Lidos pelo TalkBack quando a outra pessoa responde com a conversa aberta -->
+    <string name="conversa_anuncio_nova">Nova mensagem de %1$s: %2$s</string>
+    <plurals name="conversa_anuncio_novas">
+        <item quantity="one">%1$d nova mensagem de %2$s. A última: %3$s</item>
+        <item quantity="other">%1$d novas mensagens de %2$s. A última: %3$s</item>
+    </plurals>
     <string name="conversa_lida">Lida</string>
     <string name="conversa_enviada">Enviada</string>
     <string name="conversa_abrir_perfil">Abrir o perfil de %1$s</string>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aba Início: feed da comunidade, adaptado da página /feed do site.
+     No celular, o resumo do perfil (coluna lateral do site) vira a saudação no topo. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/margem_tela">
+
+        <TextView
+            android:id="@+id/textoSaudacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:textAppearance="@style/Texto.Acesso.TituloTela" />
+
+        <TextView
+            android:id="@+id/textoSubtitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="@color/acesso_texto_secundario" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Estilo.Acesso.Cartao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp">
+
+            <!-- Compositor de publicação: avatar e um botão largo, como "Começar publicação" -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/textoIniciaisCompositor"
+                    style="@style/Estilo.Acesso.Avatar"
+                    android:autoSizeMaxTextSize="16sp"
+                    android:autoSizeMinTextSize="9sp"
+                    android:autoSizeTextType="uniform"
+                    android:maxLines="1"
+                    android:padding="6dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoEscrever"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:text="@string/acao_escrever_publicacao"
+                    app:icon="@drawable/ic_criar" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:accessibilityHeading="true"
+            android:text="@string/inicio_publicacoes_titulo"
+            android:textAppearance="@style/Texto.Acesso.TituloSecao" />
+
+        <TextView
+            android:id="@+id/mensagemStatus"
+            style="@style/Estilo.Acesso.MensagemStatus" />
+
+        <include
+            android:id="@+id/estado"
+            layout="@layout/componente_estado_conteudo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" />
+
+        <LinearLayout
+            android:id="@+id/listaPublicacoes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

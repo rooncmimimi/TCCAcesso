@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Estado de uma lista: carregando, vazia, integração pendente ou erro com "Tentar novamente".
+     Controlado por utilitarios/ExibidorEstado. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progresso"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="@string/carregando"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:indicatorColor="@color/acesso_primaria" />
+
+    <TextView
+        android:id="@+id/textoEstado"
+        style="@style/Estilo.Acesso.Aviso"
+        android:accessibilityLiveRegion="polite"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/botaoTentarNovamente"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/tentar_novamente"
+        android:visibility="gone" />
+</LinearLayout>

@@ -3,6 +3,8 @@ package com.acesso.app.servicos;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.util.Locale;
+
 /**
  * Traduz as respostas de erro do Supabase em mensagens amigáveis em português.
  * O usuário nunca vê o texto técnico original nem stack traces.
@@ -11,14 +13,8 @@ import com.google.gson.JsonParser;
  */
 public final class TradutorErrosSupabase {
 
-    public static final String SEM_INTERNET =
-            "Sem conexão com a internet. Verifique sua rede e tente novamente.";
-    public static final String SERVIDOR_INACESSIVEL =
-            "Não foi possível falar com o servidor. Tente novamente em instantes.";
-    public static final String ERRO_GENERICO =
-            "Algo deu errado. Tente novamente.";
-    public static final String SESSAO_EXPIRADA =
-            "Sua sessão expirou. Entre novamente.";
+    public static final String ERRO_GENERICO = MensagensErro.ERRO_GENERICO;
+    public static final String SESSAO_EXPIRADA = MensagensErro.SESSAO_EXPIRADA;
 
     private TradutorErrosSupabase() {
     }
@@ -36,13 +32,13 @@ public final class TradutorErrosSupabase {
             case "email_exists":
                 return "Este e-mail já está cadastrado. Tente entrar ou recuperar a senha.";
             case "weak_password":
-                return "Essa senha é fraca. Use pelo menos 8 caracteres com letras e números.";
+                return "Essa senha é fraca. Use pelo menos 8 caracteres, com maiúscula, minúscula, número e símbolo.";
             case "email_address_invalid":
             case "validation_failed":
                 return "Confira o e-mail digitado.";
             case "over_email_send_rate_limit":
             case "over_request_rate_limit":
-                return "Muitas tentativas seguidas. Aguarde alguns minutos e tente novamente.";
+                return MensagensErro.MUITAS_TENTATIVAS;
             case "same_password":
                 return "A nova senha precisa ser diferente da atual.";
             case "session_not_found":
@@ -56,13 +52,13 @@ public final class TradutorErrosSupabase {
         }
 
         if (codigoHttp == 429) {
-            return "Muitas tentativas seguidas. Aguarde alguns minutos e tente novamente.";
+            return MensagensErro.MUITAS_TENTATIVAS;
         }
         if (codigoHttp == 401 || codigoHttp == 403) {
             return SESSAO_EXPIRADA;
         }
         if (codigoHttp >= 500) {
-            return "O serviço está indisponível no momento. Tente novamente mais tarde.";
+            return MensagensErro.SERVICO_INDISPONIVEL;
         }
         return ERRO_GENERICO;
     }
@@ -81,7 +77,7 @@ public final class TradutorErrosSupabase {
                 return json.get("error_code").getAsString();
             }
             String mensagem = primeiroTexto(json, "msg", "message", "error_description");
-            String mensagemMinuscula = mensagem != null ? mensagem.toLowerCase() : "";
+            String mensagemMinuscula = mensagem != null ? mensagem.toLowerCase(Locale.ROOT) : "";
             if (mensagemMinuscula.contains("email not confirmed")) {
                 return "email_not_confirmed";
             }

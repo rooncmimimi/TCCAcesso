@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quadrado arredondado com as iniciais da empresa, mostrado quando ela não tem logotipo -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/acesso_container_primaria" />
+    <corners android:radius="10dp" />
+</shape>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Publicações: comentar, editar e excluir -->
+    <string name="publicacao_comentar">Comentar</string>
+    <string name="publicacao_mais_opcoes">Mais opções da publicação</string>
+    <string name="publicacao_editar">Editar publicação</string>
+    <string name="publicacao_excluir">Excluir publicação</string>
+    <string name="publicacao_editada">editada</string>
+    <string name="publicacao_editar_titulo">Editar publicação</string>
+    <string name="publicacao_editar_campo">Texto da publicação</string>
+    <string name="publicacao_salvar">Salvar</string>
+    <string name="publicacao_excluir_titulo">Excluir esta publicação?</string>
+    <string name="publicacao_excluir_mensagem">Ela some do feed e os comentários também. Isso não pode ser desfeito.</string>
+    <string name="publicacao_atualizada">Publicação atualizada.</string>
+    <string name="publicacao_excluida">Publicação excluída.</string>
+    <string name="publicacao_texto_vazio">Escreva algo para publicar.</string>
+    <string name="publicacao_texto_longo">O texto pode ter no máximo 3000 caracteres.</string>
+    <string name="publicacao_imagem_sem_descricao">Imagem da publicação, sem descrição</string>
+    <string name="publicacao_imagem_com_descricao">Imagem: %1$s</string>
+
+    <!-- Comentários -->
+    <string name="comentarios_titulo">Comentários</string>
+    <string name="comentarios_campo">Escreva um comentário</string>
+    <string name="comentarios_enviar">Enviar comentário</string>
+    <string name="comentarios_vazio">Nenhum comentário ainda. Seja a primeira pessoa a comentar!</string>
+    <string name="comentarios_responder">Responder</string>
+    <string name="comentarios_responder_a">Responder a %1$s</string>
+    <string name="comentarios_respondendo">Respondendo a %1$s</string>
+    <string name="comentarios_cancelar_resposta">Cancelar resposta</string>
+    <string name="comentarios_excluir">Excluir</string>
+    <string name="comentarios_excluir_a">Excluir o comentário de %1$s</string>
+    <string name="comentarios_excluir_titulo">Excluir este comentário?</string>
+    <string name="comentarios_excluir_mensagem">Isso não pode ser desfeito.</string>
+    <string name="comentarios_excluido">Comentário excluído.</string>
+    <string name="comentarios_enviado">Comentário enviado.</string>
+    <string name="comentarios_editado">editado</string>
+    <string name="comentarios_resposta_de">Resposta de %1$s, %2$s: %3$s</string>
+
+    <!-- Seguir -->
+    <string name="perfil_seguir">Seguir</string>
+    <string name="perfil_seguindo">Seguindo</string>
+    <string name="perfil_solicitar_seguir">Solicitar para seguir</string>
+    <string name="perfil_solicitacao_enviada">Pedido enviado</string>
+    <string name="perfil_seguir_a">Seguir %1$s</string>
+    <string name="perfil_deixar_de_seguir_a">Seguindo %1$s. Toque para deixar de seguir</string>
+    <string name="perfil_cancelar_pedido_a">Pedido para seguir %1$s enviado. Toque para cancelar</string>
+    <string name="perfil_seguiu">Você agora segue %1$s.</string>
+    <string name="perfil_deixou_de_seguir">Você deixou de seguir %1$s.</string>
+    <string name="perfil_pedido_enviado">Pedido enviado. %1$s precisa aceitar para você acompanhar as publicações.</string>
+    <string name="perfil_pedido_cancelado">Pedido cancelado.</string>
+    <string name="perfil_perfil_privado">Este perfil é privado: para seguir, é preciso enviar um pedido.</string>
+    <plurals name="perfil_seguidores">
+        <item quantity="one">%d seguidor</item>
+        <item quantity="other">%d seguidores</item>
+    </plurals>
+    <string name="perfil_seguidores_seguindo">%1$s · %2$d seguindo</string>
+
+    <!-- Editar perfil -->
+    <string name="editar_perfil_titulo">Editar perfil</string>
+    <string name="editar_perfil_imagens">Fotos</string>
+    <string name="editar_perfil_dados">Dados do perfil</string>
+    <string name="editar_foto">Alterar foto</string>
+    <string name="editar_logo">Alterar logo</string>
+    <string name="editar_capa">Alterar capa</string>
+    <string name="editar_foto_atual">Foto de perfil</string>
+    <string name="editar_logo_atual">Logo da empresa</string>
+    <string name="editar_capa_atual">Capa do perfil</string>
+    <string name="editar_enviando">Enviando imagem…</string>
+    <string name="editar_foto_sucesso">Foto atualizada.</string>
+    <string name="editar_logo_sucesso">Logo atualizado.</string>
+    <string name="editar_capa_sucesso">Capa atualizada.</string>
+    <string name="editar_imagem_dica">A imagem é reduzida antes do envio. Formatos aceitos: JPEG, PNG e WebP.</string>
+    <string name="editar_imagem_ilegivel">Não foi possível usar essa imagem.</string>
+    <string name="editar_nome">Nome</string>
+    <string name="editar_nome_fantasia">Nome da empresa</string>
+    <string name="editar_titulo_profissional">Título profissional</string>
+    <string name="editar_sobre_pessoa">Sobre você</string>
+    <string name="editar_sobre_empresa">Descrição da empresa</string>
+    <string name="editar_cultura">Cultura inclusiva</string>
+    <string name="editar_setor">Setor</string>
+    <string name="editar_site">Site (https://…)</string>
+    <string name="editar_cidade">Cidade</string>
+    <string name="editar_estado">Estado (sigla, ex.: SP)</string>
+    <string name="editar_salvar">Salvar alterações</string>
+    <string name="editar_salvando">Salvando…</string>
+    <string name="editar_sucesso">Perfil atualizado.</string>
+    <string name="editar_descartar_titulo">Descartar as alterações?</string>
+    <string name="editar_descartar_mensagem">O que você mudou nos campos ainda não foi salvo.</string>
+    <string name="editar_descartar">Descartar</string>
+    <string name="editar_continuar">Continuar editando</string>
+    <string name="editar_erro_nome">Informe um nome com pelo menos 3 caracteres.</string>
+    <string name="editar_erro_estado">Use a sigla do estado, com duas letras (ex.: SP).</string>
+    <string name="editar_erro_site">Informe um endereço completo, como https://exemplo.com.br.</string>
+    <string name="editar_erro_carregar">Não foi possível carregar seu perfil para editar.</string>
+    <string name="editar_empresa_pendente">O envio de logo e capa só é liberado para empresas aprovadas.</string>
+</resources>

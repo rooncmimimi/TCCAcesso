@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faixa de aviso (modo demonstração, integração pendente) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="@dimen/raio_controle" />
+    <solid android:color="@color/acesso_container_aviso" />
+    <stroke android:width="1dp" android:color="@color/acesso_borda_aviso" />
+</shape>

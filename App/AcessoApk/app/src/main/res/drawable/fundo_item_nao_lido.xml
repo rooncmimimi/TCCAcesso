@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Linha não lida (notificação, conversa): verde bem claro, como o destaque do site -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/acesso_container_primaria" />
+</shape>

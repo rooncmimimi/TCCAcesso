@@ -12,10 +12,12 @@
     tools:context=".telas.TelaApresentacao">
 
     <!-- Raio da identidade visual por trás de todo o conteúdo, como no site -->
+    <!-- Decorativa: o estilo já tira a imagem do TalkBack; repetido aqui para quem lê o layout. -->
     <ImageView
         style="@style/Estilo.Acesso.FundoRaio"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
 
     <LinearLayout
         android:layout_width="match_parent"

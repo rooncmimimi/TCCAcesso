@@ -545,11 +545,13 @@
                             android:layout_marginTop="@dimen/espaco_campos"
                             android:hint="@string/rotulo_porte">
 
+                            <!-- O rótulo vem do hint do TextInputLayout (o Material o repassa ao TalkBack); o lint não enxerga. -->
                             <AutoCompleteTextView
                                 android:id="@+id/entradaPorte"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="none" />
+                                android:inputType="none"
+                                tools:ignore="LabelFor" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout

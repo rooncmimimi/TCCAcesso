@@ -287,8 +287,9 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/botaoSalvar"
                     android:layout_width="match_parent"
-                    android:layout_height="@dimen/altura_botao"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/espaco_campos"
+                    android:minHeight="@dimen/altura_botao"
                     android:text="@string/editar_salvar" />
             </LinearLayout>
         </LinearLayout>

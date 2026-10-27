@@ -15,6 +15,7 @@ import com.acesso.app.R;
 import com.acesso.app.databinding.FragmentoPerfilBinding;
 import com.acesso.app.modelos.PerfilConta;
 import com.acesso.app.modelos.SessaoUsuario;
+import com.acesso.app.telas.TelaAcessibilidade;
 import com.acesso.app.telas.TelaCadastro;
 import com.acesso.app.telas.TelaCandidaturas;
 import com.acesso.app.telas.TelaConversas;
@@ -67,8 +68,7 @@ public class FragmentoPerfil extends Fragment {
             ExibidorPerfil.seguidores(componentes.cabecalho, resumo, sessao != null && sessao.ehEmpresa());
         });
         componentes.botaoSair.setOnClickListener(v -> confirmarSaida());
-        componentes.botaoAcessibilidade.setOnClickListener(v ->
-                AtalhosSistema.abrirConfiguracoesAcessibilidade(requireContext()));
+        componentes.botaoAcessibilidade.setOnClickListener(v -> TelaAcessibilidade.abrir(requireContext()));
         componentes.botaoTermos.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), TelaTermos.class)));
         componentes.botaoFaleConosco.setOnClickListener(v -> {

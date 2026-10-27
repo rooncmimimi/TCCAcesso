@@ -20,7 +20,6 @@ import androidx.core.view.WindowInsetsCompat;
 import com.acesso.app.R;
 import com.acesso.app.databinding.TelaApresentacaoBinding;
 import com.acesso.app.modelos.SessaoUsuario;
-import com.acesso.app.utilitarios.AtalhosSistema;
 import com.acesso.app.utilitarios.GerenciadorSessao;
 import com.acesso.app.utilitarios.Navegacao;
 
@@ -63,8 +62,9 @@ public class TelaApresentacao extends AppCompatActivity {
         componentes.botaoQueroVagas.setOnClickListener(v -> startActivities(Navegacao.loginECadastro(this, false)));
         // "Sou empresa" abre o cadastro já com "Empresa" escolhido.
         componentes.botaoSouEmpresa.setOnClickListener(v -> startActivities(Navegacao.loginECadastro(this, true)));
-        componentes.botaoConfigurarAcessibilidade.setOnClickListener(v ->
-                AtalhosSistema.abrirConfiguracoesAcessibilidade(this));
+        // O guia explica cada recurso do celular antes de levar às configurações (lista longa e confusa
+        // para quem não sabe o que procurar).
+        componentes.botaoConfigurarAcessibilidade.setOnClickListener(v -> TelaAcessibilidade.abrir(this));
     }
 
     /**

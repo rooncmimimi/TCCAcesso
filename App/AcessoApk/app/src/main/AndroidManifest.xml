@@ -62,6 +62,11 @@
             android:name=".telas.TelaTermos"
             android:exported="false" />
 
+        <!-- Guia dos recursos de acessibilidade do celular; aberto com ou sem conta -->
+        <activity
+            android:name=".telas.TelaAcessibilidade"
+            android:exported="false" />
+
         <!-- Área logada. adjustResize: com o teclado aberto (Criar, Pesquisa), a tela encolhe
              e a barra de abas some (MargensSistema) -->
         <activity

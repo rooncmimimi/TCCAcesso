@@ -155,3 +155,50 @@ describe('leitores das respostas da API', () => {
     expect(resolverUrl(null)).toBeNull();
   });
 });
+
+describe('seguir e busca', () => {
+  test('resumo de seguidores: perfil privado só quando a API manda perfilPublico=false', () => {
+    expect(leitores.resumoPessoa({ totalSeguidores: 3, totalSeguindo: 5, seguindoEsteUsuario: true })).toEqual({
+      totalSeguidores: 3, totalSeguindo: 5, seguindo: true, perfilPrivado: false, solicitacaoPendente: false, bloqueado: false,
+    });
+    expect(leitores.resumoPessoa({ perfilPublico: false, solicitacaoPendente: true, bloqueado: true })).toMatchObject({
+      perfilPrivado: true, solicitacaoPendente: true, bloqueado: true,
+    });
+    expect(leitores.resumoEmpresaSeguidores({ totalSeguidores: 9, seguindoEstaEmpresa: true })).toMatchObject({ totalSeguidores: 9, seguindo: true, totalSeguindo: 0 });
+  });
+
+  test('depois de seguir, o estado vem da resposta e o resto do resumo se mantém', () => {
+    const antes = { totalSeguidores: 3, totalSeguindo: 5, seguindo: false, perfilPrivado: true, solicitacaoPendente: false, bloqueado: false };
+    expect(leitores.aposAlternar({ seguindo: true, totalSeguidores: 4 }, antes)).toEqual({ ...antes, seguindo: true, totalSeguidores: 4 });
+    expect(leitores.aposSolicitar({ seguindo: false, solicitacaoPendente: true }, antes)).toEqual({ ...antes, solicitacaoPendente: true });
+  });
+
+  test('tipo da conta: undefined = não encontrada, null = administração', () => {
+    expect(leitores.tipoDoUsuario({})).toBeUndefined();
+    expect(leitores.tipoDoUsuario({ usuario: { tipoUsuario: 'admin' } })).toBeNull();
+    expect(leitores.tipoDoUsuario({ usuario: { tipoUsuario: 'empresa' } })).toBe('empresa');
+  });
+
+  test('busca: pessoas sem contas de empresa, empresas por conta e vagas com a empresa', () => {
+    expect(leitores.tipoDaBusca('pessoas')).toBe('usuarios');
+    const pessoas = leitores.busca(
+      {
+        resultados: {
+          usuarios: [
+            { id: 'u1', nome: 'Ana Souza', tipoUsuario: 'candidato', candidato: { tituloProfissional: 'Dev', cidade: 'Recife', estado: 'PE' } },
+            { id: 'u2', nome: 'Empresa X', tipoUsuario: 'empresa' },
+          ],
+        },
+      },
+      'pessoas',
+    );
+    expect(pessoas).toEqual([{ categoria: 'pessoas', id: 'u1', titulo: 'Ana Souza', subtitulo: 'Dev · Recife - PE' }]);
+    expect(leitores.busca({ resultados: { empresas: [{ usuarioId: 'u2', razaoSocial: 'X Ltda', setor: 'TI' }] } }, 'empresas')).toEqual([
+      { categoria: 'empresas', id: 'u2', titulo: 'X Ltda', subtitulo: 'TI' },
+    ]);
+    expect(leitores.busca({ resultados: { vagas: [{ id: 'v1', titulo: 'Analista', cidade: 'Recife', empresa: { nomeFantasia: 'X' } }] } }, 'vagas')).toEqual([
+      { categoria: 'vagas', id: 'v1', titulo: 'Analista', subtitulo: 'X · Recife' },
+    ]);
+    expect(leitores.busca({}, 'vagas')).toEqual([]);
+  });
+});

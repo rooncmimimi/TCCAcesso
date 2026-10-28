@@ -52,6 +52,8 @@ function Navegacao() {
     >
       <Stack.Protected guard={!!sessao && !aguardando}>
         <Stack.Screen name="(abas)" options={{ headerShown: false }} />
+        <Stack.Screen name="pesquisa" options={{ title: 'Pesquisar' }} />
+        <Stack.Screen name="usuario/[id]" options={{ title: 'Perfil' }} />
       </Stack.Protected>
       <Stack.Protected guard={!!sessao && aguardando}>
         <Stack.Screen name="status-empresa" options={{ title: 'Situação da empresa' }} />

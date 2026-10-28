@@ -157,6 +157,38 @@ descrever('contrato com a API real', () => {
     expect(lista.find((item) => item.id === raiz.id)).toBeUndefined();
   });
 
+  test('perfil de outra pessoa, seguir, deixar de seguir e busca', async () => {
+    if (!sessaoPessoa) return;
+    const segunda = { ...pessoa, nome: `Segunda Pessoa ${marca}`, email: `segunda.${marca}@acesso.test`, cpf: gerarCpf() };
+    const cadastro = await auth.cadastrarPessoa(segunda);
+    if (cadastro.tipo !== 'autenticado') return;
+    const idSegunda = cadastro.sessao.idUsuario;
+
+    const perfil = await conteudo.carregarPerfilDeUsuario(idSegunda);
+    expect(perfil).toMatchObject({ tipo: 'candidato', nome: segunda.nome, usuarioId: idSegunda });
+    expect(JSON.stringify(perfil)).not.toContain(segunda.cpf);
+
+    let resumo = await conteudo.carregarResumoSeguidores(perfil);
+    expect(resumo).toMatchObject({ seguindo: false, totalSeguidores: 0, bloqueado: false });
+    resumo = await conteudo.alternarSeguir(perfil, resumo);
+    expect(resumo.seguindo || resumo.solicitacaoPendente).toBe(true);
+    if (resumo.seguindo) {
+      expect(resumo.totalSeguidores).toBe(1);
+      resumo = await conteudo.alternarSeguir(perfil, resumo);
+      expect(resumo).toMatchObject({ seguindo: false, totalSeguidores: 0 });
+    } else {
+      resumo = await conteudo.alternarSeguir(perfil, resumo);
+      expect(resumo.solicitacaoPendente).toBe(false);
+    }
+
+    const achadas = await conteudo.buscar(`Segunda Pessoa ${marca}`, 'pessoas');
+    expect(achadas.map((item) => item.id)).toContain(idSegunda);
+    expect(await conteudo.buscar('zzzz-nao-existe-zzzz', 'vagas')).toEqual([]);
+
+    const inexistente = await conteudo.carregarPerfilDeUsuario('00000000-0000-4000-8000-000000000000').catch((e: unknown) => e);
+    expect(inexistente).toBeInstanceOf(FalhaApi);
+  });
+
   test('vagas com filtros, perfil, candidaturas e notificações', async () => {
     if (!sessaoPessoa) return;
     expect(Array.isArray(await conteudo.listarVagas())).toBe(true);
@@ -244,6 +276,19 @@ descrever('contrato com a API real', () => {
     expect(vaga).toMatchObject({ modalidade: 'remoto', contrato: 'clt', publicoAlvo: 'pcd' });
     const detalhe = await conteudo.obterVaga(vaga!.id);
     expect(detalhe.recursosAcessibilidade).toEqual(['interprete_libras', 'jornada_adaptavel']);
+
+    // Perfil público da empresa (com a vaga aberta), seguir empresa e achar a vaga na busca.
+    const perfilEmpresa = await conteudo.carregarPerfilDeUsuario(login.sessao.idUsuario);
+    expect(perfilEmpresa).toMatchObject({ tipo: 'empresa', usuarioId: login.sessao.idUsuario, statusEmpresa: 'aprovada' });
+    expect(perfilEmpresa.registroId).toBeTruthy();
+    expect(perfilEmpresa.vagasAbertas.map((item) => item.titulo)).toContain(titulo);
+    let seguidores = await conteudo.carregarResumoSeguidores(perfilEmpresa);
+    expect(seguidores.seguindo).toBe(false);
+    seguidores = await conteudo.alternarSeguir(perfilEmpresa, seguidores);
+    expect(seguidores).toMatchObject({ seguindo: true, totalSeguidores: 1 });
+    seguidores = await conteudo.alternarSeguir(perfilEmpresa, seguidores);
+    expect(seguidores).toMatchObject({ seguindo: false, totalSeguidores: 0 });
+    expect((await conteudo.buscar(titulo, 'vagas')).map((item) => item.id)).toContain(vaga!.id);
 
     await conteudo.candidatar(vaga!.id, 'Tenho interesse e uso leitor de tela.');
     const candidaturas = await conteudo.listarCandidaturas();

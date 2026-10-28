@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Publicacao } from '../api/leitores';
 import { resolverUrl } from '../servicos/config';
@@ -40,12 +41,15 @@ export function CartaoPublicacao({ publicacao, aoCurtir, aoComentar }: Props) {
 
   return (
     <Cartao>
-      <View
+      <Pressable
         style={estilos.autor}
-        accessible
+        disabled={!publicacao.autorId}
+        onPress={() => router.push({ pathname: '/usuario/[id]', params: { id: publicacao.autorId! } })}
+        accessibilityRole="button"
         accessibilityLabel={[publicacao.nomeAutor, empresa ? 'empresa' : null, publicacao.quando, publicacao.editada ? 'editada' : null]
           .filter(Boolean)
           .join(', ')}
+        accessibilityHint="Abre o perfil"
       >
         <Avatar nome={publicacao.nomeAutor} url={publicacao.fotoAutorUrl} />
         <View style={estilos.flex}>
@@ -54,7 +58,7 @@ export function CartaoPublicacao({ publicacao, aoCurtir, aoComentar }: Props) {
             {[empresa ? 'Empresa' : null, publicacao.quando, publicacao.editada ? 'editada' : null].filter(Boolean).join(' · ')}
           </Text>
         </View>
-      </View>
+      </Pressable>
       {publicacao.conteudo ? <Text style={texto.corpo}>{publicacao.conteudo}</Text> : null}
       {publicacao.anexos.map((anexo, indice) => {
         const url = resolverUrl(anexo.url);

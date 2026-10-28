@@ -101,8 +101,30 @@ export interface ItemCurriculo {
   descricao: string | null;
 }
 
+export interface ResumoSeguidores {
+  totalSeguidores: number;
+  /** Só pessoas; empresa não segue. */
+  totalSeguindo: number;
+  seguindo: boolean;
+  perfilPrivado: boolean;
+  solicitacaoPendente: boolean;
+  bloqueado: boolean;
+}
+
+export type CategoriaBusca = 'pessoas' | 'empresas' | 'vagas';
+
+export interface ItemBusca {
+  categoria: CategoriaBusca;
+  /** id da vaga, ou da conta (pessoa e empresa) para abrir o perfil */
+  id: string;
+  titulo: string;
+  subtitulo: string | null;
+}
+
 export interface Perfil {
   tipo: 'candidato' | 'empresa';
+  /** id do registro (candidatos.id ou empresas.id); a empresa é seguida por ele, não pelo id da conta. */
+  registroId: string | null;
   usuarioId: string | null;
   nome: string | null;
   fotoUrl: string | null;
@@ -268,6 +290,7 @@ export function perfil(json: Json, empresa: boolean, agora: number = Date.now())
   const nomeDaConta = texto(usuario, 'nome');
   const vazio: Perfil = {
     tipo: empresa ? 'empresa' : 'candidato',
+    registroId: texto(dados, 'id'),
     usuarioId: null,
     nome: null,
     fotoUrl: null,
@@ -336,6 +359,106 @@ export function perfil(json: Json, empresa: boolean, agora: number = Date.now())
       descricao: texto(item, 'descricao'),
     })),
   };
+}
+
+/**
+ * GET /perfil/usuario/:id: { usuario: { id, nome, tipoUsuario } }. Só o tipo da conta interessa:
+ * undefined = perfil não encontrado; null = conta de administração, que não tem perfil no app.
+ */
+export function tipoDoUsuario(json: Json): 'candidato' | 'empresa' | null | undefined {
+  const usuario = objeto(json, 'usuario');
+  if (!usuario) {
+    return undefined;
+  }
+  const tipo = texto(usuario, 'tipoUsuario');
+  return tipo === 'candidato' || tipo === 'empresa' ? tipo : null;
+}
+
+/** GET /seguir/resumo/:usuarioId (pessoa). Sem "perfilPublico" = público: a API só manda false no privado. */
+export function resumoPessoa(json: Json): ResumoSeguidores {
+  return {
+    totalSeguidores: inteiro(json, 'totalSeguidores'),
+    totalSeguindo: inteiro(json, 'totalSeguindo'),
+    seguindo: booleano(json, 'seguindoEsteUsuario'),
+    perfilPrivado: 'perfilPublico' in json && !booleano(json, 'perfilPublico'),
+    solicitacaoPendente: booleano(json, 'solicitacaoPendente'),
+    bloqueado: booleano(json, 'bloqueado'),
+  };
+}
+
+/** GET /seguir/resumo/empresas/:empresaId */
+export function resumoEmpresaSeguidores(json: Json): ResumoSeguidores {
+  return {
+    totalSeguidores: inteiro(json, 'totalSeguidores'),
+    totalSeguindo: 0,
+    seguindo: booleano(json, 'seguindoEstaEmpresa'),
+    perfilPrivado: false,
+    solicitacaoPendente: false,
+    bloqueado: false,
+  };
+}
+
+/** POST /seguir/usuarios/:id e /seguir/empresas/:id: { seguindo, totalSeguidores } (o resto fica como estava). */
+export function aposAlternar(json: Json, anterior: ResumoSeguidores): ResumoSeguidores {
+  return {
+    ...anterior,
+    seguindo: booleano(json, 'seguindo'),
+    solicitacaoPendente: false,
+    totalSeguidores: inteiro(json, 'totalSeguidores'),
+  };
+}
+
+/** POST/DELETE /seguir/solicitacoes/:id: { seguindo, solicitacaoPendente, totalSeguidores? } (perfil privado cria o pedido). */
+export function aposSolicitar(json: Json, anterior: ResumoSeguidores): ResumoSeguidores {
+  return {
+    ...anterior,
+    seguindo: booleano(json, 'seguindo'),
+    solicitacaoPendente: booleano(json, 'solicitacaoPendente'),
+    totalSeguidores: 'totalSeguidores' in json ? inteiro(json, 'totalSeguidores') : anterior.totalSeguidores,
+  };
+}
+
+/** Valor de "tipo" na query de GET /busca (BuscaService.TIPOS). */
+export function tipoDaBusca(categoria: CategoriaBusca): 'usuarios' | 'empresas' | 'vagas' {
+  return categoria === 'pessoas' ? 'usuarios' : categoria;
+}
+
+/**
+ * GET /busca?tipo=...: { resultados: { usuarios|empresas|vagas: [...] } }. "usuarios" também traz contas de
+ * empresa, que ficam de fora de Pessoas porque já aparecem em Empresas.
+ */
+export function busca(json: Json, categoria: CategoriaBusca): ItemBusca[] {
+  const resultados = objeto(json, 'resultados');
+  const itens = lista(resultados, tipoDaBusca(categoria));
+  const saida: ItemBusca[] = [];
+  for (const item of itens) {
+    if (categoria === 'pessoas') {
+      if (texto(item, 'tipoUsuario') === 'empresa') continue;
+      const candidato = objeto(item, 'candidato');
+      saida.push({
+        categoria,
+        id: texto(item, 'id') ?? '',
+        titulo: texto(item, 'nome') ?? 'Pessoa',
+        subtitulo: candidato ? juntar(texto(candidato, 'tituloProfissional'), local(texto(candidato, 'cidade'), texto(candidato, 'estado'))) : null,
+      });
+    } else if (categoria === 'empresas') {
+      saida.push({
+        categoria,
+        id: texto(item, 'usuarioId') ?? '',
+        titulo: nomeDaEmpresa(item) ?? 'Empresa',
+        subtitulo: juntar(texto(item, 'setor'), local(texto(item, 'cidade'), texto(item, 'estado'))),
+      });
+    } else {
+      const empresa = objeto(item, 'empresa');
+      saida.push({
+        categoria,
+        id: texto(item, 'id') ?? '',
+        titulo: texto(item, 'titulo') ?? 'Vaga',
+        subtitulo: juntar(empresa ? nomeDaEmpresa(empresa) : null, texto(item, 'cidade')),
+      });
+    }
+  }
+  return saida.filter((item) => item.id !== '');
 }
 
 // --- auxiliares tolerantes a campo ausente ou null ---

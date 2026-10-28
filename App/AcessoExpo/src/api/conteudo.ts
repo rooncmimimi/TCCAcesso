@@ -132,6 +132,67 @@ export function carregarMeuPerfil(tipo: 'candidato' | 'empresa', idUsuario: stri
   );
 }
 
+/**
+ * Perfil de outra conta: GET /perfil/usuario/:id (descobre o tipo) e, conforme o tipo,
+ * GET /empresas/usuario/:id ou GET /perfil/candidatos/usuario/:id.
+ */
+export function carregarPerfilDeUsuario(usuarioId: string) {
+  const id = encodeURIComponent(usuarioId);
+  return comSessao(async (token) => {
+    const tipo = leitores.tipoDoUsuario(await requisitar(`perfil/usuario/${id}`, { token }));
+    if (tipo === undefined) {
+      throw new FalhaApi('Perfil não encontrado.', { status: 404 });
+    }
+    if (tipo === null) {
+      throw new FalhaApi('Este perfil não está disponível no app.', { status: 404 });
+    }
+    const empresa = tipo === 'empresa';
+    return leitores.perfil(await requisitar(empresa ? `empresas/usuario/${id}` : `perfil/candidatos/usuario/${id}`, { token }), empresa);
+  });
+}
+
+/** GET /seguir/resumo/:usuarioId (pessoa) ou /seguir/resumo/empresas/:empresaId */
+export function carregarResumoSeguidores(perfil: leitores.Perfil) {
+  const empresa = perfil.tipo === 'empresa';
+  const id = encodeURIComponent((empresa ? perfil.registroId : perfil.usuarioId) ?? '');
+  return comSessao(async (token) => {
+    const json = await requisitar(empresa ? `seguir/resumo/empresas/${id}` : `seguir/resumo/${id}`, { token });
+    return empresa ? leitores.resumoEmpresaSeguidores(json) : leitores.resumoPessoa(json);
+  });
+}
+
+/**
+ * Seguir ou deixar de seguir. Empresa: alterna (POST /seguir/empresas/:id). Pessoa seguindo: POST
+ * /seguir/usuarios/:id deixa de seguir. Pedido pendente: DELETE /seguir/solicitacoes/:id cancela. Senão,
+ * POST /seguir/solicitacoes/:id (em perfil público a API segue direto; em privado cria o pedido).
+ */
+export function alternarSeguir(perfil: leitores.Perfil, atual: leitores.ResumoSeguidores) {
+  const empresa = perfil.tipo === 'empresa';
+  const id = encodeURIComponent((empresa ? perfil.registroId : perfil.usuarioId) ?? '');
+  return comSessao(async (token) => {
+    if (empresa) {
+      return leitores.aposAlternar(await requisitar(`seguir/empresas/${id}`, { token, metodo: 'POST', corpo: {} }), atual);
+    }
+    if (atual.seguindo) {
+      return leitores.aposAlternar(await requisitar(`seguir/usuarios/${id}`, { token, metodo: 'POST', corpo: {} }), atual);
+    }
+    if (atual.solicitacaoPendente) {
+      return leitores.aposSolicitar(await requisitar(`seguir/solicitacoes/${id}`, { token, metodo: 'DELETE' }), atual);
+    }
+    return leitores.aposSolicitar(await requisitar(`seguir/solicitacoes/${id}`, { token, metodo: 'POST', corpo: {} }), atual);
+  });
+}
+
+/** GET /busca?q=&tipo=usuarios|empresas|vagas&page=1&limit=20 */
+export function buscar(termo: string, categoria: leitores.CategoriaBusca) {
+  return comSessao(async (token) =>
+    leitores.busca(
+      await requisitar('busca', { token, consulta: { q: termo, tipo: leitores.tipoDaBusca(categoria), page: 1, limit: TAMANHO_PAGINA } }),
+      categoria,
+    ),
+  );
+}
+
 /** GET /notificacoes?page=1&limit=50 */
 export function listarNotificacoes() {
   return comSessao(async (token) =>

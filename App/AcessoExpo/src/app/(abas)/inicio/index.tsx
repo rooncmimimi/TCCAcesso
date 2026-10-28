@@ -37,6 +37,12 @@ export default function Inicio() {
     <Tela aoAtualizar={() => void recarregar()} atualizando={feed.atualizando}>
       <Text style={texto.subtitulo}>{nome ? `Olá, ${nome}!` : 'Olá!'}</Text>
       <Botao
+        titulo="Pesquisar pessoas, empresas e vagas"
+        variante="secundario"
+        onPress={() => router.push('/pesquisa')}
+        icone={<Icone sf="magnifyingglass" md="search" cor={cores.primaria} tamanho={20} />}
+      />
+      <Botao
         titulo="Escrever uma publicação"
         variante="secundario"
         onPress={() => router.push('/inicio/publicar')}

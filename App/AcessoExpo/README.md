@@ -4,7 +4,7 @@ Versão do app ACESSO que roda no iPhone, feita com Expo (React Native, SDK 58) 
 separada do app Android (`App/AcessoApk`, Java), que continua igual. Usa a mesma API do site
 (`Site/Backend`) e as mesmas regras, mensagens e cores do app Android.
 
-> **Situação:** testado com Jest (unidade + contrato contra a API rodando localmente), TypeScript,
+> **Situação:** testado com Jest (unidade + contrato contra a API rodando localmente, 10 cenários), TypeScript,
 > ESLint, `expo-doctor` e pela versão web no navegador em tamanho de iPhone. **Ainda não foi aberto
 > em um iPhone de verdade nem no simulador** (o ambiente usado não tinha Mac). Esse é o próximo passo.
 
@@ -39,14 +39,15 @@ um build pelo EAS (`npx eas-cli build -p ios`).
   confirmar e-mail por código, esqueci a senha, termos.
 - Sessão guardada no Keychain (expo-secure-store), renovada sozinha; a renovação é única por vez
   (o refresh token da API é rotativo).
-- Abas nativas do iPhone: Início (feed, publicar texto, curtir), Vagas (busca com filtros, detalhe,
+- Abas nativas do iPhone: Início (feed, publicar texto, curtir, comentários com respostas, pesquisa de
+  pessoas, empresas e vagas, perfil de outras contas com seguir), Vagas (busca com filtros, detalhe,
   candidatura) ou Painel (empresa), Notificações (com selo de não lidas) e Perfil (candidaturas,
   sair).
 - Empresa em análise, reprovada ou suspensa vê só a situação da empresa.
 - Guia "Acessibilidade no iPhone" (VoiceOver, Texto Maior, Zoom, Controle por Voz etc.).
 
 Ainda não existe aqui (use o site ou o app Android): cadastro de empresa, publicar vaga, editar
-perfil, comentários, conversas, busca de pessoas e publicação com imagem.
+perfil, conversas (mensagens) e publicação com imagem.
 
 ## Acessibilidade
 

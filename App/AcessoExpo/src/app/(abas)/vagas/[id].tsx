@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
@@ -83,6 +83,15 @@ export default function DetalheVaga() {
                 {dados.nomeEmpresa}
                 {dados.empresaVerificada ? ' ✓ empresa verificada' : ''}
               </Text>
+            ) : null}
+
+            {dados.empresaUsuarioId ? (
+              <Botao
+                titulo="Ver perfil da empresa"
+                rotuloAcessivel={`Ver perfil da empresa${dados.nomeEmpresa ? ` ${dados.nomeEmpresa}` : ''}`}
+                variante="secundario"
+                onPress={() => router.push({ pathname: '/usuario/[id]', params: { id: dados.empresaUsuarioId! } })}
+              />
             ) : null}
 
             <Cartao>

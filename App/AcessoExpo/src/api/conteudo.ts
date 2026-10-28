@@ -84,6 +84,92 @@ export function listarVagas(filtros: FiltrosVagas = {}) {
   );
 }
 
+export interface NovaVaga {
+  titulo: string;
+  descricao: string;
+  modalidade: string;
+  contrato: string;
+  publicoAlvo: string;
+  cidade: string;
+  estado: string;
+  recursosAcessibilidade: string[];
+}
+
+/** Corpo de POST /vagas: campos vazios ficam de fora (a API usa os padrões dela). */
+export function corpoVaga(vaga: NovaVaga): Record<string, unknown> {
+  const corpo: Record<string, unknown> = {
+    titulo: vaga.titulo.trim(),
+    descricao: vaga.descricao.trim(),
+    modalidade: vaga.modalidade,
+    contrato: vaga.contrato,
+    publicoAlvo: vaga.publicoAlvo,
+    status: 'aberta',
+  };
+  if (vaga.cidade.trim()) corpo.cidade = vaga.cidade.trim();
+  if (vaga.estado.trim()) corpo.estado = vaga.estado.trim().toUpperCase();
+  if (vaga.recursosAcessibilidade.length > 0) corpo.recursosAcessibilidade = vaga.recursosAcessibilidade;
+  return corpo;
+}
+
+/** POST /vagas (só empresa aprovada; a API recusa as outras com 403) */
+export function criarVaga(vaga: NovaVaga) {
+  return comSessao(async (token) => {
+    await requisitar('vagas', { token, metodo: 'POST', corpo: corpoVaga(vaga) });
+  });
+}
+
+export interface EdicaoPerfil {
+  tipo: 'candidato' | 'empresa';
+  usuarioId: string;
+  registroId: string;
+  nome: string;
+  cidade: string;
+  estado: string;
+  /** pessoa */
+  tituloProfissional: string;
+  /** biografia (pessoa) ou descrição (empresa) */
+  sobre: string;
+  /** empresa */
+  setor: string;
+  culturaInclusiva: string;
+  site: string;
+}
+
+/**
+ * Corpo de PUT /candidatos/:id ou /empresas/:id. A API ignora campo vazio (o validador usa "optional
+ * falsy"), então apagar um texto exige enviar string vazia. Site vazio nunca é enviado: o validador exige URL
+ * válida quando há valor.
+ */
+export function corpoRegistroPerfil(edicao: EdicaoPerfil): Record<string, string> {
+  const corpo: Record<string, string> = { cidade: edicao.cidade.trim(), estado: edicao.estado.trim().toUpperCase() };
+  if (edicao.tipo === 'empresa') {
+    corpo.nomeFantasia = edicao.nome.trim();
+    corpo.setor = edicao.setor.trim();
+    corpo.descricao = edicao.sobre.trim();
+    corpo.culturaInclusiva = edicao.culturaInclusiva.trim();
+    if (edicao.site.trim()) corpo.site = edicao.site.trim();
+  } else {
+    corpo.tituloProfissional = edicao.tituloProfissional.trim();
+    corpo.biografia = edicao.sobre.trim();
+  }
+  return corpo;
+}
+
+/**
+ * Pessoa: PUT /usuarios/:id { nome } e depois PUT /candidatos/:registroId. Empresa: só PUT /empresas/:registroId
+ * (o nome da empresa é o nome fantasia).
+ */
+export function atualizarPerfil(edicao: EdicaoPerfil) {
+  const registro = corpoRegistroPerfil(edicao);
+  const rota = `${edicao.tipo === 'empresa' ? 'empresas' : 'candidatos'}/${encodeURIComponent(edicao.registroId)}`;
+  return comSessao(async (token) => {
+    if (edicao.tipo === 'candidato') {
+      await requisitar(`usuarios/${encodeURIComponent(edicao.usuarioId)}`, { token, metodo: 'PUT', corpo: { nome: edicao.nome.trim() } });
+    }
+    await requisitar(rota, { token, metodo: 'PUT', corpo: registro });
+  });
+}
+
 /** GET /vagas/:id */
 export function obterVaga(vagaId: string) {
   return comSessao(async (token) => {

@@ -12,6 +12,8 @@ interface ValorSessao {
   aviso: string | null;
   iniciar(sessao: Sessao): Promise<void>;
   sair(): Promise<void>;
+  /** Depois de editar o perfil, o nome em "Olá, ..." acompanha. */
+  atualizarNome(nome: string): Promise<void>;
   /** Consulta GET /auth/me para saber se a empresa já foi aprovada. */
   atualizarStatusEmpresa(): Promise<void>;
   limparAviso(): void;
@@ -53,6 +55,12 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
       if (atual) {
         // Depois de apagar a sessão local, para a pessoa não esperar a rede para sair.
         void sairNaApi(atual);
+      }
+    },
+    atualizarNome: async (nome) => {
+      const atual = sessaoGlobal.atual();
+      if (atual && nome.trim() && nome.trim() !== atual.nome) {
+        await sessaoGlobal.salvar({ ...atual, nome: nome.trim() });
       }
     },
     atualizarStatusEmpresa: async () => {

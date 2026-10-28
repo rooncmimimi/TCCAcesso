@@ -249,21 +249,17 @@ descrever('contrato com a API real', () => {
     sessaoPessoa = sessaoGlobal.atual();
     await sessaoGlobal.salvar(login.sessao);
     const titulo = `Vaga de teste iPhone ${marca}`;
-    await sessaoGlobal.comSessao((token) =>
-      requisitar('vagas', {
-        metodo: 'POST',
-        token,
-        corpo: {
-          titulo,
-          descricao: 'Descrição da vaga de teste criada pelo contrato do app iPhone.',
-          modalidade: 'remoto',
-          contrato: 'clt',
-          publicoAlvo: 'pcd',
-          status: 'aberta',
-          recursosAcessibilidade: ['interprete_libras', 'jornada_adaptavel'],
-        },
-      }),
-    );
+    // Com o mesmo corpo do formulário do app (criarVaga).
+    await conteudo.criarVaga({
+      titulo,
+      descricao: 'Descrição da vaga de teste criada pelo contrato do app iPhone.',
+      modalidade: 'remoto',
+      contrato: 'clt',
+      publicoAlvo: 'pcd',
+      cidade: 'Recife',
+      estado: 'pe',
+      recursosAcessibilidade: ['interprete_libras', 'jornada_adaptavel'],
+    });
     const painel = await conteudo.carregarResumoEmpresa();
     const vagaNoPainel = painel.vagas.find((vaga) => vaga.titulo === titulo);
     expect(vagaNoPainel).toBeDefined();
@@ -273,7 +269,7 @@ descrever('contrato com a API real', () => {
     await sessaoGlobal.salvar(sessaoPessoa!);
     const encontradas = await conteudo.listarVagas({ busca: titulo, modalidade: 'remoto', publicoAlvo: 'pcd' });
     const vaga = encontradas.find((item) => item.titulo === titulo);
-    expect(vaga).toMatchObject({ modalidade: 'remoto', contrato: 'clt', publicoAlvo: 'pcd' });
+    expect(vaga).toMatchObject({ modalidade: 'remoto', contrato: 'clt', publicoAlvo: 'pcd', cidade: 'Recife', estado: 'PE' });
     const detalhe = await conteudo.obterVaga(vaga!.id);
     expect(detalhe.recursosAcessibilidade).toEqual(['interprete_libras', 'jornada_adaptavel']);
 
@@ -302,6 +298,40 @@ descrever('contrato com a API real', () => {
     await sessaoGlobal.salvar(login.sessao);
     expect(await conteudo.contarNaoLidas()).toBeGreaterThanOrEqual(1);
     await sessaoGlobal.salvar(sessaoPessoa!);
+  });
+
+  test('editar o perfil de pessoa: nome na conta e textos no candidato', async () => {
+    if (!sessaoPessoa) return;
+    const antes = await conteudo.carregarMeuPerfil('candidato', sessaoPessoa.idUsuario);
+    expect(antes.registroId).toBeTruthy();
+    await conteudo.atualizarPerfil({
+      tipo: 'candidato',
+      usuarioId: sessaoPessoa.idUsuario,
+      registroId: antes.registroId!,
+      nome: `${pessoa.nome} Editado`,
+      cidade: 'Olinda',
+      estado: 'pe',
+      tituloProfissional: 'Analista de dados',
+      sobre: 'Texto sobre mim escrito pelo app iPhone.',
+      setor: '',
+      culturaInclusiva: '',
+      site: '',
+    });
+    const depois = await conteudo.carregarMeuPerfil('candidato', sessaoPessoa.idUsuario);
+    expect(depois).toMatchObject({
+      nome: `${pessoa.nome} Editado`,
+      tituloProfissional: 'Analista de dados',
+      sobre: 'Texto sobre mim escrito pelo app iPhone.',
+      cidade: 'Olinda',
+      estado: 'PE',
+      detalhe: 'Analista de dados · Olinda - PE',
+    });
+    // Apagar um texto: string vazia chega ao banco.
+    await conteudo.atualizarPerfil({ ...{
+      tipo: 'candidato' as const, usuarioId: sessaoPessoa.idUsuario, registroId: antes.registroId!, nome: `${pessoa.nome} Editado`,
+      cidade: 'Olinda', estado: 'PE', setor: '', culturaInclusiva: '', site: '',
+    }, tituloProfissional: '', sobre: '' });
+    expect((await conteudo.carregarMeuPerfil('candidato', sessaoPessoa.idUsuario)).sobre).toBeFalsy();
   });
 
   test('sair revoga a renovação', async () => {

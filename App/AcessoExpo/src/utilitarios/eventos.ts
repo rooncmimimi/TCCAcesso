@@ -6,11 +6,13 @@ type Ouvinte = () => void;
 
 const ouvintes = new Map<string, Set<Ouvinte>>();
 
-export function emitir(evento: 'notificacoes' | 'publicacoes'): void {
+type Evento = 'notificacoes' | 'publicacoes' | 'vagas' | 'perfil';
+
+export function emitir(evento: Evento): void {
   ouvintes.get(evento)?.forEach((ouvinte) => ouvinte());
 }
 
-export function ouvir(evento: 'notificacoes' | 'publicacoes', ouvinte: Ouvinte): () => void {
+export function ouvir(evento: Evento, ouvinte: Ouvinte): () => void {
   const lista = ouvintes.get(evento) ?? new Set<Ouvinte>();
   lista.add(ouvinte);
   ouvintes.set(evento, lista);

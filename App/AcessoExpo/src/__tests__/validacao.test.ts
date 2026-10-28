@@ -3,6 +3,11 @@ import {
   digitosVerificadoresValidos,
   validarCodigoEmail,
   validarComentario,
+  validarDescricaoVaga,
+  validarSite,
+  validarTamanhoMaximo,
+  validarTituloVaga,
+  validarUf,
   validarCpfObrigatorio,
   validarDataNascimento,
   validarEmail,
@@ -58,6 +63,21 @@ describe('validacao (mesmas regras do Validador.java e da API)', () => {
     expect(validarComentario('Ótima vaga!')).toBeNull();
     expect(validarComentario('a'.repeat(1000))).toBeNull();
     expect(validarComentario('a'.repeat(1001))).toMatch(/1000/);
+  });
+
+  test('vaga, UF opcional, site e limite de texto', () => {
+    expect(validarTituloVaga('Dev')).toBe('O título deve ter entre 5 e 200 caracteres.');
+    expect(validarTituloVaga('Analista de dados')).toBeNull();
+    expect(validarDescricaoVaga('curta')).toMatch(/entre 20 e 8000/);
+    expect(validarDescricaoVaga('a'.repeat(20))).toBeNull();
+    expect(validarUf('')).toBeNull();
+    expect(validarUf('pe')).toBeNull();
+    expect(validarUf('ZZ')).toMatch(/UF/);
+    expect(validarSite('')).toBeNull();
+    expect(validarSite('https://acesso.com.br/sobre')).toBeNull();
+    expect(validarSite('acesso.com.br')).toMatch(/http/);
+    expect(validarTamanhoMaximo('a'.repeat(151), 150)).toBe('Use no máximo 150 caracteres.');
+    expect(validarTamanhoMaximo('', 150)).toBeNull();
   });
 
   test('data de nascimento: formato, data existente, 14 anos e limite de 120 anos', () => {

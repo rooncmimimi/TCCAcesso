@@ -131,6 +131,33 @@ export function validarDataNascimento(texto: string, hoje: Date = new Date()): s
   return null;
 }
 
+/** Opcional; se preenchida, 2 letras de uma UF. */
+export function validarUf(uf: string): string | null {
+  return estaVazio(uf) ? null : validarUfObrigatoria(uf);
+}
+
+export function validarTituloVaga(titulo: string): string | null {
+  const tamanho = estaVazio(titulo) ? 0 : titulo.trim().length;
+  return tamanho >= 5 && tamanho <= 200 ? null : 'O título deve ter entre 5 e 200 caracteres.';
+}
+
+export function validarDescricaoVaga(descricao: string): string | null {
+  const tamanho = estaVazio(descricao) ? 0 : descricao.trim().length;
+  return tamanho >= 20 && tamanho <= 8000 ? null : 'A descrição deve ter entre 20 e 8000 caracteres.';
+}
+
+/** Campos opcionais com limite de tamanho (cidade, setor, textos do perfil). */
+export function validarTamanhoMaximo(valor: string, maximo: number): string | null {
+  return estaVazio(valor) || valor.trim().length <= maximo ? null : `Use no máximo ${maximo} caracteres.`;
+}
+
+export function validarSite(site: string): string | null {
+  if (estaVazio(site)) {
+    return null;
+  }
+  return /^https?:\/\/[^\s.]+\.\S+$/i.test(site.trim()) ? null : 'Informe uma URL válida (começando com http:// ou https://).';
+}
+
 export function validarAceiteTermos(aceitou: boolean): string | null {
   return aceitou ? null : 'Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.';
 }

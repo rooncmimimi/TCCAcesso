@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { carregarResumoEmpresa, listarVagas } from '@/api/conteudo';
@@ -13,6 +13,7 @@ import { Tela } from '@/componentes/Tela';
 import { Titulo } from '@/componentes/Titulo';
 import { useSessao } from '@/sessao/ProvedorSessao';
 import { cores, texto } from '@/tema';
+import { ouvir } from '@/utilitarios/eventos';
 import { useCarregar } from '@/utilitarios/useCarregar';
 
 const MODALIDADES = [
@@ -84,6 +85,9 @@ function BuscaVagas() {
 function PainelEmpresa() {
   const resumo = useCarregar(carregarResumoEmpresa);
   const dados = resumo.dados;
+  const { recarregar } = resumo;
+  // Depois de publicar uma vaga, o painel volta atualizado.
+  useEffect(() => ouvir('vagas', () => void recarregar()), [recarregar]);
   const metricas = dados
     ? [
         { nome: 'Vagas publicadas', valor: dados.vagasPublicadas },
@@ -115,9 +119,10 @@ function PainelEmpresa() {
               </Cartao>
             ))}
           </View>
+          <Botao titulo="Publicar uma vaga" onPress={() => router.push('/vagas/nova')} />
           <Titulo nivel={2}>Suas vagas</Titulo>
           {dados.vagas.length === 0 ? (
-            <Text style={texto.corpo}>Você ainda não publicou vagas. A publicação de vagas é feita pelo site ou pelo app Android.</Text>
+            <Text style={texto.corpo}>Você ainda não publicou vagas.</Text>
           ) : (
             dados.vagas.map((vaga) => (
               <CartaoVaga

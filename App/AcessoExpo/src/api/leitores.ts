@@ -127,8 +127,14 @@ export interface Perfil {
   registroId: string | null;
   usuarioId: string | null;
   nome: string | null;
+  /** O que a edição muda: nome da conta (pessoa) ou nome fantasia (empresa). */
+  nomeEditavel: string | null;
   fotoUrl: string | null;
   detalhe: string | null;
+  cidade: string | null;
+  estado: string | null;
+  tituloProfissional: string | null;
+  setor: string | null;
   sobre: string | null;
   habilidades: string[];
   experiencias: ItemCurriculo[];
@@ -293,8 +299,13 @@ export function perfil(json: Json, empresa: boolean, agora: number = Date.now())
     registroId: texto(dados, 'id'),
     usuarioId: null,
     nome: null,
+    nomeEditavel: null,
     fotoUrl: null,
     detalhe: null,
+    cidade: texto(dados, 'cidade'),
+    estado: texto(dados, 'estado'),
+    tituloProfissional: null,
+    setor: null,
     sobre: null,
     habilidades: [],
     experiencias: [],
@@ -319,6 +330,8 @@ export function perfil(json: Json, empresa: boolean, agora: number = Date.now())
       ...vazio,
       usuarioId,
       nome,
+      nomeEditavel: texto(dados, 'nomeFantasia'),
+      setor: texto(dados, 'setor'),
       fotoUrl,
       detalhe: juntar(texto(dados, 'setor'), lugar),
       sobre: texto(dados, 'descricao'),
@@ -340,6 +353,8 @@ export function perfil(json: Json, empresa: boolean, agora: number = Date.now())
     ...vazio,
     usuarioId,
     nome: nomeDaConta,
+    nomeEditavel: nomeDaConta,
+    tituloProfissional: texto(dados, 'tituloProfissional'),
     fotoUrl: texto(usuario, 'fotoPerfil'),
     detalhe: juntar(texto(dados, 'tituloProfissional'), lugar),
     sobre: texto(dados, 'biografia'),

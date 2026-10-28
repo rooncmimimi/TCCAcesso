@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Alert, Text } from 'react-native';
 
 import { carregarMeuPerfil } from '@/api/conteudo';
@@ -10,6 +11,7 @@ import { Tela } from '@/componentes/Tela';
 import { Titulo } from '@/componentes/Titulo';
 import { useSessao } from '@/sessao/ProvedorSessao';
 import { texto } from '@/tema';
+import { ouvir } from '@/utilitarios/eventos';
 import { useCarregar } from '@/utilitarios/useCarregar';
 
 /** Perfil da conta logada (FragmentoPerfil no Android), com os atalhos da conta. */
@@ -19,6 +21,9 @@ export default function Perfil() {
   const perfil = useCarregar(() => carregarMeuPerfil(tipo, sessao?.idUsuario ?? ''), [tipo, sessao?.idUsuario]);
   const dados = perfil.dados;
   const empresa = tipo === 'empresa';
+  const { recarregar } = perfil;
+  // Depois de editar, o perfil volta atualizado.
+  useEffect(() => ouvir('perfil', () => void recarregar()), [recarregar]);
 
   function confirmarSaida() {
     Alert.alert('Sair da conta?', 'Você vai precisar entrar de novo.', [
@@ -39,7 +44,8 @@ export default function Perfil() {
       {dados ? (
         <>
           <ConteudoPerfil perfil={dados} nomePadrao={sessao?.nome ?? 'Seu perfil'} />
-          <Text style={texto.secundario}>Para editar o perfil, use o site ou o app Android do ACESSO.</Text>
+          <Botao titulo="Editar perfil" variante="secundario" onPress={() => router.push('/perfil/editar')} />
+          <Text style={texto.secundario}>Foto e capa ainda são trocadas pelo site ou pelo app Android.</Text>
         </>
       ) : null}
 

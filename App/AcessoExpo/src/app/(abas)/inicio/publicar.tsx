@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
+import type { TextInputInstance } from '@/utilitarios/tipos';
 import { useRef, useState } from 'react';
-import { AccessibilityInfo, type TextInputInstance } from 'react-native';
+import { AccessibilityInfo } from 'react-native';
 
 import { publicar } from '@/api/conteudo';
 import { Aviso } from '@/componentes/Aviso';

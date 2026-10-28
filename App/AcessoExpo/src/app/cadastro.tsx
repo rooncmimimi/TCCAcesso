@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
+import type { TextInputInstance } from '@/utilitarios/tipos';
 import { useRef, useState, type RefObject } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View, type TextInputInstance } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { cadastrarPessoa } from '@/api/autenticacao';
 import { Aviso } from '@/componentes/Aviso';

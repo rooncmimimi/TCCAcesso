@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
+import type { TextInputInstance } from '@/utilitarios/tipos';
 import { useRef, useState } from 'react';
-import { AccessibilityInfo, Alert, StyleSheet, Text, View, type TextInputInstance } from 'react-native';
+import { AccessibilityInfo, Alert, StyleSheet, Text, View } from 'react-native';
 
 import { comentar, excluirComentario, listarComentarios } from '@/api/conteudo';
 import { totalComentarios, type Comentario } from '@/api/leitores';

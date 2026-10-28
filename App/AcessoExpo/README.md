@@ -20,6 +20,28 @@ separada do app Android (`App/AcessoApk`, Java), que continua igual. Usa a mesma
 3. Aponte a câmera do iPhone para o QR code que aparece no terminal e abra no Expo Go.
    Se o iPhone e o computador não estiverem na mesma rede, use `npx expo start --tunnel`.
 
+### Versão do Expo Go (importante)
+
+O projeto está no **Expo SDK 57**, que é o único que o Expo Go da App Store abre hoje (a Expo informa
+que o Expo Go do SDK 58 chega às lojas só depois do lançamento do SDK 58). Por isso:
+
+- Atualize o Expo Go na App Store. Dentro do Expo Go, a tela de ajustes (Settings) mostra a versão do
+  aplicativo; ela precisa começar com **57** (por exemplo, 57.0.9).
+- Não suba o projeto para o SDK 58 enquanto o Expo Go da loja não o suportar. Quando suportar:
+  `npx expo install expo@latest --fix`, e confira as mudanças (por exemplo, `expo-router/native-tabs`
+  no lugar de `expo-router/unstable-native-tabs`).
+- O erro `Cannot find native module 'ExpoAsset'` (ou de outro módulo `Expo...`) quer dizer que o código
+  do app e o Expo Go são de SDKs diferentes. Foi o que aconteceu quando o projeto estava no SDK 58.
+
+Depois de baixar uma versão nova do projeto, reinstale os pacotes e limpe o cache do Metro:
+
+```bash
+# Windows (PowerShell), dentro de App\AcessoExpo
+Remove-Item -Recurse -Force node_modules
+npm install
+npx expo start -c
+```
+
 O app usa a API publicada (`https://acesso-backend.onrender.com/api`). A primeira chamada pode levar
 até um minuto, porque o servidor gratuito "acorda". Para usar outra API (por exemplo, a do seu
 computador), crie `App/AcessoExpo/.env.local` com:

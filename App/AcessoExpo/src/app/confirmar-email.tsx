@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import type { TextInputInstance } from '@/utilitarios/tipos';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Text, type TextInputInstance } from 'react-native';
+import { AccessibilityInfo, Text } from 'react-native';
 
 import { confirmarEmail, reenviarCodigo } from '@/api/autenticacao';
 import { Aviso } from '@/componentes/Aviso';

@@ -1,6 +1,7 @@
-import { StyleSheet, Text, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
+import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import type { Ref } from 'react';
 
+import type { TextInputInstance } from '../utilitarios/tipos';
 import { ALVO_TOQUE, cores, texto } from '../tema';
 
 interface PropsCampo extends Omit<TextInputProps, 'style' | 'accessibilityLabel'> {

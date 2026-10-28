@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
+import type { TextInputInstance } from '@/utilitarios/tipos';
 import { useRef, useState } from 'react';
-import { Text, type TextInputInstance } from 'react-native';
+import { Text } from 'react-native';
 
 import { pedirNovaSenha } from '@/api/autenticacao';
 import { Aviso } from '@/componentes/Aviso';

@@ -33,6 +33,33 @@ export function curtir(publicacaoId: string) {
   );
 }
 
+/** GET /postagens/:id/comentarios */
+export function listarComentarios(publicacaoId: string) {
+  return comSessao(async (token) =>
+    leitores.comentarios(
+      await requisitar(`postagens/${encodeURIComponent(publicacaoId)}/comentarios`, { token, consulta: { page: 1, limit: 50 } }),
+    ),
+  );
+}
+
+/** POST /postagens/:id/comentarios { comentario, comentarioPaiId? } (resposta quando há comentário pai) */
+export function comentar(publicacaoId: string, texto: string, comentarioPaiId?: string | null) {
+  const corpo: Record<string, string> = { comentario: texto.trim() };
+  if (comentarioPaiId) {
+    corpo.comentarioPaiId = comentarioPaiId;
+  }
+  return comSessao(async (token) => {
+    await requisitar(`postagens/${encodeURIComponent(publicacaoId)}/comentarios`, { token, metodo: 'POST', corpo });
+  });
+}
+
+/** DELETE /comentarios/:id (só o autor, ou administrador) */
+export function excluirComentario(comentarioId: string) {
+  return comSessao(async (token) => {
+    await requisitar(`comentarios/${encodeURIComponent(comentarioId)}`, { token, metodo: 'DELETE' });
+  });
+}
+
 export interface FiltrosVagas {
   busca?: string;
   modalidade?: string | null;

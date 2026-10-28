@@ -72,6 +72,30 @@ describe('leitores das respostas da API', () => {
     expect(leitores.curtida({ curtido: false, totalCurtidas: 1 })).toEqual({ curtido: false, total: 1 });
   });
 
+  test('GET /postagens/:id/comentarios: respostas em um nível e total contado como a API', () => {
+    const lista = leitores.comentarios(
+      {
+        comentarios: [
+          {
+            id: 'c1',
+            comentario: 'Concordo!',
+            criadoEm: '2026-10-27T11:00:00Z',
+            editadoEm: '2026-10-27T11:30:00Z',
+            usuario: { id: 'u1', nome: 'Ana Souza', tipoUsuario: 'candidato', fotoPerfil: null },
+            respostas: [
+              { id: 'c2', comentario: 'Obrigada', criadoEm: '2026-10-27T11:50:00Z', usuarioId: 'u2', respostas: [{ id: 'x' }] },
+            ],
+          },
+        ],
+      },
+      AGORA,
+    );
+    expect(lista[0]).toMatchObject({ id: 'c1', texto: 'Concordo!', quando: 'há 1 hora', editado: true, autorId: 'u1', nomeAutor: 'Ana Souza' });
+    expect(lista[0].respostas[0]).toMatchObject({ id: 'c2', autorId: 'u2', nomeAutor: 'Usuário removido', editado: false, respostas: [] });
+    expect(leitores.totalComentarios(lista)).toBe(2);
+    expect(leitores.comentarios({})).toEqual([]);
+  });
+
   test('perfil de pessoa: currículo com períodos e competências', () => {
     const perfil = leitores.perfil(
       {

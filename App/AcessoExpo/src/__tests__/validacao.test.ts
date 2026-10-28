@@ -2,6 +2,7 @@ import {
   dataBrasileiraParaIso,
   digitosVerificadoresValidos,
   validarCodigoEmail,
+  validarComentario,
   validarCpfObrigatorio,
   validarDataNascimento,
   validarEmail,
@@ -50,6 +51,13 @@ describe('validacao (mesmas regras do Validador.java e da API)', () => {
     expect(validarUfObrigatoria('XX')).toMatch(/UF com 2 letras/);
     expect(validarCodigoEmail('12345')).toBe('O código deve ter 6 dígitos.');
     expect(validarCodigoEmail('123456')).toBeNull();
+  });
+
+  test('comentário: não vazio e até 1000 caracteres', () => {
+    expect(validarComentario('   ')).toBe('Escreva um comentário.');
+    expect(validarComentario('Ótima vaga!')).toBeNull();
+    expect(validarComentario('a'.repeat(1000))).toBeNull();
+    expect(validarComentario('a'.repeat(1001))).toMatch(/1000/);
   });
 
   test('data de nascimento: formato, data existente, 14 anos e limite de 120 anos', () => {

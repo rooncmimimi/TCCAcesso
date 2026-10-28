@@ -30,6 +30,18 @@ export interface Publicacao {
   fotoAutorUrl: string | null;
 }
 
+export interface Comentario {
+  id: string;
+  texto: string;
+  quando: string;
+  editado: boolean;
+  autorId: string | null;
+  nomeAutor: string;
+  tipoAutor: string | null;
+  fotoAutorUrl: string | null;
+  respostas: Comentario[];
+}
+
 export interface Vaga {
   id: string;
   titulo: string;
@@ -132,6 +144,31 @@ export function publicacao(json: Json, agora: number = Date.now()): Publicacao {
     tipoAutor: texto(autor, 'tipoUsuario'),
     fotoAutorUrl: texto(autor, 'fotoPerfil'),
   };
+}
+
+/** GET /postagens/:id/comentarios: { comentarios: [{ ..., usuario, respostas: [...] }] } (respostas em um nível). */
+export function comentarios(json: Json, agora: number = Date.now()): Comentario[] {
+  return lista(json, 'comentarios').map((item) => comentario(item, agora, true));
+}
+
+function comentario(json: Json, agora: number, comRespostas: boolean): Comentario {
+  const autor = objeto(json, 'usuario');
+  return {
+    id: texto(json, 'id') ?? '',
+    texto: texto(json, 'comentario') ?? '',
+    quando: tempoRelativo(texto(json, 'criadoEm'), agora),
+    editado: texto(json, 'editadoEm') !== null,
+    autorId: texto(autor, 'id') ?? texto(json, 'usuarioId'),
+    nomeAutor: texto(autor, 'nome') ?? 'Usuário removido',
+    tipoAutor: texto(autor, 'tipoUsuario'),
+    fotoAutorUrl: texto(autor, 'fotoPerfil'),
+    respostas: comRespostas ? lista(json, 'respostas').map((resposta) => comentario(resposta, agora, false)) : [],
+  };
+}
+
+/** Comentários mais respostas, como a API e o app Android contam. */
+export function totalComentarios(lista: Comentario[]): number {
+  return lista.reduce((total, item) => total + 1 + item.respostas.length, 0);
 }
 
 /** POST /postagens/:id/curtidas: { curtido, totalCurtidas } */

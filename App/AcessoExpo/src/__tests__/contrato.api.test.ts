@@ -137,6 +137,26 @@ descrever('contrato com a API real', () => {
     await expect(conteudo.curtir(minha!.id)).resolves.toEqual({ curtido: false, total: 0 });
   });
 
+  test('comentar, responder, listar e excluir', async () => {
+    if (!sessaoPessoa) return;
+    const [publicacao] = await conteudo.listarPublicacoes();
+    await conteudo.comentar(publicacao.id, 'Comentário de teste do app iPhone');
+    let lista = await conteudo.listarComentarios(publicacao.id);
+    const raiz = lista.find((item) => item.texto === 'Comentário de teste do app iPhone')!;
+    expect(raiz).toMatchObject({ nomeAutor: pessoa.nome, autorId: sessaoPessoa.idUsuario, quando: 'agora mesmo', editado: false });
+
+    await conteudo.comentar(publicacao.id, 'Resposta de teste', raiz.id);
+    lista = await conteudo.listarComentarios(publicacao.id);
+    expect(lista.find((item) => item.id === raiz.id)!.respostas.map((r) => r.texto)).toEqual(['Resposta de teste']);
+
+    const vazio = await conteudo.comentar(publicacao.id, '   ').catch((e: unknown) => e);
+    expect(vazio).toBeInstanceOf(FalhaApi);
+
+    await conteudo.excluirComentario(raiz.id);
+    lista = await conteudo.listarComentarios(publicacao.id);
+    expect(lista.find((item) => item.id === raiz.id)).toBeUndefined();
+  });
+
   test('vagas com filtros, perfil, candidaturas e notificações', async () => {
     if (!sessaoPessoa) return;
     expect(Array.isArray(await conteudo.listarVagas())).toBe(true);

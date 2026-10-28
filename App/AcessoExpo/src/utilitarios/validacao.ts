@@ -135,6 +135,17 @@ export function validarAceiteTermos(aceitou: boolean): string | null {
   return aceitou ? null : 'Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.';
 }
 
+export const TAMANHO_MAXIMO_COMENTARIO = 1000;
+
+export function validarComentario(texto: string): string | null {
+  if (estaVazio(texto)) {
+    return 'Escreva um comentário.';
+  }
+  return texto.trim().length <= TAMANHO_MAXIMO_COMENTARIO
+    ? null
+    : `O comentário pode ter no máximo ${TAMANHO_MAXIMO_COMENTARIO} caracteres.`;
+}
+
 export function validarPublicacao(conteudo: string): string | null {
   if (estaVazio(conteudo)) {
     return 'Escreva algo para publicar.';

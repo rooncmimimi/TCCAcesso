@@ -13,10 +13,11 @@ import { Icone } from './Icone';
 interface Props {
   publicacao: Publicacao;
   aoCurtir: (publicacao: Publicacao) => Promise<{ curtido: boolean; total: number }>;
+  aoComentar: (publicacao: Publicacao) => void;
 }
 
 /** Uma publicação do feed. O estado "curtido" aparece no texto e no ícone, não só na cor. */
-export function CartaoPublicacao({ publicacao, aoCurtir }: Props) {
+export function CartaoPublicacao({ publicacao, aoCurtir, aoComentar }: Props) {
   const [curtindo, setCurtindo] = useState(false);
   const empresa = publicacao.tipoAutor === 'empresa';
 
@@ -87,6 +88,17 @@ export function CartaoPublicacao({ publicacao, aoCurtir }: Props) {
               cor={publicacao.curtidoPorMim ? cores.sobrePrimaria : cores.primaria}
             />
           }
+        />
+        <Botao
+          titulo={publicacao.comentarios > 0 ? `Comentários (${publicacao.comentarios})` : 'Comentar'}
+          rotuloAcessivel={
+            publicacao.comentarios > 0
+              ? `Ver ${publicacao.comentarios} ${publicacao.comentarios === 1 ? 'comentário' : 'comentários'} de ${publicacao.nomeAutor}`
+              : `Comentar publicação de ${publicacao.nomeAutor}`
+          }
+          variante="secundario"
+          onPress={() => aoComentar(publicacao)}
+          icone={<Icone sf="bubble.left" md="chat_bubble" tamanho={18} cor={cores.primaria} />}
         />
       </View>
     </Cartao>

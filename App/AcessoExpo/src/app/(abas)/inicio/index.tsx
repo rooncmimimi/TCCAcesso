@@ -51,7 +51,17 @@ export default function Inicio() {
         textoCarregando="Carregando publicações… A primeira vez pode levar até um minuto."
       />
       {feed.dados?.map((publicacao) => (
-        <CartaoPublicacao key={publicacao.id} publicacao={publicacao} aoCurtir={alternarCurtida} />
+        <CartaoPublicacao
+          key={publicacao.id}
+          publicacao={publicacao}
+          aoCurtir={alternarCurtida}
+          aoComentar={(item) =>
+            router.push({
+              pathname: '/inicio/comentarios',
+              params: { id: item.id, autor: item.nomeAutor, conteudo: item.conteudo },
+            })
+          }
+        />
       ))}
       {feed.dados && feed.dados.length > 0 ? (
         <Botao titulo="Atualizar publicações" variante="texto" carregando={feed.atualizando} onPress={() => void recarregar()} />

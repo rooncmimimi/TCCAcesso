@@ -1,0 +1,41 @@
+name: App iPhone (Expo)
+
+# Verificações do app iPhone (App/AcessoExpo), separadas do CI dos outros projetos e disparadas só
+# quando essa pasta muda. Não precisa de segredo nem de API: o teste de contrato com a API real
+# (src/__tests__/contrato.api.test.ts) fica de fora porque só roda com ACESSO_API_TESTE_URL.
+# Gerar o pacote do iOS aqui confere que o código compila para iPhone; instalar no aparelho
+# continua exigindo o Expo Go ou um build do EAS (veja App/AcessoExpo/README.md).
+on:
+  push:
+    branches: [main]
+    paths:
+      - App/AcessoExpo/**
+      - .github/workflows/app-iphone.yml
+  pull_request:
+    paths:
+      - App/AcessoExpo/**
+      - .github/workflows/app-iphone.yml
+
+concurrency:
+  group: app-iphone-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Tipos, lint, testes e pacote iOS
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: App/AcessoExpo
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: App/AcessoExpo/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx expo lint
+      - run: npx jest --ci
+      - run: npx expo export --platform ios --output-dir dist-ios

@@ -58,12 +58,20 @@ const CAMPOS_EDITAVEIS = [
  */
 class CandidatoService {
     filtrarCampos(data) {
-        return CAMPOS_EDITAVEIS.reduce((acc, campo) => {
+        const campos = CAMPOS_EDITAVEIS.reduce((acc, campo) => {
             if (data[campo] !== undefined) {
                 acc[campo] = data[campo];
             }
             return acc;
         }, {});
+
+        // O cadastro envia `escolaridade: ""` quando a pessoa não escolhe nada. Vazia é "não informada",
+        // o mesmo que nunca ter preenchido: grava NULL, e não uma string vazia que parece um valor.
+        if (campos.escolaridade === "") {
+            campos.escolaridade = null;
+        }
+
+        return campos;
     }
 
     /* Listar (empresa ou administrador) */

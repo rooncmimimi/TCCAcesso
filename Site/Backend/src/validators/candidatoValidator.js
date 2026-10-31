@@ -20,10 +20,6 @@ export const validarAtualizacaoCandidato = [
 
     body("escolaridade").optional({ values: "falsy" }).trim().isLength({ max: 120 }),
 
-    body("experiencia").optional({ values: "falsy" }).trim().isLength({ max: 4000 }),
-
-    body("habilidades").optional({ values: "falsy" }).trim().isLength({ max: 2000 }),
-
     body("linkedin")
         .optional({ values: "falsy" })
         .trim()

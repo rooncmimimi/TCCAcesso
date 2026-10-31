@@ -27,6 +27,20 @@ npm run dev
 A API sobe em `http://localhost:3000/api` e o health check fica em
 `GET /api/health`.
 
+## Banco de dados
+
+O schema da aplicação fica em `public` no PostgreSQL. A conexão usa exclusivamente as variáveis
+`DB_*` do ambiente; credenciais nunca devem ser incluídas no frontend.
+
+- [Guia do schema](ESQUEMA_DO_BANCO.md): grupos de tabelas, relações e decisões de normalização.
+- [Histórico e execução das migrations](migrations/README.md): ordem, regras e procedimento de atualização.
+- `src/models/`: definição dos models Sequelize.
+- `src/models/index.js`: associações entre entidades.
+- `migrations/`: fonte versionada da estrutura física do banco.
+
+**Importante:** não use `sequelize.sync()` para evoluir o banco de produção. Mudanças estruturais devem
+ser migrations incrementais e aplicadas com `npm run migrate`.
+
 ## Variáveis de ambiente
 
 Todas as credenciais vêm exclusivamente do arquivo `.env` — nenhum valor
@@ -57,17 +71,19 @@ Os arquivos enviados por upload são gravados na pasta definida em
 
 ## Scripts
 
-| Script          | Descrição                          |
-| --------------- | ---------------------------------- |
-| `npm run dev`   | Desenvolvimento com recarga (nodemon) |
-| `npm start`     | Execução em produção               |
+| Script | Descrição |
+| --- | --- |
+| `npm run dev` | Desenvolvimento com recarga (nodemon). |
+| `npm start` | Execução da API. |
+| `npm run migrate` | Aplica somente migrations ainda não registradas. |
+| `npm run criar-admin` | Cria/atualiza a conta administrativa conforme o script. |
+| `npm test` | Executa a suíte de testes do backend. |
 
 ## Deploy (Render)
 
-1. Crie um **Web Service** apontando para este repositório.
-2. Root Directory: `Backend`.
-3. Build Command: `npm install` — Start Command: `npm start`.
-4. Cadastre as variáveis de ambiente do `.env.example` no painel do Render.
-5. Inclua a URL pública do frontend em `FRONTEND_URL` para liberar o CORS.
+O arquivo `render.yaml` na pasta do Backend descreve a configuração do serviço.
+Cadastre as variáveis de ambiente do `.env.example` no painel do Render. O deploy deve executar
+`npm run migrate` antes de iniciar a nova versão da API.
 
-O arquivo `render.yaml` na raiz do repositório já descreve esse serviço.
+Consulte também o README da raiz do repositório para os comandos completos de desenvolvimento
+do frontend e do app.

@@ -34,6 +34,12 @@ Em um banco que já tinha o schema antes de existir o controle de migrations, o 
 `0001_esquema_inicial.sql` como baseline em vez de tentar executar o esquema inicial sobre tabelas
 existentes.
 
+**Cuidado com bancos que receberam migrations à mão.** O script só adota o `0001` como baseline; todas as outras
+entram como pendentes e são executadas. Elas são repetíveis (`IF NOT EXISTS`, `IF EXISTS`, `ON CONFLICT`), com uma exceção
+de significado: o `UPDATE` da `0004` marca como concluído (`cadastro_concluido_em = criado_em`) todo cadastro que ainda
+está pendente. Se o banco já tem as migrations aplicadas à mão, registre-as em `migracoes_aplicadas` antes de rodar
+`npm run migrate`.
+
 O `render.yaml` (na raiz do repositório) declara `buildCommand: npm install && npm run migrate`. Num serviço
 criado a partir dele, as migrations rodam no build antes de a versão nova entrar no ar e, se uma falhar, o
 build falha. **Isso só vale se o Build Command do serviço no painel do Render tiver `npm run migrate`**: um
@@ -54,6 +60,10 @@ depende dela.
 
 A última migration versionada neste repositório é a `0006`. Portanto, a próxima deve ser
 `0007_<descricao_curta>.sql`, seguida de `0008_...` e assim por diante.
+
+Toda **tabela nova** precisa, na própria migration, de `ENABLE ROW LEVEL SECURITY` e de
+`REVOKE ALL ON TABLE public.<tabela> FROM anon, authenticated`, como fazem a `0001` e o `scripts/migrar.js`. Os privilégios
+padrão do projeto Supabase atual já não concedem nada a esses papéis, mas um projeto novo pode conceder.
 
 **Nunca edite uma migration que já foi aplicada em algum ambiente.** Para corrigir ou alterar o schema,
 crie uma nova migration incremental. Não apague nem recrie `migracoes_aplicadas`: ela é o controle

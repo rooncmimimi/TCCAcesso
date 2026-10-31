@@ -12,7 +12,7 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 | `0003_remover_chatbot_e_administradores.sql` | Remove as antigas tabelas do chatbot (`chatbot_conversas`, `chatbot_mensagens`), o enum `papel_chatbot` e a tabela `administradores`, que não eram utilizados pelos fluxos da aplicação. A administração passou a usar `usuarios.tipo_usuario`. |
 | `0004_pais_do_candidato_e_cadastro_concluido.sql` | Adiciona `candidatos.pais` (ISO 3166-1 alpha-2) e `usuarios.cadastro_concluido_em`, usados no cadastro em etapas e na retomada após a confirmação de e-mail. |
 | `0005_google_termos_e_pais_da_empresa.sql` | Adiciona `usuarios.google_id`, o registro de aceite/versão dos documentos legais (`termos_aceitos_em`, `termos_versao`) e `empresas.pais` (ISO 3166-1 alpha-2). |
-| `0006_vincular_empresa_a_conta_candidato.sql` | Adiciona `empresas.usuario_candidato_id), identificando a conta de candidato da pessoa que cadastrou a empresa. A conta institucional (`empresas.usuario_id`) continua separada. |
+| `0006_vincular_empresa_a_conta_candidato.sql` | Adiciona `empresas.usuario_candidato_id`, identificando a conta de candidato da pessoa que cadastrou a empresa. A conta institucional (`empresas.usuario_id`) continua separada. |
 
 As descrições representam o efeito de cada migration. Para detalhes de regras, constraints e decisões,
 consulte os comentários no próprio arquivo SQL e o [guia do schema](../ESQUEMA_DO_BANCO.md).
@@ -34,8 +34,12 @@ Em um banco que já tinha o schema antes de existir o controle de migrations, o 
 `0001_esquema_inicial.sql` como baseline em vez de tentar executar o esquema inicial sobre tabelas
 existentes.
 
-O deploy do Render executa as migrations no build antes de iniciar a nova versão. Se uma migration
-falhar, o build falha e a aplicação não deve subir contra um schema parcialmente atualizado.
+O `render.yaml` (na raiz do repositório) declara `buildCommand: npm install && npm run migrate`. Num serviço
+criado a partir dele, as migrations rodam no build antes de a versão nova entrar no ar e, se uma falhar, o
+build falha. **Isso só vale se o Build Command do serviço no painel do Render tiver `npm run migrate`**: um
+serviço criado à mão ignora o `render.yaml`. Confira em Settings → Build Command; se não tiver, aplique cada
+migration nova com `npm run migrate`, apontando para o banco de produção, antes de publicar o código que
+depende dela.
 
 ## Convenções
 

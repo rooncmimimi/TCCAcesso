@@ -14,13 +14,15 @@ API REST da plataforma ACESSO (inclusão profissional para PCD e profissionais 5
 
 - Node.js 20 LTS ou superior
 - npm 10 ou superior
-- Uma instância PostgreSQL (local ou Supabase)
+- Um banco PostgreSQL no Supabase. Num Postgres comum, crie antes os papéis `anon` e `authenticated`:
+  o `0001_esquema_inicial.sql` os usa em `REVOKE` e falha sem eles (`role "anon" does not exist`).
 
 ## Executando localmente
 
 ```bash
 npm install
 cp .env.example .env   # no Windows: copy .env.example .env
+npm run migrate        # cria as tabelas do banco que o .env aponta
 npm run dev
 ```
 
@@ -76,14 +78,18 @@ Os arquivos enviados por upload são gravados na pasta definida em
 | `npm run dev` | Desenvolvimento com recarga (nodemon). |
 | `npm start` | Execução da API. |
 | `npm run migrate` | Aplica somente migrations ainda não registradas. |
-| `npm run criar-admin` | Cria/atualiza a conta administrativa conforme o script. |
+| `npm run criar-admin` | Cria uma conta de administrador. Com `--promover`, transforma uma conta existente em administradora: o perfil antigo e o que depende dele (candidaturas, vagas) são apagados, depois de confirmação. |
 | `npm test` | Executa a suíte de testes do backend. |
 
 ## Deploy (Render)
 
-O arquivo `render.yaml` na pasta do Backend descreve a configuração do serviço.
-Cadastre as variáveis de ambiente do `.env.example` no painel do Render. O deploy deve executar
-`npm run migrate` antes de iniciar a nova versão da API.
+O `render.yaml` fica na **raiz do repositório** (com `rootDir: Site/Backend`) e descreve o serviço, mas só
+vale para um serviço criado a partir dele: um serviço criado à mão no painel ignora o arquivo. Cadastre as
+variáveis de ambiente do `.env.example` no painel do Render.
+
+As migrations só rodam no deploy se o **Build Command** do serviço, no painel, for
+`npm install && npm run migrate` (Settings → Build Command). Se não for, rode `npm run migrate` à mão,
+apontando para o banco de produção, antes de publicar código que dependa de uma migration nova.
 
 Consulte também o README da raiz do repositório para os comandos completos de desenvolvimento
 do frontend e do app.

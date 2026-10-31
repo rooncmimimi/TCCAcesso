@@ -110,6 +110,19 @@ export async function podeVerDadosPrivados(candidato, solicitante) {
 }
 
 /**
+ * Tira o vínculo candidato-deficiência (`CandidatoDeficiencia`, com `observacoes`) de uma deficiência. Vale
+ * para instância Sequelize (o vínculo vive em `dataValues` e é o que `toJSON` serializa) e para objeto
+ * simples.
+ */
+function esconderVinculoDaDeficiencia(deficiencia) {
+    if (typeof deficiencia.setDataValue === "function") {
+        deficiencia.setDataValue("CandidatoDeficiencia", undefined);
+    }
+
+    deficiencia.CandidatoDeficiencia = undefined;
+}
+
+/**
  * Remove do objeto (instância Sequelize ou JSON) qualquer campo que não
  * esteja na allowlist pública. Usado quando `podeVerDadosPrivados`
  * resolveu `false`. Muta e devolve o mesmo objeto (mesmo padrão já usado
@@ -128,6 +141,13 @@ export function aplicarPrivacidadeCandidato(candidato, autorizado) {
         for (const certificado of candidato.certificados) {
             certificado.arquivo = undefined;
         }
+    }
+
+    // `observacoes` é texto livre que o candidato escreve ao declarar a deficiência (o "detalhe de cada
+    // caso", migration 0002) e pode conter informação de saúde, dado pessoal sensível na LGPD. Terceiros
+    // veem a categoria declarada (nome e descrição), nunca o vínculo com o texto da pessoa.
+    if (!autorizado && Array.isArray(candidato.deficiencias)) {
+        candidato.deficiencias.forEach(esconderVinculoDaDeficiencia);
     }
 
     if (autorizado) {

@@ -3,39 +3,54 @@
 O banco da aplicação fica no schema `public` do PostgreSQL (Supabase). As migrations são arquivos
 SQL numerados, aplicados em ordem e uma única vez por banco.
 
+## Histórico de migrations
+
 | Arquivo | O que faz |
 | --- | --- |
-| `0001_esquema_inicial.sql` | Cria o schema inteiro: funções, enums, tabelas, índices, gatilhos, RLS e comentários. Roda num banco sem as tabelas da aplicação. |
-| `0002_catalogo_deficiencias.sql` | Preenche o catálogo `deficiencias`, que o candidato usa para se declarar PCD no perfil. |
-| `0003_remover_chatbot_e_administradores.sql` | Remove as tabelas do chatbot (`chatbot_conversas`, `chatbot_mensagens`), o enum `papel_chatbot` e a tabela `administradores`, que nenhum fluxo preenchia. |
-| `0004_pais_do_candidato_e_cadastro_concluido.sql` | Adiciona `candidatos.pais` (ISO 3166-1 alpha-2) e `usuarios.cadastro_concluido_em`, que sustentam o cadastro em etapas e a retomada depois da confirmação de e-mail. |
+| `0001_esquema_inicial.sql` | Cria a estrutura inicial do ACESSO: enums, tabelas, índices, chaves estrangeiras, funções, gatilhos, RLS e comentários. É o baseline do schema da aplicação. |
+| `0002_catalogo_deficiencias.sql` | Preenche o catálogo `deficiencias`, usado pelo candidato para informar suas deficiências no perfil. |
+| `0003_remover_chatbot_e_administradores.sql` | Remove as antigas tabelas do chatbot (`chatbot_conversas`, `chatbot_mensagens`), o enum `papel_chatbot` e a tabela `administradores`, que não eram utilizados pelos fluxos da aplicação. A administração passou a usar `usuarios.tipo_usuario`. |
+| `0004_pais_do_candidato_e_cadastro_concluido.sql` | Adiciona `candidatos.pais` (ISO 3166-1 alpha-2) e `usuarios.cadastro_concluido_em`, usados no cadastro em etapas e na retomada após a confirmação de e-mail. |
+| `0005_google_termos_e_pais_da_empresa.sql` | Adiciona `usuarios.google_id`, o registro de aceite/versão dos documentos legais (`termos_aceitos_em`, `termos_versao`) e `empresas.pais` (ISO 3166-1 alpha-2). |
+| `0006_vincular_empresa_a_conta_candidato.sql` | Adiciona `empresas.usuario_candidato_id), identificando a conta de candidato da pessoa que cadastrou a empresa. A conta institucional (`empresas.usuario_id`) continua separada. |
+
+As descrições representam o efeito de cada migration. Para detalhes de regras, constraints e decisões,
+consulte os comentários no próprio arquivo SQL e o [guia do schema](../ESQUEMA_DO_BANCO.md).
 
 ## Como aplicar
+
+Na pasta `Site/Backend`:
 
 ```bash
 npm run migrate
 ```
 
-O script (`scripts/migrar.js`) lê as variáveis `DB_*` do ambiente, cria a tabela de controle
-`migracoes_aplicadas` se ela não existir, e roda em ordem só o que ainda não foi aplicado — cada
-arquivo dentro de uma transação, registrado apenas se der certo. Rodar de novo sem nada pendente
-não faz nada.
+O script (`scripts/migrar.js`) lê as variáveis `DB_*` do ambiente, cria a tabela técnica
+`public.migracoes_aplicadas` se ela não existir e executa, em ordem, somente os arquivos ainda não
+registrados. Cada arquivo roda dentro de uma transação e só é marcado como aplicado se terminar com
+sucesso. Executar novamente sem migrations pendentes não altera o schema.
 
-Num banco que já tinha o schema antes deste controle existir, o baseline é registrado como
-aplicado em vez de ser executado por cima.
+Em um banco que já tinha o schema antes de existir o controle de migrations, o script registra
+`0001_esquema_inicial.sql` como baseline em vez de tentar executar o esquema inicial sobre tabelas
+existentes.
 
-O deploy do Render roda isso no build (`npm install && npm run migrate`, em `render.yaml`): se uma
-migration falhar, o build falha e a versão anterior continua no ar.
+O deploy do Render executa as migrations no build antes de iniciar a nova versão. Se uma migration
+falhar, o build falha e a aplicação não deve subir contra um schema parcialmente atualizado.
 
 ## Convenções
 
-- Tabelas no plural e colunas em `snake_case`, em português. Chave estrangeira termina em `_id`.
-- `criado_em` em toda tabela e `atualizado_em` onde a linha pode mudar, sempre `timestamptz`.
-  O gatilho `trg_<tabela>_atualizado_em` mantém `atualizado_em` certo.
-- Valores de enum em minúsculas, com `_` entre palavras (`em_analise`, `jovem_aprendiz`).
-- Nomes de objetos: `pk_`, `fk_`, `uq_`, `ck_`, `idx_` e `trg_`, seguidos da tabela e das colunas.
-- RLS ligado em todas as tabelas e sem políticas. O Backend conecta como `postgres`, que ignora RLS;
-  `anon` e `authenticated` não têm acesso.
-- Nada em `auth`, `storage` ou nos outros schemas do Supabase é criado ou alterado aqui.
+- Tabelas no plural e colunas em `snake_case`, em português. Chaves estrangeiras terminam em `_id`.
+- Datas de criação usam `criado_em`; tabelas mutáveis também podem ter `atualizado_em`, ambos como `timestamptz`.
+- Valores de enum são minúsculos e usam `_` entre palavras.
+- Prefixos de objetos: `pk_`, `fk_`, `uq_`, `ck_`, `idx_` e `trg_`.
+- RLS está habilitado nas tabelas do schema `public`. No desenho atual, o backend controla o acesso e conecta com a credencial configurada no servidor; não há políticas RLS de usuário final configuradas nas tabelas da aplicação. Não exponha credenciais do banco no frontend.
+- Este conjunto de migrations administra apenas o schema `public` da aplicação. Não crie nem altere manualmente objetos dos schemas internos `auth`, `storage` ou outros schemas gerenciados pelo Supabase.
 
-Mudanças novas entram como `0002_<descricao>.sql`, `0003_...`, sem editar migrations já aplicadas.
+## Regra para novas mudanças
+
+A última migration versionada neste repositório é a `0006`. Portanto, a próxima deve ser
+`0007_<descricao_curta>.sql`, seguida de `0008_...` e assim por diante.
+
+**Nunca edite uma migration que já foi aplicada em algum ambiente.** Para corrigir ou alterar o schema,
+crie uma nova migration incremental. Não apague nem recrie `migracoes_aplicadas`: ela é o controle
+que impede reaplicações acidentais.

@@ -36,8 +36,6 @@ const CAMPOS_EDITAVEIS = [
     "genero",
     "biografia",
     "escolaridade",
-    "experiencia",
-    "habilidades",
     "linkedin",
     "github",
     "cidade",

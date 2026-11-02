@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Accessibility, Lock, Mail, ShieldCheck } from "lucide-react";
+import { Accessibility, Lock, Mail } from "lucide-react";
 
 /**
  * Área de suporte no final das páginas principais, sempre visível. Enquanto a nova Central de
@@ -30,14 +30,16 @@ export function SuporteRodape() {
           className="flex items-center gap-1.5 font-semibold text-muted-foreground underline-offset-2 hover:underline"
         >
           <Lock className="size-4 shrink-0" aria-hidden="true" />
-          Privacidade
+          Privacidade e Segurança
         </Link>
-        <Link
-          to="/configuracoes/seguranca"
-          className="flex items-center gap-1.5 font-semibold text-muted-foreground underline-offset-2 hover:underline"
-        >
-          <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
-          Segurança
+      </nav>
+      {/* Os documentos ficam ao alcance depois do cadastro, e não só no aceite. */}
+      <nav aria-label="Documentos legais" className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        <Link to="/termos" className="font-medium text-muted-foreground underline-offset-2 hover:underline">
+          Termos de Uso
+        </Link>
+        <Link to="/privacidade" className="font-medium text-muted-foreground underline-offset-2 hover:underline">
+          Aviso de Privacidade
         </Link>
       </nav>
     </footer>

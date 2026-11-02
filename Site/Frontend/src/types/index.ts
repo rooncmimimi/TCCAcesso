@@ -31,6 +31,9 @@ export interface Usuario {
    * que faz o login oferecer retomar de onde parou.
    */
   cadastroConcluidoEm?: string | null;
+  /** Quando a pessoa aceitou os Termos de Uso e o Aviso de Privacidade, e qual versão eles tinham. */
+  termosAceitosEm?: string | null;
+  termosVersao?: string | null;
   /**
    * O servidor diz se falta dado obrigatório no cadastro de candidato (veja
    * `AutenticacaoService.situacaoDoCadastro`). Ausente em servidor antigo.

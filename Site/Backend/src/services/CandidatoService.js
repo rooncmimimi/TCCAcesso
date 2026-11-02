@@ -72,10 +72,23 @@ class CandidatoService {
         return campos;
     }
 
-    /* Listar (empresa ou administrador) */
-    async listar(query) {
+    /*
+     * Busca de talentos (empresa ou administrador).
+     *
+     * A empresa vê cada candidato como qualquer terceiro: só a allowlist pública de
+     * `candidatoPrivacidade.js`. Antes esta lista devolvia as linhas inteiras (CPF decifrado, endereço,
+     * CEP, nascimento, necessidades de acessibilidade, caminho do currículo, e-mail e telefone) a qualquer
+     * conta de empresa, mesmo sem candidatura nenhuma, o que contradizia o Aviso de Privacidade. Os dados
+     * privados de quem se candidata a uma vaga da empresa saem pelo fluxo da candidatura, não por esta busca.
+     *
+     * Deficiência não entra na busca de talentos: nem devolvida, nem como filtro (filtrar por ela revelaria
+     * a declaração por inferência). O Aviso de Privacidade promete isso. Só o administrador (moderação) usa.
+     */
+    async listar(query, solicitante = null) {
+        const administrador = ehAdministrador(solicitante);
         const { pagina, limite, offset } = resolverPaginacao(query);
-        const { nome, cidade, estado, deficienciaId } = query;
+        const { nome, cidade, estado } = query;
+        const deficienciaId = administrador ? query.deficienciaId : undefined;
 
         const whereCandidato = {};
         const whereUsuario = { ativo: true };
@@ -98,15 +111,18 @@ class CandidatoService {
                 as: "usuario",
                 where: whereUsuario,
                 required: true
-            },
-            {
+            }
+        ];
+
+        if (administrador) {
+            include.push({
                 model: Deficiencia,
                 as: "deficiencias",
                 through: { attributes: [] },
                 required: Boolean(deficienciaId),
                 ...(deficienciaId ? { where: { id: deficienciaId } } : {})
-            }
-        ];
+            });
+        }
 
         const { rows, count } = await Candidato.findAndCountAll({
             where: whereCandidato,
@@ -117,7 +133,20 @@ class CandidatoService {
             order: [["criadoEm", "DESC"]]
         });
 
-        return montarResposta("candidatos", rows, count, pagina, limite);
+        const candidatos = rows.map((candidato) => {
+            const visivel = aplicarPrivacidadeCandidato(candidato, administrador);
+
+            // A consulta já não traz deficiência para quem não é administrador; isto garante que nenhuma
+            // mudança futura na consulta a faça aparecer na busca de talentos.
+            if (!administrador && visivel) {
+                if (typeof visivel.setDataValue === "function") visivel.setDataValue("deficiencias", undefined);
+                visivel.deficiencias = undefined;
+            }
+
+            return visivel;
+        });
+
+        return montarResposta("candidatos", candidatos, count, pagina, limite);
     }
 
     /*

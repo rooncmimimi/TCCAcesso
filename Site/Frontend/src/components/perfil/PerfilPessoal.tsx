@@ -383,14 +383,18 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
         ) : null
       ) : null}
 
-      <Card className="mt-4 shadow-card">
-        <CardContent className="p-5 sm:p-6">
-          {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
-              data. */}
-          <h2 className="mb-4 text-lg font-bold">Publicações</h2>
-          <LinhaDoTempoUsuario usuarioId={alvoId} />
-        </CardContent>
-      </Card>
+      {/* O painel de publicações não aparece em "Meu Perfil": as publicações continuam no feed e nada é
+          apagado. Ao ver o perfil de outra pessoa, a linha do tempo dela segue aqui. */}
+      {!proprioPerfil && (
+        <Card className="mt-4 shadow-card">
+          <CardContent className="p-5 sm:p-6">
+            {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
+                data. */}
+            <h2 className="mb-4 text-lg font-bold">Publicações</h2>
+            <LinhaDoTempoUsuario usuarioId={alvoId} />
+          </CardContent>
+        </Card>
+      )}
     </EstruturaApp>
   );
 }

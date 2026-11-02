@@ -2,9 +2,10 @@ import { describe, it, expect } from "vitest";
 import { validationResult } from "express-validator";
 
 import { campoCpf, campoDataNascimento, campoNome } from "./camposPessoais.js";
-import { validarCadastroCandidato } from "./autenticacaoValidator.js";
+import { validarCadastroCandidato, validarCadastroEmpresa } from "./autenticacaoValidator.js";
 import { validarAtualizacaoCandidato } from "./candidatoValidator.js";
 import { validarAtualizacaoUsuario } from "./usuarioValidator.js";
+import { VERSAO_DOCUMENTOS_VIGENTE } from "../config/documentosLegais.js";
 
 /** Roda a cadeia real do express-validator sobre um corpo e devolve o que foi rejeitado e o corpo já sanitizado. */
 async function rodar(regras, corpo, params = {}) {
@@ -89,6 +90,43 @@ describe("campoDataNascimento", () => {
     });
 });
 
+describe("versão dos Termos no cadastro", () => {
+    const corpo = {
+        nome: "Maria da Silva",
+        email: "maria@exemplo.com",
+        senha: "Senha@1234",
+        telefone: "11999998888",
+        cpf: "529.982.247-25",
+        pais: "BR",
+        dataNascimento: "1990-05-20",
+        cidade: "São Paulo",
+        estado: "SP"
+    };
+
+    it("aceita a versão vigente e as já publicadas", async () => {
+        for (const termosVersao of [VERSAO_DOCUMENTOS_VIGENTE, "2026-10-13"]) {
+            expect((await rodar(validarCadastroCandidato, { ...corpo, termosVersao })).campos).toEqual([]);
+        }
+    });
+
+    it.each([[undefined], [""], ["2099-01-01"], ["rótulo inventado"], [20261102]])(
+        "recusa %j: sem uma versão publicada não há como provar o que foi aceito",
+        async (termosVersao) => {
+            const { campos, mensagens } = await rodar(validarCadastroCandidato, { ...corpo, termosVersao });
+
+            expect(campos).toEqual(["termosVersao"]);
+            expect(mensagens[0]).toContain("Recarregue a página");
+        }
+    );
+
+    it("vale também para o cadastro de empresa", async () => {
+        const empresa = { nome: "Responsável Teste", email: "e@exemplo.com", senha: "Senha@1234", cnpj: "12345678000199", razaoSocial: "Empresa Teste Ltda" };
+
+        expect((await rodar(validarCadastroEmpresa, empresa)).campos).toEqual(["termosVersao"]);
+        expect((await rodar(validarCadastroEmpresa, { ...empresa, termosVersao: VERSAO_DOCUMENTOS_VIGENTE })).campos).toEqual([]);
+    });
+});
+
 describe("validadores de rota que usam os campos pessoais", () => {
     const cadastroBase = {
         nome: "Maria da Silva",
@@ -99,7 +137,8 @@ describe("validadores de rota que usam os campos pessoais", () => {
         pais: "br",
         dataNascimento: "1990-05-20",
         cidade: "São Paulo",
-        estado: "sp"
+        estado: "sp",
+        termosVersao: VERSAO_DOCUMENTOS_VIGENTE
     };
 
     it("cadastro de candidato: aceita o corpo válido e entrega CPF só com dígitos", async () => {

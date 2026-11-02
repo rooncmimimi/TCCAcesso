@@ -1,6 +1,7 @@
 import { body } from "express-validator";
 
 import { campoCpf, campoDataNascimento, campoEstado, campoNome, campoPais } from "./camposPessoais.js";
+import { VERSOES_DE_DOCUMENTOS_CONHECIDAS } from "../config/documentosLegais.js";
 
 /**
  * Regras de senha forte (OWASP ASVS 2.1): de 8 a 72 caracteres, com maiúscula, minúscula, número e
@@ -21,13 +22,23 @@ export const regrasSenha = (campo = "senha") =>
         .matches(/[^A-Za-z0-9]/)
         .withMessage("A senha deve conter ao menos um caractere especial.");
 
+const MENSAGEM_VERSAO_DOS_TERMOS =
+    "Não foi possível confirmar qual versão dos Termos de Uso e do Aviso de Privacidade você viu. Recarregue a página e aceite novamente.";
+
 const regrasComuns = [
     // Código de entrega do Google, quando o cadastro veio de "Continuar com Google". O servidor o
     // verifica; o cliente não tem como forjar o `sub` que ele carrega.
     body("googleCodigo").optional({ values: "falsy" }).isString(),
 
-    // Rótulo da versão dos documentos legais que a tela mostrou, gravado junto do aceite.
-    body("termosVersao").optional({ values: "falsy" }).trim().isLength({ max: 20 }),
+    // Versão dos documentos legais que a tela mostrou, gravada junto do aceite. É obrigatória e precisa ser
+    // uma versão publicada (`config/documentosLegais.js`): sem ela não haveria como provar o que foi aceito.
+    body("termosVersao")
+        .isString()
+        .withMessage(MENSAGEM_VERSAO_DOS_TERMOS)
+        .bail()
+        .trim()
+        .isIn(VERSOES_DE_DOCUMENTOS_CONHECIDAS)
+        .withMessage(MENSAGEM_VERSAO_DOS_TERMOS),
 
     campoNome("nome"),
 

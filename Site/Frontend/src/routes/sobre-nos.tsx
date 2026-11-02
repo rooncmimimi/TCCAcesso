@@ -194,10 +194,20 @@ function SobreNos() {
       <footer className="border-t border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <Logo />
-          <p className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Languages className="size-4 shrink-0" aria-hidden="true" /> ACESSO · WCAG 2.2 · VLibras
-            integrado
-          </p>
+          <div className="grid gap-2 sm:justify-items-end">
+            <nav aria-label="Documentos legais" className="flex flex-wrap items-center gap-4 text-sm font-medium">
+              <Link to="/termos" className="hover:underline">
+                Termos de Uso
+              </Link>
+              <Link to="/privacidade" className="hover:underline">
+                Aviso de Privacidade
+              </Link>
+            </nav>
+            <p className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Languages className="size-4 shrink-0" aria-hidden="true" /> ACESSO · WCAG 2.2 · VLibras
+              integrado
+            </p>
+          </div>
         </div>
       </footer>
     </div>

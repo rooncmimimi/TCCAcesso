@@ -322,6 +322,12 @@ function Inicio() {
             <Link to="/sobre-nos" className="hover:underline">
               Sobre nós
             </Link>
+            <Link to="/termos" className="hover:underline">
+              Termos de Uso
+            </Link>
+            <Link to="/privacidade" className="hover:underline">
+              Aviso de Privacidade
+            </Link>
             <a href="mailto:projetoacessoinclusivo@gmail.com" className="hover:underline">
               Fale conosco
             </a>

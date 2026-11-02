@@ -11,7 +11,7 @@ import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 class CandidatoController {
     async listar(req, res, next) {
         try {
-            const dados = await CandidatoService.listar(req.query);
+            const dados = await CandidatoService.listar(req.query, req.user);
 
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {

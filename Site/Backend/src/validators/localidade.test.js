@@ -4,6 +4,7 @@ import { validationResult } from "express-validator";
 import { campoEstado, campoPais } from "./camposPessoais.js";
 import { validarCadastroCandidato, validarCadastroEmpresa } from "./autenticacaoValidator.js";
 import { validarAtualizacaoCandidato } from "./candidatoValidator.js";
+import { VERSAO_DOCUMENTOS_VIGENTE } from "../config/documentosLegais.js";
 import { CODIGOS_DE_PAIS, SIGLAS_DE_ESTADO, ehCodigoDePais, ehSiglaDeEstado } from "../utils/localidades.js";
 
 async function rodar(regras, corpo, params = {}) {
@@ -81,7 +82,8 @@ describe("rotas", () => {
         pais: "BR",
         dataNascimento: "1990-05-20",
         cidade: "São Paulo",
-        estado: "SP"
+        estado: "SP",
+        termosVersao: VERSAO_DOCUMENTOS_VIGENTE
     };
 
     it("cadastro de candidato: aceita Brasil + SP e recusa país inexistente e UF inexistente", async () => {
@@ -100,7 +102,8 @@ describe("rotas", () => {
             email: "empresa@exemplo.com",
             senha: "Senha@1234",
             cnpj: "12345678000199",
-            razaoSocial: "Empresa Teste Ltda"
+            razaoSocial: "Empresa Teste Ltda",
+            termosVersao: VERSAO_DOCUMENTOS_VIGENTE
         };
 
         expect((await rodar(validarCadastroEmpresa, empresa)).campos).toEqual([]);

@@ -31,11 +31,7 @@ const secoes = [
   {
     icon: UserCog,
     titulo: "Conta",
-    itens: [
-      { label: "Meus dados e perfil", to: "/configuracoes/conta" },
-      { label: "Alterar senha", to: "/configuracoes/senha" },
-      { label: "Sessões e contas conectadas", to: "/configuracoes/seguranca" },
-    ],
+    itens: [{ label: "Meus dados e perfil", to: "/configuracoes/conta" }],
   },
   {
     icon: Bell,
@@ -44,10 +40,12 @@ const secoes = [
   },
   {
     icon: ShieldCheck,
-    titulo: "Privacidade",
+    titulo: "Privacidade e Segurança",
     itens: [
-      { label: "Perfil público", to: "/configuracoes/privacidade" },
+      { label: "Visibilidade do perfil e mensagens", to: "/configuracoes/privacidade" },
       { label: "Usuários bloqueados", to: "/configuracoes/bloqueados" },
+      { label: "Alterar senha", to: "/configuracoes/senha" },
+      { label: "Sessões e contas conectadas", to: "/configuracoes/seguranca" },
     ],
   },
 ] as const;

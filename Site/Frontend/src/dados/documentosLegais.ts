@@ -7,13 +7,14 @@
  *
  * ⚠️ Revisão jurídica pendente. Este texto foi redigido a partir do funcionamento do sistema, não
  * por advogado. Antes de o ACESSO operar com usuários reais, alguém habilitado precisa revisá-lo —
- * sobretudo as partes de dado sensível (declaração de deficiência) e de responsabilidade.
+ * sobretudo as partes de dado sensível (declaração de deficiência) e de responsabilidade. A lista do que
+ * precisa de validação jurídica está em `Site/docs/documentos-legais.md`.
  *
  * `VERSAO_DOCUMENTOS` é gravada junto do aceite (`usuarios.termos_versao`): é o que permite saber
  * depois qual texto cada pessoa aceitou. **Mude a versão sempre que mudar o conteúdo** — senão o
  * registro de aceite passa a apontar para um texto que não é mais o que foi aceito.
  */
-export const VERSAO_DOCUMENTOS = "2026-10-13";
+export const VERSAO_DOCUMENTOS = "2026-11-02";
 
 /** Quando `true`, as telas avisam que o documento ainda não vale. */
 export const CONTEUDO_PENDENTE = false;
@@ -98,7 +99,7 @@ export const TERMOS_DE_USO: DocumentoLegal = {
       titulo: "8. Mudanças nestes Termos",
       paragrafos: [
         "Estes Termos podem mudar. Cada versão tem um identificador, e o ACESSO registra qual versão você aceitou e quando.",
-        "Quando houver mudança relevante, você será avisado na plataforma e precisará aceitar a nova versão para continuar usando.",
+        "Quando houver mudança relevante, o ACESSO comunicará os usuários antes de ela passar a valer.",
         "Continuar usando a plataforma depois do aviso significa concordar com a versão nova.",
       ],
     },
@@ -151,16 +152,25 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       paragrafos: [
         "Declarar deficiência é sempre opcional. A plataforma funciona sem essa informação.",
         "A declaração serve para cruzar o seu perfil com vagas afirmativas e para adaptar a experiência às suas necessidades. Não é usada para pontuar, classificar ou restringir o seu acesso a nada.",
-        "Empresas só veem essa informação quando você se candidata a uma vaga delas, e apenas para conduzir aquele processo seletivo. Nunca em listagens abertas nem em busca de talentos.",
+        "As necessidades de acessibilidade que você escrever, as observações sobre cada deficiência e a sua data de nascimento são privadas: só você, a equipe de moderação e a empresa de uma vaga a que você se candidatou podem vê-las, e esta última apenas para conduzir aquele processo seletivo.",
+        "A categoria de deficiência que você declarar (por exemplo, \"Deficiência visual\") aparece no seu perfil para quem puder ver o seu perfil. Se preferir não exibi-la, não a declare ou remova a declaração. As empresas não conseguem buscar candidatos por deficiência.",
         "Você pode remover a declaração a qualquer momento no seu perfil, e ela deixa de ser considerada imediatamente.",
       ],
     },
     {
-      titulo: "5. Com quem os dados são compartilhados",
+      titulo: "5. O que é público e o que é privado no seu perfil",
+      paragrafos: [
+        "Público, para quem puder ver o seu perfil (você ajusta isso em Configurações › Privacidade e Segurança): nome, foto de perfil, capa, título profissional, resumo, escolaridade, cidade, estado, país, disponibilidade, links do LinkedIn e do GitHub, experiências, formações, habilidades, certificados (título, instituição e link, sem o arquivo) e as categorias de deficiência que você declarar.",
+        "Privado, visível só para você, para a equipe de moderação e, durante o processo seletivo, para a empresa de uma vaga a que você se candidatou: e-mail, telefone, CPF, data de nascimento, gênero, endereço, CEP, pretensão salarial, necessidades de acessibilidade, observações sobre deficiência e currículo.",
+        "Uma empresa com a qual você não tem candidatura vê apenas a parte pública. Nenhum dado privado aparece em listagens abertas.",
+      ],
+    },
+    {
+      titulo: "6. Com quem os dados são compartilhados",
       paragrafos: [
         "Empresas: quando você se candidata a uma vaga, a empresa daquela vaga recebe seu perfil, seu currículo e os dados necessários ao processo. Sem candidatura, uma empresa vê apenas o que o seu perfil mostra publicamente.",
-        "Outras pessoas: o que você publica na comunidade e o seu perfil público ficam visíveis para quem suas configurações de privacidade permitirem. Você controla isso em Configurações › Privacidade.",
-        "Provedores de infraestrutura, que tratam dados apenas para operar o serviço: Supabase (banco de dados e armazenamento de arquivos), Render (servidor da aplicação), Vercel (hospedagem do site), Brevo (envio de e-mails de confirmação e recuperação de senha) e Expo (entrega de notificações push).",
+        "Outras pessoas: o que você publica na comunidade e o seu perfil público ficam visíveis para quem suas configurações de privacidade permitirem. Você controla isso em Configurações › Privacidade e Segurança.",
+        "Provedores de infraestrutura, que tratam dados apenas para operar o serviço: Supabase (banco de dados e armazenamento de arquivos), Render (servidor da aplicação), Vercel (hospedagem do site), Brevo (envio de e-mails de confirmação e recuperação de senha) e Expo (entrega de notificações push). Os servidores de alguns desses provedores ficam fora do Brasil (o banco de dados, por exemplo, fica no Canadá).",
         "Google: apenas se você optar por entrar com uma conta Google. O ACESSO recebe do Google o identificador da conta, o e-mail e o nome, e envia a ele apenas o necessário para a autenticação.",
         "IBGE: a lista de cidades é consultada no serviço público do IBGE para o preenchimento de localidade. Nenhum dado seu é enviado nessa consulta.",
         "Descrição automática de imagens: se você pedir uma sugestão de texto alternativo para uma imagem, aquela imagem é enviada a um serviço externo de inteligência artificial (OpenRouter) só para gerar a sugestão. É uma ação sua, nunca automática, e nenhum outro dado do seu perfil acompanha a imagem.",
@@ -169,7 +179,7 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       ],
     },
     {
-      titulo: "6. Por quanto tempo os dados ficam guardados",
+      titulo: "7. Por quanto tempo os dados ficam guardados",
       paragrafos: [
         "Enquanto a sua conta existir, os dados do seu perfil ficam guardados para a plataforma funcionar.",
         "Conta pausada: os dados são mantidos e deixam de aparecer para outras pessoas, até você reativar.",
@@ -178,7 +188,7 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       ],
     },
     {
-      titulo: "7. Segurança",
+      titulo: "8. Segurança",
       paragrafos: [
         "Senhas são guardadas apenas como hash, com algoritmo próprio para isso. Ninguém no ACESSO consegue ler a sua senha.",
         "CPF e CNPJ são guardados cifrados, com um hash separado usado apenas para detectar duplicidade.",
@@ -188,26 +198,26 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       ],
     },
     {
-      titulo: "8. Os seus direitos",
+      titulo: "9. Os seus direitos",
       paragrafos: [
         "Você pode: confirmar que tratamos seus dados e acessá-los; corrigir dados incompletos ou desatualizados; pedir anonimização, bloqueio ou eliminação de dados desnecessários ou tratados fora da lei; pedir a portabilidade; saber com quem compartilhamos; revogar consentimento; e se opor a um tratamento feito com base em legítimo interesse.",
-        "Boa parte disso está na própria plataforma: editar e apagar dados no perfil, ajustar visibilidade em Configurações › Privacidade, remover a declaração de deficiência, e pausar ou excluir a conta em Configurações › Conta.",
+        "Boa parte disso está na própria plataforma: editar e apagar dados no perfil, ajustar visibilidade em Configurações › Privacidade e Segurança, remover a declaração de deficiência, e pausar ou excluir a conta em Configurações › Conta.",
         "Para o que não estiver na plataforma, escreva para projetoacessoinclusivo@gmail.com. Respondemos no menor prazo possível, observado o prazo legal.",
         "Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).",
       ],
     },
     {
-      titulo: "9. Cookies e armazenamento no navegador",
+      titulo: "10. Cookies e armazenamento no navegador",
       paragrafos: [
         "O ACESSO não usa cookies de publicidade nem de rastreamento, e não compartilha dados com redes de anúncios.",
         "O navegador guarda localmente apenas o necessário para você continuar conectado e para manter as suas preferências de acessibilidade. Limpar os dados do site encerra a sessão e restaura as preferências padrão.",
       ],
     },
     {
-      titulo: "10. Mudanças neste Aviso",
+      titulo: "11. Mudanças neste Aviso",
       paragrafos: [
         "Este Aviso pode mudar. Cada versão tem um identificador, e o ACESSO registra qual versão você aceitou e quando.",
-        "Mudanças relevantes são comunicadas na plataforma antes de passarem a valer.",
+        "O ACESSO comunicará os usuários sobre mudanças relevantes antes de elas passarem a valer.",
       ],
     },
   ],

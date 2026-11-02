@@ -56,7 +56,7 @@ function UsuariosBloqueados() {
         to="/configuracoes/privacidade"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para Privacidade e Segurança
       </Link>
 
       <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">Usuários bloqueados</h1>

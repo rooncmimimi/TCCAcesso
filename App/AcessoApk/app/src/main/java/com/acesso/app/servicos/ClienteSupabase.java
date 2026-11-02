@@ -2,10 +2,6 @@ package com.acesso.app.servicos;
 
 import com.acesso.app.BuildConfig;
 
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
 /**
@@ -15,23 +11,12 @@ import okhttp3.Request;
  */
 public final class ClienteSupabase {
 
-    public static final MediaType TIPO_JSON = MediaType.get("application/json; charset=utf-8");
-
-    private static final OkHttpClient CLIENTE_HTTP = new OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .writeTimeout(20, TimeUnit.SECONDS)
-            .build();
-
     private ClienteSupabase() {
     }
 
-    public static OkHttpClient http() {
-        return CLIENTE_HTTP;
-    }
-
+    /** URL válida (com https://) e chave preenchidas no local.properties. */
     public static boolean estaConfigurado() {
-        return !BuildConfig.URL_SUPABASE.isEmpty() && !BuildConfig.CHAVE_ANONIMA_SUPABASE.isEmpty();
+        return ClienteHttp.enderecoValido(BuildConfig.URL_SUPABASE) && !BuildConfig.CHAVE_ANONIMA_SUPABASE.isEmpty();
     }
 
     /** Endereço da API de autenticação, ex.: https://xyz.supabase.co/auth/v1/token */

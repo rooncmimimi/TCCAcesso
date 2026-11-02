@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aba ativa em verde-escuro (sobre o verde-claro do indicador), demais em cinza do texto
+     secundário. A aba ativa também fica em negrito, para não depender só da cor. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/acesso_sobre_container_primaria" android:state_checked="true" />
+    <item android:color="@color/acesso_texto_secundario" />
+</selector>

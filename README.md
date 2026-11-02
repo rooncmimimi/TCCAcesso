@@ -12,7 +12,7 @@ TCCACESSO/
 │   ├── Backend/    API REST (Node.js + Express + Sequelize + PostgreSQL)
 │   └── Frontend/   Aplicação web (React + TypeScript + Vite + TanStack Router)
 └── App/
-    └── AcessoApk/  Aplicativo Android (Java + XML + Supabase)
+    └── AcessoApk/  Aplicativo Android (Java + XML; login pelo Supabase ou pela API do Site)
 ```
 
 Cada pasta em `Site/` é um projeto independente com seu próprio `package.json`,
@@ -67,10 +67,12 @@ workflow para o detalhamento de cada job.
 
 ## App Android
 
-O app fica em `App/AcessoApk`: Android nativo em Java, com o Supabase como
-backend (Auth, PostgreSQL, Storage e RLS). Abra a pasta no Android Studio e
-siga o `App/AcessoApk/README.md`. O CI compila o APK de debug e roda os
-testes JUnit em todo push e pull request.
+O app fica em `App/AcessoApk`: Android nativo em Java (não há versão iOS). Por
+padrão ele usa a mesma API do site (`FONTE_AUTENTICACAO=api`, publicada no
+Render); a comunicação está coberta por um teste de contrato contra a API real
+(`ContratoApiRealTeste`). Abra a pasta no Android Studio e siga o
+`App/AcessoApk/README.md`; acessibilidade em `App/AcessoApk/docs/ACESSIBILIDADE.md`.
+O CI compila o APK de debug e roda os testes JUnit em todo push e pull request.
 
 ## Acessibilidade
 

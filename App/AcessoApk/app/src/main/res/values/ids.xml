@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Endereço que a ImageView está carregando: descarta respostas atrasadas de quando a view foi reaproveitada -->
+    <item name="tag_url_imagem" type="id" />
+</resources>

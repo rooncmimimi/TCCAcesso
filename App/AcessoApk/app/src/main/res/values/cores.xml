@@ -23,6 +23,11 @@
     <color name="acesso_sobre_container_erro">#5C0A0E</color>
     <color name="acesso_sucesso">#1B5E20</color>
     <color name="acesso_container_sucesso">#DCEFD9</color>
+    <!-- Avisos (modo demonstração, integração pendente, empresa em análise):
+         amarelo da marca bem claro com texto escuro, 11:1 de contraste -->
+    <color name="acesso_container_aviso">#FFF6C2</color>
+    <color name="acesso_sobre_container_aviso">#3D3300</color>
+    <color name="acesso_borda_aviso">#E9D35C</color>
 
     <!-- Raio da identidade visual (drawable/raio_acesso.xml), cores da
          bandeira do Orgulho da Pessoa com Deficiência como no site -->

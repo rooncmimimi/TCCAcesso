@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Balão de mensagem enviada pela conta logada: verde da marca, canto inferior direito mais fechado -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/acesso_primaria" />
+    <corners
+        android:bottomLeftRadius="@dimen/raio_item"
+        android:bottomRightRadius="4dp"
+        android:topLeftRadius="@dimen/raio_item"
+        android:topRightRadius="@dimen/raio_item" />
+</shape>

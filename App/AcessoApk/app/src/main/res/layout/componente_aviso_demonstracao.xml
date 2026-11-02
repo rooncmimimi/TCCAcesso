@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faixa "Modo demonstração": aparece nas telas enquanto a autenticação simulada
+     estiver ativa, para nunca parecer que os dados vêm de um servidor real. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Estilo.Acesso.Aviso"
+    android:text="@string/aviso_modo_demonstracao"
+    android:visibility="gone"
+    app:drawableStartCompat="@drawable/ic_aviso" />

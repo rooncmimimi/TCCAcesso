@@ -1,0 +1,85 @@
+package com.acesso.app.repositorios;
+
+import android.content.Context;
+
+import com.acesso.app.BuildConfig;
+
+/**
+ * Escolhe as implementações usadas pelo app conforme FONTE_AUTENTICACAO
+ * (local.properties ou -PFONTE_AUTENTICACAO=...). É o único lugar que
+ * conhece as classes concretas; o resto do app usa só as interfaces.
+ */
+public final class FabricaRepositorios {
+
+    private static final String FONTE_SUPABASE = "supabase";
+    private static final String FONTE_API = "api";
+    private static final String FONTE_SIMULADA = "simulada";
+
+    private FabricaRepositorios() {
+    }
+
+    public static RepositorioAutenticacao autenticacao(Context contexto) {
+        switch (fonteAtiva()) {
+            case FONTE_API:
+                return new RepositorioAutenticacaoApi(contexto);
+            case FONTE_SIMULADA:
+                return new RepositorioAutenticacaoSimulado();
+            default:
+                return new RepositorioAutenticacaoSupabase(contexto);
+        }
+    }
+
+    /** Só a fonte "api" tem conteúdo real; a demonstração é simulada e o Supabase ainda não tem as tabelas de conteúdo. */
+    public static RepositorioConteudo conteudo(Context contexto) {
+        switch (fonteAtiva()) {
+            case FONTE_API:
+                return new RepositorioConteudoApi(contexto);
+            case FONTE_SIMULADA:
+                return new RepositorioConteudoSimulado();
+            default:
+                return new RepositorioConteudoPendente();
+        }
+    }
+
+    /** Comentários, seguir, edição de perfil e envio de imagens: reais na API, de mentira na demonstração. */
+    public static RepositorioSocial social(Context contexto) {
+        switch (fonteAtiva()) {
+            case FONTE_API:
+                return new RepositorioSocialApi(contexto);
+            case FONTE_SIMULADA:
+                return new RepositorioSocialSimulado();
+            default:
+                return new RepositorioSocialPendente();
+        }
+    }
+
+    /** Conversas existem só na API do ACESSO: nas outras fontes a tela avisa que a integração está pendente. */
+    public static RepositorioMensagens mensagens(Context contexto) {
+        return FONTE_API.equals(fonteAtiva()) ? new RepositorioMensagensApi(contexto) : new RepositorioMensagensPendente();
+    }
+
+    /** Notificações existem só na API do ACESSO, como as conversas. */
+    public static RepositorioNotificacoes notificacoes(Context contexto) {
+        return FONTE_API.equals(fonteAtiva())
+                ? new RepositorioNotificacoesApi(contexto) : new RepositorioNotificacoesPendente();
+    }
+
+    /** true quando as respostas são simuladas: as telas mostram o aviso "Modo demonstração". */
+    public static boolean modoDemonstracao() {
+        return FONTE_SIMULADA.equals(fonteAtiva());
+    }
+
+    /** Origem gravada nas sessões criadas pela fonte ativa (ver SessaoUsuario.getOrigem). */
+    public static String origemAtiva() {
+        return fonteAtiva();
+    }
+
+    /** A simulação nunca vai para o build de release: lá, cai no Supabase. */
+    private static String fonteAtiva() {
+        String fonte = BuildConfig.FONTE_AUTENTICACAO;
+        if (FONTE_SIMULADA.equals(fonte) && !BuildConfig.DEBUG) {
+            return FONTE_SUPABASE;
+        }
+        return fonte;
+    }
+}

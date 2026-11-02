@@ -4,6 +4,9 @@
     <dimen name="espaco_campos">16dp</dimen>
     <!-- Área de toque confortável (mínimo recomendado é 48dp) -->
     <dimen name="altura_botao">56dp</dimen>
+    <!-- Lado do logotipo da empresa: cartão de vaga e detalhe (para pedir a imagem já no tamanho certo) -->
+    <dimen name="tamanho_logo_empresa">48dp</dimen>
+    <dimen name="tamanho_logo_empresa_detalhe">56dp</dimen>
 
     <!-- Cantos arredondados do site (radius = 14px): botões e campos usam
          rounded-md (12px) e cartões rounded-xl (18px) -->
@@ -14,6 +17,11 @@
     <!-- Raio no topo do login e do cadastro: altura visível antes de esmaecer -->
     <dimen name="altura_fundo_raio_topo">220dp</dimen>
     <dimen name="altura_esmaecimento_raio">120dp</dimen>
+
+    <!-- Área logada -->
+    <dimen name="tamanho_avatar">44dp</dimen>
+    <dimen name="tamanho_avatar_perfil">72dp</dimen>
+    <dimen name="espaco_cartoes">12dp</dimen>
 
     <!-- Tela de apresentação -->
     <dimen name="apresentacao_margem">20dp</dimen>

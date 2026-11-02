@@ -24,6 +24,14 @@ import { emailCanonico } from "../utils/email.js";
 import { lerProva } from "../utils/codigoGoogle.js";
 import ErroApi from "../utils/ErroApi.js";
 
+/** Nome de cada dado obrigatório do candidato, para a mensagem de `concluirCadastro`. */
+const ROTULOS_DADOS = {
+    pais: "país",
+    dataNascimento: "data de nascimento",
+    cidade: "cidade",
+    estado: "estado"
+};
+
 const MINUTOS_VALIDADE_EMAIL = 15;
 const MAX_TENTATIVAS_EMAIL = 5;
 // Cooldown mínimo entre reenvios de confirmação de cadastro (anti-abuso,
@@ -80,6 +88,15 @@ class AutenticacaoService {
 
             dados.empresa = empresa || null;
         }
+
+        // O Site decide para onde mandar a pessoa logo depois de entrar. Esse sinal vem daqui, do que a
+        // conta tem de fato, e não só da data de conclusão (ver `situacaoDoCadastro`).
+        const candidato =
+            usuario.tipoUsuario === "candidato"
+                ? await Candidato.findOne({ where: { usuarioId: usuario.id } })
+                : null;
+
+        Object.assign(dados, this.situacaoDoCadastro(usuario, candidato));
 
         const { refreshToken } = await SessaoService.emitir(
             usuario.id,
@@ -202,6 +219,9 @@ class AutenticacaoService {
                     telefone: telefone || null,
                     tipoUsuario: "candidato",
                     emailVerificado: Boolean(vinculo),
+                    // Todos os dados obrigatórios chegam neste mesmo POST e são validados antes; as etapas
+                    // seguintes do assistente (perfil, acessibilidade) são opcionais.
+                    cadastroConcluidoEm: new Date(),
                     ...this.registroDeAceite(termosVersao),
                     ...(vinculo ? { googleId: vinculo.googleId } : {})
                 },
@@ -315,6 +335,7 @@ class AutenticacaoService {
                     telefone: telefone || null,
                     tipoUsuario: "empresa",
                     emailVerificado: !precisaConfirmarEmail,
+                    cadastroConcluidoEm: new Date(),
                     ...this.registroDeAceite(termosVersao)
                 },
                 { transaction }
@@ -612,6 +633,59 @@ class AutenticacaoService {
         return SessaoService.revogar(refreshToken);
     }
 
+    /**
+     * Campos sem os quais o cadastro de candidato não pode ser dado como concluído. É a mesma lista que
+     * `concluirCadastro` exige e que o cadastro (`POST /auth/register`) já grava de uma vez. Currículo,
+     * foto, perfil profissional e acessibilidade são opcionais e nunca entram aqui.
+     */
+    dadosObrigatoriosFaltando(candidato) {
+        const obrigatorios = {
+            pais: candidato?.pais,
+            dataNascimento: candidato?.dataNascimento,
+            cidade: candidato?.cidade,
+            estado: candidato?.estado
+        };
+
+        return Object.entries(obrigatorios)
+            .filter(([, valor]) => !String(valor ?? "").trim())
+            .map(([campo]) => campo);
+    }
+
+    /**
+     * Situação do cadastro, para o Site decidir se manda a pessoa continuar de onde parou.
+     *
+     * **Cadastro pendente é cadastro com dado obrigatório faltando**, e não "o último botão do
+     * assistente não foi clicado". As etapas de perfil profissional e de acessibilidade são opcionais;
+     * quem fechou a aba nelas já tem tudo o que a conta precisa e entra normalmente. Antes, o sinal era só
+     * `cadastroConcluidoEm` nula, e isso prendia a pessoa num laço: a conta criada sem país, nascimento,
+     * cidade ou estado era mandada para a etapa de perfil (que não pede esses dados), o botão final era
+     * recusado por falta deles, e no login seguinte tudo recomeçava.
+     *
+     * - Administrador e empresa: nunca pendentes (a empresa nasce com tudo numa chamada só).
+     * - Candidato com `cadastroConcluidoEm` preenchida: concluído, mesmo que uma conta antiga não tenha
+     *   algum campo (a migration 0004 deu a data a quem já existia; ninguém antigo volta ao cadastro).
+     * - Candidato sem a data: pendente só se faltar algum dado obrigatório, e `dadosCadastroPendentes`
+     *   diz quais (nomes de campo, nunca valores).
+     */
+    situacaoDoCadastro(usuario, candidato) {
+        const concluido = { cadastroPendente: false, dadosCadastroPendentes: [] };
+
+        if (usuario.tipoUsuario !== "candidato" || usuario.cadastroConcluidoEm) {
+            return concluido;
+        }
+
+        const faltando = this.dadosObrigatoriosFaltando(candidato);
+
+        return { cadastroPendente: faltando.length > 0, dadosCadastroPendentes: faltando };
+    }
+
+    /** `perfilAtual` com a situação do cadastro, já como objeto simples para a resposta da API. */
+    async perfilAtualComSituacao(id) {
+        const usuario = await this.perfilAtual(id);
+
+        return { ...usuario.toJSON(), ...this.situacaoDoCadastro(usuario, usuario.candidato) };
+    }
+
     /* Usuário autenticado */
     async perfilAtual(id) {
         const usuario = await Usuario.findByPk(id, {
@@ -657,16 +731,7 @@ class AutenticacaoService {
             // Só o que as duas primeiras etapas pedem. A etapa de perfil profissional e currículo é
             // inteiramente opcional: ninguém fica preso no cadastro por não ter currículo em mãos
             // ou por não saber como se descrever ainda.
-            const obrigatorios = {
-                "país": candidato.pais,
-                "data de nascimento": candidato.dataNascimento,
-                cidade: candidato.cidade,
-                estado: candidato.estado
-            };
-
-            const faltando = Object.entries(obrigatorios)
-                .filter(([, valor]) => !String(valor ?? "").trim())
-                .map(([nome]) => nome);
+            const faltando = this.dadosObrigatoriosFaltando(candidato).map((campo) => ROTULOS_DADOS[campo]);
 
             if (faltando.length) {
                 throw ErroApi.requisicaoInvalida(
@@ -679,7 +744,7 @@ class AutenticacaoService {
             await usuario.update({ cadastroConcluidoEm: new Date() });
         }
 
-        return this.perfilAtual(usuarioId);
+        return this.perfilAtualComSituacao(usuarioId);
     }
 
     /* Troca de senha */

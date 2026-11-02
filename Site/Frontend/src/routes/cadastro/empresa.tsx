@@ -33,6 +33,8 @@ import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { extrairMensagemErro } from "@/services/api";
 import { formatarCep, formatarCnpj, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
+import { normalizarNome } from "@/lib/validacoesPessoais";
+import { esquemaNome } from "@/components/cadastro/regrasPessoais";
 import { PORTES_EMPRESA } from "@/utils/formatacao";
 
 /** As mesmas cinco regras de `regrasSenha` no backend (`validators/autenticacaoValidator.js`). */
@@ -57,7 +59,10 @@ const esquemaEmpresa = z.object({
   setor: z.string().trim().max(120).optional(),
   porte: z.string().trim().optional(),
 
-  nome: z.string().trim().min(3, "Informe o nome de quem responde pela conta.").max(150),
+  nome: esquemaNome({
+    erroNome: "Informe o nome de quem responde pela conta.",
+    erroNomeCaracteres: "Use só letras, espaços, hífen, apóstrofo e ponto. Não use números nem símbolos.",
+  }),
   email: z.string().trim().min(1, "Informe o e-mail.").email("Digite um endereço de e-mail válido.").max(150),
   telefone: z
     .string()
@@ -262,7 +267,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
     setEnviando(true);
     try {
       const payload: Record<string, unknown> = {
-        nome: v.nome,
+        nome: normalizarNome(v.nome),
         email: v.email,
         senha: v.senha,
         cnpj: somenteDigitos(v.cnpj),

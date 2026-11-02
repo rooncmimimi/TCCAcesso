@@ -17,8 +17,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
+import { EstadoSelect } from "@/components/cadastro/EstadoSelect";
+import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
+import { SIGLAS_ESTADOS_BR } from "@/dados/estados";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
+import { textosDoCadastro } from "@/components/cadastro/idioma";
+import { limitesDataNascimento, mensagemDataNascimento } from "@/components/cadastro/regrasPessoais";
+import { nomeValido, normalizarNome, validarDataNascimento } from "@/lib/validacoesPessoais";
+
+const textos = textosDoCadastro("pt");
+const limitesData = limitesDataNascimento();
 import { useSessao } from "@/hooks/useSessao";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { CapaUploader } from "./CapaUploader";
@@ -37,6 +46,8 @@ export function EditarPerfilDialog({
   const [aberto, setAberto] = useState(false);
   const [cidade, setCidade] = useState(candidato?.cidade ?? "");
   const [estado, setEstado] = useState(candidato?.estado ?? "");
+  // O país que a conta já tem; nunca é preenchido por conta própria (sem país salvo, começa vazio).
+  const [pais, setPais] = useState(candidato?.pais ?? "");
   const { usuario, atualizar } = useSessao();
   const queryClient = useQueryClient();
 
@@ -45,15 +56,16 @@ export function EditarPerfilDialog({
     if (aberto) {
       setCidade(candidato?.cidade ?? "");
       setEstado(candidato?.estado ?? "");
+      setPais(candidato?.pais ?? "");
     }
-  }, [aberto, candidato?.cidade, candidato?.estado]);
+  }, [aberto, candidato?.cidade, candidato?.estado, candidato?.pais]);
 
   const salvar = useMutation({
     mutationFn: async (dados: FormData) => {
       const texto = (chave: string) => String(dados.get(chave) ?? "").trim();
 
       const usuarioAtualizado = await perfilService.atualizarUsuario(usuario!.id, {
-        nome: texto("nome"),
+        nome: normalizarNome(texto("nome")),
         telefone: texto("telefone") || null,
       });
 
@@ -61,10 +73,15 @@ export function EditarPerfilDialog({
         await perfilService.atualizarCandidato(candidato.id, {
           tituloProfissional: texto("tituloProfissional") || null,
           biografia: texto("biografia") || null,
-          dataNascimento: texto("dataNascimento") || null,
+          // Só vai ao servidor se mudou: quem tem uma data antiga que a regra nova recusaria não fica
+          // impedido de salvar o resto do perfil.
+          ...(texto("dataNascimento") !== (candidato.dataNascimento ?? "").slice(0, 10)
+            ? { dataNascimento: texto("dataNascimento") || null }
+            : {}),
           genero: texto("genero") || null,
+          ...(pais ? { pais } : {}),
           cidade: texto("cidade") || null,
-          estado: texto("estado").toUpperCase() || null,
+          estado: estado.toUpperCase() || null,
           escolaridade: texto("escolaridade") || null,
           linkedin: texto("linkedin") || null,
           github: texto("github") || null,
@@ -97,7 +114,27 @@ export function EditarPerfilDialog({
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    salvar.mutate(new FormData(evento.currentTarget));
+    const dados = new FormData(evento.currentTarget);
+
+    // Mesmas regras do cadastro, para errar antes da viagem; o servidor confere de novo.
+    if (!nomeValido(String(dados.get("nome") ?? ""))) {
+      toast.error(textos.erroNomeCaracteres);
+      return;
+    }
+
+    const nascimento = String(dados.get("dataNascimento") ?? "").trim();
+    const nascimentoAtual = (candidato?.dataNascimento ?? "").slice(0, 10);
+
+    if (nascimento && nascimento !== nascimentoAtual) {
+      const resultado = validarDataNascimento(nascimento);
+
+      if (!resultado.valida) {
+        toast.error(mensagemDataNascimento(textos, resultado.motivo));
+        return;
+      }
+    }
+
+    salvar.mutate(dados);
   }
 
   if (!usuario) return null;
@@ -195,6 +232,8 @@ export function EditarPerfilDialog({
                     id="dataNascimento"
                     name="dataNascimento"
                     type="date"
+                    min={limitesData.min}
+                    max={limitesData.max}
                     defaultValue={candidato.dataNascimento ? candidato.dataNascimento.slice(0, 10) : ""}
                   />
                 </div>
@@ -208,6 +247,19 @@ export function EditarPerfilDialog({
                     defaultValue={candidato.genero ?? ""}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pais">País onde mora</Label>
+                <PaisAutocomplete
+                  id="pais"
+                  valor={pais}
+                  aoMudar={(codigo) => {
+                    setPais(codigo);
+                    // O seletor de estado só oferece UFs: trocar para o Brasil com outra sigla limpa o campo.
+                    if (codigo === "BR" && !SIGLAS_ESTADOS_BR.has(estado.toUpperCase())) setEstado("");
+                  }}
+                />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -224,14 +276,18 @@ export function EditarPerfilDialog({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="estado">Estado (UF)</Label>
-                  <Input
-                    id="estado"
-                    name="estado"
-                    maxLength={2}
-                    placeholder="SP"
-                    value={estado}
-                    onChange={(e) => setEstado(e.target.value.toUpperCase())}
-                  />
+                  {pais === "BR" ? (
+                    <EstadoSelect id="estado" name="estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
+                  ) : (
+                    <Input
+                      id="estado"
+                      name="estado"
+                      maxLength={2}
+                      placeholder="SP"
+                      value={estado}
+                      onChange={(e) => setEstado(e.target.value.toUpperCase())}
+                    />
+                  )}
                 </div>
               </div>
 

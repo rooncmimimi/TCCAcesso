@@ -11,15 +11,21 @@ export type DestinoAposEntrar =
  * não em cada tela (antes eram duas cópias, e a do Google lia um campo que não existe na resposta
  * crua do servidor).
  *
- * - Candidato que não terminou o cadastro volta de onde parou. É o caso de quem fechou a aba depois
- *   da etapa 2: as etapas de perfil e de acessibilidade exigem sessão e ficaram para depois.
- *   `cadastroConcluidoEm` nula é o sinal; contas anteriores a esse campo já nascem preenchidas pela
- *   migration, então ninguém antigo é mandado para o cadastro.
+ * - Candidato com cadastro **pendente** volta de onde parou. Pendente é ter dado obrigatório faltando
+ *   (`cadastroPendente`, calculado pelo servidor), e não ter deixado de clicar no último botão do
+ *   assistente: as etapas de perfil profissional e de acessibilidade são opcionais, e quem fechou a aba
+ *   nelas entra normalmente. Antes o sinal era só `cadastroConcluidoEm` nula, o que prendia numa etapa que
+ *   nem pedia o dado que faltava (veja `AutenticacaoService.situacaoDoCadastro`).
  * - Administrador vai direto ao painel; indo para `/feed` como os demais, parecia que o login não
  *   tinha funcionado.
  */
-export function destinoAposEntrar(usuario: Pick<UsuarioSessao, "tipo" | "cadastroConcluidoEm">): DestinoAposEntrar {
-  if (usuario.tipo === "candidato" && !usuario.cadastroConcluidoEm) {
+export function destinoAposEntrar(
+  usuario: Pick<UsuarioSessao, "tipo" | "cadastroConcluidoEm" | "cadastroPendente">,
+): DestinoAposEntrar {
+  // O servidor diz se falta dado obrigatório. Servidor antigo (sem o campo): cai na data de conclusão.
+  const pendente = usuario.cadastroPendente ?? !usuario.cadastroConcluidoEm;
+
+  if (usuario.tipo === "candidato" && pendente) {
     return { to: "/cadastro/candidato", search: { retomar: true } };
   }
 

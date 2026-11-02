@@ -14,6 +14,7 @@ import type { TextosCadastro } from "@/components/cadastro/idioma";
 import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import { limparEtapa } from "@/lib/etapaCadastro";
 import { cn } from "@/lib/utils";
 
 /**
@@ -194,7 +195,12 @@ export function BotaoFinalizar({
     setEnviando(true);
     try {
       const usuario = await autenticacaoService.concluirCadastro();
-      atualizar({ cadastroConcluidoEm: usuario.cadastroConcluidoEm });
+      atualizar({
+        cadastroConcluidoEm: usuario.cadastroConcluidoEm,
+        cadastroPendente: false,
+        dadosCadastroPendentes: [],
+      });
+      limparEtapa();
       navigate({ to: seguirParaEmpresa ? "/cadastro/empresa" : "/feed" });
     } catch (erro) {
       // O backend recusa concluir com campo obrigatório do perfil em branco; a mensagem dele diz
@@ -238,13 +244,20 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
     setEnviando(true);
     try {
       const usuario = await autenticacaoService.concluirCadastro();
-      atualizar({ cadastroConcluidoEm: usuario.cadastroConcluidoEm });
-    } catch {
-      // Não trava a pessoa na última tela por causa disso: o pior caso é o login oferecer retomar
-      // de novo, e as preferências de acessibilidade já foram salvas pelo próprio painel.
+      atualizar({
+        cadastroConcluidoEm: usuario.cadastroConcluidoEm,
+        cadastroPendente: false,
+        dadosCadastroPendentes: [],
+      });
+      limparEtapa();
+      navigate({ to: "/feed" });
+    } catch (erro) {
+      // Antes a falha era engolida e a pessoa ia para o feed como se tivesse terminado. Agora vê o que
+      // houve; o servidor diz exatamente o que falta. As preferências de acessibilidade já foram salvas
+      // pelo próprio painel, então nada se perde ao tentar de novo.
+      toast.error(extrairMensagemErro(erro, "Não foi possível concluir o cadastro agora. Tente novamente."));
     } finally {
       setEnviando(false);
-      navigate({ to: "/feed" });
     }
   }
 

@@ -1,18 +1,13 @@
 import { body, param } from "express-validator";
 
+import { campoCpf, campoDataNascimento, campoEstado, campoPais } from "./camposPessoais.js";
+
 export const validarAtualizacaoCandidato = [
     param("id").isUUID().withMessage("Identificador inválido."),
 
-    body("cpf")
-        .optional({ values: "falsy" })
-        .trim()
-        .matches(/^\d{11}$/)
-        .withMessage("Informe um CPF válido."),
+    campoCpf(),
 
-    body("dataNascimento")
-        .optional({ values: "falsy" })
-        .isISO8601()
-        .withMessage("Informe uma data de nascimento válida (AAAA-MM-DD)."),
+    campoDataNascimento(),
 
     body("genero").optional({ values: "falsy" }).trim().isLength({ max: 40 }),
 
@@ -34,19 +29,11 @@ export const validarAtualizacaoCandidato = [
 
     body("cidade").optional({ values: "falsy" }).trim().isLength({ max: 100 }),
 
-    body("estado")
-        .optional({ values: "falsy" })
-        .trim()
-        .isLength({ min: 2, max: 2 })
-        .withMessage("Use a sigla do estado (ex.: SP)."),
+    // Código ISO 3166-1 alpha-2, não o nome do país (veja o model Candidato). Antes do estado, que
+    // depende dele: para quem mora no Brasil a sigla precisa ser de um estado de verdade.
+    campoPais(),
 
-    // Código ISO 3166-1 alpha-2, não o nome do país (veja o model Candidato).
-    body("pais")
-        .optional({ values: "falsy" })
-        .trim()
-        .toUpperCase()
-        .matches(/^[A-Z]{2}$/)
-        .withMessage("Use o código do país com 2 letras (ex.: BR)."),
+    campoEstado(),
 
     body("cep")
         .optional({ values: "falsy" })

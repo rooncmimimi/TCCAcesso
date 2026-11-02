@@ -118,7 +118,7 @@ class AutenticacaoController {
 
     async perfilAtual(req, res, next) {
         try {
-            const usuario = await AutenticacaoService.perfilAtual(req.user.id);
+            const usuario = await AutenticacaoService.perfilAtualComSituacao(req.user.id);
 
             return res.status(200).json({ sucesso: true, usuario });
         } catch (erro) {

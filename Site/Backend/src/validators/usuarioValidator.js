@@ -1,5 +1,7 @@
 import { body, param } from "express-validator";
 
+import { campoNome } from "./camposPessoais.js";
+
 /** Exige que o parâmetro de rota `nome` (por padrão `id`) seja um UUID. */
 export const validarUuidParam = (nome = "id") => [
     param(nome).isUUID().withMessage("Identificador inválido.")
@@ -8,11 +10,7 @@ export const validarUuidParam = (nome = "id") => [
 export const validarAtualizacaoUsuario = [
     ...validarUuidParam("id"),
 
-    body("nome")
-        .optional()
-        .trim()
-        .isLength({ min: 3, max: 150 })
-        .withMessage("Informe um nome entre 3 e 150 caracteres."),
+    campoNome("nome", { opcional: true }),
 
     body("telefone")
         .optional({ values: "falsy" })

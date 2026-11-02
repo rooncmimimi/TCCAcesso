@@ -29,7 +29,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/hooks/useSessao", () => ({
-  useSessao: () => ({ autenticado: false, usuario: null, registrarCandidato }),
+  useSessao: () => ({ autenticado: false, inicializado: true, usuario: null, registrarCandidato }),
 }));
 
 vi.mock("@/services/google.service", async (original) => ({

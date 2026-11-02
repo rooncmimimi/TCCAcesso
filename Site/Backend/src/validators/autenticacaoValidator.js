@@ -1,5 +1,7 @@
 import { body } from "express-validator";
 
+import { campoCpf, campoDataNascimento, campoEstado, campoNome, campoPais } from "./camposPessoais.js";
+
 /**
  * Regras de senha forte (OWASP ASVS 2.1): de 8 a 72 caracteres, com maiúscula, minúscula, número e
  * símbolo. É exportada para `validarRedefinirSenha` (`sessaoValidator.js`) usar exatamente as
@@ -27,10 +29,7 @@ const regrasComuns = [
     // Rótulo da versão dos documentos legais que a tela mostrou, gravado junto do aceite.
     body("termosVersao").optional({ values: "falsy" }).trim().isLength({ max: 20 }),
 
-    body("nome")
-        .trim()
-        .isLength({ min: 3, max: 150 })
-        .withMessage("Informe um nome entre 3 e 150 caracteres."),
+    campoNome("nome"),
 
     body("email")
         .trim()
@@ -64,36 +63,20 @@ export const validarCadastroCandidato = [
     // obrigatório, e esta regra roda junto da outra.
     body("telefone").trim().notEmpty().withMessage("Informe seu telefone."),
 
-    body("cpf")
-        .trim()
-        .matches(/^\d{11}$/)
-        .withMessage("Informe um CPF válido."),
+    campoCpf({ obrigatorio: true }),
 
-    // Código ISO 3166-1 alpha-2 (veja o model Candidato).
-    body("pais")
-        .trim()
-        .toUpperCase()
-        .matches(/^[A-Z]{2}$/)
-        .withMessage("Use o código do país com 2 letras (ex.: BR)."),
+    // Código ISO 3166-1 alpha-2 que existe de fato (veja o model Candidato).
+    campoPais({ obrigatorio: true }),
 
-    body("dataNascimento")
-        .trim()
-        .isISO8601()
-        .withMessage("Informe uma data de nascimento válida (AAAA-MM-DD).")
-        .bail()
-        .custom((valor) => new Date(valor) <= new Date())
-        .withMessage("A data de nascimento não pode estar no futuro."),
+    campoDataNascimento({ obrigatorio: true }),
 
     body("cidade")
         .trim()
         .isLength({ min: 2, max: 100 })
         .withMessage("Informe a cidade onde você mora."),
 
-    body("estado")
-        .trim()
-        .toUpperCase()
-        .matches(/^[A-Z]{2}$/)
-        .withMessage("Use a sigla do estado com 2 letras (ex.: SP).")
+    // Depois de `pais`: para quem mora no Brasil a sigla precisa ser de um estado de verdade.
+    campoEstado({ obrigatorio: true })
 ];
 
 export const validarCadastroEmpresa = [
@@ -137,12 +120,7 @@ export const validarCadastroEmpresa = [
         .withMessage("Informe um CEP válido (8 dígitos)."),
 
     // País da sede, no mesmo formato de `candidatos.pais`: ISO 3166-1 alpha-2.
-    body("pais")
-        .optional({ values: "falsy" })
-        .trim()
-        .toUpperCase()
-        .matches(/^[A-Z]{2}$/)
-        .withMessage("Use o código do país com 2 letras (ex.: BR)."),
+    campoPais(),
 
     // Como a empresa pratica inclusão; aparece no perfil institucional.
     body("culturaInclusiva").optional({ values: "falsy" }).trim().isLength({ max: 4000 })

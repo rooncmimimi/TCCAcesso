@@ -31,6 +31,13 @@ export interface Usuario {
    * que faz o login oferecer retomar de onde parou.
    */
   cadastroConcluidoEm?: string | null;
+  /**
+   * O servidor diz se falta dado obrigatório no cadastro de candidato (veja
+   * `AutenticacaoService.situacaoDoCadastro`). Ausente em servidor antigo.
+   */
+  cadastroPendente?: boolean;
+  /** Quais dados faltam (nomes de campo: `pais`, `dataNascimento`, `cidade`, `estado`). */
+  dadosCadastroPendentes?: string[];
   /** Só vem preenchido na resposta pro próprio dono (nunca em perfis de terceiros). */
   preferenciaMensagens?: PreferenciaMensagens;
   /**

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type FieldPath, type Resolver } from "react-hook-form";
@@ -26,6 +26,8 @@ import { SeletorIdioma } from "@/components/cadastro/SeletorIdioma";
 import { AceiteTermos, BotaoFinalizar, NavegacaoEtapa, TituloEtapa } from "@/components/cadastro/comuns";
 import { textosDoCadastro, type CodigoIdioma, type TextosCadastro } from "@/components/cadastro/idioma";
 import { ehCodigoDePais } from "@/dados/paises";
+import { SIGLAS_ESTADOS_BR } from "@/dados/estados";
+import { EstadoSelect } from "@/components/cadastro/EstadoSelect";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
@@ -33,6 +35,15 @@ import { perfilDaProvaGoogle } from "@/services/google.service";
 import { extrairMensagemErro } from "@/services/api";
 import { lerProva, limparProva } from "@/lib/googleNavegador";
 import { formatarCpf, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
+import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
+import { lerEtapaSalva, salvarEtapa } from "@/lib/etapaCadastro";
+import { normalizarNome } from "@/lib/validacoesPessoais";
+import {
+  esquemaCpf,
+  esquemaDataNascimento,
+  esquemaNome,
+  limitesDataNascimento,
+} from "@/components/cadastro/regrasPessoais";
 
 /**
  * Esquema do candidato montado a partir dos textos do idioma escolhido, para as mensagens de erro
@@ -46,11 +57,7 @@ function criarEsquemaCandidato(t: TextosCadastro) {
   return z.object({
     pais: z.string().trim().min(1, t.erroPais).refine(ehCodigoDePais, t.erroPaisLista),
     email: z.string().trim().min(1, t.erroEmail).email(t.erroEmailFormato).max(150),
-    cpf: z
-      .string()
-      .trim()
-      .min(1, t.erroCpf)
-      .refine((v) => somenteDigitos(v).length === 11, t.erroCpfFormato),
+    cpf: esquemaCpf(t),
     senha: z
       .string()
       .min(8, t.erroSenha)
@@ -60,7 +67,7 @@ function criarEsquemaCandidato(t: TextosCadastro) {
       .regex(/\d/, t.erroSenhaNumero)
       .regex(/[^A-Za-z0-9]/, t.erroSenhaEspecial),
     termos: z.literal(true, { errorMap: () => ({ message: t.erroTermos }) }),
-    nome: z.string().trim().min(3, t.erroNome).max(150),
+    nome: esquemaNome(t),
     telefone: z
       .string()
       .trim()
@@ -69,12 +76,7 @@ function criarEsquemaCandidato(t: TextosCadastro) {
         const digitos = somenteDigitos(v).length;
         return digitos >= 10 && digitos <= 11;
       }, t.erroTelefoneFormato),
-    dataNascimento: z
-      .string()
-      .trim()
-      .min(1, t.erroDataNascimento)
-      .refine((v) => !Number.isNaN(Date.parse(v)), t.erroDataNascimento)
-      .refine((v) => new Date(v) <= new Date(), t.erroDataFutura),
+    dataNascimento: esquemaDataNascimento(t),
     cidade: z.string().trim().min(2, t.erroCidade).max(100),
     estado: z.string().trim().length(2, t.erroEstado),
   });
@@ -86,6 +88,9 @@ const CAMPOS_CANDIDATO: FieldPath<FormCandidato>[][] = [
   ["pais", "email", "cpf", "senha", "termos"],
   ["nome", "telefone", "dataNascimento", "cidade", "estado"],
 ];
+
+/** Dados que a conta pode ter ficado sem (ver `dadosCadastroPendentes`): o passo "completar" pede só estes. */
+const CAMPOS_COMPLETAR: FieldPath<FormCandidato>[] = ["pais", "dataNascimento", "cidade", "estado"];
 
 /** Índices das etapas do candidato, para nenhum número solto ficar espalhado pelo arquivo. */
 const CANDIDATO = { CONTA: 0, DADOS: 1, PERFIL: 2, ACESSIBILIDADE: 3 } as const;
@@ -118,7 +123,38 @@ export const Route = createFileRoute("/cadastro/candidato")({
 
 function CadastroCandidato() {
   const { retomar, depois, google } = Route.useSearch();
-  const { autenticado, usuario } = useSessao();
+  const { autenticado, usuario, inicializado } = useSessao();
+  const navigate = useNavigate();
+
+  /**
+   * Como esta tela se comporta, decidido **uma vez**, assim que a sessão carrega:
+   * - `novo`: cadastro comum (quem não está logado como candidato);
+   * - `retomar`: candidato logado que ainda tem o que fazer aqui (dado obrigatório faltando, uma etapa
+   *   salva nesta aba ou `?retomar` explícito);
+   * - `sair`: candidato logado com o cadastro completo. Não há o que fazer aqui: antes, atualizar a página
+   *   reabria o formulário de conta (a primeira etapa) mesmo com a conta já criada.
+   * Decidir uma vez evita que o cadastro recém-criado, que também deixa a sessão autenticada, expulse
+   * a pessoa no meio do próprio assistente.
+   */
+  const [modo, setModo] = useState<"aguardando" | "novo" | "retomar" | "sair">("aguardando");
+
+  useEffect(() => {
+    if (!inicializado || modo !== "aguardando") return;
+
+    if (autenticado && usuario?.tipo === "candidato") {
+      // Servidor antigo (sem `cadastroPendente`): cai no sinal que existia, a data de conclusão.
+      const pendente = usuario.cadastroPendente ?? !usuario.cadastroConcluidoEm;
+      setModo(Boolean(retomar) || pendente || lerEtapaSalva(usuario.id) !== null ? "retomar" : "sair");
+    } else {
+      setModo("novo");
+    }
+  }, [inicializado, autenticado, usuario, retomar, modo]);
+
+  useEffect(() => {
+    if (modo === "sair" && usuario) {
+      void navigate({ ...destinoAposEntrar(usuario), replace: true });
+    }
+  }, [modo, usuario, navigate]);
   // A prova do Google só vale quando a pessoa veio do Google (`?google`); sem isso, uma prova que
   // sobrou de um cadastro abandonado é descartada, para não travar o e-mail de outro cadastro.
   const googleProva = useMemo(() => (google ? lerProva() : null), [google]);
@@ -139,9 +175,9 @@ function CadastroCandidato() {
     };
   }, [t.htmlLang]);
 
-  // Só retoma de verdade quem está logado como candidato e ainda não terminou o cadastro. Sem isso
-  // um `?retomar=true` colado na barra levaria alguém deslogado a uma etapa que precisa de sessão.
-  const retomando = Boolean(retomar) && autenticado && usuario?.tipo === "candidato";
+  // Só retoma de verdade quem está logado como candidato. Sem isso um `?retomar=true` colado na barra
+  // levaria alguém deslogado a uma etapa que precisa de sessão.
+  const retomando = modo === "retomar";
 
   return (
     <AutenticacaoLayout className="max-w-lg">
@@ -164,16 +200,23 @@ function CadastroCandidato() {
 
       <Card className="shadow-card">
         <CardContent className="p-6 sm:p-8">
-          <WizardCandidato
-            retomando={retomando}
-            t={t}
-            seguirParaEmpresa={depois === "empresa"}
-            googleProva={googleProva ?? undefined}
-          />
+          {modo === "aguardando" || modo === "sair" ? (
+            <p role="status" className="py-10 text-center text-sm text-muted-foreground">
+              {t.carregandoCadastro}
+            </p>
+          ) : (
+            <WizardCandidato
+              retomando={retomando}
+              dadosPendentes={usuario?.dadosCadastroPendentes ?? []}
+              t={t}
+              seguirParaEmpresa={depois === "empresa"}
+              googleProva={googleProva ?? undefined}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {!retomando && (
+      {modo === "novo" && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {t.jaTemConta}{" "}
           <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
@@ -197,10 +240,13 @@ function CadastroCandidato() {
  */
 function WizardCandidato({
   retomando,
+  dadosPendentes,
   t,
   seguirParaEmpresa,
   googleProva,
 }: {
+  /** Dados obrigatórios que a conta ainda não tem (nomes de campo, vindos do servidor). */
+  dadosPendentes: string[];
   seguirParaEmpresa?: boolean;
   /** Quando veio de "Continuar com Google": vai junto no cadastro para o servidor vincular. */
   googleProva?: string;
@@ -208,16 +254,29 @@ function WizardCandidato({
   retomando?: boolean;
   t: TextosCadastro;
 }) {
-  const { registrarCandidato } = useSessao();
-  const [passo, setPasso] = useState<number>(retomando ? CANDIDATO.PERFIL : CANDIDATO.CONTA);
+  const { registrarCandidato, recarregar, usuario } = useSessao();
+  // Fixo no primeiro render: ao gravar os dados, a sessão passa a dizer que nada falta, e a tela não pode
+  // mudar de forma sob os pés de quem está preenchendo.
+  const [completando] = useState(() => Boolean(retomando) && dadosPendentes.length > 0);
+  const [passo, setPasso] = useState<number>(() => {
+    if (!retomando) return CANDIDATO.CONTA;
+    // Falta dado obrigatório: o passo é o de completar (as etapas de perfil não pedem esses dados).
+    if (completando) return CANDIDATO.DADOS;
+
+    // Atualizar a página não volta a etapa: retoma onde a pessoa estava nesta aba.
+    const salvo = usuario ? lerEtapaSalva(usuario.id) : null;
+    return salvo !== null && salvo >= CANDIDATO.PERFIL && salvo <= CANDIDATO.ACESSIBILIDADE ? salvo : CANDIDATO.PERFIL;
+  });
   const [enviando, setEnviando] = useState(false);
   const [candidatoId, setCandidatoId] = useState<string | null>(null);
   // Vira `true` na primeira troca de etapa: antes disso o título não puxa o foco (ver TituloEtapa).
   const navegou = useRef(false);
 
-  function irPara(novoPasso: number) {
+  function irPara(novoPasso: number, usuarioId: string | undefined = usuario?.id) {
     navegou.current = true;
     setPasso(novoPasso);
+    // Da etapa de perfil em diante a conta existe: lembra a etapa para o F5 não voltar atrás.
+    if (usuarioId && novoPasso >= CANDIDATO.PERFIL) salvarEtapa(usuarioId, novoPasso);
   }
 
   // O esquema muda junto com o idioma; a ref deixa o resolver sempre enxergar o mais recente, para
@@ -230,6 +289,7 @@ function WizardCandidato({
   const emailDoGoogle = Boolean(doGoogle?.email);
 
   const esquema = useMemo(() => criarEsquemaCandidato(t), [t]);
+  const limitesData = useMemo(() => limitesDataNascimento(), []);
   const esquemaRef = useRef(esquema);
   esquemaRef.current = esquema;
   const resolver: Resolver<FormCandidato> = (valores, contexto, opcoes) =>
@@ -262,7 +322,17 @@ function WizardCandidato({
     perfilService
       .meuCandidato()
       .then((candidato) => {
-        if (!cancelado) setCandidatoId(candidato.id);
+        if (cancelado) return;
+        setCandidatoId(candidato.id);
+
+        if (completando) {
+          // Parte do que a conta já tem. O país nunca é escolhido por conta própria: se a conta não tem,
+          // o campo fica vazio para a pessoa escolher.
+          setValue("pais", candidato.pais ?? "");
+          if (candidato.dataNascimento) setValue("dataNascimento", candidato.dataNascimento.slice(0, 10));
+          if (candidato.cidade) setValue("cidade", candidato.cidade);
+          if (candidato.estado) setValue("estado", candidato.estado);
+        }
       })
       .catch(() => {
         if (!cancelado) toast.error(t.erroPerfilGenerico);
@@ -271,14 +341,14 @@ function WizardCandidato({
     return () => {
       cancelado = true;
     };
-  }, [retomando, t.erroPerfilGenerico]);
+  }, [retomando, completando, setValue, t.erroPerfilGenerico]);
 
   async function criarConta() {
     const v = getValues();
     setEnviando(true);
     try {
       const resultado = await registrarCandidato({
-        nome: v.nome,
+        nome: normalizarNome(v.nome),
         email: v.email,
         senha: v.senha,
         telefone: somenteDigitos(v.telefone),
@@ -305,9 +375,35 @@ function WizardCandidato({
 
       const candidato = await perfilService.meuCandidato();
       setCandidatoId(candidato.id);
-      irPara(CANDIDATO.PERFIL);
+      irPara(CANDIDATO.PERFIL, resultado.id);
     } catch (erro) {
       toast.error(extrairMensagemErro(erro, t.erroContaGenerico));
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  /** Conta que já existe, mas sem dado obrigatório: grava o que falta e segue para a etapa de perfil. */
+  async function completarDados() {
+    if (!candidatoId) {
+      toast.error(t.erroPerfilGenerico);
+      return;
+    }
+
+    const v = getValues();
+    setEnviando(true);
+    try {
+      await perfilService.atualizarCandidato(candidatoId, {
+        pais: v.pais,
+        dataNascimento: v.dataNascimento,
+        cidade: v.cidade,
+        estado: v.estado.toUpperCase(),
+      });
+      // A sessão passa a saber que nada falta; é ela que decide o destino nos próximos logins.
+      await recarregar();
+      irPara(CANDIDATO.PERFIL);
+    } catch (erro) {
+      toast.error(extrairMensagemErro(erro, t.erroPerfilGenerico));
     } finally {
       setEnviando(false);
     }
@@ -317,8 +413,13 @@ function WizardCandidato({
     evento.preventDefault();
     if (enviando) return;
 
-    const valido = await trigger(CAMPOS_CANDIDATO[passo]);
+    const valido = await trigger(completando ? CAMPOS_COMPLETAR : CAMPOS_CANDIDATO[passo]);
     if (!valido) return;
+
+    if (completando) {
+      await completarDados();
+      return;
+    }
 
     if (passo === CANDIDATO.CONTA) {
       irPara(CANDIDATO.DADOS);
@@ -399,7 +500,12 @@ function WizardCandidato({
               <PaisAutocomplete
                 id="pais"
                 valor={watch("pais") ?? ""}
-                aoMudar={(codigo) => setValue("pais", codigo, { shouldValidate: true })}
+                aoMudar={(codigo) => {
+                    setValue("pais", codigo, { shouldValidate: true });
+                    if (codigo === "BR" && !SIGLAS_ESTADOS_BR.has((getValues("estado") ?? "").toUpperCase())) {
+                      setValue("estado", "");
+                    }
+                  }}
                 temErro={Boolean(erros.pais)}
                 descrito={descricao("pais", true, Boolean(erros.pais))}
                 desabilitado={enviando}
@@ -482,10 +588,34 @@ function WizardCandidato({
 
       {passo === CANDIDATO.DADOS && (
         <>
-          <TituloEtapa titulo={t.dadosTitulo} descricao={t.dadosDescricao} />
+          <TituloEtapa
+            titulo={completando ? t.completarTitulo : t.dadosTitulo}
+            descricao={completando ? t.completarDescricao : t.dadosDescricao}
+          />
           <LegendaObrigatorio texto={t.legendaObrigatorio} />
 
           <div className="space-y-5">
+            {completando && (
+              <Campo id="pais" rotulo={t.pais} ajuda={t.paisAjuda} erro={erros.pais?.message} obrigatorio>
+                <PaisAutocomplete
+                  id="pais"
+                  valor={watch("pais") ?? ""}
+                  aoMudar={(codigo) => {
+                    setValue("pais", codigo, { shouldValidate: true });
+                    if (codigo === "BR" && !SIGLAS_ESTADOS_BR.has((getValues("estado") ?? "").toUpperCase())) {
+                      setValue("estado", "");
+                    }
+                  }}
+                  temErro={Boolean(erros.pais)}
+                  descrito={descricao("pais", true, Boolean(erros.pais))}
+                  desabilitado={enviando}
+                  placeholder={t.paisBuscar}
+                />
+              </Campo>
+            )}
+
+            {!completando && (
+              <>
             <Campo id="nome" rotulo={t.nome} erro={erros.nome?.message} obrigatorio>
               <Input
                 id="nome"
@@ -522,6 +652,8 @@ function WizardCandidato({
                 })}
               />
             </Campo>
+              </>
+            )}
 
             <Campo
               id="data-nascimento"
@@ -535,6 +667,8 @@ function WizardCandidato({
                 id="data-nascimento"
                 type="date"
                 required
+                min={limitesData.min}
+                max={limitesData.max}
                 className="min-h-12"
                 autoComplete="bday"
                 aria-invalid={Boolean(erros.dataNascimento)}
@@ -559,16 +693,30 @@ function WizardCandidato({
               </Campo>
 
               <Campo id="estado" rotulo={t.estado} erro={erros.estado?.message} obrigatorio>
-                <Input
-                  id="estado"
-                  required
-                  maxLength={2}
-                  className="min-h-12 uppercase"
-                  autoComplete="address-level1"
-                  aria-invalid={Boolean(erros.estado)}
-                  aria-describedby={descricao("estado", false, Boolean(erros.estado))}
-                  {...register("estado")}
-                />
+                {/* No Brasil, a sigla se escolhe numa lista; fora dele, o campo de 2 letras de sempre. */}
+                {watch("pais") === "BR" ? (
+                  <EstadoSelect
+                    id="estado"
+                    required
+                    placeholder={t.escolaridadeSelecione}
+                    className="min-h-12"
+                    autoComplete="address-level1"
+                    aria-invalid={Boolean(erros.estado)}
+                    aria-describedby={descricao("estado", false, Boolean(erros.estado))}
+                    {...register("estado")}
+                  />
+                ) : (
+                  <Input
+                    id="estado"
+                    required
+                    maxLength={2}
+                    className="min-h-12 uppercase"
+                    autoComplete="address-level1"
+                    aria-invalid={Boolean(erros.estado)}
+                    aria-describedby={descricao("estado", false, Boolean(erros.estado))}
+                    {...register("estado")}
+                  />
+                )}
               </Campo>
             </div>
           </div>
@@ -576,9 +724,9 @@ function WizardCandidato({
       )}
 
       <NavegacaoEtapa
-        primeiraEtapa={passo === CANDIDATO.CONTA}
+        primeiraEtapa={passo === CANDIDATO.CONTA || completando}
         enviando={enviando}
-        rotuloAvancar={passo === CANDIDATO.DADOS ? t.criarConta : t.continuar}
+        rotuloAvancar={passo === CANDIDATO.DADOS && !completando ? t.criarConta : t.continuar}
         rotuloVoltar={t.voltar}
         rotuloEnviando={t.enviando}
         aoVoltar={() => irPara(passo - 1)}

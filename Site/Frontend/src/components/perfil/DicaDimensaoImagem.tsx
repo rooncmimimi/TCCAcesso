@@ -1,3 +1,5 @@
+import { limiteEmMb } from "@/lib/arquivos";
+
 /**
  * Dica de dimensão/formato/tamanho para campos de upload de imagem
  * (foto de perfil e banner). Os valores recomendados batem com o
@@ -12,7 +14,7 @@ export function DicaDimensaoImagem({ tipo }: { tipo: "foto" | "banner" }) {
 
   return (
     <p className="mt-1.5 text-xs text-muted-foreground">
-      Recomendado: {recomendado} · Formatos: JPG, PNG ou WEBP · Tamanho máximo: 5 MB
+      Recomendado: {recomendado} · Formatos: JPG, PNG ou WEBP · Tamanho máximo: {limiteEmMb("imagem")} MB
     </p>
   );
 }

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { FileUp, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { EXTENSOES_IMPORTAVEIS, TIPOS_IMPORTAVEIS, atributoAccept, verificarArquivo } from "@/lib/arquivos";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,11 +27,6 @@ const ESCOLARIDADES = [
   "Doutorado",
 ] as const;
 
-const MAX_ARQUIVO_BYTES = 5 * 1024 * 1024;
-const TIPOS_ACEITOS = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
 
 type ItemExperiencia = { cargo: string; empresa: string; dataInicio: string; dataFim: string; descricao: string };
 type ItemFormacao = { instituicao: string; curso: string; dataFim: string; descricao: string };
@@ -89,11 +85,8 @@ export function EtapaCurriculoPerfil({
   async function importar(arquivoEscolhido: File) {
     if (!candidatoId) return;
 
-    if (!TIPOS_ACEITOS.includes(arquivoEscolhido.type)) {
-      toast.error(t.curriculoFormatos);
-      return;
-    }
-    if (arquivoEscolhido.size > MAX_ARQUIVO_BYTES) {
+    // Tipo (PDF ou DOCX) e tamanho vêm das regras centrais; o texto vem do idioma escolhido.
+    if (!verificarArquivo(arquivoEscolhido, ["documento"], { tipos: TIPOS_IMPORTAVEIS }).ok) {
       toast.error(t.curriculoFormatos);
       return;
     }
@@ -206,7 +199,7 @@ export function EtapaCurriculoPerfil({
         <input
           ref={campoArquivoRef}
           type="file"
-          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          accept={atributoAccept(["documento"], { tipos: TIPOS_IMPORTAVEIS, extensoes: EXTENSOES_IMPORTAVEIS })}
           className="sr-only"
           onChange={(e) => {
             const escolhido = e.target.files?.[0];

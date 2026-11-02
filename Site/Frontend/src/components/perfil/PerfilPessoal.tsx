@@ -11,6 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import { atributoAccept, verificarArquivo } from "@/lib/arquivos";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,12 +36,6 @@ import { BotoesCurriculo } from "./BotoesCurriculo";
 import { ImportarCurriculoDialog } from "./ImportarCurriculoDialog";
 import { ListaSeguidoresDialog } from "./ListaSeguidoresDialog";
 import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
-
-const TIPOS_CURRICULO_ACEITOS = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
 
 /**
  * Perfil pessoal: candidato (completo) ou administrador (versão sem seções profissionais).
@@ -103,8 +98,9 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     const arquivo = evento.target.files?.[0];
     evento.target.value = "";
     if (!arquivo) return;
-    if (!TIPOS_CURRICULO_ACEITOS.includes(arquivo.type)) {
-      toast.error("Envie um arquivo PDF, DOC ou DOCX.");
+    const verificacao = verificarArquivo(arquivo, ["documento"]);
+    if (!verificacao.ok) {
+      toast.error(verificacao.mensagem);
       return;
     }
     enviarCurriculo.mutate(arquivo);
@@ -319,7 +315,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                     <input
                       id="input-enviar-curriculo"
                       type="file"
-                      accept=".pdf,.doc,.docx"
+                      accept={atributoAccept(["documento"])}
                       className="sr-only"
                       disabled={enviarCurriculo.isPending}
                       onChange={aoEnviarCurriculo}

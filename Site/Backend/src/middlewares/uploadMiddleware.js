@@ -39,6 +39,15 @@ export const MIME_DOCUMENTOS = {
         ".docx"
 };
 
+/**
+ * Currículo para IMPORTAR dados: só os formatos de que se consegue extrair texto. `.doc` (formato
+ * binário antigo do Word) é aceito como currículo guardado, mas não como fonte de importação.
+ */
+export const MIME_IMPORTAVEIS = {
+    "application/pdf": ".pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx"
+};
+
 /** Vídeo de postagem: só os dois formatos com suporte de reprodução amplo no navegador. */
 export const MIME_VIDEOS = {
     "video/mp4": ".mp4",
@@ -192,8 +201,52 @@ async function limparEnviadosNestaOperacao(caminhos, privado) {
     }
 }
 
-const criarUpload = (allowlist, { files = 1, mensagem, limiteMaximo } = {}) => {
-    const storage = storageHabilitado
+/**
+ * Confere o conteúdo real de um arquivo recebido: a assinatura binária contra o mimetype declarado e o
+ * tamanho contra o limite do tipo. Nunca confia no `Content-Type` nem na extensão do cliente. Apaga o
+ * arquivo do disco quando recusa. Não guarda nada em lugar nenhum.
+ */
+async function conferirArquivo(arquivo) {
+    const buffer = arquivo.buffer ?? (await lerInicioDoArquivo(arquivo.path));
+
+    if (!assinaturaValida(buffer, arquivo.mimetype)) {
+        await apagarSeExistir(arquivo.path);
+        throw ErroApi.requisicaoInvalida(
+            "O conteúdo do arquivo não corresponde a um arquivo válido do formato declarado."
+        );
+    }
+
+    const limite = LIMITE_BYTES_POR_MIME[arquivo.mimetype] ?? env.security.maxUploadBytes;
+
+    if (arquivo.size > limite) {
+        await apagarSeExistir(arquivo.path);
+        throw ErroApi.requisicaoInvalida(
+            `Arquivo muito grande. Limite de ${Math.round(limite / (1024 * 1024))}MB para este tipo.`
+        );
+    }
+}
+
+/**
+ * Middleware para rotas que só LEEM o arquivo (como a importação de currículo): confere a assinatura e o
+ * tamanho de `req.file` e segue, sem enviar nada ao Storage. Use depois de um `upload*.single()` em
+ * memória.
+ */
+export function conferirConteudoDoArquivo() {
+    return async function conferirConteudo(req, res, next) {
+        try {
+            if (req.file) {
+                await conferirArquivo(req.file);
+            }
+
+            return next();
+        } catch (erro) {
+            return next(erro);
+        }
+    };
+}
+
+const criarUpload = (allowlist, { files = 1, mensagem, limiteMaximo, emMemoria = false } = {}) => {
+    const storage = storageHabilitado || emMemoria
         ? multer.memoryStorage()
         : multer.diskStorage({
               destination(req, file, cb) {
@@ -248,6 +301,16 @@ export const uploadDocumento = criarUpload(MIME_DOCUMENTOS, {
 });
 
 /**
+ * Importação de dados do currículo: PDF ou DOCX, sempre em memória (o arquivo só é lido para extrair o
+ * texto e nunca é guardado por esta rota; virar o currículo oficial é outra ação, com upload próprio).
+ */
+export const uploadCurriculoParaImportar = criarUpload(MIME_IMPORTAVEIS, {
+    files: 1,
+    emMemoria: true,
+    mensagem: "Formato inválido. Para importar os dados, envie um PDF ou DOCX."
+});
+
+/**
  * Anexos de postagem: até 4 arquivos, imagem ou vídeo. Documento só é aceito em currículo e
  * certificado, via `uploadDocumento`.
  */
@@ -284,23 +347,7 @@ export function criarProcessadorArmazenamento({ pasta, privado = false } = {}) {
             const prefixo = typeof pasta === "function" ? pasta(req) : pasta;
 
             const processarUm = async (arquivo) => {
-                const buffer = arquivo.buffer ?? (await lerInicioDoArquivo(arquivo.path));
-
-                if (!assinaturaValida(buffer, arquivo.mimetype)) {
-                    await apagarSeExistir(arquivo.path);
-                    throw ErroApi.requisicaoInvalida(
-                        "O conteúdo do arquivo não corresponde a um arquivo válido do formato declarado."
-                    );
-                }
-
-                const limite = LIMITE_BYTES_POR_MIME[arquivo.mimetype] ?? env.security.maxUploadBytes;
-
-                if (arquivo.size > limite) {
-                    await apagarSeExistir(arquivo.path);
-                    throw ErroApi.requisicaoInvalida(
-                        `Arquivo muito grande. Limite de ${Math.round(limite / (1024 * 1024))}MB para este tipo.`
-                    );
-                }
+                await conferirArquivo(arquivo);
 
                 if (storageHabilitado) {
                     const extensao = TODAS_EXTENSOES[arquivo.mimetype];

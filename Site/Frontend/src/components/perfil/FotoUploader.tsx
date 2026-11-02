@@ -4,12 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { extrairMensagemErro } from "@/services/api";
 import { urlArquivo } from "@/utils/arquivos";
+import { atributoAccept, verificarArquivo } from "@/lib/arquivos";
 import { toast } from "sonner";
-
-// Mesmo limite padrão do backend (MAX_UPLOAD_BYTES, ver src/config/env.js):
-// checar aqui evita que o usuário espere o upload todo só pra descobrir,
-// no fim, que o arquivo é grande demais.
-const TAMANHO_MAXIMO_BYTES = 5 * 1024 * 1024;
 
 /** Avatar com upload real de imagem (PNG/JPEG/WEBP), usado em perfis de pessoa e empresa. */
 export function FotoUploader({
@@ -32,12 +28,10 @@ export function FotoUploader({
 
   async function tratarArquivo(arquivo: File | undefined) {
     if (!arquivo) return;
-    if (!["image/png", "image/jpeg", "image/webp"].includes(arquivo.type)) {
-      toast.error("Formato inválido. Envie uma imagem PNG, JPEG ou WEBP.");
-      return;
-    }
-    if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
-      toast.error("Imagem muito grande. O tamanho máximo permitido é 5 MB.");
+    // Tipo e tamanho vêm das regras centrais (`lib/arquivos.ts`); o servidor confere tudo de novo.
+    const verificacao = verificarArquivo(arquivo, ["imagem"]);
+    if (!verificacao.ok) {
+      toast.error(verificacao.mensagem);
       return;
     }
     try {
@@ -64,7 +58,7 @@ export function FotoUploader({
         ref={inputRef}
         type="file"
         tabIndex={-1}
-        accept="image/png,image/jpeg,image/webp"
+        accept={atributoAccept(["imagem"])}
         className="sr-only"
         id="upload-foto-perfil"
         onChange={(e) => tratarArquivo(e.target.files?.[0])}

@@ -51,10 +51,14 @@ const erroMiddleware = (err, req, res, next) => {
         }));
     } else if (err instanceof multer.MulterError) {
         statusCode = 400;
+        const mb = (bytes) => Math.round(bytes / (1024 * 1024));
+
         mensagem =
-            err.code === "LIMIT_FILE_SIZE"
-                ? "Arquivo excede o tamanho máximo permitido."
-                : "Falha no upload do arquivo.";
+            {
+                LIMIT_FILE_SIZE: `Arquivo muito grande. O limite é ${mb(env.security.maxUploadBytes)}MB para imagens e documentos e ${mb(env.security.maxVideoUploadBytes)}MB para vídeos.`,
+                LIMIT_FILE_COUNT: "Há mais arquivos do que o permitido nesta ação.",
+                LIMIT_UNEXPECTED_FILE: "O arquivo foi enviado no campo errado."
+            }[err.code] ?? "Falha no upload do arquivo.";
     } else if (err instanceof DatabaseError) {
         statusCode = 500;
         mensagem = "Erro ao consultar o banco de dados.";

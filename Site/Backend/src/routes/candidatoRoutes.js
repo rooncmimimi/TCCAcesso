@@ -3,7 +3,12 @@ import CandidatoController from "../controllers/CandidatoController.js";
 import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
 import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
-import { uploadDocumento, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+import {
+    uploadDocumento,
+    uploadCurriculoParaImportar,
+    conferirConteudoDoArquivo,
+    criarProcessadorArmazenamento
+} from "../middlewares/uploadMiddleware.js";
 import { garantirDonoDeCandidato } from "../middlewares/garantirDonoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
@@ -62,7 +67,8 @@ router.post(
     "/:id/curriculo/importar",
     validarUuidParam("id"),
     validacaoMiddleware,
-    uploadDocumento.single("curriculo"),
+    uploadCurriculoParaImportar.single("curriculo"),
+    conferirConteudoDoArquivo(),
     CandidatoController.importarCurriculo
 );
 

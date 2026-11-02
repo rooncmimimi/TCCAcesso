@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { EXTENSOES_IMPORTAVEIS, TIPOS_IMPORTAVEIS, atributoAccept, verificarArquivo } from "@/lib/arquivos";
+import { salvarImportacao } from "@/lib/importacaoCurriculo";
 import { AlertTriangle, FileUp, Loader2, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -44,11 +46,6 @@ interface ItemHabilidade {
   incluir: boolean;
   nome: string;
 }
-
-const TIPOS_ACEITOS = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
 
 /**
  * Importar dados do currículo: extração por palavras-chave (sem IA),
@@ -109,62 +106,39 @@ export function ImportarCurriculoDialog({
   });
 
   const confirmar = useMutation({
-    mutationFn: async () => {
-      let salvos = 0;
-      let ignorados = 0;
-
-      for (const item of experiencias) {
-        if (!item.incluir) continue;
-        if (!item.cargo.trim() || !item.empresa.trim() || !item.dataInicio) {
-          ignorados += 1;
-          continue;
-        }
-        await perfilService.criarRecurso("experiencias", {
-          cargo: item.cargo.trim(),
-          empresa: item.empresa.trim(),
-          dataInicio: item.dataInicio,
-          dataFim: item.atual ? null : item.dataFim || null,
-          atual: item.atual,
-          descricao: item.descricao.trim() || null,
-        });
-        salvos += 1;
-      }
-
-      for (const item of formacoes) {
-        if (!item.incluir) continue;
-        if (!item.instituicao.trim() || !item.curso.trim()) {
-          ignorados += 1;
-          continue;
-        }
-        await perfilService.criarRecurso("formacoes", {
-          instituicao: item.instituicao.trim(),
-          curso: item.curso.trim(),
-          dataFim: item.emAndamento ? null : item.dataFim || null,
-          emAndamento: item.emAndamento,
-          descricao: item.descricao.trim() || null,
-        });
-        salvos += 1;
-      }
-
-      for (const item of habilidades) {
-        if (!item.incluir || !item.nome.trim()) continue;
-        await perfilService.criarRecurso("habilidades", { nome: item.nome.trim() });
-        salvos += 1;
-      }
-
-      return { salvos, ignorados };
-    },
-    onSuccess: ({ salvos, ignorados }) => {
+    // Grava só o que foi revisado e marcado, sem repetir o que o perfil já tem (`lib/importacaoCurriculo.ts`).
+    mutationFn: () =>
+      salvarImportacao(
+        { experiencias, formacoes, habilidades },
+        {
+          listar: (recurso) => perfilService.listarRecurso<Record<string, unknown>>(recurso),
+          criar: (recurso, dados) => perfilService.criarRecurso(recurso, dados),
+        },
+      ),
+    onSuccess: ({ salvos, ignorados, repetidos }) => {
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso"] });
       if (salvos === 0) {
-        toast.warning("Nada foi salvo — marque ao menos um item e preencha os campos obrigatórios.");
+        toast.warning(
+          repetidos > 0
+            ? "Tudo o que você marcou já estava no seu perfil, então nada foi adicionado de novo."
+            : "Nada foi salvo — marque ao menos um item e preencha os campos obrigatórios.",
+        );
         return;
       }
-      toast.success(
-        ignorados > 0
-          ? `${salvos} ${salvos === 1 ? "item adicionado" : "itens adicionados"} ao perfil. ${ignorados} ${ignorados === 1 ? "item foi ignorado" : "itens foram ignorados"} por falta de campo obrigatório (cargo/empresa/data ou instituição/curso).`
-          : `${salvos} ${salvos === 1 ? "item adicionado" : "itens adicionados"} ao perfil.`,
-      );
+
+      const partes = [`${salvos} ${salvos === 1 ? "item adicionado" : "itens adicionados"} ao perfil.`];
+      if (repetidos > 0) {
+        partes.push(
+          `${repetidos} já ${repetidos === 1 ? "estava" : "estavam"} no perfil e ${repetidos === 1 ? "não foi repetido" : "não foram repetidos"}.`,
+        );
+      }
+      if (ignorados > 0) {
+        partes.push(
+          `${ignorados} ${ignorados === 1 ? "item foi ignorado" : "itens foram ignorados"} por falta de campo obrigatório (cargo/empresa/data ou instituição/curso).`,
+        );
+      }
+
+      toast.success(partes.join(" "));
       setAberto(false);
       resetar();
     },
@@ -176,8 +150,13 @@ export function ImportarCurriculoDialog({
     evento.target.value = "";
     if (!arquivo) return;
 
-    if (!TIPOS_ACEITOS.includes(arquivo.type)) {
-      toast.error("Envie um arquivo PDF ou DOCX.");
+    // O mesmo conjunto de regras do envio de currículo, restrito ao que a importação sabe ler (PDF e DOCX).
+    const verificacao = verificarArquivo(arquivo, ["documento"], {
+      tipos: TIPOS_IMPORTAVEIS,
+      formatos: "um arquivo PDF ou DOCX",
+    });
+    if (!verificacao.ok) {
+      toast.error(verificacao.mensagem);
       return;
     }
 
@@ -223,7 +202,7 @@ export function ImportarCurriculoDialog({
             <input
               id="arquivo-curriculo-importar"
               type="file"
-              accept=".pdf,.docx"
+              accept={atributoAccept(["documento"], { tipos: TIPOS_IMPORTAVEIS, extensoes: EXTENSOES_IMPORTAVEIS })}
               className="sr-only"
               disabled={extrair.isPending}
               onChange={aoSelecionarArquivo}

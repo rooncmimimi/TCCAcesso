@@ -11,6 +11,9 @@ const MARCADOR_PAGINA_PDF = /^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gm;
  * sem texto real) não têm solução aqui: retornam um erro claro em vez de
  * inventar um resultado vazio ou incompleto sem explicação.
  */
+const MENSAGEM_ARQUIVO_ILEGIVEL =
+    "Não foi possível ler este arquivo. Ele pode estar corrompido ou protegido por senha. Salve-o de novo como PDF ou DOCX e tente outra vez.";
+
 export async function extrairTextoDocumento(buffer, mimetype) {
     if (mimetype === "application/pdf") {
         const parser = new PDFParse({ data: buffer });
@@ -26,8 +29,14 @@ export async function extrairTextoDocumento(buffer, mimetype) {
             }
 
             return texto;
+        } catch (erro) {
+            // Um PDF corrompido ou protegido faz a biblioteca lançar um erro cru, que viraria um erro
+            // interno 500 sem explicação. Erros nossos (como o de PDF escaneado) passam como estão.
+            if (erro instanceof ErroApi) throw erro;
+
+            throw ErroApi.requisicaoInvalida(MENSAGEM_ARQUIVO_ILEGIVEL);
         } finally {
-            await parser.destroy();
+            await parser.destroy().catch(() => {});
         }
     }
 
@@ -35,7 +44,14 @@ export async function extrairTextoDocumento(buffer, mimetype) {
         mimetype ===
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
-        const resultado = await mammoth.extractRawText({ buffer });
+        let resultado;
+
+        try {
+            resultado = await mammoth.extractRawText({ buffer });
+        } catch {
+            throw ErroApi.requisicaoInvalida(MENSAGEM_ARQUIVO_ILEGIVEL);
+        }
+
         const texto = (resultado.value ?? "").trim();
 
         if (!texto) {

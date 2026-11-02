@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
+import { verificarArquivo } from "@/lib/arquivos";
 import { Image as ImageIcon, Video, X } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,7 +17,6 @@ import { useCriarPostagem } from "./hooks";
 import {
   LIMITE_ANEXOS,
   LIMITE_CARACTERES,
-  TIPOS_ACEITOS,
   TIPOS_IMAGEM_ACEITOS,
   TIPOS_VIDEO_ACEITOS,
   ehImagem,
@@ -45,12 +45,15 @@ export function FormularioPostagem() {
     evento.target.value = "";
     if (!arquivos.length) return;
 
-    const invalidos = arquivos.filter((arquivo) => !TIPOS_ACEITOS.includes(arquivo.type));
-    if (invalidos.length) {
-      toast.error("Apenas imagens (PNG/JPEG/WEBP) e vídeos (MP4/WEBM) são aceitos.");
+    // Tipo e tamanho de cada arquivo (imagem até 5 MB, vídeo até 50 MB), pelas regras centrais. Antes só o
+    // tipo era conferido, e um vídeo grande demais subia inteiro para o servidor recusar no fim.
+    const verificados = arquivos.map((arquivo) => ({ arquivo, resultado: verificarArquivo(arquivo, ["imagem", "video"]) }));
+
+    for (const { arquivo, resultado } of verificados) {
+      if (!resultado.ok) toast.error(`${arquivo.name}: ${resultado.mensagem}`);
     }
 
-    const validos = arquivos.filter((arquivo) => TIPOS_ACEITOS.includes(arquivo.type));
+    const validos = verificados.filter(({ resultado }) => resultado.ok).map(({ arquivo }) => arquivo);
     setAnexos((atuais) => {
       const combinados = [...atuais, ...validos].slice(0, LIMITE_ANEXOS);
       if (atuais.length + validos.length > LIMITE_ANEXOS) {

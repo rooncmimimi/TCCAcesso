@@ -47,8 +47,8 @@ const Sessao = sequelize.define(
             type: DataTypes.STRING(64)
         },
 
-        // O Sequelize seleciona e insere TODAS as colunas do model. Sem a migration correspondente aplicada (o deploy
-        // não aplica migrations), declará-las sempre derrubaria o login, o cadastro e a renovação de sessão com
+        // O Sequelize seleciona e insere TODAS as colunas do model. Sem a migration correspondente aplicada (o deploy só as aplica se o
+        // Build Command do Render rodar `npm run migrate`), declará-las sempre derrubaria o login, o cadastro e a renovação de sessão com
         // "column does not exist", mesmo com o recurso desligado. Por isso as colunas de migrations posteriores à
         // 0001 só existem no model quando a chave do recurso delas está ligada (e a chave exige a migration).
 

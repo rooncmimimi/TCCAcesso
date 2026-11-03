@@ -17,7 +17,7 @@ Também: o Site mostra o tipo do aparelho (celular, tablet, computador, aplicati
 
 ## Como ligar
 
-Os itens 1, 2, 5 e 6 funcionam **sem** nenhuma configuração nova. Os itens 3 e 4 ficam atrás de uma chave, porque o deploy não aplica migrations:
+Os itens 1, 2, 5 e 6 funcionam **sem** nenhuma configuração nova. Os itens 3 e 4 ficam atrás de uma chave, porque o código precisa funcionar antes de a migration existir no banco (veja `implantacao.md`: ela só roda no deploy se o Build Command do Render tiver `npm run migrate`):
 
 1. Aplicar `0009_sessoes_e_dispositivos.sql` (`npm run migrate`). Só **acrescenta** 3 colunas e 2 índices à tabela `sessoes` e preenche as colunas novas das linhas existentes (cada uma vira a sua família). Nenhum dado é alterado ou apagado.
 2. Definir `SESSOES_DISPOSITIVOS_HABILITADO=true` no Render. Ao iniciar, o servidor confere (sem alterar nada) se a migration existe e **avisa no log** se faltar.

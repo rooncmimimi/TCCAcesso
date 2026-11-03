@@ -19,7 +19,7 @@ Os dois modos têm testes e foram exercitados contra banco real (ver o fim deste
 
 ## Como ligar (nada muda até ligar)
 
-1. Aplicar a migration `0008_totp_e_mfa_na_sessao.sql` (`npm run migrate`). **O deploy não aplica migrations.** Ela só cria 2 tabelas e 1 coluna; não altera dados.
+1. Aplicar a migration `0008_totp_e_mfa_na_sessao.sql` (`npm run migrate`). O deploy só as aplica se o Build Command do Render tiver `npm run migrate` (veja `implantacao.md`); confira com `npm run implantacao:verificar`. Ela só cria 2 tabelas e 1 coluna; não altera dados.
 2. No Render, definir `MFA_CHAVE_CIFRA` (32+ caracteres aleatórios). Sem ela usa-se o `JWT_SECRET`, e trocá-lo deixaria todos os TOTP ilegíveis. O servidor avisa no log.
 3. Definir `MFA_TOTP_HABILITADO=true` (opcional para administrador, como descrito acima). Ao iniciar, o servidor confere (sem alterar nada) se a migration existe e avisa se faltar.
 4. Deploy do Site e da API juntos.

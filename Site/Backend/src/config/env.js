@@ -196,7 +196,7 @@ const env = {
     sessoes: {
         // Liga: encerrar uma sessão corta o acesso na hora (o access token leva `sid`, e o servidor confere que a
         // sessão segue ativa), e a lista de dispositivos mostra início e última atividade verdadeiros. Desligada por
-        // padrão porque a migration 0009 precisa estar aplicada antes (o deploy não a aplica).
+        // padrão porque a migration 0009 precisa estar aplicada antes (confira com `npm run implantacao:verificar`).
         dispositivosHabilitado: process.env.SESSOES_DISPOSITIVOS_HABILITADO === "true",
         // Teto de sessões ativas por conta: ao passar dele, as mais antigas são encerradas. Não depende da migration.
         maximoPorConta: Math.max(2, Number(process.env.SESSOES_MAXIMO_POR_CONTA) || 20)
@@ -205,7 +205,7 @@ const env = {
     // Verificação em duas etapas por aplicativo autenticador (TOTP). Sem custo e sem serviço externo.
     mfa: {
         // Liga o recurso: login com o segundo fator, exigência para administradores e as telas de Segurança.
-        // Desligada por padrão porque a migration 0008 precisa estar aplicada antes (o deploy não a aplica).
+        // Desligada por padrão porque a migration 0008 precisa estar aplicada antes (confira com `npm run implantacao:verificar`).
         habilitado: process.env.MFA_TOTP_HABILITADO === "true",
         // Quais tipos de conta podem ter a verificação. Por enquanto só administrador; para abrir a candidato e empresa
         // depois, basta `MFA_TOTP_TIPOS=administrador,candidato,empresa` (sem mudar código).

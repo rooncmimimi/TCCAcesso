@@ -31,6 +31,18 @@ vi.mock("../models/index.js", () => ({
 }));
 
 vi.mock("../utils/bcrypt.js", () => ({ gerarHashSenha: vi.fn(), compararSenha: vi.fn() }));
+// A verificação em duas etapas tem testes próprios (TotpService.test.js); aqui ela fica desligada.
+vi.mock("./TotpService.js", () => ({
+    default: {
+        habilitado: vi.fn(() => false),
+        exigirHabilitado: vi.fn(),
+        buscarAtivo: vi.fn(async () => null),
+        conferirSegundoFator: vi.fn(),
+        codigosRestantes: vi.fn(),
+        situacaoDaConta: vi.fn(async () => ({ mfaDisponivel: false, mfaConfigurado: false, mfaExigido: false }))
+    }
+}));
+vi.mock("./AdminAuditoriaService.js", () => ({ default: { registrar: vi.fn() } }));
 vi.mock("./SessaoService.js", () => ({
     default: { emitir: vi.fn(async () => ({ refreshToken: "refresh-de-teste" })), revogarTodos: vi.fn() }
 }));

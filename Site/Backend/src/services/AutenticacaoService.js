@@ -7,9 +7,11 @@ import {
     CodigoVerificacaoEmail
 } from "../models/index.js";
 import { gerarHashSenha, compararSenha } from "../utils/bcrypt.js";
-import { assinarJwt } from "../utils/jwt.js";
+import { assinarJwt, assinarDesafioMfa, lerDesafioMfa } from "../utils/jwt.js";
 import { gerarCodigoNumerico, hashToken, compararHash } from "../utils/tokens.js";
 import SessaoService from "./SessaoService.js";
+import TotpService from "./TotpService.js";
+import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import EmailService from "./EmailService.js";
 import NotificacaoService from "./NotificacaoService.js";
 import NotificacaoPushService from "./NotificacaoPushService.js";
@@ -58,10 +60,15 @@ class AutenticacaoService {
         return emailCanonico(email);
     }
 
-    gerarToken(usuario) {
+    /**
+     * Access token. `mfaVerificadoEm` (quando a sessão passou pelo segundo fator) vai como `mfa`, em segundos:
+     * o middleware compara com a data em que o TOTP do administrador foi ativado ou reiniciado.
+     */
+    gerarToken(usuario, { mfaVerificadoEm = null } = {}) {
         return assinarJwt({
             id: usuario.id,
-            tipoUsuario: usuario.tipoUsuario
+            tipoUsuario: usuario.tipoUsuario,
+            ...(mfaVerificadoEm ? { mfa: Math.floor(new Date(mfaVerificadoEm).getTime() / 1000) } : {})
         });
     }
 
@@ -107,7 +114,8 @@ class AutenticacaoService {
             dadosPessoaisPendentes = !candidato || !candidato.cpfHash;
         }
 
-        return { temSenha: Boolean(hash), dadosPessoaisPendentes };
+        // Verificação em duas etapas: só o que o Site precisa (disponível, configurada, exigida). Nada de segredo.
+        return { temSenha: Boolean(hash), dadosPessoaisPendentes, ...(await TotpService.situacaoDaConta(usuario)) };
     }
 
     /**
@@ -125,7 +133,7 @@ class AutenticacaoService {
         }
     }
 
-    async montarSessao(usuario, contexto = {}) {
+    async montarSessao(usuario, contexto = {}, { mfaVerificadoEm = null } = {}) {
         const dados = usuario.toJSON();
         delete dados.senhaHash;
 
@@ -154,13 +162,16 @@ class AutenticacaoService {
 
         const { refreshToken } = await SessaoService.emitir(
             usuario.id,
-            contexto
+            contexto,
+            { mfaVerificadoEm }
         );
 
         return {
             usuario: dados,
-            token: this.gerarToken(usuario),
-            refreshToken
+            token: this.gerarToken(usuario, { mfaVerificadoEm }),
+            refreshToken,
+            // Administrador sem TOTP entra, mas só alcança a tela de configuração: o servidor nega o resto.
+            mfaConfiguracaoPendente: Boolean(dados.mfaExigido && !dados.mfaConfigurado)
         };
     }
 
@@ -721,7 +732,7 @@ class AutenticacaoService {
      * Quem chama é responsável por já ter provado a identidade: senha conferida em `entrar`, ou
      * `sub` do ID token verificado em `GoogleAuthService`.
      */
-    async entrarComUsuario(usuario, contexto = {}, confirmarReativacao = false) {
+    async entrarComUsuario(usuario, contexto = {}, confirmarReativacao = false, { segundoFatorVerificado = false } = {}) {
         if (!usuario.ativo) {
             throw ErroApi.acessoNegado("Usuário desativado.");
         }
@@ -738,6 +749,17 @@ class AutenticacaoService {
             return { emailNaoVerificado: true, email: usuario.email };
         }
 
+        // Quem tem verificação em duas etapas não recebe sessão só com a senha (ou o Google): recebe um desafio
+        // de 5 minutos, que `concluirLoginComSegundoFator` troca pela sessão depois do código. Fica antes da
+        // checagem de conta pausada para não revelar o estado da conta a quem só tem a senha.
+        if (!segundoFatorVerificado && TotpService.habilitado() && (await TotpService.buscarAtivo(usuario.id, { attributes: ["usuarioId"] }))) {
+            return {
+                mfaNecessario: true,
+                desafioMfa: assinarDesafioMfa({ sub: usuario.id, cr: confirmarReativacao ? 1 : 0 }),
+                metodosMfa: ["totp", "recuperacao"]
+            };
+        }
+
         if (usuario.pausadoPeloUsuario) {
             if (!confirmarReativacao) {
                 return { contaPausada: true };
@@ -750,12 +772,82 @@ class AutenticacaoService {
         usuario.ultimoLogin = new Date();
         await usuario.save();
 
-        return this.montarSessao(usuario, contexto);
+        return this.montarSessao(usuario, contexto, {
+            mfaVerificadoEm: segundoFatorVerificado ? new Date() : null
+        });
+    }
+
+    /**
+     * Passo 2 do login de quem tem verificação em duas etapas: troca o desafio (entregue depois da senha ou do
+     * Google) e um código do aplicativo, ou de recuperação, pela sessão.
+     *
+     * O desafio sozinho não abre nada, e o código é conferido pelo `TotpService` (uso único, espera depois de
+     * erros seguidos). Depois disso a conta passa de novo pelos portões de `entrarComUsuario`. Usar um código
+     * de recuperação fica na auditoria e a resposta diz quantos restam.
+     */
+    async concluirLoginComSegundoFator(desafio, codigo, contexto = {}) {
+        const expirado = () =>
+            ErroApi.requisicaoInvalida("A verificação expirou. Entre novamente.", { codigo: "MFA_DESAFIO_EXPIRADO" });
+
+        let payload;
+        try {
+            payload = lerDesafioMfa(desafio);
+        } catch {
+            throw expirado();
+        }
+
+        TotpService.exigirHabilitado();
+
+        const usuario = await Usuario.findByPk(payload.sub);
+
+        if (!usuario) {
+            throw expirado();
+        }
+
+        const conferencia = await TotpService.conferirSegundoFator(usuario.id, codigo);
+
+        if (!conferencia.ok) {
+            throw ErroApi.requisicaoInvalida("Código incorreto ou já usado. Confira o aplicativo e tente de novo.", {
+                codigo: "MFA_CODIGO_INVALIDO"
+            });
+        }
+
+        let codigosRestantes = null;
+
+        if (conferencia.metodo === "recuperacao") {
+            codigosRestantes = await TotpService.codigosRestantes(usuario.id);
+
+            await AdminAuditoriaService.registrar({
+                administradorId: usuario.tipoUsuario === "administrador" ? usuario.id : null,
+                acao: "totp_codigo_recuperacao_usado",
+                entidadeTipo: "usuario",
+                entidadeId: usuario.id,
+                descricao: "Entrou com um código de recuperação da verificação em duas etapas.",
+                metadados: { codigosRestantes },
+                ...contexto
+            });
+        }
+
+        const sessao = await this.entrarComUsuario(usuario, contexto, payload.cr === 1, {
+            segundoFatorVerificado: true
+        });
+
+        return codigosRestantes === null ? sessao : { ...sessao, codigosRecuperacaoRestantes: codigosRestantes };
+    }
+
+    /**
+     * Sessão nova, já marcada como verificada, para quem acabou de ativar ou trocar o TOTP (isso encerra as
+     * outras sessões da conta, e este aparelho segue com a sua).
+     */
+    async emitirSessaoVerificada(usuario, contexto = {}, mfaVerificadoEm) {
+        const { refreshToken } = await SessaoService.emitir(usuario.id, contexto, { mfaVerificadoEm });
+
+        return { token: this.gerarToken(usuario, { mfaVerificadoEm }), refreshToken };
     }
 
     /* Renovação de sessão */
     async renovarToken(refreshToken, contexto = {}) {
-        const { usuario, refreshToken: novoToken } =
+        const { usuario, refreshToken: novoToken, mfaVerificadoEm } =
             await SessaoService.rotacionar(refreshToken, contexto);
 
         const dados = usuario.toJSON();
@@ -763,7 +855,7 @@ class AutenticacaoService {
 
         return {
             usuario: dados,
-            token: this.gerarToken(usuario),
+            token: this.gerarToken(usuario, { mfaVerificadoEm }),
             refreshToken: novoToken
         };
     }

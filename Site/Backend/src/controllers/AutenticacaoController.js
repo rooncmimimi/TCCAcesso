@@ -55,6 +55,20 @@ class AutenticacaoController {
         }
     }
 
+    async entrarComSegundoFator(req, res, next) {
+        try {
+            const resultado = await AutenticacaoService.concluirLoginComSegundoFator(
+                req.body.desafio,
+                req.body.codigo,
+                contextoRequisicao(req)
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
     async renovarToken(req, res, next) {
         try {
             const resultado = await AutenticacaoService.renovarToken(

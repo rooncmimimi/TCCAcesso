@@ -83,6 +83,10 @@ class TotpService {
         return { mfaDisponivel: true, mfaConfigurado: Boolean(ativo), mfaExigido: this.exigidoPara(usuario) };
     }
 
+    async codigosRestantes(usuarioId) {
+        return CodigoRecuperacaoTotp.count({ where: { usuarioId, usadoEm: null } });
+    }
+
     async estado(usuario) {
         const situacao = await this.situacaoDaConta(usuario);
 

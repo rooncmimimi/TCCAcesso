@@ -1,7 +1,8 @@
 import { Router } from "express";
 import AutenticacaoController from "../controllers/AutenticacaoController.js";
 import GoogleAuthController from "../controllers/GoogleAuthController.js";
-import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
+import autenticacaoMiddleware, { autenticacaoSemExigirMfa } from "../middlewares/autenticacaoMiddleware.js";
+import TotpController from "../controllers/TotpController.js";
 import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import {
@@ -30,6 +31,12 @@ import {
     validarReenviarConfirmacaoCadastro
 } from "../validators/sessaoValidator.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
+import {
+    validarAtivarTotp,
+    validarIniciarConfiguracaoTotp,
+    validarLoginTotp,
+    validarReautenticacaoTotp
+} from "../validators/totpValidator.js";
 
 const router = Router();
 
@@ -58,6 +65,16 @@ router.post(
     validarLogin,
     validacaoMiddleware,
     AutenticacaoController.entrar
+);
+
+// Passo 2 do login de quem tem verificação em duas etapas (senha ou Google já provados). Público: o
+// desafio de 5 minutos é quem identifica a conta; o código errado conta no limite de falhas.
+router.post(
+    "/login/totp",
+    limiteAutenticacao,
+    validarLoginTotp,
+    validacaoMiddleware,
+    AutenticacaoController.entrarComSegundoFator
 );
 
 router.post(
@@ -153,7 +170,9 @@ router.post("/google/vincular", autenticacaoMiddleware, limiteAutenticacao, Goog
 // Desvincula, também com a senha atual.
 router.delete("/google/vinculo", autenticacaoMiddleware, limiteAutenticacao, GoogleAuthController.desvincular);
 
-router.get("/me", autenticacaoMiddleware, AutenticacaoController.perfilAtual);
+// /me e /logout ficam abertos ao administrador que ainda não ativou (ou não verificou) o TOTP: a tela de
+// configuração precisa saber quem ele é e ele precisa conseguir sair. Todo o resto do servidor o recusa.
+router.get("/me", autenticacaoSemExigirMfa, AutenticacaoController.perfilAtual);
 
 // Marca o cadastro como terminado (última etapa do wizard). Enquanto não for chamada,
 // `cadastroConcluidoEm` fica nula e o Site oferece retomar o cadastro depois do login.
@@ -171,7 +190,50 @@ router.patch(
     AutenticacaoController.alterarSenha
 );
 
-router.post("/logout", autenticacaoMiddleware, AutenticacaoController.sair);
+router.post("/logout", autenticacaoSemExigirMfa, AutenticacaoController.sair);
+
+/* Verificação em duas etapas (aplicativo autenticador) */
+
+// Estado e configuração ficam abertos ao administrador que ainda vai configurar. Trocar o aparelho de quem
+// já tem TOTP exige senha e um código (`TotpService.iniciarConfiguracao`), então uma sessão não verificada
+// não consegue trocá-lo.
+router.get("/totp", autenticacaoSemExigirMfa, TotpController.estado);
+
+router.post(
+    "/totp/configurar",
+    autenticacaoSemExigirMfa,
+    limiteAutenticacao,
+    validarIniciarConfiguracaoTotp,
+    validacaoMiddleware,
+    TotpController.iniciar
+);
+
+router.post(
+    "/totp/ativar",
+    autenticacaoSemExigirMfa,
+    limiteAutenticacao,
+    validarAtivarTotp,
+    validacaoMiddleware,
+    TotpController.ativar
+);
+
+router.post(
+    "/totp/codigos-recuperacao",
+    autenticacaoMiddleware,
+    limiteAutenticacao,
+    validarReautenticacaoTotp,
+    validacaoMiddleware,
+    TotpController.regenerarCodigos
+);
+
+router.post(
+    "/totp/desativar",
+    autenticacaoMiddleware,
+    limiteAutenticacao,
+    validarReautenticacaoTotp,
+    validacaoMiddleware,
+    TotpController.desativar
+);
 
 /* Conta: pausar, excluir e trocar e-mail */
 

@@ -56,7 +56,7 @@ class SessaoService {
         return data;
     }
 
-    async emitir(usuarioId, contexto = {}, { transaction } = {}) {
+    async emitir(usuarioId, contexto = {}, { transaction, mfaVerificadoEm = null } = {}) {
         const token = gerarTokenOpaco();
 
         const registro = await Sessao.create(
@@ -67,7 +67,8 @@ class SessaoService {
                 userAgent: contexto.userAgent
                     ? String(contexto.userAgent).slice(0, 255)
                     : null,
-                ip: contexto.ip ? String(contexto.ip).slice(0, 64) : null
+                ip: contexto.ip ? String(contexto.ip).slice(0, 64) : null,
+                mfaVerificadoEm
             },
             { transaction }
         );
@@ -202,12 +203,16 @@ class SessaoService {
                     const { refreshToken: tokenTolerado } = await this.emitir(
                         usuarioTolerado.id,
                         contexto,
-                        { transaction }
+                        { transaction, mfaVerificadoEm: registro.mfaVerificadoEm }
                     );
 
                     await transaction.commit();
 
-                    return { usuario: usuarioTolerado, refreshToken: tokenTolerado };
+                    return {
+                        usuario: usuarioTolerado,
+                        refreshToken: tokenTolerado,
+                        mfaVerificadoEm: registro.mfaVerificadoEm
+                    };
                 }
 
                 if (foiRotacaoIndividual) {
@@ -242,10 +247,11 @@ class SessaoService {
                 throw this.erroContaIndisponivel(usuario);
             }
 
+            // A verificação do segundo fator acompanha a sessão na renovação.
             const { refreshToken, registro: novo } = await this.emitir(
                 usuario.id,
                 contexto,
-                { transaction }
+                { transaction, mfaVerificadoEm: registro.mfaVerificadoEm }
             );
 
             await registro.update(
@@ -255,7 +261,7 @@ class SessaoService {
 
             await transaction.commit();
 
-            return { usuario, refreshToken };
+            return { usuario, refreshToken, mfaVerificadoEm: registro.mfaVerificadoEm };
         } catch (erro) {
             if (!transaction.finished) {
                 await transaction.rollback();

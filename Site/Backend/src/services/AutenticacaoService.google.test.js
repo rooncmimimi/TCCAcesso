@@ -34,6 +34,18 @@ vi.mock("../utils/bcrypt.js", () => ({
     compararSenha: vi.fn()
 }));
 
+// A verificação em duas etapas tem testes próprios (TotpService.test.js); aqui ela fica desligada.
+vi.mock("./TotpService.js", () => ({
+    default: {
+        habilitado: vi.fn(() => false),
+        exigirHabilitado: vi.fn(),
+        buscarAtivo: vi.fn(async () => null),
+        conferirSegundoFator: vi.fn(),
+        codigosRestantes: vi.fn(),
+        situacaoDaConta: vi.fn(async () => ({ mfaDisponivel: false, mfaConfigurado: false, mfaExigido: false }))
+    }
+}));
+vi.mock("./AdminAuditoriaService.js", () => ({ default: { registrar: vi.fn() } }));
 vi.mock("./SessaoService.js", () => ({
     default: { emitir: vi.fn(async () => ({ refreshToken: "refresh-de-teste" })), revogarTodos: vi.fn() }
 }));
@@ -333,7 +345,8 @@ describe("entrarComUsuario (portões comuns ao login por senha e ao do Google)",
         expect(resultado).toMatchObject({ token: expect.any(String), refreshToken: "refresh-de-teste" });
         expect(conta.ultimoLogin).toBeInstanceOf(Date);
         expect(conta.save).toHaveBeenCalled();
-        expect(SessaoService.emitir).toHaveBeenCalledWith("u1", { ip: "10.0.0.1" });
+        // Sem segundo fator nesta sessão, a verificação (mfaVerificadoEm) segue nula.
+        expect(SessaoService.emitir).toHaveBeenCalledWith("u1", { ip: "10.0.0.1" }, { mfaVerificadoEm: null });
     });
 
     it("recusa conta desativada com 403", async () => {

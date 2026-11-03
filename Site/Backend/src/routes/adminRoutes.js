@@ -7,6 +7,7 @@ import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
 import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
+import { validarReinicioTotp } from "../validators/totpValidator.js";
 import {
     validarAtribuicaoDenuncia,
     validarObservacaoAdmin,
@@ -70,6 +71,14 @@ router.post(
     body("motivo").optional({ values: "falsy" }).trim().isLength({ max: 1000 }).withMessage("Motivo deve ter no máximo 1000 caracteres."),
     validacaoMiddleware,
     AdminController.bloquearUsuario
+);
+// Reinicia o TOTP de outra conta (nunca a própria). A rota já exige administrador COM o TOTP verificado.
+router.post(
+    "/usuarios/:id/totp/reiniciar",
+    validarUuidParam("id"),
+    validarReinicioTotp,
+    validacaoMiddleware,
+    AdminController.reiniciarTotp
 );
 router.get("/postagens", AdminController.postagens);
 router.delete(

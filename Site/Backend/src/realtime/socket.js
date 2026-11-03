@@ -3,6 +3,7 @@ import { Server } from "socket.io";
 import env from "../config/env.js";
 import { verificarJwt, tokenAnteriorATrocaDeSenha } from "../utils/jwt.js";
 import { Usuario, Conversa } from "../models/index.js";
+import TotpService from "../services/TotpService.js";
 
 /**
  * Camada de tempo real (Socket.IO).
@@ -115,6 +116,13 @@ export const iniciarSocket = (httpServer) => {
 
             if (!usuario.ativo) {
                 return next(new Error("Sessão inválida."));
+            }
+
+            // Administrador sem o TOTP configurado e verificado não abre conexão: é a mesma regra do REST.
+            if ((await TotpService.estadoDoAcesso(usuario, payload)) !== "ok") {
+                const erro = new Error("Confirme a verificação em duas etapas para continuar.");
+                erro.data = { codigo: "MFA_NECESSARIO" };
+                return next(erro);
             }
 
             socket.data.usuario = {

@@ -171,3 +171,29 @@ export async function avisoDaMigracaoTotp({ habilitado, consultar }) {
         "O login e as rotas de administrador vão falhar. Rode `npm run migrate` ou desligue a variável."
     );
 }
+
+const COLUNAS_DAS_SESSOES = ["sessoes.familia_id", "sessoes.iniciada_em", "sessoes.ultimo_uso_em"];
+
+/**
+ * Com `SESSOES_DISPOSITIVOS_HABILITADO` ligada, confere (sem alterar nada) se a migration 0009 foi aplicada. Sem ela,
+ * o login e a renovação de sessão falhariam no banco. `consultar` devolve os itens encontrados (`sessoes.coluna`).
+ */
+export async function avisoDaMigracaoSessoes({ habilitado, consultar }) {
+    if (!habilitado) return null;
+
+    let achados;
+    try {
+        achados = await consultar();
+    } catch {
+        return "[ENV] SESSOES_DISPOSITIVOS_HABILITADO está ligada, mas não consegui conferir se a migration 0009 foi aplicada.";
+    }
+
+    const faltando = COLUNAS_DAS_SESSOES.filter((item) => !achados.includes(item));
+
+    if (faltando.length === 0) return null;
+
+    return (
+        `[ENV] SESSOES_DISPOSITIVOS_HABILITADO está ligada, mas a migration 0009 NÃO foi aplicada (faltam: ${faltando.join(", ")}). ` +
+        "O login e a renovação de sessão vão falhar. Rode `npm run migrate` ou desligue a variável."
+    );
+}

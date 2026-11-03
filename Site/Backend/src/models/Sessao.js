@@ -47,12 +47,23 @@ const Sessao = sequelize.define(
             type: DataTypes.STRING(64)
         },
 
-        // Quando a sessão passou pelo segundo fator (TOTP ou código de recuperação). Vai junto na renovação
-        // do refresh token. Nulo = não passou (conta sem TOTP, ou administrador que ainda vai configurar).
-        //
-        // **Só existe no model com `MFA_TOTP_HABILITADO` ligada.** O Sequelize seleciona e insere todas as colunas
-        // do model; sem a migration 0008 aplicada (o deploy não a aplica), declará-la sempre derrubaria o login, o
-        // cadastro e a renovação de sessão com "column does not exist", mesmo com o recurso desligado.
+        // O Sequelize seleciona e insere TODAS as colunas do model. Sem a migration correspondente aplicada (o deploy
+        // não aplica migrations), declará-las sempre derrubaria o login, o cadastro e a renovação de sessão com
+        // "column does not exist", mesmo com o recurso desligado. Por isso as colunas de migrations posteriores à
+        // 0001 só existem no model quando a chave do recurso delas está ligada (e a chave exige a migration).
+
+        // Migration 0009 (Bloco 2, `SESSOES_DISPOSITIVOS_HABILITADO`): o login (família), o início dele e a última
+        // renovação.
+        ...(env.sessoes.dispositivosHabilitado
+            ? {
+                  familiaId: { type: DataTypes.UUID },
+                  iniciadaEm: { type: DataTypes.DATE },
+                  ultimoUsoEm: { type: DataTypes.DATE }
+              }
+            : {}),
+
+        // Migration 0008 (`MFA_TOTP_HABILITADO`): quando a sessão passou pelo segundo fator (TOTP ou código de
+        // recuperação). Vai junto na renovação do refresh token. Nulo = não passou.
         ...(env.mfa.habilitado
             ? {
                   mfaVerificadoEm: {

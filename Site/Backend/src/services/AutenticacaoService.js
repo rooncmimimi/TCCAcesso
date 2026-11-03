@@ -64,11 +64,13 @@ class AutenticacaoService {
      * Access token. `mfaVerificadoEm` (quando a sessão passou pelo segundo fator) vai como `mfa`, em segundos:
      * o middleware compara com a data em que o TOTP do administrador foi ativado ou reiniciado.
      */
-    gerarToken(usuario, { mfaVerificadoEm = null } = {}) {
+    gerarToken(usuario, { mfaVerificadoEm = null, familiaId = null } = {}) {
         return assinarJwt({
             id: usuario.id,
             tipoUsuario: usuario.tipoUsuario,
-            ...(mfaVerificadoEm ? { mfa: Math.floor(new Date(mfaVerificadoEm).getTime() / 1000) } : {})
+            ...(mfaVerificadoEm ? { mfa: Math.floor(new Date(mfaVerificadoEm).getTime() / 1000) } : {}),
+            // Identifica o login (dispositivo): o middleware confere que ele segue ativo, e encerrar a sessão corta o acesso na hora.
+            ...(familiaId ? { sid: familiaId } : {})
         });
     }
 
@@ -160,7 +162,7 @@ class AutenticacaoService {
 
         Object.assign(dados, this.situacaoDoCadastro(usuario, candidato));
 
-        const { refreshToken } = await SessaoService.emitir(
+        const { refreshToken, registro } = await SessaoService.emitir(
             usuario.id,
             contexto,
             { mfaVerificadoEm }
@@ -168,7 +170,7 @@ class AutenticacaoService {
 
         return {
             usuario: dados,
-            token: this.gerarToken(usuario, { mfaVerificadoEm }),
+            token: this.gerarToken(usuario, { mfaVerificadoEm, familiaId: registro?.familiaId }),
             refreshToken,
             // Administrador sem TOTP entra, mas só alcança a tela de configuração: o servidor nega o resto.
             mfaConfiguracaoPendente: Boolean(dados.mfaExigido && !dados.mfaConfigurado)
@@ -840,14 +842,14 @@ class AutenticacaoService {
      * outras sessões da conta, e este aparelho segue com a sua).
      */
     async emitirSessaoVerificada(usuario, contexto = {}, mfaVerificadoEm) {
-        const { refreshToken } = await SessaoService.emitir(usuario.id, contexto, { mfaVerificadoEm });
+        const { refreshToken, registro } = await SessaoService.emitir(usuario.id, contexto, { mfaVerificadoEm });
 
-        return { token: this.gerarToken(usuario, { mfaVerificadoEm }), refreshToken };
+        return { token: this.gerarToken(usuario, { mfaVerificadoEm, familiaId: registro?.familiaId }), refreshToken };
     }
 
     /* Renovação de sessão */
     async renovarToken(refreshToken, contexto = {}) {
-        const { usuario, refreshToken: novoToken, mfaVerificadoEm } =
+        const { usuario, refreshToken: novoToken, mfaVerificadoEm, familiaId } =
             await SessaoService.rotacionar(refreshToken, contexto);
 
         const dados = usuario.toJSON();
@@ -855,13 +857,13 @@ class AutenticacaoService {
 
         return {
             usuario: dados,
-            token: this.gerarToken(usuario, { mfaVerificadoEm }),
+            token: this.gerarToken(usuario, { mfaVerificadoEm, familiaId }),
             refreshToken: novoToken
         };
     }
 
-    async sair(refreshToken) {
-        return SessaoService.revogar(refreshToken);
+    async sair(refreshToken, { usuarioId = null, familiaId = null } = {}) {
+        return SessaoService.revogar(refreshToken, { usuarioId, familiaId });
     }
 
     /**

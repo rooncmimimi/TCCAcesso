@@ -44,3 +44,30 @@ describe("Sessao: colunas condicionadas à chave do recurso", () => {
         }
     });
 });
+
+describe("Sessao: colunas da migration 0009 (sessões e dispositivos)", () => {
+    const COLUNAS = ["familiaId", "iniciadaEm", "ultimoUsoEm"];
+
+    it("DESLIGADA (padrão): nenhuma delas entra nas consultas", async () => {
+        vi.stubEnv("SESSOES_DISPOSITIVOS_HABILITADO", "false");
+        const Sessao = await carregar();
+
+        for (const coluna of COLUNAS) expect(Object.keys(Sessao.rawAttributes)).not.toContain(coluna);
+    });
+
+    it("LIGADA: passam a existir", async () => {
+        vi.stubEnv("SESSOES_DISPOSITIVOS_HABILITADO", "true");
+        const Sessao = await carregar();
+
+        for (const coluna of COLUNAS) expect(Object.keys(Sessao.rawAttributes)).toContain(coluna);
+    });
+
+    it("as duas chaves são independentes", async () => {
+        vi.stubEnv("MFA_TOTP_HABILITADO", "true");
+        vi.stubEnv("SESSOES_DISPOSITIVOS_HABILITADO", "false");
+        const Sessao = await carregar();
+
+        expect(Object.keys(Sessao.rawAttributes)).toContain("mfaVerificadoEm");
+        expect(Object.keys(Sessao.rawAttributes)).not.toContain("familiaId");
+    });
+});

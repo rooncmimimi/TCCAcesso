@@ -66,6 +66,8 @@ export function dispararSessaoExpirada(motivo?: string) {
  * encerra a sessão, e a pessoa entra de novo e digita o código.
  */
 const CODIGO_MFA_NAO_CONFIGURADO = "MFA_NAO_CONFIGURADO";
+/** 401 de uma sessão encerrada (em outro dispositivo, ou pelo logout): renovar não adianta, o refresh token também foi revogado. */
+const CODIGO_SESSAO_ENCERRADA = "SESSAO_ENCERRADA";
 const CODIGO_MFA_NECESSARIO = "MFA_NECESSARIO";
 
 type MfaListener = () => void;
@@ -211,6 +213,14 @@ clienteApi.interceptors.response.use(
         listenersMfa.forEach((fn) => fn());
         return Promise.reject(erro);
       }
+    }
+
+    // Sessão encerrada por outro dispositivo ou pelo próprio logout: o acesso acabou na hora. Tentar renovar só atrasaria a
+    // resposta (o refresh token dela foi revogado junto), então encerra direto e explica o que houve.
+    if (erro.response?.status === 401 && codigoDoErro(erro) === CODIGO_SESSAO_ENCERRADA && !ehRotaAutenticacao) {
+      limparTokens();
+      dispararSessaoExpirada(extrairMensagemErro(erro));
+      return Promise.reject(erro);
     }
 
     if (erro.response?.status === 401 && original && !original._retry && !ehRotaAutenticacao) {

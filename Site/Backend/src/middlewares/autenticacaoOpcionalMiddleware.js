@@ -1,6 +1,8 @@
 import { verificarJwt } from "../utils/jwt.js";
 import { Usuario } from "../models/index.js";
 import TotpService from "../services/TotpService.js";
+import SessaoService from "../services/SessaoService.js";
+import env from "../config/env.js";
 
 /**
  * Variante opcional do `autenticacaoMiddleware`, para rotas públicas que precisam saber quem está
@@ -29,7 +31,11 @@ const autenticacaoOpcionalMiddleware = async (req, res, next) => {
             }
         });
 
-        if (usuario && usuario.ativo && !usuario.bloqueado && (await TotpService.estadoDoAcesso(usuario, payload)) === "ok") {
+        // Sessão encerrada não é reconhecida nem em rota pública.
+        const sessaoViva =
+            !env.sessoes.dispositivosHabilitado || !payload.sid || (await SessaoService.familiaViva(usuario?.id, payload.sid));
+
+        if (usuario && sessaoViva && usuario.ativo && !usuario.bloqueado && (await TotpService.estadoDoAcesso(usuario, payload)) === "ok") {
             req.user = usuario;
         }
 

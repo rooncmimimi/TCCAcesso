@@ -271,9 +271,16 @@ export interface SessaoAtiva {
   id: string;
   userAgent?: string | null;
   ip?: string | null;
+  /** Da última renovação da sessão. Servidor antigo só traz este. */
   criadoEm: string;
+  /** Quando o login aconteceu (não muda nas renovações). Ausente em servidor antigo. */
+  iniciadaEm?: string;
+  /** Última atividade do dispositivo (a última renovação). Ausente em servidor antigo. */
+  ultimoUsoEm?: string;
   expiraEm: string;
   atual: boolean;
+  /** Esta sessão passou pela verificação em duas etapas. */
+  verificadaEmDuasEtapas?: boolean;
 }
 
 /** Espelha a tabela `preferencias_notificacao` do Backend. */

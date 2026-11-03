@@ -168,7 +168,10 @@ class AutenticacaoController {
     /** Revoga o refresh token da sessão atual. */
     async sair(req, res, next) {
         try {
-            const resultado = await AutenticacaoService.sair(req.body?.refreshToken);
+            const resultado = await AutenticacaoService.sair(req.body?.refreshToken, {
+                usuarioId: req.user.id,
+                familiaId: req.sessaoFamiliaId
+            });
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {
@@ -231,10 +234,10 @@ class AutenticacaoController {
 
     async sessoes(req, res, next) {
         try {
-            const sessoes = await SessaoService.listarAtivas(
-                req.user.id,
-                req.body?.refreshToken
-            );
+            const sessoes = await SessaoService.listarAtivas(req.user.id, {
+                familiaId: req.sessaoFamiliaId,
+                tokenAtual: req.body?.refreshToken
+            });
 
             return res.status(200).json({ sucesso: true, sessoes });
         } catch (erro) {
@@ -257,10 +260,10 @@ class AutenticacaoController {
 
     async revogarOutrasSessoes(req, res, next) {
         try {
-            const resultado = await SessaoService.revogarTodosExceto(
-                req.user.id,
-                req.body?.refreshToken
-            );
+            const resultado = await SessaoService.revogarTodosExceto(req.user.id, {
+                familiaId: req.sessaoFamiliaId,
+                tokenAtual: req.body?.refreshToken
+            });
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

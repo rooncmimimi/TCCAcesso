@@ -1,4 +1,6 @@
+import crypto from "node:crypto";
 import { Op } from "sequelize";
+import env from "../config/env.js";
 import sequelize from "../config/bancoDeDados.js";
 import { Sessao, Usuario } from "../models/index.js";
 import { gerarTokenOpaco, hashToken } from "../utils/tokens.js";
@@ -56,24 +58,110 @@ class SessaoService {
         return data;
     }
 
-    async emitir(usuarioId, contexto = {}, { transaction, mfaVerificadoEm = null } = {}) {
+    /**
+     * Abre uma sessão (um login) ou, com `familia`, a renovação dela. Com `SESSOES_DISPOSITIVOS_HABILITADO`, todas
+     * as renovações de um login compartilham `familiaId` e `iniciadaEm`, e `ultimoUsoEm` marca a renovação. Um login
+     * novo (sem `familia`) respeita o teto de sessões por conta.
+     */
+    async emitir(usuarioId, contexto = {}, { transaction, mfaVerificadoEm = null, familia = null, rotacao = false } = {}) {
         const token = gerarTokenOpaco();
 
-        const registro = await Sessao.create(
-            {
-                usuarioId,
-                tokenHash: hashToken(token),
-                expiraEm: this.calcularExpiracao(),
-                userAgent: contexto.userAgent
-                    ? String(contexto.userAgent).slice(0, 255)
-                    : null,
-                ip: contexto.ip ? String(contexto.ip).slice(0, 64) : null,
-                mfaVerificadoEm
-            },
-            { transaction }
-        );
+        const dados = {
+            usuarioId,
+            tokenHash: hashToken(token),
+            expiraEm: this.calcularExpiracao(),
+            userAgent: contexto.userAgent ? String(contexto.userAgent).slice(0, 255) : null,
+            ip: contexto.ip ? String(contexto.ip).slice(0, 64) : null,
+            mfaVerificadoEm
+        };
+
+        if (env.sessoes.dispositivosHabilitado) {
+            const id = crypto.randomUUID();
+            const agora = new Date();
+
+            Object.assign(dados, {
+                id,
+                familiaId: familia?.familiaId ?? id,
+                iniciadaEm: familia?.iniciadaEm ?? agora,
+                ultimoUsoEm: agora
+            });
+        }
+
+        const registro = await Sessao.create(dados, { transaction });
+
+        if (!rotacao) {
+            await this.aplicarLimite(usuarioId, { transaction });
+        }
 
         return { refreshToken: token, registro };
+    }
+
+    /** A família (login) de uma sessão existente, para a renovação herdá-la. Nulo sem a migration 0009 ou em linha antiga. */
+    familiaDe(registro) {
+        if (!env.sessoes.dispositivosHabilitado || !registro?.familiaId) {
+            return null;
+        }
+
+        return { familiaId: registro.familiaId, iniciadaEm: registro.iniciadaEm };
+    }
+
+    /**
+     * Teto de sessões ativas por conta (`SESSOES_MAXIMO_POR_CONTA`, padrão 20): ao passar dele, os dispositivos menos
+     * recentes são encerrados. Sem isto, quem repetisse o login (ou um script) acumularia sessões sem limite.
+     *
+     * **Conta dispositivos (famílias), não linhas.** Durante a janela de tolerância de uma renovação (duas abas renovando
+     * juntas) o mesmo login pode ter duas linhas ativas; contar linhas fazia o teto encerrar o dispositivo de quem estava
+     * usando. Visto na rodada funcional contra banco real. Devolve quantos dispositivos foram encerrados.
+     */
+    async aplicarLimite(usuarioId, { transaction } = {}) {
+        const ativas = await Sessao.findAll({
+            where: { usuarioId, revogadaEm: null, expiraEm: { [Op.gt]: new Date() } },
+            order: [["criadoEm", "DESC"]],
+            attributes: env.sessoes.dispositivosHabilitado ? ["id", "familiaId"] : ["id"],
+            transaction
+        });
+
+        // Um dispositivo por família (a linha mais recente dela); linha sem família é um dispositivo só dela.
+        const vistos = new Set();
+        const dispositivos = ativas.filter((sessao) => {
+            const chave = sessao.familiaId ?? sessao.id;
+            if (vistos.has(chave)) return false;
+            vistos.add(chave);
+            return true;
+        });
+
+        if (dispositivos.length <= env.sessoes.maximoPorConta) {
+            return 0;
+        }
+
+        const excedentes = dispositivos.slice(env.sessoes.maximoPorConta);
+        const familias = excedentes.map((s) => s.familiaId).filter(Boolean);
+        const ids = excedentes.filter((s) => !s.familiaId).map((s) => s.id);
+        const alvos = [];
+
+        if (familias.length > 0) alvos.push({ familiaId: { [Op.in]: familias } });
+        if (ids.length > 0) alvos.push({ id: { [Op.in]: ids } });
+
+        await Sessao.update(
+            { revogadaEm: new Date() },
+            { where: { usuarioId, revogadaEm: null, [Op.or]: alvos }, transaction }
+        );
+
+        return excedentes.length;
+    }
+
+    /**
+     * Esta sessão (login) continua ativa? É o que faz encerrar uma sessão valer na hora: o access token leva `sid`, e
+     * o middleware pergunta aqui a cada requisição. Uma renovação em curso troca a linha dentro de uma transação, então
+     * a família nunca fica sem linha ativa no meio dela.
+     */
+    async familiaViva(usuarioId, familiaId) {
+        const viva = await Sessao.findOne({
+            where: { familiaId, usuarioId, revogadaEm: null, expiraEm: { [Op.gt]: new Date() } },
+            attributes: ["id"]
+        });
+
+        return Boolean(viva);
     }
 
     async revogarTodos(usuarioId, { transaction } = {}) {
@@ -85,8 +173,12 @@ class SessaoService {
 
     /* Sessões ativas (tela de Configurações) */
 
-    /** Lista as sessões ativas do usuário, sinalizando qual é a atual. */
-    async listarAtivas(usuarioId, tokenAtual) {
+    /**
+     * Lista as sessões ativas do usuário, uma por login (dispositivo), sinalizando qual é a atual. A atual é a da
+     * família do access token (`familiaId`, quando a migration 0009 está em uso) ou a do refresh token informado.
+     * `iniciadaEm` e `ultimoUsoEm` são os verdadeiros com a 0009 e, sem ela, caem no `criadoEm` da linha.
+     */
+    async listarAtivas(usuarioId, { familiaId = null, tokenAtual = null } = {}) {
         const hashAtual = tokenAtual ? hashToken(tokenAtual) : null;
 
         const registros = await Sessao.findAll({
@@ -98,13 +190,27 @@ class SessaoService {
             order: [["criadoEm", "DESC"]]
         });
 
-        return registros.map((registro) => ({
+        // Durante a janela de tolerância de uma renovação a família pode ter duas linhas: fica a mais recente.
+        const vistos = new Set();
+        const unicos = registros.filter((registro) => {
+            const chave = registro.familiaId ?? registro.id;
+            if (vistos.has(chave)) return false;
+            vistos.add(chave);
+            return true;
+        });
+
+        return unicos.map((registro) => ({
             id: registro.id,
             userAgent: registro.userAgent,
             ip: registro.ip,
             criadoEm: registro.criadoEm,
+            iniciadaEm: registro.iniciadaEm ?? registro.criadoEm,
+            ultimoUsoEm: registro.ultimoUsoEm ?? registro.criadoEm,
             expiraEm: registro.expiraEm,
-            atual: hashAtual !== null && registro.tokenHash === hashAtual
+            verificadaEmDuasEtapas: Boolean(registro.mfaVerificadoEm),
+            atual:
+                Boolean(familiaId && registro.familiaId === familiaId) ||
+                (hashAtual !== null && registro.tokenHash === hashAtual)
         }));
     }
 
@@ -118,25 +224,49 @@ class SessaoService {
             throw ErroApi.naoEncontrado("Sessão não encontrada.");
         }
 
-        await registro.update({ revogadaEm: new Date() });
+        // Com a migration 0009 o login inteiro (todas as renovações) é encerrado, e o access token dele deixa de valer.
+        if (registro.familiaId) {
+            await Sessao.update(
+                { revogadaEm: new Date() },
+                { where: { familiaId: registro.familiaId, usuarioId, revogadaEm: null } }
+            );
+        } else {
+            await registro.update({ revogadaEm: new Date() });
+        }
 
         return { mensagem: "Sessão encerrada." };
     }
 
-    /** Revoga todas as sessões do usuário, exceto a que corresponde ao token informado. */
-    async revogarTodosExceto(usuarioId, tokenAtual) {
-        const hashAtual = tokenAtual ? hashToken(tokenAtual) : null;
+    /**
+     * Revoga todas as sessões do usuário, exceto a atual. A atual vem da família do access token (`familiaId`) ou do
+     * refresh token informado. **Sem conseguir identificá-la, recusa**: antes, sem o refresh token no corpo, isto
+     * encerrava também a sessão de quem pediu, sem avisar.
+     */
+    async revogarTodosExceto(usuarioId, { familiaId = null, tokenAtual = null } = {}) {
+        let familiaAtual = familiaId;
+        let idAtual = null;
 
-        await Sessao.update(
-            { revogadaEm: new Date() },
-            {
-                where: {
-                    usuarioId,
-                    revogadaEm: null,
-                    ...(hashAtual ? { tokenHash: { [Op.ne]: hashAtual } } : {})
-                }
-            }
-        );
+        if (!familiaAtual && tokenAtual) {
+            const atual = await Sessao.findOne({
+                where: { usuarioId, tokenHash: hashToken(tokenAtual), revogadaEm: null }
+            });
+
+            familiaAtual = atual?.familiaId ?? null;
+            idAtual = atual?.id ?? null;
+        }
+
+        if (!familiaAtual && !idAtual) {
+            throw ErroApi.requisicaoInvalida(
+                "Não foi possível identificar a sessão que você está usando. Entre novamente antes de encerrar as outras.",
+                { codigo: "SESSAO_ATUAL_NAO_IDENTIFICADA" }
+            );
+        }
+
+        const alvo = familiaAtual
+            ? { [Op.or]: [{ familiaId: { [Op.ne]: familiaAtual } }, { familiaId: null }] }
+            : { id: { [Op.ne]: idAtual } };
+
+        await Sessao.update({ revogadaEm: new Date() }, { where: { usuarioId, revogadaEm: null, ...alvo } });
 
         return { mensagem: "As outras sessões foram encerradas." };
     }
@@ -203,7 +333,12 @@ class SessaoService {
                     const { refreshToken: tokenTolerado } = await this.emitir(
                         usuarioTolerado.id,
                         contexto,
-                        { transaction, mfaVerificadoEm: registro.mfaVerificadoEm }
+                        {
+                            transaction,
+                            mfaVerificadoEm: registro.mfaVerificadoEm,
+                            familia: this.familiaDe(registro),
+                            rotacao: true
+                        }
                     );
 
                     await transaction.commit();
@@ -211,7 +346,8 @@ class SessaoService {
                     return {
                         usuario: usuarioTolerado,
                         refreshToken: tokenTolerado,
-                        mfaVerificadoEm: registro.mfaVerificadoEm
+                        mfaVerificadoEm: registro.mfaVerificadoEm,
+                        familiaId: registro.familiaId ?? null
                     };
                 }
 
@@ -251,7 +387,12 @@ class SessaoService {
             const { refreshToken, registro: novo } = await this.emitir(
                 usuario.id,
                 contexto,
-                { transaction, mfaVerificadoEm: registro.mfaVerificadoEm }
+                {
+                    transaction,
+                    mfaVerificadoEm: registro.mfaVerificadoEm,
+                    familia: this.familiaDe(registro),
+                    rotacao: true
+                }
             );
 
             await registro.update(
@@ -261,7 +402,12 @@ class SessaoService {
 
             await transaction.commit();
 
-            return { usuario, refreshToken, mfaVerificadoEm: registro.mfaVerificadoEm };
+            return {
+                usuario,
+                refreshToken,
+                mfaVerificadoEm: registro.mfaVerificadoEm,
+                familiaId: registro.familiaId ?? null
+            };
         } catch (erro) {
             if (!transaction.finished) {
                 await transaction.rollback();
@@ -270,15 +416,34 @@ class SessaoService {
         }
     }
 
-    async revogar(token) {
-        if (!token) {
+    /**
+     * Logout. Com a migration 0009, encerra o login inteiro (a família do token, ou a do access token de quem pediu),
+     * para o access token dele também deixar de valer na hora.
+     */
+    async revogar(token, { usuarioId = null, familiaId = null } = {}) {
+        if (!token && !familiaId) {
             return { mensagem: "Sessão encerrada." };
         }
 
-        await Sessao.update(
-            { revogadaEm: new Date() },
-            { where: { tokenHash: hashToken(token), revogadaEm: null } }
-        );
+        let familia = familiaId;
+        let dono = usuarioId;
+
+        if (token) {
+            const registro = await Sessao.findOne({ where: { tokenHash: hashToken(token), revogadaEm: null } });
+
+            if (registro) {
+                familia = registro.familiaId ?? familia;
+                dono = registro.usuarioId;
+
+                if (!registro.familiaId) {
+                    await registro.update({ revogadaEm: new Date() });
+                }
+            }
+        }
+
+        if (familia && dono) {
+            await Sessao.update({ revogadaEm: new Date() }, { where: { familiaId: familia, usuarioId: dono, revogadaEm: null } });
+        }
 
         return { mensagem: "Sessão encerrada." };
     }
@@ -286,6 +451,24 @@ class SessaoService {
     async limparExpirados() {
         return Sessao.destroy({
             where: { expiraEm: { [Op.lt]: new Date() } }
+        });
+    }
+
+    /**
+     * Limpeza periódica (`server.js`). Cada renovação do refresh token revoga uma linha e cria outra, então sem isto a
+     * tabela cresce sem limite (antes, `limparExpirados` nunca era chamada). Apaga as vencidas há mais de 1 dia e as
+     * revogadas há mais de 7: a detecção de reuso de token (que precisa da linha revogada) segue valendo por uma semana.
+     */
+    async limparAntigas({ agora = Date.now() } = {}) {
+        const DIA = 24 * 60 * 60 * 1000;
+
+        return Sessao.destroy({
+            where: {
+                [Op.or]: [
+                    { expiraEm: { [Op.lt]: new Date(agora - DIA) } },
+                    { revogadaEm: { [Op.lt]: new Date(agora - 7 * DIA) } }
+                ]
+            }
         });
     }
 }

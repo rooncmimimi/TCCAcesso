@@ -4,7 +4,8 @@ import app from "./app.js";
 import env from "./config/env.js";
 import conectarBanco from "./config/sequelize.js";
 import sequelize from "./config/bancoDeDados.js";
-import { avisoDaMigracaoContaSemSenha, avisoDaMigracaoTotp } from "./config/avisosDeAmbiente.js";
+import { avisoDaMigracaoContaSemSenha, avisoDaMigracaoSessoes, avisoDaMigracaoTotp } from "./config/avisosDeAmbiente.js";
+import SessaoService from "./services/SessaoService.js";
 import { iniciarSocket } from "./realtime/socket.js";
 import { storageHabilitado } from "./utils/supabaseStorage.js";
 
@@ -52,6 +53,33 @@ async function iniciarServidor() {
         }
     });
     if (avisoDoTotp) console.error(avisoDoTotp);
+
+    // Sessões e dispositivos (migration 0009): mesma conferência.
+    const avisoDasSessoes = await avisoDaMigracaoSessoes({
+        habilitado: env.sessoes.dispositivosHabilitado,
+        consultar: async () => {
+            const colunas = await sequelize.query(
+                "SELECT 'sessoes.' || column_name AS item FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'sessoes' AND column_name IN ('familia_id', 'iniciada_em', 'ultimo_uso_em')",
+                { type: "SELECT" }
+            );
+
+            return colunas.map((linha) => linha.item);
+        }
+    });
+    if (avisoDasSessoes) console.error(avisoDasSessoes);
+
+    // Limpeza das sessões antigas: cada renovação cria uma linha, e antes nada as apagava. Roda ao iniciar e a cada
+    // 6 horas; uma falha só é registrada, nunca derruba o servidor.
+    const limparSessoes = async () => {
+        try {
+            const apagadas = await SessaoService.limparAntigas();
+            if (apagadas > 0) console.log(`[SESSOES] ${apagadas} sessão(ões) antiga(s) apagada(s).`);
+        } catch (erro) {
+            console.error(`[SESSOES] Falha na limpeza de sessões antigas: ${erro.message}`);
+        }
+    };
+    void limparSessoes();
+    setInterval(limparSessoes, 6 * 60 * 60 * 1000).unref();
 
     // Nunca loga as credenciais, só o modo em uso, para deixar óbvio em
     // produção se o Storage persistente está realmente ativo ou se caiu

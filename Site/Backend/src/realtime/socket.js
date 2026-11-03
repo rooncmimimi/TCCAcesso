@@ -4,6 +4,7 @@ import env from "../config/env.js";
 import { verificarJwt, tokenAnteriorATrocaDeSenha } from "../utils/jwt.js";
 import { Usuario, Conversa } from "../models/index.js";
 import TotpService from "../services/TotpService.js";
+import SessaoService from "../services/SessaoService.js";
 
 /**
  * Camada de tempo real (Socket.IO).
@@ -116,6 +117,13 @@ export const iniciarSocket = (httpServer) => {
 
             if (!usuario.ativo) {
                 return next(new Error("Sessão inválida."));
+            }
+
+            // Sessão encerrada não abre conexão de tempo real: é a mesma regra do REST.
+            if (env.sessoes.dispositivosHabilitado && payload.sid && !(await SessaoService.familiaViva(usuario.id, payload.sid))) {
+                const erro = new Error("Esta sessão foi encerrada. Entre novamente.");
+                erro.data = { codigo: "SESSAO_ENCERRADA" };
+                return next(erro);
             }
 
             // Administrador sem o TOTP configurado e verificado não abre conexão: é a mesma regra do REST.

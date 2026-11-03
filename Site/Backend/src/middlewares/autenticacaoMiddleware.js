@@ -1,6 +1,8 @@
 import { verificarJwt, tokenAnteriorATrocaDeSenha } from "../utils/jwt.js";
 import { Usuario } from "../models/index.js";
 import TotpService from "../services/TotpService.js";
+import SessaoService from "../services/SessaoService.js";
+import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
 
 const MENSAGENS_MFA = {
@@ -79,6 +81,18 @@ export function criarAutenticacaoMiddleware({ permitirMfaPendente = false } = {}
                 throw ErroApi.naoAutenticado("Sua senha foi alterada. Entre novamente.", {
                     codigo: "SENHA_ALTERADA"
                 });
+            }
+
+            // Encerrar a sessão (ou sair) vale na hora: o access token leva o `sid` do login, e o login precisa seguir ativo.
+            // Token sem `sid` (emitido antes de a migration 0009 entrar em uso) vale até expirar, como sempre valeu.
+            if (env.sessoes.dispositivosHabilitado && payload.sid) {
+                if (!(await SessaoService.familiaViva(usuario.id, payload.sid))) {
+                    throw ErroApi.naoAutenticado("Esta sessão foi encerrada. Entre novamente.", {
+                        codigo: "SESSAO_ENCERRADA"
+                    });
+                }
+
+                req.sessaoFamiliaId = payload.sid;
             }
 
             const estadoMfa = await TotpService.estadoDoAcesso(usuario, payload);

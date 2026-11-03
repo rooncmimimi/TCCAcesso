@@ -76,5 +76,10 @@ services:
         value: administrador
       - key: MFA_TOTP_OBRIGATORIO_ADMIN
         value: "false"
+      # Sessões e dispositivos (Bloco 2). Só ligue depois de aplicar a migration 0009.
+      - key: SESSOES_DISPOSITIVOS_HABILITADO
+        value: "false"
+      - key: SESSOES_MAXIMO_POR_CONTA
+        value: "20"
       - key: MFA_CHAVE_CIFRA
         sync: false

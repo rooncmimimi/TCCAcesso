@@ -90,6 +90,22 @@ export const validarCadastroCandidato = [
     campoEstado({ obrigatorio: true })
 ];
 
+/**
+ * Criar a conta direto do retorno do Google: só a prova (que o servidor mesmo assinou) e a versão dos
+ * termos aceitos. Nada de e-mail, nome ou senha: o que vale vem da prova.
+ */
+export const validarCadastroComGoogle = [
+    body("prova")
+        .isString()
+        .notEmpty()
+        .withMessage("Verificação do Google ausente. Entre com o Google novamente."),
+
+    body("termosVersao")
+        .trim()
+        .isLength({ min: 1, max: 20 })
+        .withMessage("Aceite os Termos de Uso e o Aviso de Privacidade para criar a conta.")
+];
+
 export const validarCadastroEmpresa = [
     ...regrasComuns,
 

@@ -39,7 +39,9 @@ import { Route as AdminUsuariosRouteImport } from './routes/admin/usuarios'
 import { Route as AdminVagasRouteImport } from './routes/admin/vagas'
 import { Route as CadastroIndexRouteImport } from './routes/cadastro/index'
 import { Route as CadastroCandidatoRouteImport } from './routes/cadastro/candidato'
+import { Route as CadastroDadosRouteImport } from './routes/cadastro/dados'
 import { Route as CadastroEmpresaRouteImport } from './routes/cadastro/empresa'
+import { Route as CadastroGoogleRouteImport } from './routes/cadastro/google'
 import { Route as ConfiguracoesIndexRouteImport } from './routes/configuracoes/index'
 import { Route as ConfiguracoesAcessibilidadeRouteImport } from './routes/configuracoes/acessibilidade'
 import { Route as ConfiguracoesBloqueadosRouteImport } from './routes/configuracoes/bloqueados'
@@ -210,9 +212,19 @@ const CadastroCandidatoRoute = CadastroCandidatoRouteImport.update({
   path: '/cadastro/candidato',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CadastroDadosRoute = CadastroDadosRouteImport.update({
+  id: '/cadastro/dados',
+  path: '/cadastro/dados',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadastroEmpresaRoute = CadastroEmpresaRouteImport.update({
   id: '/cadastro/empresa',
   path: '/cadastro/empresa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroGoogleRoute = CadastroGoogleRouteImport.update({
+  id: '/cadastro/google',
+  path: '/cadastro/google',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesIndexRoute = ConfiguracoesIndexRouteImport.update({
@@ -344,7 +356,9 @@ export interface FileRoutesByFullPath {
   '/admin/usuarios': typeof AdminUsuariosRouteWithChildren
   '/admin/vagas': typeof AdminVagasRoute
   '/cadastro/candidato': typeof CadastroCandidatoRoute
+  '/cadastro/dados': typeof CadastroDadosRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
+  '/cadastro/google': typeof CadastroGoogleRoute
   '/configuracoes/acessibilidade': typeof ConfiguracoesAcessibilidadeRoute
   '/configuracoes/bloqueados': typeof ConfiguracoesBloqueadosRoute
   '/configuracoes/conta': typeof ConfiguracoesContaRoute
@@ -391,7 +405,9 @@ export interface FileRoutesByTo {
   '/admin/postagens': typeof AdminPostagensRoute
   '/admin/vagas': typeof AdminVagasRoute
   '/cadastro/candidato': typeof CadastroCandidatoRoute
+  '/cadastro/dados': typeof CadastroDadosRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
+  '/cadastro/google': typeof CadastroGoogleRoute
   '/configuracoes/acessibilidade': typeof ConfiguracoesAcessibilidadeRoute
   '/configuracoes/bloqueados': typeof ConfiguracoesBloqueadosRoute
   '/configuracoes/conta': typeof ConfiguracoesContaRoute
@@ -444,7 +460,9 @@ export interface FileRoutesById {
   '/admin/usuarios': typeof AdminUsuariosRouteWithChildren
   '/admin/vagas': typeof AdminVagasRoute
   '/cadastro/candidato': typeof CadastroCandidatoRoute
+  '/cadastro/dados': typeof CadastroDadosRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
+  '/cadastro/google': typeof CadastroGoogleRoute
   '/configuracoes/acessibilidade': typeof ConfiguracoesAcessibilidadeRoute
   '/configuracoes/bloqueados': typeof ConfiguracoesBloqueadosRoute
   '/configuracoes/conta': typeof ConfiguracoesContaRoute
@@ -498,7 +516,9 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/admin/vagas'
     | '/cadastro/candidato'
+    | '/cadastro/dados'
     | '/cadastro/empresa'
+    | '/cadastro/google'
     | '/configuracoes/acessibilidade'
     | '/configuracoes/bloqueados'
     | '/configuracoes/conta'
@@ -545,7 +565,9 @@ export interface FileRouteTypes {
     | '/admin/postagens'
     | '/admin/vagas'
     | '/cadastro/candidato'
+    | '/cadastro/dados'
     | '/cadastro/empresa'
+    | '/cadastro/google'
     | '/configuracoes/acessibilidade'
     | '/configuracoes/bloqueados'
     | '/configuracoes/conta'
@@ -597,7 +619,9 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/admin/vagas'
     | '/cadastro/candidato'
+    | '/cadastro/dados'
     | '/cadastro/empresa'
+    | '/cadastro/google'
     | '/configuracoes/acessibilidade'
     | '/configuracoes/bloqueados'
     | '/configuracoes/conta'
@@ -643,7 +667,9 @@ export interface RootRouteChildren {
   TermosRoute: typeof TermosRoute
   VagasRoute: typeof VagasRoute
   CadastroCandidatoRoute: typeof CadastroCandidatoRoute
+  CadastroDadosRoute: typeof CadastroDadosRoute
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
+  CadastroGoogleRoute: typeof CadastroGoogleRoute
   ConfiguracoesAcessibilidadeRoute: typeof ConfiguracoesAcessibilidadeRoute
   ConfiguracoesBloqueadosRoute: typeof ConfiguracoesBloqueadosRoute
   ConfiguracoesContaRoute: typeof ConfiguracoesContaRoute
@@ -869,11 +895,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CadastroCandidatoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadastro/dados': {
+      id: '/cadastro/dados'
+      path: '/cadastro/dados'
+      fullPath: '/cadastro/dados'
+      preLoaderRoute: typeof CadastroDadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadastro/empresa': {
       id: '/cadastro/empresa'
       path: '/cadastro/empresa'
       fullPath: '/cadastro/empresa'
       preLoaderRoute: typeof CadastroEmpresaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro/google': {
+      id: '/cadastro/google'
+      path: '/cadastro/google'
+      fullPath: '/cadastro/google'
+      preLoaderRoute: typeof CadastroGoogleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes/': {
@@ -1115,7 +1155,9 @@ const rootRouteChildren: RootRouteChildren = {
   TermosRoute: TermosRoute,
   VagasRoute: VagasRoute,
   CadastroCandidatoRoute: CadastroCandidatoRoute,
+  CadastroDadosRoute: CadastroDadosRoute,
   CadastroEmpresaRoute: CadastroEmpresaRoute,
+  CadastroGoogleRoute: CadastroGoogleRoute,
   ConfiguracoesAcessibilidadeRoute: ConfiguracoesAcessibilidadeRoute,
   ConfiguracoesBloqueadosRoute: ConfiguracoesBloqueadosRoute,
   ConfiguracoesContaRoute: ConfiguracoesContaRoute,

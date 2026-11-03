@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { webcrypto } from "node:crypto";
+import type { ReactNode } from "react";
 
 /**
  * "Contas conectadas" em Configurações → Segurança (achados 7 e 20): vincular e desvincular o Google
@@ -12,7 +13,7 @@ import { webcrypto } from "node:crypto";
  */
 
 const { usuarioDaSessao, conta, iniciarVinculo, vincular, desvincular, avisoSucesso, avisoErro } = vi.hoisted(() => ({
-  usuarioDaSessao: { tipo: "candidato" as string },
+  usuarioDaSessao: { tipo: "candidato" as string, temSenha: undefined as boolean | undefined },
   conta: vi.fn(),
   iniciarVinculo: vi.fn(),
   vincular: vi.fn(),
@@ -22,6 +23,9 @@ const { usuarioDaSessao, conta, iniciarVinculo, vincular, desvincular, avisoSuce
 }));
 
 vi.mock("@/hooks/useSessao", () => ({ useSessao: () => ({ usuario: usuarioDaSessao }) }));
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a>,
+}));
 vi.mock("sonner", () => ({ toast: { success: avisoSucesso, error: avisoErro } }));
 vi.mock("@/services/google.service", async (original) => ({
   ...(await original<typeof import("@/services/google.service")>()),
@@ -47,6 +51,7 @@ const erroDoServidor = (status: number, mensagem: string) => ({ response: { stat
 beforeEach(() => {
   vi.clearAllMocks();
   usuarioDaSessao.tipo = "candidato";
+  usuarioDaSessao.temSenha = undefined;
   window.sessionStorage.clear();
   window.history.replaceState(null, "", "/configuracoes/seguranca");
   vi.stubGlobal("crypto", webcrypto);
@@ -226,6 +231,36 @@ describe("vincular", () => {
     fireEvent.click(screen.getByRole("button", { name: "Vincular conta Google" }));
 
     expect(await screen.findByLabelText("Senha atual")).toHaveValue("");
+  });
+});
+
+// Etapa 6: conta criada pelo Google não tem senha, e o Google é o único jeito de entrar nela.
+describe("conta sem senha (entra só pelo Google)", () => {
+  beforeEach(() => {
+    usuarioDaSessao.temSenha = false;
+    conta.mockResolvedValue({ disponivel: true, elegivel: true, vinculado: true });
+  });
+
+  it("mostra que está vinculada, mas não oferece desvincular", async () => {
+    abrir();
+
+    expect(await screen.findByText("Vinculada")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desvincular conta Google" })).not.toBeInTheDocument();
+  });
+
+  it("explica por quê e leva a definir a senha", async () => {
+    abrir();
+
+    expect(await screen.findByRole("note")).toHaveTextContent("desvincular o Google");
+    expect(screen.getByRole("link", { name: "Definir senha" })).toHaveAttribute("href", "/configuracoes/senha");
+  });
+
+  it("com senha, o botão volta", async () => {
+    usuarioDaSessao.temSenha = true;
+    abrir();
+
+    expect(await screen.findByRole("button", { name: "Desvincular conta Google" })).toBeInTheDocument();
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 });
 

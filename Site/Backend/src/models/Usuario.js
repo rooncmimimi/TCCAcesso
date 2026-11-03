@@ -29,9 +29,12 @@ const Usuario = sequelize.define(
             }
         },
 
+        // Nulo = conta que entra só pelo Google e ainda não definiu senha. O banco garante que ela
+        // tenha, nesse caso, um `google_id` (`ck_usuarios_senha_ou_google`, migration 0007). Fica
+        // fora de qualquer resposta pelo escopo padrão; use `Usuario.scope("comSenha")` para lê-lo.
         senhaHash: {
             type: DataTypes.STRING(255),
-            allowNull: false
+            allowNull: true
         },
 
         telefone: {

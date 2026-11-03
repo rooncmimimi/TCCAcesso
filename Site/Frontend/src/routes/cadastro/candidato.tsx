@@ -25,9 +25,9 @@ import { RequisitosSenha } from "@/components/cadastro/RequisitosSenha";
 import { SeletorIdioma } from "@/components/cadastro/SeletorIdioma";
 import { AceiteTermos, BotaoFinalizar, NavegacaoEtapa, TituloEtapa } from "@/components/cadastro/comuns";
 import { textosDoCadastro, type CodigoIdioma, type TextosCadastro } from "@/components/cadastro/idioma";
-import { ehCodigoDePais } from "@/dados/paises";
 import { SIGLAS_ESTADOS_BR } from "@/dados/estados";
 import { EstadoSelect } from "@/components/cadastro/EstadoSelect";
+import { criarEsquemaCandidato } from "@/components/cadastro/esquemaCandidato";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
@@ -38,49 +38,7 @@ import { formatarCpf, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 import { lerEtapaSalva, salvarEtapa } from "@/lib/etapaCadastro";
 import { normalizarNome } from "@/lib/validacoesPessoais";
-import {
-  esquemaCpf,
-  esquemaDataNascimento,
-  esquemaNome,
-  limitesDataNascimento,
-} from "@/components/cadastro/regrasPessoais";
-
-/**
- * Esquema do candidato montado a partir dos textos do idioma escolhido, para as mensagens de erro
- * acompanharem a tradução — errar em português numa tela em espanhol é justamente a hora em que a
- * pessoa mais precisa entender.
- *
- * **Todo campo aqui é obrigatório.** Os dois únicos opcionais do cadastro — foto de perfil e
- * currículo — não passam por este esquema; ficam na etapa 3, que tem validação própria.
- */
-function criarEsquemaCandidato(t: TextosCadastro) {
-  return z.object({
-    pais: z.string().trim().min(1, t.erroPais).refine(ehCodigoDePais, t.erroPaisLista),
-    email: z.string().trim().min(1, t.erroEmail).email(t.erroEmailFormato).max(150),
-    cpf: esquemaCpf(t),
-    senha: z
-      .string()
-      .min(8, t.erroSenha)
-      .max(72, t.erroSenha)
-      .regex(/[a-z]/, t.erroSenhaMinuscula)
-      .regex(/[A-Z]/, t.erroSenhaMaiuscula)
-      .regex(/\d/, t.erroSenhaNumero)
-      .regex(/[^A-Za-z0-9]/, t.erroSenhaEspecial),
-    termos: z.literal(true, { errorMap: () => ({ message: t.erroTermos }) }),
-    nome: esquemaNome(t),
-    telefone: z
-      .string()
-      .trim()
-      .min(1, t.erroTelefone)
-      .refine((v) => {
-        const digitos = somenteDigitos(v).length;
-        return digitos >= 10 && digitos <= 11;
-      }, t.erroTelefoneFormato),
-    dataNascimento: esquemaDataNascimento(t),
-    cidade: z.string().trim().min(2, t.erroCidade).max(100),
-    estado: z.string().trim().length(2, t.erroEstado),
-  });
-}
+import { limitesDataNascimento } from "@/components/cadastro/regrasPessoais";
 
 type FormCandidato = z.infer<ReturnType<typeof criarEsquemaCandidato>>;
 /** Campos validados antes de liberar cada etapa do candidato. O índice é o da etapa. */
@@ -179,6 +137,15 @@ function CadastroCandidato() {
   // levaria alguém deslogado a uma etapa que precisa de sessão.
   const retomando = modo === "retomar";
 
+  // Quem criou a conta direto pelo Google ainda não informou CPF, nascimento e endereço, e as etapas
+  // seguintes dependem deles: começa por `/cadastro/dados`, e só depois volta para cá.
+  const faltamDadosPessoais = retomando && Boolean(usuario?.dadosPessoaisPendentes);
+  useEffect(() => {
+    if (faltamDadosPessoais) {
+      void navigate({ to: "/cadastro/dados", search: { depois }, replace: true });
+    }
+  }, [faltamDadosPessoais, navigate, depois]);
+
   return (
     <AutenticacaoLayout className="max-w-lg">
       {/* Quebra em duas linhas quando logo + idioma + acessibilidade não cabem (celular estreito),
@@ -203,6 +170,10 @@ function CadastroCandidato() {
           {modo === "aguardando" || modo === "sair" ? (
             <p role="status" className="py-10 text-center text-sm text-muted-foreground">
               {t.carregandoCadastro}
+            </p>
+          ) : faltamDadosPessoais ? (
+            <p role="status" className="py-6 text-sm text-muted-foreground">
+              Abrindo seus dados…
             </p>
           ) : (
             <WizardCandidato

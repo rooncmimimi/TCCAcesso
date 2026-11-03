@@ -56,3 +56,13 @@ describe("Usuario.toJSON", () => {
         expect(texto).not.toContain("sub-secreto");
     });
 });
+
+describe("Usuario.senhaHash", () => {
+    it("aceita nulo: conta que entra só pelo Google ainda não tem senha (o banco exige o Google, ck_usuarios_senha_ou_google)", () => {
+        expect(Usuario.rawAttributes.senhaHash.allowNull).toBe(true);
+    });
+
+    it("continua fora de qualquer resposta pelo escopo padrão", () => {
+        expect(Usuario.options.defaultScope.attributes.exclude).toContain("senhaHash");
+    });
+});

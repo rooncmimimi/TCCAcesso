@@ -63,3 +63,7 @@ services:
         sync: false
       - key: GOOGLE_REDIRECT_URI
         sync: false
+      # Etapa 6: "true" cria a conta no retorno do Google, sem senha. Só depois de aplicar a migration
+      # 0007 (senha_hash aceitando nulo). Desligada, o cadastro segue o formulário com senha.
+      - key: GOOGLE_CONTA_SEM_SENHA
+        value: "false"

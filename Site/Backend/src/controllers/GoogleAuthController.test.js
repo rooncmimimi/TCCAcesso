@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import jwt from "jsonwebtoken";
+import { UniqueConstraintError } from "sequelize";
 
 /**
  * `GoogleAuthController` com o serviço do Google e o de autenticação simulados: o que se testa aqui
@@ -14,7 +15,8 @@ const SEGREDO = "segredo-de-teste-com-mais-de-trinta-e-dois-caracteres";
 const { env } = vi.hoisted(() => ({
     env: {
         jwt: { secret: "segredo-de-teste-com-mais-de-trinta-e-dois-caracteres" },
-        frontendUrl: "https://site.exemplo"
+        frontendUrl: "https://site.exemplo",
+        google: { contaSemSenha: false }
     }
 }));
 
@@ -35,7 +37,7 @@ vi.mock("../services/GoogleAuthService.js", () => ({
 }));
 
 vi.mock("../services/AutenticacaoService.js", () => ({
-    default: { entrarComUsuario: vi.fn(), conferirSenhaAtual: vi.fn() }
+    default: { entrarComUsuario: vi.fn(), conferirSenhaAtual: vi.fn(), cadastrarCandidatoComGoogle: vi.fn() }
 }));
 
 const { default: GoogleAuthService } = await import("../services/GoogleAuthService.js");
@@ -94,6 +96,7 @@ const vincular = async (body, usuario = { id: "u1" }) => {
 };
 
 beforeEach(() => {
+    env.google.contaSemSenha = false;
     // reset (e não só clear): respostas `...Once` que sobrarem de um teste não vazam para o próximo.
     vi.resetAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -487,6 +490,7 @@ describe("concluir", () => {
             desfecho: "cadastrar",
             tipoConta: "empresa",
             perfil: { email: "ana@exemplo.com", nome: "Ana" },
+            contaSemSenha: false,
             prova: expect.any(String)
         });
         expect(JSON.stringify(resultado.perfil)).not.toContain("sub-1");
@@ -655,6 +659,100 @@ describe("concluir — vínculo com o navegador (achado 3)", () => {
         await concluir(corpo());
 
         expect(codigosDeEntregaUsados.tamanho).toBe(antes);
+    });
+});
+
+// Etapa 6: criar a conta direto do retorno do Google, sem senha.
+describe("concluir: o caminho para quem não tem conta", () => {
+    beforeEach(() => {
+        GoogleAuthService.resolver.mockResolvedValue({ desfecho: "cadastrar", perfil: PERFIL });
+    });
+
+    it("com a chave desligada, diz ao Site para seguir o cadastro de sempre (contaSemSenha: false)", async () => {
+        const { res } = await concluir(corpo());
+
+        expect(res.json.mock.calls[0][0].contaSemSenha).toBe(false);
+    });
+
+    it("com a chave ligada, diz ao Site que a conta pode ser criada já (contaSemSenha: true)", async () => {
+        env.google.contaSemSenha = true;
+
+        const { res } = await concluir(corpo());
+
+        expect(res.json.mock.calls[0][0]).toMatchObject({ desfecho: "cadastrar", contaSemSenha: true, prova: expect.any(String) });
+    });
+});
+
+describe("cadastrar (cria a conta sem senha)", () => {
+    const cadastrar = async (body) => {
+        const res = resposta();
+        const next = vi.fn();
+        await GoogleAuthController.cadastrar(requisicao({ body }), res, next);
+        return { res, next };
+    };
+
+    it("com a chave desligada, recusa com 403 e não cria nada, mesmo chamando a rota direto", async () => {
+        const { next, res } = await cadastrar({ prova: "p", termosVersao: "2026-10-09" });
+
+        expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 403 });
+        expect(AutenticacaoService.cadastrarCandidatoComGoogle).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
+    });
+
+    describe("com a chave ligada", () => {
+        beforeEach(() => {
+            env.google.contaSemSenha = true;
+        });
+
+        it("cria a conta e devolve a sessão com 201", async () => {
+            const sessao = { usuario: { id: "u1", temSenha: false }, token: "t", refreshToken: "r" };
+            AutenticacaoService.cadastrarCandidatoComGoogle.mockResolvedValue(sessao);
+
+            const { res } = await cadastrar({ prova: "prova-do-servidor", termosVersao: "2026-10-09" });
+
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith({ sucesso: true, ...sessao });
+        });
+
+        it("passa ao serviço só a prova e a versão dos termos, com o IP e o navegador, e mais nada do corpo", async () => {
+            AutenticacaoService.cadastrarCandidatoComGoogle.mockResolvedValue({});
+
+            await cadastrar({ prova: "p", termosVersao: "2026-10-09", email: "outro@x.com", tipoUsuario: "administrador", senha: "x" });
+
+            expect(AutenticacaoService.cadastrarCandidatoComGoogle).toHaveBeenCalledWith(
+                { prova: "p", termosVersao: "2026-10-09" },
+                { ip: "10.0.0.1", userAgent: "navegador-de-teste" }
+            );
+        });
+
+        it("uma recusa de regra de negócio segue como está (ex.: 409 e-mail já cadastrado)", async () => {
+            const { default: ErroApi } = await import("../utils/ErroApi.js");
+            AutenticacaoService.cadastrarCandidatoComGoogle.mockRejectedValue(ErroApi.conflito("Este e-mail já está cadastrado."));
+
+            const { next } = await cadastrar({ prova: "p", termosVersao: "x" });
+
+            expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 409, message: "Este e-mail já está cadastrado." });
+        });
+
+        it("duas criações ao mesmo tempo: a violação do índice único vira 409, e não 500", async () => {
+            AutenticacaoService.cadastrarCandidatoComGoogle.mockRejectedValue(
+                new UniqueConstraintError({ errors: [{ path: "google_id" }], fields: { google_id: "x" }, parent: { constraint: "uq_usuarios_google_id" } })
+            );
+
+            const { next } = await cadastrar({ prova: "p", termosVersao: "x" });
+
+            expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 409, message: expect.stringContaining("Google") });
+        });
+
+        it("uma falha inesperada (por exemplo, a migration que falta) vira 500 genérico, sem vazar o erro do banco", async () => {
+            AutenticacaoService.cadastrarCandidatoComGoogle.mockRejectedValue(new Error('null value in column "senha_hash" violates not-null constraint'));
+
+            const { next } = await cadastrar({ prova: "p", termosVersao: "x" });
+
+            const erro = next.mock.calls[0][0];
+            expect(erro.statusCode).toBe(500);
+            expect(erro.message).not.toMatch(/senha_hash|constraint/);
+        });
     });
 });
 

@@ -2,6 +2,7 @@ import type { UsuarioSessao } from "@/contexts/SessaoContext";
 
 /** Para onde a pessoa vai logo depois de entrar. */
 export type DestinoAposEntrar =
+  | { to: "/cadastro/dados" }
   | { to: "/cadastro/candidato"; search: { retomar: true } }
   | { to: "/admin" }
   | { to: "/feed" };
@@ -11,6 +12,9 @@ export type DestinoAposEntrar =
  * não em cada tela (antes eram duas cópias, e a do Google lia um campo que não existe na resposta
  * crua do servidor).
  *
+ * - Candidato que criou a conta direto pelo Google e ainda não informou o CPF e o restante dos dados
+ *   pessoais (`dadosPessoaisPendentes`) vai primeiro a `/cadastro/dados`: as etapas seguintes do
+ *   cadastro pressupõem esses dados.
  * - Candidato com cadastro **pendente** volta de onde parou. Pendente é ter dado obrigatório faltando
  *   (`cadastroPendente`, calculado pelo servidor), e não ter deixado de clicar no último botão do
  *   assistente: as etapas de perfil profissional e de acessibilidade são opcionais, e quem fechou a aba
@@ -20,8 +24,12 @@ export type DestinoAposEntrar =
  *   tinha funcionado.
  */
 export function destinoAposEntrar(
-  usuario: Pick<UsuarioSessao, "tipo" | "cadastroConcluidoEm" | "cadastroPendente">,
+  usuario: Pick<UsuarioSessao, "tipo" | "cadastroConcluidoEm" | "cadastroPendente" | "dadosPessoaisPendentes">,
 ): DestinoAposEntrar {
+  if (usuario.tipo === "candidato" && usuario.dadosPessoaisPendentes) {
+    return { to: "/cadastro/dados" };
+  }
+
   // O servidor diz se falta dado obrigatório. Servidor antigo (sem o campo): cai na data de conclusão.
   const pendente = usuario.cadastroPendente ?? !usuario.cadastroConcluidoEm;
 

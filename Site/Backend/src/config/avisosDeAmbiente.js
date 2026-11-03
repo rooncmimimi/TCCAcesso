@@ -33,6 +33,34 @@ function caminhoDe(url) {
 }
 
 /**
+ * A conferência que o servidor faz ao iniciar quando `GOOGLE_CONTA_SEM_SENHA` está ligada: a coluna
+ * `usuarios.senha_hash` já aceita nulo (migration 0007)? Sem isso, cada conta criada pelo Google
+ * falharia no banco, e a pessoa veria um erro genérico no meio do cadastro. Devolve o texto do aviso,
+ * ou `null` quando está tudo certo (ou a chave está desligada, e nada precisa ser conferido).
+ *
+ * `consultar` é quem pergunta ao banco e devolve `"YES"` ou `"NO"` (`is_nullable` do catálogo do
+ * Postgres), ou `null` se a coluna não existir. Uma falha da própria consulta não derruba nada: vira
+ * um aviso de que não deu para conferir.
+ */
+export async function avisoDaMigracaoContaSemSenha({ habilitado, consultar }) {
+    if (!habilitado) return null;
+
+    let aceitaNulo;
+    try {
+        aceitaNulo = await consultar();
+    } catch {
+        return "[ENV] GOOGLE_CONTA_SEM_SENHA está ligada, mas não consegui conferir se a migration 0007 foi aplicada.";
+    }
+
+    if (aceitaNulo === "YES") return null;
+
+    return (
+        "[ENV] GOOGLE_CONTA_SEM_SENHA está ligada, mas a migration 0007 (usuarios.senha_hash aceitando nulo) NÃO foi " +
+        "aplicada: criar a conta pelo Google vai falhar no banco. Rode `npm run migrate` ou desligue a variável."
+    );
+}
+
+/**
  * Avisos do login com Google (achado 9 e itens da seção de ambiente da auditoria).
  *
  * - **Configuração pela metade.** O recurso exige as três variáveis; com uma ou duas, o botão

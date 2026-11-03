@@ -51,6 +51,11 @@ export type ResultadoGoogle =
        * (`lib/googleNavegador`) e acompanha o cadastro, onde o servidor a reconfere.
        */
       prova: string;
+      /**
+       * O servidor está com a criação de conta sem senha ligada: o Site leva a `/cadastro/google`
+       * (aceite dos termos e conta criada na hora). Sem isso, segue o cadastro de sempre.
+       */
+      contaSemSenha?: boolean;
     };
 
 /**
@@ -94,6 +99,16 @@ export const googleService = {
       vinculo: lerVinculo() ?? undefined,
       ...(confirmarReativacao ? { confirmarReativacao: true } : {}),
     });
+    return data;
+  },
+
+  /**
+   * Cria a conta de candidato a partir da prova do Google, sem senha, e devolve a sessão. Só o
+   * aceite dos termos (versão que a tela mostrou) acompanha a prova: nome e e-mail vêm da prova,
+   * que o servidor assinou, e o resto dos dados é pedido depois do login.
+   */
+  async cadastrar(prova: string, termosVersao: string): Promise<RespostaLogin> {
+    const { data } = await clienteApi.post<RespostaLogin>("/auth/google/cadastrar", { prova, termosVersao });
     return data;
   },
 

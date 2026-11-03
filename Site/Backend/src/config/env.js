@@ -167,7 +167,13 @@ const env = {
     google: {
         clientId: process.env.GOOGLE_CLIENT_ID || null,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || null,
-        redirectUri: process.env.GOOGLE_REDIRECT_URI || null
+        redirectUri: process.env.GOOGLE_REDIRECT_URI || null,
+        // Chave de segurança da etapa 6: com `true`, quem entra pelo Google e não tem conta ganha a
+        // conta já no retorno, sem senha (o Site pede só o aceite dos termos e, depois, os dados).
+        // Só ligue depois de aplicar a migration 0007 (`senha_hash` aceitando nulo): o servidor
+        // confere ao iniciar e avisa se ela faltar. Desligada (o padrão), nada muda: o cadastro
+        // segue o formulário de sempre, com senha, e contas já criadas sem senha continuam entrando.
+        contaSemSenha: process.env.GOOGLE_CONTA_SEM_SENHA === "true"
     },
 
     brevo: {

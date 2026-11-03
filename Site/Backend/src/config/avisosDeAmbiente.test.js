@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
-import { ORIGEM_LOCAL, avisosDoGoogle } from "./avisosDeAmbiente.js";
+import { ORIGEM_LOCAL, avisoDaMigracaoContaSemSenha, avisosDoGoogle } from "./avisosDeAmbiente.js";
 
 /**
  * Os avisos de configuração do login com Google (achado 9 e itens de ambiente da auditoria). São
@@ -138,6 +138,39 @@ describe("ORIGEM_LOCAL", () => {
             expect(ORIGEM_LOCAL.test(origem)).toBe(false);
         }
     );
+});
+
+// Etapa 6: a chave GOOGLE_CONTA_SEM_SENHA só pode ficar ligada com a migration 0007 aplicada.
+describe("avisoDaMigracaoContaSemSenha", () => {
+    it("chave desligada: não confere nada, nem pergunta ao banco", async () => {
+        const consultar = vi.fn();
+
+        expect(await avisoDaMigracaoContaSemSenha({ habilitado: false, consultar })).toBeNull();
+        expect(consultar).not.toHaveBeenCalled();
+    });
+
+    it("chave ligada e a coluna já aceita nulo: tudo certo, sem aviso", async () => {
+        expect(await avisoDaMigracaoContaSemSenha({ habilitado: true, consultar: async () => "YES" })).toBeNull();
+    });
+
+    it.each([["NO"], [null]])("chave ligada e a coluna é %j: avisa que a migration 0007 não foi aplicada", async (resposta) => {
+        const aviso = await avisoDaMigracaoContaSemSenha({ habilitado: true, consultar: async () => resposta });
+
+        expect(aviso).toContain("migration 0007");
+        expect(aviso).toContain("npm run migrate");
+    });
+
+    it("falha na consulta: avisa que não deu para conferir, sem derrubar nada", async () => {
+        const aviso = await avisoDaMigracaoContaSemSenha({
+            habilitado: true,
+            consultar: async () => {
+                throw new Error("conexão perdida com senha=segredo");
+            }
+        });
+
+        expect(aviso).toContain("não consegui conferir");
+        expect(aviso).not.toContain("segredo");
+    });
 });
 
 // O `render.yaml` é o que recria o serviço do zero. Sem as variáveis do Google nele, o botão

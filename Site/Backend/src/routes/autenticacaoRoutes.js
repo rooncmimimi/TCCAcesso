@@ -14,6 +14,7 @@ import {
 } from "../middlewares/limiteRequisicoesMiddleware.js";
 import {
     validarCadastroCandidato,
+    validarCadastroComGoogle,
     validarCadastroEmpresa,
     validarLogin,
     validarTrocaSenha
@@ -121,6 +122,16 @@ router.get(
 
 // O Site troca o código de entrega por sessão, por conflito ou pelo próximo passo do cadastro.
 router.post("/google/concluir", limiteAutenticacao, GoogleAuthController.concluir);
+
+// Cria a conta direto do retorno do Google, sem senha (só com GOOGLE_CONTA_SEM_SENHA=true). Público:
+// acontece antes de existir conta; o que vale vem da prova que o servidor assinou.
+router.post(
+    "/google/cadastrar",
+    limiteAutenticacao,
+    validarCadastroComGoogle,
+    validacaoMiddleware,
+    GoogleAuthController.cadastrar
+);
 
 /* Contas conectadas (Configurações → Segurança): vincular e desvincular o Google de quem já tem conta. */
 

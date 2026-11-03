@@ -116,6 +116,26 @@ describe("vincular", () => {
   });
 });
 
+// Etapa 6: criar a conta direto do retorno do Google.
+describe("cadastrar", () => {
+  it("manda só a prova e a versão dos termos aceitos, e devolve a sessão", async () => {
+    const sessao = { usuario: { id: "u1" }, token: "t", refreshToken: "r" };
+    post.mockResolvedValue({ data: sessao });
+
+    await expect(googleService.cadastrar("prova-do-servidor", "2026-10-09")).resolves.toEqual(sessao);
+
+    expect(post).toHaveBeenCalledWith("/auth/google/cadastrar", { prova: "prova-do-servidor", termosVersao: "2026-10-09" });
+  });
+
+  it("não manda e-mail, nome nem senha: o que vale vem da prova", async () => {
+    post.mockResolvedValue({ data: {} });
+
+    await googleService.cadastrar("p", "v");
+
+    expect(Object.keys(post.mock.calls[0][1]).sort()).toEqual(["prova", "termosVersao"]);
+  });
+});
+
 describe("conta", () => {
   it("devolve a situação do Google nesta conta", async () => {
     get.mockResolvedValue({ data: { sucesso: true, disponivel: true, elegivel: true, vinculado: false } });

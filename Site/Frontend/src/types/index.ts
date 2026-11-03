@@ -26,6 +26,17 @@ export interface Usuario {
   pausadoPeloUsuario?: boolean;
   perfilPublico?: boolean;
   /**
+   * Falso na conta que entra só pelo Google e ainda não definiu senha. Só vem preenchido na resposta
+   * ao próprio dono (login e `/auth/me`); o Site trata apenas `false` como "sem senha", então uma
+   * sessão antiga, sem o campo, continua como sempre foi.
+   */
+  temSenha?: boolean;
+  /**
+   * Candidato que ainda não terminou o cadastro e a quem falta algum dado pessoal (CPF, nascimento,
+   * cidade, estado, país): quem criou a conta direto pelo Google. Leva a `/cadastro/dados`.
+   */
+  dadosPessoaisPendentes?: boolean;
+  /**
    * Quando a pessoa terminou a última etapa do cadastro. Nulo significa cadastro começado e não
    * terminado — o caso normal com confirmação de e-mail ativa, que corta o fluxo em dois — e é o
    * que faz o login oferecer retomar de onde parou.

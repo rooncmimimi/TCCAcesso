@@ -21,6 +21,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { extrairMensagemErro } from "@/services/api";
 import { autenticacaoService } from "@/services/autenticacao.service";
 import { useSessao } from "@/hooks/useSessao";
+import { AvisoSemSenha } from "./AvisoSemSenha";
 
 /** Troca de e-mail: senha atual + novo e-mail, depois confirma com o código enviado ao novo endereço. */
 export function SecaoTrocarEmail() {
@@ -72,105 +73,111 @@ export function SecaoTrocarEmail() {
           E-mail atual: <span className="font-medium text-foreground">{usuario?.email}</span>
         </p>
 
-        <Dialog
-          open={aberto}
-          onOpenChange={(valor) => {
-            setAberto(valor);
-            if (!valor) reiniciar();
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button variant="outline" className="min-h-11 gap-2">
-              <Mail className="size-4" aria-hidden="true" /> Alterar e-mail
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            {etapa === "pedido" ? (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Alterar e-mail</DialogTitle>
-                  <DialogDescription>
-                    Confirme sua senha e informe o novo e-mail. Vamos enviar um código de confirmação para lá.
-                  </DialogDescription>
-                </DialogHeader>
-                <form
-                  className="space-y-4"
-                  onSubmit={(evento) => {
-                    evento.preventDefault();
-                    solicitar.mutate();
-                  }}
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="senha-trocar-email">Senha atual</Label>
-                    <PasswordInput
-                      id="senha-trocar-email"
-                      autoComplete="current-password"
-                      required
-                      value={senhaAtual}
-                      onChange={(evento) => setSenhaAtual(evento.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="novo-email">Novo e-mail</Label>
-                    <Input
-                      id="novo-email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={novoEmail}
-                      onChange={(evento) => setNovoEmail(evento.target.value)}
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={solicitar.isPending || !senhaAtual || !novoEmail}
-                      className="min-h-11 gap-2"
-                    >
-                      {solicitar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                      Enviar código
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </>
-            ) : (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Confirme o novo e-mail</DialogTitle>
-                  <DialogDescription>Digite o código de 6 dígitos enviado para {novoEmail}.</DialogDescription>
-                </DialogHeader>
-                <form
-                  className="space-y-4"
-                  onSubmit={(evento) => {
-                    evento.preventDefault();
-                    confirmar.mutate();
-                  }}
-                >
-                  <Label htmlFor="codigo-trocar-email">Código de confirmação</Label>
-                  <InputOTP id="codigo-trocar-email" maxLength={6} value={codigo} onChange={setCodigo}>
-                    <InputOTPGroup>
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <InputOTPSlot key={i} index={i} />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-                  <DialogFooter className="pt-2">
-                    <Button type="button" variant="outline" onClick={() => setEtapa("pedido")}>
-                      Voltar
-                    </Button>
-                    <Button type="submit" disabled={confirmar.isPending || codigo.length !== 6} className="min-h-11 gap-2">
-                      {confirmar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                      Confirmar
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+        {/* Trocar o e-mail pede a senha atual; conta que entra só pelo Google ainda não tem uma. */}
+        {usuario?.temSenha === false ? (
+          <AvisoSemSenha recurso="alterar o e-mail" />
+        ) : (
+
+          <Dialog
+            open={aberto}
+            onOpenChange={(valor) => {
+              setAberto(valor);
+              if (!valor) reiniciar();
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button variant="outline" className="min-h-11 gap-2">
+                <Mail className="size-4" aria-hidden="true" /> Alterar e-mail
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              {etapa === "pedido" ? (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Alterar e-mail</DialogTitle>
+                    <DialogDescription>
+                      Confirme sua senha e informe o novo e-mail. Vamos enviar um código de confirmação para lá.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form
+                    className="space-y-4"
+                    onSubmit={(evento) => {
+                      evento.preventDefault();
+                      solicitar.mutate();
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="senha-trocar-email">Senha atual</Label>
+                      <PasswordInput
+                        id="senha-trocar-email"
+                        autoComplete="current-password"
+                        required
+                        value={senhaAtual}
+                        onChange={(evento) => setSenhaAtual(evento.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="novo-email">Novo e-mail</Label>
+                      <Input
+                        id="novo-email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={novoEmail}
+                        onChange={(evento) => setNovoEmail(evento.target.value)}
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={solicitar.isPending || !senhaAtual || !novoEmail}
+                        className="min-h-11 gap-2"
+                      >
+                        {solicitar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        Enviar código
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Confirme o novo e-mail</DialogTitle>
+                    <DialogDescription>Digite o código de 6 dígitos enviado para {novoEmail}.</DialogDescription>
+                  </DialogHeader>
+                  <form
+                    className="space-y-4"
+                    onSubmit={(evento) => {
+                      evento.preventDefault();
+                      confirmar.mutate();
+                    }}
+                  >
+                    <Label htmlFor="codigo-trocar-email">Código de confirmação</Label>
+                    <InputOTP id="codigo-trocar-email" maxLength={6} value={codigo} onChange={setCodigo}>
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <InputOTPSlot key={i} index={i} />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                    <DialogFooter className="pt-2">
+                      <Button type="button" variant="outline" onClick={() => setEtapa("pedido")}>
+                        Voltar
+                      </Button>
+                      <Button type="submit" disabled={confirmar.isPending || codigo.length !== 6} className="min-h-11 gap-2">
+                        {confirmar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        Confirmar
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   );

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { IconeGoogle } from "@/components/cadastro/BotaoGoogle";
+import { AvisoSemSenha } from "@/components/configuracoes/AvisoSemSenha";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -284,7 +285,7 @@ export function SecaoContasConectadas() {
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1">
-              {conta.vinculado ? (
+              {conta.vinculado && usuario?.temSenha === false ? null : conta.vinculado ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -306,6 +307,13 @@ export function SecaoContasConectadas() {
                 </Button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Sem senha, o Google é o único jeito de entrar: desvincular a deixaria sem acesso. */}
+        {conta?.vinculado && usuario?.temSenha === false && (
+          <div className="mt-3">
+            <AvisoSemSenha recurso="desvincular o Google" />
           </div>
         )}
       </CardContent>

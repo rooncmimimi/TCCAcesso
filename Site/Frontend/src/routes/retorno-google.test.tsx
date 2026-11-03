@@ -446,6 +446,42 @@ describe("desfecho cadastrar", () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
+  // Etapa 6: com a criação sem senha ligada no servidor, a conta nasce no retorno do Google.
+  it("com contaSemSenha, segue para /cadastro/google (aceite dos termos e conta na hora), e não para o formulário", async () => {
+    concluir.mockResolvedValue(cadastrar({ contaSemSenha: true }));
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(navegar).toHaveBeenCalledWith({ to: "/cadastro/google", search: { depois: undefined }, replace: true });
+  });
+
+  it("com contaSemSenha, a prova também fica na aba, e nunca na URL", async () => {
+    const prova = provaDeTeste();
+    concluir.mockResolvedValue(cadastrar({ contaSemSenha: true }, prova));
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(lerProva()).toBe(prova);
+    expect(JSON.stringify(navegar.mock.calls[0][0])).not.toContain(prova);
+  });
+
+  it("com contaSemSenha e 'Sou empresa', preserva a intenção", async () => {
+    concluir.mockResolvedValue(cadastrar({ contaSemSenha: true, tipoConta: "empresa" }));
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(navegar.mock.calls[0][0]).toEqual({ to: "/cadastro/google", search: { depois: "empresa" }, replace: true });
+  });
+
+  it.each([[false], [undefined]])("com contaSemSenha %j (chave desligada ou API antiga), segue o cadastro de sempre", async (contaSemSenha) => {
+    concluir.mockResolvedValue(cadastrar({ contaSemSenha }));
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalled());
+    expect(navegar.mock.calls[0][0].to).toBe("/cadastro/candidato");
+    expect(navegar.mock.calls[0][0].search).toMatchObject({ google: true });
+  });
+
   it("preserva a intenção de seguir para o cadastro da empresa", async () => {
     concluir.mockResolvedValue(cadastrar({ tipoConta: "empresa" }));
     abrir({ codigo: "c" });

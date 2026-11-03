@@ -37,7 +37,9 @@ import googleService, { mensagemDeErroGoogle } from "@/services/google.service";
  * - **conflito** — já existe conta ACESSO com aquele e-mail sem Google vinculado: pede para entrar
  *   com a senha, porque vincular só pelo e-mail deixaria qualquer um assumir a conta alheia;
  * - **cadastrar** — não há conta: guarda a prova do Google na aba (`lib/googleNavegador`, nunca na
- *   URL) e segue direto para o cadastro de candidato. Não há tela perguntando "candidato ou empresa"
+ *   URL). Com a criação sem senha ligada no servidor (`contaSemSenha`), segue para
+ *   `/cadastro/google`, onde a pessoa aceita os termos e a conta nasce na hora; sem ela, segue para o
+ *   cadastro de candidato de sempre, com senha. Não há tela perguntando "candidato ou empresa"
  *   porque toda conta no ACESSO começa como candidato — a conta da empresa é uma segunda conta,
  *   criada a partir dela.
  *
@@ -134,11 +136,14 @@ function RetornoGoogle() {
           setEstado({ tipo: "falha", texto: FALHA_GENERICA });
           return;
         }
-        navigate({
-          to: "/cadastro/candidato",
-          search: { google: true, depois: retorno.tipoConta === "empresa" ? "empresa" : undefined },
-          replace: true,
-        });
+        const depois = retorno.tipoConta === "empresa" ? "empresa" : undefined;
+
+        if (retorno.contaSemSenha) {
+          navigate({ to: "/cadastro/google", search: { depois }, replace: true });
+          return;
+        }
+
+        navigate({ to: "/cadastro/candidato", search: { google: true, depois }, replace: true });
         return;
       }
 

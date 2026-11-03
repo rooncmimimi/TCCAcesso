@@ -73,9 +73,63 @@ class AutenticacaoService {
         });
     }
 
+    /**
+     * O que o Site precisa saber da conta além do que está na tabela (nada disso é segredo):
+     *
+     * - `temSenha`: conta que entra só pelo Google ainda não tem senha. O Site usa para oferecer
+     *   "definir senha" e para não mostrar "senha atual" onde não há o que digitar.
+     * - `dadosPessoaisPendentes`: candidato que ainda não terminou o cadastro e **não tem CPF**. É o
+     *   caso de quem criou a conta direto pelo Google: a conta nasce sem CPF, nascimento, cidade e
+     *   estado, e `/cadastro/dados` pede tudo de uma vez. Só vale para cadastro **não concluído**:
+     *   quem já terminou nunca é mandado de volta, mesmo que o dado seja antigo e esteja em branco.
+     *   Quem tem CPF mas está sem algum outro dado obrigatório (conta antiga) não entra aqui: é o
+     *   `cadastroPendente` (`situacaoDoCadastro`), que pede só o que falta e não obriga a digitar o
+     *   CPF de novo.
+     *
+     * O hash da senha só sai do banco para virar esse booleano.
+     */
+    async situacaoDaConta(usuario) {
+        // `senhaHash` já está na instância quando ela veio de `Usuario.create` ou do escopo
+        // `comSenha` (login por senha); no resto das vezes é preciso perguntar ao banco.
+        const hash =
+            usuario.senhaHash !== undefined
+                ? usuario.senhaHash
+                : (await Usuario.scope("comSenha").findByPk(usuario.id, { attributes: ["id", "senhaHash"] }))?.senhaHash;
+
+        let dadosPessoaisPendentes = false;
+
+        if (usuario.tipoUsuario === "candidato" && !usuario.cadastroConcluidoEm) {
+            const candidato = await Candidato.findOne({
+                where: { usuarioId: usuario.id },
+                attributes: ["id", "cpfHash"]
+            });
+
+            dadosPessoaisPendentes = !candidato || !candidato.cpfHash;
+        }
+
+        return { temSenha: Boolean(hash), dadosPessoaisPendentes };
+    }
+
+    /**
+     * Conta que entra só pelo Google ainda não tem senha, e várias ações pedem a "senha atual". Em vez
+     * de um "senha incorreta" que não faria sentido, diz o que fazer. O código `SEM_SENHA` é o que o
+     * Site compara para oferecer o caminho de definir a senha.
+     */
+    exigirSenhaDefinida(usuario) {
+        if (!usuario.senhaHash) {
+            throw new ErroApi(
+                409,
+                "Esta conta entra com o Google e ainda não tem senha. Defina uma senha em Configurações, Alterar senha, para usar este recurso.",
+                { codigo: "SEM_SENHA" }
+            );
+        }
+    }
+
     async montarSessao(usuario, contexto = {}) {
         const dados = usuario.toJSON();
         delete dados.senhaHash;
+
+        Object.assign(dados, await this.situacaoDaConta(usuario));
 
         // Só para empresa: inclui a empresa na resposta para o cliente saber o `statusAprovacao` já
         // no login ou no cadastro, sem esperar `/auth/me`; senão, haveria um momento em que a
@@ -144,7 +198,8 @@ class AutenticacaoService {
         return {
             googleId: perfil.sub,
             email: perfil.email ?? null,
-            emailVerificado: perfil.emailVerificado === true
+            emailVerificado: perfil.emailVerificado === true,
+            nome: perfil.nome ?? null
         };
     }
 
@@ -261,6 +316,90 @@ class AutenticacaoService {
         }
 
         return this.montarSessao(usuarioCriado, contexto);
+    }
+
+    /**
+     * Cria a conta de candidato **direto do retorno do Google**, sem senha (etapa 6 da auditoria).
+     *
+     * Quem chega aqui já passou pelo `concluir`, que verificou o ID token com o Google e entregou a
+     * prova. Tudo que importa vem dela, nunca do corpo: o `sub`, o e-mail e o nome. As regras do
+     * cadastro com Google continuam valendo e são até mais rígidas, porque aqui não há formulário
+     * para a pessoa digitar outro e-mail: o Google tem de ter **verificado** o e-mail, e a conta já
+     * nasce com ele verificado.
+     *
+     * O aceite dos termos é condição para criar a conta (e fica registrado, com a versão e o
+     * momento), como no cadastro por formulário. CPF, telefone, nascimento e endereço ficam para
+     * depois do login (`situacaoDaConta` diz que estão pendentes), e a conta nasce com
+     * `cadastroConcluidoEm` nulo, como toda conta de cadastro em andamento.
+     *
+     * O banco só deixa uma conta nascer sem senha se tiver Google vinculado
+     * (`ck_usuarios_senha_ou_google`), e aqui ela sempre tem.
+     */
+    async cadastrarCandidatoComGoogle({ prova, termosVersao }, contexto = {}) {
+        if (!termosVersao) {
+            throw ErroApi.requisicaoInvalida("Aceite os Termos de Uso e o Aviso de Privacidade para criar a conta.");
+        }
+
+        const vinculo = this.vinculoGoogle(prova);
+
+        if (!vinculo) {
+            throw ErroApi.requisicaoInvalida("A verificação com o Google expirou. Entre com o Google novamente.");
+        }
+
+        if (!vinculo.emailVerificado || !vinculo.email) {
+            throw ErroApi.requisicaoInvalida(
+                "O Google não confirmou o e-mail desta conta. Faça o cadastro com e-mail e senha."
+            );
+        }
+
+        const email = this.normalizarEmail(vinculo.email);
+
+        if (await this.buscarPorEmail(email)) {
+            throw ErroApi.conflito("Este e-mail já está cadastrado.");
+        }
+
+        if (await Usuario.findOne({ where: { googleId: vinculo.googleId } })) {
+            throw ErroApi.conflito("Esta conta Google já está vinculada a outra conta.");
+        }
+
+        const transaction = await sequelize.transaction();
+        let usuarioCriado;
+
+        try {
+            usuarioCriado = await Usuario.create(
+                {
+                    nome: this.nomeDaContaGoogle(vinculo.nome, email),
+                    email,
+                    senhaHash: null,
+                    tipoUsuario: "candidato",
+                    emailVerificado: true,
+                    googleId: vinculo.googleId,
+                    ...this.registroDeAceite(termosVersao)
+                },
+                { transaction }
+            );
+
+            await Candidato.create({ usuarioId: usuarioCriado.id }, { transaction });
+
+            await transaction.commit();
+        } catch (erro) {
+            await transaction.rollback();
+            throw erro;
+        }
+
+        return this.montarSessao(usuarioCriado, contexto);
+    }
+
+    /**
+     * O nome da conta vem do Google, mas o modelo exige de 3 a 150 caracteres. Sem nome, ou com um
+     * curto demais, usa a parte do e-mail antes do @ (que a pessoa troca depois no perfil).
+     */
+    nomeDaContaGoogle(nome, email) {
+        const limpo = String(nome ?? "").trim();
+        if (limpo.length >= 3) return limpo.slice(0, 150);
+
+        const doEmail = String(email).split("@")[0].trim();
+        return doEmail.length >= 3 ? doEmail.slice(0, 150) : "Novo usuário";
     }
 
     /* Cadastro de empresa */
@@ -683,7 +822,11 @@ class AutenticacaoService {
     async perfilAtualComSituacao(id) {
         const usuario = await this.perfilAtual(id);
 
-        return { ...usuario.toJSON(), ...this.situacaoDoCadastro(usuario, usuario.candidato) };
+        return {
+            ...usuario.toJSON(),
+            ...(await this.situacaoDaConta(usuario)),
+            ...this.situacaoDoCadastro(usuario, usuario.candidato)
+        };
     }
 
     /* Usuário autenticado */
@@ -760,10 +903,9 @@ class AutenticacaoService {
             throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
-        const confere =
-            typeof senha === "string" && senha !== "" && usuario.senhaHash
-                ? await compararSenha(senha, usuario.senhaHash)
-                : false;
+        this.exigirSenhaDefinida(usuario);
+
+        const confere = typeof senha === "string" && senha !== "" ? await compararSenha(senha, usuario.senhaHash) : false;
 
         if (!confere) {
             throw ErroApi.acessoNegado("Senha incorreta.");
@@ -776,6 +918,8 @@ class AutenticacaoService {
         if (!usuario) {
             throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
+
+        this.exigirSenhaDefinida(usuario);
 
         const confere = await compararSenha(senhaAtual, usuario.senhaHash);
 
@@ -849,6 +993,8 @@ class AutenticacaoService {
             throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
+        this.exigirSenhaDefinida(usuario);
+
         const confere = await compararSenha(senhaAtual, usuario.senhaHash);
 
         if (!confere) {
@@ -878,6 +1024,8 @@ class AutenticacaoService {
             throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
 
+        this.exigirSenhaDefinida(usuario);
+
         const confere = await compararSenha(senhaAtual, usuario.senhaHash);
 
         if (!confere) {
@@ -898,6 +1046,8 @@ class AutenticacaoService {
         if (!usuario) {
             throw ErroApi.naoEncontrado("Usuário não encontrado.");
         }
+
+        this.exigirSenhaDefinida(usuario);
 
         const confere = await compararSenha(senhaAtual, usuario.senhaHash);
 

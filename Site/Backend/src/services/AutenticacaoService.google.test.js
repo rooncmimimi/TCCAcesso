@@ -105,7 +105,8 @@ describe("vinculoGoogle", () => {
         expect(AutenticacaoService.vinculoGoogle(codigoDoGoogle())).toEqual({
             googleId: "sub-do-google-1",
             email: "ana@exemplo.com",
-            emailVerificado: true
+            emailVerificado: true,
+            nome: "Ana Souza"
         });
     });
 
@@ -293,10 +294,13 @@ describe("conferirSenhaAtual (reautenticação antes de vincular ou desvincular 
         expect(compararSenha).not.toHaveBeenCalled();
     });
 
-    it("recusa conta sem senha cadastrada, sem comparar", async () => {
+    it("conta sem senha: diz o que fazer (409 SEM_SENHA), e não um \"senha incorreta\" que não faria sentido", async () => {
         comSenha.findByPk.mockResolvedValue({ id: "u1", senhaHash: null });
 
-        await expect(AutenticacaoService.conferirSenhaAtual("u1", "qualquer")).rejects.toMatchObject({ statusCode: 403 });
+        await expect(AutenticacaoService.conferirSenhaAtual("u1", "qualquer")).rejects.toMatchObject({
+            statusCode: 409,
+            detalhes: { codigo: "SEM_SENHA" }
+        });
         expect(compararSenha).not.toHaveBeenCalled();
     });
 

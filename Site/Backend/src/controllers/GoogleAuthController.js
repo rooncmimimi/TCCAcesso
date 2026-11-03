@@ -11,6 +11,7 @@ import {
     lerCodigoDeEntrega
 } from "../utils/codigoGoogle.js";
 import { codigosDeEntregaUsados } from "../utils/usoUnico.js";
+import { tratarErroCadastro } from "../utils/erroDeCadastro.js";
 
 const CODIGO_JA_USADO = "Este código do Google já foi usado. Entre com o Google de novo.";
 const CODIGO_DE_OUTRO_FLUXO =
@@ -202,6 +203,9 @@ class GoogleAuthController {
                 desfecho: "cadastrar",
                 tipoConta: tipoConta ?? null,
                 perfil: { email: perfil.email, nome: perfil.nome },
+                // Diz ao Site qual caminho seguir: com a chave ligada (e a migration aplicada), a conta
+                // é criada já aqui, sem senha; desligada, o cadastro segue o formulário de sempre.
+                contaSemSenha: Boolean(env.google.contaSemSenha),
                 // Assinada aqui, depois de o ID token ser verificado: o Site a reenvia no cadastro e o
                 // vínculo é feito pelo `sub` que ela carrega, nunca por um `sub` que o navegador alegue.
                 prova: assinarProva(perfil)
@@ -212,6 +216,29 @@ class GoogleAuthController {
             }
 
             return next(erro);
+        }
+    }
+
+    /**
+     * Cria a conta de candidato a partir da prova do Google, sem senha (etapa 6). É o passo que vem
+     * depois de `concluir` devolver `cadastrar` com `contaSemSenha`. Recusa quando a chave
+     * `GOOGLE_CONTA_SEM_SENHA` está desligada: o servidor não cria conta sem senha por conta própria,
+     * mesmo que alguém chame a rota direto.
+     */
+    async cadastrar(req, res, next) {
+        try {
+            if (!env.google.contaSemSenha) {
+                throw ErroApi.acessoNegado("Criar a conta direto pelo Google não está habilitado.");
+            }
+
+            const resultado = await AutenticacaoService.cadastrarCandidatoComGoogle(
+                { prova: req.body.prova, termosVersao: req.body.termosVersao },
+                contextoRequisicao(req)
+            );
+
+            return res.status(201).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(tratarErroCadastro(erro));
         }
     }
 

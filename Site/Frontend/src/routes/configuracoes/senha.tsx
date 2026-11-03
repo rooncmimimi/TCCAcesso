@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, KeyRound, Loader2, MailCheck, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -45,10 +45,109 @@ export const Route = createFileRoute("/configuracoes/senha")({
   }),
   component: () => (
     <GuardaAcesso tipos={["candidato", "empresa", "administrador"]}>
-      <AlterarSenha />
+      <PaginaSenha />
     </GuardaAcesso>
   ),
 });
+
+/** Conta que entra só pelo Google ainda não tem senha: aqui ela **define** uma, em vez de alterar. */
+function PaginaSenha() {
+  const { usuario } = useSessao();
+
+  return usuario?.temSenha === false ? <DefinirSenha email={usuario.email} /> : <AlterarSenha />;
+}
+
+/**
+ * Definir a primeira senha de uma conta que entra com o Google.
+ *
+ * Não pede "senha atual" (não existe) e não aceita a senha digitada aqui direto: a prova de que a
+ * pessoa é dona da conta é o **e-mail**. Reaproveita a recuperação de senha, que manda ao endereço da
+ * conta um link e um código; ao definir a senha, todas as sessões se encerram, como em qualquer
+ * troca de senha, e a pessoa entra de novo pelo Google ou com a senha nova.
+ */
+function DefinirSenha({ email }: { email: string }) {
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  async function enviar() {
+    setEnviando(true);
+    try {
+      await autenticacaoService.esqueciSenha(email);
+      setEnviado(true);
+    } catch (erro) {
+      toast.error(extrairMensagemErro(erro, "Não foi possível enviar o e-mail. Tente novamente."));
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <EstruturaApp>
+      <Link
+        to="/configuracoes/conta"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+      </Link>
+
+      <div className="mt-4 flex items-center gap-3">
+        <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <KeyRound className="size-5" />
+        </span>
+        <div>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">Definir senha</h1>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            Sua conta entra com o Google. Com uma senha, você também entra com e-mail e senha e pode pausar ou
+            excluir a conta e trocar o e-mail.
+          </p>
+        </div>
+      </div>
+
+      <Card className="mt-6 max-w-lg shadow-none">
+        <CardContent className="space-y-4 p-5 sm:p-6">
+          {enviado ? (
+            <div role="status" className="space-y-3">
+              <p className="flex items-center gap-2 font-semibold">
+                <MailCheck className="size-5 text-primary" aria-hidden="true" /> E-mail enviado
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Enviamos para <span className="font-medium text-foreground">{email}</span> um link para escolher a
+                senha. Ele vale por pouco tempo. Quando você definir a senha, as suas sessões se encerram e você
+                entra de novo, pelo Google ou com a senha nova.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Prefere digitar o código que veio no e-mail?{" "}
+                <Link
+                  to="/redefinir-senha"
+                  search={{ email }}
+                  className="font-semibold text-primary underline underline-offset-2"
+                >
+                  Usar o código
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Por segurança, vamos mandar para <span className="font-medium text-foreground">{email}</span> um link
+                para você escolher a senha.
+              </p>
+              <Button type="button" className="min-h-12 w-full text-base" disabled={enviando} onClick={enviar}>
+                {enviando ? (
+                  <>
+                    <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                  </>
+                ) : (
+                  "Enviar e-mail para definir a senha"
+                )}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </EstruturaApp>
+  );
+}
 
 function AlterarSenha() {
   const navigate = useNavigate();

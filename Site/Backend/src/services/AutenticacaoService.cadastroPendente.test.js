@@ -56,6 +56,7 @@ const usuario = (extra = {}) => ({
     id: "u1",
     tipoUsuario: "candidato",
     cadastroConcluidoEm: null,
+    senhaHash: "hash",
     toJSON() {
         return { id: this.id, tipoUsuario: this.tipoUsuario, cadastroConcluidoEm: this.cadastroConcluidoEm };
     },

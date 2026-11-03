@@ -3,6 +3,8 @@ import http from "node:http";
 import app from "./app.js";
 import env from "./config/env.js";
 import conectarBanco from "./config/sequelize.js";
+import sequelize from "./config/bancoDeDados.js";
+import { avisoDaMigracaoContaSemSenha } from "./config/avisosDeAmbiente.js";
 import { iniciarSocket } from "./realtime/socket.js";
 import { storageHabilitado } from "./utils/supabaseStorage.js";
 
@@ -15,6 +17,21 @@ import { storageHabilitado } from "./utils/supabaseStorage.js";
  */
 async function iniciarServidor() {
     await conectarBanco();
+
+    // Com a criação de conta sem senha ligada, confere (sem alterar nada) se a migration 0007 foi
+    // aplicada; sem ela, cada conta criada pelo Google falharia no banco.
+    const avisoDaMigracao = await avisoDaMigracaoContaSemSenha({
+        habilitado: env.google.contaSemSenha,
+        consultar: async () => {
+            const [linha] = await sequelize.query(
+                "SELECT is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'usuarios' AND column_name = 'senha_hash'",
+                { type: "SELECT" }
+            );
+
+            return linha?.is_nullable ?? null;
+        }
+    });
+    if (avisoDaMigracao) console.error(avisoDaMigracao);
 
     // Nunca loga as credenciais, só o modo em uso, para deixar óbvio em
     // produção se o Storage persistente está realmente ativo ou se caiu

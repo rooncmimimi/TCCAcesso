@@ -21,10 +21,11 @@ import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
 import { autenticacaoService } from "@/services/autenticacao.service";
 import { useSessao } from "@/hooks/useSessao";
+import { AvisoSemSenha } from "./AvisoSemSenha";
 
 /** Pausar/excluir conta: ambas destrutivas, ambas exigem senha atual e confirmação explícita. */
 export function SecaoContaPerigo() {
-  const { sair } = useSessao();
+  const { sair, usuario } = useSessao();
   const navigate = useNavigate();
   const [abertoPausar, setAbertoPausar] = useState(false);
   const [abertoExcluir, setAbertoExcluir] = useState(false);
@@ -50,6 +51,20 @@ export function SecaoContaPerigo() {
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a conta.")),
   });
+
+  // Conta que entra só pelo Google: pausar e excluir pedem a senha, que ainda não existe.
+  if (usuario?.temSenha === false) {
+    return (
+      <Card className="border-destructive/30 shadow-none">
+        <CardHeader>
+          <CardTitle className="text-lg text-destructive">Zona de risco</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AvisoSemSenha recurso="pausar ou excluir a conta" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-destructive/30 shadow-none">

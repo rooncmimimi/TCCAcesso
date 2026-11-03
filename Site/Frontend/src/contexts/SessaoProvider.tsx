@@ -128,7 +128,9 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       }
       definirTokens(resposta.token, resposta.refreshToken);
       const normalizado = aposAutenticar(resposta.usuario);
-      void sincronizarNoLogin();
+      // Administrador que ainda precisa configurar a verificação em duas etapas: o servidor nega tudo, inclusive esta
+      // chamada. Sincroniza depois, quando a sessão estiver verificada.
+      if (!(normalizado.mfaExigido && !normalizado.mfaConfigurado)) void sincronizarNoLogin();
       return normalizado;
     },
     [aposAutenticar, sincronizarNoLogin],

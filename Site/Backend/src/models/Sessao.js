@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/bancoDeDados.js";
+import env from "../config/env.js";
 
 /**
  * Tabela `sessoes`: uma sessão de login por linha. Guarda só o hash do refresh token; cada
@@ -48,9 +49,17 @@ const Sessao = sequelize.define(
 
         // Quando a sessão passou pelo segundo fator (TOTP ou código de recuperação). Vai junto na renovação
         // do refresh token. Nulo = não passou (conta sem TOTP, ou administrador que ainda vai configurar).
-        mfaVerificadoEm: {
-            type: DataTypes.DATE
-        }
+        //
+        // **Só existe no model com `MFA_TOTP_HABILITADO` ligada.** O Sequelize seleciona e insere todas as colunas
+        // do model; sem a migration 0008 aplicada (o deploy não a aplica), declará-la sempre derrubaria o login, o
+        // cadastro e a renovação de sessão com "column does not exist", mesmo com o recurso desligado.
+        ...(env.mfa.habilitado
+            ? {
+                  mfaVerificadoEm: {
+                      type: DataTypes.DATE
+                  }
+              }
+            : {})
     },
     {
         tableName: "sessoes",

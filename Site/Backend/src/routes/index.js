@@ -19,6 +19,7 @@ import buscaRoutes from "./buscaRoutes.js";
 import seguidorRoutes from "./seguidorRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import publicoRoutes from "./publicoRoutes.js";
+import contatoRoutes from "./contatoRoutes.js";
 import denunciaRoutes from "./denunciaRoutes.js";
 import atividadeRoutes from "./atividadeRoutes.js";
 
@@ -47,6 +48,7 @@ router.use("/busca", buscaRoutes);
 router.use("/seguir", seguidorRoutes);
 router.use("/admin", adminRoutes);
 router.use("/publico", publicoRoutes);
+router.use("/contato", contatoRoutes);
 router.use("/denuncias", denunciaRoutes);
 router.use("/atividade", atividadeRoutes);
 

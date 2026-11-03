@@ -106,7 +106,7 @@ export const TERMOS_DE_USO: DocumentoLegal = {
     {
       titulo: "9. Contato e foro",
       paragrafos: [
-        "Dúvidas, denúncias e pedidos sobre estes Termos: projetoacessoinclusivo@gmail.com.",
+        "Dúvidas, denúncias e pedidos sobre estes Termos: pelo formulário Fale conosco, no rodapé do ACESSO, ou pelo e-mail projetoacessoinclusivo@gmail.com.",
         "Estes Termos são regidos pelas leis brasileiras. Fica eleito o foro do domicílio do usuário para resolver controvérsias, conforme o Código de Defesa do Consumidor.",
       ],
     },
@@ -122,7 +122,7 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       titulo: "1. Quem trata os seus dados",
       paragrafos: [
         "O ACESSO é o controlador dos dados pessoais tratados na plataforma, nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018).",
-        "Contato para assuntos de privacidade, incluindo o exercício dos seus direitos: projetoacessoinclusivo@gmail.com.",
+        "Contato para assuntos de privacidade, incluindo o exercício dos seus direitos: pelo formulário Fale conosco (escolha o assunto \"Privacidade e dados pessoais\") ou pelo e-mail projetoacessoinclusivo@gmail.com.",
       ],
     },
     {
@@ -202,7 +202,7 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       paragrafos: [
         "Você pode: confirmar que tratamos seus dados e acessá-los; corrigir dados incompletos ou desatualizados; pedir anonimização, bloqueio ou eliminação de dados desnecessários ou tratados fora da lei; pedir a portabilidade; saber com quem compartilhamos; revogar consentimento; e se opor a um tratamento feito com base em legítimo interesse.",
         "Boa parte disso está na própria plataforma: editar e apagar dados no perfil, ajustar visibilidade em Configurações › Privacidade e Segurança, remover a declaração de deficiência, e pausar ou excluir a conta em Configurações › Conta.",
-        "Para o que não estiver na plataforma, escreva para projetoacessoinclusivo@gmail.com. Respondemos no menor prazo possível, observado o prazo legal.",
+        "Para o que não estiver na plataforma, use o formulário Fale conosco (assunto \"Privacidade e dados pessoais\") ou escreva para projetoacessoinclusivo@gmail.com. Respondemos no menor prazo possível, observado o prazo legal.",
         "Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).",
       ],
     },

@@ -31,6 +31,8 @@ class EmailService {
      * @param {string} params.assunto
      * @param {string} params.html
      * @param {string} [params.texto]
+     * @param {{ email: string, nome?: string }} [params.responderPara] - endereço de resposta (`Reply-To`): o
+     *   "Responder" do e-mail recebido vai para ele, e não para o remetente do ACESSO.
      * @param {string} [params.tag] - identifica o fluxo no painel de
      *   estatísticas da Brevo (ex.: "confirmacao-cadastro",
      *   "recuperacao-senha"); uma chave de API só, tags por finalidade.
@@ -39,7 +41,7 @@ class EmailService {
      *   "enviar e-mail transacional" de forma genérica; chaves separadas
      *   não isolam nada de verdade, só dão mais credencial pra vazar.
      */
-    async enviar({ para, nomeDestinatario, assunto, html, texto, tag }) {
+    async enviar({ para, nomeDestinatario, assunto, html, texto, tag, responderPara }) {
         if (!this.disponivel()) {
             throw ErroApi.servicoIndisponivel(
                 "Envio de e-mail não está configurado neste momento."
@@ -64,6 +66,7 @@ class EmailService {
                     subject: assunto,
                     htmlContent: html,
                     textContent: texto,
+                    replyTo: responderPara ? { email: responderPara.email, name: responderPara.nome || undefined } : undefined,
                     tags: tag ? [tag] : undefined
                 }),
                 signal: controlador.signal

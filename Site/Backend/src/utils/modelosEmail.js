@@ -80,6 +80,36 @@ function botao(url, texto) {
 }
 
 /**
+ * E-mail que a EQUIPE recebe quando alguém usa o "Fale conosco". Todo texto da pessoa passa por `escaparHtml`. O
+ * assunto é montado só com o rótulo do assunto e o protocolo, nunca com texto digitado (sem injeção de cabeçalho).
+ */
+export function modeloMensagemDeContato({ protocolo, rotulo, nome, email, mensagem }) {
+    const assunto = `[Fale conosco] ${rotulo} (${protocolo})`;
+    const linha = (nomeDoCampo, valor) =>
+        `<tr><td style="padding:2px 12px 2px 0;color:${COR_TEXTO_SECUNDARIO};vertical-align:top;">${nomeDoCampo}</td><td style="padding:2px 0;color:${COR_TEXTO};">${escaparHtml(valor)}</td></tr>`;
+
+    const corpoHtml = `
+      <p style="margin:0 0 16px 0;">Nova mensagem pelo formulário Fale conosco. Para responder, use o botão Responder do seu e-mail: a resposta vai direto para quem escreveu.</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px 0;font-size:14px;">
+        ${linha("Protocolo", protocolo)}
+        ${linha("Assunto", rotulo)}
+        ${linha("Nome", nome)}
+        ${linha("E-mail", email)}
+      </table>
+      <p style="margin:0 0 8px 0;color:${COR_TEXTO_SECUNDARIO};">Mensagem</p>
+      <div style="white-space:pre-wrap;word-break:break-word;border:1px solid ${COR_BORDA};border-radius:8px;background-color:${COR_FUNDO};padding:12px;">${escaparHtml(mensagem)}</div>
+    `;
+    const html = layoutBase({ titulo: "Nova mensagem — Fale conosco", corpoHtml });
+    const texto =
+        `Nova mensagem pelo Fale conosco\n\n` +
+        `Protocolo: ${protocolo}\nAssunto: ${rotulo}\nNome: ${nome}\nE-mail: ${email}\n\n` +
+        `Mensagem:\n${mensagem}\n\n` +
+        `Para responder, use o botão Responder: a resposta vai direto para quem escreveu.`;
+
+    return { assunto, html, texto };
+}
+
+/**
  * E-mail de confirmação de cadastro (candidato ou empresa).
  *
  * `linkConfirmacao` pode vir `null` (ver `utils/urlFrontend.js`) quando

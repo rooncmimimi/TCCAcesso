@@ -180,6 +180,12 @@ const env = {
         timeoutMs: Number(process.env.BREVO_TIMEOUT_MS) || 15000
     },
 
+    contato: {
+        // Para onde vão as mensagens do "Fale conosco". Sem valor padrão de propósito: nenhum endereço é inventado.
+        // Sem isto (ou sem a Brevo acima), o formulário responde 503 dizendo que o envio não está disponível.
+        destinoEmail: process.env.CONTATO_EMAIL_DESTINO || null
+    },
+
     // URL base do Frontend para montar links de e-mail (confirmação de
     // cadastro, redefinição de senha). Reaproveita FRONTEND_URL (mesma
     // variável já usada para CORS): usa a primeira origem da lista que

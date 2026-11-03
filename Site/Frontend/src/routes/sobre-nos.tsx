@@ -202,6 +202,9 @@ function SobreNos() {
               <Link to="/privacidade" className="hover:underline">
                 Aviso de Privacidade
               </Link>
+              <Link to="/fale-conosco" className="hover:underline">
+                Fale conosco
+              </Link>
             </nav>
             <p className="flex items-center gap-1 text-sm text-muted-foreground">
               <Languages className="size-4 shrink-0" aria-hidden="true" /> ACESSO · WCAG 2.2 · VLibras

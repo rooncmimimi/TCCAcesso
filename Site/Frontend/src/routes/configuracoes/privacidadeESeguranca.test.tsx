@@ -116,6 +116,8 @@ describe("rodapé do app", () => {
     expect(destino("Termos de Uso")).toBe("/termos");
     expect(destino("Aviso de Privacidade")).toBe("/privacidade");
     expect(destino(/Privacidade e Segurança/)).toBe("/configuracoes/privacidade");
+    // O Fale conosco é a página com o formulário, e não mais um mailto solto.
+    expect(destino("Fale conosco")).toBe("/fale-conosco");
     expect(screen.queryByRole("link", { name: "Segurança" })).not.toBeInTheDocument();
   });
 });

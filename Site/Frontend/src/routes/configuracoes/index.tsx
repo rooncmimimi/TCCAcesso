@@ -111,12 +111,9 @@ function Configuracoes() {
             <h2 className="flex items-center gap-2 text-base font-bold">
               <HelpCircle className="size-5 shrink-0 text-primary" aria-hidden="true" /> Ajuda
             </h2>
-            <a
-              href="mailto:projetoacessoinclusivo@gmail.com"
-              className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline"
-            >
+            <Link to="/fale-conosco" className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline">
               Falar com a equipe do ACESSO
-            </a>
+            </Link>
           </CardContent>
         </Card>
       </div>

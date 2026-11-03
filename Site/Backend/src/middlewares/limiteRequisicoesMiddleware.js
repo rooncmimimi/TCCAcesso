@@ -59,6 +59,21 @@ export function criarLimiteGoogle({ max = LIMITE_GOOGLE_POR_JANELA, aoExceder } 
     });
 }
 
+/**
+ * Fale conosco: 5 mensagens por IP a cada hora, contando todas (não só as recusadas). Uma pessoa de boa-fé
+ * escreve uma, no máximo duas; o limite existe para o formulário não virar um disparador de e-mail.
+ */
+export const limiteContato = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        sucesso: false,
+        mensagem: "Você já enviou várias mensagens. Aguarde um pouco antes de enviar outra."
+    }
+});
+
 /** `GET /auth/google/iniciar`: responde 429 em JSON, que o Site mostra como aviso. */
 export const limiteGoogleIniciar = criarLimiteGoogle();
 

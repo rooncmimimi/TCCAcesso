@@ -16,6 +16,7 @@ import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DescobrirRouteImport } from './routes/descobrir'
 import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as FaleConoscoRouteImport } from './routes/fale-conosco'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as MensagensRouteImport } from './routes/mensagens'
 import { Route as MinhaAtividadeRouteImport } from './routes/minha-atividade'
@@ -92,6 +93,11 @@ const DescobrirRoute = DescobrirRouteImport.update({
 const EntrarRoute = EntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaleConoscoRoute = FaleConoscoRouteImport.update({
+  id: '/fale-conosco',
+  path: '/fale-conosco',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedRoute = FeedRouteImport.update({
@@ -317,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
+  '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
@@ -366,6 +373,7 @@ export interface FileRoutesByTo {
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
+  '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
@@ -415,6 +423,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
+  '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/descobrir'
     | '/entrar'
+    | '/fale-conosco'
     | '/feed'
     | '/mensagens'
     | '/minha-atividade'
@@ -517,6 +527,7 @@ export interface FileRouteTypes {
     | '/confirmar-email'
     | '/descobrir'
     | '/entrar'
+    | '/fale-conosco'
     | '/feed'
     | '/mensagens'
     | '/minha-atividade'
@@ -565,6 +576,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/descobrir'
     | '/entrar'
+    | '/fale-conosco'
     | '/feed'
     | '/mensagens'
     | '/minha-atividade'
@@ -617,6 +629,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   DescobrirRoute: typeof DescobrirRoute
   EntrarRoute: typeof EntrarRoute
+  FaleConoscoRoute: typeof FaleConoscoRoute
   FeedRoute: typeof FeedRoute
   MensagensRoute: typeof MensagensRoute
   MinhaAtividadeRoute: typeof MinhaAtividadeRoute
@@ -693,6 +706,13 @@ declare module '@tanstack/react-router' {
       path: '/entrar'
       fullPath: '/entrar'
       preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fale-conosco': {
+      id: '/fale-conosco'
+      path: '/fale-conosco'
+      fullPath: '/fale-conosco'
+      preLoaderRoute: typeof FaleConoscoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feed': {
@@ -1081,6 +1101,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   DescobrirRoute: DescobrirRoute,
   EntrarRoute: EntrarRoute,
+  FaleConoscoRoute: FaleConoscoRoute,
   FeedRoute: FeedRoute,
   MensagensRoute: MensagensRoute,
   MinhaAtividadeRoute: MinhaAtividadeRoute,

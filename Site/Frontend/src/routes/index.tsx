@@ -328,9 +328,9 @@ function Inicio() {
             <Link to="/privacidade" className="hover:underline">
               Aviso de Privacidade
             </Link>
-            <a href="mailto:projetoacessoinclusivo@gmail.com" className="hover:underline">
+            <Link to="/fale-conosco" className="hover:underline">
               Fale conosco
-            </a>
+            </Link>
           </nav>
         </div>
         <div className="mx-auto max-w-6xl px-4 pb-8 text-sm text-muted-foreground">

@@ -4,7 +4,7 @@ import app from "./app.js";
 import env from "./config/env.js";
 import conectarBanco from "./config/sequelize.js";
 import sequelize from "./config/bancoDeDados.js";
-import { avisoDaMigracaoContaSemSenha } from "./config/avisosDeAmbiente.js";
+import { avisoDaMigracaoContaSemSenha, avisoDaMigracaoTotp } from "./config/avisosDeAmbiente.js";
 import { iniciarSocket } from "./realtime/socket.js";
 import { storageHabilitado } from "./utils/supabaseStorage.js";
 
@@ -32,6 +32,26 @@ async function iniciarServidor() {
         }
     });
     if (avisoDaMigracao) console.error(avisoDaMigracao);
+
+    // Mesma conferência para o TOTP: ligado sem a migration 0008, o login e o painel falhariam no banco.
+    const avisoDoTotp = await avisoDaMigracaoTotp({
+        habilitado: env.mfa.habilitado,
+        consultar: async () => {
+            const tabelas = await sequelize.query(
+                // Alias obrigatório: o Sequelize reconhece 'SELECT table_name FROM information_schema.tables' como a listagem
+                // de tabelas dele e devolveria arrays em vez de linhas, e a conferência nunca acharia nada.
+                "SELECT tablename AS nome FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('autenticacao_totp', 'codigos_recuperacao_totp')",
+                { type: "SELECT" }
+            );
+            const colunas = await sequelize.query(
+                "SELECT 'sessoes.' || column_name AS item FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'sessoes' AND column_name = 'mfa_verificado_em'",
+                { type: "SELECT" }
+            );
+
+            return [...tabelas.map((linha) => linha.nome), ...colunas.map((linha) => linha.item)];
+        }
+    });
+    if (avisoDoTotp) console.error(avisoDoTotp);
 
     // Nunca loga as credenciais, só o modo em uso, para deixar óbvio em
     // produção se o Storage persistente está realmente ativo ou se caiu

@@ -67,3 +67,9 @@ services:
       # 0007 (senha_hash aceitando nulo). Desligada, o cadastro segue o formulário com senha.
       - key: GOOGLE_CONTA_SEM_SENHA
         value: "false"
+      # Verificação em duas etapas (TOTP): obrigatória para administradores. Só ligue depois de aplicar a
+      # migration 0008 e de definir MFA_CHAVE_CIFRA. Veja Site/docs/verificacao-em-duas-etapas.md.
+      - key: MFA_TOTP_HABILITADO
+        value: "false"
+      - key: MFA_CHAVE_CIFRA
+        sync: false

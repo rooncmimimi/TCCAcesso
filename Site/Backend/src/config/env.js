@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 
-import { ORIGEM_LOCAL, avisosDoGoogle } from "./avisosDeAmbiente.js";
+import { ORIGEM_LOCAL, avisosDoGoogle, avisosDoMfa } from "./avisosDeAmbiente.js";
 
 dotenv.config();
 
@@ -275,6 +275,10 @@ if (!ehUrlAbsolutaValida(env.frontendUrl)) {
  * com o Google, `npm run google:verificar`.
  */
 for (const aviso of avisosDoGoogle({ google: env.google, isProducao: env.isProducao, corsOrigins: env.security.corsOrigins })) {
+    console.error(aviso);
+}
+
+for (const aviso of avisosDoMfa({ mfa: env.mfa, isProducao: env.isProducao })) {
     console.error(aviso);
 }
 

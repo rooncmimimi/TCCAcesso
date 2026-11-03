@@ -49,11 +49,12 @@ describe("0007_conta_sem_senha.sql", () => {
         expect(comandos).toMatch(/ck_usuarios_/);
     });
 
-    it("é a última migration, logo depois da 0006, e está no README", () => {
+    it("vem logo depois da 0006 e está no README", () => {
         const arquivos = readdirSync(pasta).filter((nome) => nome.endsWith(".sql")).sort();
+        const posicao = arquivos.indexOf("0007_conta_sem_senha.sql");
 
-        expect(arquivos.at(-1)).toBe("0007_conta_sem_senha.sql");
-        expect(arquivos.at(-2)).toMatch(/^0006_/);
+        expect(posicao).toBeGreaterThan(0);
+        expect(arquivos[posicao - 1]).toMatch(/^0006_/);
         expect(readFileSync(resolve(pasta, "README.md"), "utf8")).toContain("0007_conta_sem_senha.sql");
     });
 });

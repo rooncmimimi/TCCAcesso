@@ -14,6 +14,7 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 | `0005_google_termos_e_pais_da_empresa.sql` | Adiciona `usuarios.google_id`, o registro de aceite/versão dos documentos legais (`termos_aceitos_em`, `termos_versao`) e `empresas.pais` (ISO 3166-1 alpha-2). |
 | `0006_vincular_empresa_a_conta_candidato.sql` | Adiciona `empresas.usuario_candidato_id`, identificando a conta de candidato da pessoa que cadastrou a empresa. A conta institucional (`empresas.usuario_id`) continua separada. |
 | `0007_conta_sem_senha.sql` | `usuarios.senha_hash` passa a aceitar nulo, com a regra `ck_usuarios_senha_ou_google`: toda conta tem senha **ou** Google vinculado. Sustenta criar a conta no retorno do Google (`GOOGLE_CONTA_SEM_SENHA`). Traz no cabeçalho como voltar atrás. |
+| `0008_totp_e_mfa_na_sessao.sql` | Verificação em duas etapas por aplicativo autenticador (TOTP): cria `autenticacao_totp` (segredo cifrado, nunca em claro) e `codigos_recuperacao_totp` (só o HMAC), e acrescenta `sessoes.mfa_verificado_em`. Obrigatória para administradores e opcional para as demais contas, só depois de ligar `MFA_TOTP_HABILITADO`. Traz no cabeçalho como voltar atrás. |
 
 As descrições representam o efeito de cada migration. Para detalhes de regras, constraints e decisões,
 consulte os comentários no próprio arquivo SQL e o [guia do schema](../ESQUEMA_DO_BANCO.md).

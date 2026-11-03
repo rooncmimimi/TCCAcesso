@@ -233,6 +233,8 @@ export interface RespostaLogin {
   mfaConfiguracaoPendente?: boolean;
   /** Entrou com um código de recuperação: quantos ainda restam. */
   codigosRecuperacaoRestantes?: number;
+  /** Só na confirmação por e-mail com "lembrar este dispositivo": o token do aparelho, entregue uma única vez. */
+  dispositivo?: string;
 }
 
 /**
@@ -243,6 +245,19 @@ export interface RespostaLoginMfa {
   mfaNecessario: true;
   desafioMfa: string;
   metodosMfa: string[];
+}
+
+/**
+ * Retornado no lugar de `RespostaLogin` quando o servidor não reconhece este aparelho: a senha (ou o Google) estava certa, mas
+ * falta o código de 6 números enviado por e-mail. O desafio vale 20 minutos, o código 15.
+ */
+export interface RespostaLoginDispositivo {
+  verificacaoDispositivo: true;
+  desafioDispositivo: string;
+  /** Para dizer à pessoa onde olhar: "an***@gmail.com". */
+  emailMascarado: string;
+  validadeEmMinutos: number;
+  reenvioEmSegundos: number;
 }
 
 /** Retornado no lugar de `RespostaLogin` quando a conta foi pausada pelo próprio usuário. */

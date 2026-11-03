@@ -13,6 +13,7 @@ import type {
   RespostaLogin,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
+  RespostaLoginDispositivo,
   RespostaLoginMfa,
   TipoUsuario,
   Usuario,
@@ -121,9 +122,9 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
    */
   const iniciarSessao = useCallback(
     async (
-      resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa,
-    ): Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa> => {
-      if ("contaPausada" in resposta || "emailNaoVerificado" in resposta || "mfaNecessario" in resposta) {
+      resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa | RespostaLoginDispositivo,
+    ): Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa | RespostaLoginDispositivo> => {
+      if ("contaPausada" in resposta || "emailNaoVerificado" in resposta || "mfaNecessario" in resposta || "verificacaoDispositivo" in resposta) {
         return resposta;
       }
       definirTokens(resposta.token, resposta.refreshToken);

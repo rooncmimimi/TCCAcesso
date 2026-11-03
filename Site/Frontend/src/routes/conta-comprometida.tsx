@@ -1,0 +1,279 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { Accessibility, ArrowLeft, Loader2, MailCheck, ShieldAlert, ShieldCheck } from "lucide-react";
+import { z } from "zod";
+
+import { Campo } from "@/components/cadastro/Campo";
+import { descricao } from "@/components/cadastro/descricao";
+import { Logo } from "@/components/Logo";
+import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { esquecerDispositivoConfiavel } from "@/services/api";
+import segurancaService, { codigoDoErroSeguranca, mensagemDeErroSeguranca } from "@/services/seguranca.service";
+
+/**
+ * "Acho que invadiram minha conta", para quem NÃO está logado (ou já perdeu o acesso).
+ *
+ * - Sem `token`: pede o e-mail. A resposta é sempre a mesma, exista a conta ou não; o link só chega ao e-mail da conta.
+ * - Com `token` (o link do e-mail, tanto do pedido quanto do "Não fui eu" do aviso de novo acesso): uma confirmação por clique,
+ *   e não ao abrir a página, para um programa que pré-visualiza links não proteger a conta (nem a gastar o link) sem a pessoa.
+ *
+ * Proteger encerra todas as sessões e remove a confiança nos dispositivos; manda o link de nova senha. Não desliga a
+ * verificação em duas etapas.
+ */
+export const Route = createFileRoute("/conta-comprometida")({
+  // `z.coerce.string()`: o parser de search params converte valor só com dígitos em número (ver `redefinir-senha.tsx`).
+  validateSearch: z.object({ token: z.coerce.string().optional() }),
+  head: () => ({
+    meta: [
+      { title: "Proteger minha conta — ACESSO" },
+      { name: "description", content: "Encerre todas as sessões da sua conta ACESSO se você acha que ela foi invadida." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: ContaComprometida,
+});
+
+function Cabecalho() {
+  return (
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+      <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Logo />
+      </Link>
+      <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
+        <Link to="/configuracoes/acessibilidade">
+          <Accessibility aria-hidden="true" />
+          <span className="hidden sm:inline">Acessibilidade</span>
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+function ContaComprometida() {
+  const { token } = Route.useSearch();
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    tituloRef.current?.focus();
+  }, [token]);
+
+  return (
+    <AutenticacaoLayout className="max-w-lg">
+      <Cabecalho />
+      <Card className="shadow-card">
+        <CardContent className="p-6 sm:p-8">{token ? <Confirmar token={token} tituloRef={tituloRef} /> : <Pedir tituloRef={tituloRef} />}</CardContent>
+      </Card>
+    </AutenticacaoLayout>
+  );
+}
+
+function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | null> }) {
+  const [email, setEmail] = useState("");
+  const [erro, setErro] = useState<string | undefined>();
+  const [enviando, setEnviando] = useState(false);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+  const enviandoRef = useRef(false);
+
+  async function enviar(evento: React.FormEvent) {
+    evento.preventDefault();
+    if (enviandoRef.current) return;
+
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      setErro("Informe um e-mail válido.");
+      return;
+    }
+
+    enviandoRef.current = true;
+    setEnviando(true);
+    setErro(undefined);
+
+    try {
+      setMensagem(await segurancaService.solicitarProtecao(email.trim()));
+    } catch (falha) {
+      setErro(mensagemDeErroSeguranca(falha, "Não foi possível enviar agora. Tente novamente em instantes."));
+    } finally {
+      enviandoRef.current = false;
+      setEnviando(false);
+    }
+  }
+
+  if (mensagem) {
+    return (
+      <div className="space-y-4" role="status">
+        <div className="flex items-start gap-3">
+          <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <MailCheck className="size-5" />
+          </span>
+          <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
+            Verifique o seu e-mail
+          </h1>
+        </div>
+        <p className="text-sm text-muted-foreground">{mensagem}</p>
+        <Button asChild className="min-h-12 w-full text-base">
+          <Link to="/entrar">Voltar para o login</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={enviar} className="space-y-5" noValidate aria-labelledby="titulo-conta-comprometida">
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <ShieldAlert className="size-5" />
+        </span>
+        <div>
+          <h1 id="titulo-conta-comprometida" ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
+            Acho que invadiram minha conta
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Informe o e-mail da conta. Enviaremos um link para protegê-la: ele encerra todas as sessões abertas e deixa você criar uma nova senha.
+          </p>
+        </div>
+      </div>
+
+      <Campo id="email-protecao" rotulo="E-mail da conta" erro={erro}>
+        <Input
+          id="email-protecao"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(evento) => {
+            setEmail(evento.target.value);
+            setErro(undefined);
+          }}
+          disabled={enviando}
+          className="min-h-12"
+          aria-invalid={Boolean(erro)}
+          aria-describedby={descricao("email-protecao", false, Boolean(erro))}
+        />
+      </Campo>
+
+      <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
+        {enviando ? (
+          <>
+            <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+          </>
+        ) : (
+          "Enviar link de proteção"
+        )}
+      </Button>
+
+      <Button asChild variant="ghost" className="min-h-11 justify-start px-0">
+        <Link to="/entrar">
+          <ArrowLeft aria-hidden="true" /> Voltar para o login
+        </Link>
+      </Button>
+    </form>
+  );
+}
+
+function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefObject<HTMLHeadingElement | null> }) {
+  const [enviando, setEnviando] = useState(false);
+  const [protegida, setProtegida] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | undefined>();
+  const [linkInvalido, setLinkInvalido] = useState(false);
+  const enviandoRef = useRef(false);
+
+  async function proteger() {
+    if (enviandoRef.current) return;
+
+    enviandoRef.current = true;
+    setEnviando(true);
+    setErro(undefined);
+
+    try {
+      setProtegida(await segurancaService.confirmarProtecao(token));
+      esquecerDispositivoConfiavel();
+    } catch (falha) {
+      if (codigoDoErroSeguranca(falha) === "LINK_DE_SEGURANCA_INVALIDO") {
+        setLinkInvalido(true);
+      } else {
+        setErro(mensagemDeErroSeguranca(falha, "Não foi possível proteger a conta agora. Tente novamente."));
+      }
+    } finally {
+      enviandoRef.current = false;
+      setEnviando(false);
+    }
+  }
+
+  if (protegida) {
+    return (
+      <div className="space-y-4" role="status">
+        <div className="flex items-start gap-3">
+          <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <ShieldCheck className="size-5" />
+          </span>
+          <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
+            Conta protegida
+          </h1>
+        </div>
+        <p className="text-sm text-muted-foreground">{protegida}</p>
+        <p className="text-sm text-muted-foreground">Abra o e-mail que acabamos de enviar para criar a nova senha.</p>
+        <Button asChild className="min-h-12 w-full text-base">
+          <Link to="/entrar">Ir para o login</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (linkInvalido) {
+    return (
+      <div className="space-y-4" role="alert">
+        <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
+          Este link não vale mais
+        </h1>
+        <p className="text-sm text-muted-foreground">O link expirou ou já foi usado. Peça um novo: ele chega ao e-mail da conta.</p>
+        <Button asChild className="min-h-12 w-full text-base">
+          <Link to="/conta-comprometida" search={{ token: undefined }}>
+            Pedir um novo link
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <ShieldAlert className="size-5" />
+        </span>
+        <div>
+          <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
+            Proteger a sua conta
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ao confirmar, todas as sessões abertas são encerradas na hora e a confiança nos dispositivos é removida. Depois, você cria uma nova senha. A
+            verificação em duas etapas, se você usa, continua ativa.
+          </p>
+        </div>
+      </div>
+
+      {erro && (
+        <p role="alert" className="text-sm text-destructive">
+          {erro}
+        </p>
+      )}
+
+      <Button type="button" variant="destructive" className="min-h-12 w-full text-base" onClick={proteger} disabled={enviando}>
+        {enviando ? (
+          <>
+            <Loader2 className="animate-spin" aria-hidden="true" /> Protegendo…
+          </>
+        ) : (
+          "Proteger minha conta"
+        )}
+      </Button>
+
+      <Button asChild variant="ghost" className="min-h-11 justify-start px-0">
+        <Link to="/entrar">
+          <ArrowLeft aria-hidden="true" /> Não é isso: voltar para o login
+        </Link>
+      </Button>
+    </div>
+  );
+}

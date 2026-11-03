@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BoasVindasRouteImport } from './routes/boas-vindas'
 import { Route as ConfigurarVerificacaoRouteImport } from './routes/configurar-verificacao'
 import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
+import { Route as ContaComprometidaRouteImport } from './routes/conta-comprometida'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DescobrirRouteImport } from './routes/descobrir'
 import { Route as EntrarRouteImport } from './routes/entrar'
@@ -30,6 +31,7 @@ import { Route as RetornoGoogleRouteImport } from './routes/retorno-google'
 import { Route as SobreNosRouteImport } from './routes/sobre-nos'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VagasRouteImport } from './routes/vagas'
+import { Route as VerificacaoDeDispositivoRouteImport } from './routes/verificacao-de-dispositivo'
 import { Route as VerificacaoEmDuasEtapasRouteImport } from './routes/verificacao-em-duas-etapas'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminComentariosRouteImport } from './routes/admin/comentarios'
@@ -87,6 +89,11 @@ const ConfigurarVerificacaoRoute = ConfigurarVerificacaoRouteImport.update({
 const ConfirmarEmailRoute = ConfirmarEmailRouteImport.update({
   id: '/confirmar-email',
   path: '/confirmar-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContaComprometidaRoute = ContaComprometidaRouteImport.update({
+  id: '/conta-comprometida',
+  path: '/conta-comprometida',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -169,6 +176,12 @@ const VagasRoute = VagasRouteImport.update({
   path: '/vagas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerificacaoDeDispositivoRoute =
+  VerificacaoDeDispositivoRouteImport.update({
+    id: '/verificacao-de-dispositivo',
+    path: '/verificacao-de-dispositivo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const VerificacaoEmDuasEtapasRoute = VerificacaoEmDuasEtapasRouteImport.update({
   id: '/verificacao-em-duas-etapas',
   path: '/verificacao-em-duas-etapas',
@@ -345,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/boas-vindas': typeof BoasVindasRoute
   '/configurar-verificacao': typeof ConfigurarVerificacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
+  '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
@@ -361,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
+  '/verificacao-de-dispositivo': typeof VerificacaoDeDispositivoRoute
   '/verificacao-em-duas-etapas': typeof VerificacaoEmDuasEtapasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/denuncias': typeof AdminDenunciasRouteWithChildren
@@ -400,6 +415,7 @@ export interface FileRoutesByTo {
   '/boas-vindas': typeof BoasVindasRoute
   '/configurar-verificacao': typeof ConfigurarVerificacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
+  '/conta-comprometida': typeof ContaComprometidaRoute
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
   '/fale-conosco': typeof FaleConoscoRoute
@@ -414,6 +430,7 @@ export interface FileRoutesByTo {
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
+  '/verificacao-de-dispositivo': typeof VerificacaoDeDispositivoRoute
   '/verificacao-em-duas-etapas': typeof VerificacaoEmDuasEtapasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
@@ -453,6 +470,7 @@ export interface FileRoutesById {
   '/boas-vindas': typeof BoasVindasRoute
   '/configurar-verificacao': typeof ConfigurarVerificacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
+  '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
@@ -469,6 +487,7 @@ export interface FileRoutesById {
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
+  '/verificacao-de-dispositivo': typeof VerificacaoDeDispositivoRoute
   '/verificacao-em-duas-etapas': typeof VerificacaoEmDuasEtapasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/denuncias': typeof AdminDenunciasRouteWithChildren
@@ -511,6 +530,7 @@ export interface FileRouteTypes {
     | '/boas-vindas'
     | '/configurar-verificacao'
     | '/confirmar-email'
+    | '/conta-comprometida'
     | '/dashboard'
     | '/descobrir'
     | '/entrar'
@@ -527,6 +547,7 @@ export interface FileRouteTypes {
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
+    | '/verificacao-de-dispositivo'
     | '/verificacao-em-duas-etapas'
     | '/admin/comentarios'
     | '/admin/denuncias'
@@ -566,6 +587,7 @@ export interface FileRouteTypes {
     | '/boas-vindas'
     | '/configurar-verificacao'
     | '/confirmar-email'
+    | '/conta-comprometida'
     | '/descobrir'
     | '/entrar'
     | '/fale-conosco'
@@ -580,6 +602,7 @@ export interface FileRouteTypes {
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
+    | '/verificacao-de-dispositivo'
     | '/verificacao-em-duas-etapas'
     | '/admin/comentarios'
     | '/admin/empresas'
@@ -618,6 +641,7 @@ export interface FileRouteTypes {
     | '/boas-vindas'
     | '/configurar-verificacao'
     | '/confirmar-email'
+    | '/conta-comprometida'
     | '/dashboard'
     | '/descobrir'
     | '/entrar'
@@ -634,6 +658,7 @@ export interface FileRouteTypes {
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
+    | '/verificacao-de-dispositivo'
     | '/verificacao-em-duas-etapas'
     | '/admin/comentarios'
     | '/admin/denuncias'
@@ -675,6 +700,7 @@ export interface RootRouteChildren {
   BoasVindasRoute: typeof BoasVindasRoute
   ConfigurarVerificacaoRoute: typeof ConfigurarVerificacaoRoute
   ConfirmarEmailRoute: typeof ConfirmarEmailRoute
+  ContaComprometidaRoute: typeof ContaComprometidaRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DescobrirRoute: typeof DescobrirRoute
   EntrarRoute: typeof EntrarRoute
@@ -691,6 +717,7 @@ export interface RootRouteChildren {
   SobreNosRoute: typeof SobreNosRoute
   TermosRoute: typeof TermosRoute
   VagasRoute: typeof VagasRoute
+  VerificacaoDeDispositivoRoute: typeof VerificacaoDeDispositivoRoute
   VerificacaoEmDuasEtapasRoute: typeof VerificacaoEmDuasEtapasRoute
   CadastroCandidatoRoute: typeof CadastroCandidatoRoute
   CadastroDadosRoute: typeof CadastroDadosRoute
@@ -744,6 +771,13 @@ declare module '@tanstack/react-router' {
       path: '/confirmar-email'
       fullPath: '/confirmar-email'
       preLoaderRoute: typeof ConfirmarEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conta-comprometida': {
+      id: '/conta-comprometida'
+      path: '/conta-comprometida'
+      fullPath: '/conta-comprometida'
+      preLoaderRoute: typeof ContaComprometidaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -856,6 +890,13 @@ declare module '@tanstack/react-router' {
       path: '/vagas'
       fullPath: '/vagas'
       preLoaderRoute: typeof VagasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificacao-de-dispositivo': {
+      id: '/verificacao-de-dispositivo'
+      path: '/verificacao-de-dispositivo'
+      fullPath: '/verificacao-de-dispositivo'
+      preLoaderRoute: typeof VerificacaoDeDispositivoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verificacao-em-duas-etapas': {
@@ -1179,6 +1220,7 @@ const rootRouteChildren: RootRouteChildren = {
   BoasVindasRoute: BoasVindasRoute,
   ConfigurarVerificacaoRoute: ConfigurarVerificacaoRoute,
   ConfirmarEmailRoute: ConfirmarEmailRoute,
+  ContaComprometidaRoute: ContaComprometidaRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DescobrirRoute: DescobrirRoute,
   EntrarRoute: EntrarRoute,
@@ -1195,6 +1237,7 @@ const rootRouteChildren: RootRouteChildren = {
   SobreNosRoute: SobreNosRoute,
   TermosRoute: TermosRoute,
   VagasRoute: VagasRoute,
+  VerificacaoDeDispositivoRoute: VerificacaoDeDispositivoRoute,
   VerificacaoEmDuasEtapasRoute: VerificacaoEmDuasEtapasRoute,
   CadastroCandidatoRoute: CadastroCandidatoRoute,
   CadastroDadosRoute: CadastroDadosRoute,

@@ -498,3 +498,23 @@ describe("desfecho cadastrar", () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 });
+
+describe("aparelho que o servidor não reconhece (código por e-mail)", () => {
+  it("o Google provou quem é, mas falta o código do e-mail: guarda o desafio e vai à tela do código, sem abrir sessão", async () => {
+    concluir.mockResolvedValue(sessaoDoBackend());
+    iniciarSessao.mockResolvedValue({
+      verificacaoDispositivo: true,
+      desafioDispositivo: "desafio-por-email",
+      emailMascarado: "an***@exemplo.com",
+      validadeEmMinutos: 15,
+      reenvioEmSegundos: 60,
+    });
+    abrir({ codigo: "c" });
+
+    await waitFor(() => expect(navegar).toHaveBeenCalledWith({ to: "/verificacao-de-dispositivo", replace: true }));
+
+    const { lerVerificacao } = await import("@/lib/verificacaoDispositivo");
+
+    expect(lerVerificacao()).toMatchObject({ desafio: "desafio-por-email", emailMascarado: "an***@exemplo.com", reenvioEmSegundos: 60 });
+  });
+});

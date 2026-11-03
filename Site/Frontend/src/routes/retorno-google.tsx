@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 import { guardarDesafio } from "@/lib/desafioMfa";
+import { guardarVerificacao } from "@/lib/verificacaoDispositivo";
 import {
   guardarProva,
   lerCodigoDoFragmento,
@@ -156,6 +157,18 @@ function RetornoGoogle() {
         limparVinculo();
         guardarDesafio(resultado.desafioMfa);
         navigate({ to: "/verificacao-em-duas-etapas", replace: true });
+        return;
+      }
+
+      // O Google provou quem é, mas este aparelho não é reconhecido: o código de 6 números foi para o e-mail da conta.
+      if ("verificacaoDispositivo" in resultado) {
+        limparVinculo();
+        guardarVerificacao({
+          desafio: resultado.desafioDispositivo,
+          emailMascarado: resultado.emailMascarado,
+          reenvioEmSegundos: resultado.reenvioEmSegundos,
+        });
+        navigate({ to: "/verificacao-de-dispositivo", replace: true });
         return;
       }
 

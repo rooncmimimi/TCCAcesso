@@ -7,6 +7,8 @@ import axios, {
 /** Chaves usadas para persistir os tokens JWT no navegador. */
 export const CHAVE_ACCESS_TOKEN = "acesso:accessToken";
 export const CHAVE_REFRESH_TOKEN = "acesso:refreshToken";
+/** O token do aparelho de confiança. Fica separado dos tokens da sessão: sair da conta NÃO o apaga. */
+export const CHAVE_DISPOSITIVO_CONFIAVEL = "acesso:dispositivoConfiavel";
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
 
@@ -15,6 +17,31 @@ export const clienteApi: AxiosInstance = axios.create({
   withCredentials: true,
   timeout: 20_000,
 });
+
+/** O token do aparelho de confiança, ou `null` (nunca lança: o armazenamento pode estar bloqueado). */
+export function lerDispositivoConfiavel(): string | null {
+  try {
+    return window.localStorage.getItem(CHAVE_DISPOSITIVO_CONFIAVEL);
+  } catch {
+    return null;
+  }
+}
+
+export function guardarDispositivoConfiavel(token: string): void {
+  try {
+    window.localStorage.setItem(CHAVE_DISPOSITIVO_CONFIAVEL, token);
+  } catch {
+    // Sem armazenamento, o aparelho não é lembrado e o código por e-mail volta a ser pedido no próximo login.
+  }
+}
+
+export function esquecerDispositivoConfiavel(): void {
+  try {
+    window.localStorage.removeItem(CHAVE_DISPOSITIVO_CONFIAVEL);
+  } catch {
+    // Nada a apagar.
+  }
+}
 
 export function obterAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -91,6 +118,11 @@ clienteApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = obterAccessToken();
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);
+  }
+  // Diz ao servidor que este aparelho já confirmou o código por e-mail. Sem ele, o login pede o código de novo.
+  const dispositivo = lerDispositivoConfiavel();
+  if (dispositivo) {
+    config.headers.set("X-Dispositivo", dispositivo);
   }
   return config;
 });

@@ -6,6 +6,7 @@ import type {
   RespostaLogin,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
+  RespostaLoginDispositivo,
   RespostaLoginMfa,
   TipoUsuario,
   Usuario,
@@ -29,21 +30,21 @@ export type SessaoContextValue = {
   carregando: boolean;
   autenticado: boolean;
   /**
-   * Retorna `{ contaPausada: true }`, `{ emailNaoVerificado: true, email }` ou `{ mfaNecessario: true, desafioMfa }`
+   * Retorna `{ contaPausada: true }`, `{ emailNaoVerificado: true, email }` `{ mfaNecessario: true, desafioMfa }` ou `{ verificacaoDispositivo: true, desafioDispositivo }`
    * (sem criar sessão) quando o login precisa de uma etapa extra.
    */
   entrar: (
     credenciais: CredenciaisLogin,
-  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa>;
+  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa | RespostaLoginDispositivo>;
   /**
    * O "depois de autenticar" de qualquer entrada (senha ou Google): guarda os tokens, normaliza o
    * usuário, conecta o socket e aplica as preferências de acessibilidade da conta. Quando a
-   * resposta é uma etapa extra (`contaPausada`, `emailNaoVerificado` ou `mfaNecessario`), devolve-a sem
+   * resposta é uma etapa extra (`contaPausada`, `emailNaoVerificado`, `mfaNecessario` ou `verificacaoDispositivo`), devolve-a sem
    * criar sessão.
    */
   iniciarSessao: (
-    resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa,
-  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa>;
+    resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa | RespostaLoginDispositivo,
+  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa | RespostaLoginDispositivo>;
   /** Retorna `{ pendenteVerificacaoEmail: true, email }` (sem criar sessão) quando o cadastro exige confirmação de e-mail. */
   registrarCandidato: (
     payload: Record<string, unknown>,

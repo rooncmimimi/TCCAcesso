@@ -19,6 +19,8 @@ import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 import { guardarDesafio } from "@/lib/desafioMfa";
+import { guardarVerificacao } from "@/lib/verificacaoDispositivo";
+import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
 
 const esquemaLogin = z.object({
   email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
@@ -41,6 +43,8 @@ export const Route = createFileRoute("/entrar")({
 
 function Entrar() {
   const { entrar } = useSessao();
+  // Só oferece "Acho que invadiram minha conta" quando o recurso está ligado no servidor.
+  const { data: estadoSeguranca } = useEstadoDaSeguranca();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [contaPausadaPendente, setContaPausadaPendente] = useState<{ email: string; senha: string } | null>(null);
@@ -89,6 +93,16 @@ function Entrar() {
         navigate({ to: "/verificacao-em-duas-etapas" });
         return;
       }
+      // Dispositivo que o servidor não reconhece: o código de 6 números foi para o e-mail. Nenhuma sessão foi aberta.
+      if ("verificacaoDispositivo" in resultado) {
+        guardarVerificacao({
+          desafio: resultado.desafioDispositivo,
+          emailMascarado: resultado.emailMascarado,
+          reenvioEmSegundos: resultado.reenvioEmSegundos,
+        });
+        navigate({ to: "/verificacao-de-dispositivo" });
+        return;
+      }
       if ("contaPausada" in resultado) {
         setContaPausadaPendente(valores);
         return;
@@ -135,6 +149,15 @@ function Entrar() {
       if ("mfaNecessario" in resultado) {
         guardarDesafio(resultado.desafioMfa);
         navigate({ to: "/verificacao-em-duas-etapas" });
+        return;
+      }
+      if ("verificacaoDispositivo" in resultado) {
+        guardarVerificacao({
+          desafio: resultado.desafioDispositivo,
+          emailMascarado: resultado.emailMascarado,
+          reenvioEmSegundos: resultado.reenvioEmSegundos,
+        });
+        navigate({ to: "/verificacao-de-dispositivo" });
         return;
       }
       if ("contaPausada" in resultado || "emailNaoVerificado" in resultado) return;
@@ -308,6 +331,14 @@ function Entrar() {
                     {...register("senha")}
                   />
                 </Campo>
+
+                {estadoSeguranca?.habilitado && (
+                  <p className="text-sm">
+                    <Link to="/conta-comprometida" className="font-semibold text-primary underline">
+                      Acho que invadiram minha conta
+                    </Link>
+                  </p>
+                )}
 
                 <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
                   {enviando ? (

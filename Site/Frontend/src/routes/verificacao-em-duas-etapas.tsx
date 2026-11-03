@@ -92,7 +92,7 @@ function VerificacaoEmDuasEtapas() {
         return;
       }
 
-      if ("emailNaoVerificado" in resultado || "mfaNecessario" in resultado) {
+      if ("emailNaoVerificado" in resultado || "mfaNecessario" in resultado || "verificacaoDispositivo" in resultado) {
         void navigate({ to: "/entrar", replace: true });
         return;
       }

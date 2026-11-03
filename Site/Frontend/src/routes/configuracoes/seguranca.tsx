@@ -3,7 +3,10 @@ import { ArrowLeft, Lock } from "lucide-react";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
+import { SecaoAtividadeDeSeguranca } from "@/components/configuracoes/SecaoAtividadeDeSeguranca";
+import { SecaoContaComprometida } from "@/components/configuracoes/SecaoContaComprometida";
 import { SecaoContasConectadas } from "@/components/configuracoes/SecaoContasConectadas";
+import { SecaoDispositivosConfiaveis } from "@/components/configuracoes/SecaoDispositivosConfiaveis";
 import { SecaoSessoes } from "@/components/configuracoes/SecaoSessoes";
 import { SecaoVerificacaoEmDuasEtapas } from "@/components/configuracoes/SecaoVerificacaoEmDuasEtapas";
 
@@ -45,6 +48,9 @@ function Seguranca() {
         <SecaoVerificacaoEmDuasEtapas />
         <SecaoContasConectadas />
         <SecaoSessoes />
+        <SecaoDispositivosConfiaveis />
+        <SecaoAtividadeDeSeguranca />
+        <SecaoContaComprometida />
       </div>
     </EstruturaApp>
   );

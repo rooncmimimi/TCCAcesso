@@ -13,25 +13,28 @@ import env from "../config/env.js";
  * não abre em outro, e o segredo do JWT nunca é usado diretamente como chave de cifra. O formato é
  * `base64url(iv ‖ tag ‖ cifrado)`, com IV novo a cada chamada. A autenticação do GCM faz qualquer
  * alteração do valor ser recusada.
+ *
+ * `material` troca a origem da chave quando um uso precisa de uma chave própria, separada do JWT_SECRET
+ * (o segredo do TOTP usa `MFA_CHAVE_CIFRA`, ver `segredosMfa.js`). Sem ele, vale o JWT_SECRET de sempre.
  */
 
 const TAMANHO_DO_IV = 12;
 const TAMANHO_DA_TAG = 16;
 
-function chaveDoContexto(contexto) {
-    return Buffer.from(crypto.hkdfSync("sha256", env.jwt.secret, "acesso:cifra", contexto, 32));
+function chaveDoContexto(contexto, material = env.jwt.secret) {
+    return Buffer.from(crypto.hkdfSync("sha256", material, "acesso:cifra", contexto, 32));
 }
 
-export function cifrar(texto, contexto) {
+export function cifrar(texto, contexto, material) {
     const iv = crypto.randomBytes(TAMANHO_DO_IV);
-    const cifra = crypto.createCipheriv("aes-256-gcm", chaveDoContexto(contexto), iv);
+    const cifra = crypto.createCipheriv("aes-256-gcm", chaveDoContexto(contexto, material), iv);
     const cifrado = Buffer.concat([cifra.update(String(texto), "utf8"), cifra.final()]);
 
     return Buffer.concat([iv, cifra.getAuthTag(), cifrado]).toString("base64url");
 }
 
 /** Devolve o texto original, ou lança se o valor foi alterado, vem de outro contexto ou é de outra chave. */
-export function decifrar(valor, contexto) {
+export function decifrar(valor, contexto, material) {
     const bruto = Buffer.from(String(valor ?? ""), "base64url");
 
     if (bruto.length <= TAMANHO_DO_IV + TAMANHO_DA_TAG) {
@@ -40,7 +43,7 @@ export function decifrar(valor, contexto) {
 
     const decifra = crypto.createDecipheriv(
         "aes-256-gcm",
-        chaveDoContexto(contexto),
+        chaveDoContexto(contexto, material),
         bruto.subarray(0, TAMANHO_DO_IV)
     );
     decifra.setAuthTag(bruto.subarray(TAMANHO_DO_IV, TAMANHO_DO_IV + TAMANHO_DA_TAG));

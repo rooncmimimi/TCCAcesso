@@ -44,6 +44,12 @@ const Sessao = sequelize.define(
 
         ip: {
             type: DataTypes.STRING(64)
+        },
+
+        // Quando a sessão passou pelo segundo fator (TOTP ou código de recuperação). Vai junto na renovação
+        // do refresh token. Nulo = não passou (conta sem TOTP, ou administrador que ainda vai configurar).
+        mfaVerificadoEm: {
+            type: DataTypes.DATE
         }
     },
     {

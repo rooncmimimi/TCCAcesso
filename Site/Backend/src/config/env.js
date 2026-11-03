@@ -192,6 +192,18 @@ const env = {
         destinoEmail: process.env.CONTATO_EMAIL_DESTINO || null
     },
 
+    // Verificação em duas etapas por aplicativo autenticador (TOTP). Sem custo e sem serviço externo.
+    mfa: {
+        // Liga o recurso: login com o segundo fator, exigência para administradores e as telas de Segurança.
+        // Desligada por padrão porque a migration 0008 precisa estar aplicada antes (o deploy não a aplica).
+        habilitado: process.env.MFA_TOTP_HABILITADO === "true",
+        // Chave de cifra do segredo TOTP e dos códigos de recuperação. Recomendada em produção, separada do
+        // JWT_SECRET; sem ela, usa o JWT_SECRET. Trocá-la invalida os segredos já guardados.
+        chaveCifra: process.env.MFA_CHAVE_CIFRA || null,
+        // Nome que aparece no aplicativo autenticador, ao lado do e-mail da conta.
+        emissor: process.env.MFA_EMISSOR || "ACESSO"
+    },
+
     // URL base do Frontend para montar links de e-mail (confirmação de
     // cadastro, redefinição de senha). Reaproveita FRONTEND_URL (mesma
     // variável já usada para CORS): usa a primeira origem da lista que

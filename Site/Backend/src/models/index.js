@@ -5,6 +5,8 @@ import Sessao from "./Sessao.js";
 import TokenPush from "./TokenPush.js";
 import CodigoRecuperacaoSenha from "./CodigoRecuperacaoSenha.js";
 import CodigoVerificacaoEmail from "./CodigoVerificacaoEmail.js";
+import AutenticacaoTotp from "./AutenticacaoTotp.js";
+import CodigoRecuperacaoTotp from "./CodigoRecuperacaoTotp.js";
 import PreferenciaAcessibilidade from "./PreferenciaAcessibilidade.js";
 import PreferenciaNotificacao from "./PreferenciaNotificacao.js";
 import Candidato from "./Candidato.js";
@@ -65,6 +67,12 @@ CodigoRecuperacaoSenha.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuari
 
 Usuario.hasMany(CodigoVerificacaoEmail, { foreignKey: "usuarioId", as: "codigosVerificacaoEmail" });
 CodigoVerificacaoEmail.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+Usuario.hasOne(AutenticacaoTotp, { foreignKey: "usuarioId", as: "totp" });
+AutenticacaoTotp.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+Usuario.hasMany(CodigoRecuperacaoTotp, { foreignKey: "usuarioId", as: "codigosRecuperacaoTotp" });
+CodigoRecuperacaoTotp.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 
 Usuario.hasOne(PreferenciaAcessibilidade, { foreignKey: "usuarioId", as: "preferenciasAcessibilidade" });
 PreferenciaAcessibilidade.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
@@ -247,6 +255,8 @@ export {
     TokenPush,
     CodigoRecuperacaoSenha,
     CodigoVerificacaoEmail,
+    AutenticacaoTotp,
+    CodigoRecuperacaoTotp,
     PreferenciaAcessibilidade,
     PreferenciaNotificacao,
     Candidato,

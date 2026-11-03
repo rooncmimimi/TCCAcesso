@@ -115,12 +115,4 @@ router.patch(
     UsuarioController.desativar
 );
 
-router.delete(
-    "/:id",
-    exigirTipoUsuarioMiddleware("administrador"),
-    validarUuidParam("id"),
-    validacaoMiddleware,
-    UsuarioController.excluir
-);
-
 export default router;

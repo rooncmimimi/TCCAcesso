@@ -17,7 +17,7 @@ class DenunciaController {
 
     async listar(req, res, next) {
         try {
-            const dados = await DenunciaService.listar(req.query);
+            const dados = await DenunciaService.listar(req.query, req.user);
             return res.status(200).json({ sucesso: true, ...dados });
         } catch (erro) {
             return next(erro);
@@ -51,7 +51,8 @@ class DenunciaController {
             const denuncia = await DenunciaService.atribuir(
                 req.params.id,
                 req.user,
-                contextoRequisicao(req)
+                contextoRequisicao(req),
+                { forcar: req.body?.forcar === true }
             );
             return res.status(200).json({ sucesso: true, denuncia });
         } catch (erro) {

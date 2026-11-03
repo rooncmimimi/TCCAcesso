@@ -7,7 +7,8 @@ import {
     Vaga,
     Empresa,
     Mensagem,
-    Denuncia
+    Denuncia,
+    RegistroAuditoria
 } from "../models/index.js";
 import ErroApi from "../utils/ErroApi.js";
 import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
@@ -164,10 +165,13 @@ class DenunciaService {
     }
 
     /* Fila administrativa */
-    async listar(query) {
+    async listar(query, solicitante = null) {
         const { pagina, limite, offset } = resolverPaginacao(query);
 
         const where = {};
+        // Responsável: "minhas" (as do administrador que pede) ou "sem_responsavel" (ninguém assumiu).
+        if (query.atribuicao === "minhas" && solicitante?.id) where.administradorResponsavelId = solicitante.id;
+        if (query.atribuicao === "sem_responsavel") where.administradorResponsavelId = null;
         if (query.status) where.status = query.status;
         if (query.entidadeTipo) where.entidadeTipo = query.entidadeTipo;
         if (query.motivo) where.motivo = query.motivo;
@@ -201,19 +205,27 @@ class DenunciaService {
                 const postagem = await Postagem.findByPk(entidadeId, {
                     attributes: ["id", "conteudo", "ativo", "usuarioId"]
                 });
-                return postagem;
+                return this.comAutor(postagem);
             }
             case "comentario": {
                 const comentario = await Comentario.findByPk(entidadeId, {
                     attributes: ["id", "comentario", "ativo", "usuarioId"]
                 });
-                return comentario;
+                return this.comAutor(comentario);
             }
             case "vaga": {
                 const vaga = await Vaga.findByPk(entidadeId, {
                     attributes: ["id", "titulo", "status", "oculta", "empresaId"]
                 });
-                return vaga;
+
+                if (!vaga) return null;
+
+                // Quem publicou a vaga, para a moderação saber de quem se trata sem abrir outra tela.
+                const empresa = await Empresa.findByPk(vaga.empresaId, {
+                    attributes: ["id", "razaoSocial", "nomeFantasia"]
+                });
+
+                return { ...vaga.toJSON(), empresa: empresa ? empresa.toJSON() : null };
             }
             case "empresa": {
                 const empresa = await Empresa.findByPk(entidadeId, {
@@ -233,6 +245,41 @@ class DenunciaService {
         }
     }
 
+    /** Acrescenta quem escreveu (nome e tipo de conta) a uma postagem ou comentário denunciado. */
+    async comAutor(conteudo) {
+        if (!conteudo) return null;
+
+        const autor = await Usuario.findByPk(conteudo.usuarioId, {
+            attributes: ["id", "nome", "tipoUsuario"]
+        });
+
+        return { ...conteudo.toJSON(), autor: autor ? autor.toJSON() : null };
+    }
+
+    /**
+     * Histórico de tratamento: tudo o que a moderação fez nesta denúncia (assumir, resolver, rejeitar,
+     * arquivar, abrir o contexto de uma mensagem), em ordem. Vem dos registros de auditoria que já são
+     * gravados; só data, ação, descrição e quem agiu saem daqui, nunca IP nem metadados.
+     */
+    async historico(id) {
+        const registros = await RegistroAuditoria.findAll({
+            where: { entidadeTipo: "denuncia", entidadeId: id },
+            attributes: ["id", "acao", "descricao", "criadoEm"],
+            include: [{ model: Usuario, as: "administrador", attributes: ["id", "nome"] }],
+            order: [["criadoEm", "ASC"]]
+        });
+
+        return registros.map((registro) => ({
+            id: registro.id,
+            acao: registro.acao,
+            descricao: registro.descricao,
+            criadoEm: registro.criadoEm,
+            administrador: registro.administrador
+                ? { id: registro.administrador.id, nome: registro.administrador.nome }
+                : null
+        }));
+    }
+
     async detalhe(id) {
         const denuncia = await Denuncia.findByPk(id, {
             include: INCLUDE_PARTES
@@ -242,12 +289,12 @@ class DenunciaService {
             throw ErroApi.naoEncontrado("Denúncia não encontrada.");
         }
 
-        const previaEntidade = await this.carregarPreviaEntidade(
-            denuncia.entidadeTipo,
-            denuncia.entidadeId
-        );
+        const [previaEntidade, historico] = await Promise.all([
+            this.carregarPreviaEntidade(denuncia.entidadeTipo, denuncia.entidadeId),
+            this.historico(denuncia.id)
+        ]);
 
-        return { ...denuncia.toJSON(), previaEntidade };
+        return { ...denuncia.toJSON(), previaEntidade, historico };
     }
 
     /* Transições de status */
@@ -259,37 +306,84 @@ class DenunciaService {
         }
     }
 
-    async atribuir(id, solicitante, contexto = {}) {
-        const denuncia = await Denuncia.findByPk(id);
-
-        if (!denuncia) {
-            throw ErroApi.naoEncontrado("Denúncia não encontrada.");
+    /**
+     * "Atribuir a mim": o administrador autenticado assume a denúncia.
+     *
+     * - Quem assume vem **sempre da sessão** (`solicitante`); a requisição não diz quem assume, então não há
+     *   como atribuir a outra pessoa, muito menos a uma conta que não seja de administrador. Mesmo assim o
+     *   serviço confere o tipo da conta, porque é ele que grava `administrador_responsavel_id`.
+     * - Já é minha: nada muda e nada é registrado de novo (idempotente).
+     * - Está com outro administrador: recusa com 409 dizendo quem é, a não ser que se confirme (`forcar`).
+     *   Antes a atribuição de um colega era sobrescrita em silêncio, e dois cliques simultâneos terminavam
+     *   com o último vencendo sem aviso.
+     * - A leitura e a gravação ficam na mesma transação, com a linha travada, para duas pessoas não
+     *   assumirem ao mesmo tempo.
+     *
+     * Devolve a denúncia já com o responsável, para a tela mostrar o resultado confirmado pela API.
+     */
+    async atribuir(id, solicitante, contexto = {}, { forcar = false } = {}) {
+        if (solicitante?.tipoUsuario !== "administrador") {
+            throw ErroApi.acessoNegado("Só um administrador pode assumir uma denúncia.");
         }
 
-        this.garantirTransitavel(denuncia);
+        const transaction = await sequelize.transaction();
+        let anterior = null;
+        let alterou = false;
+        let denunciaEntidade;
 
-        await denuncia.update({
-            status: "em_analise",
-            administradorResponsavelId: solicitante.id
-        });
+        try {
+            const denuncia = await Denuncia.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
 
-        await AdminAuditoriaService.registrar({
-            administradorId: solicitante.id,
-            acao: "atribuir_denuncia",
-            entidadeTipo: "denuncia",
-            entidadeId: denuncia.id,
-            descricao: `Denúncia atribuída a ${solicitante.nome}.`,
-            metadados: {
-                entidadeDenunciada: {
-                    tipo: denuncia.entidadeTipo,
-                    id: denuncia.entidadeId
+            if (!denuncia) {
+                throw ErroApi.naoEncontrado("Denúncia não encontrada.");
+            }
+
+            this.garantirTransitavel(denuncia);
+
+            denunciaEntidade = { tipo: denuncia.entidadeTipo, id: denuncia.entidadeId };
+            anterior = denuncia.administradorResponsavelId;
+
+            if (anterior !== solicitante.id) {
+                if (anterior && !forcar) {
+                    const outro = await Usuario.findByPk(anterior, { attributes: ["nome"], transaction });
+
+                    throw ErroApi.conflito(
+                        `Esta denúncia já está com ${outro?.nome ?? "outro administrador"}. Confirme para assumi-la.`
+                    );
                 }
-            },
-            ip: contexto.ip,
-            userAgent: contexto.userAgent
-        });
 
-        return denuncia;
+                await denuncia.update(
+                    { status: "em_analise", administradorResponsavelId: solicitante.id },
+                    { transaction }
+                );
+                alterou = true;
+            }
+
+            await transaction.commit();
+        } catch (erro) {
+            await transaction.rollback();
+            throw erro;
+        }
+
+        if (alterou) {
+            await AdminAuditoriaService.registrar({
+                administradorId: solicitante.id,
+                acao: "atribuir_denuncia",
+                entidadeTipo: "denuncia",
+                entidadeId: id,
+                descricao: anterior
+                    ? `Denúncia assumida por ${solicitante.nome} (estava com outro administrador).`
+                    : `Denúncia atribuída a ${solicitante.nome}.`,
+                metadados: {
+                    entidadeDenunciada: denunciaEntidade,
+                    responsavelAnteriorId: anterior ?? null
+                },
+                ip: contexto.ip,
+                userAgent: contexto.userAgent
+            });
+        }
+
+        return Denuncia.findByPk(id, { include: INCLUDE_PARTES });
     }
 
     /**

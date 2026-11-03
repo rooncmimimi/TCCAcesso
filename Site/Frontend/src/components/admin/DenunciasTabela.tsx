@@ -25,6 +25,7 @@ import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import denunciaService, {
   MOTIVO_ROTULO,
   type EntidadeDenunciaTipo,
+  type MotivoDenuncia,
   type StatusDenuncia,
 } from "@/services/denuncia.service";
 
@@ -47,6 +48,15 @@ const TIPO_OPCOES: (EntidadeDenunciaTipo | "todos")[] = [
   "empresa",
 ];
 
+const MOTIVO_OPCOES = Object.keys(MOTIVO_ROTULO) as MotivoDenuncia[];
+
+const ATRIBUICAO_OPCOES = ["todas", "minhas", "sem_responsavel"] as const;
+const ATRIBUICAO_ROTULO: Record<(typeof ATRIBUICAO_OPCOES)[number], string> = {
+  todas: "Todas as denúncias",
+  minhas: "Atribuídas a mim",
+  sem_responsavel: "Sem responsável",
+};
+
 const STATUS_ROTULO: Record<StatusDenuncia, string> = {
   pendente: "Pendente",
   em_analise: "Em análise",
@@ -67,8 +77,8 @@ const TIPO_ROTULO: Record<EntidadeDenunciaTipo, string> = {
   postagem: "Postagem",
   comentario: "Comentário",
   usuario: "Usuário",
-  mensagem: "mensagem",
-  vaga: "vaga",
+  mensagem: "Mensagem",
+  vaga: "Vaga",
   empresa: "Empresa",
 };
 
@@ -77,15 +87,19 @@ export function DenunciasTabela() {
   const [pagina, setPagina] = useState(1);
   const [status, setStatus] = useState<(typeof STATUS_OPCOES)[number]>("todos");
   const [tipo, setTipo] = useState<(typeof TIPO_OPCOES)[number]>("todos");
+  const [motivo, setMotivo] = useState<MotivoDenuncia | "todos">("todos");
+  const [atribuicao, setAtribuicao] = useState<(typeof ATRIBUICAO_OPCOES)[number]>("todas");
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["admin", "denuncias", pagina, status, tipo],
+    queryKey: ["admin", "denuncias", pagina, status, tipo, motivo, atribuicao],
     queryFn: () =>
       denunciaService.listarDenuncias({
         page: pagina,
         limit: 10,
         status: status === "todos" ? undefined : status,
         entidadeTipo: tipo === "todos" ? undefined : tipo,
+        motivo: motivo === "todos" ? undefined : motivo,
+        atribuicao: atribuicao === "todas" ? undefined : atribuicao,
       }),
   });
 
@@ -134,6 +148,47 @@ export function DenunciasTabela() {
             </SelectContent>
           </Select>
         </div>
+        <div className="w-48">
+          <Select
+            value={motivo}
+            onValueChange={(valor) => {
+              setMotivo(valor as MotivoDenuncia | "todos");
+              setPagina(1);
+            }}
+          >
+            <SelectTrigger aria-label="Filtrar por motivo">
+              <SelectValue placeholder="Motivo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os motivos</SelectItem>
+              {MOTIVO_OPCOES.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {MOTIVO_ROTULO[item]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-52">
+          <Select
+            value={atribuicao}
+            onValueChange={(valor) => {
+              setAtribuicao(valor as (typeof ATRIBUICAO_OPCOES)[number]);
+              setPagina(1);
+            }}
+          >
+            <SelectTrigger aria-label="Filtrar por responsável">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              {ATRIBUICAO_OPCOES.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {ATRIBUICAO_ROTULO[item]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? (
@@ -162,6 +217,7 @@ export function DenunciasTabela() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Motivo</TableHead>
                 <TableHead>Denunciante</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -173,6 +229,9 @@ export function DenunciasTabela() {
                   <TableCell>{TIPO_ROTULO[denuncia.entidadeTipo] ?? denuncia.entidadeTipo}</TableCell>
                   <TableCell>{MOTIVO_ROTULO[denuncia.motivo] ?? denuncia.motivo}</TableCell>
                   <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? "Usuário removido"}</TableCell>
+                  <TableCell className="max-w-40 truncate text-sm">
+                    {denuncia.administradorResponsavel?.nome ?? <span className="text-muted-foreground">Sem responsável</span>}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge tom={STATUS_TOM[denuncia.status]}>
                       {STATUS_ROTULO[denuncia.status]}

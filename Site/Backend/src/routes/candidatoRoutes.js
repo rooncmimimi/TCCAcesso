@@ -105,12 +105,4 @@ router.delete(
     CandidatoController.desvincularDeficiencia
 );
 
-router.delete(
-    "/:id",
-    exigirTipoUsuarioMiddleware("administrador"),
-    validarUuidParam("id"),
-    validacaoMiddleware,
-    CandidatoController.excluir
-);
-
 export default router;

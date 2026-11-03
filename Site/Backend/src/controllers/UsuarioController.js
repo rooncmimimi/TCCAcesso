@@ -141,19 +141,6 @@ class UsuarioController {
         }
     }
 
-    async excluir(req, res, next) {
-        try {
-            const resultado = await UsuarioService.excluir(
-                req.params.id,
-                req.user,
-                contextoRequisicao(req)
-            );
-
-            return res.status(200).json({ sucesso: true, ...resultado });
-        } catch (erro) {
-            return next(erro);
-        }
-    }
 }
 
 export default new UsuarioController();

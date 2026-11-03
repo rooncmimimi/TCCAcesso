@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Lock, Trash2, Unlock, Users } from "lucide-react";
+import { Lock, Unlock, Users } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -31,13 +30,15 @@ import {
   ativarUsuario,
   desativarUsuario,
   listarUsuarios,
-  removerUsuario,
   type UsuarioAdmin,
 } from "@/services/admin.service";
 
 const TIPOS = ["todos", "candidato", "empresa", "administrador"] as const;
 
-/** Usuários da plataforma, com filtros, bloqueio e desbloqueio, exclusão e link para o detalhe. */
+/**
+ * Usuários da plataforma, com filtros, bloqueio e desbloqueio e link para o detalhe. A exclusão de conta não
+ * é oferecida ao administrador: quem exclui a conta é a própria pessoa (Configurações › Conta).
+ */
 export function UsuariosTabela() {
   const { usuario: usuarioLogado } = useSessao();
 
@@ -47,8 +48,6 @@ export function UsuariosTabela() {
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState<(typeof TIPOS)[number]>("todos");
   const [alvo, setAlvo] = useState<UsuarioAdmin | null>(null);
-  const [alvoExclusao, setAlvoExclusao] = useState<UsuarioAdmin | null>(null);
-  const [motivoExclusao, setMotivoExclusao] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "usuarios", pagina, busca, tipo],
@@ -71,17 +70,6 @@ export function UsuariosTabela() {
       setAlvo(null);
     },
     onError: (erro: Error) => toast.error(erro.message || "Não foi possível concluir a ação."),
-  });
-
-  const mutacaoExclusao = useMutation({
-    mutationFn: (usuario: UsuarioAdmin) => removerUsuario(usuario.id, motivoExclusao.trim() || undefined),
-    onSuccess: () => {
-      toast.success("Usuário excluído definitivamente.");
-      queryClient.invalidateQueries({ queryKey: ["admin", "usuarios"] });
-      setAlvoExclusao(null);
-      setMotivoExclusao("");
-    },
-    onError: (erro: Error) => toast.error(erro.message || "Não foi possível excluir esta conta."),
   });
 
   const usuarios = data?.usuarios ?? [];
@@ -202,20 +190,6 @@ export function UsuariosTabela() {
                           </>
                         )}
                       </Button>
-                      {/* Excluir conta é irreversível e nunca é oferecida contra a própria
-                          conta do admin nem contra outra conta administrativa (o backend já
-                          recusa os dois casos; aqui só evitamos um clique com resultado
-                          garantido). */}
-                      {usuario.tipoUsuario !== "administrador" && usuario.id !== usuarioLogado?.id && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setAlvoExclusao(usuario)}
-                          aria-label={`Excluir conta de ${usuario.nome} definitivamente`}
-                        >
-                          <Trash2 className="size-4" aria-hidden="true" /> Excluir conta
-                        </Button>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -241,44 +215,6 @@ export function UsuariosTabela() {
         destrutivo={Boolean(alvo?.ativo)}
         carregando={mutacao.isPending}
         onConfirmar={() => alvo && mutacao.mutate(alvo)}
-      />
-
-      <ConfirmarAcaoDialog
-        open={Boolean(alvoExclusao)}
-        onOpenChange={(aberto) => {
-          if (!aberto) {
-            setAlvoExclusao(null);
-            setMotivoExclusao("");
-          }
-        }}
-        titulo="Excluir conta definitivamente"
-        descricao={
-          <div className="space-y-3">
-            <p>
-              Tem certeza que deseja excluir permanentemente a conta de{" "}
-              <strong>&quot;{alvoExclusao?.nome}&quot;</strong> ({alvoExclusao?.email})?
-            </p>
-            <p className="font-semibold text-destructive">
-              Esta ação é irreversível. Todos os dados da conta — perfil, publicações,
-              candidaturas, mensagens e arquivos enviados — serão apagados
-              definitivamente do banco de dados e não poderão ser recuperados.
-            </p>
-            <div>
-              <Label htmlFor="motivo-exclusao-usuario">Motivo (opcional)</Label>
-              <Textarea
-                id="motivo-exclusao-usuario"
-                value={motivoExclusao}
-                onChange={(evento) => setMotivoExclusao(evento.target.value)}
-                className="mt-1 min-h-20 resize-none"
-                placeholder="Registrado no log de auditoria administrativa"
-              />
-            </div>
-          </div>
-        }
-        textoConfirmar="Excluir definitivamente"
-        destrutivo
-        carregando={mutacaoExclusao.isPending}
-        onConfirmar={() => alvoExclusao && mutacaoExclusao.mutate(alvoExclusao)}
       />
     </div>
   );

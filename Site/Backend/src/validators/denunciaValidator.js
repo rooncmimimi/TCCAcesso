@@ -37,6 +37,13 @@ export const validarCriacaoDenuncia = [
         .withMessage("Descrição deve ter no máximo 1000 caracteres.")
 ];
 
+/** `PATCH /admin/denuncias/:id/atribuir`: a única opção é `forcar`, para assumir uma denúncia que está com outro administrador. */
+export const validarAtribuicaoDenuncia = [
+    ...validarUuidParam("id"),
+
+    body("forcar").optional().isBoolean().withMessage("Informe forcar como true ou false.")
+];
+
 export const validarObservacaoAdmin = [
     ...validarUuidParam("id"),
 

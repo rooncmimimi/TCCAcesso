@@ -262,7 +262,7 @@ class AdminUsuarioService {
         console.info(
             JSON.stringify({
                 nivel: "info",
-                servico: "AdminUsuarioService.removerUsuario",
+                servico: "AdminUsuarioService.excluirContaDefinitivamente",
                 etapa: "limpeza_storage",
                 usuarioId,
                 total: relatorio.length,
@@ -275,7 +275,7 @@ class AdminUsuarioService {
             console.error(
                 JSON.stringify({
                     nivel: "error",
-                    servico: "AdminUsuarioService.removerUsuario",
+                    servico: "AdminUsuarioService.excluirContaDefinitivamente",
                     etapa: "limpeza_storage",
                     motivo: "um_ou_mais_arquivos_nao_foram_removidos_do_storage",
                     usuarioId,
@@ -289,10 +289,11 @@ class AdminUsuarioService {
 
     /**
      * Núcleo da exclusão definitiva de uma conta: limpeza do Storage, arquivamento das denúncias
-     * pendentes contra a conta e `destroy()`, com o banco numa única transação. Usado pelos dois
-     * caminhos de exclusão, `removerUsuario` (administrador, abaixo) e
-     * `AutenticacaoService.excluirConta` (o próprio usuário); nenhum outro lugar deve reimplementar
-     * esta lógica.
+     * pendentes contra a conta e `destroy()`, com o banco numa única transação. Hoje só
+     * `AutenticacaoService.excluirConta` o usa: quem exclui a conta é a própria pessoa. O administrador
+     * não exclui contas (a exclusão de perfil pelo painel foi retirada, e as rotas `DELETE` de usuário,
+     * candidato e empresa deixaram de existir); a ação de moderação é bloquear. Nenhum outro lugar deve
+     * reimplementar esta lógica.
      *
      * Autorização e log de auditoria ficam com quem chama: este método não decide se a ação é
      * permitida (isso já aconteceu antes, pela senha atual ou por
@@ -407,46 +408,6 @@ class AdminUsuarioService {
         return { dadosRemovidos, relatorioStorage, denunciasArquivadas };
     }
 
-    async removerUsuario(id, { motivo } = {}, solicitante, contexto = {}) {
-        const usuario = await this.resolverUsuarioModeravel(id, solicitante, {
-            mensagemAutoAcao: "Você não pode excluir a própria conta.",
-            mensagemAdminProtegido:
-                "Contas administrativas não podem ser excluídas por aqui."
-        });
-
-        await this.excluirContaDefinitivamente(usuario, {
-            dentroDaTransacao: async ({
-                transaction,
-                dadosRemovidos,
-                relatorioStorage,
-                denunciasArquivadas
-            }) => {
-                await AdminAuditoriaService.registrar(
-                    {
-                        administradorId: solicitante.id,
-                        acao: "excluir_usuario",
-                        entidadeTipo: "usuario",
-                        entidadeId: id,
-                        descricao: `Usuário ${dadosRemovidos.nome} (${dadosRemovidos.email}) foi excluído permanentemente.`,
-                        metadados: {
-                            usuario: dadosRemovidos,
-                            motivo: motivo || null,
-                            denunciasArquivadas,
-                            storage: {
-                                totalArquivos: relatorioStorage.length,
-                                falhas: relatorioStorage.filter((r) => !r.sucesso).length
-                            }
-                        },
-                        ip: contexto.ip,
-                        userAgent: contexto.userAgent
-                    },
-                    { transaction }
-                );
-            }
-        });
-
-        return { mensagem: "Usuário removido definitivamente." };
-    }
 }
 
 export default new AdminUsuarioService();

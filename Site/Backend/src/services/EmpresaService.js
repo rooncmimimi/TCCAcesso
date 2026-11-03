@@ -240,47 +240,6 @@ class EmpresaService {
         }
     }
 
-    /*
-     * Remover (administrador). A rota já é restrita a administrador (`exigirTipoUsuarioMiddleware`)
-     * e não há caminho de dona, então a auditoria é sempre registrada.
-     */
-    async excluir(id, solicitante, contexto = {}) {
-        const transaction = await sequelize.transaction();
-        let empresaRemovida;
-
-        try {
-            const empresa = await Empresa.findByPk(id, { transaction });
-
-            if (!empresa) {
-                throw ErroApi.naoEncontrado("Empresa não encontrada.");
-            }
-
-            empresaRemovida = {
-                id: empresa.id,
-                razaoSocial: empresa.razaoSocial,
-                usuarioId: empresa.usuarioId
-            };
-
-            await empresa.destroy({ transaction });
-            await transaction.commit();
-        } catch (erro) {
-            await transaction.rollback();
-            throw erro;
-        }
-
-        await AdminAuditoriaService.registrar({
-            administradorId: solicitante.id,
-            acao: "excluir_empresa",
-            entidadeTipo: "empresa",
-            entidadeId: id,
-            descricao: `Empresa ${empresaRemovida.razaoSocial} foi removida.`,
-            metadados: { empresa: empresaRemovida },
-            ip: contexto.ip,
-            userAgent: contexto.userAgent
-        });
-
-        return { mensagem: "Empresa removida com sucesso." };
-    }
 }
 
 export default new EmpresaService();

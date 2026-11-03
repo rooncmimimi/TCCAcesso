@@ -200,15 +200,6 @@ class UsuarioService {
         return this.definirAtivo(id, false, solicitante, contexto);
     }
 
-    /*
-     * Excluir (administrador). Delega para `AdminUsuarioService.removerUsuario`, para ter
-     * exatamente o mesmo resultado da exclusão pelo painel (limpeza do Storage, arquivamento de
-     * denúncias pendentes e log de auditoria na mesma transação). O painel usa
-     * `/admin/usuarios/:id`, mas esta rota continua ativa pela API.
-     */
-    async excluir(id, solicitante, contexto = {}) {
-        return AdminUsuarioService.removerUsuario(id, {}, solicitante, contexto);
-    }
 }
 
 export default new UsuarioService();

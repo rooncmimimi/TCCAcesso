@@ -42,6 +42,15 @@ export const MOTIVO_ROTULO: Record<MotivoDenuncia, string> = {
   outro: "Outro",
 };
 
+/** Um passo do tratamento da denúncia, tirado do registro de auditoria. */
+export interface EventoDaDenuncia {
+  id: string;
+  acao: string;
+  descricao: string | null;
+  criadoEm: string;
+  administrador: { id: string; nome: string } | null;
+}
+
 export interface Denuncia {
   id: string;
   denuncianteId: string;
@@ -57,6 +66,8 @@ export interface Denuncia {
   denunciante?: { id: string; nome: string; email: string };
   administradorResponsavel?: { id: string; nome: string } | null;
   previaEntidade?: Record<string, unknown> | null;
+  /** Só no detalhe: o que a moderação já fez nesta denúncia, do mais antigo ao mais novo. */
+  historico?: EventoDaDenuncia[];
 }
 
 export interface MensagemContexto {
@@ -112,6 +123,8 @@ export async function listarDenuncias(
     entidadeTipo?: EntidadeDenunciaTipo;
     motivo?: MotivoDenuncia;
     entidadeId?: string;
+    /** "minhas": as que estão comigo; "sem_responsavel": as que ninguém assumiu. */
+    atribuicao?: "minhas" | "sem_responsavel";
   } = {},
 ) {
   const resposta = await listar<Denuncia>("/admin/denuncias", "denuncias", params);
@@ -123,8 +136,15 @@ export async function obterDenuncia(id: string): Promise<Denuncia> {
   return data.denuncia;
 }
 
-export async function atribuirDenuncia(id: string): Promise<Denuncia> {
-  const { data } = await clienteApi.patch<{ denuncia: Denuncia }>(`/admin/denuncias/${id}/atribuir`);
+/**
+ * "Atribuir a mim": o responsável é sempre quem está logado (o servidor decide, a requisição não diz quem).
+ * `forcar` confirma assumir uma denúncia que está com outro administrador.
+ */
+export async function atribuirDenuncia(id: string, opcoes: { forcar?: boolean } = {}): Promise<Denuncia> {
+  const { data } = await clienteApi.patch<{ denuncia: Denuncia }>(
+    `/admin/denuncias/${id}/atribuir`,
+    opcoes.forcar ? { forcar: true } : undefined,
+  );
   return data.denuncia;
 }
 

@@ -77,13 +77,4 @@ router.patch(
     EmpresaController.enviarCapa
 );
 
-router.delete(
-    "/:id",
-    autenticacaoMiddleware,
-    exigirTipoUsuarioMiddleware("administrador"),
-    validarUuidParam("id"),
-    validacaoMiddleware,
-    EmpresaController.excluir
-);
-
 export default router;

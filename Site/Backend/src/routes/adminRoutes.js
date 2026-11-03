@@ -8,6 +8,7 @@ import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddlew
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
+    validarAtribuicaoDenuncia,
     validarObservacaoAdmin,
     validarResolucaoDenuncia
 } from "../validators/denunciaValidator.js";
@@ -70,13 +71,6 @@ router.post(
     validacaoMiddleware,
     AdminController.bloquearUsuario
 );
-router.delete(
-    "/usuarios/:id",
-    validarUuidParam("id"),
-    validacaoMiddleware,
-    AdminController.removerUsuario
-);
-
 router.get("/postagens", AdminController.postagens);
 router.delete(
     "/postagens/:id",
@@ -115,7 +109,7 @@ router.get(
 );
 router.patch(
     "/denuncias/:id/atribuir",
-    validarUuidParam("id"),
+    validarAtribuicaoDenuncia,
     validacaoMiddleware,
     DenunciaController.atribuir
 );

@@ -121,20 +121,6 @@ class AdminController {
         }
     }
 
-    async removerUsuario(req, res, next) {
-        try {
-            const dados = await AdminUsuarioService.removerUsuario(
-                req.params.id,
-                { motivo: req.body?.motivo },
-                req.user,
-                contextoRequisicao(req)
-            );
-            return res.status(200).json({ sucesso: true, ...dados });
-        } catch (erro) {
-            return next(erro);
-        }
-    }
-
     async postagens(req, res, next) {
         try {
             const dados = await AdminConteudoService.listarPostagens(req.query);

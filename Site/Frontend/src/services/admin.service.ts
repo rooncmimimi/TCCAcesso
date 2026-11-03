@@ -224,10 +224,6 @@ export async function ativarUsuario(id: string) {
   return data;
 }
 
-export async function removerUsuario(id: string, motivo?: string): Promise<void> {
-  await clienteApi.delete(`/admin/usuarios/${id}`, { data: { motivo: motivo ?? null } });
-}
-
 export async function obterUsuario(id: string): Promise<UsuarioAdmin> {
   const { data } = await clienteApi.get<{ usuario: UsuarioAdmin }>(`/admin/usuarios/${id}`);
   return data.usuario;
@@ -302,7 +298,6 @@ export const adminService = {
   listarUsuarios,
   ativarUsuario,
   desativarUsuario,
-  removerUsuario,
   obterUsuario,
   listarPostagens,
   removerPostagem,

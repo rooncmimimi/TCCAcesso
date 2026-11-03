@@ -19,9 +19,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { extrairMensagemErro } from "@/services/api";
+import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
+import { ConteudoDenunciado } from "@/components/admin/ConteudoDenunciado";
+import { HistoricoDaDenuncia } from "@/components/admin/HistoricoDaDenuncia";
+import { useSessao } from "@/hooks/useSessao";
 import denunciaService, {
   ACAO_POR_TIPO,
   MOTIVO_ROTULO,
+  type Denuncia,
   type MensagemContexto,
   type StatusDenuncia,
 } from "@/services/denuncia.service";
@@ -65,6 +70,8 @@ function AdminDenunciaDetalhe() {
   const [observacao, setObservacao] = useState("");
   const [comAcao, setComAcao] = useState(true);
   const [contextoAberto, setContextoAberto] = useState(false);
+  const { usuario: eu } = useSessao();
+  const [confirmarAssumir, setConfirmarAssumir] = useState(false);
 
   const { data: denuncia, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "denuncia", denunciaId],
@@ -83,14 +90,28 @@ function AdminDenunciaDetalhe() {
   }
 
   const atribuir = useMutation({
-    mutationFn: () => denunciaService.atribuirDenuncia(denunciaId),
-    onSuccess: () => {
+    mutationFn: (forcar: boolean) => denunciaService.atribuirDenuncia(denunciaId, { forcar }),
+    onSuccess: (atualizada) => {
+      // Mostra já o que a API confirmou (responsável e status), sem esperar a nova busca.
+      queryClient.setQueryData<Denuncia>(["admin", "denuncia", denunciaId], (atual) =>
+        atual
+          ? {
+              ...atual,
+              status: atualizada.status,
+              administradorResponsavelId: atualizada.administradorResponsavelId,
+              administradorResponsavel: atualizada.administradorResponsavel ?? null,
+            }
+          : atual,
+      );
       toast.success("Denúncia atribuída a você.");
+      setConfirmarAssumir(false);
       invalidar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro)),
+    onError: (erro) => {
+      setConfirmarAssumir(false);
+      toast.error(extrairMensagemErro(erro));
+    },
   });
-
   const acaoEsperada = denuncia ? ACAO_POR_TIPO[denuncia.entidadeTipo] : undefined;
 
   const transicao = useMutation({
@@ -136,6 +157,8 @@ function AdminDenunciaDetalhe() {
   }
 
   const transitavel = denuncia.status === "pendente" || denuncia.status === "em_analise";
+  const souResponsavel = Boolean(eu?.id) && denuncia.administradorResponsavelId === eu?.id;
+  const comOutroAdministrador = Boolean(denuncia.administradorResponsavelId) && !souResponsavel;
 
   return (
     <>
@@ -172,7 +195,9 @@ function AdminDenunciaDetalhe() {
             </div>
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">Responsável</p>
-              <p className="mt-1 text-sm">{denuncia.administradorResponsavel?.nome ?? "Ninguém atribuído"}</p>
+              <p className="mt-1 text-sm">{denuncia.administradorResponsavel
+                  ? `${denuncia.administradorResponsavel.nome}${souResponsavel ? " (você)" : ""}`
+                  : "Ninguém atribuído"}</p>
             </div>
           </div>
 
@@ -211,25 +236,36 @@ function AdminDenunciaDetalhe() {
                 <MessageSquareText className="size-4" aria-hidden="true" /> Ver contexto da mensagem
               </Button>
             </div>
-          ) : denuncia.previaEntidade ? (
-            <pre className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-secondary p-3 text-sm">
-              {JSON.stringify(denuncia.previaEntidade, null, 2)}
-            </pre>
           ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Este conteúdo não existe mais ou já foi removido.
-            </p>
+            <ConteudoDenunciado tipo={denuncia.entidadeTipo} previa={denuncia.previaEntidade} />
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 shadow-none">
+        <CardContent className="p-5 sm:p-6">
+          <p className="text-xs font-bold uppercase text-muted-foreground">Histórico de tratamento</p>
+          <HistoricoDaDenuncia
+            registradaEm={denuncia.criadoEm}
+            denunciante={denuncia.denunciante?.nome ?? null}
+            eventos={denuncia.historico ?? []}
+          />
         </CardContent>
       </Card>
 
       {transitavel && (
         <Card className="mt-4 shadow-none">
           <CardContent className="flex flex-wrap gap-2 p-5 sm:p-6">
-            {denuncia.status === "pendente" && (
-              <Button variant="outline" disabled={atribuir.isPending} onClick={() => atribuir.mutate()}>
+            {souResponsavel ? (
+              <p className="self-center text-sm text-muted-foreground">Você é o responsável por esta denúncia.</p>
+            ) : (
+              <Button
+                variant="outline"
+                disabled={atribuir.isPending}
+                onClick={() => (comOutroAdministrador ? setConfirmarAssumir(true) : atribuir.mutate(false))}
+              >
                 {atribuir.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                Atribuir a mim
+                {comOutroAdministrador ? "Assumir denúncia" : "Atribuir a mim"}
               </Button>
             )}
             <Button onClick={() => setDialogoTransicao("resolver")}>Resolver</Button>
@@ -242,6 +278,16 @@ function AdminDenunciaDetalhe() {
           </CardContent>
         </Card>
       )}
+
+      <ConfirmarAcaoDialog
+        open={confirmarAssumir}
+        onOpenChange={setConfirmarAssumir}
+        titulo="Assumir esta denúncia"
+        descricao={`Esta denúncia está com ${denuncia.administradorResponsavel?.nome ?? "outro administrador"}. Deseja assumi-la? O histórico guarda quem a tinha antes.`}
+        textoConfirmar="Assumir"
+        carregando={atribuir.isPending}
+        onConfirmar={() => atribuir.mutate(true)}
+      />
 
       <Dialog
         open={Boolean(dialogoTransicao)}

@@ -146,20 +146,6 @@ class CandidatoController {
         }
     }
 
-    async excluir(req, res, next) {
-        try {
-            const resultado = await CandidatoService.remover(
-                req.params.id,
-                req.user,
-                contextoRequisicao(req)
-            );
-
-            return res.status(200).json({ sucesso: true, ...resultado });
-        } catch (erro) {
-            return next(erro);
-        }
-    }
-
     /**
      * Extrai texto do arquivo enviado e devolve um rascunho; nunca grava
      * nada no perfil. O arquivo enviado aqui não vira o currículo oficial

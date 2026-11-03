@@ -362,47 +362,6 @@ class CandidatoService {
         return { mensagem: "Deficiência desvinculada com sucesso." };
     }
 
-    /*
-     * Remover (administrador). A rota já é restrita a administrador, e o serviço confere de novo;
-     * como não há caminho de dono, a auditoria é sempre registrada.
-     */
-    async remover(id, solicitante, contexto = {}) {
-        if (!ehAdministrador(solicitante)) {
-            throw ErroApi.acessoNegado("Apenas administradores podem remover candidatos.");
-        }
-
-        const transaction = await sequelize.transaction();
-        let candidatoRemovido;
-
-        try {
-            const candidato = await Candidato.findByPk(id, { transaction });
-
-            if (!candidato) {
-                throw ErroApi.naoEncontrado("Candidato não encontrado.");
-            }
-
-            candidatoRemovido = { id: candidato.id, usuarioId: candidato.usuarioId };
-
-            await candidato.destroy({ transaction });
-            await transaction.commit();
-        } catch (erro) {
-            await transaction.rollback();
-            throw erro;
-        }
-
-        await AdminAuditoriaService.registrar({
-            administradorId: solicitante.id,
-            acao: "excluir_candidato",
-            entidadeTipo: "usuario",
-            entidadeId: candidatoRemovido.usuarioId,
-            descricao: "Perfil de candidato removido.",
-            metadados: { candidato: candidatoRemovido },
-            ip: contexto.ip,
-            userAgent: contexto.userAgent
-        });
-
-        return { mensagem: "Candidato removido com sucesso." };
-    }
 }
 
 export default new CandidatoService();

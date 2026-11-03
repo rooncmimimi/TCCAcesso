@@ -5,6 +5,7 @@ import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { SecaoContasConectadas } from "@/components/configuracoes/SecaoContasConectadas";
 import { SecaoSessoes } from "@/components/configuracoes/SecaoSessoes";
+import { SecaoVerificacaoEmDuasEtapas } from "@/components/configuracoes/SecaoVerificacaoEmDuasEtapas";
 
 export const Route = createFileRoute("/configuracoes/seguranca")({
   head: () => ({
@@ -41,6 +42,7 @@ function Seguranca() {
       </div>
 
       <div className="mt-6 space-y-4">
+        <SecaoVerificacaoEmDuasEtapas />
         <SecaoContasConectadas />
         <SecaoSessoes />
       </div>

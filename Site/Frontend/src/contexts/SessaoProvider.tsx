@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { toast } from "sonner";
 
 import autenticacaoService from "@/services/autenticacao.service";
-import { aoExpirarSessao, definirTokens, limparTokens, obterAccessToken } from "@/services/api";
+import { aoExigirConfiguracaoMfa, aoExpirarSessao, definirTokens, limparTokens, obterAccessToken } from "@/services/api";
 import { conectarSocket, desconectarSocket } from "@/services/socket";
 import acessibilidadeService, {
   preferenciasDaApi,
@@ -13,6 +13,7 @@ import type {
   RespostaLogin,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
+  RespostaLoginMfa,
   TipoUsuario,
   Usuario,
 } from "@/types";
@@ -77,6 +78,11 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // O servidor negou algo por falta de TOTP configurado (ex.: o TOTP foi reiniciado por outro administrador
+  // com esta aba aberta): relê o perfil, que passa a dizer `mfaConfigurado: false`, e o layout leva à
+  // configuração.
+  useEffect(() => aoExigirConfiguracaoMfa(() => void carregarPerfil()), [carregarPerfil]);
+
   const aposAutenticar = useCallback((usuario: Usuario) => {
     const normalizado = normalizarUsuarioSessao(usuario);
     setUsuario(normalizado);
@@ -115,9 +121,9 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
    */
   const iniciarSessao = useCallback(
     async (
-      resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado,
-    ): Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado> => {
-      if ("contaPausada" in resposta || "emailNaoVerificado" in resposta) {
+      resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa,
+    ): Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa> => {
+      if ("contaPausada" in resposta || "emailNaoVerificado" in resposta || "mfaNecessario" in resposta) {
         return resposta;
       }
       definirTokens(resposta.token, resposta.refreshToken);

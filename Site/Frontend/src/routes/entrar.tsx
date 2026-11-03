@@ -18,6 +18,7 @@ import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
+import { guardarDesafio } from "@/lib/desafioMfa";
 
 const esquemaLogin = z.object({
   email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
@@ -81,6 +82,13 @@ function Entrar() {
     setEnviando(true);
     try {
       const resultado = await entrar(valores);
+      // Conta com verificação em duas etapas: a senha estava certa, falta o código. O desafio vai para a
+      // tela do código; nenhuma sessão foi aberta.
+      if ("mfaNecessario" in resultado) {
+        guardarDesafio(resultado.desafioMfa);
+        navigate({ to: "/verificacao-em-duas-etapas" });
+        return;
+      }
       if ("contaPausada" in resultado) {
         setContaPausadaPendente(valores);
         return;
@@ -124,6 +132,11 @@ function Entrar() {
     setEnviando(true);
     try {
       const resultado = await entrar({ ...contaPausadaPendente, confirmarReativacao: true });
+      if ("mfaNecessario" in resultado) {
+        guardarDesafio(resultado.desafioMfa);
+        navigate({ to: "/verificacao-em-duas-etapas" });
+        return;
+      }
       if ("contaPausada" in resultado || "emailNaoVerificado" in resultado) return;
       // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
       // leitura.

@@ -2,6 +2,7 @@ import type { UsuarioSessao } from "@/contexts/SessaoContext";
 
 /** Para onde a pessoa vai logo depois de entrar. */
 export type DestinoAposEntrar =
+  | { to: "/configurar-verificacao" }
   | { to: "/cadastro/dados" }
   | { to: "/cadastro/candidato"; search: { retomar: true } }
   | { to: "/admin" }
@@ -12,6 +13,8 @@ export type DestinoAposEntrar =
  * não em cada tela (antes eram duas cópias, e a do Google lia um campo que não existe na resposta
  * crua do servidor).
  *
+ * - Administrador sem a verificação em duas etapas configurada vai direto à configuração: o servidor
+ *   nega todo o painel até ele ativar (`mfaExigido` e não `mfaConfigurado`).
  * - Candidato que criou a conta direto pelo Google e ainda não informou o CPF e o restante dos dados
  *   pessoais (`dadosPessoaisPendentes`) vai primeiro a `/cadastro/dados`: as etapas seguintes do
  *   cadastro pressupõem esses dados.
@@ -24,8 +27,13 @@ export type DestinoAposEntrar =
  *   tinha funcionado.
  */
 export function destinoAposEntrar(
-  usuario: Pick<UsuarioSessao, "tipo" | "cadastroConcluidoEm" | "cadastroPendente" | "dadosPessoaisPendentes">,
+  usuario: Pick<UsuarioSessao, "tipo" | "cadastroConcluidoEm" | "cadastroPendente" | "dadosPessoaisPendentes"> &
+    Partial<Pick<UsuarioSessao, "mfaExigido" | "mfaConfigurado">>,
 ): DestinoAposEntrar {
+  if (usuario.tipo === "administrador" && usuario.mfaExigido && !usuario.mfaConfigurado) {
+    return { to: "/configurar-verificacao" };
+  }
+
   if (usuario.tipo === "candidato" && usuario.dadosPessoaisPendentes) {
     return { to: "/cadastro/dados" };
   }

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BoasVindasRouteImport } from './routes/boas-vindas'
+import { Route as ConfigurarVerificacaoRouteImport } from './routes/configurar-verificacao'
 import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DescobrirRouteImport } from './routes/descobrir'
@@ -29,6 +30,7 @@ import { Route as RetornoGoogleRouteImport } from './routes/retorno-google'
 import { Route as SobreNosRouteImport } from './routes/sobre-nos'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VagasRouteImport } from './routes/vagas'
+import { Route as VerificacaoEmDuasEtapasRouteImport } from './routes/verificacao-em-duas-etapas'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminComentariosRouteImport } from './routes/admin/comentarios'
 import { Route as AdminDenunciasRouteImport } from './routes/admin/denuncias'
@@ -75,6 +77,11 @@ const AdminRoute = AdminRouteImport.update({
 const BoasVindasRoute = BoasVindasRouteImport.update({
   id: '/boas-vindas',
   path: '/boas-vindas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfigurarVerificacaoRoute = ConfigurarVerificacaoRouteImport.update({
+  id: '/configurar-verificacao',
+  path: '/configurar-verificacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfirmarEmailRoute = ConfirmarEmailRouteImport.update({
@@ -160,6 +167,11 @@ const TermosRoute = TermosRouteImport.update({
 const VagasRoute = VagasRouteImport.update({
   id: '/vagas',
   path: '/vagas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificacaoEmDuasEtapasRoute = VerificacaoEmDuasEtapasRouteImport.update({
+  id: '/verificacao-em-duas-etapas',
+  path: '/verificacao-em-duas-etapas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -331,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
+  '/configurar-verificacao': typeof ConfigurarVerificacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
@@ -348,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
+  '/verificacao-em-duas-etapas': typeof VerificacaoEmDuasEtapasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/denuncias': typeof AdminDenunciasRouteWithChildren
   '/admin/empresas': typeof AdminEmpresasRoute
@@ -384,6 +398,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/boas-vindas': typeof BoasVindasRoute
+  '/configurar-verificacao': typeof ConfigurarVerificacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/descobrir': typeof DescobrirRoute
   '/entrar': typeof EntrarRoute
@@ -399,6 +414,7 @@ export interface FileRoutesByTo {
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
+  '/verificacao-em-duas-etapas': typeof VerificacaoEmDuasEtapasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/logs': typeof AdminLogsRoute
@@ -435,6 +451,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
+  '/configurar-verificacao': typeof ConfigurarVerificacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
@@ -452,6 +469,7 @@ export interface FileRoutesById {
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
+  '/verificacao-em-duas-etapas': typeof VerificacaoEmDuasEtapasRoute
   '/admin/comentarios': typeof AdminComentariosRoute
   '/admin/denuncias': typeof AdminDenunciasRouteWithChildren
   '/admin/empresas': typeof AdminEmpresasRoute
@@ -491,6 +509,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/boas-vindas'
+    | '/configurar-verificacao'
     | '/confirmar-email'
     | '/dashboard'
     | '/descobrir'
@@ -508,6 +527,7 @@ export interface FileRouteTypes {
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
+    | '/verificacao-em-duas-etapas'
     | '/admin/comentarios'
     | '/admin/denuncias'
     | '/admin/empresas'
@@ -544,6 +564,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/boas-vindas'
+    | '/configurar-verificacao'
     | '/confirmar-email'
     | '/descobrir'
     | '/entrar'
@@ -559,6 +580,7 @@ export interface FileRouteTypes {
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
+    | '/verificacao-em-duas-etapas'
     | '/admin/comentarios'
     | '/admin/empresas'
     | '/admin/logs'
@@ -594,6 +616,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/boas-vindas'
+    | '/configurar-verificacao'
     | '/confirmar-email'
     | '/dashboard'
     | '/descobrir'
@@ -611,6 +634,7 @@ export interface FileRouteTypes {
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
+    | '/verificacao-em-duas-etapas'
     | '/admin/comentarios'
     | '/admin/denuncias'
     | '/admin/empresas'
@@ -649,6 +673,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   BoasVindasRoute: typeof BoasVindasRoute
+  ConfigurarVerificacaoRoute: typeof ConfigurarVerificacaoRoute
   ConfirmarEmailRoute: typeof ConfirmarEmailRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DescobrirRoute: typeof DescobrirRoute
@@ -666,6 +691,7 @@ export interface RootRouteChildren {
   SobreNosRoute: typeof SobreNosRoute
   TermosRoute: typeof TermosRoute
   VagasRoute: typeof VagasRoute
+  VerificacaoEmDuasEtapasRoute: typeof VerificacaoEmDuasEtapasRoute
   CadastroCandidatoRoute: typeof CadastroCandidatoRoute
   CadastroDadosRoute: typeof CadastroDadosRoute
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
@@ -704,6 +730,13 @@ declare module '@tanstack/react-router' {
       path: '/boas-vindas'
       fullPath: '/boas-vindas'
       preLoaderRoute: typeof BoasVindasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configurar-verificacao': {
+      id: '/configurar-verificacao'
+      path: '/configurar-verificacao'
+      fullPath: '/configurar-verificacao'
+      preLoaderRoute: typeof ConfigurarVerificacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confirmar-email': {
@@ -823,6 +856,13 @@ declare module '@tanstack/react-router' {
       path: '/vagas'
       fullPath: '/vagas'
       preLoaderRoute: typeof VagasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verificacao-em-duas-etapas': {
+      id: '/verificacao-em-duas-etapas'
+      path: '/verificacao-em-duas-etapas'
+      fullPath: '/verificacao-em-duas-etapas'
+      preLoaderRoute: typeof VerificacaoEmDuasEtapasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1137,6 +1177,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   BoasVindasRoute: BoasVindasRoute,
+  ConfigurarVerificacaoRoute: ConfigurarVerificacaoRoute,
   ConfirmarEmailRoute: ConfirmarEmailRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DescobrirRoute: DescobrirRoute,
@@ -1154,6 +1195,7 @@ const rootRouteChildren: RootRouteChildren = {
   SobreNosRoute: SobreNosRoute,
   TermosRoute: TermosRoute,
   VagasRoute: VagasRoute,
+  VerificacaoEmDuasEtapasRoute: VerificacaoEmDuasEtapasRoute,
   CadastroCandidatoRoute: CadastroCandidatoRoute,
   CadastroDadosRoute: CadastroDadosRoute,
   CadastroEmpresaRoute: CadastroEmpresaRoute,

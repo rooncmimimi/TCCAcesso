@@ -37,6 +37,13 @@ export interface Usuario {
    */
   dadosPessoaisPendentes?: boolean;
   /**
+   * Verificação em duas etapas (aplicativo autenticador): o recurso está ligado no servidor, está ativa
+   * nesta conta e é obrigatória para ela (administrador). Só vêm na resposta ao próprio dono.
+   */
+  mfaDisponivel?: boolean;
+  mfaConfigurado?: boolean;
+  mfaExigido?: boolean;
+  /**
    * Quando a pessoa terminou a última etapa do cadastro. Nulo significa cadastro começado e não
    * terminado — o caso normal com confirmação de e-mail ativa, que corta o fluxo em dois — e é o
    * que faz o login oferecer retomar de onde parou.
@@ -222,6 +229,20 @@ export interface RespostaLogin {
   /** O backend Express devolve o access token no campo `token`. */
   token: string;
   refreshToken: string;
+  /** Administrador sem TOTP: entrou, mas só alcança a configuração até ativá-lo. */
+  mfaConfiguracaoPendente?: boolean;
+  /** Entrou com um código de recuperação: quantos ainda restam. */
+  codigosRecuperacaoRestantes?: number;
+}
+
+/**
+ * Retornado no lugar de `RespostaLogin` quando a conta tem verificação em duas etapas: a senha (ou o
+ * Google) estava certa, mas falta o código. O desafio vale 5 minutos e só serve para `/auth/login/totp`.
+ */
+export interface RespostaLoginMfa {
+  mfaNecessario: true;
+  desafioMfa: string;
+  metodosMfa: string[];
 }
 
 /** Retornado no lugar de `RespostaLogin` quando a conta foi pausada pelo próprio usuário. */

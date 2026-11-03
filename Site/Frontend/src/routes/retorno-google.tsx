@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
+import { guardarDesafio } from "@/lib/desafioMfa";
 import {
   guardarProva,
   lerCodigoDoFragmento,
@@ -148,6 +149,15 @@ function RetornoGoogle() {
       }
 
       const resultado = await iniciarSessao(retorno);
+
+      // O Google provou quem é, mas a conta tem verificação em duas etapas: falta o código. O Google não
+      // substitui o segundo fator do ACESSO.
+      if ("mfaNecessario" in resultado) {
+        limparVinculo();
+        guardarDesafio(resultado.desafioMfa);
+        navigate({ to: "/verificacao-em-duas-etapas", replace: true });
+        return;
+      }
 
       // Conta pausada é a única resposta em que a pessoa ainda reapresenta o código (o botão de
       // reativar), então só nela o segredo da aba continua valendo.

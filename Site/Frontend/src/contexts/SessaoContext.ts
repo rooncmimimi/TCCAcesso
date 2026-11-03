@@ -6,6 +6,7 @@ import type {
   RespostaLogin,
   RespostaLoginContaPausada,
   RespostaLoginEmailNaoVerificado,
+  RespostaLoginMfa,
   TipoUsuario,
   Usuario,
 } from "@/types";
@@ -27,18 +28,22 @@ export type SessaoContextValue = {
   inicializado: boolean;
   carregando: boolean;
   autenticado: boolean;
-  /** Retorna `{ contaPausada: true }` ou `{ emailNaoVerificado: true, email }` (sem criar sessão) quando o login precisa de uma etapa extra. */
+  /**
+   * Retorna `{ contaPausada: true }`, `{ emailNaoVerificado: true, email }` ou `{ mfaNecessario: true, desafioMfa }`
+   * (sem criar sessão) quando o login precisa de uma etapa extra.
+   */
   entrar: (
     credenciais: CredenciaisLogin,
-  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>;
+  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa>;
   /**
    * O "depois de autenticar" de qualquer entrada (senha ou Google): guarda os tokens, normaliza o
    * usuário, conecta o socket e aplica as preferências de acessibilidade da conta. Quando a
-   * resposta é uma etapa extra (`contaPausada` ou `emailNaoVerificado`), devolve-a sem criar sessão.
+   * resposta é uma etapa extra (`contaPausada`, `emailNaoVerificado` ou `mfaNecessario`), devolve-a sem
+   * criar sessão.
    */
   iniciarSessao: (
-    resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado,
-  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado>;
+    resposta: RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa,
+  ) => Promise<UsuarioSessao | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa>;
   /** Retorna `{ pendenteVerificacaoEmail: true, email }` (sem criar sessão) quando o cadastro exige confirmação de e-mail. */
   registrarCandidato: (
     payload: Record<string, unknown>,

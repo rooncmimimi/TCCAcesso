@@ -180,7 +180,7 @@ export function SecaoVerificacaoEmDuasEtapas() {
               )}
             </div>
 
-            {obrigatoria && (
+            {usuario?.tipo === "administrador" && (
               <p className="text-xs text-muted-foreground">
                 Perdeu o aplicativo e os códigos de recuperação? Peça a outro administrador para reiniciar a sua verificação.
                 Quem é o único administrador pede à equipe técnica, que reinicia pelo servidor.

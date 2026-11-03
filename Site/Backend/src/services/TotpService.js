@@ -25,9 +25,11 @@ import {
  * Verificação em duas etapas por aplicativo autenticador (TOTP).
  *
  * Regras (o porquê está em cada método):
- * - **Administrador** é obrigado a ter TOTP; os demais ativam se quiserem.
- * - O administrador **não consegue desligar** a própria proteção pela interface. Para trocar de
- *   aparelho ele refaz a configuração (com senha e um código), e para perder tudo existe o reinício
+ * - **Por enquanto só administrador** pode ter TOTP (`MFA_TOTP_TIPOS`), e ele é **opcional**
+ *   (`MFA_TOTP_OBRIGATORIO_ADMIN` desligada): quem o ativa passa a ser cobrado em todo login e em toda
+ *   rota; quem não ativa segue como antes.
+ * - Com a obrigatoriedade ligada, o administrador **não consegue desligar** a própria proteção pela
+ *   interface. Para trocar de aparelho ele refaz a configuração (com senha e um código), e para perder tudo existe o reinício
  *   por outro administrador ou pelo script de emergência (`scripts/resetarTotpAdmin.js`). Reinício por
  *   e-mail não existe: quem tomasse a caixa de e-mail desligaria a proteção.
  * - O segredo só é gravado depois de a pessoa provar que o aplicativo gera o código certo.
@@ -59,9 +61,24 @@ class TotpService {
         }
     }
 
-    /** Só administrador é obrigado. */
+    /** Este tipo de conta pode ter a verificação? Hoje só administrador (`MFA_TOTP_TIPOS`). */
+    elegivel(usuario) {
+        return this.habilitado() && (env.mfa.tiposElegiveis ?? ["administrador"]).includes(usuario.tipoUsuario);
+    }
+
+    exigirDisponivelPara(usuario) {
+        this.exigirHabilitado();
+
+        if (!this.elegivel(usuario)) {
+            throw ErroApi.acessoNegado("A verificação em duas etapas ainda não está disponível para este tipo de conta.", {
+                codigo: "MFA_INDISPONIVEL_PARA_CONTA"
+            });
+        }
+    }
+
+    /** Obrigatória? Só para administrador, e só com `MFA_TOTP_OBRIGATORIO_ADMIN` ligada. */
     exigidoPara(usuario) {
-        return this.habilitado() && usuario.tipoUsuario === "administrador";
+        return this.elegivel(usuario) && usuario.tipoUsuario === "administrador" && Boolean(env.mfa.obrigatorioAdmin);
     }
 
     async buscarAtivo(usuarioId, opcoes = {}) {
@@ -71,10 +88,11 @@ class TotpService {
     /**
      * O que o Site precisa saber da conta (nunca o segredo nem os códigos):
      * `mfaDisponivel` (o recurso está ligado), `mfaConfigurado` e `mfaExigido` (administrador).
-     * Com o recurso desligado, não consulta o banco.
+     * Com o recurso desligado, ou para um tipo de conta que ainda não o tem, não consulta o banco e nada fica
+     * disponível.
      */
     async situacaoDaConta(usuario) {
-        if (!this.habilitado()) {
+        if (!this.elegivel(usuario)) {
             return { mfaDisponivel: false, mfaConfigurado: false, mfaExigido: false };
         }
 
@@ -106,23 +124,25 @@ class TotpService {
      * O acesso desta sessão está de acordo com a regra do TOTP?
      *
      * - `ok`: pode seguir.
-     * - `nao_configurado`: administrador sem TOTP. Entra, mas só alcança a configuração.
+     * - `nao_configurado`: administrador sem TOTP, **quando a obrigatoriedade está ligada**. Entra, mas só alcança a
+     *   configuração. Com a obrigatoriedade desligada (o padrão), administrador sem TOTP segue normalmente.
      * - `necessario`: administrador com TOTP cuja sessão não passou pelo segundo fator (ou passou antes
-     *   de o TOTP ser reiniciado ou trocado). Tem de entrar de novo.
+     *   de o TOTP ser reiniciado ou trocado). Tem de entrar de novo. Vale também com o TOTP opcional: quem o
+     *   ativou não pode ter uma sessão sem o segundo fator, senão a proteção seria de enfeite.
      *
      * Só administrador é cobrado a cada requisição: o poder dele é o que justifica o custo da consulta.
      * Para as demais contas o segundo fator vale no login (e as sessões antigas são encerradas quando
      * a pessoa ativa o TOTP).
      */
     async estadoDoAcesso(usuario, payload) {
-        if (!this.exigidoPara(usuario)) {
+        if (!this.elegivel(usuario) || usuario.tipoUsuario !== "administrador") {
             return "ok";
         }
 
         const ativo = await this.buscarAtivo(usuario.id, { attributes: ["usuarioId", "confirmadoEm"] });
 
         if (!ativo) {
-            return "nao_configurado";
+            return this.exigidoPara(usuario) ? "nao_configurado" : "ok";
         }
 
         const desde = Math.floor(new Date(ativo.confirmadoEm).getTime() / 1000);
@@ -249,7 +269,7 @@ class TotpService {
      * gravado. Quem já tem TOTP só chega aqui provando senha e código (troca de aparelho).
      */
     async iniciarConfiguracao(usuario, reautenticacao = {}) {
-        this.exigirHabilitado();
+        this.exigirDisponivelPara(usuario);
 
         const ativo = await this.buscarAtivo(usuario.id, { attributes: ["usuarioId"] });
 
@@ -275,7 +295,7 @@ class TotpService {
      * `mfaVerificadoEm`.
      */
     async ativar(usuario, { configuracao, codigo }, contexto = {}) {
-        this.exigirHabilitado();
+        this.exigirDisponivelPara(usuario);
 
         const aberta = abrirConfiguracao(configuracao, usuario.id);
 
@@ -361,7 +381,7 @@ class TotpService {
     }
 
     async regenerarCodigosDeRecuperacao(usuario, reautenticacao, contexto = {}) {
-        this.exigirHabilitado();
+        this.exigirDisponivelPara(usuario);
 
         if (!(await this.buscarAtivo(usuario.id, { attributes: ["usuarioId"] }))) {
             throw ErroApi.requisicaoInvalida("A verificação em duas etapas não está ativa nesta conta.");
@@ -398,11 +418,14 @@ class TotpService {
         }
     }
 
-    /** Desliga o TOTP de quem o ativou por vontade própria. Administrador não pode. */
+    /**
+     * Desliga o TOTP, com senha e um código. Se a obrigatoriedade para administradores estiver ligada, o
+     * administrador não pode (a regra existe justamente para o poder dele não ficar sem a segunda camada).
+     */
     async desativar(usuario, reautenticacao, contexto = {}) {
-        this.exigirHabilitado();
+        this.exigirDisponivelPara(usuario);
 
-        if (usuario.tipoUsuario === "administrador") {
+        if (this.exigidoPara(usuario)) {
             throw ErroApi.acessoNegado(
                 "Administradores não podem desativar a verificação em duas etapas. Para trocar de aparelho, configure de novo; se perdeu o acesso, peça o reinício a outro administrador.",
                 { codigo: "MFA_OBRIGATORIO" }
@@ -467,6 +490,16 @@ class TotpService {
                     codigo: "MFA_AUTORREINICIO"
                 });
             }
+
+            // Quem reinicia a proteção de outra conta precisa ter a SUA. Com a verificação opcional, um administrador só
+            // com senha poderia, senão, tirar a segunda camada de outro; com ela ativa, o middleware já garante que esta
+            // sessão passou pelo segundo fator.
+            if (!(await this.buscarAtivo(solicitante.id, { attributes: ["usuarioId"] }))) {
+                throw ErroApi.acessoNegado(
+                    "Para reiniciar a verificação em duas etapas de outra conta, ative primeiro a sua própria.",
+                    { codigo: "MFA_REQUER_TOTP_PROPRIO" }
+                );
+            }
         }
 
         const transaction = await sequelize.transaction();
@@ -476,6 +509,14 @@ class TotpService {
 
             if (!alvo) {
                 throw ErroApi.naoEncontrado("Conta não encontrada.");
+            }
+
+            // Por enquanto só administrador tem verificação em duas etapas; reiniciar a de outro tipo de conta não faz
+            // sentido e seria um caminho a mais para quem pedisse o reinício de um candidato ou de uma empresa.
+            if (origem === "administrador" && alvo.tipoUsuario !== "administrador") {
+                throw ErroApi.requisicaoInvalida("Por enquanto só administradores têm verificação em duas etapas.", {
+                    codigo: "MFA_INDISPONIVEL_PARA_CONTA"
+                });
             }
 
             const removidos = await AutenticacaoTotp.destroy({ where: { usuarioId: alvoId }, transaction });

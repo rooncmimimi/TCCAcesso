@@ -124,6 +124,34 @@ describe("com a verificação ativa", () => {
   });
 });
 
+describe("administrador com a verificação opcional (o padrão de hoje)", () => {
+  beforeEach(() => {
+    sessao.usuario = { id: "a1", tipo: "administrador", temSenha: true };
+    servico.estado.mockResolvedValue(estado({ mfaConfigurado: true, mfaExigido: false, codigosRestantes: 10 }));
+  });
+
+  it("sem a obrigatoriedade, pode desativar (com senha e código) e não vê o aviso de 'obrigatória'", async () => {
+    renderizar();
+
+    expect(await screen.findByRole("button", { name: "Desativar" })).toBeInTheDocument();
+    expect(screen.queryByText(/obrigatória para administradores/)).not.toBeInTheDocument();
+  });
+
+  it("continua vendo como recuperar o acesso se perder o aplicativo", async () => {
+    renderizar();
+
+    expect(await screen.findByText(/outro administrador para reiniciar/)).toBeInTheDocument();
+  });
+
+  it("ainda não ativou: a seção oferece ativar, sem dizer que é obrigatório", async () => {
+    servico.estado.mockResolvedValue(estado({ mfaConfigurado: false, mfaExigido: false }));
+    renderizar();
+
+    expect(await screen.findByRole("button", { name: "Ativar verificação em duas etapas" })).toBeInTheDocument();
+    expect(screen.queryByText(/obrigatória/)).not.toBeInTheDocument();
+  });
+});
+
 describe("desativar (candidato ou empresa)", () => {
   beforeEach(() => servico.estado.mockResolvedValue(estado({ mfaConfigurado: true, codigosRestantes: 10 })));
 

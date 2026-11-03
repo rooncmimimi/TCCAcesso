@@ -71,5 +71,10 @@ services:
       # migration 0008 e de definir MFA_CHAVE_CIFRA. Veja Site/docs/verificacao-em-duas-etapas.md.
       - key: MFA_TOTP_HABILITADO
         value: "false"
+      # Por enquanto só administrador, e opcional. Para tornar obrigatória: MFA_TOTP_OBRIGATORIO_ADMIN=true.
+      - key: MFA_TOTP_TIPOS
+        value: administrador
+      - key: MFA_TOTP_OBRIGATORIO_ADMIN
+        value: "false"
       - key: MFA_CHAVE_CIFRA
         sync: false

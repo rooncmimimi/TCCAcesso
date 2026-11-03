@@ -197,6 +197,18 @@ const env = {
         // Liga o recurso: login com o segundo fator, exigência para administradores e as telas de Segurança.
         // Desligada por padrão porque a migration 0008 precisa estar aplicada antes (o deploy não a aplica).
         habilitado: process.env.MFA_TOTP_HABILITADO === "true",
+        // Quais tipos de conta podem ter a verificação. Por enquanto só administrador; para abrir a candidato e empresa
+        // depois, basta `MFA_TOTP_TIPOS=administrador,candidato,empresa` (sem mudar código).
+        tiposElegiveis: paraLista(process.env.MFA_TOTP_TIPOS, ["administrador"]),
+        // Administrador é OBRIGADO a ter a verificação? Desligado por padrão: ela é opcional. Ligado, o administrador
+        // sem TOTP entra, mas só alcança a tela de configuração, e o servidor nega o resto.
+        obrigatorioAdmin: process.env.MFA_TOTP_OBRIGATORIO_ADMIN === "true",
+        // Quais tipos de conta podem ter a verificação. Por enquanto só administrador; para abrir a candidato e empresa
+        // depois, basta `MFA_TOTP_TIPOS=administrador,candidato,empresa` (sem mudar código).
+        tiposElegiveis: paraLista(process.env.MFA_TOTP_TIPOS, ["administrador"]),
+        // Administrador é OBRIGADO a ter a verificação? Desligado por padrão: ela é opcional. Ligado, o administrador
+        // sem TOTP entra, mas só alcança a tela de configuração, e o servidor nega o resto.
+        obrigatorioAdmin: process.env.MFA_TOTP_OBRIGATORIO_ADMIN === "true",
         // Chave de cifra do segredo TOTP e dos códigos de recuperação. Recomendada em produção, separada do
         // JWT_SECRET; sem ela, usa o JWT_SECRET. Trocá-la invalida os segredos já guardados.
         chaveCifra: process.env.MFA_CHAVE_CIFRA || null,

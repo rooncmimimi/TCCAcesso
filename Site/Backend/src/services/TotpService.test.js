@@ -20,7 +20,7 @@ const { env, banco, models, auditoria, sessoes, comparar } = vi.hoisted(() => {
     };
 
     return {
-        env: { jwt: { secret: "k".repeat(64) }, mfa: { habilitado: true, chaveCifra: null, emissor: "ACESSO" } },
+        env: { jwt: { secret: "k".repeat(64) }, mfa: { habilitado: true, chaveCifra: null, emissor: "ACESSO", tiposElegiveis: ["administrador"], obrigatorioAdmin: false } },
         banco,
         models: {
             AutenticacaoTotp: {
@@ -111,6 +111,10 @@ beforeEach(() => {
     banco.usuarios.clear();
     for (const u of [candidata, admin, outroAdmin]) banco.usuarios.set(u.id, { ...u, senhaHash: "hash" });
     env.mfa.habilitado = true;
+    // Os grupos abaixo, exceto o último, rodam no modo AMPLIADO (todos os tipos, administrador obrigado), que continua
+    // suportado por variável de ambiente. O padrão de hoje (só administrador, opcional) tem o seu grupo no fim.
+    env.mfa.tiposElegiveis = ["administrador", "candidato", "empresa"];
+    env.mfa.obrigatorioAdmin = true;
     comparar.mockResolvedValue(true);
 });
 
@@ -442,6 +446,7 @@ describe("códigos de recuperação: refazer", () => {
 describe("reiniciar", () => {
     it("outro administrador reinicia: apaga segredo e códigos, encerra sessões, audita com origem e motivo", async () => {
         await ativarNoBanco(admin);
+        await ativarNoBanco(outroAdmin);
         codigoLivre(admin.id, "ABCDE-FGHJK");
 
         const r = await TotpService.reiniciar(admin.id, {
@@ -472,6 +477,18 @@ describe("reiniciar", () => {
             detalhes: { codigo: "MFA_AUTORREINICIO" }
         });
         expect(banco.totp.has(admin.id)).toBe(true);
+    });
+
+    it("administrador SEM a própria verificação não reinicia a de outro (403 MFA_REQUER_TOTP_PROPRIO), e nada muda", async () => {
+        await ativarNoBanco(admin);
+
+        await expect(TotpService.reiniciar(admin.id, { origem: "administrador", solicitante: outroAdmin, motivo: "Perdeu o aplicativo" })).rejects.toMatchObject({
+            statusCode: 403,
+            detalhes: { codigo: "MFA_REQUER_TOTP_PROPRIO" }
+        });
+        expect(banco.totp.has(admin.id)).toBe(true);
+        expect(auditoria.registrar).not.toHaveBeenCalled();
+        expect(sessoes.revogarTodos).not.toHaveBeenCalled();
     });
 
     it("quem não é administrador não reinicia", async () => {
@@ -575,5 +592,116 @@ describe("situacaoDaConta (o que o Site recebe)", () => {
 
         const texto = JSON.stringify(await TotpService.estado(candidata));
         expect(texto).not.toMatch(/segredo/i);
+    });
+});
+
+describe("o padrão de hoje: só administrador, e opcional", () => {
+    beforeEach(() => {
+        env.mfa.tiposElegiveis = ["administrador"];
+        env.mfa.obrigatorioAdmin = false;
+    });
+
+    describe("candidato e empresa ainda não têm a verificação", () => {
+        it.each([
+            ["iniciar a configuração", (u) => TotpService.iniciarConfiguracao(u)],
+            ["ativar", (u) => TotpService.ativar(u, { configuracao: "x", codigo: "123456" })],
+            ["refazer códigos", (u) => TotpService.regenerarCodigosDeRecuperacao(u, { codigo: "123456" })],
+            ["desativar", (u) => TotpService.desativar(u, { codigo: "123456" })]
+        ])("%s é negado com MFA_INDISPONIVEL_PARA_CONTA", async (_nome, acao) => {
+            for (const usuario of [candidata, { id: "e1", tipoUsuario: "empresa", email: "e@exemplo.com" }]) {
+                await expect(acao(usuario)).rejects.toMatchObject({ statusCode: 403, detalhes: { codigo: "MFA_INDISPONIVEL_PARA_CONTA" } });
+            }
+
+            expect(banco.totp.size).toBe(0);
+        });
+
+        it("o Site recebe 'indisponível' e o banco nem é consultado", async () => {
+            expect(await TotpService.situacaoDaConta(candidata)).toEqual({ mfaDisponivel: false, mfaConfigurado: false, mfaExigido: false });
+            expect(models.AutenticacaoTotp.findByPk).not.toHaveBeenCalled();
+        });
+
+        it("nunca são cobrados por sessão verificada", async () => {
+            expect(await TotpService.estadoDoAcesso(candidata, {})).toBe("ok");
+        });
+
+        it("outro administrador não reinicia o TOTP de candidato nem de empresa (400), e nada é auditado", async () => {
+            await ativarNoBanco(outroAdmin);
+
+            for (const alvo of [candidata, { id: "e1", tipoUsuario: "empresa" }]) {
+                banco.usuarios.set(alvo.id, { ...alvo });
+                await expect(TotpService.reiniciar(alvo.id, { origem: "administrador", solicitante: outroAdmin, motivo: "Perdeu o aplicativo" })).rejects.toMatchObject({
+                    statusCode: 400,
+                    detalhes: { codigo: "MFA_INDISPONIVEL_PARA_CONTA" }
+                });
+            }
+
+            expect(auditoria.registrar).not.toHaveBeenCalled();
+            expect(sessoes.revogarTodos).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("administrador sem a verificação (não obrigatória)", () => {
+        it("está disponível, não configurada e NÃO exigida", async () => {
+            expect(await TotpService.situacaoDaConta(admin)).toEqual({ mfaDisponivel: true, mfaConfigurado: false, mfaExigido: false });
+        });
+
+        it("segue com acesso normal ao painel: nada de 'nao_configurado'", async () => {
+            expect(await TotpService.estadoDoAcesso(admin, {})).toBe("ok");
+            expect(await TotpService.estadoDoAcesso(admin, null)).toBe("ok");
+        });
+
+        it("pode ativar por vontade própria", async () => {
+            const inicio = await TotpService.iniciarConfiguracao(admin);
+            const r = await TotpService.ativar(admin, { configuracao: inicio.configuracao, codigo: codigoDoPasso(inicio.segredo, passoDoInstante()) });
+
+            expect(r.codigosRecuperacao).toHaveLength(10);
+            expect(banco.totp.has(admin.id)).toBe(true);
+        });
+    });
+
+    describe("administrador que ativou (mesmo sendo opcional)", () => {
+        const desde = Math.floor((AGORA - 3600_000) / 1000);
+
+        it("passa a ser cobrado: sessão sem a verificação é 'necessario'", async () => {
+            await ativarNoBanco(admin);
+
+            expect(await TotpService.estadoDoAcesso(admin, {})).toBe("necessario");
+            expect(await TotpService.estadoDoAcesso(admin, { mfa: desde - 1 })).toBe("necessario");
+        });
+
+        it("com a sessão verificada, o acesso segue", async () => {
+            await ativarNoBanco(admin);
+
+            expect(await TotpService.estadoDoAcesso(admin, { mfa: desde })).toBe("ok");
+        });
+
+        it("pode desativar, mas só provando senha e código", async () => {
+            const segredo = await ativarNoBanco(admin);
+
+            comparar.mockResolvedValue(false);
+            await expect(TotpService.desativar(admin, { senhaAtual: "errada", codigo: codigoDoPasso(segredo, passoDoInstante()) })).rejects.toMatchObject({ statusCode: 401 });
+            expect(banco.totp.has(admin.id)).toBe(true);
+
+            comparar.mockResolvedValue(true);
+            await expect(TotpService.desativar(admin, { senhaAtual: "certa", codigo: "000000" })).rejects.toMatchObject({ statusCode: 400 });
+            expect(banco.totp.has(admin.id)).toBe(true);
+
+            await TotpService.desativar(admin, { senhaAtual: "certa", codigo: codigoDoPasso(segredo, passoDoInstante()) });
+            expect(banco.totp.has(admin.id)).toBe(false);
+        });
+
+        it("desativado, volta a entrar sem cobrança", async () => {
+            await ativarNoBanco(admin);
+            banco.totp.delete(admin.id);
+
+            expect(await TotpService.estadoDoAcesso(admin, {})).toBe("ok");
+        });
+    });
+
+    it("com a obrigatoriedade ligada, o administrador sem TOTP volta a ser barrado e não pode desativar", async () => {
+        env.mfa.obrigatorioAdmin = true;
+
+        expect(await TotpService.estadoDoAcesso(admin, {})).toBe("nao_configurado");
+        expect(await TotpService.situacaoDaConta(admin)).toMatchObject({ mfaExigido: true });
     });
 });

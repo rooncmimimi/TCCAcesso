@@ -81,5 +81,10 @@ services:
         value: "false"
       - key: SESSOES_MAXIMO_POR_CONTA
         value: "20"
+      # Código por e-mail em dispositivo novo e conta comprometida (Bloco 3). Exige a migration 0010 e o e-mail (Brevo) configurado.
+      - key: DISPOSITIVOS_CONFIAVEIS_HABILITADO
+        value: "false"
+      - key: DISPOSITIVOS_CONFIAVEIS_DIAS
+        value: "90"
       - key: MFA_CHAVE_CIFRA
         sync: false

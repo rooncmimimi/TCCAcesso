@@ -23,6 +23,12 @@ export const RECURSOS = [
         exige: [{ variavel: "MFA_CHAVE_CIFRA", minimo: 32, motivo: "chave própria do segredo do TOTP (senão usa o JWT_SECRET)" }]
     },
     {
+        chave: "DISPOSITIVOS_CONFIAVEIS_HABILITADO",
+        migration: "0010_dispositivos_confiaveis_e_eventos_de_seguranca.sql",
+        descricao: "Código por e-mail em dispositivo novo e \"Acho que invadiram minha conta\"",
+        exige: [{ variavel: "BREVO_API_KEY", minimo: 1, motivo: "envio de e-mail (sem ele o recurso fica inativo)" }]
+    },
+    {
         chave: "SESSOES_DISPOSITIVOS_HABILITADO",
         migration: "0009_sessoes_e_dispositivos.sql",
         descricao: "Encerrar sessão na hora e datas verdadeiras dos dispositivos",

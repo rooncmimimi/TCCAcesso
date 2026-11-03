@@ -4,6 +4,8 @@ import { Usuario, CodigoRecuperacaoSenha } from "../models/index.js";
 import { gerarCodigoNumerico, gerarTokenOpaco, hashToken, compararHash } from "../utils/tokens.js";
 import { gerarHashSenha } from "../utils/bcrypt.js";
 import SessaoService from "./SessaoService.js";
+import DispositivoConfiavelService from "./DispositivoConfiavelService.js";
+import SegurancaEventosService from "./SegurancaEventosService.js";
 import EmailService from "./EmailService.js";
 import NotificacaoPushService from "./NotificacaoPushService.js";
 import AutenticacaoService from "./AutenticacaoService.js";
@@ -223,6 +225,10 @@ class RecuperacaoSenhaService {
         }
 
         await SessaoService.revogarTodos(usuario.id);
+        if (DispositivoConfiavelService.habilitado()) {
+            await DispositivoConfiavelService.revogarTodos(usuario.id);
+        }
+        await SegurancaEventosService.registrar(usuario.id, "senha_alterada", {}, { origem: "redefinicao" });
         await NotificacaoPushService.removerTodosDoUsuario(usuario.id);
         await AutenticacaoService.avisarSenhaAlterada(usuario);
     }

@@ -1,6 +1,8 @@
 import AutenticacaoService from "../services/AutenticacaoService.js";
 import RecuperacaoSenhaService from "../services/RecuperacaoSenhaService.js";
 import SessaoService from "../services/SessaoService.js";
+import DispositivoConfiavelService from "../services/DispositivoConfiavelService.js";
+import SegurancaEventosService from "../services/SegurancaEventosService.js";
 import ErroApi from "../utils/ErroApi.js";
 import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 import { tratarErroCadastro } from "../utils/erroDeCadastro.js";
@@ -48,6 +50,33 @@ class AutenticacaoController {
                 contextoRequisicao(req),
                 Boolean(confirmarReativacao)
             );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async entrarComDispositivo(req, res, next) {
+        try {
+            const resultado = await AutenticacaoService.concluirLoginComDispositivo(
+                req.body.desafio,
+                req.body.codigo,
+                { lembrar: Boolean(req.body.lembrar) },
+                contextoRequisicao(req)
+            );
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async reenviarCodigoDispositivo(req, res, next) {
+        try {
+            DispositivoConfiavelService.exigirHabilitado();
+
+            const resultado = await DispositivoConfiavelService.reenviar(req.body.desafio, contextoRequisicao(req));
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {
@@ -264,6 +293,8 @@ class AutenticacaoController {
                 familiaId: req.sessaoFamiliaId,
                 tokenAtual: req.body?.refreshToken
             });
+
+            await SegurancaEventosService.registrar(req.user.id, "sessoes_encerradas", contextoRequisicao(req));
 
             return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {

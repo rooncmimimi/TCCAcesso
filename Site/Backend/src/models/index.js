@@ -7,6 +7,10 @@ import CodigoRecuperacaoSenha from "./CodigoRecuperacaoSenha.js";
 import CodigoVerificacaoEmail from "./CodigoVerificacaoEmail.js";
 import AutenticacaoTotp from "./AutenticacaoTotp.js";
 import CodigoRecuperacaoTotp from "./CodigoRecuperacaoTotp.js";
+import DispositivoConfiavel from "./DispositivoConfiavel.js";
+import DesafioDeDispositivo from "./DesafioDeDispositivo.js";
+import LinkDeSeguranca from "./LinkDeSeguranca.js";
+import EventoDeSeguranca from "./EventoDeSeguranca.js";
 import PreferenciaAcessibilidade from "./PreferenciaAcessibilidade.js";
 import PreferenciaNotificacao from "./PreferenciaNotificacao.js";
 import Candidato from "./Candidato.js";
@@ -73,6 +77,18 @@ AutenticacaoTotp.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 
 Usuario.hasMany(CodigoRecuperacaoTotp, { foreignKey: "usuarioId", as: "codigosRecuperacaoTotp" });
 CodigoRecuperacaoTotp.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+Usuario.hasMany(DispositivoConfiavel, { foreignKey: "usuarioId", as: "dispositivosConfiaveis" });
+DispositivoConfiavel.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+Usuario.hasMany(DesafioDeDispositivo, { foreignKey: "usuarioId", as: "desafiosDeDispositivo" });
+DesafioDeDispositivo.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+Usuario.hasMany(LinkDeSeguranca, { foreignKey: "usuarioId", as: "linksDeSeguranca" });
+LinkDeSeguranca.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
+
+Usuario.hasMany(EventoDeSeguranca, { foreignKey: "usuarioId", as: "eventosDeSeguranca" });
+EventoDeSeguranca.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 
 Usuario.hasOne(PreferenciaAcessibilidade, { foreignKey: "usuarioId", as: "preferenciasAcessibilidade" });
 PreferenciaAcessibilidade.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
@@ -257,6 +273,10 @@ export {
     CodigoVerificacaoEmail,
     AutenticacaoTotp,
     CodigoRecuperacaoTotp,
+    DispositivoConfiavel,
+    DesafioDeDispositivo,
+    LinkDeSeguranca,
+    EventoDeSeguranca,
     PreferenciaAcessibilidade,
     PreferenciaNotificacao,
     Candidato,

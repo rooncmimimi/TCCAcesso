@@ -3,6 +3,7 @@ import AutenticacaoController from "../controllers/AutenticacaoController.js";
 import GoogleAuthController from "../controllers/GoogleAuthController.js";
 import autenticacaoMiddleware, { autenticacaoSemExigirMfa } from "../middlewares/autenticacaoMiddleware.js";
 import TotpController from "../controllers/TotpController.js";
+import SegurancaController from "../controllers/SegurancaController.js";
 import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import {
@@ -31,6 +32,13 @@ import {
     validarReenviarConfirmacaoCadastro
 } from "../validators/sessaoValidator.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
+import {
+    validarConfirmarContaComprometida,
+    validarLoginDispositivo,
+    validarProtegerAgora,
+    validarReenvioDeCodigo,
+    validarSolicitarContaComprometida
+} from "../validators/segurancaValidator.js";
 import {
     validarAtivarTotp,
     validarIniciarConfiguracaoTotp,
@@ -75,6 +83,64 @@ router.post(
     validarLoginTotp,
     validacaoMiddleware,
     AutenticacaoController.entrarComSegundoFator
+);
+
+// Passo 2 do login em dispositivo novo: o código enviado por e-mail. Público: quem identifica a conta é o desafio.
+router.post(
+    "/login/dispositivo",
+    limiteAutenticacao,
+    validarLoginDispositivo,
+    validacaoMiddleware,
+    AutenticacaoController.entrarComDispositivo
+);
+
+router.post(
+    "/login/dispositivo/reenviar",
+    limiteReenvioConfirmacao,
+    validarReenvioDeCodigo,
+    validacaoMiddleware,
+    AutenticacaoController.reenviarCodigoDispositivo
+);
+
+/* Segurança da conta: dispositivos de confiança, histórico e conta comprometida (Bloco 3) */
+
+// Diz se o recurso está ligado; o Site só mostra as telas novas quando está.
+router.get("/seguranca/disponivel", SegurancaController.disponivel);
+
+router.get("/dispositivos", autenticacaoMiddleware, SegurancaController.dispositivos);
+router.post("/dispositivos/revogar-todos", autenticacaoMiddleware, SegurancaController.revogarTodosDispositivos);
+router.delete(
+    "/dispositivos/:id",
+    autenticacaoMiddleware,
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    SegurancaController.revogarDispositivo
+);
+router.get("/eventos-de-seguranca", autenticacaoMiddleware, SegurancaController.eventos);
+
+// "Acho que invadiram minha conta": o pedido público (resposta sempre genérica), a confirmação pelo link do e-mail e a
+// proteção de quem está logado. Nenhuma delas desliga a verificação em duas etapas.
+router.post(
+    "/conta-comprometida/solicitar",
+    limiteRecuperacaoSenha,
+    validarSolicitarContaComprometida,
+    validacaoMiddleware,
+    SegurancaController.solicitarContaComprometida
+);
+router.post(
+    "/conta-comprometida/confirmar",
+    limiteAutenticacao,
+    validarConfirmarContaComprometida,
+    validacaoMiddleware,
+    SegurancaController.confirmarContaComprometida
+);
+router.post(
+    "/conta-comprometida/proteger-agora",
+    autenticacaoMiddleware,
+    limiteAutenticacao,
+    validarProtegerAgora,
+    validacaoMiddleware,
+    SegurancaController.protegerAgora
 );
 
 router.post(

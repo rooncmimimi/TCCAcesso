@@ -66,3 +66,17 @@ export const tokenAnteriorATrocaDeSenha = (payload, usuario) => {
 
     return payload.iat < Math.floor(new Date(usuario.senhaAlteradaEm).getTime() / 1000);
 };
+
+const AUDIENCE_DESAFIO_DISPOSITIVO = "acesso:dispositivo-desafio";
+
+/**
+ * Desafio da verificação por e-mail de um dispositivo novo: vale 20 minutos e só serve para `POST /auth/login/dispositivo`
+ * (e o reenvio). Tem `audience` própria, então `verificarJwt` o recusa como access token, e `lerDesafioMfa` o recusa também.
+ */
+export const assinarDesafioDispositivo = (payload) => {
+    return jwt.sign(payload, env.jwt.secret, { expiresIn: "20m", issuer: "acesso-api", audience: AUDIENCE_DESAFIO_DISPOSITIVO });
+};
+
+export const lerDesafioDispositivo = (token) => {
+    return jwt.verify(token, env.jwt.secret, { issuer: "acesso-api", audience: AUDIENCE_DESAFIO_DISPOSITIVO });
+};

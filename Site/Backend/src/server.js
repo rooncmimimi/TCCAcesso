@@ -4,7 +4,15 @@ import app from "./app.js";
 import env from "./config/env.js";
 import conectarBanco from "./config/sequelize.js";
 import sequelize from "./config/bancoDeDados.js";
-import { avisoDaMigracaoContaSemSenha, avisoDaMigracaoSessoes, avisoDaMigracaoTotp } from "./config/avisosDeAmbiente.js";
+import {
+    avisoDaMigracaoContaSemSenha,
+    avisoDaMigracaoSeguranca,
+    avisoDaMigracaoSessoes,
+    avisoDaMigracaoTotp,
+    avisosDaSeguranca
+} from "./config/avisosDeAmbiente.js";
+import DispositivoConfiavelService from "./services/DispositivoConfiavelService.js";
+import EmailService from "./services/EmailService.js";
 import SessaoService from "./services/SessaoService.js";
 import { iniciarSocket } from "./realtime/socket.js";
 import { storageHabilitado } from "./utils/supabaseStorage.js";
@@ -68,12 +76,33 @@ async function iniciarServidor() {
     });
     if (avisoDasSessoes) console.error(avisoDasSessoes);
 
+    // Verificação de dispositivo novo e conta comprometida (migration 0010): mesma conferência, mais o aviso de e-mail ausente.
+    const avisoDaSeguranca = await avisoDaMigracaoSeguranca({
+        habilitado: env.seguranca.dispositivosHabilitado,
+        consultar: async () => {
+            const tabelas = await sequelize.query(
+                "SELECT tablename AS nome FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('dispositivos_confiaveis', 'desafios_de_dispositivo', 'links_de_seguranca', 'eventos_de_seguranca')",
+                { type: "SELECT" }
+            );
+
+            return tabelas.map((linha) => linha.nome);
+        }
+    });
+    if (avisoDaSeguranca) console.error(avisoDaSeguranca);
+    for (const aviso of avisosDaSeguranca({ seguranca: env.seguranca, emailDisponivel: EmailService.disponivel() })) console.error(aviso);
+
     // Limpeza das sessões antigas: cada renovação cria uma linha, e antes nada as apagava. Roda ao iniciar e a cada
     // 6 horas; uma falha só é registrada, nunca derruba o servidor.
     const limparSessoes = async () => {
         try {
             const apagadas = await SessaoService.limparAntigas();
             if (apagadas > 0) console.log(`[SESSOES] ${apagadas} sessão(ões) antiga(s) apagada(s).`);
+
+            if (DispositivoConfiavelService.habilitado()) {
+                const antigos = await DispositivoConfiavelService.limparAntigos();
+                const total = antigos.desafios + antigos.links + antigos.dispositivos;
+                if (total > 0) console.log(`[SEGURANCA] ${total} registro(s) antigo(s) de segurança apagado(s).`);
+            }
         } catch (erro) {
             console.error(`[SESSOES] Falha na limpeza de sessões antigas: ${erro.message}`);
         }

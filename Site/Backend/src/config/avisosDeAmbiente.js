@@ -197,3 +197,42 @@ export async function avisoDaMigracaoSessoes({ habilitado, consultar }) {
         "O login e a renovação de sessão vão falhar. Rode `npm run migrate` ou desligue a variável."
     );
 }
+
+const TABELAS_DO_BLOCO_3 = ["dispositivos_confiaveis", "desafios_de_dispositivo", "links_de_seguranca", "eventos_de_seguranca"];
+
+/**
+ * Com `DISPOSITIVOS_CONFIAVEIS_HABILITADO` ligada, confere (sem alterar nada) se a migration 0010 foi aplicada. Sem ela, o login de
+ * quem entra de um dispositivo novo falharia no banco. `consultar` devolve os nomes das tabelas encontradas.
+ */
+export async function avisoDaMigracaoSeguranca({ habilitado, consultar }) {
+    if (!habilitado) return null;
+
+    let achadas;
+    try {
+        achadas = await consultar();
+    } catch {
+        return "[ENV] DISPOSITIVOS_CONFIAVEIS_HABILITADO está ligada, mas não consegui conferir se a migration 0010 foi aplicada.";
+    }
+
+    const faltando = TABELAS_DO_BLOCO_3.filter((tabela) => !achadas.includes(tabela));
+
+    if (faltando.length === 0) return null;
+
+    return (
+        `[ENV] DISPOSITIVOS_CONFIAVEIS_HABILITADO está ligada, mas a migration 0010 NÃO foi aplicada (faltam: ${faltando.join(", ")}). ` +
+        "O login de quem entra de um dispositivo novo vai falhar. Rode `npm run migrate` ou desligue a variável."
+    );
+}
+
+/**
+ * Ligada, mas sem e-mail capaz de enviar o código: o recurso fica **inativo** (ninguém é trancado para fora). O aviso existe para
+ * ninguém achar que a verificação está funcionando quando não está.
+ */
+export function avisosDaSeguranca({ seguranca, emailDisponivel }) {
+    if (!seguranca?.dispositivosHabilitado || emailDisponivel) return [];
+
+    return [
+        "[ENV] DISPOSITIVOS_CONFIAVEIS_HABILITADO está ligada, mas o envio de e-mail não está configurado (BREVO_API_KEY e " +
+            "BREVO_REMETENTE_EMAIL): a verificação de dispositivo novo está INATIVA e o login segue como antes."
+    ];
+}

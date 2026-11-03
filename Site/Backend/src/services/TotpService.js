@@ -3,6 +3,7 @@ import env from "../config/env.js";
 import { AutenticacaoTotp, CodigoRecuperacaoTotp, Usuario } from "../models/index.js";
 import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import SessaoService from "./SessaoService.js";
+import SegurancaEventosService from "./SegurancaEventosService.js";
 import ErroApi from "../utils/ErroApi.js";
 import { compararSenha } from "../utils/bcrypt.js";
 import {
@@ -356,6 +357,8 @@ class TotpService {
 
             await transaction.commit();
 
+            await SegurancaEventosService.registrar(usuario.id, "totp_ativado", contexto, { troca: Boolean(existente) });
+
             return { codigosRecuperacao, mfaVerificadoEm: confirmadoEm };
         } catch (erro) {
             if (!transaction.finished) {
@@ -459,6 +462,8 @@ class TotpService {
 
             await transaction.commit();
 
+            await SegurancaEventosService.registrar(usuario.id, "totp_desativado", contexto);
+
             return { desativado: true };
         } catch (erro) {
             if (!transaction.finished) {
@@ -545,6 +550,8 @@ class TotpService {
             );
 
             await transaction.commit();
+
+            await SegurancaEventosService.registrar(alvoId, "totp_reiniciado", contexto, { origem });
 
             return { tinhaTotp: removidos > 0, tipoUsuario: alvo.tipoUsuario };
         } catch (erro) {

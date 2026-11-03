@@ -186,10 +186,27 @@ const env = {
         timeoutMs: Number(process.env.BREVO_TIMEOUT_MS) || 15000
     },
 
+    // Como os e-mails saem. `brevo` (padrão) usa a API; `console` só existe em desenvolvimento e teste e GRAVA os e-mails num
+    // arquivo (`EMAIL_CONSOLE_ARQUIVO`) em vez de enviar. É recusado em produção.
+    email: {
+        driver: process.env.EMAIL_DRIVER === "console" ? "console" : "brevo",
+        consoleArquivo: process.env.EMAIL_CONSOLE_ARQUIVO || null
+    },
+
     contato: {
         // Para onde vão as mensagens do "Fale conosco". Sem valor padrão de propósito: nenhum endereço é inventado.
         // Sem isto (ou sem a Brevo acima), o formulário responde 503 dizendo que o envio não está disponível.
         destinoEmail: process.env.CONTATO_EMAIL_DESTINO || null
+    },
+
+    // Verificação por e-mail em dispositivo novo e recuperação de conta comprometida (Bloco 3).
+    seguranca: {
+        // Liga: depois da senha (ou do Google), um dispositivo que o Site ainda não confirmou recebe um código de 6 dígitos por
+        // e-mail; e passam a existir o histórico de segurança, a lista de dispositivos de confiança e o "Acho que invadiram
+        // minha conta". Desligada por padrão: a migration 0010 precisa estar aplicada e o e-mail (Brevo) configurado.
+        dispositivosHabilitado: process.env.DISPOSITIVOS_CONFIAVEIS_HABILITADO === "true",
+        // Por quantos dias um dispositivo marcado como de confiança dispensa o código do e-mail.
+        diasDeConfianca: Math.min(365, Math.max(1, Number(process.env.DISPOSITIVOS_CONFIAVEIS_DIAS) || 90))
     },
 
     // Sessões e dispositivos (Bloco 2).
@@ -261,6 +278,14 @@ if (env.isProducao && !(env.storage.supabaseUrl && env.storage.supabaseServiceRo
  * comportamento correto (gate de verificação + recuperação de senha por
  * e-mail) só é ativado com a chave configurada.
  */
+if (env.isProducao && env.email.driver === "console") {
+    console.error(
+        "[ENV] EMAIL_DRIVER=console não é permitido em produção: os e-mails seriam gravados em arquivo em vez de enviados. " +
+            "Remova a variável (o padrão é a Brevo)."
+    );
+    process.exit(1);
+}
+
 if (env.isProducao && !env.brevo.apiKey) {
     console.error(
         "[ENV] Produção sem BREVO_API_KEY configurada. Recuperação de senha " +

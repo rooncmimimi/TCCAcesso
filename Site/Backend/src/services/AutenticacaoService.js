@@ -11,6 +11,8 @@ import { assinarJwt, assinarDesafioMfa, lerDesafioMfa } from "../utils/jwt.js";
 import { gerarCodigoNumerico, hashToken, compararHash } from "../utils/tokens.js";
 import SessaoService from "./SessaoService.js";
 import TotpService from "./TotpService.js";
+import DispositivoConfiavelService from "./DispositivoConfiavelService.js";
+import SegurancaEventosService from "./SegurancaEventosService.js";
 import AdminAuditoriaService from "./AdminAuditoriaService.js";
 import EmailService from "./EmailService.js";
 import NotificacaoService from "./NotificacaoService.js";
@@ -734,7 +736,7 @@ class AutenticacaoService {
      * Quem chama é responsável por já ter provado a identidade: senha conferida em `entrar`, ou
      * `sub` do ID token verificado em `GoogleAuthService`.
      */
-    async entrarComUsuario(usuario, contexto = {}, confirmarReativacao = false, { segundoFatorVerificado = false } = {}) {
+    async entrarComUsuario(usuario, contexto = {}, confirmarReativacao = false, { segundoFatorVerificado = false, dispositivoVerificado = false } = {}) {
         if (!usuario.ativo) {
             throw ErroApi.acessoNegado("Usuário desativado.");
         }
@@ -760,6 +762,17 @@ class AutenticacaoService {
                 desafioMfa: assinarDesafioMfa({ sub: usuario.id, cr: confirmarReativacao ? 1 : 0 }),
                 metodosMfa: ["totp", "recuperacao"]
             };
+        }
+
+        // Dispositivo que o Site ainda não confirmou: um código de 6 dígitos por e-mail antes da sessão. Quem tem TOTP já passou pelo
+        // segundo fator (acima) e não chega aqui sem ele. Com o recurso desligado, ou sem e-mail capaz de enviar, não muda nada.
+        if (
+            !segundoFatorVerificado &&
+            !dispositivoVerificado &&
+            DispositivoConfiavelService.disponivel() &&
+            !(await DispositivoConfiavelService.reconhecido(usuario.id, contexto.dispositivo))
+        ) {
+            return DispositivoConfiavelService.iniciarVerificacao(usuario, contexto, { confirmarReativacao });
         }
 
         if (usuario.pausadoPeloUsuario) {
@@ -828,6 +841,7 @@ class AutenticacaoService {
                 metadados: { codigosRestantes },
                 ...contexto
             });
+            await SegurancaEventosService.registrar(usuario.id, "totp_codigo_recuperacao_usado", contexto, { codigosRestantes });
         }
 
         const sessao = await this.entrarComUsuario(usuario, contexto, payload.cr === 1, {
@@ -835,6 +849,41 @@ class AutenticacaoService {
         });
 
         return codigosRestantes === null ? sessao : { ...sessao, codigosRecuperacaoRestantes: codigosRestantes };
+    }
+
+    /**
+     * Passo 2 do login em dispositivo novo: confere o código enviado por e-mail e abre a sessão. Com `lembrar`, o aparelho vira de
+     * confiança (o token sai na resposta, uma única vez) e deixa de pedir o código pelo prazo configurado. Avisa por e-mail do novo
+     * acesso, com o link "Não fui eu", sem atrasar o login.
+     */
+    async concluirLoginComDispositivo(desafio, codigo, { lembrar = false } = {}, contexto = {}) {
+        DispositivoConfiavelService.exigirHabilitado();
+
+        const { usuarioId, confirmarReativacao } = await DispositivoConfiavelService.confirmar(desafio, codigo);
+        const usuario = await Usuario.findByPk(usuarioId);
+
+        if (!usuario) {
+            throw ErroApi.requisicaoInvalida("A verificação expirou. Entre novamente.", { codigo: "DISPOSITIVO_DESAFIO_EXPIRADO" });
+        }
+
+        await SegurancaEventosService.registrar(usuario.id, "dispositivo_novo_confirmado", contexto);
+
+        const sessao = await this.entrarComUsuario(usuario, contexto, confirmarReativacao, { dispositivoVerificado: true });
+
+        // Conta pausada ou outra etapa extra: sem sessão ainda, não há o que lembrar nem avisar.
+        if (!sessao.token) {
+            return sessao;
+        }
+
+        const resposta = { ...sessao };
+
+        if (lembrar) {
+            resposta.dispositivo = await DispositivoConfiavelService.confiar(usuario.id, contexto);
+        }
+
+        void DispositivoConfiavelService.notificarNovoAcesso(usuario, contexto);
+
+        return resposta;
     }
 
     /**
@@ -1033,6 +1082,12 @@ class AutenticacaoService {
         // Junto das sessões vão os tokens de push: um aparelho que acabou de perder o acesso não
         // pode continuar recebendo as notificações da conta.
         await NotificacaoPushService.removerTodosDoUsuario(usuarioId);
+
+        // A senha mudou: a confiança nos dispositivos também acaba (quem tinha a senha antiga e um aparelho confiável não pode manter o acesso).
+        if (DispositivoConfiavelService.habilitado()) {
+            await DispositivoConfiavelService.revogarTodos(usuarioId);
+        }
+        await SegurancaEventosService.registrar(usuarioId, "senha_alterada", {});
 
         await this.avisarSenhaAlterada(usuario);
 

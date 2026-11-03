@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 import env from "../config/env.js";
 import ErroApi from "../utils/ErroApi.js";
 
@@ -20,7 +22,12 @@ function mascarar(email) {
  * sempre um `ErroApi` com mensagem genérica, sem detalhe interno.
  */
 class EmailService {
+    /** Com o driver de console (só fora de produção) o envio está sempre "disponível": ele grava em arquivo. */
     disponivel() {
+        if (env.email.driver === "console") {
+            return !env.isProducao;
+        }
+
         return Boolean(env.brevo.apiKey && env.brevo.remetenteEmail);
     }
 
@@ -42,6 +49,18 @@ class EmailService {
      *   não isolam nada de verdade, só dão mais credencial pra vazar.
      */
     async enviar({ para, nomeDestinatario, assunto, html, texto, tag, responderPara }) {
+        // Desenvolvimento e teste: nada sai do computador. O e-mail inteiro (inclusive o código) vai para o arquivo, que é o
+        // que permite testar os fluxos de ponta a ponta sem um provedor real; o console só mostra o assunto.
+        if (env.email.driver === "console" && !env.isProducao) {
+            console.log(`[EMAIL:console] ${mascarar(para)} — ${assunto}`);
+
+            if (env.email.consoleArquivo) {
+                fs.appendFileSync(env.email.consoleArquivo, `${JSON.stringify({ para, assunto, texto, tag, em: new Date().toISOString() })}\n`);
+            }
+
+            return { enviado: true, driver: "console" };
+        }
+
         if (!this.disponivel()) {
             throw ErroApi.servicoIndisponivel(
                 "Envio de e-mail não está configurado neste momento."

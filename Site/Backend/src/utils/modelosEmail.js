@@ -303,3 +303,80 @@ export function modeloSenhaAlterada({ nome }) {
 
     return { assunto, html, texto };
 }
+
+/** Código de 6 dígitos para entrar de um dispositivo novo. */
+export function modeloVerificacaoDeDispositivo({ nome, codigo, minutosValidade, dispositivo, ip }) {
+    const assunto = "Código para entrar no ACESSO";
+    const corpoHtml = `
+      <p style="margin:0 0 16px 0;">Alguém acabou de entrar na sua conta ACESSO com a senha correta, de um dispositivo que ainda não reconhecemos:</p>
+      <p style="margin:0 0 16px 0;color:${COR_TEXTO_SECUNDARIO};">${escaparHtml(dispositivo || "Dispositivo desconhecido")}${ip ? ` · IP ${escaparHtml(ip)}` : ""}</p>
+      <p style="margin:0 0 8px 0;">Se foi você, digite este código na tela de entrada:</p>
+      <p style="margin:0 0 16px 0;font-size:28px;font-weight:bold;letter-spacing:6px;color:${COR_TEXTO};text-align:center;">${escaparHtml(codigo)}</p>
+      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Válido por ${minutosValidade} minutos. <strong>Se não foi você, não informe o código a ninguém</strong> e troque a sua senha: sem o código, ninguém entra.</p>
+    `;
+    const html = layoutBase({ titulo: "Código para entrar", saudacao: nome ? `Olá, ${nome}!` : "Olá!", corpoHtml });
+    const texto =
+        `Código para entrar no ACESSO\n\n` +
+        `Entraram na sua conta com a senha correta, de um dispositivo novo: ${dispositivo || "desconhecido"}${ip ? ` (IP ${ip})` : ""}.\n` +
+        `Se foi você, use o código: ${codigo}\n\n` +
+        `Válido por ${minutosValidade} minutos. Se não foi você, não informe o código a ninguém e troque a sua senha.`;
+
+    return { assunto, html, texto };
+}
+
+/** Aviso de acesso de dispositivo novo, com o link "Não fui eu". */
+export function modeloNovoAcesso({ nome, dispositivo, ip, linkNaoFuiEu }) {
+    const assunto = "Novo acesso à sua conta — ACESSO";
+    const corpoHtml = `
+      <p style="margin:0 0 16px 0;">Sua conta ACESSO foi acessada de um dispositivo novo, que confirmou o código enviado por e-mail:</p>
+      <p style="margin:0 0 16px 0;color:${COR_TEXTO_SECUNDARIO};">${escaparHtml(dispositivo || "Dispositivo desconhecido")}${ip ? ` · IP ${escaparHtml(ip)}` : ""}</p>
+      <p style="margin:0 0 8px 0;">Se foi você, não precisa fazer nada.</p>
+      <p style="margin:0;">Se <strong>não foi você</strong>, proteja a conta agora: encerramos todas as sessões e você cria uma nova senha.</p>
+      ${linkNaoFuiEu ? botao(linkNaoFuiEu, "Não fui eu, proteger minha conta") : ""}
+      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Este link vale por 7 dias e só pode ser usado uma vez.</p>
+    `;
+    const html = layoutBase({ titulo: "Novo acesso à sua conta", saudacao: nome ? `Olá, ${nome}!` : "Olá!", corpoHtml });
+    const texto =
+        `Novo acesso à sua conta — ACESSO\n\n` +
+        `Sua conta foi acessada de um dispositivo novo: ${dispositivo || "desconhecido"}${ip ? ` (IP ${ip})` : ""}.\n` +
+        `Se foi você, não precisa fazer nada.\n` +
+        (linkNaoFuiEu ? `Se não foi você, proteja a conta: ${linkNaoFuiEu}\n` : "") +
+        `O link vale por 7 dias.`;
+
+    return { assunto, html, texto };
+}
+
+/** Link do pedido público "acho que invadiram minha conta". */
+export function modeloLinkContaComprometida({ nome, link, minutosValidade }) {
+    const assunto = "Proteger sua conta — ACESSO";
+    const corpoHtml = `
+      <p style="margin:0 0 16px 0;">Recebemos um pedido para proteger a sua conta ACESSO, por suspeita de acesso indevido.</p>
+      <p style="margin:0;">Ao confirmar, <strong>encerramos todas as sessões</strong> da conta e removemos a confiança nos dispositivos. Depois você cria uma nova senha.</p>
+      ${link ? botao(link, "Proteger minha conta") : ""}
+      <p style="margin:16px 0 0 0;color:${COR_TEXTO_SECUNDARIO};">Válido por ${minutosValidade} minutos. Se você não fez este pedido, ignore este e-mail: nada muda.</p>
+    `;
+    const html = layoutBase({ titulo: "Proteger sua conta", saudacao: nome ? `Olá, ${nome}!` : "Olá!", corpoHtml });
+    const texto =
+        `Proteger sua conta — ACESSO\n\n` +
+        `Recebemos um pedido para proteger sua conta, por suspeita de acesso indevido.\n` +
+        (link ? `Confirme: ${link}\n` : "") +
+        `Ao confirmar, encerramos todas as sessões e você cria uma nova senha. Válido por ${minutosValidade} minutos. Se não foi você, ignore.`;
+
+    return { assunto, html, texto };
+}
+
+/** Aviso de que a conta foi protegida. */
+export function modeloContaProtegida({ nome }) {
+    const assunto = "Sua conta foi protegida — ACESSO";
+    const corpoHtml = `
+      <p style="margin:0 0 16px 0;">A proteção da sua conta ACESSO foi acionada: as sessões abertas foram encerradas e a confiança nos dispositivos foi removida.</p>
+      <p style="margin:0;color:${COR_TEXTO_SECUNDARIO};">Crie uma nova senha agora. Se você não fez isso, troque a senha imediatamente e fale com o suporte pelo Fale conosco.</p>
+    `;
+    const html = layoutBase({ titulo: "Sua conta foi protegida", saudacao: nome ? `Olá, ${nome}!` : "Olá!", corpoHtml });
+    const texto =
+        `Sua conta foi protegida — ACESSO\n\n` +
+        `As sessões abertas foram encerradas e a confiança nos dispositivos foi removida. Crie uma nova senha agora.\n` +
+        `Se você não fez isso, troque a senha imediatamente e fale com o suporte.`;
+
+    return { assunto, html, texto };
+}

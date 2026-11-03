@@ -16,6 +16,9 @@ Ela é **somente leitura** (só consulta `migracoes_aplicadas`), usa o banco e a
 | **0007** conta sem senha | **não** | `GOOGLE_CONTA_SEM_SENHA` |
 | **0008** TOTP | **não** | `MFA_TOTP_HABILITADO` |
 | **0009** sessões e dispositivos | **não** | `SESSOES_DISPOSITIVOS_HABILITADO` |
+| **0010** dispositivos de confiança e eventos de segurança | **não** | `DISPOSITIVOS_CONFIAVEIS_HABILITADO` (exige também o e-mail/Brevo configurado) |
+
+A 0010 só **cria** quatro tabelas novas (veja `dispositivos-e-conta-comprometida.md`).
 
 Correção: antes eu citava só a 0008 e a 0009 como pendentes. **A 0007 também está pendente.** Ela só relaxa `senha_hash` para aceitar nulo e cria uma regra que as contas existentes já cumprem (todas têm senha).
 
@@ -37,6 +40,7 @@ Depende do **Build Command do serviço no Render**, que o projeto não consegue 
 5. Ligar as chaves **uma por vez**, conferindo o log de inicialização (o servidor avisa se algo faltar):
    - `SESSOES_DISPOSITIVOS_HABILITADO=true`
    - `MFA_TOTP_HABILITADO=true` (opcional para administrador; veja `verificacao-em-duas-etapas.md`)
+   - `DISPOSITIVOS_CONFIAVEIS_HABILITADO=true` (só com a 0010 aplicada **e** o e-mail configurado; veja `dispositivos-e-conta-comprometida.md`). **Nunca** use `EMAIL_DRIVER=console` no Render: o servidor se recusa a subir.
 6. Testar no Site: entrar, abrir Configurações → Sessões, e, para o TOTP, ativar com o administrador.
 
 Se algo der errado, **desligar a chave** devolve o comportamento anterior sem reverter nada no banco.

@@ -14,6 +14,7 @@ import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
 import { urlArquivo } from "@/utils/arquivos";
 import { CampoDescricaoImagem } from "./CampoDescricaoImagem";
+import { imagensSemDescricao } from "./imagensSemDescricao";
 import { useCriarPostagem } from "./hooks";
 import {
   LIMITE_ANEXOS,
@@ -35,6 +36,10 @@ export function FormularioPostagem() {
   // Uma descrição por anexo, no mesmo índice: nunca gerada automaticamente,
   // sempre em branco até o usuário escrever (ver PostagemAnexo.descricao).
   const [descricoes, setDescricoes] = useState<string[]>([]);
+  // Imagem que a pessoa marcou como só decorativa: não pede descrição e não gera aviso.
+  const [decorativas, setDecorativas] = useState<boolean[]>([]);
+  // Imagens informativas sem descrição que a pessoa precisa decidir antes de publicar.
+  const [avisoSemDescricao, setAvisoSemDescricao] = useState<number[] | null>(null);
   // Dois inputs de arquivo: "Foto" abre o seletor filtrado para imagem, e "Vídeo", para vídeo.
   const inputImagemRef = useRef<HTMLInputElement>(null);
   const inputVideoRef = useRef<HTMLInputElement>(null);
@@ -64,23 +69,34 @@ export function FormularioPostagem() {
       return combinados;
     });
     setDescricoes((atuais) => [...atuais, ...validos.map(() => "")].slice(0, LIMITE_ANEXOS));
+    setDecorativas((atuais) => [...atuais, ...validos.map(() => false)].slice(0, LIMITE_ANEXOS));
+    setAvisoSemDescricao(null);
   }
 
   function removerAnexo(indice: number) {
     setAnexos((atuais) => atuais.filter((_, i) => i !== indice));
     setDescricoes((atuais) => atuais.filter((_, i) => i !== indice));
+    setDecorativas((atuais) => atuais.filter((_, i) => i !== indice));
+    setAvisoSemDescricao(null);
   }
 
   function alterarDescricao(indice: number, valor: string) {
     setDescricoes((atuais) => atuais.map((d, i) => (i === indice ? valor.slice(0, MAX_DESCRICAO) : d)));
   }
 
-  function aoEnviar(evento: React.FormEvent) {
+  function aoEnviar(evento: React.FormEvent, ignorarAviso = false) {
     evento.preventDefault();
     if (!conteudo.trim() && anexos.length === 0) {
       toast.error(t("formPost.erroVazio"));
       return;
     }
+    // Imagem informativa sem descrição: avisa antes de publicar. Não bloqueia; a pessoa decide.
+    const semDescricao = imagensSemDescricao(anexos, descricoes, decorativas);
+    if (semDescricao.length > 0 && !ignorarAviso) {
+      setAvisoSemDescricao(semDescricao);
+      return;
+    }
+
     criar.mutate(
       { conteudo: conteudo.trim(), anexos, descricoesAnexos: descricoes },
       {
@@ -88,6 +104,8 @@ export function FormularioPostagem() {
           setConteudo("");
           setAnexos([]);
           setDescricoes([]);
+          setDecorativas([]);
+          setAvisoSemDescricao(null);
         },
       },
     );
@@ -160,12 +178,29 @@ export function FormularioPostagem() {
 
                   <div className="mt-2">
                     {ehImagem(arquivo) ? (
-                      <CampoDescricaoImagem
-                        id={`descricao-anexo-${indice}`}
-                        value={descricoes[indice] ?? ""}
-                        onChange={(valor) => alterarDescricao(indice, valor)}
-                        obterImagem={() => Promise.resolve(arquivo)}
-                      />
+                      <>
+                        <label className="mb-2 flex min-h-8 items-center gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={decorativas[indice] ?? false}
+                            onChange={(e) => {
+                              setDecorativas((atuais) => atuais.map((d, i) => (i === indice ? e.target.checked : d)));
+                              setAvisoSemDescricao(null);
+                            }}
+                          />
+                          Esta imagem é decorativa (não traz informação nova)
+                        </label>
+                        {decorativas[indice] ? (
+                          <p className="text-[11px] text-muted-foreground">Ela será ignorada por leitores de tela. Desmarque se ela mostra algo que a publicação precisa.</p>
+                        ) : (
+                          <CampoDescricaoImagem
+                            id={`descricao-anexo-${indice}`}
+                            value={descricoes[indice] ?? ""}
+                            onChange={(valor) => alterarDescricao(indice, valor)}
+                            obterImagem={() => Promise.resolve(arquivo)}
+                          />
+                        )}
+                      </>
                     ) : (
                       <>
                         <Label htmlFor={`descricao-anexo-${indice}`} className="text-xs font-semibold">
@@ -189,6 +224,30 @@ export function FormularioPostagem() {
               ))}
             </ul>
           )}
+
+          {avisoSemDescricao ? (
+            <div role="alert" className="mt-3 space-y-2 rounded-lg border-2 border-primary/50 bg-primary-soft/40 p-3 text-sm">
+              <p className="font-semibold">
+                {avisoSemDescricao.length === 1 ? "Uma imagem está sem descrição." : `${avisoSemDescricao.length} imagens estão sem descrição.`}
+              </p>
+              <p>Quem usa leitor de tela não vai saber o que ela mostra. Descreva, ou marque como decorativa se ela só enfeita.</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    document.getElementById(`descricao-anexo-${avisoSemDescricao[0]}`)?.focus();
+                    setAvisoSemDescricao(null);
+                  }}
+                >
+                  Voltar e descrever
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={(e) => aoEnviar(e as unknown as React.FormEvent, true)}>
+                  Publicar sem descrição
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input

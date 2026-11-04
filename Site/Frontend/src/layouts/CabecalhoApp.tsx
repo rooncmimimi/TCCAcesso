@@ -8,6 +8,7 @@ import {
   Briefcase,
   ChevronDown,
   Compass,
+  GraduationCap,
   Home,
   LayoutDashboard,
   LogOut,
@@ -223,6 +224,20 @@ export function CabecalhoApp() {
                 <Activity aria-hidden="true" /> {t("cabecalho.minhaAtividade")}
               </Link>
             </DropdownMenuItem>
+            {usuario?.tipo === "candidato" && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link to="/minha-acessibilidade">
+                    <Accessibility aria-hidden="true" /> Minha Acessibilidade
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/simulador">
+                    <GraduationCap aria-hidden="true" /> Simulador de candidatura
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuItem asChild>
               <Link to="/descobrir">
                 <Compass aria-hidden="true" /> {t("cabecalho.descobrir")}

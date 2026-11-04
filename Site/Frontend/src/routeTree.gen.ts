@@ -20,6 +20,7 @@ import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as FaleConoscoRouteImport } from './routes/fale-conosco'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as MensagensRouteImport } from './routes/mensagens'
+import { Route as MinhaAcessibilidadeRouteImport } from './routes/minha-acessibilidade'
 import { Route as MinhaAtividadeRouteImport } from './routes/minha-atividade'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as PerfilRouteImport } from './routes/perfil'
@@ -27,6 +28,7 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as RetornoGoogleRouteImport } from './routes/retorno-google'
+import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as SobreNosRouteImport } from './routes/sobre-nos'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VagasRouteImport } from './routes/vagas'
@@ -119,6 +121,11 @@ const MensagensRoute = MensagensRouteImport.update({
   path: '/mensagens',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MinhaAcessibilidadeRoute = MinhaAcessibilidadeRouteImport.update({
+  id: '/minha-acessibilidade',
+  path: '/minha-acessibilidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MinhaAtividadeRoute = MinhaAtividadeRouteImport.update({
   id: '/minha-atividade',
   path: '/minha-atividade',
@@ -152,6 +159,11 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
 const RetornoGoogleRoute = RetornoGoogleRouteImport.update({
   id: '/retorno-google',
   path: '/retorno-google',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimuladorRoute = SimuladorRouteImport.update({
+  id: '/simulador',
+  path: '/simulador',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SobreNosRoute = SobreNosRouteImport.update({
@@ -352,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
+  '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRouteWithChildren
@@ -359,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
+  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -406,12 +420,14 @@ export interface FileRoutesByTo {
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
+  '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
+  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -460,6 +476,7 @@ export interface FileRoutesById {
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
+  '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRouteWithChildren
@@ -467,6 +484,7 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
+  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -518,6 +536,7 @@ export interface FileRouteTypes {
     | '/fale-conosco'
     | '/feed'
     | '/mensagens'
+    | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
     | '/perfil'
@@ -525,6 +544,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
+    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -572,12 +592,14 @@ export interface FileRouteTypes {
     | '/fale-conosco'
     | '/feed'
     | '/mensagens'
+    | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
     | '/privacidade'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
+    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -625,6 +647,7 @@ export interface FileRouteTypes {
     | '/fale-conosco'
     | '/feed'
     | '/mensagens'
+    | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
     | '/perfil'
@@ -632,6 +655,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
+    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -682,6 +706,7 @@ export interface RootRouteChildren {
   FaleConoscoRoute: typeof FaleConoscoRoute
   FeedRoute: typeof FeedRoute
   MensagensRoute: typeof MensagensRoute
+  MinhaAcessibilidadeRoute: typeof MinhaAcessibilidadeRoute
   MinhaAtividadeRoute: typeof MinhaAtividadeRoute
   NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRouteWithChildren
@@ -689,6 +714,7 @@ export interface RootRouteChildren {
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   RetornoGoogleRoute: typeof RetornoGoogleRoute
+  SimuladorRoute: typeof SimuladorRoute
   SobreNosRoute: typeof SobreNosRoute
   TermosRoute: typeof TermosRoute
   VagasRoute: typeof VagasRoute
@@ -789,6 +815,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MensagensRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/minha-acessibilidade': {
+      id: '/minha-acessibilidade'
+      path: '/minha-acessibilidade'
+      fullPath: '/minha-acessibilidade'
+      preLoaderRoute: typeof MinhaAcessibilidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/minha-atividade': {
       id: '/minha-atividade'
       path: '/minha-atividade'
@@ -836,6 +869,13 @@ declare module '@tanstack/react-router' {
       path: '/retorno-google'
       fullPath: '/retorno-google'
       preLoaderRoute: typeof RetornoGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulador': {
+      id: '/simulador'
+      path: '/simulador'
+      fullPath: '/simulador'
+      preLoaderRoute: typeof SimuladorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sobre-nos': {
@@ -1186,6 +1226,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaleConoscoRoute: FaleConoscoRoute,
   FeedRoute: FeedRoute,
   MensagensRoute: MensagensRoute,
+  MinhaAcessibilidadeRoute: MinhaAcessibilidadeRoute,
   MinhaAtividadeRoute: MinhaAtividadeRoute,
   NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRouteWithChildren,
@@ -1193,6 +1234,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   RetornoGoogleRoute: RetornoGoogleRoute,
+  SimuladorRoute: SimuladorRoute,
   SobreNosRoute: SobreNosRoute,
   TermosRoute: TermosRoute,
   VagasRoute: VagasRoute,

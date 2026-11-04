@@ -32,6 +32,8 @@ import { cn } from "@/lib/utils";
 import { ResumoVagaSimples } from "@/components/vagas/ResumoVagaSimples";
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { TermosDoTexto } from "@/components/acessibilidade/TermosDoTexto";
+import { CandidaturaDialog } from "@/components/candidatura/CandidaturaDialog";
+import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
 
 export const Route = createFileRoute("/vaga/$vagaId")({
   head: () => ({
@@ -77,17 +79,13 @@ function DetalheVaga() {
   const jaCandidatado = (minhas?.dados ?? []).some((c) => c.vaga?.id === vagaId);
   const favoritada = (favoritos?.dados ?? []).some((v) => v.id === vagaId);
 
-  const candidatar = useMutation({
-    mutationFn: () => vagasService.candidatar(vagaId),
-    onSuccess: () => {
-      toast.success(t("vagaDetalhe.candidaturaSucesso"));
-      // O widget "Minhas candidaturas recentes" do painel (CandidaturasRecentes.tsx)
-      // usa o mesmo prefixo ["candidaturas","minhas"]: invalidar aqui já
-      // cobre as duas telas, mais o card de métricas do painel.
-      void queryClient.invalidateQueries({ queryKey: ["candidaturas", "minhas"] });
-      void queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
-    },
-    onError: (erro) => toast.error(extrairMensagemErro(erro)),
+  // A candidatura passa por um diálogo (mensagem, adaptações e prévia de privacidade); o rascunho fica no servidor.
+  const [candidaturaAberta, setCandidaturaAberta] = useState(false);
+
+  const { data: rascunho } = useQuery({
+    queryKey: ["candidaturas", "rascunho", vagaId],
+    queryFn: () => candidaturaAdaptacoesService.obterRascunho(vagaId),
+    enabled: ehCandidato && !jaCandidatado,
   });
 
   const favoritar = useMutation({
@@ -243,13 +241,14 @@ function DetalheVaga() {
           </p>
         ) : (
           <>
+            {ehCandidato ? <CandidaturaDialog vaga={{ id: vaga.id, titulo: vaga.titulo }} aberto={candidaturaAberta} aoFechar={() => setCandidaturaAberta(false)} /> : null}
             <div className="mt-6 flex flex-wrap gap-3">
               <Button
                 className="min-h-12"
-                disabled={!ehCandidato || jaCandidatado || candidatar.isPending || vaga.status !== "aberta"}
-                onClick={() => candidatar.mutate()}
+                disabled={!ehCandidato || jaCandidatado || vaga.status !== "aberta"}
+                onClick={() => setCandidaturaAberta(true)}
               >
-                {jaCandidatado ? t("vagaDetalhe.candidaturaEnviada") : candidatar.isPending ? t("vagaDetalhe.enviando") : t("vagaDetalhe.candidatar")}
+                {jaCandidatado ? t("vagaDetalhe.candidaturaEnviada") : rascunho ? "Continuar candidatura (rascunho salvo)" : t("vagaDetalhe.candidatar")}
               </Button>
               {ehCandidato && (
                 <Button

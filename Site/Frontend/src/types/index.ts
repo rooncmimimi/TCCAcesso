@@ -1,3 +1,5 @@
+import type { AdaptacoesDaEmpresa, AdaptacoesDoCandidato } from "./adaptacoes";
+
 /** Perfis de usuário suportados pela plataforma. */
 export type TipoUsuario = "candidato" | "empresa" | "administrador";
 
@@ -337,6 +339,11 @@ export interface Candidatura {
   criadoEm: string;
   vaga?: Vaga;
   candidato?: Candidato;
+  /**
+   * O que foi autorizado compartilhar nesta candidatura. Para a pessoa candidata, é a visão dela
+   * (com estado e retirada); para a empresa dona da vaga, só a cópia autorizada. Nulo sem pedido.
+   */
+  adaptacoes?: AdaptacoesDoCandidato | AdaptacoesDaEmpresa | null;
 }
 
 export interface Postagem {

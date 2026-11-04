@@ -55,6 +55,19 @@ export const EXPLICACOES: readonly ExplicacaoDePagina[] = [
     proximosPassos: "Para participar, use Candidatar-se. Você também pode favoritar a vaga ou conversar com a empresa.",
   },
   {
+    padrao: "/minha-acessibilidade",
+    nome: "Minha Acessibilidade",
+    texto:
+      "Aqui você registra, só para você, o que ajuda a participar de processos seletivos: adaptações, como prefere ser contatado e se quer mostrar a categoria de deficiência no seu perfil. Nada é enviado a empresas sozinho.",
+    proximosPassos: "Marque o que se aplica e salve cada parte. Em cada candidatura você decide o que compartilhar, depois de ver uma prévia.",
+  },
+  {
+    padrao: "/simulador",
+    nome: "Simulador de candidatura e entrevista",
+    texto: "Uma área de treino com uma vaga inventada. Você pratica uma candidatura e uma entrevista no seu ritmo. Nada é enviado e nenhuma candidatura de verdade é criada.",
+    proximosPassos: "Escolha candidatura ou entrevista. Você pode pausar e continuar depois.",
+  },
+  {
     padrao: "/feed",
     nome: "Publicações",
     texto: "Aqui ficam as publicações de pessoas e empresas que você segue, como numa rede social profissional.",

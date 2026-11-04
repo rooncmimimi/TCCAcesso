@@ -9,6 +9,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { postagensService } from "@/services/postagens.service";
 import { useVoz } from "@/hooks/useVoz";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { OrientacaoDeDescricao } from "./OrientacaoDeDescricao";
 
 type Modo = "escolha" | "ia" | "manual";
 
@@ -90,6 +91,11 @@ export function CampoDescricaoImagem({
             <Pencil className="size-3.5" aria-hidden="true" /> Escrever minha própria descrição
           </Button>
         </div>
+        <p className="text-[11px] text-muted-foreground">
+          “Descrever com IA” envia a imagem a um serviço externo gratuito (OpenRouter) para criar um rascunho de descrição. O rascunho pode errar: você sempre revisa antes de publicar. Se
+          preferir que a imagem não saia do ACESSO, escreva a sua.
+        </p>
+        <OrientacaoDeDescricao />
       </div>
     );
   }
@@ -166,6 +172,7 @@ export function CampoDescricaoImagem({
                 <X className="size-3.5" aria-hidden="true" /> Escrever minha própria
               </Button>
             </div>
+            <OrientacaoDeDescricao />
           </div>
         )}
       </div>
@@ -195,6 +202,7 @@ export function CampoDescricaoImagem({
       >
         <Sparkles className="size-3.5" aria-hidden="true" /> Descrever com IA em vez disso
       </Button>
+      <OrientacaoDeDescricao />
     </div>
   );
 }

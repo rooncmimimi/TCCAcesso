@@ -1,4 +1,5 @@
 import {
+  ArrowDownUp,
   Contrast,
   Eye,
   Languages,
@@ -30,12 +31,14 @@ function ToggleRow({
   titulo,
   descricao,
   chave,
+  desabilitado = false,
 }: {
   id: string;
   icon: LucideIcon;
   titulo: string;
   descricao: string;
   chave: ToggleKey;
+  desabilitado?: boolean;
 }) {
   const { preferencias, definir } = useAcessibilidade();
   return (
@@ -55,6 +58,7 @@ function ToggleRow({
       <Switch
         id={id}
         checked={preferencias[chave]}
+        disabled={desabilitado}
         onCheckedChange={(v) => definir(chave, v)}
         aria-describedby={`${id}-desc`}
       />
@@ -272,6 +276,18 @@ export function PainelAcessibilidade() {
           titulo="Leitura por voz"
           descricao="Lê em voz alta os elementos ao navegar pelo site."
           chave="screenReader"
+        />
+        <ToggleRow
+          id="a11y-arrow-reading"
+          icon={ArrowDownUp}
+          titulo="Navegar pelo conteúdo com as setas"
+          descricao={
+            preferencias.screenReader
+              ? "As setas ↑ e ↓ percorrem títulos, textos e botões, e a voz lê cada um. Esc para de ler. Listas de opções, menus e controles deslizantes continuam usando as setas normalmente. Se você já usa NVDA, JAWS ou VoiceOver, deixe desligado."
+              : "Ative a leitura por voz para usar as setas na leitura do conteúdo."
+          }
+          chave="arrowReading"
+          desabilitado={!preferencias.screenReader}
         />
         <SliderRow
           id="a11y-rate"

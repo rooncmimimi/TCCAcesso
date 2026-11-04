@@ -9,6 +9,7 @@ import {
 
 import { AcessibilidadeProvider } from "@/contexts/AcessibilidadeProvider";
 import { VozProvider } from "@/contexts/VozProvider";
+import { useCursorDeLeitura } from "@/hooks/useCursorDeLeitura";
 import { useLeituraAutomatica } from "@/hooks/useLeituraAutomatica";
 import { useIdioma } from "@/hooks/useIdioma";
 import { SessaoProvider } from "@/contexts/SessaoProvider";
@@ -101,6 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function AppFrame() {
   useLeituraAutomatica();
+  useCursorDeLeitura();
 
   return (
     <>

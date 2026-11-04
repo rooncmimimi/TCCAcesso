@@ -34,7 +34,11 @@ export function resolverAlvoFalavel(target: EventTarget | null): HTMLElement | n
 }
 
 function textoVisivel(el: Element | null): string | null {
-  const texto = (el as HTMLElement | null)?.innerText?.trim();
+  if (!el) return null;
+  // Navegador de verdade sempre tem `innerText`; o `textContent` é a reserva de ambientes sem
+  // layout (jsdom), onde `innerText` não existe.
+  const bruto = (el as HTMLElement).innerText ?? el.textContent;
+  const texto = bruto?.trim();
   return texto || null;
 }
 

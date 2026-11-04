@@ -27,6 +27,12 @@ export type PreferenciasAcessibilidade = {
   voiceConsent: boolean | null;
   speechRate: number;
   vlibras: boolean;
+  /**
+   * Cursor de leitura: com a leitura por voz ligada, ↑ e ↓ percorrem o conteúdo da página, bloco a
+   * bloco (`hooks/useCursorDeLeitura.ts`). Fica só no navegador, como as demais preferências sem
+   * campo no backend; desligado por padrão porque as setas também rolam a página.
+   */
+  arrowReading: boolean;
 };
 
 export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
@@ -44,6 +50,7 @@ export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
   voiceConsent: null,
   speechRate: 1,
   vlibras: true,
+  arrowReading: false,
 };
 
 export const CHAVE_ESCOLHA_VOZ = "acesso:voice-choice";

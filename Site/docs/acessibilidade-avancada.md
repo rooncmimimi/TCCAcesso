@@ -102,6 +102,15 @@ informou" nas etapas. Para ter esses dados de verdade é preciso incluir campos 
 - A voz fala no idioma do site (`<html lang>`: pt-BR, en-US, es-ES). Se o aparelho não tiver voz nesse idioma, o navegador escolhe a que tiver.
 - **Não testado** com NVDA, JAWS, VoiceOver, TalkBack nem com dispositivo de acionamento.
 
+### Pendências deixadas de propósito para o fim de todos os blocos
+
+| Pendência | Por quê | O que fazer no fim |
+|---|---|---|
+| **Destaque por palavra em voz de rede e em celular** | Funciona com as vozes locais do computador (Microsoft Maria e Daniel, revisto em 04/11/2026 depois da mudança na pausa). Vozes de rede (as "Google" do Chrome) e várias do Android não emitem o evento `boundary`; nelas o site cai para destaque por frase. Esse caminho só foi testado com voz simulada e o celular nunca foi testado. | Testar no Chrome com uma voz Google e em um Android real. Decidir se vale embutir um motor de voz próprio (software livre), que daria palavra por palavra em qualquer aparelho ao custo de peso e de uma voz mais robótica. |
+| Pausa por reinício em aparelho real | Coberta por testes com voz simulada. A prova ao vivo no navegador do app saiu contaminada pela leitura por setas, que falava cada botão clicado. | Testar pausar e continuar em um Android e no Chrome com voz de rede. |
+| Leitores de tela (NVDA, JAWS, VoiceOver, TalkBack) e dispositivo de acionamento | Não há nenhum disponível no ambiente de desenvolvimento. | Teste manual com pessoas e aparelhos reais. |
+| Verificação automática com `axe` | Exige uma dependência de desenvolvimento nova, que depende de aprovação. | Aprovar e rodar nas telas principais. |
+
 ### Testes
 
 O resultado completo e o estado do Git estão no relatório entregue junto deste bloco.

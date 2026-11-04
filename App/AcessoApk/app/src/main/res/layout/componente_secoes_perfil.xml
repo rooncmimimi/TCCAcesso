@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Seções profissionais do perfil, na ordem de uma rede profissional. Pessoa: Sobre, Competências,
+     Experiência, Formação. Empresa: Sobre, Cultura inclusiva, Informações, Vagas abertas.
+     Preenchidas por utilitarios/ExibidorSecoes; seção sem dados não aparece. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include android:id="@+id/secaoSobre" layout="@layout/componente_secao" />
+
+    <include android:id="@+id/secaoCultura" layout="@layout/componente_secao" />
+
+    <include android:id="@+id/secaoCompetencias" layout="@layout/componente_secao" />
+
+    <include android:id="@+id/secaoExperiencia" layout="@layout/componente_secao" />
+
+    <include android:id="@+id/secaoFormacao" layout="@layout/componente_secao" />
+
+    <include android:id="@+id/secaoInformacoes" layout="@layout/componente_secao" />
+
+    <include android:id="@+id/secaoVagas" layout="@layout/componente_secao" />
+
+    <TextView
+        android:id="@+id/textoSemInformacoes"
+        style="@style/Estilo.Acesso.Aviso"
+        android:layout_marginTop="@dimen/espaco_cartoes"
+        android:visibility="gone" />
+</LinearLayout>

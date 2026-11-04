@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Selo de não lidas (mensagens): pílula vermelha da paleta, com o número em branco (contraste 5,6:1) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/acesso_erro" />
+    <corners android:radius="10dp" />
+    <stroke android:width="1.5dp" android:color="@color/acesso_fundo" />
+</shape>

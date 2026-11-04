@@ -1,6 +1,5 @@
 package com.acesso.app.telas;
 
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -10,7 +9,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.acesso.app.R;
 import com.acesso.app.databinding.TelaNovaSenhaBinding;
+import com.acesso.app.utilitarios.MargensSistema;
 import com.acesso.app.utilitarios.MensagemStatus;
+import com.acesso.app.utilitarios.Navegacao;
 import com.acesso.app.viewmodels.ViewModelNovaSenha;
 
 /**
@@ -29,6 +30,7 @@ public class TelaNovaSenha extends AppCompatActivity {
         super.onCreate(estadoSalvo);
         componentes = TelaNovaSenhaBinding.inflate(getLayoutInflater());
         setContentView(componentes.getRoot());
+        MargensSistema.aplicar(this, componentes.getRoot());
 
         viewModel = new ViewModelProvider(this).get(ViewModelNovaSenha.class);
         tokenRecuperacao = lerTokenRecuperacao(getIntent().getData());
@@ -77,10 +79,8 @@ public class TelaNovaSenha extends AppCompatActivity {
         return parametros.getQueryParameter("access_token");
     }
 
+    /** Volta ao login com a apresentação embaixo, sem a pilha antiga (o link pode ter aberto o app do zero). */
     private void irParaLogin() {
-        Intent intencao = new Intent(this, TelaLogin.class);
-        intencao.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intencao);
-        finish();
+        Navegacao.abrirLoginDoZero(this);
     }
 }

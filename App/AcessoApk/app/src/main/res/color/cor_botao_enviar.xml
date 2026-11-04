@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botão de enviar mensagem: verde quando há texto, cinza quando o campo está vazio ou enviando -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/acesso_contorno" android:state_enabled="false" />
+    <item android:color="@color/acesso_primaria" />
+</selector>

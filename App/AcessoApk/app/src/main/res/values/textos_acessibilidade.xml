@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Guia de acessibilidade do celular (TelaAcessibilidade). Explica os recursos que o próprio Android
+     oferece e leva às configurações; o app não refaz o que o sistema já faz. Os caminhos são os do
+     Android puro e mudam um pouco conforme a marca, por isso a nota no fim da tela. -->
+<resources>
+    <string name="guia_titulo">Acessibilidade no seu celular</string>
+    <string name="guia_introducao">O seu celular já tem recursos de acessibilidade, e o ACESSO funciona com eles. Veja o que cada um faz e como ativar. Você pode ligar e desligar quando quiser.</string>
+    <string name="guia_abrir_configuracoes">Abrir as configurações de acessibilidade</string>
+    <string name="guia_nota_caminhos">Os nomes e caminhos mudam um pouco conforme a marca e a versão do Android (Samsung, Motorola, Xiaomi e outras). Se não encontrar, use a busca das Configurações e digite o nome do recurso.</string>
+    <!-- %1$s: o que o recurso faz; %2$s: onde ativar -->
+    <string name="guia_recurso_texto">%1$s\n\nComo ativar: %2$s</string>
+
+    <!-- As três listas andam juntas: o item N de cada uma é o mesmo recurso. -->
+    <string-array name="guia_recursos_nomes">
+        <item>TalkBack (leitor de tela)</item>
+        <item>Tamanho do texto e da tela</item>
+        <item>Ampliação</item>
+        <item>Contraste e cores</item>
+        <item>Selecionar para ouvir</item>
+        <item>Acesso por voz</item>
+        <item>Acesso com interruptor</item>
+        <item>Legenda instantânea</item>
+        <item>Transcrição e notificação de som</item>
+        <item>Menos animações e mais tempo para ler</item>
+    </string-array>
+
+    <string-array name="guia_recursos_descricoes">
+        <item>Lê em voz alta o que aparece na tela. Toque uma vez em algo para ouvir e toque duas vezes para ativar. Para rolar, deslize com dois dedos.</item>
+        <item>Aumenta as letras e os elementos da tela. O ACESSO acompanha essa configuração em todas as telas.</item>
+        <item>Aproxima uma parte da tela, como uma lupa, usando um atalho (por exemplo, tocar três vezes na tela).</item>
+        <item>Deixa o texto mais nítido, ajusta as cores para quem tem daltonismo ou inverte as cores da tela.</item>
+        <item>Toque em um texto e o celular lê em voz alta, sem precisar ligar o TalkBack.</item>
+        <item>Controle o celular falando, por exemplo: \"tocar Entrar\" ou \"rolar para baixo\".</item>
+        <item>Use o celular com um interruptor, um teclado ou movimentos do rosto pela câmera, sem tocar na tela.</item>
+        <item>Cria legendas automáticas para áudios e vídeos que tocam no celular. Disponível em parte dos aparelhos.</item>
+        <item>Transforma em texto a fala das pessoas ao redor e avisa sons importantes, como campainha e alarme, com vibração e luz.</item>
+        <item>Reduz os movimentos na tela e dá mais tempo para ler avisos que somem sozinhos.</item>
+    </string-array>
+
+    <string-array name="guia_recursos_caminhos">
+        <item>Configurações › Acessibilidade › TalkBack. Se o atalho estiver ligado, também dá para segurar os dois botões de volume por 3 segundos.</item>
+        <item>Configurações › Acessibilidade › Tamanho da exibição e texto (em alguns aparelhos: Configurações › Tela › Tamanho da fonte).</item>
+        <item>Configurações › Acessibilidade › Ampliação.</item>
+        <item>Configurações › Acessibilidade › Cor e movimento (ou Texto e exibição): Texto em alto contraste, Correção de cor e Inversão de cores.</item>
+        <item>Configurações › Acessibilidade › Selecionar para ouvir.</item>
+        <item>Configurações › Acessibilidade › Acesso por voz. Se não aparecer, instale o app Voice Access pela Play Store.</item>
+        <item>Configurações › Acessibilidade › Acesso com interruptor.</item>
+        <item>Configurações › Acessibilidade › Legenda instantânea (ou pelo botão de legendas que aparece junto do volume).</item>
+        <item>Instale \"Transcrição instantânea e notificação de som\" pela Play Store e ative em Configurações › Acessibilidade.</item>
+        <item>Configurações › Acessibilidade › Cor e movimento › Remover animações; e Configurações › Acessibilidade › Tempo para agir.</item>
+    </string-array>
+</resources>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Aba Pesquisa: pessoas, empresas e vagas (página /descobrir e busca do site) -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/margem_tela">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:text="@string/pesquisa_titulo"
+            android:textAppearance="@style/Texto.Acesso.TituloTela" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/campoTermo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaco_campos"
+            android:hint="@string/pesquisa_campo"
+            app:endIconContentDescription="@string/acao_buscar"
+            app:endIconDrawable="@drawable/ic_pesquisa"
+            app:endIconMode="custom">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/entradaTermo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/pesquisa_categoria"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="@color/acesso_titulo" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/grupoCategoria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPessoas"
+                style="@style/Estilo.Acesso.Chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/pesquisa_categoria_pessoas" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipEmpresas"
+                style="@style/Estilo.Acesso.Chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pesquisa_categoria_empresas" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipVagas"
+                style="@style/Estilo.Acesso.Chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pesquisa_categoria_vagas" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/botaoBuscar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/acao_buscar"
+            app:icon="@drawable/ic_pesquisa" />
+
+        <TextView
+            android:id="@+id/textoInstrucao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/pesquisa_instrucao"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/acesso_texto_secundario" />
+
+        <include
+            android:id="@+id/estado"
+            layout="@layout/componente_estado_conteudo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <LinearLayout
+            android:id="@+id/listaResultados"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:divider="@drawable/divisor_lista"
+            android:orientation="vertical"
+            android:showDividers="middle" />
+    </LinearLayout>
+</ScrollView>

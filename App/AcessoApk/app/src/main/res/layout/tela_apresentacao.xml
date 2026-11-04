@@ -12,10 +12,12 @@
     tools:context=".telas.TelaApresentacao">
 
     <!-- Raio da identidade visual por trás de todo o conteúdo, como no site -->
+    <!-- Decorativa: o estilo já tira a imagem do TalkBack; repetido aqui para quem lê o layout. -->
     <ImageView
         style="@style/Estilo.Acesso.FundoRaio"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -119,6 +121,14 @@
                 android:paddingTop="32dp"
                 android:paddingEnd="@dimen/apresentacao_margem"
                 android:paddingBottom="32dp">
+
+                <!-- Aviso ao voltar da área logada (ex.: sessão expirada). Preenchido em TelaApresentacao. -->
+                <TextView
+                    android:id="@+id/textoAviso"
+                    style="@style/Estilo.Acesso.Aviso"
+                    android:layout_marginBottom="16dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:visibility="gone" />
 
                 <TextView
                     android:layout_width="wrap_content"

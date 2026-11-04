@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Um comentário: autor (abre o perfil), texto e as ações Responder e Excluir (só nos próprios).
+     As respostas entram recuadas em listaRespostas. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="@dimen/tamanho_avatar"
+            android:layout_height="@dimen/tamanho_avatar">
+
+            <TextView
+                android:id="@+id/textoIniciais"
+                style="@style/Estilo.Acesso.Avatar" />
+
+            <ImageView
+                android:id="@+id/imagemAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/fundo_avatar"
+                android:clipToOutline="true"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:outlineProvider="background"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Balão com autor, hora e texto: o leitor de tela lê tudo de uma vez -->
+            <LinearLayout
+                android:id="@+id/balao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/fundo_balao_outro"
+                android:focusable="true"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/textoAutor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleSmall"
+                    android:textColor="@color/acesso_titulo"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textoQuando"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/acesso_texto_secundario" />
+
+                <TextView
+                    android:id="@+id/textoComentario"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/acesso_texto" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoResponder"
+                    style="@style/Estilo.Acesso.BotaoTexto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/comentarios_responder"
+                    android:textColor="@color/acesso_texto_secundario" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botaoExcluir"
+                    style="@style/Estilo.Acesso.BotaoTexto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/comentarios_excluir"
+                    android:textColor="@color/acesso_erro"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/listaRespostas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notificação: ícone do tipo, título, descrição e quando. Não lida tem fundo verde-claro e título em negrito. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/conteudoItem"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:minHeight="72dp"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/iconeTipo"
+        android:layout_width="@dimen/tamanho_avatar"
+        android:layout_height="@dimen/tamanho_avatar"
+        android:background="@drawable/fundo_avatar"
+        android:importantForAccessibility="no"
+        android:padding="10dp"
+        app:tint="@color/acesso_sobre_container_primaria" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textoTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="@color/acesso_titulo" />
+
+        <TextView
+            android:id="@+id/textoDescricao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/acesso_texto" />
+
+        <TextView
+            android:id="@+id/textoQuando"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/acesso_texto_secundario" />
+    </LinearLayout>
+</LinearLayout>

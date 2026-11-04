@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Logotipo do cabeçalho: círculo verde com o símbolo de acessibilidade -->
+<!-- Logotipo (como o componente Logo do site): círculo verde com o símbolo de
+     acessibilidade. No site o selo tem 36px com cantos de 18px (um círculo) e o
+     símbolo 20px, ou seja, ~55% do selo; aqui, 22dp num selo de 40dp. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="oval">
@@ -10,8 +12,8 @@
         </shape>
     </item>
     <item
-        android:width="24dp"
-        android:height="24dp"
+        android:width="22dp"
+        android:height="22dp"
         android:drawable="@drawable/ic_acessibilidade"
         android:gravity="center" />
 </layer-list>

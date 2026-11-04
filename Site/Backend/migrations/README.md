@@ -16,6 +16,7 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 | `0007_conta_sem_senha.sql` | `usuarios.senha_hash` passa a aceitar nulo, com a regra `ck_usuarios_senha_ou_google`: toda conta tem senha **ou** Google vinculado. Sustenta criar a conta no retorno do Google (`GOOGLE_CONTA_SEM_SENHA`). Traz no cabeçalho como voltar atrás. |
 | `0009_sessoes_e_dispositivos.sql` | Sessões e dispositivos: acrescenta `sessoes.familia_id` (o login/dispositivo, igual em todas as renovações), `iniciada_em` e `ultimo_uso_em` e dois índices, e preenche as colunas novas das linhas existentes. Só acrescenta; não altera nem apaga dados. Encerrar uma sessão passa a valer na hora, só depois de ligar `SESSOES_DISPOSITIVOS_HABILITADO`. Traz no cabeçalho como voltar atrás. |
 | `0010_dispositivos_confiaveis_e_eventos_de_seguranca.sql` | Dispositivo novo por e-mail e conta comprometida: cria `dispositivos_confiaveis` (só o hash do token do aparelho), `desafios_de_dispositivo` (só o HMAC do código de 6 dígitos), `links_de_seguranca` (só o hash do link) e `eventos_de_seguranca` (histórico sem segredo), todas com RLS ligada e `ON DELETE CASCADE` da conta. Só cria; não altera nem apaga nada existente. Só tem efeito depois de ligar `DISPOSITIVOS_CONFIAVEIS_HABILITADO`. Traz no cabeçalho como voltar atrás. |
+| `0011_idioma_na_conta.sql` | Idioma do site na conta: acrescenta `preferencias_acessibilidade.idioma` (nula, `pt`/`en`/`es`). Só acrescenta; nenhuma linha existente muda. Só tem efeito depois de ligar `IDIOMA_NA_CONTA_HABILITADO`. Traz no cabeçalho como voltar atrás. |
 
 As descrições representam o efeito de cada migration. Para detalhes de regras, constraints e decisões,
 consulte os comentários no próprio arquivo SQL e o [guia do schema](../ESQUEMA_DO_BANCO.md).
@@ -61,8 +62,8 @@ depende dela.
 
 ## Regra para novas mudanças
 
-A última migration versionada neste repositório é a `0010`. Portanto, a próxima deve ser
-`0011_<descricao_curta>.sql`, e assim por diante.
+A última migration versionada neste repositório é a `0011`. Portanto, a próxima deve ser
+`0012_<descricao_curta>.sql`, e assim por diante.
 
 A numeração tem uma **lacuna de propósito**: a `0008` (verificação em duas etapas por aplicativo autenticador) foi escrita, nunca aplicada em
 nenhum banco e removida. O código dela está preservado na branch `totp-bloco1-preservado`. O executor de migrations trabalha pelo nome

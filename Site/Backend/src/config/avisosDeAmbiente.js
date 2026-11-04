@@ -143,6 +143,28 @@ export async function avisoDaMigracaoSessoes({ habilitado, consultar }) {
     );
 }
 
+/**
+ * Com `IDIOMA_NA_CONTA_HABILITADO` ligada, confere (sem alterar nada) se a migration 0011 foi aplicada. Sem ela, ler ou salvar as
+ * preferências de acessibilidade falharia no banco. `consultar` devolve os itens encontrados (`tabela.coluna`).
+ */
+export async function avisoDaMigracaoIdioma({ habilitado, consultar }) {
+    if (!habilitado) return null;
+
+    let achados;
+    try {
+        achados = await consultar();
+    } catch {
+        return "[ENV] IDIOMA_NA_CONTA_HABILITADO está ligada, mas não consegui conferir se a migration 0011 foi aplicada.";
+    }
+
+    if (achados.includes("preferencias_acessibilidade.idioma")) return null;
+
+    return (
+        "[ENV] IDIOMA_NA_CONTA_HABILITADO está ligada, mas a migration 0011 NÃO foi aplicada (falta: preferencias_acessibilidade.idioma). " +
+        "As preferências de acessibilidade vão falhar. Rode `npm run migrate` ou desligue a variável."
+    );
+}
+
 const TABELAS_DO_BLOCO_3 = ["dispositivos_confiaveis", "desafios_de_dispositivo", "links_de_seguranca", "eventos_de_seguranca"];
 
 /**

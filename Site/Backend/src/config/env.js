@@ -209,6 +209,11 @@ const env = {
         diasDeConfianca: Math.min(365, Math.max(1, Number(process.env.DISPOSITIVOS_CONFIAVEIS_DIAS) || 90))
     },
 
+    // Idioma do site guardado na conta (migration 0011). Desligado por padrão: sem a migration, a coluna não existe.
+    idioma: {
+        naContaHabilitado: process.env.IDIOMA_NA_CONTA_HABILITADO === "true"
+    },
+
     // Sessões e dispositivos (Bloco 2).
     sessoes: {
         // Liga: encerrar uma sessão corta o acesso na hora (o access token leva `sid`, e o servidor confere que a

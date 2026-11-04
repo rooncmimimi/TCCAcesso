@@ -23,6 +23,12 @@ export const RECURSOS = [
         exige: [{ variavel: "BREVO_API_KEY", minimo: 1, motivo: "envio de e-mail (sem ele o recurso fica inativo)" }]
     },
     {
+        chave: "IDIOMA_NA_CONTA_HABILITADO",
+        migration: "0011_idioma_na_conta.sql",
+        descricao: "Idioma do site guardado na conta (acompanha a pessoa em qualquer dispositivo)",
+        exige: []
+    },
+    {
         chave: "SESSOES_DISPOSITIVOS_HABILITADO",
         migration: "0009_sessoes_e_dispositivos.sql",
         descricao: "Encerrar sessão na hora e datas verdadeiras dos dispositivos",

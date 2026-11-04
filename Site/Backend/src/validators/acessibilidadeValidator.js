@@ -6,6 +6,12 @@ export const validarPreferencias = [
         .isIn(["claro", "escuro", "sistema"])
         .withMessage("Tema inválido."),
 
+    // Idioma do site; nulo significa "ainda não escolheu".
+    body("idioma")
+        .optional({ values: "null" })
+        .isIn(["pt", "en", "es"])
+        .withMessage("Idioma inválido."),
+
     body("escalaFonte")
         .optional()
         .isInt({ min: 80, max: 200 })

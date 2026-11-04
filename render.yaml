@@ -77,3 +77,6 @@ services:
         value: "false"
       - key: DISPOSITIVOS_CONFIAVEIS_DIAS
         value: "90"
+      # Idioma do site guardado na conta. Só ligue depois de aplicar a migration 0011.
+      - key: IDIOMA_NA_CONTA_HABILITADO
+        value: "false"

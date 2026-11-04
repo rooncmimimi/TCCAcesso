@@ -6,6 +6,7 @@ import conectarBanco from "./config/sequelize.js";
 import sequelize from "./config/bancoDeDados.js";
 import {
     avisoDaMigracaoContaSemSenha,
+    avisoDaMigracaoIdioma,
     avisoDaMigracaoSeguranca,
     avisoDaMigracaoSessoes,
     avisosDaSeguranca
@@ -54,6 +55,20 @@ async function iniciarServidor() {
         }
     });
     if (avisoDasSessoes) console.error(avisoDasSessoes);
+
+    // Idioma na conta (migration 0011): mesma conferência.
+    const avisoDoIdioma = await avisoDaMigracaoIdioma({
+        habilitado: env.idioma.naContaHabilitado,
+        consultar: async () => {
+            const colunas = await sequelize.query(
+                "SELECT 'preferencias_acessibilidade.' || column_name AS item FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'preferencias_acessibilidade' AND column_name = 'idioma'",
+                { type: "SELECT" }
+            );
+
+            return colunas.map((linha) => linha.item);
+        }
+    });
+    if (avisoDoIdioma) console.error(avisoDoIdioma);
 
     // Verificação de dispositivo novo e conta comprometida (migration 0010): mesma conferência, mais o aviso de e-mail ausente.
     const avisoDaSeguranca = await avisoDaMigracaoSeguranca({

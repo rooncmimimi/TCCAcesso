@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/bancoDeDados.js";
+import env from "../config/env.js";
 
 /** Tabela `preferencias_acessibilidade`: as preferências salvas na conta, uma linha por usuário. */
 const PreferenciaAcessibilidade = sequelize.define(
@@ -89,7 +90,19 @@ const PreferenciaAcessibilidade = sequelize.define(
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: true
-        }
+        },
+
+        // Migration 0011 (`IDIOMA_NA_CONTA_HABILITADO`): o idioma do site. O Sequelize seleciona e insere TODAS as colunas do model, então
+        // sem a migration aplicada declará-la sempre derrubaria as preferências de acessibilidade. Nulo: a conta ainda não escolheu.
+        ...(env.idioma.naContaHabilitado
+            ? {
+                  idioma: {
+                      type: DataTypes.STRING(5),
+                      allowNull: true,
+                      validate: { isIn: [["pt", "en", "es"]] }
+                  }
+              }
+            : {})
     },
     {
         tableName: "preferencias_acessibilidade"

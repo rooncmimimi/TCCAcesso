@@ -1,3 +1,4 @@
+import env from "../config/env.js";
 import { PreferenciaAcessibilidade } from "../models/index.js";
 
 /**
@@ -35,7 +36,10 @@ class AcessibilidadeService {
     async atualizar(usuarioId, data) {
         const preferencias = await this.obter(usuarioId);
 
-        const alteracoes = CAMPOS.reduce((acumulado, campo) => {
+        // `idioma` só existe com o recurso ligado (migration 0011); desligado, o campo enviado é ignorado como qualquer outro desconhecido.
+        const campos = env.idioma.naContaHabilitado ? [...CAMPOS, "idioma"] : CAMPOS;
+
+        const alteracoes = campos.reduce((acumulado, campo) => {
             if (data[campo] !== undefined) {
                 acumulado[campo] = data[campo];
             }

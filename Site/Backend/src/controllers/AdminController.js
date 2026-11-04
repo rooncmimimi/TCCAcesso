@@ -4,6 +4,7 @@ import AdminConteudoService from "../services/AdminConteudoService.js";
 import AdminRelatorioService from "../services/AdminRelatorioService.js";
 import UsuarioService from "../services/UsuarioService.js";
 import AdminAuditoriaService from "../services/AdminAuditoriaService.js";
+import VagaService from "../services/VagaService.js";
 import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
 /**
@@ -179,6 +180,21 @@ class AdminController {
             const dados = await AdminConteudoService.alternarVisibilidadeVaga(
                 req.params.id,
                 req.body.oculta,
+                req.user,
+                contextoRequisicao(req)
+            );
+            return res.status(200).json({ sucesso: true, ...dados });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    /** Selo "verificado" do mapa de acessibilidade física: só a moderação. */
+    async verificarAcessibilidadeFisica(req, res, next) {
+        try {
+            const dados = await VagaService.verificarAcessibilidadeFisica(
+                req.params.id,
+                { itens: req.body.itens, verificado: req.body.verificado },
                 req.user,
                 contextoRequisicao(req)
             );

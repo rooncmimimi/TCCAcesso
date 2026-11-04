@@ -40,6 +40,7 @@ import PerfilAdaptacao from "./PerfilAdaptacao.js";
 import PreferenciaComunicacao from "./PreferenciaComunicacao.js";
 import CandidaturaAdaptacao from "./CandidaturaAdaptacao.js";
 import CandidaturaRascunho from "./CandidaturaRascunho.js";
+import VagaMidia from "./VagaMidia.js";
 
 /**
  * Registro central dos models e das associações.
@@ -151,6 +152,11 @@ Candidato.hasMany(CandidaturaRascunho, { foreignKey: "candidatoId", as: "rascunh
 CandidaturaRascunho.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
 Vaga.hasMany(CandidaturaRascunho, { foreignKey: "vagaId", as: "rascunhos" });
 CandidaturaRascunho.belongsTo(Vaga, { foreignKey: "vagaId", as: "vaga" });
+
+/* Vídeo da vaga em Libras (Bloco 3): um por vaga, apagado junto com ela */
+
+Vaga.hasOne(VagaMidia, { foreignKey: "vagaId", as: "midia" });
+VagaMidia.belongsTo(Vaga, { foreignKey: "vagaId", as: "vaga" });
 
 /* Favoritos e empresas seguidas (N:N) */
 
@@ -317,5 +323,6 @@ export {
     PerfilAdaptacao,
     PreferenciaComunicacao,
     CandidaturaAdaptacao,
-    CandidaturaRascunho
+    CandidaturaRascunho,
+    VagaMidia
 };

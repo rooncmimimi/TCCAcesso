@@ -82,7 +82,29 @@ const camposVaga = (obrigatorio) => [
     body("dataEncerramento")
         .optional({ values: "falsy" })
         .isISO8601()
-        .withMessage("Informe uma data válida (AAAA-MM-DD).")
+        .withMessage("Informe uma data válida (AAAA-MM-DD)."),
+
+    // Bloco 3: o conteúdo de cada lista fechada é conferido (e recusado) em `utils/ambienteDeTrabalho.js`;
+    // aqui só o formato e o tamanho.
+    body("atividades").optional({ values: "falsy" }).trim().isLength({ max: 4000 }),
+
+    body("requisitosDesejaveis").optional({ values: "falsy" }).trim().isLength({ max: 4000 }),
+
+    body("etapasSelecao").optional({ values: "falsy" }).trim().isLength({ max: 4000 }),
+
+    body("entrevistaAdaptacoes").optional({ values: "null" }).isArray({ max: 20 }).withMessage("As adaptações da entrevista devem ser uma lista."),
+
+    body("entrevistaObservacao").optional({ values: "falsy" }).isString().isLength({ max: 1000 }),
+
+    body("ambienteSensorial")
+        .optional({ values: "null" })
+        .custom((v) => v !== null && typeof v === "object" && !Array.isArray(v))
+        .withMessage("A prévia sensorial deve ser um objeto."),
+
+    body("acessibilidadeFisica")
+        .optional({ values: "null" })
+        .custom((v) => v !== null && typeof v === "object" && !Array.isArray(v))
+        .withMessage("O mapa de acessibilidade física deve ser um objeto.")
 ];
 
 export const validarCriacaoVaga = camposVaga(true);

@@ -7,6 +7,7 @@ import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalM
 import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
+import { criarProcessadorArmazenamento, uploadLegenda, uploadVideoDaVaga } from "../middlewares/uploadMiddleware.js";
 import {
     validarCriacaoVaga,
     validarAtualizacaoVaga,
@@ -29,6 +30,72 @@ router.get(
     autenticacaoMiddleware,
     exigirTipoUsuarioMiddleware("empresa"),
     VagaController.minhas
+);
+
+// O vídeo da vaga em Libras vai para o bucket PRIVADO (URL assinada, temporária), em `vagas/<empresaUsuarioId>`.
+const processarVideoDaVaga = criarProcessadorArmazenamento({
+    pasta: (req) => `vagas/${req.user.id}`,
+    privado: true
+});
+
+// Antes de "/:id", para "catalogo-acessibilidade" não ser lido como um identificador.
+router.get("/catalogo-acessibilidade", VagaController.catalogoDeAcessibilidade);
+
+router.get(
+    "/:id/midia",
+    autenticacaoOpcionalMiddleware,
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.obterMidia
+);
+
+// Vídeo (mp4 ou webm) + transcrição obrigatória no mesmo envio. Só a empresa dona (o service confere).
+router.put(
+    "/:id/midia/video",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    uploadVideoDaVaga.single("video"),
+    processarVideoDaVaga,
+    VagaController.enviarVideo
+);
+
+router.put(
+    "/:id/midia/legenda",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    uploadLegenda.single("legenda"),
+    VagaController.enviarLegenda
+);
+
+router.delete(
+    "/:id/midia/legenda",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.removerLegenda
+);
+
+router.patch(
+    "/:id/midia",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.atualizarMidia
+);
+
+router.delete(
+    "/:id/midia",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.removerMidia
 );
 
 router.get(

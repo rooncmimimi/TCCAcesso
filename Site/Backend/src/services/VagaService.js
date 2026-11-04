@@ -5,6 +5,14 @@ import ErroApi from "../utils/ErroApi.js";
 import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import { garantirDono, garantirEmpresaAprovada, ehAdministrador } from "../utils/autorizacao.js";
 import AdminAuditoriaService from "./AdminAuditoriaService.js";
+import {
+    aplicarVerificacao,
+    normalizarAcessibilidadeFisica,
+    normalizarAmbienteSensorial,
+    normalizarEntrevista,
+    observacaoDeEntrevista,
+    ITENS_FISICOS
+} from "../utils/ambienteDeTrabalho.js";
 
 const CAMPOS_EDITAVEIS = [
     "titulo",
@@ -21,7 +29,15 @@ const CAMPOS_EDITAVEIS = [
     "recursosAcessibilidade",
     "publicoAlvo",
     "status",
-    "dataEncerramento"
+    "dataEncerramento",
+    // Bloco 3. Os três últimos têm tratamento próprio em `normalizarAmbiente` (lista fechada, origem do mapa físico).
+    "atividades",
+    "requisitosDesejaveis",
+    "etapasSelecao",
+    "entrevistaAdaptacoes",
+    "entrevistaObservacao",
+    "ambienteSensorial",
+    "acessibilidadeFisica"
 ];
 
 /**
@@ -36,6 +52,44 @@ class VagaService {
             }
             return acc;
         }, {});
+    }
+
+    /**
+     * Valida e normaliza os campos do ambiente de trabalho (Bloco 3). Valor fora das listas fechadas é
+     * ERRO (400), nunca ignorado em silêncio. A `origem` do mapa físico é decidida aqui: a empresa
+     * só declara, e alterar um item verificado derruba a verificação. `atual` é o mapa já gravado.
+     */
+    normalizarAmbiente(data, atual = {}) {
+        const erros = [];
+        const campos = {};
+
+        if (data.entrevistaAdaptacoes !== undefined) {
+            const { valor, erros: e } = normalizarEntrevista(data.entrevistaAdaptacoes);
+            erros.push(...e);
+            campos.entrevistaAdaptacoes = valor;
+        }
+
+        if (data.entrevistaObservacao !== undefined) {
+            campos.entrevistaObservacao = observacaoDeEntrevista(data.entrevistaObservacao);
+        }
+
+        if (data.ambienteSensorial !== undefined) {
+            const { valor, erros: e } = normalizarAmbienteSensorial(data.ambienteSensorial);
+            erros.push(...e);
+            campos.ambienteSensorial = valor;
+        }
+
+        if (data.acessibilidadeFisica !== undefined) {
+            const { valor, erros: e } = normalizarAcessibilidadeFisica(data.acessibilidadeFisica, atual);
+            erros.push(...e);
+            campos.acessibilidadeFisica = valor;
+        }
+
+        if (erros.length > 0) {
+            throw ErroApi.requisicaoInvalida(erros[0], erros);
+        }
+
+        return campos;
     }
 
     /**
@@ -267,6 +321,7 @@ class VagaService {
 
         const vaga = await Vaga.create({
             ...this.filtrarCampos(data),
+            ...this.normalizarAmbiente(data),
             empresaId: empresa.id,
             status: data.status || "aberta"
         });
@@ -284,7 +339,10 @@ class VagaService {
             garantirDono(solicitante, vaga.empresa.usuarioId);
             garantirEmpresaAprovada(vaga.empresa, solicitante);
 
-            await vaga.update(this.filtrarCampos(data), { transaction });
+            await vaga.update(
+                { ...this.filtrarCampos(data), ...this.normalizarAmbiente(data, vaga.acessibilidadeFisica ?? {}) },
+                { transaction }
+            );
             await transaction.commit();
 
             return this.buscarPorId(id);
@@ -292,6 +350,49 @@ class VagaService {
             await transaction.rollback();
             throw erro;
         }
+    }
+
+    /**
+     * A moderação marca (ou desmarca) itens do mapa de acessibilidade física como VERIFICADOS. A
+     * empresa nunca chama isto: o selo "verificado" não pode ser dado pela própria empresa. Só a
+     * lista de chaves conhecidas é aceita, e a operação vai para a auditoria (sem copiar o mapa).
+     */
+    async verificarAcessibilidadeFisica(id, { itens, verificado }, administrador, contexto = {}) {
+        if (!ehAdministrador(administrador)) {
+            throw ErroApi.acessoNegado("Só a moderação do ACESSO pode verificar o mapa de acessibilidade física.");
+        }
+
+        const conhecidos = new Set(ITENS_FISICOS.map((i) => i.chave));
+
+        if (!Array.isArray(itens) || itens.length === 0 || itens.some((chave) => !conhecidos.has(chave))) {
+            throw ErroApi.requisicaoInvalida("Informe uma lista de itens do mapa de acessibilidade física.");
+        }
+
+        if (typeof verificado !== "boolean") {
+            throw ErroApi.requisicaoInvalida("Informe verificado como verdadeiro ou falso.");
+        }
+
+        const vaga = await this.buscarVagaComEmpresa(id);
+        const { valor, alteradas } = aplicarVerificacao(vaga.acessibilidadeFisica ?? {}, itens, verificado);
+
+        if (alteradas.length === 0) {
+            return { alteradas: [], acessibilidadeFisica: vaga.acessibilidadeFisica ?? {} };
+        }
+
+        await vaga.update({ acessibilidadeFisica: valor });
+
+        await AdminAuditoriaService.registrar({
+            administradorId: administrador.id,
+            acao: verificado ? "verificar_acessibilidade_fisica" : "desfazer_verificacao_acessibilidade_fisica",
+            entidadeTipo: "vaga",
+            entidadeId: vaga.id,
+            descricao: `Mapa de acessibilidade física da vaga "${vaga.titulo}": ${alteradas.length} item(ns) ${verificado ? "verificado(s)" : "voltaram a declarado"}.`,
+            metadados: { itens: alteradas },
+            ip: contexto.ip,
+            userAgent: contexto.userAgent
+        });
+
+        return { alteradas, acessibilidadeFisica: valor };
     }
 
     /* Alterar status */

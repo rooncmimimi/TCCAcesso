@@ -94,6 +94,17 @@ router.post(
     AdminController.ocultarVaga
 );
 
+// O selo "verificado" do mapa de acessibilidade física da vaga: só a moderação, nunca a empresa.
+router.post(
+    "/vagas/:id/acessibilidade-fisica/verificacao",
+    validarUuidParam("id"),
+    body("itens").isArray({ min: 1, max: 20 }).withMessage("Informe a lista de itens."),
+    body("itens.*").isString().isLength({ max: 40 }),
+    body("verificado").isBoolean().withMessage("Informe verificado como true ou false."),
+    validacaoMiddleware,
+    AdminController.verificarAcessibilidadeFisica
+);
+
 router.get("/denuncias", DenunciaController.listar);
 router.get(
     "/denuncias/:id",

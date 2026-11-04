@@ -19,6 +19,7 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 | `0011_idioma_na_conta.sql` | Idioma do site na conta: acrescenta `preferencias_acessibilidade.idioma` (nula, `pt`/`en`/`es`). Só acrescenta; nenhuma linha existente muda. Só tem efeito depois de ligar `IDIOMA_NA_CONTA_HABILITADO`. Traz no cabeçalho como voltar atrás. |
 
 | `0012_adaptacoes_rascunhos_e_privacidade_da_candidatura.sql` | Bloco 2 da acessibilidade avançada: `candidatos.exibir_deficiencia_no_perfil` (falso: a categoria de deficiência deixa de ser pública por padrão) e as tabelas `perfis_adaptacao`, `preferencias_comunicacao`, `candidatura_adaptacoes` (cópia autorizada por candidatura, apagada na retirada) e `candidatura_rascunhos`, todas com RLS e sem acesso para anon/authenticated. Só acrescenta. **Aplique antes de publicar o código que a usa** (o model passa a ler a coluna nova). Traz no cabeçalho como voltar atrás. |
+| `0013_ambiente_entrevista_e_midia_da_vaga.sql` | Bloco 3 da acessibilidade avançada: `vagas` ganha `entrevista_adaptacoes`, `entrevista_observacao`, `ambiente_sensorial` (prévia sensorial), `acessibilidade_fisica` (mapa físico, com origem declarado ou verificado), `atividades`, `requisitos_desejaveis` e `etapas_selecao`, todas opcionais; e a tabela `vaga_midias` (vídeo da vaga em Libras com transcrição obrigatória e legenda WebVTT em texto), com RLS e sem acesso para anon/authenticated. Só acrescenta. **Aplique antes de publicar o código que a usa.** Traz no cabeçalho como voltar atrás. |
 
 As descrições representam o efeito de cada migration. Para detalhes de regras, constraints e decisões,
 consulte os comentários no próprio arquivo SQL e o [guia do schema](../ESQUEMA_DO_BANCO.md).
@@ -64,8 +65,8 @@ depende dela.
 
 ## Regra para novas mudanças
 
-A última migration versionada neste repositório é a `0012`. Portanto, a próxima deve ser
-`0013_<descricao_curta>.sql`, e assim por diante.
+A última migration versionada neste repositório é a `0013`. Portanto, a próxima deve ser
+`0014_<descricao_curta>.sql`, e assim por diante.
 
 A numeração tem uma **lacuna de propósito**: a `0008` (verificação em duas etapas por aplicativo autenticador) foi escrita, nunca aplicada em
 nenhum banco e removida. O código dela está preservado na branch `totp-bloco1-preservado`. O executor de migrations trabalha pelo nome

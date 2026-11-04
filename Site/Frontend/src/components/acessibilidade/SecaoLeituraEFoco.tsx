@@ -134,6 +134,7 @@ export function SecaoLeituraEFoco() {
             valor={preferencias.readingFont}
             opcoes={[
               { valor: "padrao", rotulo: "Padrão do site" },
+              { valor: "hiperlegivel", rotulo: "Atkinson Hyperlegible (letras bem distintas)" },
               { valor: "sem-serifa", rotulo: "Sem serifa (Verdana)" },
               { valor: "serifada", rotulo: "Com serifa (Georgia)" },
             ]}

@@ -70,15 +70,15 @@ backend nem no banco. As novas preferências ficam só no navegador (`localStora
 | 2 | Régua de leitura | `components/acessibilidade/ReguaDeLeitura.tsx` | Pronto. Mouse, foco, cursor de leitura e Alt + ↑/↓. Altura e escurecimento ajustáveis. |
 | 3 | Resumo da vaga em linguagem simples | `lib/resumoVaga.ts`, `components/vagas/ResumoVagaSimples.tsx` | Pronto, com os limites dos dados (ver abaixo). |
 | 4 | Avisos que não somem | `components/ui/sonner.tsx`, `lib/avisos.ts` | Pronto. Botão de fechar e limite de 5 minutos. |
-| 5 | Glossário | `dados/glossario.ts`, `PaineisDeAjuda.tsx` | Pronto (18 termos). Lista e busca, com os termos da página em destaque. **Não** há dica sobre cada palavra dentro do texto. |
+| 5 | Glossário | `dados/glossario.ts`, `PaineisDeAjuda.tsx` | Pronto (18 termos). Lista e busca, com os termos da página em destaque. Na página da vaga, abaixo da descrição, dos requisitos e dos benefícios, um bloco fechado "Termos deste texto" (`TermosDoTexto.tsx`) explica os termos que aquele texto usa. A dica fica ao lado do texto, não em cada palavra: marcar palavras soltas dentro do texto traduzido não é confiável. |
 | 6 | Modo foco | CSS (`.a11y-focus-mode`) | Pronto: esconde `aside`, rodapé e `data-secundario`. |
-| 7 | Modo leitura | CSS (`.a11y-reading-mode`) | Pronto. Fonte do sistema (sem serifa ou serifada) e fundo. **Atkinson Hyperlegible não foi incluída**: pede uma dependência ou arquivo de fonte, a decidir com você. |
-| 8 | Cores personalizadas | `SecaoLeituraEFoco.tsx`, `lib/contraste.ts` | Pronto. Só `#rrggbb` chega ao CSS. Mostra o contraste de cada par e avisa. |
+| 7 | Modo leitura | CSS (`.a11y-reading-mode`) | Pronto. Fonte Atkinson Hyperlegible (licença SIL OFL 1.1, arquivos `woff2` em `src/assets/fonts/atkinson`, servidos pelo próprio site, sem dependência nova e sem pedir nada a terceiros), sem serifa (Verdana) ou serifada (Georgia), e fundo padrão, creme ou escuro. O verde da marca foi ajustado nos fundos creme (5,9:1) e escuro (7,7:1), onde passava de 4,5:1 por pouco ou não passava. A mesma fonte passa a valer também no modo "fonte para dislexia", que a citava sem carregá-la. |
+| 8 | Cores personalizadas | `SecaoLeituraEFoco.tsx`, `lib/contraste.ts` | Pronto. Só `#rrggbb` chega ao CSS. Mostra o contraste de cada par e avisa. Os fundos suaves do tema (`secondary`, `muted`, `accent`) e as bordas seguem o fundo escolhido, e os links das telas de entrada e cadastro (que não têm `main`) usam a cor de link escolhida. |
 | 9 | Modo para daltonismo | CSS (`.a11y-colorblind`) | Pronto: laranja e azul no lugar de vermelho e verde, símbolo em erro e aviso, links sublinhados. Os selos de status já tinham texto. |
-| 10 | Mais tempo | `lib/rascunhoDeFormulario.ts`, `hooks/useRascunhoDeFormulario.ts` | **Parcial**: rascunho automático nos formulários de texto longo do perfil (Sobre mim, título, experiência, formação). **Não há** aviso de expiração nem extensão de tempo porque o Site não tem prazo de formulário; a sessão e os códigos por e-mail vencem no servidor e não foram alterados, por segurança. |
+| 10 | Mais tempo | `lib/rascunhoDeFormulario.ts`, `hooks/useRascunhoDeFormulario.ts`, `lib/prazoDoCodigo.ts`, `PrazoDoCodigo.tsx` | Pronto. (a) Rascunho automático nos textos longos de perfil, experiência, formação, nova vaga, edição de vaga e perfil da empresa. (b) Na tela do código por e-mail (verificação de dispositivo), mostra até que horas o código vale, sem contagem regressiva; faltando 3 minutos (ou vencido) avisa uma vez e oferece "Preciso de mais tempo: enviar outro código", que usa o reenvio que já existia. O prazo é o do servidor (15 min): nada foi estendido nem encurtado. A sessão se renova sozinha com o refresh token. A confirmação de e-mail do cadastro **não** ganhou o aviso porque o site não sabe a que horas o e-mail foi enviado (o código pode vir do link). |
 | 11 | Onde estou? | `lib/ondeEstou.ts` | Pronto. Página, etapa do cadastro, seção e ação principal (heurística). |
 | 12 | Explique esta página | `dados/explicacoesPaginas.ts` | Pronto para as rotas principais; as demais dizem que não há explicação. |
-| 13 | Assistente de preenchimento | `dados/dicasDeCampo.ts`, `DicaDeCampoBotao.tsx` | **Parcial**: 4 campos do perfil (título, sobre mim, descrição de experiência e de formação). O exemplo nunca é colocado no campo. |
+| 13 | Assistente de preenchimento | `dados/dicasDeCampo.ts`, `DicaDeCampoBotao.tsx` | Pronto nos textos livres do Site: título e sobre mim do perfil, descrição de experiência e de formação, descrição, requisitos, benefícios e acessibilidade da vaga (nova e edição), descrição e cultura de inclusão da empresa. O exemplo nunca é colocado no campo. |
 | 14 | Histórico de instruções | `lib/historicoInstrucoes.ts`, `SalvarInstrucao.tsx` | Pronto. Só neste navegador, no máximo 50 itens. |
 
 O acesso a "Onde estou?", "Explique esta página", glossário e histórico está no botão fixo
@@ -98,9 +98,8 @@ informou" nas etapas. Para ter esses dados de verdade é preciso incluir campos 
   com as vozes locais "Microsoft Maria" e "Daniel"**, onde as palavras vieram em ordem e certas.
   Vozes de rede costumam não emitir `boundary`: nelas o destaque cai para frase e o aviso na tela diz
   isso. Esse plano B foi testado só com voz simulada.
-- `speechSynthesis.pause()`/`resume()` é irregular em alguns navegadores, principalmente com textos
-  longos no Android. Não foi testado em celular.
-- A voz fala sempre em `pt-BR`, mesmo com o site em inglês ou espanhol (já era assim).
+- `speechSynthesis.pause()`/`resume()` é irregular (no Chrome do Android equivale a cancelar, e algumas vozes de rede travam ao retomar). Por isso, quando já se sabe até onde a voz foi (houve `boundary`), a pausa é feita por **reinício**: cancela, guarda a palavra e, ao continuar, fala o que faltava. Sem esse ponto, ou com fila de falas, usa o `pause()` nativo. Coberto por testes com voz simulada; **não** testado em celular de verdade.
+- A voz fala no idioma do site (`<html lang>`: pt-BR, en-US, es-ES). Se o aparelho não tiver voz nesse idioma, o navegador escolhe a que tiver.
 - **Não testado** com NVDA, JAWS, VoiceOver, TalkBack nem com dispositivo de acionamento.
 
 ### Testes

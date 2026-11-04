@@ -72,6 +72,16 @@ describe("VozProvider: falar", () => {
     expect(falas[0].rate).toBe(1.4);
   });
 
+  it("fala no idioma do site e, sem ele, em português", () => {
+    document.documentElement.lang = "en-US";
+    act(() => voz.falar("Hello"));
+    expect(falas[0].lang).toBe("en-US");
+
+    document.documentElement.lang = "";
+    act(() => voz.falar("Olá"));
+    expect(falas[1].lang).toBe("pt-BR");
+  });
+
   it("não fala texto vazio", () => {
     act(() => voz.falar("   "));
 
@@ -156,6 +166,78 @@ describe("VozProvider: pausar, retomar e parar", () => {
     act(() => voz.retomar());
     expect(sintese.resume).toHaveBeenCalledTimes(1);
     expect(voz.pausado).toBe(false);
+  });
+
+  it("com o ponto da fala conhecido, pausa por reinício: cancela e retoma da palavra em que parou", () => {
+    const aoLimite = vi.fn();
+    const aoIniciar = vi.fn();
+    const aoTerminar = vi.fn();
+    act(() => voz.falar("um dois três", { aoLimite, aoIniciar, aoTerminar }));
+    act(() => falas[0].onstart?.());
+    act(() => falas[0].onboundary?.({ charIndex: 3, charLength: 4, name: "word" }));
+
+    act(() => voz.pausar());
+    expect(sintese.pause).not.toHaveBeenCalled();
+    expect(sintese.cancel).toHaveBeenCalled();
+    expect(voz.pausado).toBe(true);
+    // O cancelamento da pausa não conta como fim da leitura.
+    act(() => falas[0].onerror?.({ error: "interrupted" }));
+    expect(aoTerminar).not.toHaveBeenCalled();
+    expect(voz.falando).toBe(true);
+
+    act(() => voz.retomar());
+    expect(sintese.resume).not.toHaveBeenCalled();
+    expect(falas[1].text).toBe("dois três");
+    expect(voz.pausado).toBe(false);
+
+    // Quem acompanha a leitura continua recebendo índices do texto original e não é avisado do início de novo.
+    act(() => falas[1].onstart?.());
+    expect(aoIniciar).toHaveBeenCalledTimes(1);
+    act(() => falas[1].onboundary?.({ charIndex: 5, charLength: 4, name: "word" }));
+    expect(aoLimite).toHaveBeenLastCalledWith({ charIndex: 8, charLength: 4, name: "word" });
+
+    act(() => falas[1].onend?.());
+    expect(aoTerminar).toHaveBeenCalledWith("fim");
+    expect(voz.falando).toBe(false);
+  });
+
+  it("pausar duas vezes seguidas, com retomada no meio, continua a partir do texto original", () => {
+    act(() => voz.falar("um dois três quatro"));
+    act(() => falas[0].onstart?.());
+    act(() => falas[0].onboundary?.({ charIndex: 3, name: "word" }));
+    act(() => voz.pausar());
+    act(() => voz.retomar());
+
+    act(() => falas[1].onstart?.());
+    act(() => falas[1].onboundary?.({ charIndex: 5, name: "word" })); // "três" no original (8)
+    act(() => voz.pausar());
+    act(() => voz.retomar());
+
+    expect(falas[2].text).toBe("três quatro");
+  });
+
+  it("com várias falas na fila, usa o pause nativo", () => {
+    act(() => voz.falar("um", { interrupt: false }));
+    act(() => voz.falar("dois", { interrupt: false }));
+    act(() => falas[0].onstart?.());
+    act(() => falas[0].onboundary?.({ charIndex: 1, name: "word" }));
+
+    act(() => voz.pausar());
+
+    expect(sintese.pause).toHaveBeenCalledTimes(1);
+  });
+
+  it("parar descarta uma pausa por reinício pendente", () => {
+    act(() => voz.falar("um dois"));
+    act(() => falas[0].onstart?.());
+    act(() => falas[0].onboundary?.({ charIndex: 3, name: "word" }));
+    act(() => voz.pausar());
+
+    act(() => voz.parar());
+    act(() => voz.retomar());
+
+    expect(falas).toHaveLength(1);
+    expect(sintese.resume).toHaveBeenCalledTimes(1);
   });
 
   it("não pausa quando não há nada sendo falado", () => {

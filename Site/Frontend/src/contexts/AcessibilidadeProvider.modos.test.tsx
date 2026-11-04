@@ -82,6 +82,9 @@ describe("modos aplicados no documento", () => {
 
     expect(raiz.getAttribute("data-reading-bg")).toBe("creme");
     expect(raiz.getAttribute("data-reading-font")).toBe("serifada");
+
+    act(() => result.current.definir("readingFont", "hiperlegivel"));
+    expect(raiz.getAttribute("data-reading-font")).toBe("hiperlegivel");
   });
 });
 

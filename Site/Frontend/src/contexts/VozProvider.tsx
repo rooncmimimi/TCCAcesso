@@ -2,7 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { CHAVE_ESCOLHA_VOZ } from "@/contexts/AcessibilidadeContext";
-import { type EscolhaVoz, type VozContextValue, VozContext } from "@/contexts/VozContext";
+import { type EscolhaVoz, type OpcoesFala, type VozContextValue, VozContext } from "@/contexts/VozContext";
+
+type FalaAtual = {
+  /** O texto inteiro da leitura, desde o começo. */
+  original: string;
+  opts: OpcoesFala | undefined;
+  /** Posição, em `original`, onde esta fala começa (0, ou o ponto de uma retomada). */
+  base: number;
+  /** `charIndex` (nesta fala) do último `boundary` de palavra; -1 se a voz ainda não emitiu nenhum. */
+  ultimo: number;
+  pausada: boolean;
+};
 
 /**
  * Leitura por voz com a Web Speech API do navegador (`speechSynthesis`), em português e na
@@ -26,6 +37,11 @@ export function VozProvider({ children }: { children: ReactNode }) {
    * `falando` ficaria falso com a fala nova a caminho.
    */
   const geracaoRef = useRef(0);
+  /** A fala sozinha em andamento, para a pausa por reinício (ver `pausar`). */
+  const atualRef = useRef<FalaAtual | null>(null);
+  /** Onde retomar depois de uma pausa por reinício. */
+  const pendenteRef = useRef<{ original: string; opts: OpcoesFala | undefined; ponto: number } | null>(null);
+  const iniciarFalaRef = useRef<(texto: string, opts: OpcoesFala | undefined, base: number, original: string) => void>(() => {});
 
   velocidadeRef.current = preferencias.speechRate;
   preferenciasRef.current = preferencias;
@@ -48,45 +64,78 @@ export function VozProvider({ children }: { children: ReactNode }) {
     window.speechSynthesis.cancel();
     geracaoRef.current += 1;
     naFilaRef.current = 0;
+    atualRef.current = null;
+    pendenteRef.current = null;
     setFalando(false);
     setPausado(false);
   }, []);
 
+  /**
+   * Pausa. O `pause()` nativo é irregular: no Chrome do Android ele equivale a cancelar, e algumas
+   * vozes de rede travam ao retomar. Quando se sabe até onde a fala foi (houve `boundary`), a pausa
+   * é feita por reinício: cancela e guarda o ponto, e `retomar` fala o que faltava a partir da
+   * palavra em que parou. Sem esse ponto (ou com várias falas na fila), usa o `pause()` nativo.
+   */
   const pausar = useCallback(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     if (!window.speechSynthesis.speaking) return;
+
+    const atual = atualRef.current;
+    if (atual && atual.ultimo >= 0 && naFilaRef.current === 1) {
+      atual.pausada = true;
+      pendenteRef.current = { original: atual.original, opts: atual.opts, ponto: atual.base + atual.ultimo };
+      window.speechSynthesis.cancel();
+      geracaoRef.current += 1;
+      naFilaRef.current = 0;
+      atualRef.current = null;
+      setPausado(true);
+      return;
+    }
+
     window.speechSynthesis.pause();
     setPausado(true);
   }, []);
 
   const retomar = useCallback(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const pendente = pendenteRef.current;
+    if (pendente) {
+      pendenteRef.current = null;
+      setPausado(false);
+      iniciarFalaRef.current(pendente.original.slice(pendente.ponto), pendente.opts, pendente.ponto, pendente.original);
+      return;
+    }
     window.speechSynthesis.resume();
     setPausado(false);
   }, []);
 
-  const falar = useCallback<VozContextValue["falar"]>((text, opts) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const textoLimpo = text.trim();
-    if (!textoLimpo) return;
+  const iniciarFala = useCallback((textoLimpo: string, opts: OpcoesFala | undefined, base: number, original: string) => {
     if (opts?.interrupt !== false) {
       window.speechSynthesis.cancel();
       geracaoRef.current += 1;
       naFilaRef.current = 0;
+      pendenteRef.current = null;
       setPausado(false);
     }
 
     const fala = new SpeechSynthesisUtterance(textoLimpo);
-    fala.lang = "pt-BR";
+    // A voz fala no idioma do site (`<html lang>`, mantido pelo seletor de idioma); sem ele, português.
+    fala.lang = (typeof document !== "undefined" && document.documentElement.lang) || "pt-BR";
     fala.rate = velocidadeRef.current;
     naFilaRef.current += 1;
     const minhaGeracao = geracaoRef.current;
+
+    const entrada: FalaAtual = { original, opts, base, ultimo: -1, pausada: false };
+    // Só a fala sozinha pode ser pausada por reinício: com fila, o ponto de retomada seria ambíguo.
+    atualRef.current = naFilaRef.current === 1 ? entrada : null;
 
     let encerrada = false;
     const encerrar = (motivo: "fim" | "erro" | "cancelada") => {
       // `end` e `error` podem chegar os dois para a mesma fala: conta uma vez só.
       if (encerrada) return;
       encerrada = true;
+      // Cancelada só para pausar: a leitura segue "viva" e `retomar` a reinicia do ponto guardado.
+      if (entrada.pausada) return;
       // Fala de uma geração anterior (cancelada) não mexe na fila da atual.
       if (minhaGeracao === geracaoRef.current) {
         naFilaRef.current = Math.max(0, naFilaRef.current - 1);
@@ -100,10 +149,13 @@ export function VozProvider({ children }: { children: ReactNode }) {
 
     fala.onstart = () => {
       setFalando(true);
-      opts?.aoIniciar?.();
+      // Depois de uma pausa por reinício, quem acompanha a leitura já foi avisado do começo.
+      if (base === 0) opts?.aoIniciar?.();
     };
     fala.onboundary = (evento) => {
-      opts?.aoLimite?.({ charIndex: evento.charIndex, charLength: evento.charLength, name: evento.name });
+      if (evento.name === "word") entrada.ultimo = evento.charIndex;
+      // O índice sempre aponta para o texto original, mesmo depois de uma retomada no meio dele.
+      opts?.aoLimite?.({ charIndex: base + evento.charIndex, charLength: evento.charLength, name: evento.name });
     };
     fala.onend = () => encerrar("fim");
     fala.onerror = (evento) => {
@@ -113,6 +165,17 @@ export function VozProvider({ children }: { children: ReactNode }) {
     };
     window.speechSynthesis.speak(fala);
   }, []);
+  iniciarFalaRef.current = iniciarFala;
+
+  const falar = useCallback<VozContextValue["falar"]>(
+    (text, opts) => {
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+      const textoLimpo = text.trim();
+      if (!textoLimpo) return;
+      iniciarFala(textoLimpo, opts, 0, textoLimpo);
+    },
+    [iniciarFala],
+  );
 
   const definirEscolha = useCallback<VozContextValue["definirEscolha"]>(
     (next) => {

@@ -49,7 +49,7 @@ export type PreferenciasAcessibilidade = {
   /** Modo leitura: coluna estreita, texto à esquerda, mais respiro e fundo à escolha. */
   readingMode: boolean;
   readingBg: "padrao" | "creme" | "escuro";
-  readingFont: "padrao" | "sem-serifa" | "serifada";
+  readingFont: "padrao" | "hiperlegivel" | "sem-serifa" | "serifada";
   /** Cores à escolha da pessoa, sempre em `#rrggbb`. */
   customColors: boolean;
   colorText: string;

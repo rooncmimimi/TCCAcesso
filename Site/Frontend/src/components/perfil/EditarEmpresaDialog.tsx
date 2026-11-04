@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
+import { AvisoDeRascunho } from "@/components/acessibilidade/AvisoDeRascunho";
+import { useRascunhoDeFormulario } from "@/hooks/useRascunhoDeFormulario";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -32,6 +35,9 @@ import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
 import { PORTES_EMPRESA } from "@/utils/formatacao";
 import type { Empresa } from "@/types";
 
+/** Os únicos campos deste formulário que entram no rascunho automático. */
+const CAMPOS_DO_RASCUNHO = ["descricao", "culturaInclusiva"] as const;
+
 /** Edição do perfil empresarial. O backend recusa a chamada se a empresa não estiver aprovada. */
 export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; children: ReactNode }) {
   const [aberto, setAberto] = useState(false);
@@ -39,6 +45,8 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
   const [cidade, setCidade] = useState(empresa.cidade ?? "");
   const [estado, setEstado] = useState(empresa.estado ?? "");
   const queryClient = useQueryClient();
+  // Rascunho só dos dois textos longos (nada de CNPJ, endereço nem contato): ver `lib/rascunhoDeFormulario.ts`.
+  const rascunho = useRascunhoDeFormulario({ chave: `empresa:${empresa.id}`, campos: CAMPOS_DO_RASCUNHO, ativo: aberto });
 
   // Reabrir o diálogo sempre reflete os dados mais recentes da empresa.
   useEffect(() => {
@@ -57,6 +65,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
     onSuccess: () => {
       void invalidarEmpresa();
       toast.success("Perfil da empresa atualizado.");
+      rascunho.limpar();
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil da empresa.")),
@@ -143,7 +152,8 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           </div>
         </div>
 
-        <form onSubmit={enviar} className="space-y-4 border-t pt-4">
+        <form ref={rascunho.ref} onSubmit={enviar} className="space-y-4 border-t pt-4">
+          <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="razaoSocial">Razão social</Label>
@@ -163,12 +173,18 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descricao">Descrição</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="descricao">Descrição</Label>
+              <DicaDeCampoBotao dica="empresaDescricao" nomeDoCampo="Descrição da empresa" />
+            </div>
             <Textarea id="descricao" name="descricao" rows={4} maxLength={4000} defaultValue={empresa.descricao ?? ""} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="culturaInclusiva">Cultura de inclusão</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="culturaInclusiva">Cultura de inclusão</Label>
+              <DicaDeCampoBotao dica="empresaCulturaInclusiva" nomeDoCampo="Cultura de inclusão" />
+            </div>
             <Textarea
               id="culturaInclusiva"
               name="culturaInclusiva"

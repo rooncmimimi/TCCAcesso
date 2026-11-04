@@ -31,6 +31,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { cn } from "@/lib/utils";
 import { ResumoVagaSimples } from "@/components/vagas/ResumoVagaSimples";
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
+import { TermosDoTexto } from "@/components/acessibilidade/TermosDoTexto";
 
 export const Route = createFileRoute("/vaga/$vagaId")({
   head: () => ({
@@ -297,6 +298,7 @@ function DetalheVaga() {
               <TextoOuvivel rotulo="Ouvir a descrição da vaga" className="mt-2">
                 <p className="whitespace-pre-line text-sm">{traducao.texto("descricao")}</p>
               </TextoOuvivel>
+              <TermosDoTexto texto={vaga.descricao} />
             </section>
 
             {vaga.requisitos && (
@@ -305,6 +307,7 @@ function DetalheVaga() {
                 <TextoOuvivel rotulo="Ouvir os requisitos da vaga" className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("requisitos")}</p>
                 </TextoOuvivel>
+                <TermosDoTexto texto={vaga.requisitos} />
               </section>
             )}
 
@@ -314,6 +317,7 @@ function DetalheVaga() {
                 <TextoOuvivel rotulo="Ouvir os benefícios da vaga" className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("beneficios")}</p>
                 </TextoOuvivel>
+                <TermosDoTexto texto={vaga.beneficios} />
               </section>
             )}
 

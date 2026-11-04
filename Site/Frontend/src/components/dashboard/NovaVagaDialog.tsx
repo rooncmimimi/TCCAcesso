@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
+import { AvisoDeRascunho } from "@/components/acessibilidade/AvisoDeRascunho";
+import { useRascunhoDeFormulario } from "@/hooks/useRascunhoDeFormulario";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
@@ -32,6 +35,9 @@ import {
   ROTULO_RECURSO_ACESSIBILIDADE,
 } from "./constantesVaga";
 
+/** Os únicos campos deste formulário que entram no rascunho automático. */
+const CAMPOS_DO_RASCUNHO = ["titulo", "descricao", "requisitos", "beneficios", "acessibilidade"] as const;
+
 /**
  * Publicação real de vaga pela empresa autenticada (POST /vagas).
  * Os campos e limites espelham o validador do backend.
@@ -43,6 +49,8 @@ export function NovaVagaDialog() {
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
   const queryClient = useQueryClient();
+  // Rascunho só dos textos da vaga (nada pessoal): ver `lib/rascunhoDeFormulario.ts`.
+  const rascunho = useRascunhoDeFormulario({ chave: "vaga:nova", campos: CAMPOS_DO_RASCUNHO, ativo: aberto });
 
   // Cada "Nova vaga" começa em branco, mesmo que o diálogo já tenha sido aberto antes.
   useEffect(() => {
@@ -56,6 +64,7 @@ export function NovaVagaDialog() {
     mutationFn: (payload: Record<string, unknown>) => vagasService.criar(payload),
     onSuccess: (vaga) => {
       toast.success(`Vaga "${vaga.titulo}" publicada com sucesso.`);
+      rascunho.limpar();
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-empresa"] });
@@ -108,25 +117,35 @@ export function NovaVagaDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={enviar} className="space-y-4">
+        <form ref={rascunho.ref} onSubmit={enviar} className="space-y-4">
+          <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="space-y-2">
             <Label htmlFor="titulo">Título da vaga</Label>
             <Input id="titulo" name="titulo" required minLength={5} maxLength={200} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descricao">Descrição</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="descricao">Descrição</Label>
+              <DicaDeCampoBotao dica="vagaDescricao" nomeDoCampo="Descrição da vaga" />
+            </div>
             <Textarea id="descricao" name="descricao" required minLength={20} rows={5} />
             <p className="text-xs text-muted-foreground">Mínimo de 20 caracteres.</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="requisitos">Requisitos</Label>
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="requisitos">Requisitos</Label>
+                <DicaDeCampoBotao dica="vagaRequisitos" nomeDoCampo="Requisitos" />
+              </div>
               <Textarea id="requisitos" name="requisitos" rows={3} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="beneficios">Benefícios</Label>
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="beneficios">Benefícios</Label>
+                <DicaDeCampoBotao dica="vagaBeneficios" nomeDoCampo="Benefícios" />
+              </div>
               <Textarea id="beneficios" name="beneficios" rows={3} />
             </div>
           </div>
@@ -237,7 +256,10 @@ export function NovaVagaDialog() {
           </fieldset>
 
           <div className="space-y-2">
-            <Label htmlFor="acessibilidade">Detalhes adicionais de acessibilidade</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="acessibilidade">Detalhes adicionais de acessibilidade</Label>
+              <DicaDeCampoBotao dica="vagaAcessibilidade" nomeDoCampo="Detalhes de acessibilidade" />
+            </div>
             <Textarea
               id="acessibilidade"
               name="acessibilidade"

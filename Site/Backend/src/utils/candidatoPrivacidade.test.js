@@ -78,6 +78,7 @@ function candidatoComDeficiencia(comoInstancia, extras = {}) {
         cep: "01001000",
         necessidadesAcessibilidade: "Leitor de tela",
         curriculo: "privado/curriculo.pdf",
+        curriculoNome: "Meu CV.pdf",
         exibirDeficienciaNoPerfil: false,
         ...extras,
         deficiencias: [
@@ -152,24 +153,28 @@ describe.each([
         expect(visto.cpf).toBe("12345678901");
     });
 
-    it("o contato liberado da candidatura devolve só o e-mail, nada além", () => {
+    it("o contato liberado da candidatura devolve só o e-mail e o NOME do currículo, nada além (nunca o caminho)", () => {
         const base = candidatoComDeficiencia(comoInstancia);
         comUsuario(base, { id: "u1", nome: "Ana", email: "ana@exemplo.com", telefone: "11999999999", senhaHash: "x" }, comoInstancia);
 
         const visto = serializar(aplicarPrivacidadeCandidato(base, false, { contatoLiberado: true }));
 
         expect(visto.usuario.email).toBe("ana@exemplo.com");
+        expect(visto.curriculoNome).toBe("Meu CV.pdf");
+        expect(visto.curriculo).toBeUndefined();
         expect(visto.usuario.nome).toBe("Ana");
         expect(visto.usuario.telefone).toBeUndefined();
         expect(visto.usuario.senhaHash).toBeUndefined();
         expect(visto.cpf).toBeUndefined();
     });
 
-    it("sem contato liberado, o e-mail some", () => {
+    it("sem contato liberado, o e-mail e o nome do currículo somem", () => {
         const base = candidatoComDeficiencia(comoInstancia);
         comUsuario(base, { id: "u1", nome: "Ana", email: "ana@exemplo.com" }, comoInstancia);
 
-        expect(serializar(aplicarPrivacidadeCandidato(base, false)).usuario.email).toBeUndefined();
+        const visto = serializar(aplicarPrivacidadeCandidato(base, false));
+        expect(visto.usuario.email).toBeUndefined();
+        expect(visto.curriculoNome).toBeUndefined();
     });
 });
 

@@ -70,6 +70,7 @@ function candidatoCompleto() {
         pretensaoSalarial: "5000",
         necessidadesAcessibilidade: "Uso leitor de tela",
         curriculo: "privado/cv.pdf",
+        curriculoNome: "cv.pdf",
         exibirDeficienciaNoPerfil: false,
         tituloProfissional: "Analista",
         cidade: "São Paulo",
@@ -113,6 +114,9 @@ describe("listarDaVaga: o que a empresa recebe", () => {
         const r = await Servico.listarDaVaga("v1", EMPRESA_A, {});
         const porStatus = Object.fromEntries(r.candidaturas.map((c) => [c.status, c.candidato.usuario.email]));
 
+        const curriculoPorStatus = Object.fromEntries(r.candidaturas.map((c) => [c.status, c.candidato.curriculoNome]));
+        expect(curriculoPorStatus.pendente).toBe("cv.pdf");
+        expect(curriculoPorStatus.rejeitada).toBeUndefined();
         expect(porStatus.pendente).toBe("ana@exemplo.com");
         expect(porStatus.em_analise).toBe("ana@exemplo.com");
         expect(porStatus.rejeitada).toBeUndefined();

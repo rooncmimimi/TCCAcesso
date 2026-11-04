@@ -50,6 +50,9 @@ const CAMPOS_PUBLICOS_CANDIDATO = new Set([
     "atualizadoEm"
 ]);
 
+/** O que a candidatura entrega, além do perfil público: o nome do currículo (nunca o caminho). */
+const CAMPOS_DA_CANDIDATURA = new Set(["curriculoNome", "curriculoAtualizadoEm"]);
+
 /** Campos do Usuario aninhado visíveis para qualquer usuário autenticado. */
 const CAMPOS_PUBLICOS_USUARIO = new Set([
     "id",
@@ -162,8 +165,10 @@ function esconderCampo(objeto, campo) {
  * pública. `autorizado` vem de `podeVerDadosPrivados` (dono ou administrador). Muta e devolve o
  * mesmo objeto (mesmo padrão já usado no projeto para `usuario.email = undefined`).
  *
- * `contatoLiberado` (de `podeVerDadosDaCandidatura`) deixa o e-mail de contato visível para a
- * empresa com candidatura ativa. Não libera mais nada.
+ * `contatoLiberado` (de `podeVerDadosDaCandidatura`) deixa visíveis, para a empresa com candidatura
+ * ativa, o e-mail de contato e o NOME do currículo (que a tela usa para oferecer o download). O
+ * caminho do arquivo (`curriculo`) nunca sai: o download é por URL assinada, autorizada de novo a
+ * cada pedido. Não libera mais nada.
  */
 export function aplicarPrivacidadeCandidato(candidato, autorizado, { contatoLiberado = false } = {}) {
     if (!candidato) {
@@ -198,6 +203,10 @@ export function aplicarPrivacidadeCandidato(candidato, autorizado, { contatoLibe
 
     for (const campo of Object.keys(candidato.dataValues ?? candidato)) {
         if (campo === "deficiencias" && mostrarDeficiencia) {
+            continue;
+        }
+
+        if (contatoLiberado && CAMPOS_DA_CANDIDATURA.has(campo)) {
             continue;
         }
 

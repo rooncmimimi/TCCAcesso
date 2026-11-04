@@ -15,11 +15,12 @@ import type { ReactNode } from "react";
  * do jsdom: cada teste começa com a aba tendo iniciado um fluxo, salvo quando diz o contrário.
  */
 
-const { busca, navegar, iniciarSessao, concluir } = vi.hoisted(() => ({
+const { busca, navegar, iniciarSessao, concluir, criarConta } = vi.hoisted(() => ({
   busca: { codigo: undefined as string | undefined, erro: undefined as string | undefined },
   navegar: vi.fn(),
   iniciarSessao: vi.fn(),
   concluir: vi.fn(),
+  criarConta: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -32,7 +33,7 @@ vi.mock("@/hooks/useSessao", () => ({ useSessao: () => ({ iniciarSessao }) }));
 // O resto do módulo (como `mensagemDeErroGoogle`) é o de verdade; só o serviço HTTP é simulado.
 vi.mock("@/services/google.service", async (original) => ({
   ...(await original<typeof import("@/services/google.service")>()),
-  default: { concluir },
+  default: { concluir, cadastrar: criarConta },
 }));
 
 const { Route } = await import("./retorno-google");
@@ -446,31 +447,55 @@ describe("desfecho cadastrar", () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
-  // Etapa 6: com a criação sem senha ligada no servidor, a conta nasce no retorno do Google.
-  it("com contaSemSenha, segue para /cadastro/google (aceite dos termos e conta na hora), e não para o formulário", async () => {
-    concluir.mockResolvedValue(cadastrar({ contaSemSenha: true }));
-    abrir({ codigo: "c" });
+  // Etapa 6: com a criação sem senha ligada no servidor, a conta nasce no retorno do Google, sem tela de aceite.
+  describe("com contaSemSenha", () => {
+    const sessaoNova = { token: "t", refreshToken: "r", usuario: { id: "u9", nome: "Ana", tipoUsuario: "candidato" } };
 
-    await waitFor(() => expect(navegar).toHaveBeenCalled());
-    expect(navegar).toHaveBeenCalledWith({ to: "/cadastro/google", search: { depois: undefined }, replace: true });
-  });
+    it("cria a conta na hora, abre a sessão e segue para os dados, sem passar por /cadastro/google", async () => {
+      const prova = provaDeTeste();
+      concluir.mockResolvedValue(cadastrar({ contaSemSenha: true }, prova));
+      criarConta.mockResolvedValue(sessaoNova);
+      iniciarSessao.mockResolvedValue(usuarioNormalizado());
+      abrir({ codigo: "c" });
 
-  it("com contaSemSenha, a prova também fica na aba, e nunca na URL", async () => {
-    const prova = provaDeTeste();
-    concluir.mockResolvedValue(cadastrar({ contaSemSenha: true }, prova));
-    abrir({ codigo: "c" });
+      await waitFor(() => expect(navegar).toHaveBeenCalled());
+      expect(criarConta).toHaveBeenCalledWith(prova, expect.any(String));
+      expect(iniciarSessao).toHaveBeenCalledWith(sessaoNova);
+      expect(navegar).toHaveBeenCalledTimes(1);
+      expect(navegar).toHaveBeenCalledWith({ to: "/cadastro/dados", search: { depois: undefined }, replace: true });
+    });
 
-    await waitFor(() => expect(navegar).toHaveBeenCalled());
-    expect(lerProva()).toBe(prova);
-    expect(JSON.stringify(navegar.mock.calls[0][0])).not.toContain(prova);
-  });
+    it("gasta a prova: ela não fica na aba depois que a conta nasceu", async () => {
+      concluir.mockResolvedValue(cadastrar({ contaSemSenha: true }));
+      criarConta.mockResolvedValue(sessaoNova);
+      iniciarSessao.mockResolvedValue(usuarioNormalizado());
+      abrir({ codigo: "c" });
 
-  it("com contaSemSenha e 'Sou empresa', preserva a intenção", async () => {
-    concluir.mockResolvedValue(cadastrar({ contaSemSenha: true, tipoConta: "empresa" }));
-    abrir({ codigo: "c" });
+      await waitFor(() => expect(navegar).toHaveBeenCalled());
+      expect(lerProva()).toBeNull();
+    });
 
-    await waitFor(() => expect(navegar).toHaveBeenCalled());
-    expect(navegar.mock.calls[0][0]).toEqual({ to: "/cadastro/google", search: { depois: "empresa" }, replace: true });
+    it("com 'Sou empresa', preserva a intenção", async () => {
+      concluir.mockResolvedValue(cadastrar({ contaSemSenha: true, tipoConta: "empresa" }));
+      criarConta.mockResolvedValue(sessaoNova);
+      iniciarSessao.mockResolvedValue(usuarioNormalizado());
+      abrir({ codigo: "c" });
+
+      await waitFor(() => expect(navegar).toHaveBeenCalled());
+      expect(navegar.mock.calls[0][0]).toEqual({ to: "/cadastro/dados", search: { depois: "empresa" }, replace: true });
+    });
+
+    it("se o servidor recusar criar a conta, cai em /cadastro/google com a prova ainda na aba, para tentar de novo", async () => {
+      const prova = provaDeTeste();
+      concluir.mockResolvedValue(cadastrar({ contaSemSenha: true }, prova));
+      criarConta.mockRejectedValue(erroDoServidor(503, "Tente novamente"));
+      abrir({ codigo: "c" });
+
+      await waitFor(() => expect(navegar).toHaveBeenCalled());
+      expect(iniciarSessao).not.toHaveBeenCalled();
+      expect(navegar).toHaveBeenCalledWith({ to: "/cadastro/google", search: { depois: undefined }, replace: true });
+      expect(lerProva()).toBe(prova);
+    });
   });
 
   it.each([[false], [undefined]])("com contaSemSenha %j (chave desligada ou API antiga), segue o cadastro de sempre", async (contaSemSenha) => {

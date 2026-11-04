@@ -46,6 +46,17 @@ describe("disponibilidade", () => {
     expect(disponivel).toHaveBeenCalledTimes(1);
   });
 
+  it("avisa que continuar com o Google é aceitar os Termos e a Privacidade, com os dois documentos à mão", async () => {
+    disponivel.mockResolvedValue(true);
+    render(<BotaoGoogle />);
+
+    await avancar(0);
+
+    expect(screen.getByText(/concorda com os/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Termos de Uso" })).toHaveAttribute("href", "/termos");
+    expect(screen.getByRole("link", { name: "Política de Privacidade" })).toHaveAttribute("href", "/privacidade");
+  });
+
   it("não mostra o botão, e não pergunta de novo, quando o Google não está configurado (resposta definitiva)", async () => {
     disponivel.mockResolvedValue(false);
     render(<BotaoGoogle />);

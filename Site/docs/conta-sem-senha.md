@@ -12,13 +12,17 @@ preencher o formulário inteiro antes. A senha, o CPF e o resto dos dados vêm d
 | --- | --- | --- |
 | 1 | Google | A pessoa escolhe a conta Google. |
 | 2 | `/retorno-google` | O servidor devolve `cadastrar` com `contaSemSenha: true` (a chave ligada). |
-| 3 | `/cadastro/google` | Mostra a conta Google (nome e e-mail vêm da prova, a pessoa não digita), pede o **aceite dos Termos e do Aviso de Privacidade**. Ao aceitar, `POST /auth/google/cadastrar` cria a conta e abre a sessão. |
+| 3 | `/retorno-google` | Sem tela nenhuma: o Site chama `POST /auth/google/cadastrar` com a prova e a versão dos documentos, a conta nasce e a sessão abre. O aceite dos **Termos e da Política de Privacidade** é o aviso com os dois links logo abaixo do botão "Continuar com Google" (`BotaoGoogle`). |
+| 3b | `/cadastro/google` | Só aparece se a criação do passo 3 falhar (servidor acordando, por exemplo): mostra a conta Google, pede o aceite com caixa de seleção e tenta de novo. |
 | 4 | `/cadastro/dados` | País, CPF, telefone, nascimento, cidade e estado (as mesmas regras do cadastro). Grava pelos endpoints de perfil que já existiam. |
 | 5 | `/cadastro/candidato?retomar=true` | As etapas de perfil e de acessibilidade que já existiam. |
 
 Quem preferir definir uma senha e preencher tudo de uma vez tem o link "Cadastro completo" no passo 3, que leva
 ao cadastro de sempre (aceita a mesma prova do Google). Com a chave desligada, o passo 2 já segue por esse
 cadastro de sempre.
+
+Consequência do passo 3: o aceite deixou de ser uma caixa marcada e passou a ser o aviso ao clicar no botão. Se o jurídico
+preferir o aceite explícito, basta o `retorno-google` voltar a navegar para `/cadastro/google` quando `contaSemSenha`.
 
 Se a pessoa fechar a aba depois do passo 3, no próximo login `destinoAposEntrar` a leva de volta aos dados
 (`dadosPessoaisPendentes`), e nunca a quem já terminou o cadastro.

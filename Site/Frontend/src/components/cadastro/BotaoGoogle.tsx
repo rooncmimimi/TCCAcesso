@@ -126,6 +126,23 @@ export function BotaoGoogle({
         {rotulo ?? t("auth.continuarGoogle")}
       </Button>
 
+      {/*
+        Quem ainda não tem conta ganha uma na hora, sem tela de aceite (ver `retorno-google`). O aceite
+        dos documentos passa a ser este aviso, na frente do botão, antes de sair para o Google.
+        Links comuns, em nova aba: o botão aparece em formulários e não deve perder o que foi digitado.
+      */}
+      <p className="text-center text-xs leading-relaxed text-muted-foreground">
+        {t("auth.googleAvisoAntes")}{" "}
+        <a href="/termos" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline underline-offset-2">
+          {t("auth.googleAvisoTermos")}
+        </a>{" "}
+        {t("auth.googleAvisoEntre")}{" "}
+        <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline underline-offset-2">
+          {t("auth.googleAvisoPrivacidade")}
+        </a>
+        {t("auth.googleAvisoDepois")}
+      </p>
+
       {/* Separador decorativo: o texto "ou" fica fora do fluxo de leitura dos leitores de tela. */}
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-border" />

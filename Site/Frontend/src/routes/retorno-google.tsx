@@ -11,10 +11,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 import { guardarVerificacao } from "@/lib/verificacaoDispositivo";
+import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import {
   guardarProva,
   lerCodigoDoFragmento,
   lerVinculo,
+  limparProva,
   limparVinculo,
   tirarCodigoDaUrl,
 } from "@/lib/googleNavegador";
@@ -38,9 +40,10 @@ import googleService, { mensagemDeErroGoogle } from "@/services/google.service";
  * - **conflito** — já existe conta ACESSO com aquele e-mail sem Google vinculado: pede para entrar
  *   com a senha, porque vincular só pelo e-mail deixaria qualquer um assumir a conta alheia;
  * - **cadastrar** — não há conta: guarda a prova do Google na aba (`lib/googleNavegador`, nunca na
- *   URL). Com a criação sem senha ligada no servidor (`contaSemSenha`), segue para
- *   `/cadastro/google`, onde a pessoa aceita os termos e a conta nasce na hora; sem ela, segue para o
- *   cadastro de candidato de sempre, com senha. Não há tela perguntando "candidato ou empresa"
+ *   URL). Com a criação sem senha ligada no servidor (`contaSemSenha`), a conta nasce aqui mesmo,
+ *   sem tela nenhuma (o aviso dos Termos está no botão do Google) e a pessoa segue para
+ *   `/cadastro/dados`; se a criação falhar, cai em `/cadastro/google`, que permite tentar de novo.
+ *   Sem a chave, segue para o cadastro de candidato de sempre, com senha. Não há tela perguntando "candidato ou empresa"
  *   porque toda conta no ACESSO começa como candidato — a conta da empresa é uma segunda conta,
  *   criada a partir dela.
  *
@@ -139,8 +142,23 @@ function RetornoGoogle() {
         }
         const depois = retorno.tipoConta === "empresa" ? "empresa" : undefined;
 
+        // A conta nasce aqui, sem tela de aceite: o aviso dos Termos e da Privacidade está no botão
+        // "Continuar com Google" (`BotaoGoogle`), que a pessoa acabou de usar. O servidor é quem
+        // reconfere a prova, o e-mail verificado e a versão dos documentos.
         if (retorno.contaSemSenha) {
-          navigate({ to: "/cadastro/google", search: { depois }, replace: true });
+          let sessaoNova: Awaited<ReturnType<typeof googleService.cadastrar>>;
+          try {
+            sessaoNova = await googleService.cadastrar(retorno.prova, VERSAO_DOCUMENTOS);
+          } catch {
+            // Não deu para criar agora: a tela de sempre deixa a pessoa tentar de novo ou escolher o cadastro com senha.
+            navigate({ to: "/cadastro/google", search: { depois }, replace: true });
+            return;
+          }
+          // A prova cumpriu o papel e não deve ficar na aba para outro cadastro.
+          limparProva();
+          await iniciarSessao(sessaoNova);
+          toast.success("Conta criada com o Google.");
+          navigate({ to: "/cadastro/dados", search: { depois }, replace: true });
           return;
         }
 

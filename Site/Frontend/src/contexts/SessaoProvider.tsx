@@ -9,6 +9,7 @@ import acessibilidadeService, {
   preferenciasParaApi,
 } from "@/services/acessibilidade.service";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { duracaoDoAviso } from "@/lib/avisos";
 import type {
   RespostaLogin,
   RespostaLoginContaPausada,
@@ -73,7 +74,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       desconectarSocket();
       setUsuario(null);
       if (motivo) {
-        toast.error(motivo, { duration: 10_000 });
+        toast.error(motivo, { duration: duracaoDoAviso(10_000, prefsRef.current.persistentToasts) });
       }
     });
   }, []);

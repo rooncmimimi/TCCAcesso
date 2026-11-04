@@ -13,10 +13,19 @@ export function VozProvider({ children }: { children: ReactNode }) {
   const { preferencias, salvar } = useAcessibilidade();
   const [suportado, setSuportado] = useState(false);
   const [falando, setFalando] = useState(false);
+  const [pausado, setPausado] = useState(false);
   const [escolha, setChoiceState] = useState<EscolhaVoz>(null);
   const [perguntouNestaSessao, setAsked] = useState(false);
   const velocidadeRef = useRef(preferencias.speechRate);
   const preferenciasRef = useRef(preferencias);
+  /** Quantas falas ainda estão na fila do navegador: `falando` só vira falso quando zera. */
+  const naFilaRef = useRef(0);
+  /**
+   * Muda a cada `cancel()`. Uma fala cancelada ainda recebe o próprio `error` depois de a fala nova
+   * já ter entrado na fila; sem comparar a geração, esse aviso tardio zeraria a conta da fila e
+   * `falando` ficaria falso com a fala nova a caminho.
+   */
+  const geracaoRef = useRef(0);
 
   velocidadeRef.current = preferencias.speechRate;
   preferenciasRef.current = preferencias;
@@ -37,20 +46,71 @@ export function VozProvider({ children }: { children: ReactNode }) {
   const parar = useCallback(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
+    geracaoRef.current += 1;
+    naFilaRef.current = 0;
     setFalando(false);
+    setPausado(false);
+  }, []);
+
+  const pausar = useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (!window.speechSynthesis.speaking) return;
+    window.speechSynthesis.pause();
+    setPausado(true);
+  }, []);
+
+  const retomar = useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.resume();
+    setPausado(false);
   }, []);
 
   const falar = useCallback<VozContextValue["falar"]>((text, opts) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const textoLimpo = text.trim();
     if (!textoLimpo) return;
-    if (opts?.interrupt !== false) window.speechSynthesis.cancel();
+    if (opts?.interrupt !== false) {
+      window.speechSynthesis.cancel();
+      geracaoRef.current += 1;
+      naFilaRef.current = 0;
+      setPausado(false);
+    }
+
     const fala = new SpeechSynthesisUtterance(textoLimpo);
     fala.lang = "pt-BR";
     fala.rate = velocidadeRef.current;
-    fala.onstart = () => setFalando(true);
-    fala.onend = () => setFalando(false);
-    fala.onerror = () => setFalando(false);
+    naFilaRef.current += 1;
+    const minhaGeracao = geracaoRef.current;
+
+    let encerrada = false;
+    const encerrar = (motivo: "fim" | "erro" | "cancelada") => {
+      // `end` e `error` podem chegar os dois para a mesma fala: conta uma vez só.
+      if (encerrada) return;
+      encerrada = true;
+      // Fala de uma geração anterior (cancelada) não mexe na fila da atual.
+      if (minhaGeracao === geracaoRef.current) {
+        naFilaRef.current = Math.max(0, naFilaRef.current - 1);
+        if (naFilaRef.current === 0) {
+          setFalando(false);
+          setPausado(false);
+        }
+      }
+      opts?.aoTerminar?.(motivo);
+    };
+
+    fala.onstart = () => {
+      setFalando(true);
+      opts?.aoIniciar?.();
+    };
+    fala.onboundary = (evento) => {
+      opts?.aoLimite?.({ charIndex: evento.charIndex, charLength: evento.charLength, name: evento.name });
+    };
+    fala.onend = () => encerrar("fim");
+    fala.onerror = (evento) => {
+      // `interrupted` e `canceled` são o nosso próprio `cancel()`, não uma falha.
+      const cancelada = evento.error === "interrupted" || evento.error === "canceled";
+      encerrar(cancelada ? "cancelada" : "erro");
+    };
     window.speechSynthesis.speak(fala);
   }, []);
 
@@ -86,8 +146,20 @@ export function VozProvider({ children }: { children: ReactNode }) {
   useEffect(() => parar, [parar]);
 
   const valorContexto = useMemo<VozContextValue>(
-    () => ({ suportado, falando, escolha, perguntouNestaSessao, falar, parar, definirEscolha, limparEscolha }),
-    [suportado, falando, escolha, perguntouNestaSessao, falar, parar, definirEscolha, limparEscolha],
+    () => ({
+      suportado,
+      falando,
+      pausado,
+      escolha,
+      perguntouNestaSessao,
+      falar,
+      parar,
+      pausar,
+      retomar,
+      definirEscolha,
+      limparEscolha,
+    }),
+    [suportado, falando, pausado, escolha, perguntouNestaSessao, falar, parar, pausar, retomar, definirEscolha, limparEscolha],
   );
 
   return <VozContext.Provider value={valorContexto}>{children}</VozContext.Provider>;

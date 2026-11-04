@@ -21,6 +21,12 @@ export type Parada = {
   tipo: "controle" | "texto";
   /** O que a voz diz. Nos controles, só é usado quando o foco não consegue chegar neles. */
   fala: string;
+  /**
+   * Bloco de texto cuja fala é o texto inteiro dele: pode ser lido com destaque palavra por palavra
+   * (`useLeituraDestacada`), com `prefixo` falado antes e sem destaque.
+   */
+  destacavel?: boolean;
+  prefixo?: string;
 };
 
 /** Blocos de texto que viram parada. Células de tabela entram para as listagens do painel admin. */
@@ -92,7 +98,7 @@ function limitar(texto: string): string {
 }
 
 /** Oculto de verdade: o usuário não vê nem um leitor de tela nativo leria. */
-function criarVerificadorDeOculto() {
+export function criarVerificadorDeOculto() {
   const memo = new Map<HTMLElement, boolean>();
 
   const oculto = (el: HTMLElement): boolean => {
@@ -145,14 +151,21 @@ function nivelDoTitulo(el: HTMLElement): string | null {
   return aria && /^[1-6]$/.test(aria) ? aria : null;
 }
 
-function falaDoTexto(el: HTMLElement, texto: string): string {
+/** O que a voz diz antes do texto de um título ("Título de nível 2: "); vazio para os demais blocos. */
+function prefixoDoTitulo(el: HTMLElement): string {
   const ehTitulo = /^H[1-6]$/.test(el.tagName) || el.getAttribute("role") === "heading";
-  if (!ehTitulo) return limitar(texto);
+  if (!ehTitulo) return "";
   const nivel = nivelDoTitulo(el);
+  return `${nivel ? `Título de nível ${nivel}` : "Título"}: `;
+}
+
+function falaDoTexto(el: HTMLElement, texto: string): string {
+  const prefixo = prefixoDoTitulo(el);
   const fala = limitar(texto);
+  if (!prefixo) return fala;
   // Título que já termina em pontuação não ganha um ponto a mais ("vidas.." soaria como erro).
   const pontuacao = /[.!?…:;]$/.test(fala) ? "" : ".";
-  return `${nivel ? `Título de nível ${nivel}` : "Título"}: ${fala}${pontuacao}`;
+  return `${prefixo}${fala}${pontuacao}`;
 }
 
 /**
@@ -202,7 +215,17 @@ export function listarParadas(raiz: HTMLElement): Parada[] {
     // Sem blocos dentro, lê o bloco inteiro (com o texto dos links no meio da frase). Com blocos
     // dentro (um item de lista com sublista), lê só o texto que é dele; o resto vira outras paradas.
     const texto = temBlocosAninhados ? textoProprio(el, oculto) : textoCompleto(el);
-    if (texto) paradas.push({ el, tipo: "texto", fala: falaDoTexto(el, texto) });
+    if (texto) {
+      paradas.push({
+        el,
+        tipo: "texto",
+        fala: falaDoTexto(el, texto),
+        // Com blocos aninhados, a fala é só o texto próprio do bloco, e o destaque por palavra
+        // marcaria também o texto dos blocos de dentro.
+        destacavel: !temBlocosAninhados,
+        prefixo: prefixoDoTitulo(el),
+      });
+    }
   }
 
   return paradas;

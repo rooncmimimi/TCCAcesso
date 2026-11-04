@@ -19,6 +19,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
+import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
+import { AvisoDeRascunho } from "@/components/acessibilidade/AvisoDeRascunho";
+import { useRascunhoDeFormulario } from "@/hooks/useRascunhoDeFormulario";
+
+/** Os únicos campos de texto livre que entram no rascunho automático. */
+const CAMPOS_DO_RASCUNHO = ["cargo", "empresa", "local", "descricao", "instituicao", "curso", "titulo", "nome"] as const;
 
 /** União "achatada" dos 4 formatos de recurso: cada campo pode não existir no registro atual. */
 type Registro = {
@@ -64,6 +70,12 @@ export function FormularioRecursoDialog({
   const [emAndamento, setEmAndamento] = useState(Boolean(registro?.emAndamento));
   const queryClient = useQueryClient();
   const editando = Boolean(registro?.id);
+  // Rascunho só do texto livre (cargo, empresa, curso, descrição): sem datas nem nada pessoal.
+  const rascunho = useRascunhoDeFormulario({
+    chave: `recurso:${recurso}:${registro?.id ?? "novo"}`,
+    campos: CAMPOS_DO_RASCUNHO,
+    ativo: aberto,
+  });
 
   function alternarAberto(next: boolean) {
     if (next) {
@@ -82,6 +94,7 @@ export function FormularioRecursoDialog({
     onSuccess: () => {
       toast.success(editando ? "Registro atualizado." : "Registro adicionado.");
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso", recurso] });
+      rascunho.limpar();
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar.")),
@@ -143,7 +156,8 @@ export function FormularioRecursoDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={enviar} className="space-y-4">
+        <form ref={rascunho.ref} onSubmit={enviar} className="space-y-4">
+          <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           {recurso === "experiencias" && (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -181,7 +195,10 @@ export function FormularioRecursoDialog({
                 <Switch id="atual" checked={atual} onCheckedChange={setAtual} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
+                <div className="flex flex-wrap items-center justify-between gap-x-2">
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <DicaDeCampoBotao dica="experienciaDescricao" nomeDoCampo="Descrição" />
+                </div>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
               </div>
             </>
@@ -218,7 +235,10 @@ export function FormularioRecursoDialog({
                 <Switch id="emAndamento" checked={emAndamento} onCheckedChange={setEmAndamento} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
+                <div className="flex flex-wrap items-center justify-between gap-x-2">
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <DicaDeCampoBotao dica="formacaoDescricao" nomeDoCampo="Descrição" />
+                </div>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
               </div>
             </>

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
 import { useVoz } from "@/hooks/useVoz";
 import { acharParada, listarParadas, raizDaLeitura, setaPertenceAoComponente, type Parada } from "@/lib/cursorDeLeitura";
 import { resolverAlvoFalavel } from "@/lib/leitorSemantico";
@@ -27,6 +28,7 @@ import { resolverAlvoFalavel } from "@/lib/leitorSemantico";
 export function useCursorDeLeitura() {
   const { preferencias } = useAcessibilidade();
   const { falar, parar } = useVoz();
+  const { ler: lerDestacado, parar: pararLeitura } = useLeituraDestacada();
   const ativo = preferencias.screenReader && preferencias.arrowReading;
   const reduzirMovimento = preferencias.reduceMotion;
 
@@ -36,6 +38,8 @@ export function useCursorDeLeitura() {
     /** Onde o cursor está: a última parada lida ou o último controle focado. */
     let atual: HTMLElement | null = null;
     let marcado: HTMLElement | null = null;
+    /** A última coisa que o cursor mandou ler foi um bloco com destaque (marcação própria). */
+    let lendoPeloCursor = false;
 
     const desmarcar = () => {
       marcado?.removeAttribute("data-speaking");
@@ -76,8 +80,17 @@ export function useCursorDeLeitura() {
 
       const focado = document.activeElement;
       if (focado instanceof HTMLElement && focado !== document.body) focado.blur();
-      marcar(parada.el);
+      desmarcar();
       rolarAte(parada.el);
+
+      if (parada.destacavel) {
+        // O leitor destacado marca a palavra (ou a frase, ou o bloco) e limpa a marca sozinho.
+        lerDestacado(parada.el, { prefixo: parada.prefixo });
+        lendoPeloCursor = true;
+        return;
+      }
+
+      marcar(parada.el);
       falar(parada.fala);
     };
 
@@ -92,9 +105,11 @@ export function useCursorDeLeitura() {
       if (e.defaultPrevented) return;
 
       if (e.key === "Escape") {
-        if (marcado) {
+        if (marcado || lendoPeloCursor) {
           desmarcar();
+          pararLeitura();
           parar();
+          lendoPeloCursor = false;
         }
         return;
       }
@@ -129,5 +144,5 @@ export function useCursorDeLeitura() {
       document.removeEventListener("focusin", aoFocar);
       desmarcar();
     };
-  }, [ativo, reduzirMovimento, falar, parar]);
+  }, [ativo, reduzirMovimento, falar, parar, lerDestacado, pararLeitura]);
 }

@@ -9,6 +9,10 @@ import {
 
 import { AcessibilidadeProvider } from "@/contexts/AcessibilidadeProvider";
 import { VozProvider } from "@/contexts/VozProvider";
+import { LeituraDestacadaProvider } from "@/contexts/LeituraDestacadaProvider";
+import { ControleDeLeitura } from "@/components/acessibilidade/ControleDeLeitura";
+import { FerramentasDeLeitura } from "@/components/acessibilidade/FerramentasDeLeitura";
+import { ReguaDeLeitura } from "@/components/acessibilidade/ReguaDeLeitura";
 import { useCursorDeLeitura } from "@/hooks/useCursorDeLeitura";
 import { useLeituraAutomatica } from "@/hooks/useLeituraAutomatica";
 import { useIdioma } from "@/hooks/useIdioma";
@@ -109,6 +113,9 @@ function AppFrame() {
       <HeadContent />
       <Outlet />
       <VLibras />
+      <FerramentasDeLeitura />
+      <ControleDeLeitura />
+      <ReguaDeLeitura />
       <Toaster />
     </>
   );
@@ -121,11 +128,13 @@ function ComponenteRaiz() {
     <QueryClientProvider client={queryClient}>
       <AcessibilidadeProvider>
         <VozProvider>
-          <SessaoProvider>
-            <IdiomaProvider>
-              <AppFrame />
-            </IdiomaProvider>
-          </SessaoProvider>
+          <LeituraDestacadaProvider>
+            <SessaoProvider>
+              <IdiomaProvider>
+                <AppFrame />
+              </IdiomaProvider>
+            </SessaoProvider>
+          </LeituraDestacadaProvider>
         </VozProvider>
       </AcessibilidadeProvider>
     </QueryClientProvider>

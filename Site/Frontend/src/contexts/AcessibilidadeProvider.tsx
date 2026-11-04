@@ -7,6 +7,7 @@ import {
   CHAVE_ESCOLHA_VOZ,
   AcessibilidadeContext,
 } from "@/contexts/AcessibilidadeContext";
+import { ehCorHex } from "@/lib/contraste";
 
 const CHAVE_PREFERENCIAS = "acesso:a11y-prefs";
 
@@ -31,6 +32,23 @@ function aplicarNoDocumento(p: PreferenciasAcessibilidade) {
   raiz.style.setProperty("--a11y-font-scale", String(p.fontScale));
   raiz.style.setProperty("--a11y-letter-spacing", `${p.letterSpacing}em`);
   raiz.style.setProperty("--a11y-line-height", String(p.lineHeight));
+
+  raiz.classList.toggle("a11y-focus-mode", p.focusMode);
+  raiz.classList.toggle("a11y-reading-mode", p.readingMode);
+  raiz.classList.toggle("a11y-colorblind", p.colorBlind);
+  raiz.setAttribute("data-reading-bg", p.readingBg);
+  raiz.setAttribute("data-reading-font", p.readingFont);
+
+  // Cores à escolha: só vão para o CSS valores `#rrggbb` válidos. Um valor corrompido no
+  // localStorage (ou vindo de fora) desliga o modo em vez de virar CSS arbitrário.
+  const cores = { text: p.colorText, bg: p.colorBg, link: p.colorLink, focus: p.colorFocus };
+  const coresValidas = Object.values(cores).every(ehCorHex);
+  const ligarCores = p.customColors && coresValidas;
+  raiz.classList.toggle("a11y-custom-colors", ligarCores);
+  for (const [nome, valor] of Object.entries(cores)) {
+    if (ligarCores) raiz.style.setProperty(`--a11y-c-${nome}`, valor);
+    else raiz.style.removeProperty(`--a11y-c-${nome}`);
+  }
 }
 
 /**

@@ -29,6 +29,8 @@ import mensagensService from "@/services/mensagens.service";
 import dashboardService, { candidaturasService } from "@/services/dashboard.service";
 import { extrairMensagemErro } from "@/services/api";
 import { cn } from "@/lib/utils";
+import { ResumoVagaSimples } from "@/components/vagas/ResumoVagaSimples";
+import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 
 export const Route = createFileRoute("/vaga/$vagaId")({
   head: () => ({
@@ -286,24 +288,32 @@ function DetalheVaga() {
 
         <ControleDeTraducao traducao={traducao} conteudo="vaga" className="mt-3" />
 
+        <ResumoVagaSimples vaga={vaga} />
+
         <Card className="mt-6 shadow-none">
           <CardContent className="space-y-6 p-6">
             <section>
               <h2 className="text-lg font-bold">{t("vagaDetalhe.descricao")}</h2>
-              <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("descricao")}</p>
+              <TextoOuvivel rotulo="Ouvir a descrição da vaga" className="mt-2">
+                <p className="whitespace-pre-line text-sm">{traducao.texto("descricao")}</p>
+              </TextoOuvivel>
             </section>
 
             {vaga.requisitos && (
               <section>
                 <h2 className="text-lg font-bold">{t("vagaDetalhe.requisitos")}</h2>
-                <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("requisitos")}</p>
+                <TextoOuvivel rotulo="Ouvir os requisitos da vaga" className="mt-2">
+                  <p className="whitespace-pre-line text-sm">{traducao.texto("requisitos")}</p>
+                </TextoOuvivel>
               </section>
             )}
 
             {vaga.beneficios && (
               <section>
                 <h2 className="text-lg font-bold">{t("vagaDetalhe.beneficios")}</h2>
-                <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("beneficios")}</p>
+                <TextoOuvivel rotulo="Ouvir os benefícios da vaga" className="mt-2">
+                  <p className="whitespace-pre-line text-sm">{traducao.texto("beneficios")}</p>
+                </TextoOuvivel>
               </section>
             )}
 
@@ -329,7 +339,9 @@ function DetalheVaga() {
             {vaga.acessibilidade && (
               <section>
                 <h2 className="text-lg font-bold">{t("vagaDetalhe.detalhesAcessibilidade")}</h2>
-                <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("acessibilidade")}</p>
+                <TextoOuvivel rotulo="Ouvir os detalhes de acessibilidade da vaga" className="mt-2">
+                  <p className="whitespace-pre-line text-sm">{traducao.texto("acessibilidade")}</p>
+                </TextoOuvivel>
               </section>
             )}
 

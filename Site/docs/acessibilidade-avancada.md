@@ -1,0 +1,108 @@
+# Acessibilidade avançada: auditoria (Bloco 0) e planejamento
+
+Branch `feat/acessibilidade-avancada`, criada a partir de `7f4ede0` (mesmo ponto do `origin/main`),
+com o cursor de leitura por setas como primeiro commit. Nada foi publicado, mesclado ou implantado,
+e o banco de produção não foi tocado.
+
+Este documento tem três partes: o que existe hoje, o que cada bloco vai fazer e o que cada item do
+Bloco 1 entregou (seção 4, atualizada ao fim do bloco).
+
+## 1. Auditoria: o que existe
+
+| Área | Onde está | Estado | O que falta / melhoria |
+|---|---|---|---|
+| Painel de preferências | `components/acessibilidade/PainelAcessibilidade.tsx`, rota `/configuracoes/acessibilidade`, boas-vindas | Funciona. Pré-visualização ao vivo (rascunho), salvar, descartar e redefinir. Textos fixos em português (fora do dicionário pt/en/es). | Novos controles entram como `ToggleRow`/`SliderRow`. `keyboardNav` existe no tipo mas não tem controle (o site já é todo operável por teclado). |
+| Preferências | `contexts/AcessibilidadeContext.ts`, `AcessibilidadeProvider.tsx` | 14 campos, guardados no `localStorage` (`acesso:a11y-prefs`). Aplicadas como classes `a11y-*` e variáveis CSS na raiz. | Só um subconjunto sincroniza com a conta (`acessibilidade.service.ts`). Preferências novas ficam locais, sem migration. A coluna `linguagemSimplificada` existe no banco e no validador mas **nenhuma tela a usa**. |
+| Sincronização com a conta | `services/acessibilidade.service.ts`, `Backend/models/PreferenciaAcessibilidade.js` | tema, contraste, dislexia, escala, espaçamento, animações, voz, consentimento, velocidade, Libras, foco. | Sincronizar as novas exigiria migration (fora do Bloco 1). |
+| Leitura por voz | `contexts/VozProvider.tsx` (`falar`, `parar`), `hooks/useLeituraAutomatica.ts` | Fala o elemento focado ou clicado, diálogos e toasts. Respeita a velocidade. `lang` fixo em `pt-BR`. **Sem pausa, sem retomada, sem evento `boundary`**, e não lê blocos longos de texto. | Itens 1 e 2 do Bloco 1. A língua falada não acompanha o idioma do site (en/es). |
+| `leitorSemantico` | `lib/leitorSemantico.ts` | Funções puras que descrevem um elemento (nome, função, estado, descrição). Bem coberto por testes. | Reaproveitado pelo cursor de leitura. |
+| Cursor de leitura por setas | `lib/cursorDeLeitura.ts`, `hooks/useCursorDeLeitura.ts` | Entregue antes deste bloco. Opcional, desligado por padrão. | Testado só com a voz simulada. |
+| Avisos (toasts) | `components/ui/sonner.tsx`, `<Toaster />` em `__root.tsx` | Sonner com duração padrão (4 s). Um aviso explícito de 10 s em `SessaoProvider`. **Sem botão de fechar e sem opção de manter.** Lidos em voz por `useLeituraAutomatica`. | Item 4 do Bloco 1. |
+| Texto alternativo | `components/feed/CampoDescricaoImagem.tsx`, `POST` de sugestão em `postagemRoutes.js` | Já oferece "Descrever com IA" (OpenRouter, modelos **gratuitos** em `env.js`) e escrita manual. A sugestão nunca é salva sozinha e é editável. | A imagem sai do servidor para um serviço externo ao clicar: precisa constar na política de privacidade. Orientação contextual e aviso de imagem sem descrição ficam para o Bloco 3. |
+| Estrutura de vaga | `Backend/models/Vaga.js`, `types/index.ts`, `routes/vaga.$vagaId.tsx` | Título, descrição, `requisitos` (um texto único), `beneficios`, salário, modalidade, contrato, cidade/estado, `cargaHoraria` (texto), público-alvo, `recursosAcessibilidade` (lista), `acessibilidade` (texto), status. | **Não existe** campo de atividades separado, requisito obrigatório x desejável, nem etapas da seleção. O resumo não pode inventar: dirá "não informado" nesses casos. |
+| Candidatura | `Backend/models/Candidatura.js` | Só `status` e `mensagem`. | Nenhum campo de adaptação: o Bloco 2 precisa de tabela nova e migration. |
+| Dados sensíveis (verificado em `utils/candidatoPrivacidade.js`) | `CandidatoDeficiencia`, `Deficiencia`, `Candidato.necessidadesAcessibilidade` | (1) A **categoria** de deficiência declarada (`deficiencias`) está na lista de campos **públicos**: qualquer pessoa autenticada vê. Só o texto livre (`observacoes`) fica escondido de terceiros. (2) Uma empresa que tenha **qualquer candidatura** do candidato (em qualquer status) passa a ver **todos** os campos privados, inclusive `necessidadesAcessibilidade`, sem autorização específica daquela candidatura. (3) `necessidadesAcessibilidade` é texto livre, editável no perfil. | Decisão do Bloco 2, **não alterada aqui**: a regra pedida (autorização específica por candidatura, nada compartilhado por padrão) contradiz (1) e (2). Mudar isso altera o que empresas e pessoas veem hoje e precisa da sua validação. |
+| Navegação por teclado e marcos | `layouts/EstruturaApp.tsx`, `AutenticacaoLayout.tsx`, `CabecalhoApp.tsx` | Link "Pular para o conteúdo principal", `<main id="conteudo">`, `<header>`, `<nav aria-label>`. Foco visível reforçável. | Sem rodapé como `<footer>` verificado. |
+| Retomada e tempo | `lib/etapaCadastro.ts`, rotas de cadastro | O cadastro guarda a etapa para retomar. | Sem aviso de expiração nem rascunho de formulários de candidatura. Item 10. |
+| i18n | `i18n/dicionarios`, `IdiomaProvider` | pt/en/es no site. | Textos novos de acessibilidade seguem o painel atual (português fixo), a traduzir depois. |
+| Testes | Vitest + Testing Library; 49 arquivos, 718 testes antes deste bloco | Sem `axe` nem checagem automática de acessibilidade. | Verificação manual e por testes de comportamento. |
+| Leitores de tela reais | — | **Nunca testado** com NVDA, JAWS, VoiceOver ou TalkBack. | Declarado como limitação em todos os relatórios. |
+
+## 2. Princípios que valem para todos os blocos
+
+- Custo adicional **R$ 0,00**: APIs do navegador, React, CSS e regras determinísticas. Nenhuma dependência nova.
+- Nada de IA nova. A sugestão de texto alternativo que já existe não é ampliada neste bloco.
+- Preferências de interface (este bloco) são locais ao navegador. Necessidades profissionais e dados
+  sensíveis (Bloco 2 em diante) ficam no backend, com autorização por candidatura.
+- Não afirmar compatibilidade universal. Cada limitação de navegador é registrada na seção 4.
+- WCAG 2.2 como referência. Nenhuma declaração de conformidade sem auditoria externa.
+
+## 3. Planejamento por bloco
+
+**Bloco 1 — leitura e compreensão (este).** Destaque palavra por palavra; régua de leitura; resumo da
+vaga em linguagem simples; avisos persistentes; glossário; modo foco; modo leitura; cores
+personalizadas; modo daltonismo; mais tempo; "Onde estou?"; "Explique esta página"; assistente de
+preenchimento; histórico de instruções. Tudo no Site, sem migration.
+
+**Bloco 2 — inclusão nas candidaturas.** Minha Acessibilidade; perfil de adaptações; preferências de
+comunicação; solicitação de adaptações por candidatura; prévia de privacidade; pausar e continuar;
+simulador. Exige tabelas novas e migration, e a auditoria de quem vê dados de deficiência.
+
+**Bloco 3 — empresas e ambientes.** Entrevista adaptável; prévia sensorial; mapa de acessibilidade
+física; vídeo da vaga em Libras; legendas e transcrição; revisão de texto alternativo; avaliador de
+vagas; comparador; explicação de requisitos. Exige campos novos em `vagas`.
+
+**Bloco 4 — motricidade e comunicação.** Varredura com um botão; proteção contra tremores; alvos
+maiores; atalhos; comandos de voz; ditado (com vocabulário contextual); central de comunicação
+alternativa; dicionário visual de profissões; navegação por objetivos.
+
+Ordem sujeita a revisão: o Bloco 2 depende de decisões de modelo de dados que precisam da sua
+validação antes de qualquer migration.
+
+## 4. Bloco 1: o que foi entregue
+
+Tudo no Site (frontend). Sem migration, sem dependência nova, sem serviço externo, sem mexer no
+backend nem no banco. As novas preferências ficam só no navegador (`localStorage`).
+
+| # | Recurso | Onde | Estado |
+|---|---|---|---|
+| 1 | Destaque palavra por palavra | `contexts/LeituraDestacadaProvider.tsx`, `lib/leituraDestacada.ts`, `TextoOuvivel`, cursor de leitura | Pronto. Pausar, continuar e parar em `ControleDeLeitura`. Plano B por frase, plano C por bloco. |
+| 2 | Régua de leitura | `components/acessibilidade/ReguaDeLeitura.tsx` | Pronto. Mouse, foco, cursor de leitura e Alt + ↑/↓. Altura e escurecimento ajustáveis. |
+| 3 | Resumo da vaga em linguagem simples | `lib/resumoVaga.ts`, `components/vagas/ResumoVagaSimples.tsx` | Pronto, com os limites dos dados (ver abaixo). |
+| 4 | Avisos que não somem | `components/ui/sonner.tsx`, `lib/avisos.ts` | Pronto. Botão de fechar e limite de 5 minutos. |
+| 5 | Glossário | `dados/glossario.ts`, `PaineisDeAjuda.tsx` | Pronto (18 termos). Lista e busca, com os termos da página em destaque. **Não** há dica sobre cada palavra dentro do texto. |
+| 6 | Modo foco | CSS (`.a11y-focus-mode`) | Pronto: esconde `aside`, rodapé e `data-secundario`. |
+| 7 | Modo leitura | CSS (`.a11y-reading-mode`) | Pronto. Fonte do sistema (sem serifa ou serifada) e fundo. **Atkinson Hyperlegible não foi incluída**: pede uma dependência ou arquivo de fonte, a decidir com você. |
+| 8 | Cores personalizadas | `SecaoLeituraEFoco.tsx`, `lib/contraste.ts` | Pronto. Só `#rrggbb` chega ao CSS. Mostra o contraste de cada par e avisa. |
+| 9 | Modo para daltonismo | CSS (`.a11y-colorblind`) | Pronto: laranja e azul no lugar de vermelho e verde, símbolo em erro e aviso, links sublinhados. Os selos de status já tinham texto. |
+| 10 | Mais tempo | `lib/rascunhoDeFormulario.ts`, `hooks/useRascunhoDeFormulario.ts` | **Parcial**: rascunho automático nos formulários de texto longo do perfil (Sobre mim, título, experiência, formação). **Não há** aviso de expiração nem extensão de tempo porque o Site não tem prazo de formulário; a sessão e os códigos por e-mail vencem no servidor e não foram alterados, por segurança. |
+| 11 | Onde estou? | `lib/ondeEstou.ts` | Pronto. Página, etapa do cadastro, seção e ação principal (heurística). |
+| 12 | Explique esta página | `dados/explicacoesPaginas.ts` | Pronto para as rotas principais; as demais dizem que não há explicação. |
+| 13 | Assistente de preenchimento | `dados/dicasDeCampo.ts`, `DicaDeCampoBotao.tsx` | **Parcial**: 4 campos do perfil (título, sobre mim, descrição de experiência e de formação). O exemplo nunca é colocado no campo. |
+| 14 | Histórico de instruções | `lib/historicoInstrucoes.ts`, `SalvarInstrucao.tsx` | Pronto. Só neste navegador, no máximo 50 itens. |
+
+O acesso a "Onde estou?", "Explique esta página", glossário e histórico está no botão fixo
+**Ajuda de leitura** (canto inferior esquerdo), que também tem ajustes rápidos.
+
+### Limites dos dados da vaga (por que o resumo diz "não informado")
+
+O cadastro de vagas não tem campo para atividades separadas da descrição, requisitos obrigatórios x
+desejáveis, nem etapas da seleção. O resumo **não inventa** esses dados: usa o início da descrição,
+mostra os requisitos como a empresa os escreveu, diz que não foram separados e informa "A empresa não
+informou" nas etapas. Para ter esses dados de verdade é preciso incluir campos nas vagas (Bloco 3).
+
+### Limitações de navegador (registradas, não universais)
+
+- **Destaque por palavra** depende do evento `boundary` da voz e da CSS Custom Highlight API
+  (Chrome/Edge 105+, Safari 17.2+, Firefox 140+). **Testado de verdade apenas no navegador do app
+  com as vozes locais "Microsoft Maria" e "Daniel"**, onde as palavras vieram em ordem e certas.
+  Vozes de rede costumam não emitir `boundary`: nelas o destaque cai para frase e o aviso na tela diz
+  isso. Esse plano B foi testado só com voz simulada.
+- `speechSynthesis.pause()`/`resume()` é irregular em alguns navegadores, principalmente com textos
+  longos no Android. Não foi testado em celular.
+- A voz fala sempre em `pt-BR`, mesmo com o site em inglês ou espanhol (já era assim).
+- **Não testado** com NVDA, JAWS, VoiceOver, TalkBack nem com dispositivo de acionamento.
+
+### Testes
+
+O resultado completo e o estado do Git estão no relatório entregue junto deste bloco.

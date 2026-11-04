@@ -33,6 +33,31 @@ export type PreferenciasAcessibilidade = {
    * campo no backend; desligado por padrão porque as setas também rolam a página.
    */
   arrowReading: boolean;
+
+  // Bloco 1 da acessibilidade avançada. Todas ficam só no navegador (sem coluna no backend).
+
+  /** Destaca a palavra que a voz está dizendo (`hooks/useLeituraDestacada.ts`). */
+  wordHighlight: boolean;
+  /** Régua de leitura: faixa clara que acompanha o mouse ou o foco, com o resto da tela escurecido. */
+  readingRuler: boolean;
+  rulerHeight: number; // px, 24 – 160
+  rulerDim: number; // 0.2 – 0.85: quanto o resto da tela escurece
+  /** Avisos (toasts) ficam na tela até a pessoa fechar. */
+  persistentToasts: boolean;
+  /** Esconde elementos secundários (colunas laterais, rodapé de suporte). */
+  focusMode: boolean;
+  /** Modo leitura: coluna estreita, texto à esquerda, mais respiro e fundo à escolha. */
+  readingMode: boolean;
+  readingBg: "padrao" | "creme" | "escuro";
+  readingFont: "padrao" | "sem-serifa" | "serifada";
+  /** Cores à escolha da pessoa, sempre em `#rrggbb`. */
+  customColors: boolean;
+  colorText: string;
+  colorBg: string;
+  colorLink: string;
+  colorFocus: string;
+  /** Paleta que não depende de vermelho x verde, com links sublinhados e estados com ícone. */
+  colorBlind: boolean;
 };
 
 export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
@@ -51,6 +76,21 @@ export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
   speechRate: 1,
   vlibras: true,
   arrowReading: false,
+  wordHighlight: true,
+  readingRuler: false,
+  rulerHeight: 64,
+  rulerDim: 0.6,
+  persistentToasts: false,
+  focusMode: false,
+  readingMode: false,
+  readingBg: "padrao",
+  readingFont: "padrao",
+  customColors: false,
+  colorText: "#111111",
+  colorBg: "#ffffff",
+  colorLink: "#0b3d91",
+  colorFocus: "#c2410c",
+  colorBlind: false,
 };
 
 export const CHAVE_ESCOLHA_VOZ = "acesso:voice-choice";

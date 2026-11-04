@@ -47,7 +47,7 @@ function Feed() {
   return (
     <EstruturaApp>
       <h1 className="sr-only">{t("feed.titulo")}</h1>
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] [.a11y-focus-mode_&]:lg:grid-cols-[minmax(0,1fr)]">
 
         <aside aria-label={t("feed.seuResumo")} className="hidden space-y-4 lg:block">
           <Card className="shadow-card">

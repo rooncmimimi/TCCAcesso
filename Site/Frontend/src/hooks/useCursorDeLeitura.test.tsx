@@ -9,6 +9,14 @@ const { falar, parar, estado } = vi.hoisted(() => ({
 
 vi.mock("@/hooks/useAcessibilidade", () => ({ useAcessibilidade: () => ({ preferencias: estado }) }));
 vi.mock("@/hooks/useVoz", () => ({ useVoz: () => ({ falar, parar }) }));
+// O leitor destacado de verdade fala por `falar` e destaca; aqui ele só repete o texto do bloco.
+const { pararLeitura } = vi.hoisted(() => ({ pararLeitura: vi.fn() }));
+vi.mock("@/hooks/useLeituraDestacada", () => ({
+  useLeituraDestacada: () => ({
+    ler: (el: HTMLElement, o?: { prefixo?: string }) => falar(`${o?.prefixo ?? ""}${el.textContent}`),
+    parar: pararLeitura,
+  }),
+}));
 
 const { useCursorDeLeitura } = await import("./useCursorDeLeitura");
 
@@ -44,22 +52,32 @@ describe("useCursorDeLeitura", () => {
     const evento = apertar("ArrowDown");
 
     expect(evento.defaultPrevented).toBe(true);
-    expect(falar).toHaveBeenCalledWith("Título de nível 1: Vagas.");
-    expect(marcado()?.tagName).toBe("H1");
+    expect(falar).toHaveBeenCalledWith("Título de nível 1: Vagas");
   });
 
-  it("↓ e ↑ andam bloco a bloco, e a marca acompanha só o bloco atual", () => {
+  it("↓ e ↑ andam bloco a bloco", () => {
     render(<Pagina html="<h1>Vagas</h1><p>Primeiro.</p><p>Segundo.</p>" />);
 
     apertar("ArrowDown");
     apertar("ArrowDown");
     apertar("ArrowDown");
     expect(falar).toHaveBeenLastCalledWith("Segundo.");
-    expect(document.querySelectorAll('[data-speaking="true"]')).toHaveLength(1);
 
     apertar("ArrowUp");
     expect(falar).toHaveBeenLastCalledWith("Primeiro.");
-    expect(marcado()?.textContent).toBe("Primeiro.");
+  });
+
+  it("bloco que não pode ser destacado por palavra (item com sublista) é marcado pelo cursor, uma marca só", () => {
+    render(<Pagina html="<ul><li>Pai<ul><li>Filho</li></ul></li></ul>" />);
+
+    apertar("ArrowDown");
+    expect(falar).toHaveBeenLastCalledWith("Pai");
+    expect(marcado()?.tagName).toBe("LI");
+
+    apertar("ArrowDown");
+    expect(falar).toHaveBeenLastCalledWith("Filho");
+    // O "Filho" é um bloco destacável: a marca do pai some, e o leitor destacado cuida do resto.
+    expect(marcado()).toBeNull();
   });
 
   it("avisa o fim e o começo da página sem sair do lugar", () => {
@@ -210,15 +228,24 @@ describe("useCursorDeLeitura", () => {
     expect(falar).toHaveBeenLastCalledWith("Início da página.");
   });
 
-  it("Esc apaga a marca e para a fala", () => {
+  it("Esc para a leitura destacada e a fala", () => {
     render(<Pagina html="<p>Texto.</p>" />);
+    apertar("ArrowDown");
+
+    apertar("Escape");
+
+    expect(pararLeitura).toHaveBeenCalled();
+    expect(parar).toHaveBeenCalled();
+  });
+
+  it("Esc apaga a marca de um bloco marcado pelo cursor", () => {
+    render(<Pagina html="<ul><li>Pai<ul><li>Filho</li></ul></li></ul>" />);
     apertar("ArrowDown");
     expect(marcado()).not.toBeNull();
 
     apertar("Escape");
 
     expect(marcado()).toBeNull();
-    expect(parar).toHaveBeenCalled();
   });
 
   it("Esc sem nada marcado não faz nada (deixa fechar diálogos e menus)", () => {
@@ -244,7 +271,7 @@ describe("useCursorDeLeitura", () => {
   });
 
   it("ao desligar, tira a marca da tela", () => {
-    const { unmount } = render(<Pagina html="<p>Texto.</p>" />);
+    const { unmount } = render(<Pagina html="<ul><li>Pai<ul><li>Filho</li></ul></li></ul>" />);
     apertar("ArrowDown");
     expect(marcado()).not.toBeNull();
 

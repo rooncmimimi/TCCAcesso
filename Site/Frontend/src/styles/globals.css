@@ -477,6 +477,18 @@
   background-color: oklch(from #0a98e7 l c h / 0.12);
 }
 
+/* Destaque da leitura em voz (CSS Custom Highlight API; ver `lib/leituraDestacada.ts`).
+   A palavra tem texto preto sobre amarelo (mede mais de 15:1) nos dois temas, e a frase
+   um fundo azul suave que não esconde o texto. */
+::highlight(acesso-palavra) {
+  background-color: #ffe14d;
+  color: #000000;
+}
+
+::highlight(acesso-frase) {
+  background-color: oklch(from #0a98e7 l c h / 0.25);
+}
+
 .sr-only-focusable:not(:focus):not(:focus-within) {
   position: absolute;
   width: 1px;
@@ -492,3 +504,119 @@ div[vw].enabled {
   z-index: 40;
 }
 
+
+/* ------------------------------------------------------------------------------------------------
+   Acessibilidade avançada (Bloco 1). Cada modo é uma classe na raiz (`html`), ligada por
+   `AcessibilidadeProvider`. Todos ficam ao fim do arquivo, depois dos temas, para vencer o `:root`
+   e o `.dark` de mesma especificidade.
+   ------------------------------------------------------------------------------------------------ */
+
+/* Modo foco: some o que é secundário. `data-secundario` marca o que mais deve sumir, e as colunas
+   laterais (`aside`) e o rodapé de suporte saem por padrão. Nunca esconde menu, conteúdo nem foco. */
+.a11y-focus-mode aside,
+.a11y-focus-mode [data-secundario],
+.a11y-focus-mode footer {
+  display: none !important;
+}
+
+/* Modo leitura: coluna estreita, texto à esquerda, mais respiro entre linhas e parágrafos.
+   `ch` acompanha o tamanho da fonte, então a coluna cresce junto com o zoom. */
+.a11y-reading-mode main {
+  max-width: 68ch;
+  margin-inline: auto;
+  text-align: left;
+  line-height: max(var(--a11y-line-height), 1.8);
+}
+
+.a11y-reading-mode main p,
+.a11y-reading-mode main li {
+  text-align: left;
+  hyphens: manual;
+}
+
+.a11y-reading-mode main p + p,
+.a11y-reading-mode main li + li {
+  margin-top: 1.1em;
+}
+
+.a11y-reading-mode[data-reading-font="sem-serifa"] main {
+  font-family: Verdana, "Segoe UI", system-ui, sans-serif;
+}
+
+.a11y-reading-mode[data-reading-font="serifada"] main {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+/* Fundo do modo leitura: creme (menos brilho que o branco) ou escuro. Texto escuro sobre creme mede
+   mais de 12:1, e texto claro sobre o escuro, mais de 14:1. */
+.a11y-reading-mode[data-reading-bg="creme"] main {
+  background-color: #f6efe0;
+  color: #1c1917;
+  --foreground: #1c1917;
+  --card: #f6efe0;
+  --card-foreground: #1c1917;
+  --muted-foreground: #44403c;
+}
+
+.a11y-reading-mode[data-reading-bg="escuro"] main {
+  background-color: #14171c;
+  color: #f1f5f9;
+  --foreground: #f1f5f9;
+  --card: #14171c;
+  --card-foreground: #f1f5f9;
+  --muted-foreground: #cbd5e1;
+}
+
+/* Cores personalizadas: a pessoa escolhe texto, fundo, links e foco. As variáveis `--a11y-c-*` só
+   existem com o modo ligado e com valores `#rrggbb` validados (`AcessibilidadeProvider`). */
+.a11y-custom-colors,
+.dark.a11y-custom-colors {
+  --background: var(--a11y-c-bg);
+  --foreground: var(--a11y-c-text);
+  --card: var(--a11y-c-bg);
+  --card-foreground: var(--a11y-c-text);
+  --popover: var(--a11y-c-bg);
+  --popover-foreground: var(--a11y-c-text);
+  --muted-foreground: var(--a11y-c-text);
+  --secondary-foreground: var(--a11y-c-text);
+  --accent-foreground: var(--a11y-c-text);
+}
+
+.a11y-custom-colors main a:not([class*="bg-"]),
+.a11y-custom-colors footer a {
+  color: var(--a11y-c-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.a11y-custom-colors :focus-visible {
+  outline: 4px solid var(--a11y-c-focus) !important;
+  outline-offset: 3px !important;
+}
+
+/* Modo para daltonismo. Troca o par vermelho e verde por laranja-queimado e azul (paleta de Okabe e
+   Ito), que se distinguem nos tipos comuns de daltonismo. Os dois medem mais de 5:1 com texto
+   branco. Erros e avisos ganham também um símbolo (o `/ ""` esconde o símbolo de leitores de tela:
+   o texto do selo já diz tudo), e os links do conteúdo ficam sublinhados. */
+.a11y-colorblind,
+.dark.a11y-colorblind {
+  --destructive: #b84a00;
+  --destructive-foreground: #ffffff;
+  --success: #0072b2;
+  --success-foreground: #ffffff;
+  --chart-1: #0072b2;
+  --chart-5: #b84a00;
+}
+
+.a11y-colorblind [data-variant="destructive"]::before {
+  content: "✕ " / "";
+}
+
+.a11y-colorblind [data-variant="warning"]::before {
+  content: "⚠ " / "";
+}
+
+.a11y-colorblind main a:not([class*="bg-"]) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

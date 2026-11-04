@@ -3,7 +3,7 @@
 ## Termos de Uso e Aviso de Privacidade
 
 - Texto: `Site/Frontend/src/dados/documentosLegais.ts`. Páginas públicas `/termos` e `/privacidade` (acessíveis antes do cadastro, durante e depois, pelo rodapé e por Configurações → Privacidade e Segurança).
-- Versão vigente: `2026-11-02`, declarada no Backend (`src/config/documentosLegais.js`) e no Site (`VERSAO_DOCUMENTOS`). Um teste confere que são a mesma.
+- Versão vigente: `2026-11-04`, declarada no Backend (`src/config/documentosLegais.js`) e no Site (`VERSAO_DOCUMENTOS`). Um teste confere que são a mesma.
 - Aceite: o cadastro exige a caixa marcada e envia `termosVersao`; o servidor recusa versão ausente ou desconhecida e grava `termos_aceitos_em` e `termos_versao`. A versão e a data aparecem em Configurações → Privacidade e Segurança. Conta anterior ao registro mostra "não há versão aceita registrada" (nada é inventado).
 - Ao publicar uma versão nova: altere o texto, `VERSAO_DOCUMENTOS` e `VERSAO_DOCUMENTOS_VIGENTE`, e mantenha a anterior em `VERSOES_DE_DOCUMENTOS_CONHECIDAS` se quiser que clientes antigos ainda cadastrem. **Não existe** fluxo para pedir novo aceite a quem já tem conta; o texto não promete isso.
 

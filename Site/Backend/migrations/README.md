@@ -18,6 +18,8 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 | `0010_dispositivos_confiaveis_e_eventos_de_seguranca.sql` | Dispositivo novo por e-mail e conta comprometida: cria `dispositivos_confiaveis` (só o hash do token do aparelho), `desafios_de_dispositivo` (só o HMAC do código de 6 dígitos), `links_de_seguranca` (só o hash do link) e `eventos_de_seguranca` (histórico sem segredo), todas com RLS ligada e `ON DELETE CASCADE` da conta. Só cria; não altera nem apaga nada existente. Só tem efeito depois de ligar `DISPOSITIVOS_CONFIAVEIS_HABILITADO`. Traz no cabeçalho como voltar atrás. |
 | `0011_idioma_na_conta.sql` | Idioma do site na conta: acrescenta `preferencias_acessibilidade.idioma` (nula, `pt`/`en`/`es`). Só acrescenta; nenhuma linha existente muda. Só tem efeito depois de ligar `IDIOMA_NA_CONTA_HABILITADO`. Traz no cabeçalho como voltar atrás. |
 
+| `0012_adaptacoes_rascunhos_e_privacidade_da_candidatura.sql` | Bloco 2 da acessibilidade avançada: `candidatos.exibir_deficiencia_no_perfil` (falso: a categoria de deficiência deixa de ser pública por padrão) e as tabelas `perfis_adaptacao`, `preferencias_comunicacao`, `candidatura_adaptacoes` (cópia autorizada por candidatura, apagada na retirada) e `candidatura_rascunhos`, todas com RLS e sem acesso para anon/authenticated. Só acrescenta. **Aplique antes de publicar o código que a usa** (o model passa a ler a coluna nova). Traz no cabeçalho como voltar atrás. |
+
 As descrições representam o efeito de cada migration. Para detalhes de regras, constraints e decisões,
 consulte os comentários no próprio arquivo SQL e o [guia do schema](../ESQUEMA_DO_BANCO.md).
 
@@ -62,8 +64,8 @@ depende dela.
 
 ## Regra para novas mudanças
 
-A última migration versionada neste repositório é a `0011`. Portanto, a próxima deve ser
-`0012_<descricao_curta>.sql`, e assim por diante.
+A última migration versionada neste repositório é a `0012`. Portanto, a próxima deve ser
+`0013_<descricao_curta>.sql`, e assim por diante.
 
 A numeração tem uma **lacuna de propósito**: a `0008` (verificação em duas etapas por aplicativo autenticador) foi escrita, nunca aplicada em
 nenhum banco e removida. O código dela está preservado na branch `totp-bloco1-preservado`. O executor de migrations trabalha pelo nome

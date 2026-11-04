@@ -14,7 +14,7 @@
  * depois qual texto cada pessoa aceitou. **Mude a versão sempre que mudar o conteúdo** — senão o
  * registro de aceite passa a apontar para um texto que não é mais o que foi aceito.
  */
-export const VERSAO_DOCUMENTOS = "2026-11-02";
+export const VERSAO_DOCUMENTOS = "2026-11-04";
 
 /** Quando `true`, as telas avisam que o documento ainda não vale. */
 export const CONTEUDO_PENDENTE = false;
@@ -132,6 +132,7 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
         "No perfil profissional, se você quiser preencher: título profissional, escolaridade, resumo, experiências, formações, habilidades, certificados, LinkedIn, GitHub, disponibilidade, pretensão salarial, foto e capa.",
         "Currículo: o arquivo que você enviar, quando enviar. É opcional.",
         "Declaração de deficiência e necessidades de acessibilidade, se você quiser declarar. São dados sensíveis e recebem o tratamento descrito no item 4.",
+        "Perfil de adaptações e preferências de comunicação (Minha Acessibilidade) e rascunhos de candidatura, se você usar esses recursos. São privados e tratados como dados sensíveis, como descrito no item 4.",
         "Uso da plataforma: candidaturas, vagas favoritadas, publicações, comentários, curtidas, compartilhamentos, mensagens, pessoas e empresas que você segue, bloqueios e denúncias que fizer.",
         "Preferências de acessibilidade e de notificação, para a plataforma abrir do jeito que você configurou.",
         "Segurança e funcionamento: sessões ativas com dispositivo e endereço IP, registros de auditoria de ações sensíveis, e o identificador da sua conta Google se você entrar por ela — nunca a sua senha do Google.",
@@ -152,28 +153,31 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       paragrafos: [
         "Declarar deficiência é sempre opcional. A plataforma funciona sem essa informação.",
         "A declaração serve para cruzar o seu perfil com vagas afirmativas e para adaptar a experiência às suas necessidades. Não é usada para pontuar, classificar ou restringir o seu acesso a nada.",
-        "As necessidades de acessibilidade que você escrever, as observações sobre cada deficiência e a sua data de nascimento são privadas: só você, a equipe de moderação e a empresa de uma vaga a que você se candidatou podem vê-las, e esta última apenas para conduzir aquele processo seletivo.",
-        "A categoria de deficiência que você declarar (por exemplo, \"Deficiência visual\") aparece no seu perfil para quem puder ver o seu perfil. Se preferir não exibi-la, não a declare ou remova a declaração. As empresas não conseguem buscar candidatos por deficiência.",
+        "As necessidades de acessibilidade que você escrever, as observações sobre cada deficiência, a sua data de nascimento, o seu perfil de adaptações e as suas preferências de comunicação são privados: só você e a equipe de moderação podem vê-los. Uma empresa só recebe uma informação de acessibilidade se você a escolher e autorizar, candidatura por candidatura.",
+        "A categoria de deficiência que você declarar (por exemplo, \"Deficiência visual\") é privada por padrão. Ela só aparece no seu perfil público se você ligar essa opção em Minha Acessibilidade, e ligar não libera nenhuma outra informação. Você também pode escolher compartilhá-la numa candidatura específica, que é uma escolha separada. As empresas não conseguem buscar candidatos por deficiência.",
         "Você pode remover a declaração a qualquer momento no seu perfil, e ela deixa de ser considerada imediatamente.",
+        "Autorização por candidatura: ao se candidatar, você vê uma prévia do que a empresa receberá e escolhe, item por item, quais informações de acessibilidade compartilhar. Enviar a candidatura não autoriza compartilhar nada sozinho. O ACESSO guarda uma cópia só do que você autorizou, para aquela empresa e aquele processo seletivo, e registra a data e a finalidade da autorização. Mudar o seu perfil depois não altera o que você já autorizou.",
+        "Retirar a autorização: você pode retirá-la quando quiser. A empresa deixa de poder consultar a informação e o ACESSO apaga o conteúdo da cópia, mantendo só um registro mínimo (datas e quantidade de itens) para comprovar a operação. Não é possível apagar da memória de quem já viu, copiou ou baixou a informação antes da retirada. Por isso, compartilhe apenas o que for necessário para participar do processo.",
       ],
     },
     {
       titulo: "5. O que é público e o que é privado no seu perfil",
       paragrafos: [
-        "Público, para quem puder ver o seu perfil (você ajusta isso em Configurações › Privacidade e Segurança): nome, foto de perfil, capa, título profissional, resumo, escolaridade, cidade, estado, país, disponibilidade, links do LinkedIn e do GitHub, experiências, formações, habilidades, certificados (título, instituição e link, sem o arquivo) e as categorias de deficiência que você declarar.",
-        "Privado, visível só para você, para a equipe de moderação e, durante o processo seletivo, para a empresa de uma vaga a que você se candidatou: e-mail, telefone, CPF, data de nascimento, gênero, endereço, CEP, pretensão salarial, necessidades de acessibilidade, observações sobre deficiência e currículo.",
-        "Uma empresa com a qual você não tem candidatura vê apenas a parte pública. Nenhum dado privado aparece em listagens abertas.",
+        "Público, para quem puder ver o seu perfil (você ajusta isso em Configurações › Privacidade e Segurança): nome, foto de perfil, capa, título profissional, resumo, escolaridade, cidade, estado, país, disponibilidade, links do LinkedIn e do GitHub, experiências, formações, habilidades, certificados (título, instituição e link, sem o arquivo) e, somente se você ligar essa opção, a categoria de deficiência que declarou.",
+        "Privado, visível só para você e para a equipe de moderação: e-mail, telefone, CPF, data de nascimento, gênero, endereço, CEP, pretensão salarial, necessidades de acessibilidade, observações sobre deficiência, perfil de adaptações, preferências de comunicação e o arquivo do currículo.",
+        "Ao se candidatar, a empresa da vaga recebe o seu perfil público, o seu e-mail de contato e o seu currículo, enquanto a candidatura estiver ativa (ela perde o acesso se você cancelar a candidatura ou se ela for rejeitada). CPF, endereço, data de nascimento e as demais informações privadas não são enviados. Uma empresa sem candidatura sua vê apenas a parte pública, e nenhum dado privado aparece em listagens abertas.",
       ],
     },
     {
       titulo: "6. Com quem os dados são compartilhados",
       paragrafos: [
-        "Empresas: quando você se candidata a uma vaga, a empresa daquela vaga recebe seu perfil, seu currículo e os dados necessários ao processo. Sem candidatura, uma empresa vê apenas o que o seu perfil mostra publicamente.",
+        "Empresas: quando você se candidata a uma vaga, a empresa daquela vaga recebe o seu perfil público, o e-mail de contato, o currículo e, somente se você autorizar, as informações de acessibilidade que você escolher. Sem candidatura, uma empresa vê apenas o que o seu perfil mostra publicamente.",
         "Outras pessoas: o que você publica na comunidade e o seu perfil público ficam visíveis para quem suas configurações de privacidade permitirem. Você controla isso em Configurações › Privacidade e Segurança.",
         "Provedores de infraestrutura, que tratam dados apenas para operar o serviço: Supabase (banco de dados e armazenamento de arquivos), Render (servidor da aplicação), Vercel (hospedagem do site), Brevo (envio de e-mails de confirmação e recuperação de senha) e Expo (entrega de notificações push). Os servidores de alguns desses provedores ficam fora do Brasil (o banco de dados, por exemplo, fica no Canadá).",
         "Google: apenas se você optar por entrar com uma conta Google. O ACESSO recebe do Google o identificador da conta, o e-mail e o nome, e envia a ele apenas o necessário para a autenticação.",
         "IBGE: a lista de cidades é consultada no serviço público do IBGE para o preenchimento de localidade. Nenhum dado seu é enviado nessa consulta.",
         "Descrição automática de imagens: se você pedir uma sugestão de texto alternativo para uma imagem, aquela imagem é enviada a um serviço externo de inteligência artificial (OpenRouter) só para gerar a sugestão. É uma ação sua, nunca automática, e nenhum outro dado do seu perfil acompanha a imagem.",
+        "Ditado por voz: se você usar o ditado, o reconhecimento de fala é feito pelo serviço do seu navegador. Em navegadores como Chrome e Edge, o áudio pode ser enviado ao fabricante do navegador e é preciso internet. O ACESSO recebe só o texto, depois que você o revisa e confirma, e não grava áudio.",
         "Autoridades: mediante ordem judicial ou requisição legal, na medida exigida.",
         "O ACESSO não vende dados pessoais e não os compartilha para publicidade.",
       ],
@@ -183,6 +187,8 @@ export const AVISO_DE_PRIVACIDADE: DocumentoLegal = {
       paragrafos: [
         "Enquanto a sua conta existir, os dados do seu perfil ficam guardados para a plataforma funcionar.",
         "Conta pausada: os dados são mantidos e deixam de aparecer para outras pessoas, até você reativar.",
+        "Rascunhos de candidatura: ficam guardados por até 30 dias sem alteração e depois são apagados. A empresa nunca os vê.",
+        "Informações de acessibilidade compartilhadas numa candidatura: são apagadas quando você retira a autorização ou cancela a candidatura. Fica só um registro mínimo da operação, sem o conteúdo.",
         "Conta excluída: perfil, currículo, candidaturas, publicações, mensagens e preferências são apagados, e o arquivo do currículo é removido do armazenamento.",
         "Podem ser mantidos depois da exclusão: registros de auditoria de ações sensíveis e dados necessários ao cumprimento de obrigação legal ou à defesa em processo, pelo prazo legal aplicável.",
       ],

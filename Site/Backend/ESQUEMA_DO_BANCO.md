@@ -16,6 +16,7 @@ arquivos SQL em `migrations/`.
 | Preferências | `preferencias_acessibilidade`, `preferencias_notificacao` | Preferências individuais de acessibilidade e categorias de notificações. |
 | Perfis e dados profissionais | `candidatos`, `empresas`, `deficiencias`, `candidato_deficiencias`, `candidato_experiencias`, `candidato_formacoes`, `candidato_certificados`, `candidato_habilidades` | Perfis de candidato/empresa e histórico profissional detalhado. |
 | Vagas e recrutamento | `vagas`, `candidaturas`, `favoritos_vaga`, `empresas_seguidas` | Publicação de vagas, candidaturas, favoritos e relação de candidatos com empresas. |
+| Inclusão nas candidaturas | `perfis_adaptacao`, `preferencias_comunicacao`, `candidatura_adaptacoes`, `candidatura_rascunhos` | Adaptações e preferências de comunicação da pessoa (privadas), a cópia do que ela autorizou compartilhar em cada candidatura e o rascunho da candidatura (migration `0012`). |
 | Rede de usuários | `usuarios_seguidos`, `solicitacoes_seguimento`, `usuarios_bloqueados` | Seguir pessoas, controlar pedidos para perfis privados e bloquear contas. |
 | Feed | `postagens`, `postagem_anexos`, `comentarios`, `curtidas`, `compartilhamentos` | Publicações, mídias, comentários/respostas e interações. |
 | Comunicação | `conversas`, `mensagens`, `notificacoes` | Conversas privadas, mensagens e avisos enviados aos usuários. |
@@ -157,11 +158,15 @@ Consequências a ter em mente:
 
 | Dado | Como é guardado | Quem vê |
 | --- | --- | --- |
-| CPF (`candidatos`) | Cifrado com AES-256-GCM (`cpf_cifrado`) e com hash SHA-256 (`cpf_hash`) só para checar duplicidade. Nunca em texto puro. O CNPJ de `empresas` é guardado do mesmo modo (`cnpj_cifrado`, `cnpj_hash`). | Dono, administrador e empresa com candidatura. |
-| Currículo | Só o caminho no bucket privado (`candidatos.curriculo`). Nunca vira URL pública: o acesso é por URL assinada e temporária, gerada depois da autorização. | Dono, administrador e empresa com candidatura. |
-| Data de nascimento, gênero, endereço, CEP, pretensão salarial, `necessidades_acessibilidade` | Texto puro no banco. A proteção é o controle de acesso da API, não cifra de coluna. | Dono, administrador e empresa com candidatura. |
-| `candidato_deficiencias.observacoes` | Texto livre, pode conter informação de saúde (dado pessoal sensível na LGPD). Tratar como privado. | Dono, administrador e empresa com candidatura. |
-| Nome, foto, cidade, estado, país, título, resumo, escolaridade, experiências, formações, habilidades, deficiências declaradas | Texto puro. | Qualquer usuário autenticado (perfil público). |
+| CPF (`candidatos`) | Cifrado com AES-256-GCM (`cpf_cifrado`) e com hash SHA-256 (`cpf_hash`) só para checar duplicidade. Nunca em texto puro. O CNPJ de `empresas` é guardado do mesmo modo (`cnpj_cifrado`, `cnpj_hash`). | Dono e administrador. **Nunca** uma empresa. |
+| Currículo | Só o caminho no bucket privado (`candidatos.curriculo`). Nunca vira URL pública: o acesso é por URL assinada e temporária, gerada depois da autorização. | Dono, administrador e a empresa dona da vaga, enquanto a candidatura está ativa (nem cancelada nem rejeitada). |
+| Data de nascimento, gênero, endereço, CEP, pretensão salarial, `necessidades_acessibilidade` | Texto puro no banco. A proteção é o controle de acesso da API, não cifra de coluna. | Dono e administrador. **Nunca** uma empresa. |
+| `candidato_deficiencias.observacoes` | Texto livre, pode conter informação de saúde (dado pessoal sensível na LGPD). Tratar como privado. | Dono e administrador. |
+| Categoria de deficiência declarada (`deficiencias` do candidato) | Privada por padrão. `candidatos.exibir_deficiencia_no_perfil` (falso) só vira verdadeiro por escolha da própria pessoa, e isso não libera mais nada. | Dono e administrador; qualquer usuário autenticado só se a pessoa ligar a exibição. Numa candidatura, só se ela marcar a categoria na cópia autorizada. |
+| `perfis_adaptacao`, `preferencias_comunicacao` | Chaves de uma lista fechada e textos curtos. Sem diagnóstico. | Só o dono (nenhuma rota de terceiros lê). |
+| `candidatura_adaptacoes.itens` | Cópia (JSONB) do que a pessoa autorizou, por candidatura. Apagada (nula) ao retirar a autorização ou cancelar a candidatura; sobram datas, versão e quantidade. | A pessoa dona e, enquanto ativa, a empresa dona da vaga. Nem o administrador lê o conteúdo. |
+| `candidatura_rascunhos` | Mensagem e escolhas (nunca cópia do perfil). Expira em 30 dias sem alteração. | Só o dono. A empresa nunca. |
+| Nome, foto, cidade, estado, país, título, resumo, escolaridade, experiências, formações, habilidades | Texto puro. | Qualquer usuário autenticado (perfil público). |
 
 A separação mora em `src/utils/candidatoPrivacidade.js` e é uma **allowlist**: um campo novo do model nasce
 privado até alguém decidir torná-lo público. As duas rotas que expõem um candidato a terceiros

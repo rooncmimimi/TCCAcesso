@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Accessibility, ArrowLeft, ArrowRight, Loader2, Mail, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -20,13 +20,19 @@ import { extrairMensagemErro } from "@/services/api";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 import { guardarVerificacao } from "@/lib/verificacaoDispositivo";
 import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
+import { useIdioma } from "@/hooks/useIdioma";
+import { SeletorDeIdioma } from "@/components/SeletorDeIdioma";
 
-const esquemaLogin = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-  senha: z.string().min(1, "Informe sua senha."),
-});
+type TFuncao = ReturnType<typeof useIdioma>["t"];
 
-type FormularioLogin = z.infer<typeof esquemaLogin>;
+/** O esquema nasce do idioma atual: as mensagens de erro saem na língua da tela. */
+const criarEsquemaLogin = (t: TFuncao) =>
+  z.object({
+    email: z.string().trim().min(1, t("login.erroEmail")).email(t("login.erroEmailFormato")),
+    senha: z.string().min(1, t("login.erroSenha")),
+  });
+
+type FormularioLogin = z.infer<ReturnType<typeof criarEsquemaLogin>>;
 
 export const Route = createFileRoute("/entrar")({
   head: () => ({
@@ -42,6 +48,8 @@ export const Route = createFileRoute("/entrar")({
 
 function Entrar() {
   const { entrar } = useSessao();
+  const { t } = useIdioma();
+  const esquemaLogin = useMemo(() => criarEsquemaLogin(t), [t]);
   // Só oferece "Acho que invadiram minha conta" quando o recurso está ligado no servidor.
   const { data: estadoSeguranca } = useEstadoDaSeguranca();
   const navigate = useNavigate();
@@ -103,13 +111,13 @@ function Entrar() {
         setEmailNaoVerificado(resultado.email);
         return;
       }
-      toast.success("Login realizado com sucesso!");
+      toast.success(t("login.sucesso"));
 
       // Retomar o cadastro por terminar, painel do administrador ou feed: a regra é a mesma do
       // retorno do Google (ver `lib/destinoAposEntrar.ts`).
       navigate(destinoAposEntrar(resultado));
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível entrar. Verifique seus dados.");
+      const mensagem = extrairMensagemErro(erro, t("login.falha"));
       setError("senha", { message: mensagem });
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.error(mensagem);
@@ -125,9 +133,9 @@ function Entrar() {
     try {
       await autenticacaoService.reenviarConfirmacaoCadastro(emailNaoVerificado);
       setReenviado(true);
-      toast.success("Um novo e-mail de confirmação foi enviado.");
+      toast.success(t("login.novoEmailEnviado"));
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível reenviar o e-mail agora."));
+      toast.error(extrairMensagemErro(erro, t("login.reenvioFalhou")));
     } finally {
       setReenviando(false);
     }
@@ -150,10 +158,10 @@ function Entrar() {
       if ("contaPausada" in resultado || "emailNaoVerificado" in resultado) return;
       // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
       // leitura.
-      toast.success("Conta reativada. Bem-vindo de volta!");
+      toast.success(t("login.reativada"));
       navigate(destinoAposEntrar(resultado));
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível reativar a conta.");
+      const mensagem = extrairMensagemErro(erro, t("login.reativarFalhou"));
       toast.error(mensagem);
     } finally {
       setEnviando(false);
@@ -164,16 +172,19 @@ function Entrar() {
 
   return (
     <AutenticacaoLayout className="max-w-lg">
-      <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+        <Link to="/" aria-label={t("auth.voltarPaginaInicial")} className="inline-flex">
           <Logo />
         </Link>
-        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
-          <Link to="/configuracoes/acessibilidade">
-            <Accessibility aria-hidden="true" />
-            <span className="hidden sm:inline">Acessibilidade</span>
-          </Link>
-        </Button>
+        <div className="flex flex-1 items-center justify-end gap-2">
+          <SeletorDeIdioma />
+          <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t("auth.configAcessibilidade")}>
+            <Link to="/configuracoes/acessibilidade">
+              <Accessibility aria-hidden="true" />
+              <span className="hidden sm:inline">{t("auth.acessibilidade")}</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="shadow-card">
@@ -190,17 +201,16 @@ function Entrar() {
                 <h1
                   ref={tituloNaoVerificadoRef}
                   tabIndex={-1}
-                  data-speak="Confirme seu e-mail antes de entrar."
+                  data-speak={t("login.confirmeEmailVoz")}
                   className="text-xl font-extrabold outline-none"
                 >
-                  Confirme seu e-mail
+                  {t("login.confirmeEmail")}
                 </h1>
               </div>
 
               <p className="mt-4 text-sm text-muted-foreground">
-                Enviamos um e-mail de confirmação para{" "}
-                <strong className="text-foreground">{emailNaoVerificado}</strong>. Verifique sua caixa de entrada e
-                também a pasta de spam, e clique no link antes de entrar.
+                {t("login.enviamosEmail")}{" "}
+                <strong className="text-foreground">{emailNaoVerificado}</strong>. {t("login.enviamosEmailDica")}
               </p>
 
               <Button
@@ -212,12 +222,12 @@ function Entrar() {
               >
                 {reenviando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Reenviando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("login.reenviando")}
                   </>
                 ) : reenviado ? (
-                  "E-mail reenviado"
+                  t("login.emailReenviado")
                 ) : (
-                  "Reenviar e-mail"
+                  t("login.reenviarEmail")
                 )}
               </Button>
 
@@ -230,7 +240,7 @@ function Entrar() {
                   setReenviado(false);
                 }}
               >
-                <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+                <ArrowLeft className="size-4" aria-hidden="true" /> {t("auth.voltar")}
               </Button>
             </>
           ) : contaPausadaPendente ? (
@@ -245,24 +255,24 @@ function Entrar() {
                 <h1
                   ref={tituloPausadaRef}
                   tabIndex={-1}
-                  data-speak="Sua conta está pausada. Deseja reativá-la agora?"
+                  data-speak={t("login.contaPausadaVoz")}
                   className="text-xl font-extrabold outline-none"
                 >
-                  Sua conta está pausada
+                  {t("login.contaPausada")}
                 </h1>
               </div>
 
               <p className="mt-4 text-sm text-muted-foreground">
-                Você pausou esta conta anteriormente. Deseja reativá-la e continuar?
+                {t("login.contaPausadaTexto")}
               </p>
 
               <Button type="button" className="mt-6 min-h-12 w-full text-base" disabled={enviando} onClick={reativarConta}>
                 {enviando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Reativando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("login.reativando")}
                   </>
                 ) : (
-                  "Reativar minha conta"
+                  t("login.reativar")
                 )}
               </Button>
 
@@ -272,22 +282,22 @@ function Entrar() {
                 className="mt-2 min-h-11 w-full gap-2"
                 onClick={() => setContaPausadaPendente(null)}
               >
-                <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+                <ArrowLeft className="size-4" aria-hidden="true" /> {t("auth.voltar")}
               </Button>
             </>
           ) : (
             <>
               <div className="mb-6">
-                <h1 className="text-2xl font-extrabold">Entrar no ACESSO</h1>
+                <h1 className="text-2xl font-extrabold">{t("login.titulo")}</h1>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  Suas preferências de acessibilidade acompanham sua conta.
+                  {t("login.subtitulo")}
                 </p>
               </div>
 
               <BotaoGoogle />
 
               <form className="space-y-5" onSubmit={aoEnviar} noValidate>
-                <Campo id="email" rotulo="E-mail" erro={errors.email?.message}>
+                <Campo id="email" rotulo={t("login.email")} erro={errors.email?.message}>
                   <Input
                     id="email"
                     type="email"
@@ -301,11 +311,11 @@ function Entrar() {
 
                 <Campo
                   id="senha"
-                  rotulo="Senha"
+                  rotulo={t("login.senha")}
                   erro={errors.senha?.message}
                   acao={
                     <Link to="/recuperar-senha" className="text-sm font-semibold text-primary underline">
-                      Esqueceu a senha?
+                      {t("login.esqueceuSenha")}
                     </Link>
                   }
                 >
@@ -322,7 +332,7 @@ function Entrar() {
                 {estadoSeguranca?.habilitado && (
                   <p className="text-sm">
                     <Link to="/conta-comprometida" className="font-semibold text-primary underline">
-                      Acho que invadiram minha conta
+                      {t("login.contaComprometida")}
                     </Link>
                   </p>
                 )}
@@ -330,11 +340,11 @@ function Entrar() {
                 <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
                   {enviando ? (
                     <>
-                      <Loader2 className="animate-spin" aria-hidden="true" /> Entrando…
+                      <Loader2 className="animate-spin" aria-hidden="true" /> {t("login.entrando")}
                     </>
                   ) : (
                     <>
-                      Entrar <ArrowRight aria-hidden="true" />
+                      {t("login.entrar")} <ArrowRight aria-hidden="true" />
                     </>
                   )}
                 </Button>
@@ -346,9 +356,9 @@ function Entrar() {
 
       {!emInterrupcao && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Ainda não tem uma conta?{" "}
+          {t("login.semConta")}{" "}
           <Link to="/cadastro" className="font-semibold text-primary underline underline-offset-2">
-            Criar conta gratuita
+            {t("login.criarConta")}
           </Link>
         </p>
       )}

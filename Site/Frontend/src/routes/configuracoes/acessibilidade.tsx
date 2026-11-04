@@ -6,6 +6,7 @@ import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PainelAcessibilidade } from "@/components/acessibilidade/PainelAcessibilidade";
+import { SecaoIdioma } from "@/components/configuracoes/SecaoIdioma";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { useVoz } from "@/hooks/useVoz";
 import { useSessao } from "@/hooks/useSessao";
@@ -66,6 +67,8 @@ function ConfiguracoesAcessibilidade() {
           ? "Ao salvar, as preferências ficam vinculadas à sua conta."
           : "Sem login, as preferências ficam salvas neste dispositivo."}
       </p>
+
+      <SecaoIdioma />
 
       <Card className="mt-6 shadow-card">
         <CardContent className="p-5 sm:p-6">

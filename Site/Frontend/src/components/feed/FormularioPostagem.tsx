@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
+import { useIdioma } from "@/hooks/useIdioma";
 import { toast } from "sonner";
 import { verificarArquivo } from "@/lib/arquivos";
 import { Image as ImageIcon, Video, X } from "lucide-react";
@@ -28,6 +29,7 @@ const MAX_DESCRICAO = 500;
 /** Formulário de nova publicação: texto + até 4 anexos (imagens/vídeos). */
 export function FormularioPostagem() {
   const { usuario } = useSessao();
+  const { t } = useIdioma();
   const [conteudo, setConteudo] = useState("");
   const [anexos, setAnexos] = useState<File[]>([]);
   // Uma descrição por anexo, no mesmo índice: nunca gerada automaticamente,
@@ -57,7 +59,7 @@ export function FormularioPostagem() {
     setAnexos((atuais) => {
       const combinados = [...atuais, ...validos].slice(0, LIMITE_ANEXOS);
       if (atuais.length + validos.length > LIMITE_ANEXOS) {
-        toast.warning(`Você pode anexar no máximo ${LIMITE_ANEXOS} arquivos.`);
+        toast.warning(t("formPost.limiteAnexos", { n: LIMITE_ANEXOS }));
       }
       return combinados;
     });
@@ -76,7 +78,7 @@ export function FormularioPostagem() {
   function aoEnviar(evento: React.FormEvent) {
     evento.preventDefault();
     if (!conteudo.trim() && anexos.length === 0) {
-      toast.error("Escreva algo ou anexe um arquivo para publicar.");
+      toast.error(t("formPost.erroVazio"));
       return;
     }
     criar.mutate(
@@ -94,21 +96,21 @@ export function FormularioPostagem() {
   return (
     <Card className="shadow-card">
       <CardContent className="p-4">
-        <form onSubmit={aoEnviar} aria-label="Criar nova publicação">
+        <form onSubmit={aoEnviar} aria-label={t("formPost.criarRotulo")}>
           <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
             <Avatar className="size-10 shrink-0">
               <AvatarImage src={urlArquivo(usuario?.fotoPerfil)} alt="" />
               <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-                {iniciaisDoNome(usuario?.nome ?? "Visitante")}
+                {iniciaisDoNome(usuario?.nome ?? t("cabecalho.visitante"))}
               </AvatarFallback>
             </Avatar>
             <div>
               <label htmlFor="novo-post" className="sr-only">
-                Compartilhe algo com a comunidade
+                {t("formPost.rotulo")}
               </label>
               <Textarea
                 id="novo-post"
-                placeholder="Compartilhe algo…"
+                placeholder={t("formPost.placeholder")}
                 value={conteudo}
                 maxLength={LIMITE_CARACTERES}
                 onChange={(e) => setConteudo(e.target.value)}
@@ -120,19 +122,19 @@ export function FormularioPostagem() {
                 className={`mt-1 text-right text-xs ${restantes < 0 ? "text-destructive" : "text-muted-foreground"}`}
                 aria-live="polite"
               >
-                {restantes} caracteres restantes
+                {t("formPost.restantes", { n: restantes })}
               </p>
             </div>
           </div>
 
           {anexos.length > 0 && (
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2" aria-label="Anexos selecionados">
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2" aria-label={t("formPost.anexosSelecionados")}>
               {anexos.map((arquivo, indice) => (
                 <li key={`${arquivo.name}-${indice}`} className="relative rounded-lg border border-border p-2">
                   {ehImagem(arquivo) ? (
                     <img
                       src={URL.createObjectURL(arquivo)}
-                      alt={`Pré-visualização de ${arquivo.name}`}
+                      alt={t("formPost.previa", { nome: arquivo.name })}
                       className="h-32 w-full rounded-md object-cover"
                     />
                   ) : ehVideo(arquivo) ? (
@@ -141,7 +143,7 @@ export function FormularioPostagem() {
                       controls
                       muted
                       preload="metadata"
-                      aria-label={`Pré-visualização de ${arquivo.name}`}
+                      aria-label={t("formPost.previa", { nome: arquivo.name })}
                       className="h-32 w-full rounded-md bg-black object-cover"
                     />
                   ) : null}
@@ -151,7 +153,7 @@ export function FormularioPostagem() {
                     size="icon"
                     className="absolute -right-2 -top-2 size-7 min-h-0 rounded-full"
                     onClick={() => removerAnexo(indice)}
-                    aria-label={`Remover anexo ${arquivo.name}`}
+                    aria-label={t("formPost.removerAnexo", { nome: arquivo.name })}
                   >
                     <X className="size-3.5" aria-hidden="true" />
                   </Button>
@@ -167,20 +169,20 @@ export function FormularioPostagem() {
                     ) : (
                       <>
                         <Label htmlFor={`descricao-anexo-${indice}`} className="text-xs font-semibold">
-                          Descrição do vídeo (opcional)
+                          {t("formPost.descricaoVideo")}
                         </Label>
                         <Input
                           id={`descricao-anexo-${indice}`}
                           value={descricoes[indice] ?? ""}
                           maxLength={MAX_DESCRICAO}
-                          placeholder="Descreva o que aparece neste vídeo para pessoas que utilizam leitores de tela"
+                          placeholder={t("formPost.descricaoVideoDica")}
                           onChange={(e) => alterarDescricao(indice, e.target.value)}
                           className="h-9 text-xs"
                         />
                       </>
                     )}
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      A descrição ajuda pessoas que utilizam leitores de tela a compreender o conteúdo visual.
+                      {t("formPost.descricaoAjuda")}
                     </p>
                   </div>
                 </li>
@@ -213,28 +215,28 @@ export function FormularioPostagem() {
               type="button"
               variant="ghost"
               className="min-h-11 gap-2"
-              aria-label="Adicionar foto à publicação"
+              aria-label={t("formPost.addFotoRotulo")}
               onClick={() => inputImagemRef.current?.click()}
               disabled={anexos.length >= LIMITE_ANEXOS}
             >
-              <ImageIcon className="size-4" aria-hidden="true" /> Foto
+              <ImageIcon className="size-4" aria-hidden="true" /> {t("formPost.foto")}
             </Button>
             <Button
               type="button"
               variant="ghost"
               className="min-h-11 gap-2"
-              aria-label="Adicionar vídeo à publicação"
+              aria-label={t("formPost.addVideoRotulo")}
               onClick={() => inputVideoRef.current?.click()}
               disabled={anexos.length >= LIMITE_ANEXOS}
             >
-              <Video className="size-4" aria-hidden="true" /> Vídeo
+              <Video className="size-4" aria-hidden="true" /> {t("formPost.video")}
             </Button>
             <Button
               type="submit"
               className="ml-auto min-h-11"
               disabled={criar.isPending || restantes < 0 || (!conteudo.trim() && anexos.length === 0)}
             >
-              {criar.isPending ? "Publicando…" : "Publicar"}
+              {criar.isPending ? t("formPost.publicando") : t("formPost.publicar")}
             </Button>
           </div>
         </form>

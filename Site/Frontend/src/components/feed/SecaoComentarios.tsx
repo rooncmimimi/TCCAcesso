@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useIdioma } from "@/hooks/useIdioma";
+import { ControleDeTraducao } from "@/components/traducao/ControleDeTraducao";
+import { useTraducao } from "@/hooks/useTraducao";
 import { Trash2 } from "lucide-react";
 
 import {
@@ -34,10 +37,13 @@ function LinhaComentario({
   aoResponder?: (comentario: ComentarioCompleto) => void;
 }) {
   const { usuario } = useSessao();
+  const { t, locale } = useIdioma();
   const autor = comentario.usuario ?? comentario.autor;
+  const nomeDoAutor = autor?.nome ?? t("post.usuario");
   const remover = useRemoverComentario(postagemId);
   const podeExcluir = autor?.id === usuario?.id;
   const [denunciando, setDenunciando] = useState(false);
+  const traducao = useTraducao({ comentario: comentario.comentario });
 
   return (
     <li>
@@ -45,7 +51,7 @@ function LinhaComentario({
         <LinkAutor
           autorId={autor?.id}
           className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          ariaLabel={`Ver perfil de ${autor?.nome ?? "usuário"}`}
+          ariaLabel={t("post.verPerfilDe", { nome: nomeDoAutor })}
         >
           <Avatar className="size-8">
             <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
@@ -58,20 +64,21 @@ function LinhaComentario({
           <div className="rounded-xl bg-secondary px-3 py-2">
             <p className="text-sm font-bold">
               <LinkAutor autorId={autor?.id} className="hover:underline focus-visible:underline">
-                {autor?.nome ?? "Usuário"}
+                {nomeDoAutor}
               </LinkAutor>
             </p>
-            <p className="text-sm leading-relaxed">{comentario.comentario}</p>
+            <p className="text-sm leading-relaxed">{traducao.texto("comentario")}</p>
           </div>
+          {comentario.comentario.trim() && <ControleDeTraducao traducao={traducao} conteudo="comentario" className="px-1" />}
           <div className="mt-1 flex items-center gap-3 px-1 text-xs text-muted-foreground">
-            <span>{formatarTempoRelativo(comentario.criadoEm ?? comentario.criadoEm)}</span>
+            <span>{formatarTempoRelativo(comentario.criadoEm ?? comentario.criadoEm, locale)}</span>
             {aoResponder && (
               <button
                 type="button"
                 className="min-h-6 font-semibold hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
                 onClick={() => aoResponder(comentario)}
               >
-                Responder
+                {t("comentario.responder")}
               </button>
             )}
             {podeExcluir && (
@@ -80,25 +87,25 @@ function LinhaComentario({
                   <button
                     type="button"
                     className="flex min-h-6 items-center gap-1 font-semibold text-destructive hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-                    aria-label="Excluir comentário"
+                    aria-label={t("comentario.excluirRotulo")}
                   >
-                    <Trash2 className="size-3.5" aria-hidden="true" /> Excluir
+                    <Trash2 className="size-3.5" aria-hidden="true" /> {t("comentario.excluir")}
                   </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir comentário?</AlertDialogTitle>
+                    <AlertDialogTitle>{t("comentario.excluirTitulo")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. O comentário será removido permanentemente.
+                      {t("comentario.excluirTexto")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel className="min-h-11">{t("comentario.cancelar")}</AlertDialogCancel>
                     <AlertDialogAction
                       className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       onClick={() => remover.mutate(comentario.id)}
                     >
-                      Excluir
+                      {t("comentario.excluir")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -110,7 +117,7 @@ function LinhaComentario({
                 className="min-h-6 font-semibold text-muted-foreground hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
                 onClick={() => setDenunciando(true)}
               >
-                Denunciar
+                {t("comentario.denunciar")}
               </button>
             )}
           </div>
@@ -127,7 +134,7 @@ function LinhaComentario({
           )}
 
           {comentario.respostas && comentario.respostas.length > 0 && (
-            <ul className="mt-3 space-y-3 border-l border-border pl-4" aria-label="Respostas">
+            <ul className="mt-3 space-y-3 border-l border-border pl-4" aria-label={t("comentario.respostas")}>
               {comentario.respostas.map((resposta) => (
                 <LinhaComentario key={resposta.id} comentario={resposta} postagemId={postagemId} />
               ))}
@@ -142,6 +149,7 @@ function LinhaComentario({
 /** Lista de comentários (com respostas de 1 nível) e formulário de novo comentário/resposta. */
 export function SecaoComentarios({ postagemId }: { postagemId: string }) {
   const { usuario } = useSessao();
+  const { t } = useIdioma();
   const { data, isLoading, isError } = useComentarios(postagemId);
   const criar = useCriarComentario(postagemId);
   const [texto, setTexto] = useState("");
@@ -163,34 +171,34 @@ export function SecaoComentarios({ postagemId }: { postagemId: string }) {
 
   return (
     <div className="mt-4 border-t border-border pt-4">
-      <form onSubmit={aoEnviar} aria-label="Adicionar comentário" className="flex gap-3">
+      <form onSubmit={aoEnviar} aria-label={t("comentario.adicionar")} className="flex gap-3">
         <Avatar className="size-8 shrink-0">
           <AvatarImage src={urlArquivo(usuario?.fotoPerfil)} alt="" />
           <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-            {iniciaisDoNome(usuario?.nome ?? "Visitante")}
+            {iniciaisDoNome(usuario?.nome ?? t("cabecalho.visitante"))}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
           {respondendoA && (
             <p className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-              Respondendo a {respondendoA.usuario?.nome ?? respondendoA.autor?.nome}
+              {t("comentario.respondendoA", { nome: respondendoA.usuario?.nome ?? respondendoA.autor?.nome ?? "" })}
               <button
                 type="button"
                 className="font-semibold underline"
                 onClick={() => setRespondendoA(null)}
               >
-                cancelar
+                {t("comentario.cancelarResposta")}
               </button>
             </p>
           )}
           <label htmlFor={`comentario-${postagemId}`} className="sr-only">
-            Escreva um comentário
+            {t("comentario.escreva")}
           </label>
           <Textarea
             id={`comentario-${postagemId}`}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Escreva um comentário…"
+            placeholder={t("comentario.placeholder")}
             className="min-h-10 resize-none"
           />
           <Button
@@ -199,15 +207,15 @@ export function SecaoComentarios({ postagemId }: { postagemId: string }) {
             className="mt-2 min-h-9"
             disabled={!texto.trim() || criar.isPending}
           >
-            {criar.isPending ? "Enviando…" : respondendoA ? "Responder" : "Comentar"}
+            {criar.isPending ? t("comentario.enviando") : respondendoA ? t("comentario.responder") : t("post.comentar")}
           </Button>
         </div>
       </form>
 
-      {isLoading && <p className="mt-4 text-sm text-muted-foreground">Carregando comentários…</p>}
-      {isError && <p className="mt-4 text-sm text-destructive">Não foi possível carregar os comentários.</p>}
+      {isLoading && <p className="mt-4 text-sm text-muted-foreground">{t("comentario.carregando")}</p>}
+      {isError && <p className="mt-4 text-sm text-destructive">{t("comentario.erroCarregar")}</p>}
       {!isLoading && !isError && data && data.dados.length === 0 && (
-        <p className="mt-4 text-sm text-muted-foreground">Seja o primeiro a comentar.</p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("comentario.vazio")}</p>
       )}
 
       {!isLoading && data && data.dados.length > 0 && (

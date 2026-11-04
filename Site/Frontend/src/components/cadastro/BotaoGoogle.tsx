@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,11 +56,12 @@ const ESPERAS_ENTRE_TENTATIVAS = [2000, 4000, 8000, 16000];
  */
 export function BotaoGoogle({
   tipoConta,
-  rotulo = "Continuar com Google",
+  rotulo,
 }: {
   tipoConta?: "candidato" | "empresa";
   rotulo?: string;
 }) {
+  const { t } = useIdioma();
   const [disponivel, setDisponivel] = useState(false);
   const [indo, setIndo] = useState(false);
 
@@ -105,7 +107,7 @@ export function BotaoGoogle({
       toast.error(
         erro instanceof ErroGoogleNavegador
           ? erro.message
-          : extrairMensagemErro(erro, "Não foi possível abrir a autenticação do Google.")
+          : extrairMensagemErro(erro, t("auth.googleErro"))
       );
       setIndo(false);
     }
@@ -121,13 +123,13 @@ export function BotaoGoogle({
         onClick={ir}
       >
         {indo ? <Loader2 className="animate-spin" aria-hidden="true" /> : <IconeGoogle />}
-        {rotulo}
+        {rotulo ?? t("auth.continuarGoogle")}
       </Button>
 
       {/* Separador decorativo: o texto "ou" fica fora do fluxo de leitura dos leitores de tela. */}
       <div className="flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-border" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ou</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("auth.ou")}</span>
         <span className="h-px flex-1 bg-border" />
       </div>
     </div>

@@ -16,8 +16,9 @@ Ela é **somente leitura** (só consulta `migracoes_aplicadas`), usa o banco e a
 | **0007** conta sem senha | **não** | `GOOGLE_CONTA_SEM_SENHA` |
 | **0009** sessões e dispositivos | **não** | `SESSOES_DISPOSITIVOS_HABILITADO` |
 | **0010** dispositivos de confiança e eventos de segurança | **não** | `DISPOSITIVOS_CONFIAVEIS_HABILITADO` (exige também o e-mail/Brevo configurado) |
+| **0011** idioma na conta | **não** | `IDIOMA_NA_CONTA_HABILITADO` (veja `idioma-e-traducao.md`) |
 
-A 0010 só **cria** quatro tabelas novas (veja `dispositivos-e-conta-comprometida.md`).
+A 0010 só **cria** quatro tabelas novas (veja `dispositivos-e-conta-comprometida.md`). A 0011 só **acrescenta uma coluna nula** a `preferencias_acessibilidade`.
 
 Correção: antes eu citava só a 0008 e a 0009 como pendentes. **A 0007 também está pendente.** Ela só relaxa `senha_hash` para aceitar nulo e cria uma regra que as contas existentes já cumprem (todas têm senha).
 
@@ -41,6 +42,7 @@ A `0008` (verificação em duas etapas por aplicativo autenticador) foi escrita,
 3. `npm run implantacao:verificar` de novo: deve dizer "sem bloqueios" e "migration já aplicada, recurso desligado".
 4. Ligar as chaves **uma por vez**, conferindo o log de inicialização (o servidor avisa se algo faltar):
    - `SESSOES_DISPOSITIVOS_HABILITADO=true`
+   - `IDIOMA_NA_CONTA_HABILITADO=true` (só com a 0011 aplicada; sem ela o idioma continua valendo só no aparelho)
    - `DISPOSITIVOS_CONFIAVEIS_HABILITADO=true` (só com a 0010 aplicada **e** o e-mail configurado; veja `dispositivos-e-conta-comprometida.md`). **Nunca** use `EMAIL_DRIVER=console` no Render: o servidor se recusa a subir.
 5. Testar no Site: entrar, abrir Configurações → Segurança (sessões, dispositivos de confiança e atividade).
 

@@ -1,4 +1,7 @@
 import { useRef, useState } from "react";
+import { useIdioma } from "@/hooks/useIdioma";
+import { ControleDeTraducao } from "@/components/traducao/ControleDeTraducao";
+import { useTraducao } from "@/hooks/useTraducao";
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, MoreVertical, Share2, ThumbsUp, Undo2 } from "lucide-react";
 
@@ -49,9 +52,12 @@ export function PostagemCard({
   mostrarComentariosAbertos?: boolean;
 }) {
   const { usuario } = useSessao();
+  const { t, locale } = useIdioma();
   const autor = postagem.usuario ?? postagem.autor;
+  const nomeDoAutor = autor?.nome ?? t("post.usuario");
   const ehAutor = autor?.id === usuario?.id;
 
+  const traducao = useTraducao({ conteudo: postagem.conteudo });
   const [editando, setEditando] = useState(false);
   const [textoEdicao, setTextoEdicao] = useState(postagem.conteudo);
   const [comentariosAbertos, setComentariosAbertos] = useState(mostrarComentariosAbertos);
@@ -82,24 +88,24 @@ export function PostagemCard({
             <LinkAutor
               autorId={autor?.id}
               className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              ariaLabel={`Ver perfil de ${autor?.nome ?? "usuário"}`}
+              ariaLabel={t("post.verPerfilDe", { nome: nomeDoAutor })}
             >
               <Avatar className="size-11">
                 <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
                 <AvatarFallback className="bg-primary-soft text-sm font-bold text-primary">
-                  {iniciaisDoNome(autor?.nome ?? "Usuário")}
+                  {iniciaisDoNome(nomeDoAutor)}
                 </AvatarFallback>
               </Avatar>
             </LinkAutor>
             <div className="min-w-0">
               <h2 id={`autor-${postagem.id}`} className="truncate text-base font-bold">
                 <LinkAutor autorId={autor?.id} className="hover:underline focus-visible:underline">
-                  {autor?.nome ?? "Usuário"}
+                  {nomeDoAutor}
                 </LinkAutor>
               </h2>
               <p className="truncate text-sm text-muted-foreground">
-                {formatarTempoRelativo(postagem.criadoEm ?? postagem.criadoEm)}
-                {postagem.editadoEm ? " · editado" : ""}
+                {formatarTempoRelativo(postagem.criadoEm ?? postagem.criadoEm, locale)}
+                {postagem.editadoEm ? ` · ${t("post.editado")}` : ""}
               </p>
             </div>
             {usuario && (
@@ -110,7 +116,7 @@ export function PostagemCard({
                     variant="ghost"
                     size="icon"
                     className="min-h-11 min-w-11"
-                    aria-label="Mais opções da publicação"
+                    aria-label={t("post.maisOpcoes")}
                   >
                     <MoreVertical className="size-4" aria-hidden="true" />
                   </Button>
@@ -118,31 +124,30 @@ export function PostagemCard({
                 <DropdownMenuContent align="end">
                   {ehAutor ? (
                     <>
-                      <DropdownMenuItem onSelect={() => setEditando(true)}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setEditando(true)}>{t("post.editar")}</DropdownMenuItem>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onSelect={(e) => e.preventDefault()}
                           >
-                            Excluir
+                            {t("post.excluir")}
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir publicação?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("post.excluirTitulo")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. A publicação, seus anexos, curtidas e comentários
-                              serão removidos permanentemente.
+                              {t("post.excluirTexto")}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+                            <AlertDialogCancel className="min-h-11">{t("post.cancelar")}</AlertDialogCancel>
                             <AlertDialogAction
                               className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               onClick={() => remover.mutate(postagem.id)}
                             >
-                              Excluir
+                              {t("post.excluir")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -153,7 +158,7 @@ export function PostagemCard({
                       className="text-destructive focus:text-destructive"
                       onSelect={() => setDenunciando(true)}
                     >
-                      Denunciar
+                      {t("post.denunciar")}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -176,7 +181,7 @@ export function PostagemCard({
           {editando ? (
             <div className="mt-4 space-y-2">
               <label htmlFor={`editar-${postagem.id}`} className="sr-only">
-                Editar publicação
+                {t("post.editarRotulo")}
               </label>
               <Textarea
                 id={`editar-${postagem.id}`}
@@ -191,7 +196,7 @@ export function PostagemCard({
                   onClick={salvarEdicao}
                   disabled={atualizar.isPending || !textoEdicao.trim()}
                 >
-                  Salvar
+                  {t("post.salvar")}
                 </Button>
                 <Button
                   variant="outline"
@@ -207,7 +212,10 @@ export function PostagemCard({
               </div>
             </div>
           ) : (
-            <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">{postagem.conteudo}</p>
+            <>
+              <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">{traducao.texto("conteudo")}</p>
+              {postagem.conteudo.trim() && <ControleDeTraducao traducao={traducao} conteudo="publicacao" />}
+            </>
           )}
 
           <GaleriaAnexos anexos={postagem.anexos ?? []} postagemId={postagem.id} editavel={ehAutor} />
@@ -217,38 +225,38 @@ export function PostagemCard({
               variant="ghost"
               className="min-h-11 gap-2"
               aria-pressed={Boolean(postagem.curtidoPorMim)}
-              aria-label={`${postagem.curtidoPorMim ? "Descurtir" : "Curtir"} publicação de ${autor?.nome ?? "usuário"}. ${postagem.totalCurtidas ?? 0} curtida${(postagem.totalCurtidas ?? 0) === 1 ? "" : "s"}.`}
+              aria-label={t(postagem.curtidoPorMim ? "post.descurtirRotulo" : "post.curtirRotulo", { nome: nomeDoAutor, n: postagem.totalCurtidas ?? 0 })}
               onClick={() => curtir.mutate(postagem.id)}
             >
               <ThumbsUp
                 className={`size-4 ${postagem.curtidoPorMim ? "fill-primary text-primary" : ""}`}
                 aria-hidden="true"
               />
-              <span aria-hidden="true">Curtir ({postagem.totalCurtidas ?? 0})</span>
+              <span aria-hidden="true">{t("post.curtir")} ({postagem.totalCurtidas ?? 0})</span>
             </Button>
             <Button
               variant="ghost"
               className="min-h-11 gap-2"
               aria-expanded={comentariosAbertos}
-              aria-label={`${comentariosAbertos ? "Fechar" : "Abrir"} comentários. ${postagem.totalComentarios ?? 0} comentário${(postagem.totalComentarios ?? 0) === 1 ? "" : "s"}.`}
+              aria-label={t(comentariosAbertos ? "post.fecharComentarios" : "post.abrirComentarios", { n: postagem.totalComentarios ?? 0 })}
               onClick={() => setComentariosAbertos((v) => !v)}
             >
               <MessageCircle className="size-4" aria-hidden="true" />
               <span aria-hidden="true">
-                Comentar ({postagem.totalComentarios ?? 0})
+                {t("post.comentar")} ({postagem.totalComentarios ?? 0})
               </span>
             </Button>
             {postagem.compartilhadaPorMim ? (
               <Button
                 variant="ghost"
                 className="min-h-11 gap-2"
-                aria-label="Desfazer compartilhamento desta publicação."
+                aria-label={t("post.desfazerCompartilhamentoRotulo")}
                 onClick={() =>
                   desfazerCompartilhamento.mutate({ id: postagem.id, postagemId: postagem.id })
                 }
               >
                 <Undo2 className="size-4" aria-hidden="true" />
-                <span aria-hidden="true">Desfazer compartilhamento</span>
+                <span aria-hidden="true">{t("post.desfazerCompartilhamento")}</span>
               </Button>
             ) : (
               <CompartilharDialog
@@ -257,11 +265,11 @@ export function PostagemCard({
                   <Button
                     variant="ghost"
                     className="min-h-11 gap-2"
-                    aria-label={`Compartilhar publicação de ${autor?.nome ?? "usuário"}. ${postagem.totalCompartilhamentos ?? 0} compartilhamento${(postagem.totalCompartilhamentos ?? 0) === 1 ? "" : "s"}.`}
+                    aria-label={t("post.compartilharRotulo", { nome: nomeDoAutor, n: postagem.totalCompartilhamentos ?? 0 })}
                   >
                     <Share2 className="size-4" aria-hidden="true" />
                     <span aria-hidden="true">
-                      Compartilhar ({postagem.totalCompartilhamentos ?? 0})
+                      {t("post.compartilhar")} ({postagem.totalCompartilhamentos ?? 0})
                     </span>
                   </Button>
                 }
@@ -271,9 +279,9 @@ export function PostagemCard({
               <Link
                 to="/postagem/$postagemId"
                 params={{ postagemId: postagem.id }}
-                aria-label={`Ver publicação completa de ${autor?.nome ?? "usuário"}.`}
+                aria-label={t("post.verPublicacaoRotulo", { nome: nomeDoAutor })}
               >
-                Ver publicação
+                {t("post.verPublicacao")}
               </Link>
             </Button>
           </footer>

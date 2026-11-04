@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { useIdioma } from "@/hooks/useIdioma";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/feed")({
 
 function Feed() {
   const { usuario } = useSessao();
+  const { t } = useIdioma();
   useFeedTempoReal();
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeedInfinito({
     limit: 10,
@@ -44,22 +46,22 @@ function Feed() {
 
   return (
     <EstruturaApp>
-      <h1 className="sr-only">Feed da comunidade ACESSO</h1>
+      <h1 className="sr-only">{t("feed.titulo")}</h1>
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
 
-        <aside aria-label="Seu resumo" className="hidden space-y-4 lg:block">
+        <aside aria-label={t("feed.seuResumo")} className="hidden space-y-4 lg:block">
           <Card className="shadow-card">
             <CardContent className="p-5 text-center">
               <Avatar className="mx-auto size-16">
                 <AvatarImage src={urlArquivo(usuario?.fotoPerfil)} alt="" />
                 <AvatarFallback className="bg-primary-soft text-lg font-bold text-primary">
-                  {iniciaisDoNome(usuario?.nome ?? "Visitante")}
+                  {iniciaisDoNome(usuario?.nome ?? t("cabecalho.visitante"))}
                 </AvatarFallback>
               </Avatar>
-              <h2 className="mt-3 truncate font-bold">{usuario?.nome ?? "Visitante"}</h2>
-              <p className="text-sm text-muted-foreground">{usuario?.titulo ?? "Entre para personalizar"}</p>
+              <h2 className="mt-3 truncate font-bold">{usuario?.nome ?? t("cabecalho.visitante")}</h2>
+              <p className="text-sm text-muted-foreground">{usuario?.titulo ?? t("feed.entrePersonalizar")}</p>
               <Button asChild variant="secondary" className="mt-4 min-h-11 w-full">
-                <Link to="/perfil">Ver meu perfil</Link>
+                <Link to="/perfil">{t("feed.verMeuPerfil")}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -71,7 +73,7 @@ function Feed() {
           <FormularioPostagem />
 
           {isLoading && (
-            <div className="space-y-4" aria-label="Carregando publicações">
+            <div className="space-y-4" aria-label={t("feed.carregandoPublicacoes")}>
               {[1, 2, 3].map((n) => (
                 <Skeleton key={n} className="h-40 w-full rounded-xl" />
               ))}
@@ -81,7 +83,7 @@ function Feed() {
           {isError && (
             <Card>
               <CardContent className="p-6 text-center text-sm text-destructive">
-                Não foi possível carregar o feed. Tente novamente mais tarde.
+                {t("feed.erroCarregar")}
               </CardContent>
             </Card>
           )}
@@ -89,7 +91,7 @@ function Feed() {
           {!isLoading && !isError && postagens.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center text-sm text-muted-foreground">
-                Ainda não há publicações. Seja o primeiro a compartilhar algo com a comunidade.
+                {t("feed.vazio")}
               </CardContent>
             </Card>
           )}
@@ -112,7 +114,7 @@ function Feed() {
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
               >
-                {isFetchingNextPage ? "Carregando…" : "Carregar mais"}
+                {isFetchingNextPage ? t("feed.carregando") : t("feed.carregarMais")}
               </Button>
             </div>
           )}

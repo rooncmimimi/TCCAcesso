@@ -22,9 +22,10 @@ import { LegendaObrigatorio } from "@/components/cadastro/MarcaObrigatorio";
 import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
 import { PassosCadastro } from "@/components/cadastro/PassosCadastro";
 import { RequisitosSenha } from "@/components/cadastro/RequisitosSenha";
-import { SeletorIdioma } from "@/components/cadastro/SeletorIdioma";
+import { SeletorDeIdioma } from "@/components/SeletorDeIdioma";
+import { useIdioma } from "@/hooks/useIdioma";
 import { AceiteTermos, BotaoFinalizar, NavegacaoEtapa, TituloEtapa } from "@/components/cadastro/comuns";
-import { textosDoCadastro, type CodigoIdioma, type TextosCadastro } from "@/components/cadastro/idioma";
+import { textosDoCadastro, type TextosCadastro } from "@/components/cadastro/idioma";
 import { SIGLAS_ESTADOS_BR } from "@/dados/estados";
 import { EstadoSelect } from "@/components/cadastro/EstadoSelect";
 import { criarEsquemaCandidato } from "@/components/cadastro/esquemaCandidato";
@@ -119,19 +120,9 @@ function CadastroCandidato() {
   useEffect(() => {
     if (!google) limparProva();
   }, [google]);
-  // O idioma vale só enquanto o cadastro durar: não é salvo na conta, porque nada fora deste fluxo
-  // está traduzido e uma preferência gravada não teria onde ser honrada depois do login.
-  const [idioma, setIdioma] = useState<CodigoIdioma>("pt");
+  // O idioma é o do site inteiro (`IdiomaProvider`): o que a pessoa escolhe aqui vale no resto e, depois do cadastro, sobe para a conta.
+  const { idioma } = useIdioma();
   const t = useMemo(() => textosDoCadastro(idioma), [idioma]);
-
-  // Mantém o `lang` do documento de acordo com a escolha: leitor de tela troca a pronúncia por ele.
-  useEffect(() => {
-    const anterior = document.documentElement.lang;
-    document.documentElement.lang = t.htmlLang;
-    return () => {
-      document.documentElement.lang = anterior;
-    };
-  }, [t.htmlLang]);
 
   // Só retoma de verdade quem está logado como candidato. Sem isso um `?retomar=true` colado na barra
   // levaria alguém deslogado a uma etapa que precisa de sessão.
@@ -155,7 +146,7 @@ function CadastroCandidato() {
           <Logo />
         </Link>
         <div className="flex flex-1 items-center justify-end gap-2">
-          <SeletorIdioma idioma={idioma} aoTrocar={setIdioma} rotulo={t.idiomaRotulo} />
+          <SeletorDeIdioma />
           <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t.acessibilidade}>
             <Link to="/configuracoes/acessibilidade">
               <Accessibility aria-hidden="true" />

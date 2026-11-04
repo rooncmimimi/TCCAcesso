@@ -1,12 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { ControleDeTraducao } from "@/components/traducao/ControleDeTraducao";
+import { useTraducao } from "@/hooks/useTraducao";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { ArrowLeft, BadgeCheck, Building2, Heart, MapPin, MessagesSquare, MoreVertical } from "lucide-react";
 import {
   ICONE_RECURSO_ACESSIBILIDADE,
-  ROTULO_PUBLICO_ALVO_CURTO,
-  ROTULO_RECURSO_ACESSIBILIDADE,
 } from "@/components/dashboard/constantesVaga";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
@@ -75,7 +77,7 @@ function DetalheVaga() {
   const candidatar = useMutation({
     mutationFn: () => vagasService.candidatar(vagaId),
     onSuccess: () => {
-      toast.success("Candidatura enviada com sucesso.");
+      toast.success(t("vagaDetalhe.candidaturaSucesso"));
       // O widget "Minhas candidaturas recentes" do painel (CandidaturasRecentes.tsx)
       // usa o mesmo prefixo ["candidaturas","minhas"]: invalidar aqui já
       // cobre as duas telas, mais o card de métricas do painel.
@@ -88,7 +90,7 @@ function DetalheVaga() {
   const favoritar = useMutation({
     mutationFn: () => vagasService.favoritar(vagaId),
     onSuccess: (resultado) => {
-      toast.success(resultado.favoritada ? "Vaga favoritada." : "Vaga removida dos favoritos.");
+      toast.success(resultado.favoritada ? t("vagas.favoritada") : t("vagas.favoritadaRemovida"));
       // Mesma regra do favoritar em `vagas.tsx` (ver o comentário lá): há duas chaves para o mesmo
       // dado, e as duas são invalidadas.
       void queryClient.invalidateQueries({ queryKey: ["dashboard", "favoritos"] });
@@ -104,7 +106,16 @@ function DetalheVaga() {
       await queryClient.invalidateQueries({ queryKey: ["conversas"] });
       void navigate({ to: "/mensagens", search: { conversaId: conversa.id } });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível abrir a conversa.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("vagaDetalhe.conversaFalha"))),
+  });
+
+  const { t, locale } = useIdioma();
+  const traducao = useTraducao({
+    titulo: vaga?.titulo ?? "",
+    descricao: vaga?.descricao ?? "",
+    requisitos: vaga?.requisitos ?? "",
+    beneficios: vaga?.beneficios ?? "",
+    acessibilidade: vaga?.acessibilidade ?? "",
   });
 
   if (isLoading) {
@@ -120,16 +131,16 @@ function DetalheVaga() {
     return (
       <EstruturaApp>
         <div role="alert" className="space-y-3 rounded-xl border border-destructive/40 p-6">
-          <h1 className="text-xl font-bold">Vaga não encontrada</h1>
+          <h1 className="text-xl font-bold">{t("vagaDetalhe.naoEncontrada")}</h1>
           <p className="text-sm text-muted-foreground">
-            Esta vaga pode ter sido encerrada ou removida pela empresa.
+            {t("vagaDetalhe.naoEncontradaTexto")}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => refetch()}>
-              Tentar novamente
+              {t("vagas.tentarNovamente")}
             </Button>
             <Button asChild>
-              <Link to="/vagas">Ver todas as vagas</Link>
+              <Link to="/vagas">{t("vagaDetalhe.verTodas")}</Link>
             </Button>
           </div>
         </div>
@@ -137,7 +148,7 @@ function DetalheVaga() {
     );
   }
 
-  const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa";
+  const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? t("vaga.empresa");
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
   const ehDonoDaVaga = vaga.empresa?.usuario?.id === usuario?.id;
 
@@ -147,12 +158,12 @@ function DetalheVaga() {
         to="/vagas"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para as vagas
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("vagaDetalhe.voltar")}
       </Link>
 
       <article className="mt-4">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-3xl font-extrabold">{vaga.titulo}</h1>
+          <h1 className="text-3xl font-extrabold">{traducao.texto("titulo")}</h1>
           {usuario && !ehDonoDaVaga && (
             <DenunciarVagaMenu
               vagaId={vaga.id}
@@ -176,8 +187,8 @@ function DetalheVaga() {
             nomeEmpresa
           )}
           {vaga.empresa?.empresaVerificada && (
-            <span className="inline-flex items-center gap-1 font-medium text-primary" title="Empresa verificada pelo ACESSO">
-              <BadgeCheck className="size-4" aria-hidden="true" /> Verificada
+            <span className="inline-flex items-center gap-1 font-medium text-primary" title={t("vaga.empresaVerificadaTitulo")}>
+              <BadgeCheck className="size-4" aria-hidden="true" /> {t("vaga.verificada")}
             </span>
           )}
           {local && (
@@ -186,7 +197,7 @@ function DetalheVaga() {
               <MapPin className="size-4" aria-hidden="true" /> {local}
             </>
           )}
-          <span aria-hidden="true">·</span> {vaga.modalidade}
+          <span aria-hidden="true">·</span> {t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase)}
           {vaga.contrato && (
             <>
               <span aria-hidden="true">·</span> {vaga.contrato}
@@ -202,15 +213,18 @@ function DetalheVaga() {
           </li>
           {vaga.publicoAlvo && vaga.publicoAlvo !== "geral" && (
             <li>
-              <Badge className="font-medium">{ROTULO_PUBLICO_ALVO_CURTO[vaga.publicoAlvo]}</Badge>
+              <Badge className="font-medium">{t(`vaga.publicoCurto.${vaga.publicoAlvo}` as ChaveBase)}</Badge>
             </li>
           )}
           {vaga.salario != null && vaga.salario !== "" && (
             <li>
               <Badge variant="outline" className="font-medium">
-                Salário: {typeof vaga.salario === "number"
-                  ? vaga.salario.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-                  : vaga.salario}
+                {t("vagaDetalhe.salario", {
+                  valor:
+                    typeof vaga.salario === "number"
+                      ? vaga.salario.toLocaleString(locale, { style: "currency", currency: "BRL" })
+                      : vaga.salario,
+                })}
               </Badge>
             </li>
           )}
@@ -218,9 +232,9 @@ function DetalheVaga() {
 
         {ehDonoDaVaga ? (
           <p className="mt-6 text-sm text-muted-foreground">
-            Esta é uma das suas vagas.{" "}
+            {t("vagaDetalhe.suaVaga")}{" "}
             <Link to="/dashboard/empresa" className="font-semibold text-primary underline">
-              Gerenciar pelo painel da empresa
+              {t("vagaDetalhe.gerenciar")}
             </Link>
             .
           </p>
@@ -232,7 +246,7 @@ function DetalheVaga() {
                 disabled={!ehCandidato || jaCandidatado || candidatar.isPending || vaga.status !== "aberta"}
                 onClick={() => candidatar.mutate()}
               >
-                {jaCandidatado ? "Candidatura enviada" : candidatar.isPending ? "Enviando…" : "Candidatar-se"}
+                {jaCandidatado ? t("vagaDetalhe.candidaturaEnviada") : candidatar.isPending ? t("vagaDetalhe.enviando") : t("vagaDetalhe.candidatar")}
               </Button>
               {ehCandidato && (
                 <Button
@@ -246,7 +260,7 @@ function DetalheVaga() {
                     className={cn("size-4", favoritada && "fill-primary text-primary")}
                     aria-hidden="true"
                   />
-                  {favoritada ? "Favoritada" : "Favoritar"}
+                  {favoritada ? t("vagaDetalhe.favoritadaBotao") : t("vagaDetalhe.favoritarBotao")}
                 </Button>
               )}
               {ehCandidato && vaga.empresa?.usuario?.id && (
@@ -257,43 +271,45 @@ function DetalheVaga() {
                   onClick={() => conversar.mutate()}
                 >
                   <MessagesSquare className="size-4" aria-hidden="true" />
-                  {conversar.isPending ? "Abrindo…" : "Conversar com a empresa"}
+                  {conversar.isPending ? t("vagaDetalhe.abrindo") : t("vagaDetalhe.conversar")}
                 </Button>
               )}
             </div>
 
             {!ehCandidato && (
               <p className="mt-3 text-sm text-muted-foreground">
-                Entre com uma conta de candidato para se candidatar a esta vaga.
+                {t("vagaDetalhe.entreCandidato")}
               </p>
             )}
           </>
         )}
 
+        <ControleDeTraducao traducao={traducao} conteudo="vaga" className="mt-3" />
+
         <Card className="mt-6 shadow-none">
           <CardContent className="space-y-6 p-6">
             <section>
-              <h2 className="text-lg font-bold">Descrição</h2>
-              <p className="mt-2 whitespace-pre-line text-sm">{vaga.descricao}</p>
+              <h2 className="text-lg font-bold">{t("vagaDetalhe.descricao")}</h2>
+              <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("descricao")}</p>
             </section>
 
             {vaga.requisitos && (
               <section>
-                <h2 className="text-lg font-bold">Requisitos</h2>
-                <p className="mt-2 whitespace-pre-line text-sm">{vaga.requisitos}</p>
+                <h2 className="text-lg font-bold">{t("vagaDetalhe.requisitos")}</h2>
+                <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("requisitos")}</p>
               </section>
             )}
 
             {vaga.beneficios && (
               <section>
-                <h2 className="text-lg font-bold">Benefícios</h2>
-                <p className="mt-2 whitespace-pre-line text-sm">{vaga.beneficios}</p>
+                <h2 className="text-lg font-bold">{t("vagaDetalhe.beneficios")}</h2>
+                <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("beneficios")}</p>
               </section>
             )}
 
             {(vaga.recursosAcessibilidade?.length ?? 0) > 0 && (
               <section>
-                <h2 className="text-lg font-bold">Recursos de acessibilidade</h2>
+                <h2 className="text-lg font-bold">{t("vagaDetalhe.recursos")}</h2>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {vaga.recursosAcessibilidade!.map((recurso) => {
                     const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
@@ -301,7 +317,7 @@ function DetalheVaga() {
                       <li key={recurso}>
                         <Badge variant="outline" className="gap-1.5 py-1.5 font-medium">
                           <Icone className="size-4" aria-hidden="true" />
-                          {ROTULO_RECURSO_ACESSIBILIDADE[recurso]}
+                          {t(`vaga.recurso.${recurso}` as ChaveBase)}
                         </Badge>
                       </li>
                     );
@@ -312,14 +328,14 @@ function DetalheVaga() {
 
             {vaga.acessibilidade && (
               <section>
-                <h2 className="text-lg font-bold">Detalhes adicionais de acessibilidade</h2>
-                <p className="mt-2 whitespace-pre-line text-sm">{vaga.acessibilidade}</p>
+                <h2 className="text-lg font-bold">{t("vagaDetalhe.detalhesAcessibilidade")}</h2>
+                <p className="mt-2 whitespace-pre-line text-sm">{traducao.texto("acessibilidade")}</p>
               </section>
             )}
 
             {vaga.cargaHoraria && (
               <section>
-                <h2 className="text-lg font-bold">Carga horária</h2>
+                <h2 className="text-lg font-bold">{t("vagaDetalhe.cargaHoraria")}</h2>
                 <p className="mt-2 text-sm">{vaga.cargaHoraria}</p>
               </section>
             )}
@@ -341,6 +357,7 @@ function DenunciarVagaMenu({
   autorUsuarioId?: string;
   autorNomeExibicao?: string;
 }) {
+  const { t } = useIdioma();
   const [denunciando, setDenunciando] = useState(false);
   // Foco volta pra este botão ao fechar o DenunciarDialog (ver comentário
   // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
@@ -356,7 +373,7 @@ function DenunciarVagaMenu({
             variant="ghost"
             size="icon"
             className="min-h-11 min-w-11 shrink-0"
-            aria-label="Mais opções da vaga"
+            aria-label={t("vagaDetalhe.maisOpcoes")}
           >
             <MoreVertical className="size-4" aria-hidden="true" />
           </Button>
@@ -366,7 +383,7 @@ function DenunciarVagaMenu({
             className="text-destructive focus:text-destructive"
             onSelect={() => setDenunciando(true)}
           >
-            Denunciar vaga
+            {t("vagaDetalhe.denunciar")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

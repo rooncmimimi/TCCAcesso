@@ -8,6 +8,8 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { useIdioma } from "@/hooks/useIdioma";
+
 import { extrairMensagemErro } from "@/services/api";
 import { ouvirEvento } from "@/services/socket";
 import postagensService, { type FiltroFeed, type NovaPostagem } from "@/services/postagens.service";
@@ -160,18 +162,20 @@ export function useFeedTempoReal() {
 }
 
 export function useCriarPostagem() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: NovaPostagem) => postagensService.criar(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["postagens"] });
-      toast.success("Publicação criada com sucesso.");
+      toast.success(t("toast.postCriada"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível publicar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.postFalhaCriar"))),
   });
 }
 
 export function useAtualizarPostagem() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, conteudo }: { id: string; conteudo: string }) =>
@@ -181,13 +185,14 @@ export function useAtualizarPostagem() {
         atualizarPostagemNoCacheFeed(atual, postagemAtualizada.id, () => postagemAtualizada),
       );
       queryClient.setQueryData(["postagem", postagemAtualizada.id], postagemAtualizada);
-      toast.success("Publicação atualizada.");
+      toast.success(t("toast.postAtualizada"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível editar a publicação.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.postFalhaEditar"))),
   });
 }
 
 export function useAtualizarDescricaoAnexo() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ postagemId, anexoId, descricao }: { postagemId: string; anexoId: string; descricao: string }) =>
@@ -197,13 +202,14 @@ export function useAtualizarDescricaoAnexo() {
         atualizarPostagemNoCacheFeed(atual, postagemAtualizada.id, () => postagemAtualizada),
       );
       queryClient.setQueryData(["postagem", postagemAtualizada.id], postagemAtualizada);
-      toast.success("Descrição da imagem atualizada.");
+      toast.success(t("toast.descricaoAtualizada"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar a descrição.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.descricaoFalha"))),
   });
 }
 
 export function useRemoverPostagem() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => postagensService.remover(id),
@@ -211,9 +217,9 @@ export function useRemoverPostagem() {
       queryClient.setQueriesData<PaginasFeed>({ queryKey: ["postagens"] }, (atual) =>
         removerPostagemDoCacheFeed(atual, id),
       );
-      toast.success("Publicação excluída.");
+      toast.success(t("toast.postExcluida"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a publicação.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.postFalhaExcluir"))),
   });
 }
 
@@ -223,6 +229,7 @@ export function useRemoverPostagem() {
 // travado. As outras (comentar, compartilhar, publicar) já têm sua própria
 // espera natural (digitar, abrir um diálogo) e não precisam do mesmo truque.
 export function useAlternarCurtida() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (postagemId: string) => postagensService.alternarCurtida(postagemId),
@@ -256,7 +263,7 @@ export function useAlternarCurtida() {
       if (contexto?.anteriorDetalhe) {
         queryClient.setQueryData(["postagem", postagemId], contexto.anteriorDetalhe);
       }
-      toast.error(extrairMensagemErro(erro, "Não foi possível curtir a publicação."));
+      toast.error(extrairMensagemErro(erro, t("toast.curtirFalha")));
     },
     onSuccess: (resultado, postagemId) => {
       const aplicar = (postagem: PostagemCompleta) => ({
@@ -275,6 +282,7 @@ export function useAlternarCurtida() {
 }
 
 export function useCriarComentario(postagemId: string) {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ comentario, comentarioPaiId }: { comentario: string; comentarioPaiId?: string | null }) =>
@@ -291,11 +299,12 @@ export function useCriarComentario(postagemId: string) {
         atual ? { ...atual, totalComentarios: (atual.totalComentarios ?? 0) + 1 } : atual,
       );
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível enviar o comentário.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.comentarioFalha"))),
   });
 }
 
 export function useRemoverComentario(postagemId: string) {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (comentarioId: string) => postagensService.removerComentario(comentarioId),
@@ -307,13 +316,14 @@ export function useRemoverComentario(postagemId: string) {
           totalComentarios: Math.max(0, (postagem.totalComentarios ?? 0) - 1),
         })),
       );
-      toast.success("Comentário excluído.");
+      toast.success(t("toast.comentarioExcluido"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir o comentário.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.comentarioFalhaExcluir"))),
   });
 }
 
 export function useCompartilharPostagem() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ postagemId, comentario }: { postagemId: string; comentario?: string }) =>
@@ -331,13 +341,14 @@ export function useCompartilharPostagem() {
         atual ? aplicar(atual) : atual,
       );
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Publicação compartilhada.");
+      toast.success(t("toast.compartilhada"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível compartilhar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.compartilharFalha"))),
   });
 }
 
 export function useDesfazerCompartilhamento() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: string; postagemId: string }) => postagensService.removerCompartilhamento(id),
@@ -353,9 +364,9 @@ export function useDesfazerCompartilhamento() {
       queryClient.setQueryData<PostagemCompleta>(["postagem", variaveis.postagemId], (atual) =>
         atual ? aplicar(atual) : atual,
       );
-      toast.success("Compartilhamento desfeito.");
+      toast.success(t("toast.compartilhamentoDesfeito"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível desfazer o compartilhamento.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("toast.desfazerFalha"))),
   });
 }
 

@@ -587,6 +587,8 @@ export interface PreferenciasAcessibilidadeApi {
   linguagemSimplificada?: boolean;
   libras?: boolean;
   destaqueFoco?: boolean;
+  /** Idioma do site (`pt`, `en`, `es`). `null`: a conta ainda não escolheu. Ausente: o servidor não tem o recurso ligado. */
+  idioma?: "pt" | "en" | "es" | null;
   [chave: string]: unknown;
 }
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useIdioma } from "@/hooks/useIdioma";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,13 +21,15 @@ export function AutenticacaoLayout({
    */
   className?: string;
 }) {
+  const { t } = useIdioma();
+
   return (
     <div className="grid min-h-dvh place-items-center bg-secondary px-4 py-10">
       <a
         href="#conteudo"
         className="sr-only-focusable absolute left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
       >
-        Pular para o conteúdo principal
+        {t("auth.pularConteudo")}
       </a>
       <div id="conteudo" tabIndex={-1} className={cn("w-full max-w-md outline-none", className)}>
         {children}

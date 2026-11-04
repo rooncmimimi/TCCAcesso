@@ -70,7 +70,9 @@ export function formatarDataHora(data?: string | Date | null): string {
 }
 
 /** Retorna uma descrição relativa acessível, como "há 3 dias". */
-export function formatarTempoRelativo(data?: string | Date | null): string {
+const AGORA_POR_IDIOMA: Record<string, string> = { pt: "agora mesmo", en: "just now", es: "ahora mismo" };
+
+export function formatarTempoRelativo(data?: string | Date | null, locale: string = "pt-BR"): string {
   if (!data) return "";
   const referencia = typeof data === "string" ? new Date(data) : data;
   if (Number.isNaN(referencia.getTime())) return "";
@@ -84,7 +86,7 @@ export function formatarTempoRelativo(data?: string | Date | null): string {
     ["minute", 60],
   ];
 
-  const formatador = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+  const formatador = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 
   for (const [unidade, fator] of unidades) {
     if (Math.abs(segundos) >= fator) {
@@ -92,7 +94,7 @@ export function formatarTempoRelativo(data?: string | Date | null): string {
     }
   }
 
-  return "agora mesmo";
+  return AGORA_POR_IDIOMA[locale.split("-")[0]] ?? AGORA_POR_IDIOMA.pt;
 }
 
 /** Gera as iniciais de um nome para uso em avatares. */

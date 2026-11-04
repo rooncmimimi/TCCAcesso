@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useIdioma } from "@/hooks/useIdioma";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -42,6 +43,7 @@ const FILTROS_INICIAIS: FiltrosVagasEstado = {
 
 function Vagas() {
   const { usuario } = useSessao();
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const [rascunho, setRascunho] = useState<FiltrosVagasEstado>(FILTROS_INICIAIS);
   const [filtros, setFiltros] = useState<FiltrosVagasEstado>(FILTROS_INICIAIS);
@@ -76,7 +78,7 @@ function Vagas() {
   const favoritar = useMutation({
     mutationFn: (vagaId: string) => vagasService.favoritar(vagaId),
     onSuccess: (resultado) => {
-      toast.success(resultado.favoritada ? "Vaga favoritada." : "Vaga removida dos favoritos.");
+      toast.success(resultado.favoritada ? t("vagas.favoritada") : t("vagas.favoritadaRemovida"));
       // Há duas chaves de query para favoritos: `["dashboard", "favoritos"]` (esta tela e o detalhe
       // da vaga, lista simples) e `["vagas-favoritas", pagina]` (widget do painel, paginado). São
       // buscas diferentes do mesmo dado, então as duas são invalidadas, em vez de unificadas com
@@ -99,13 +101,11 @@ function Vagas() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Vagas inclusivas</h1>
+      <h1 className="text-3xl font-extrabold">{t("vagas.titulo")}</h1>
       <p className="mt-2 text-muted-foreground" role="status" aria-live="polite">
         {isLoading
-          ? "Carregando oportunidades…"
-          : `${data?.total ?? 0} oportunidade${(data?.total ?? 0) === 1 ? "" : "s"} publicada${
-              (data?.total ?? 0) === 1 ? "" : "s"
-            }.`}
+          ? t("vagas.carregando")
+          : t("vagas.total", { n: data?.total ?? 0 })}
       </p>
 
       <div className="mt-6">
@@ -113,7 +113,7 @@ function Vagas() {
       </div>
 
       {isLoading && (
-        <ul className="mt-6 space-y-4" aria-label="Carregando vagas">
+        <ul className="mt-6 space-y-4" aria-label={t("vagas.carregandoLista")}>
           {[1, 2, 3].map((i) => (
             <li key={i}>
               <Skeleton className="h-44 w-full rounded-xl" />
@@ -124,9 +124,9 @@ function Vagas() {
 
       {isError && (
         <div role="alert" className="mt-6 space-y-3 rounded-xl border border-destructive/40 p-6">
-          <p className="text-sm">Não foi possível carregar as vagas.</p>
+          <p className="text-sm">{t("vagas.erro")}</p>
           <Button variant="outline" onClick={() => refetch()}>
-            Tentar novamente
+            {t("vagas.tentarNovamente")}
           </Button>
         </div>
       )}
@@ -134,7 +134,7 @@ function Vagas() {
       {!isLoading && !isError && vagas.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border p-10 text-center text-muted-foreground">
           <Briefcase className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhuma vaga encontrada com esses filtros.</p>
+          <p className="text-sm">{t("vagas.nenhuma")}</p>
         </div>
       )}
 
@@ -148,7 +148,7 @@ function Vagas() {
                 favoritando={favoritar.isPending && favoritar.variables === vaga.id}
                 onFavoritar={() => {
                   if (!ehCandidato) {
-                    toast.info("Entre com uma conta de candidato para favoritar vagas.");
+                    toast.info(t("vagas.entreFavoritar"));
                     return;
                   }
                   favoritar.mutate(vaga.id);
@@ -162,10 +162,10 @@ function Vagas() {
       {(data?.totalPaginas ?? 1) > 1 && (
         <div className="mt-6 flex items-center justify-between gap-3">
           <Button variant="outline" disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
-            Página anterior
+            {t("vagas.paginaAnterior")}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Página {data?.pagina} de {data?.totalPaginas}
+            {t("vagas.paginaDe", { pagina: data?.pagina ?? 1, total: data?.totalPaginas ?? 1 })}
             {isFetching && <Loader2 className="ml-2 inline size-4 animate-spin" aria-hidden="true" />}
           </p>
           <Button
@@ -173,7 +173,7 @@ function Vagas() {
             disabled={pagina >= (data?.totalPaginas ?? 1)}
             onClick={() => setPagina((p) => p + 1)}
           >
-            Próxima página
+            {t("vagas.proximaPagina")}
           </Button>
         </div>
       )}

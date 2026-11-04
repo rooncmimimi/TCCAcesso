@@ -1,4 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { ControleDeTraducao } from "@/components/traducao/ControleDeTraducao";
+import { useTraducao } from "@/hooks/useTraducao";
 import { BadgeCheck, Heart, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,8 +11,6 @@ import type { Vaga } from "@/types";
 import { cn } from "@/lib/utils";
 import {
   ICONE_RECURSO_ACESSIBILIDADE,
-  ROTULO_PUBLICO_ALVO_CURTO,
-  ROTULO_RECURSO_ACESSIBILIDADE,
 } from "@/components/dashboard/constantesVaga";
 
 export function VagaCard({
@@ -22,13 +24,20 @@ export function VagaCard({
   onFavoritar: () => void;
   favoritando: boolean;
 }) {
-  const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa";
+  const { t } = useIdioma();
+  const traducao = useTraducao({ titulo: vaga.titulo, descricao: vaga.descricao ?? "" });
+  const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? t("vaga.empresa");
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
   // `data-speak` só afeta o leitor de voz próprio do ACESSO (useLeituraAutomatica): o
   // nome acessível nativo do link continua sendo o título, sem duplicar leitura
   // para quem usa NVDA/JAWS/VoiceOver (esses seguem lendo os parágrafos abaixo
   // normalmente). Dá contexto completo numa frase só: vaga, empresa, local, modalidade.
-  const resumoParaVoz = `Vaga de ${vaga.titulo}, empresa ${nomeEmpresa}, ${local || "local não informado"}, modalidade ${vaga.modalidade}.`;
+  const resumoParaVoz = t("vaga.resumoVoz", {
+    titulo: vaga.titulo,
+    empresa: nomeEmpresa,
+    local: local || t("vaga.localNaoInformado"),
+    modalidade: t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase),
+  });
 
   return (
     <Card className="shadow-card">
@@ -41,30 +50,31 @@ export function VagaCard({
               data-speak={resumoParaVoz}
               className="text-lg font-bold hover:underline focus-visible:underline"
             >
-              {vaga.titulo}
+              {traducao.texto("titulo")}
             </Link>
             <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm font-medium text-muted-foreground">
               <span>{nomeEmpresa}</span>
               {vaga.empresa?.empresaVerificada && (
                 <span
                   className="inline-flex items-center gap-0.5 text-primary"
-                  title="Empresa verificada pelo ACESSO"
+                  title={t("vaga.empresaVerificadaTitulo")}
                 >
                   <BadgeCheck className="size-4" aria-hidden="true" />
-                  <span className="sr-only">Empresa verificada</span>
+                  <span className="sr-only">{t("vaga.empresaVerificada")}</span>
                 </span>
               )}
               {vaga.contrato ? <span>· {vaga.contrato}</span> : null}
             </p>
             <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="size-4 shrink-0" aria-hidden="true" /> {vaga.modalidade}
+              <MapPin className="size-4 shrink-0" aria-hidden="true" /> {t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase)}
               {local ? ` · ${local}` : ""}
             </p>
-            <p className="mt-3 line-clamp-2 text-sm">{vaga.descricao}</p>
+            <p className="mt-3 line-clamp-2 text-sm">{traducao.texto("descricao")}</p>
+            <ControleDeTraducao traducao={traducao} conteudo="vaga" className="mt-1" />
             <ul className="mt-3 flex flex-wrap gap-2">
               {vaga.publicoAlvo && vaga.publicoAlvo !== "geral" && (
                 <li>
-                  <Badge className="font-medium">{ROTULO_PUBLICO_ALVO_CURTO[vaga.publicoAlvo]}</Badge>
+                  <Badge className="font-medium">{t(`vaga.publicoCurto.${vaga.publicoAlvo}` as ChaveBase)}</Badge>
                 </li>
               )}
               {(vaga.recursosAcessibilidade ?? [])
@@ -76,7 +86,7 @@ export function VagaCard({
                     <li key={recurso}>
                       <Badge variant="outline" className="gap-1 font-medium">
                         <Icone className="size-3.5" aria-hidden="true" />
-                        {ROTULO_RECURSO_ACESSIBILIDADE[recurso]}
+                        {t(`vaga.recurso.${recurso}` as ChaveBase)}
                       </Badge>
                     </li>
                   );
@@ -91,14 +101,14 @@ export function VagaCard({
           <div className="flex shrink-0 gap-2 sm:flex-col">
             <Button asChild className="min-h-12 flex-1 sm:flex-none">
               <Link to="/vaga/$vagaId" params={{ vagaId: vaga.id }}>
-                Ver vaga
+                {t("vaga.verVaga")}
               </Link>
             </Button>
             <Button
               variant="outline"
               className="min-h-12 shrink-0"
               aria-pressed={favoritada}
-              aria-label={favoritada ? "Remover vaga dos favoritos" : "Favoritar vaga"}
+              aria-label={favoritada ? t("vaga.removerFavorito") : t("vaga.favoritar")}
               disabled={favoritando}
               onClick={onFavoritar}
             >

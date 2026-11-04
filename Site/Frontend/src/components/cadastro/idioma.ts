@@ -1,25 +1,17 @@
 /**
  * Textos do fluxo de cadastro em português, inglês e espanhol.
  *
- * É um dicionário próprio e deliberadamente pequeno, não uma arquitetura de i18n: o projeto não tem
- * nenhuma (nem biblioteca, nem locale, nem contexto de idioma), e montar uma para traduzir só o
- * cadastro seria carregar peso que o resto do site ainda não usa. Quando a tradução do site inteiro
- * entrar, este arquivo vira o primeiro conjunto de chaves dela.
- *
- * O idioma **não** é salvo na conta, por decisão do produto: nada fora do cadastro está traduzido,
- * então uma preferência gravada não teria onde ser honrada depois do login.
+ * Estes são os textos **do cadastro**, com as mensagens de erro de validação. O resto do site usa o dicionário geral
+ * (`src/i18n/dicionarios`), e o idioma é o do site inteiro (`IdiomaProvider`): o que a pessoa escolhe aqui vale no resto e, com a
+ * conta, acompanha-a. Mover estes textos para o dicionário geral é uma das próximas ondas.
  *
  * As mensagens de erro moram aqui junto dos rótulos de propósito. Traduzir só o rótulo e deixar o
  * erro em português deixaria a tela meio traduzida justamente na hora em que a pessoa mais precisa
  * entender o que fazer.
  */
-export const IDIOMAS = [
-  { codigo: "pt", nome: "Português" },
-  { codigo: "en", nome: "English" },
-  { codigo: "es", nome: "Español" },
-] as const;
+import { IDIOMAS, type CodigoIdioma } from "@/i18n/idiomas";
 
-export type CodigoIdioma = (typeof IDIOMAS)[number]["codigo"];
+export { IDIOMAS, type CodigoIdioma };
 
 const pt = {
   htmlLang: "pt-BR",

@@ -10,25 +10,29 @@ import {
 import { AcessibilidadeProvider } from "@/contexts/AcessibilidadeProvider";
 import { VozProvider } from "@/contexts/VozProvider";
 import { useLeituraAutomatica } from "@/hooks/useLeituraAutomatica";
+import { useIdioma } from "@/hooks/useIdioma";
 import { SessaoProvider } from "@/contexts/SessaoProvider";
+import { IdiomaProvider } from "@/contexts/IdiomaProvider";
 import { VLibras } from "@/components/VLibras";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
+  const { t } = useIdioma();
+
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Página não encontrada</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{t("raiz.naoEncontradaTitulo")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          A página que você procura não existe ou foi movida.
+          {t("raiz.naoEncontradaTexto")}
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Voltar ao início
+            {t("raiz.voltarInicio")}
           </Link>
         </div>
       </div>
@@ -39,15 +43,16 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const { t } = useIdioma();
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Esta página não carregou
+          {t("raiz.erroTitulo")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Algo deu errado do nosso lado. Você pode tentar novamente ou voltar ao início.
+          {t("raiz.erroTexto")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -57,13 +62,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Tentar novamente
+            {t("raiz.tentarNovamente")}
           </button>
           <a
             href="/"
             className="inline-flex min-h-11 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Ir para o início
+            {t("raiz.irInicio")}
           </a>
         </div>
       </div>
@@ -115,7 +120,9 @@ function ComponenteRaiz() {
       <AcessibilidadeProvider>
         <VozProvider>
           <SessaoProvider>
-            <AppFrame />
+            <IdiomaProvider>
+              <AppFrame />
+            </IdiomaProvider>
           </SessaoProvider>
         </VozProvider>
       </AcessibilidadeProvider>

@@ -1,4 +1,6 @@
 import { Search } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,8 +18,6 @@ import {
   ICONE_RECURSO_ACESSIBILIDADE,
   PUBLICO_ALVO,
   RECURSOS_ACESSIBILIDADE,
-  ROTULO_PUBLICO_ALVO,
-  ROTULO_RECURSO_ACESSIBILIDADE,
 } from "@/components/dashboard/constantesVaga";
 import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga } from "@/types";
 
@@ -41,27 +41,29 @@ export function FiltrosVagas({
   aoMudar: (proximo: FiltrosVagasEstado) => void;
   aoBuscar: () => void;
 }) {
+  const { t } = useIdioma();
+
   return (
     <Card className="shadow-none">
       <CardContent className="space-y-4 p-4">
         <div>
           <Label htmlFor="busca-vagas" className="text-sm font-bold">
-            Buscar vaga
+            {t("filtro.buscarVaga")}
           </Label>
           <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <Input
               id="busca-vagas"
               className="min-h-12"
-              placeholder="Cargo, empresa ou palavra-chave"
+              placeholder={t("filtro.placeholderBusca")}
               value={valor.busca}
               onChange={(e) => aoMudar({ ...valor, busca: e.target.value })}
               onKeyDown={(e) => {
                 if (e.key === "Enter") aoBuscar();
               }}
             />
-            <Button className="min-h-12 shrink-0" aria-label="Buscar vagas" onClick={aoBuscar}>
+            <Button className="min-h-12 shrink-0" aria-label={t("filtro.buscarRotulo")} onClick={aoBuscar}>
               <Search aria-hidden="true" />
-              <span className="hidden sm:inline">Buscar</span>
+              <span className="hidden sm:inline">{t("filtro.buscar")}</span>
             </Button>
           </div>
         </div>
@@ -69,12 +71,12 @@ export function FiltrosVagas({
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="filtro-cidade" className="text-sm font-bold">
-              Cidade
+              {t("filtro.cidade")}
             </Label>
             <CidadeAutocomplete
               id="filtro-cidade"
               className="mt-2 min-h-11"
-              placeholder="Ex.: São Paulo"
+              placeholder={t("filtro.cidadeExemplo")}
               value={valor.cidade}
               onChange={(cidade) => aoMudar({ ...valor, cidade })}
               onEnterSemSelecao={aoBuscar}
@@ -83,20 +85,20 @@ export function FiltrosVagas({
 
           <div>
             <Label htmlFor="filtro-modalidade" className="text-sm font-bold">
-              Modalidade
+              {t("filtro.modalidade")}
             </Label>
             <Select
               value={valor.modalidade || "todas"}
               onValueChange={(v) => aoMudar({ ...valor, modalidade: v === "todas" ? "" : v })}
             >
               <SelectTrigger id="filtro-modalidade" className="mt-2 min-h-11">
-                <SelectValue placeholder="Todas" />
+                <SelectValue placeholder={t("filtro.todas")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todas">Todas as modalidades</SelectItem>
+                <SelectItem value="todas">{t("filtro.todasModalidades")}</SelectItem>
                 {MODALIDADES.map((m) => (
                   <SelectItem key={m} value={m}>
-                    {m}
+                    {t(`vaga.modalidade.${m}` as ChaveBase)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -107,7 +109,7 @@ export function FiltrosVagas({
             {/* Único controle de público: "exclusiva PCD" já é uma das opções da lista (junto
                 de 50+ e PCD+50+), então não há checkbox separado. */}
             <Label htmlFor="filtro-publico" className="text-sm font-bold">
-              Público da vaga
+              {t("filtro.publico")}
             </Label>
             <Select
               value={valor.publicoAlvo || "todos"}
@@ -116,13 +118,13 @@ export function FiltrosVagas({
               }
             >
               <SelectTrigger id="filtro-publico" className="mt-2 min-h-11">
-                <SelectValue placeholder="Todos os públicos" />
+                <SelectValue placeholder={t("filtro.todosPublicos")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos os públicos</SelectItem>
+                <SelectItem value="todos">{t("filtro.todosPublicos")}</SelectItem>
                 {PUBLICO_ALVO.map((p) => (
                   <SelectItem key={p} value={p}>
-                    {ROTULO_PUBLICO_ALVO[p]}
+                    {t(`vaga.publico.${p}` as ChaveBase)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -131,7 +133,7 @@ export function FiltrosVagas({
         </div>
 
         <fieldset>
-          <legend className="text-sm font-bold">Recursos de acessibilidade da vaga</legend>
+          <legend className="text-sm font-bold">{t("filtro.recursos")}</legend>
           <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {RECURSOS_ACESSIBILIDADE.filter((r) => r !== "outro").map((recurso) => {
               const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
@@ -151,7 +153,7 @@ export function FiltrosVagas({
                     }}
                   />
                   <Icone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <span className="min-w-0 truncate">{ROTULO_RECURSO_ACESSIBILIDADE[recurso]}</span>
+                  <span className="min-w-0 truncate">{t(`vaga.recurso.${recurso}` as ChaveBase)}</span>
                 </label>
               );
             })}

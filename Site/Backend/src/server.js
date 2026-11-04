@@ -11,6 +11,7 @@ import {
     avisoDaMigracaoSessoes,
     avisosDaSeguranca
 } from "./config/avisosDeAmbiente.js";
+import CandidaturaRascunhoService from "./services/CandidaturaRascunhoService.js";
 import DispositivoConfiavelService from "./services/DispositivoConfiavelService.js";
 import EmailService from "./services/EmailService.js";
 import SessaoService from "./services/SessaoService.js";
@@ -103,6 +104,20 @@ async function iniciarServidor() {
     };
     void limparSessoes();
     setInterval(limparSessoes, 6 * 60 * 60 * 1000).unref();
+
+    // Rascunhos de candidatura parados há mais de `DIAS_DE_VALIDADE_DO_RASCUNHO` dias. À parte da
+    // limpeza de sessões para uma falha (por exemplo, a migration 0012 ainda não aplicada) não
+    // atrapalhar nenhuma das duas.
+    const limparRascunhos = async () => {
+        try {
+            const apagados = await CandidaturaRascunhoService.limparExpirados();
+            if (apagados > 0) console.log(`[RASCUNHOS] ${apagados} rascunho(s) de candidatura vencido(s) apagado(s).`);
+        } catch (erro) {
+            console.error(`[RASCUNHOS] Falha na limpeza de rascunhos vencidos: ${erro.message}`);
+        }
+    };
+    void limparRascunhos();
+    setInterval(limparRascunhos, 6 * 60 * 60 * 1000).unref();
 
     // Nunca loga as credenciais, só o modo em uso, para deixar óbvio em
     // produção se o Storage persistente está realmente ativo ou se caiu

@@ -12,7 +12,11 @@ import {
     validarAtualizacaoVaga,
     validarStatusVaga
 } from "../validators/vagaValidator.js";
-import { validarCriacaoCandidatura } from "../validators/candidaturaValidator.js";
+import {
+    validarCriacaoCandidatura,
+    validarPreviaDaCandidatura,
+    validarRascunhoDaCandidatura
+} from "../validators/candidaturaValidator.js";
 
 const router = Router();
 
@@ -88,6 +92,44 @@ router.post(
     validarCriacaoCandidatura,
     validacaoMiddleware,
     CandidaturaController.criar
+);
+
+/* Prévia de privacidade: o que a empresa receberia, sem enviar nada */
+router.post(
+    "/:vagaId/candidaturas/previa",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarPreviaDaCandidatura,
+    validacaoMiddleware,
+    CandidaturaController.previa
+);
+
+/* Rascunho da candidatura: só a própria pessoa; a empresa nunca vê */
+router.get(
+    "/:vagaId/rascunho",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarUuidParam("vagaId"),
+    validacaoMiddleware,
+    CandidaturaController.obterRascunho
+);
+
+router.put(
+    "/:vagaId/rascunho",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarRascunhoDaCandidatura,
+    validacaoMiddleware,
+    CandidaturaController.salvarRascunho
+);
+
+router.delete(
+    "/:vagaId/rascunho",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarUuidParam("vagaId"),
+    validacaoMiddleware,
+    CandidaturaController.descartarRascunho
 );
 
 router.get(

@@ -126,6 +126,15 @@ const Candidato = sequelize.define(
 
         pretensaoSalarial: {
             type: DataTypes.DECIMAL(10, 2)
+        },
+
+        // A categoria de deficiência é PRIVADA por padrão. Só aparece no perfil público quando a
+        // própria pessoa liga esta opção, e ligar não libera nenhuma outra informação nem
+        // autoriza compartilhar nada em candidatura (`utils/candidatoPrivacidade.js`).
+        exibirDeficienciaNoPerfil: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
         }
     },
     {

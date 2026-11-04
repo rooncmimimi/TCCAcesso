@@ -22,6 +22,7 @@ import publicoRoutes from "./publicoRoutes.js";
 import contatoRoutes from "./contatoRoutes.js";
 import denunciaRoutes from "./denunciaRoutes.js";
 import atividadeRoutes from "./atividadeRoutes.js";
+import minhaAcessibilidadeRoutes from "./minhaAcessibilidadeRoutes.js";
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.use("/deficiencias", deficienciaRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/perfil", perfilRoutes);
 router.use("/acessibilidade", acessibilidadeRoutes);
+router.use("/minha-acessibilidade", minhaAcessibilidadeRoutes);
 router.use("/compartilhamentos", compartilhamentoRoutes);
 router.use("/busca", buscaRoutes);
 router.use("/seguir", seguidorRoutes);

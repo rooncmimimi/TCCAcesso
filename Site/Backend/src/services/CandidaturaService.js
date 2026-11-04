@@ -17,6 +17,9 @@ import {
 import { STATUS_CANDIDATURA } from "../models/Candidatura.js";
 import NotificacaoService from "./NotificacaoService.js";
 import BloqueioService from "./BloqueioService.js";
+import CandidaturaAdaptacaoService from "./CandidaturaAdaptacaoService.js";
+import CandidaturaRascunhoService from "./CandidaturaRascunhoService.js";
+import { aplicarPrivacidadeCandidato, STATUS_SEM_ACESSO_DA_EMPRESA } from "../utils/candidatoPrivacidade.js";
 
 /** Status que somente a empresa dona da vaga pode aplicar. */
 const STATUS_EMPRESA = ["visualizada", "em_analise", "aprovada", "rejeitada"];
@@ -59,7 +62,13 @@ class CandidaturaService {
     }
 
     /* Candidatar-se */
-    async criar(vagaId, mensagem, solicitante) {
+    /**
+     * `compartilhar` são as ESCOLHAS da pessoa sobre adaptações (nunca conteúdo) e `aceita` é a
+     * confirmação da autorização, dada depois da prévia de privacidade. Sem escolha, nada de
+     * acessibilidade é compartilhado. A cópia, o fim do rascunho e a candidatura nascem na MESMA
+     * transação: ou tudo, ou nada.
+     */
+    async criar(vagaId, mensagem, solicitante, { compartilhar, aceita } = {}) {
         const candidato = await this.candidatoDoUsuario(solicitante.id);
         const transaction = await sequelize.transaction();
 
@@ -117,6 +126,14 @@ class CandidaturaService {
                 },
                 { transaction }
             );
+
+            await CandidaturaAdaptacaoService.registrar(
+                { candidato, candidaturaId: candidatura.id, corpo: compartilhar ?? {}, aceita },
+                { transaction }
+            );
+
+            // O rascunho cumpriu o papel: nasce a candidatura de verdade e o rascunho some junto.
+            await CandidaturaRascunhoService.apagarDoEnvio(vagaId, candidato.id, { transaction });
 
             const notificacao = await NotificacaoService.criar(
                 {
@@ -180,7 +197,11 @@ class CandidaturaService {
             order: [["criadoEm", "DESC"]]
         });
 
-        return montarResposta("candidaturas", rows, count, pagina, limite);
+        // O que a própria pessoa autorizou compartilhar em cada candidatura (e se já retirou).
+        const adaptacoes = await CandidaturaAdaptacaoService.paraOCandidato(rows.map((r) => r.id));
+        const itens = rows.map((linha) => ({ ...linha.toJSON(), adaptacoes: adaptacoes.get(linha.id) ?? null }));
+
+        return montarResposta("candidaturas", itens, count, pagina, limite);
     }
 
     /* Candidaturas de uma vaga (empresa dona) */
@@ -229,7 +250,26 @@ class CandidaturaService {
             order: [["criadoEm", "DESC"]]
         });
 
-        return montarResposta("candidaturas", rows, count, pagina, limite);
+        // Antes, o candidato inteiro (CPF, endereço, necessidades de acessibilidade...) saía daqui. Agora
+        // a empresa recebe só o perfil público e, enquanto a candidatura estiver ativa, o e-mail de
+        // contato; as adaptações são só a cópia que a pessoa autorizou.
+        const adaptacoes = ehAdministrador(solicitante) ? new Map() : await CandidaturaAdaptacaoService.paraAEmpresa(rows);
+        const itens = rows.map((linha) => this.paraAEmpresa(linha, solicitante, adaptacoes));
+
+        return montarResposta("candidaturas", itens, count, pagina, limite);
+    }
+
+    /**
+     * A candidatura como a EMPRESA (ou o administrador) a vê: candidato sem dado privado, com o
+     * e-mail de contato só enquanto a candidatura estiver ativa, e as adaptações autorizadas.
+     */
+    paraAEmpresa(candidatura, solicitante, adaptacoes) {
+        const administrador = ehAdministrador(solicitante);
+        const ativa = !STATUS_SEM_ACESSO_DA_EMPRESA.includes(candidatura.status);
+
+        aplicarPrivacidadeCandidato(candidatura.candidato, administrador, { contatoLiberado: ativa });
+
+        return { ...candidatura.toJSON(), adaptacoes: administrador ? null : adaptacoes.get(candidatura.id) ?? null };
     }
 
     /* Detalhe (candidato dono, empresa dona ou administrador) */
@@ -268,7 +308,16 @@ class CandidaturaService {
             throw ErroApi.acessoNegado("Acesso negado a esta candidatura.");
         }
 
-        return candidatura;
+        if (ehDonoCandidato) {
+            const minhas = await CandidaturaAdaptacaoService.paraOCandidato([candidatura.id]);
+
+            return { ...candidatura.toJSON(), adaptacoes: minhas.get(candidatura.id) ?? null };
+        }
+
+        // Empresa dona da vaga ou administrador: nunca o candidato inteiro.
+        const daEmpresa = ehAdministrador(solicitante) ? new Map() : await CandidaturaAdaptacaoService.paraAEmpresa([candidatura]);
+
+        return this.paraAEmpresa(candidatura, solicitante, daEmpresa);
     }
 
     /* Atualizar status (empresa dona) */
@@ -358,8 +407,18 @@ class CandidaturaService {
             "Você só pode cancelar as suas próprias candidaturas."
         );
 
-        candidatura.status = "cancelada";
-        await candidatura.save();
+        // Cancelou: o que foi compartilhado não tem mais finalidade e é apagado junto, de uma vez só.
+        const transaction = await sequelize.transaction();
+
+        try {
+            candidatura.status = "cancelada";
+            await candidatura.save({ transaction });
+            await CandidaturaAdaptacaoService.encerrarPorCancelamento(candidatura.id, { transaction });
+            await transaction.commit();
+        } catch (erro) {
+            await transaction.rollback();
+            throw erro;
+        }
 
         return candidatura;
     }

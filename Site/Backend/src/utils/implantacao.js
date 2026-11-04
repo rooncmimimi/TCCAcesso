@@ -17,12 +17,6 @@ export const RECURSOS = [
         exige: []
     },
     {
-        chave: "MFA_TOTP_HABILITADO",
-        migration: "0008_totp_e_mfa_na_sessao.sql",
-        descricao: "Verificação em duas etapas (aplicativo autenticador)",
-        exige: [{ variavel: "MFA_CHAVE_CIFRA", minimo: 32, motivo: "chave própria do segredo do TOTP (senão usa o JWT_SECRET)" }]
-    },
-    {
         chave: "DISPOSITIVOS_CONFIAVEIS_HABILITADO",
         migration: "0010_dispositivos_confiaveis_e_eventos_de_seguranca.sql",
         descricao: "Código por e-mail em dispositivo novo e \"Acho que invadiram minha conta\"",

@@ -60,16 +60,6 @@ const Sessao = sequelize.define(
                   iniciadaEm: { type: DataTypes.DATE },
                   ultimoUsoEm: { type: DataTypes.DATE }
               }
-            : {}),
-
-        // Migration 0008 (`MFA_TOTP_HABILITADO`): quando a sessão passou pelo segundo fator (TOTP ou código de
-        // recuperação). Vai junto na renovação do refresh token. Nulo = não passou.
-        ...(env.mfa.habilitado
-            ? {
-                  mfaVerificadoEm: {
-                      type: DataTypes.DATE
-                  }
-              }
             : {})
     },
     {

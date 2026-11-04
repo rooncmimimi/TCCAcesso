@@ -117,61 +117,6 @@ export function avisosDoGoogle({ google, isProducao, corsOrigins = [] }) {
     return avisos;
 }
 
-/**
- * Avisos da verificação em duas etapas (TOTP), só quando `MFA_TOTP_HABILITADO` está ligada.
- *
- * - **Chave própria.** Sem `MFA_CHAVE_CIFRA`, o segredo do TOTP é cifrado com uma chave derivada do
- *   `JWT_SECRET`. Funciona, mas trocar o `JWT_SECRET` (o que se faz para invalidar sessões) tornaria todos
- *   os segredos ilegíveis e deixaria os administradores sem entrar. Em produção, vale a chave separada.
- * - **Chave curta.** Uma chave própria precisa de 32 caracteres ou mais.
- */
-export function avisosDoMfa({ mfa, isProducao }) {
-    const avisos = [];
-
-    if (!mfa?.habilitado) return avisos;
-
-    if (mfa.chaveCifra && mfa.chaveCifra.length < 32) {
-        avisos.push("[ENV] MFA_CHAVE_CIFRA tem menos de 32 caracteres: use um valor longo e aleatório.");
-    }
-
-    if (isProducao && !mfa.chaveCifra) {
-        avisos.push(
-            "[ENV] Produção com MFA_TOTP_HABILITADO ligada e sem MFA_CHAVE_CIFRA: o segredo do TOTP está sendo cifrado com a " +
-                "chave derivada do JWT_SECRET, e trocar o JWT_SECRET depois deixaria todos os TOTP ilegíveis. Defina " +
-                "MFA_CHAVE_CIFRA (32 caracteres ou mais, aleatórios) no Render ANTES de os administradores configurarem o TOTP."
-        );
-    }
-
-    return avisos;
-}
-
-const ESTRUTURAS_DO_TOTP = ["autenticacao_totp", "codigos_recuperacao_totp", "sessoes.mfa_verificado_em"];
-
-/**
- * Com o TOTP ligado, confere (sem alterar nada) se a migration 0008 foi aplicada. Sem ela, o login e toda
- * rota de administrador falhariam no banco. `consultar` devolve os nomes encontrados (`tabela` ou
- * `tabela.coluna`); uma falha da própria consulta vira um aviso de que não deu para conferir.
- */
-export async function avisoDaMigracaoTotp({ habilitado, consultar }) {
-    if (!habilitado) return null;
-
-    let achados;
-    try {
-        achados = await consultar();
-    } catch {
-        return "[ENV] MFA_TOTP_HABILITADO está ligada, mas não consegui conferir se a migration 0008 foi aplicada.";
-    }
-
-    const faltando = ESTRUTURAS_DO_TOTP.filter((item) => !achados.includes(item));
-
-    if (faltando.length === 0) return null;
-
-    return (
-        `[ENV] MFA_TOTP_HABILITADO está ligada, mas a migration 0008 NÃO foi aplicada (faltam: ${faltando.join(", ")}). ` +
-        "O login e as rotas de administrador vão falhar. Rode `npm run migrate` ou desligue a variável."
-    );
-}
-
 const COLUNAS_DAS_SESSOES = ["sessoes.familia_id", "sessoes.iniciada_em", "sessoes.ultimo_uso_em"];
 
 /**

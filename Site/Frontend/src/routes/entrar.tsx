@@ -18,7 +18,6 @@ import { useSessao } from "@/hooks/useSessao";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
-import { guardarDesafio } from "@/lib/desafioMfa";
 import { guardarVerificacao } from "@/lib/verificacaoDispositivo";
 import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
 
@@ -86,13 +85,6 @@ function Entrar() {
     setEnviando(true);
     try {
       const resultado = await entrar(valores);
-      // Conta com verificação em duas etapas: a senha estava certa, falta o código. O desafio vai para a
-      // tela do código; nenhuma sessão foi aberta.
-      if ("mfaNecessario" in resultado) {
-        guardarDesafio(resultado.desafioMfa);
-        navigate({ to: "/verificacao-em-duas-etapas" });
-        return;
-      }
       // Dispositivo que o servidor não reconhece: o código de 6 números foi para o e-mail. Nenhuma sessão foi aberta.
       if ("verificacaoDispositivo" in resultado) {
         guardarVerificacao({
@@ -146,11 +138,6 @@ function Entrar() {
     setEnviando(true);
     try {
       const resultado = await entrar({ ...contaPausadaPendente, confirmarReativacao: true });
-      if ("mfaNecessario" in resultado) {
-        guardarDesafio(resultado.desafioMfa);
-        navigate({ to: "/verificacao-em-duas-etapas" });
-        return;
-      }
       if ("verificacaoDispositivo" in resultado) {
         guardarVerificacao({
           desafio: resultado.desafioDispositivo,

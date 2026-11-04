@@ -9,7 +9,7 @@ import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
 
 /**
  * Seção "Atividade de segurança": o histórico recente da própria conta (dispositivo novo confirmado, senha alterada,
- * verificação em duas etapas ligada ou desligada, conta protegida). Nunca mostra código nem token. Só aparece com o recurso ligado.
+ * conta protegida). Nunca mostra código nem token. Só aparece com o recurso ligado.
  */
 export function SecaoAtividadeDeSeguranca() {
   const { data: estado } = useEstadoDaSeguranca();

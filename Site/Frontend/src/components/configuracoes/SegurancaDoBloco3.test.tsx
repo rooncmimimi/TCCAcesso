@@ -161,7 +161,7 @@ describe("atividade de segurança", () => {
   it("lista do mais recente ao mais antigo, com texto legível, data, aparelho e IP", async () => {
     servico.listarEventos.mockResolvedValue([
       { id: "1", tipo: "senha_alterada", descricao: "A senha foi alterada.", ip: "177.10.0.1", dispositivo: "Chrome · Windows", criadoEm: horasAtras(1) },
-      { id: "2", tipo: "totp_ativado", descricao: "A verificação em duas etapas foi ativada.", ip: null, dispositivo: null, criadoEm: horasAtras(30) },
+      { id: "2", tipo: "dispositivo_novo_confirmado", descricao: "Você confirmou um dispositivo novo com o código enviado por e-mail.", ip: null, dispositivo: null, criadoEm: horasAtras(30) },
     ]);
     renderizar(<SecaoAtividadeDeSeguranca />);
 
@@ -171,7 +171,7 @@ describe("atividade de segurança", () => {
     expect(itens[0]).toHaveTextContent("A senha foi alterada.");
     expect(itens[0]).toHaveTextContent("Chrome · Windows");
     expect(itens[0]).toHaveTextContent("IP 177.10.0.1");
-    expect(itens[1]).toHaveTextContent("A verificação em duas etapas foi ativada.");
+    expect(itens[1]).toHaveTextContent("Você confirmou um dispositivo novo");
     expect(itens[1]).not.toHaveTextContent("IP");
   });
 
@@ -189,10 +189,10 @@ describe("proteger minha conta agora", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Proteger minha conta agora" }));
   };
 
-  it("explica o que acontece, inclusive que a verificação em duas etapas continua", async () => {
+  it("explica o que acontece", async () => {
     renderizar(<SecaoContaComprometida />);
 
-    expect(await screen.findByText(/A verificação em duas\s+etapas, se você usa, continua ativa/)).toBeInTheDocument();
+    expect(await screen.findByText(/Encerra as outras sessões, remove a confiança nos dispositivos/)).toBeInTheDocument();
   });
 
   it("conta com senha: pede a senha atual e não chama o servidor sem ela", async () => {

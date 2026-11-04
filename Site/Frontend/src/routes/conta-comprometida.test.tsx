@@ -93,7 +93,7 @@ describe("com link (confirmar)", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Proteger a sua conta" })).toBeInTheDocument();
     expect(confirmarProtecao).not.toHaveBeenCalled();
-    expect(screen.getByText(/verificação em duas etapas, se você usa, continua ativa/)).toBeInTheDocument();
+    expect(screen.getByText(/Depois, você cria uma nova senha/)).toBeInTheDocument();
   });
 
   it("no clique, confirma com o token do link e mostra o resultado", async () => {

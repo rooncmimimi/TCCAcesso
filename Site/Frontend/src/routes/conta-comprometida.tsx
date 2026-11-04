@@ -20,8 +20,7 @@ import segurancaService, { codigoDoErroSeguranca, mensagemDeErroSeguranca } from
  * - Com `token` (o link do e-mail, tanto do pedido quanto do "Não fui eu" do aviso de novo acesso): uma confirmação por clique,
  *   e não ao abrir a página, para um programa que pré-visualiza links não proteger a conta (nem a gastar o link) sem a pessoa.
  *
- * Proteger encerra todas as sessões e remove a confiança nos dispositivos; manda o link de nova senha. Não desliga a
- * verificação em duas etapas.
+ * Proteger encerra todas as sessões e remove a confiança nos dispositivos; manda o link de nova senha.
  */
 export const Route = createFileRoute("/conta-comprometida")({
   // `z.coerce.string()`: o parser de search params converte valor só com dígitos em número (ver `redefinir-senha.tsx`).
@@ -247,8 +246,7 @@ function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefOb
             Proteger a sua conta
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ao confirmar, todas as sessões abertas são encerradas na hora e a confiança nos dispositivos é removida. Depois, você cria uma nova senha. A
-            verificação em duas etapas, se você usa, continua ativa.
+            Ao confirmar, todas as sessões abertas são encerradas na hora e a confiança nos dispositivos é removida. Depois, você cria uma nova senha.
           </p>
         </div>
       </div>

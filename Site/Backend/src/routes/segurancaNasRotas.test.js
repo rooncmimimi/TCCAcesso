@@ -51,7 +51,7 @@ describe("rotas da conta logada", () => {
         ["delete", "/dispositivos/:id"],
         ["get", "/eventos-de-seguranca"],
         ["post", "/conta-comprometida/proteger-agora"]
-    ])("%s %s exige a sessão (middleware padrão, que também cobra o TOTP do administrador)", (metodo, caminho) => {
+    ])("%s %s exige a sessão (middleware padrão)", (metodo, caminho) => {
         expect(rota(metodo, caminho)).toContain(autenticacaoMiddleware);
     });
 });

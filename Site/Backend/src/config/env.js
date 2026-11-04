@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 
-import { ORIGEM_LOCAL, avisosDoGoogle, avisosDoMfa } from "./avisosDeAmbiente.js";
+import { ORIGEM_LOCAL, avisosDoGoogle } from "./avisosDeAmbiente.js";
 
 dotenv.config();
 
@@ -219,24 +219,6 @@ const env = {
         maximoPorConta: Math.max(2, Number(process.env.SESSOES_MAXIMO_POR_CONTA) || 20)
     },
 
-    // Verificação em duas etapas por aplicativo autenticador (TOTP). Sem custo e sem serviço externo.
-    mfa: {
-        // Liga o recurso: login com o segundo fator, exigência para administradores e as telas de Segurança.
-        // Desligada por padrão porque a migration 0008 precisa estar aplicada antes (confira com `npm run implantacao:verificar`).
-        habilitado: process.env.MFA_TOTP_HABILITADO === "true",
-        // Quais tipos de conta podem ter a verificação. Por enquanto só administrador; para abrir a candidato e empresa
-        // depois, basta `MFA_TOTP_TIPOS=administrador,candidato,empresa` (sem mudar código).
-        tiposElegiveis: paraLista(process.env.MFA_TOTP_TIPOS, ["administrador"]),
-        // Administrador é OBRIGADO a ter a verificação? Desligado por padrão: ela é opcional. Ligado, o administrador
-        // sem TOTP entra, mas só alcança a tela de configuração, e o servidor nega o resto.
-        obrigatorioAdmin: process.env.MFA_TOTP_OBRIGATORIO_ADMIN === "true",
-        // Chave de cifra do segredo TOTP e dos códigos de recuperação. Recomendada em produção, separada do
-        // JWT_SECRET; sem ela, usa o JWT_SECRET. Trocá-la invalida os segredos já guardados.
-        chaveCifra: process.env.MFA_CHAVE_CIFRA || null,
-        // Nome que aparece no aplicativo autenticador, ao lado do e-mail da conta.
-        emissor: process.env.MFA_EMISSOR || "ACESSO"
-    },
-
     // URL base do Frontend para montar links de e-mail (confirmação de
     // cadastro, redefinição de senha). Reaproveita FRONTEND_URL (mesma
     // variável já usada para CORS): usa a primeira origem da lista que
@@ -316,10 +298,6 @@ if (!ehUrlAbsolutaValida(env.frontendUrl)) {
  * com o Google, `npm run google:verificar`.
  */
 for (const aviso of avisosDoGoogle({ google: env.google, isProducao: env.isProducao, corsOrigins: env.security.corsOrigins })) {
-    console.error(aviso);
-}
-
-for (const aviso of avisosDoMfa({ mfa: env.mfa, isProducao: env.isProducao })) {
     console.error(aviso);
 }
 

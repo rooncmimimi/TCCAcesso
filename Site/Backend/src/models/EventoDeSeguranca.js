@@ -3,7 +3,7 @@ import sequelize from "../config/bancoDeDados.js";
 
 /**
  * Tabela `eventos_de_seguranca`: o histórico de segurança de cada conta (dispositivo novo confirmado, dispositivo revogado,
- * conta protegida, senha ou TOTP alterados...). Nunca guarda segredo nem código. É da própria pessoa: só ela vê o dela.
+ * conta protegida, senha alterada...). Nunca guarda segredo nem código. É da própria pessoa: só ela vê o dela.
  */
 const EventoDeSeguranca = sequelize.define(
     "EventoDeSeguranca",

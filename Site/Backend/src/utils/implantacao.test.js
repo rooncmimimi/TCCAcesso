@@ -43,21 +43,8 @@ describe("avaliarImplantacao", () => {
         expect(r.pronto).toBe(true);
     });
 
-    it("TOTP ligado em produção sem MFA_CHAVE_CIFRA: aviso (não bloqueio)", () => {
-        const r = avaliarImplantacao({ arquivos: ARQUIVOS, aplicadas: ARQUIVOS, ambiente: { MFA_TOTP_HABILITADO: "true" }, producao: true });
-
-        expect(r.pronto).toBe(true);
-        expect(r.avisos).toBe(1);
-        expect(r.itens.find((i) => i.nivel === "aviso").texto).toContain("MFA_CHAVE_CIFRA");
-    });
-
-    it("com a chave de 32+ caracteres, sem aviso; fora de produção, também", () => {
-        expect(avaliarImplantacao({ arquivos: ARQUIVOS, aplicadas: ARQUIVOS, ambiente: { MFA_TOTP_HABILITADO: "true", MFA_CHAVE_CIFRA: "x".repeat(40) }, producao: true }).avisos).toBe(0);
-        expect(avaliarImplantacao({ arquivos: ARQUIVOS, aplicadas: ARQUIVOS, ambiente: { MFA_TOTP_HABILITADO: "true" }, producao: false }).avisos).toBe(0);
-    });
-
     it("aceita 'True', ' true ' e rejeita 'sim' como ligado (o servidor só liga com 'true')", () => {
-        const ligado = (v) => avaliarImplantacao({ arquivos: ARQUIVOS, aplicadas: [], ambiente: { MFA_TOTP_HABILITADO: v } }).pronto === false;
+        const ligado = (v) => avaliarImplantacao({ arquivos: ARQUIVOS, aplicadas: [], ambiente: { SESSOES_DISPOSITIVOS_HABILITADO: v } }).pronto === false;
 
         expect(ligado("True")).toBe(true);
         expect(ligado(" true ")).toBe(true);
@@ -68,10 +55,10 @@ describe("avaliarImplantacao", () => {
 
 describe("formatarRelatorio", () => {
     it("nunca imprime o valor de uma variável, só o nome", () => {
-        const texto = formatarRelatorio(avaliarImplantacao({ arquivos: ARQUIVOS, aplicadas: [], ambiente: { MFA_TOTP_HABILITADO: "true", MFA_CHAVE_CIFRA: "segredo-super-secreto-1234567890-abcdef" } }));
+        const texto = formatarRelatorio(avaliarImplantacao({ arquivos: ARQUIVOS, aplicadas: [], ambiente: { SESSOES_DISPOSITIVOS_HABILITADO: "true", BREVO_API_KEY: "segredo-super-secreto-1234567890-abcdef" } }));
 
         expect(texto).not.toContain("segredo-super-secreto");
-        expect(texto).toContain("MFA_TOTP_HABILITADO");
+        expect(texto).toContain("SESSOES_DISPOSITIVOS_HABILITADO");
     });
 
     it("diz o resultado final", () => {
@@ -86,7 +73,8 @@ describe("os scripts", () => {
         const script = readFileSync(resolve(__dirname, "../../scripts/verificarImplantacao.js"), "utf8");
 
         expect(pacote.scripts["implantacao:verificar"]).toBe("node scripts/verificarImplantacao.js");
-        expect(pacote.scripts["mfa:gerar-chave"]).toBe("node scripts/gerarChaveMfa.js");
+        expect(pacote.scripts["mfa:gerar-chave"]).toBeUndefined();
+        expect(pacote.scripts["admin:resetar-totp"]).toBeUndefined();
         expect(script).not.toMatch(/\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b/);
     });
 });

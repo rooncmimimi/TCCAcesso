@@ -5,8 +5,6 @@ import Sessao from "./Sessao.js";
 import TokenPush from "./TokenPush.js";
 import CodigoRecuperacaoSenha from "./CodigoRecuperacaoSenha.js";
 import CodigoVerificacaoEmail from "./CodigoVerificacaoEmail.js";
-import AutenticacaoTotp from "./AutenticacaoTotp.js";
-import CodigoRecuperacaoTotp from "./CodigoRecuperacaoTotp.js";
 import DispositivoConfiavel from "./DispositivoConfiavel.js";
 import DesafioDeDispositivo from "./DesafioDeDispositivo.js";
 import LinkDeSeguranca from "./LinkDeSeguranca.js";
@@ -71,12 +69,6 @@ CodigoRecuperacaoSenha.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuari
 
 Usuario.hasMany(CodigoVerificacaoEmail, { foreignKey: "usuarioId", as: "codigosVerificacaoEmail" });
 CodigoVerificacaoEmail.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
-
-Usuario.hasOne(AutenticacaoTotp, { foreignKey: "usuarioId", as: "totp" });
-AutenticacaoTotp.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
-
-Usuario.hasMany(CodigoRecuperacaoTotp, { foreignKey: "usuarioId", as: "codigosRecuperacaoTotp" });
-CodigoRecuperacaoTotp.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
 
 Usuario.hasMany(DispositivoConfiavel, { foreignKey: "usuarioId", as: "dispositivosConfiaveis" });
 DispositivoConfiavel.belongsTo(Usuario, { foreignKey: "usuarioId", as: "usuario" });
@@ -271,8 +263,6 @@ export {
     TokenPush,
     CodigoRecuperacaoSenha,
     CodigoVerificacaoEmail,
-    AutenticacaoTotp,
-    CodigoRecuperacaoTotp,
     DispositivoConfiavel,
     DesafioDeDispositivo,
     LinkDeSeguranca,

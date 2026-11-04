@@ -12,11 +12,7 @@ export const EVENTOS_DE_SEGURANCA = {
     conta_protegida_agora: "Você protegeu a conta: as outras sessões foram encerradas e a confiança nos dispositivos foi removida.",
     link_de_seguranca_enviado: "Foi pedido um link de segurança para esta conta.",
     sessoes_encerradas: "Você encerrou as outras sessões.",
-    senha_alterada: "A senha foi alterada.",
-    totp_ativado: "A verificação em duas etapas foi ativada.",
-    totp_desativado: "A verificação em duas etapas foi desativada.",
-    totp_reiniciado: "A verificação em duas etapas foi reiniciada.",
-    totp_codigo_recuperacao_usado: "Um código de recuperação da verificação em duas etapas foi usado para entrar."
+    senha_alterada: "A senha foi alterada."
 };
 
 export function descreverEvento(tipo) {

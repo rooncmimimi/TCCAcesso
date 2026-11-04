@@ -5,8 +5,7 @@ import { descricao } from "@/components/cadastro/descricao";
 import { Input } from "@/components/ui/input";
 
 /**
- * Campo do código da verificação em duas etapas: os 6 números do aplicativo ou, no modo `recuperacao`, um
- * código de recuperação (letras e números). Rótulo de verdade, erro ligado ao campo e `autocomplete` de
+ * Campo de um código de 6 números (o que chega por e-mail ou SMS). Rótulo de verdade, erro ligado ao campo e `autocomplete` de
  * código de uso único, para o celular sugerir o código recebido.
  */
 export function CampoCodigo({
@@ -16,7 +15,6 @@ export function CampoCodigo({
   aoMudar,
   erro,
   ajuda,
-  tipo = "app",
   desabilitado,
   refInput,
 }: {
@@ -26,12 +24,9 @@ export function CampoCodigo({
   aoMudar: (valor: string) => void;
   erro?: string;
   ajuda?: string;
-  tipo?: "app" | "recuperacao";
   desabilitado?: boolean;
   refInput?: Ref<HTMLInputElement>;
 }) {
-  const recuperacao = tipo === "recuperacao";
-
   return (
     <Campo id={id} rotulo={rotulo} erro={erro} ajuda={ajuda}>
       <Input
@@ -39,11 +34,11 @@ export function CampoCodigo({
         ref={refInput}
         value={valor}
         onChange={(evento) => aoMudar(evento.target.value)}
-        inputMode={recuperacao ? "text" : "numeric"}
+        inputMode="numeric"
         autoComplete="one-time-code"
-        autoCapitalize={recuperacao ? "characters" : "off"}
+        autoCapitalize="off"
         spellCheck={false}
-        maxLength={recuperacao ? 20 : 7}
+        maxLength={7}
         disabled={desabilitado}
         aria-invalid={Boolean(erro)}
         aria-describedby={descricao(id, Boolean(ajuda), Boolean(erro))}

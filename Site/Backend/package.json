@@ -9,9 +9,7 @@
     "start": "node src/server.js",
     "migrate": "node scripts/migrar.js",
     "criar-admin": "node scripts/criarAdministrador.js",
-    "admin:resetar-totp": "node scripts/resetarTotpAdmin.js",
     "implantacao:verificar": "node scripts/verificarImplantacao.js",
-    "mfa:gerar-chave": "node scripts/gerarChaveMfa.js",
     "google:verificar": "node scripts/verificarGoogle.js",
     "test": "vitest run"
   },

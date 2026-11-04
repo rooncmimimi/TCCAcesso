@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
  * "Acho que invadiram minha conta": o que o `ContaComprometidaService` promete (resposta sempre igual, link de uso único,
- * sessões e confiança encerradas, TOTP intocado). O banco é simulado; a transação real e o efeito sobre o login são conferidos
+ * sessões e confiança encerradas). O banco é simulado; a transação real e o efeito sobre o login são conferidos
  * na rodada funcional contra um Postgres descartável.
  */
 
@@ -12,9 +12,7 @@ const { modelos, sessoes, dispositivos, eventos, email, recuperacao, transacao, 
     return {
         modelos: {
             LinkDeSeguranca: { findOne: vi.fn(), create: vi.fn() },
-            Usuario: { findOne: vi.fn(), findByPk: vi.fn(), update: vi.fn(), scope: vi.fn() },
-            AutenticacaoTotp: { destroy: vi.fn() },
-            CodigoRecuperacaoTotp: { destroy: vi.fn() }
+            Usuario: { findOne: vi.fn(), findByPk: vi.fn(), update: vi.fn(), scope: vi.fn() }
         },
         sessoes: { revogarTodos: vi.fn(), revogarTodosExceto: vi.fn() },
         dispositivos: { revogarTodos: vi.fn() },
@@ -178,13 +176,6 @@ describe("confirmar (pelo link)", () => {
         expect(sessoes.revogarTodos).not.toHaveBeenCalled();
         expect(dispositivos.revogarTodos).not.toHaveBeenCalled();
         expect(modelos.Usuario.update).not.toHaveBeenCalled();
-    });
-
-    it("NUNCA desliga a verificação em duas etapas: não toca nas tabelas do TOTP", async () => {
-        await Servico.confirmar("token-valido-token-valido-token", CONTEXTO);
-
-        expect(modelos.AutenticacaoTotp.destroy).not.toHaveBeenCalled();
-        expect(modelos.CodigoRecuperacaoTotp.destroy).not.toHaveBeenCalled();
     });
 
     it("depois de proteger: avisa por e-mail e manda o link de nova senha; uma falha de e-mail não desfaz a proteção", async () => {

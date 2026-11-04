@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
  * O portão de dispositivo novo no login (Bloco 3): a senha (ou o Google) sozinha não abre sessão num aparelho que o Site ainda não
- * confirmou, quem tem TOTP não passa por aqui, e o recurso desligado (ou sem e-mail) deixa o login exatamente como era. O banco e
+ * confirmou, e o recurso desligado (ou sem e-mail) deixa o login exatamente como era. O banco e
  * os serviços vizinhos são simulados; o ponta a ponta real é a rodada funcional descrita em
  * `Site/docs/dispositivos-e-conta-comprometida.md`.
  */
@@ -11,14 +11,7 @@ vi.mock("../config/env.js", () => ({
     default: { jwt: { secret: "segredo-de-teste-com-mais-de-trinta-e-dois-caracteres", expiresIn: "30m" } }
 }));
 
-const { totp, sessoes, dispositivos, eventos } = vi.hoisted(() => ({
-    totp: {
-        habilitado: vi.fn(() => false),
-        exigirHabilitado: vi.fn(),
-        buscarAtivo: vi.fn(),
-        conferirSegundoFator: vi.fn(),
-        situacaoDaConta: vi.fn()
-    },
+const { sessoes, dispositivos, eventos } = vi.hoisted(() => ({
     sessoes: { emitir: vi.fn(), revogarTodos: vi.fn() },
     dispositivos: {
         disponivel: vi.fn(),
@@ -42,7 +35,6 @@ vi.mock("../models/index.js", () => ({
     CodigoVerificacaoEmail: { create: vi.fn(), findOne: vi.fn(), update: vi.fn() }
 }));
 vi.mock("../utils/bcrypt.js", () => ({ gerarHashSenha: vi.fn(), compararSenha: vi.fn() }));
-vi.mock("./TotpService.js", () => ({ default: totp }));
 vi.mock("./AdminAuditoriaService.js", () => ({ default: { registrar: vi.fn() } }));
 vi.mock("./SessaoService.js", () => ({ default: sessoes }));
 vi.mock("./DispositivoConfiavelService.js", () => ({ default: dispositivos }));
@@ -83,8 +75,6 @@ const VERIFICACAO = { verificacaoDispositivo: true, desafioDispositivo: "jwt-do-
 
 beforeEach(() => {
     vi.resetAllMocks();
-    totp.habilitado.mockReturnValue(false);
-    totp.situacaoDaConta.mockResolvedValue({ mfaDisponivel: false, mfaConfigurado: false, mfaExigido: false });
     sessoes.emitir.mockResolvedValue({ refreshToken: "refresh-de-teste" });
     dispositivos.disponivel.mockReturnValue(true);
     dispositivos.habilitado.mockReturnValue(true);
@@ -152,23 +142,10 @@ describe("quando o portão NÃO se aplica", () => {
         expect(dispositivos.iniciarVerificacao).not.toHaveBeenCalled();
     });
 
-    it("quem tem TOTP recebe o desafio do TOTP, nunca o do e-mail", async () => {
-        totp.habilitado.mockReturnValue(true);
-        totp.buscarAtivo.mockResolvedValue({ usuarioId: "u1" });
+    it("depois do código do e-mail, o portão não se repete", async () => {
+        const r = await AutenticacaoService.entrarComUsuario(conta(), {}, false, { dispositivoVerificado: true });
 
-        const r = await AutenticacaoService.entrarComUsuario(conta(), {});
-
-        expect(r.mfaNecessario).toBe(true);
-        expect(r.verificacaoDispositivo).toBeUndefined();
-        expect(dispositivos.iniciarVerificacao).not.toHaveBeenCalled();
-    });
-
-    it("depois do segundo fator (TOTP) ou do código do e-mail, o portão não se repete", async () => {
-        const a = await AutenticacaoService.entrarComUsuario(conta(), {}, false, { segundoFatorVerificado: true });
-        const b = await AutenticacaoService.entrarComUsuario(conta(), {}, false, { dispositivoVerificado: true });
-
-        expect(a.token).toBeDefined();
-        expect(b.token).toBeDefined();
+        expect(r.token).toBeDefined();
         expect(dispositivos.iniciarVerificacao).not.toHaveBeenCalled();
     });
 });

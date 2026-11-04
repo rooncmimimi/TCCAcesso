@@ -11,7 +11,7 @@
 -- 3. `links_de_seguranca`: os links de uso único dos e-mails "Acho que invadiram minha conta" e "Não fui eu". Só o hash do
 --    token fica guardado, com prazo e marca de uso.
 -- 4. `eventos_de_seguranca`: o histórico de segurança de cada conta (dispositivo novo confirmado, dispositivo revogado,
---    conta protegida, senha ou TOTP alterados...), sem segredo nem código. Alimenta a tela "Atividade de segurança".
+--    conta protegida, senha alterada...), sem segredo nem código. Alimenta a tela "Atividade de segurança".
 --
 -- Todas apagam junto com a conta (`ON DELETE CASCADE`) e seguem o padrão das demais: RLS ligada e sem acesso para a API
 -- pública do Supabase.

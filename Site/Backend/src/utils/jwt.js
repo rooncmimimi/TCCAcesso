@@ -30,28 +30,6 @@ export const verificarJwt = (token) => {
     return payload;
 };
 
-const AUDIENCE_DESAFIO_MFA = "acesso:mfa-desafio";
-
-/**
- * Desafio do segundo fator: o que o login entrega no lugar da sessão quando a conta tem verificação em
- * duas etapas. Vale 5 minutos e só serve para `POST /auth/login/totp`: tem `audience` própria, e
- * `verificarJwt` recusa qualquer token com `aud`. Leva o `sub` da conta (nunca o `id` de uma sessão).
- */
-export const assinarDesafioMfa = (payload) => {
-    return jwt.sign(payload, env.jwt.secret, {
-        expiresIn: "5m",
-        issuer: "acesso-api",
-        audience: AUDIENCE_DESAFIO_MFA
-    });
-};
-
-export const lerDesafioMfa = (token) => {
-    return jwt.verify(token, env.jwt.secret, {
-        issuer: "acesso-api",
-        audience: AUDIENCE_DESAFIO_MFA
-    });
-};
-
 /**
  * O token foi emitido antes da última troca de senha da conta?
  *
@@ -71,7 +49,7 @@ const AUDIENCE_DESAFIO_DISPOSITIVO = "acesso:dispositivo-desafio";
 
 /**
  * Desafio da verificação por e-mail de um dispositivo novo: vale 20 minutos e só serve para `POST /auth/login/dispositivo`
- * (e o reenvio). Tem `audience` própria, então `verificarJwt` o recusa como access token, e `lerDesafioMfa` o recusa também.
+ * (e o reenvio). Tem `audience` própria, então `verificarJwt` o recusa como access token, e `lerDesafioDispositivo` só aceita a audiência dele.
  */
 export const assinarDesafioDispositivo = (payload) => {
     return jwt.sign(payload, env.jwt.secret, { expiresIn: "20m", issuer: "acesso-api", audience: AUDIENCE_DESAFIO_DISPOSITIVO });

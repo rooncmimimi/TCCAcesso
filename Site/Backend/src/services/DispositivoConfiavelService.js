@@ -35,7 +35,6 @@ export function hmacDoCodigo(codigo, desafioId) {
  *
  * - Um dispositivo é **reconhecido** quando o Site manda (`X-Dispositivo`) o token de um dispositivo de confiança ativo, não
  *   revogado e dentro do prazo. O token é aleatório; só o hash fica no banco.
- * - Quem tem verificação em duas etapas (TOTP) já tem segundo fator e **não** passa por aqui.
  * - Com a chave ligada mas o e-mail indisponível (sem Brevo), o recurso fica **inativo** em vez de trancar todo mundo para
  *   fora; o servidor avisa na inicialização. Com o e-mail configurado mas um envio que falha, o login é **recusado** (503): é
  *   melhor a pessoa tentar de novo do que entrar sem a verificação.

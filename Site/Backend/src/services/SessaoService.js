@@ -63,7 +63,7 @@ class SessaoService {
      * as renovações de um login compartilham `familiaId` e `iniciadaEm`, e `ultimoUsoEm` marca a renovação. Um login
      * novo (sem `familia`) respeita o teto de sessões por conta.
      */
-    async emitir(usuarioId, contexto = {}, { transaction, mfaVerificadoEm = null, familia = null, rotacao = false } = {}) {
+    async emitir(usuarioId, contexto = {}, { transaction, familia = null, rotacao = false } = {}) {
         const token = gerarTokenOpaco();
 
         const dados = {
@@ -71,8 +71,7 @@ class SessaoService {
             tokenHash: hashToken(token),
             expiraEm: this.calcularExpiracao(),
             userAgent: contexto.userAgent ? String(contexto.userAgent).slice(0, 255) : null,
-            ip: contexto.ip ? String(contexto.ip).slice(0, 64) : null,
-            mfaVerificadoEm
+            ip: contexto.ip ? String(contexto.ip).slice(0, 64) : null
         };
 
         if (env.sessoes.dispositivosHabilitado) {
@@ -207,7 +206,6 @@ class SessaoService {
             iniciadaEm: registro.iniciadaEm ?? registro.criadoEm,
             ultimoUsoEm: registro.ultimoUsoEm ?? registro.criadoEm,
             expiraEm: registro.expiraEm,
-            verificadaEmDuasEtapas: Boolean(registro.mfaVerificadoEm),
             atual:
                 Boolean(familiaId && registro.familiaId === familiaId) ||
                 (hashAtual !== null && registro.tokenHash === hashAtual)
@@ -335,7 +333,6 @@ class SessaoService {
                         contexto,
                         {
                             transaction,
-                            mfaVerificadoEm: registro.mfaVerificadoEm,
                             familia: this.familiaDe(registro),
                             rotacao: true
                         }
@@ -346,7 +343,6 @@ class SessaoService {
                     return {
                         usuario: usuarioTolerado,
                         refreshToken: tokenTolerado,
-                        mfaVerificadoEm: registro.mfaVerificadoEm,
                         familiaId: registro.familiaId ?? null
                     };
                 }
@@ -383,13 +379,11 @@ class SessaoService {
                 throw this.erroContaIndisponivel(usuario);
             }
 
-            // A verificação do segundo fator acompanha a sessão na renovação.
             const { refreshToken, registro: novo } = await this.emitir(
                 usuario.id,
                 contexto,
                 {
                     transaction,
-                    mfaVerificadoEm: registro.mfaVerificadoEm,
                     familia: this.familiaDe(registro),
                     rotacao: true
                 }
@@ -405,7 +399,6 @@ class SessaoService {
             return {
                 usuario,
                 refreshToken,
-                mfaVerificadoEm: registro.mfaVerificadoEm,
                 familiaId: registro.familiaId ?? null
             };
         } catch (erro) {

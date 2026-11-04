@@ -12,7 +12,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
-import { guardarDesafio } from "@/lib/desafioMfa";
 import { lerVerificacao, limparVerificacao, renovarVerificacao, segundosParaReenviar } from "@/lib/verificacaoDispositivo";
 import segurancaService, { codigoDoErroSeguranca, desafioDeDispositivoVenceu, mensagemDeErroSeguranca, segundosDeEspera } from "@/services/seguranca.service";
 
@@ -105,13 +104,6 @@ function VerificacaoDeDispositivo() {
       // A conta estava pausada: o código já foi gasto; a reativação é no login.
       if ("contaPausada" in resultado) {
         setContaPausada(true);
-        return;
-      }
-
-      // A conta ganhou a verificação em duas etapas entre a senha e o código do e-mail: segue o fluxo dela.
-      if ("mfaNecessario" in resultado) {
-        guardarDesafio(resultado.desafioMfa);
-        void navigate({ to: "/verificacao-em-duas-etapas", replace: true });
         return;
       }
 

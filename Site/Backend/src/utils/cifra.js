@@ -15,7 +15,7 @@ import env from "../config/env.js";
  * alteração do valor ser recusada.
  *
  * `material` troca a origem da chave quando um uso precisa de uma chave própria, separada do JWT_SECRET
- * (o segredo do TOTP usa `MFA_CHAVE_CIFRA`, ver `segredosMfa.js`). Sem ele, vale o JWT_SECRET de sempre.
+ * (hoje nenhum uso o passa). Sem ele, vale o JWT_SECRET de sempre.
  */
 
 const TAMANHO_DO_IV = 12;

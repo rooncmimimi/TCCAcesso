@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Navigate } from "@tanstack/react-router";
 import { CabecalhoApp } from "./CabecalhoApp";
 import { TelaStatusEmpresa } from "./TelaStatusEmpresa";
 import { SuporteRodape } from "@/components/SuporteRodape";
@@ -13,12 +12,6 @@ import { useSessao } from "@/hooks/useSessao";
  */
 export function EstruturaApp({ children }: { children: ReactNode }) {
   const { usuario } = useSessao();
-
-  // Administrador sem a verificação em duas etapas configurada não usa nenhuma página do app: vai para a
-  // configuração. É só experiência; quem nega o acesso de verdade é o servidor (`autenticacaoMiddleware`).
-  if (usuario?.tipo === "administrador" && usuario.mfaExigido && !usuario.mfaConfigurado) {
-    return <Navigate to="/configurar-verificacao" replace />;
-  }
 
   // Empresa pendente, reprovada ou suspensa nunca vê o app por trás desta tela: nem os links do
   // `CabecalhoApp`, nem o conteúdo da rota. A checagem fica neste ponto único, por onde passam

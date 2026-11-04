@@ -8,7 +8,7 @@ import { Op } from "sequelize";
  */
 
 const { env, sessaoModel } = vi.hoisted(() => ({
-    env: { sessoes: { dispositivosHabilitado: true, maximoPorConta: 3 }, mfa: {} },
+    env: { sessoes: { dispositivosHabilitado: true, maximoPorConta: 3 } },
     sessaoModel: { create: vi.fn(), findAll: vi.fn(), findOne: vi.fn(), update: vi.fn(), destroy: vi.fn() }
 }));
 
@@ -30,7 +30,6 @@ const linha = (extra = {}) => ({
     familiaId: "f1",
     iniciadaEm: new Date("2026-11-01T08:00:00Z"),
     ultimoUsoEm: new Date("2026-11-03T10:00:00Z"),
-    mfaVerificadoEm: null,
     update: vi.fn(),
     ...extra
 });
@@ -189,12 +188,11 @@ describe("listarAtivas", () => {
         expect(antiga.ultimoUsoEm).toEqual(antiga.criadoEm);
     });
 
-    it("diz se a sessão passou pelo segundo fator e nunca devolve o hash do token", async () => {
-        sessaoModel.findAll.mockResolvedValue([linha({ mfaVerificadoEm: new Date() })]);
+    it("nunca devolve o hash do token", async () => {
+        sessaoModel.findAll.mockResolvedValue([linha()]);
 
         const [sessao] = await SessaoService.listarAtivas("u1");
 
-        expect(sessao.verificadaEmDuasEtapas).toBe(true);
         expect(JSON.stringify(sessao)).not.toContain("tokenHash");
         expect(JSON.stringify(sessao)).not.toContain("h1");
     });

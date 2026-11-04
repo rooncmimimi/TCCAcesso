@@ -32,7 +32,6 @@ const sessao = (extra: Partial<Record<string, unknown>> = {}) => ({
   ultimoUsoEm: horasAtras(1),
   expiraEm: horasAtras(-700),
   atual: false,
-  verificadaEmDuasEtapas: false,
   ...extra,
 });
 
@@ -96,23 +95,13 @@ describe("a lista", () => {
   });
 
   it("servidor antigo (sem as datas novas): cai no criadoEm, sem 'NaN' nem texto quebrado", async () => {
-    servico.listarSessoes.mockResolvedValue([sessao({ id: "a", atual: true, iniciadaEm: undefined, ultimoUsoEm: undefined, verificadaEmDuasEtapas: undefined })]);
+    servico.listarSessoes.mockResolvedValue([sessao({ id: "a", atual: true, iniciadaEm: undefined, ultimoUsoEm: undefined })]);
     renderizar();
 
     const item = within(await screen.findByRole("list")).getByRole("listitem");
 
     expect(item).toHaveTextContent(/Entrou em \d{2}\/\d{2}\/\d{4}/);
     expect(item.textContent).not.toMatch(/NaN|undefined|Invalid/);
-  });
-
-  it("sessão verificada em duas etapas ganha o selo; as outras não", async () => {
-    servico.listarSessoes.mockResolvedValue([sessao({ id: "a", atual: true, verificadaEmDuasEtapas: true }), sessao({ id: "b", userAgent: UA_IPHONE })]);
-    renderizar();
-
-    const itens = within(await screen.findByRole("list")).getAllByRole("listitem");
-
-    expect(itens[0]).toHaveTextContent("Verificada em duas etapas");
-    expect(itens[1]).not.toHaveTextContent("Verificada em duas etapas");
   });
 
   it("user-agent ausente: 'Dispositivo desconhecido'", async () => {
@@ -123,7 +112,7 @@ describe("a lista", () => {
   });
 
   it("HTML válido: o selo (div) não fica dentro de parágrafo", async () => {
-    servico.listarSessoes.mockResolvedValue([sessao({ atual: true, verificadaEmDuasEtapas: true })]);
+    servico.listarSessoes.mockResolvedValue([sessao({ atual: true })]);
     const { container } = renderizar();
 
     await screen.findByRole("list");

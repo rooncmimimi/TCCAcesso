@@ -5,18 +5,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  * ativo. Token sem `sid` (emitido antes da migration 0009) vale até expirar. Sem a chave ligada, o banco nem é consultado.
  */
 
-const { env, payload, usuarios, sessoes, totp } = vi.hoisted(() => ({
+const { env, payload, usuarios, sessoes } = vi.hoisted(() => ({
     env: { sessoes: { dispositivosHabilitado: true } },
     payload: { atual: { id: "u1", iat: 1000, sid: "f1" } },
     usuarios: { atual: null },
-    sessoes: { familiaViva: vi.fn() },
-    totp: { estadoDoAcesso: vi.fn() }
+    sessoes: { familiaViva: vi.fn() }
 }));
 
 vi.mock("../config/env.js", () => ({ default: env }));
 vi.mock("../utils/jwt.js", () => ({ verificarJwt: vi.fn(() => payload.atual), tokenAnteriorATrocaDeSenha: vi.fn(() => false) }));
 vi.mock("../models/index.js", () => ({ Usuario: { findByPk: vi.fn(async () => usuarios.atual) } }));
-vi.mock("../services/TotpService.js", () => ({ default: totp }));
 vi.mock("../services/SessaoService.js", () => ({ default: sessoes }));
 
 const { default: autenticacao } = await import("./autenticacaoMiddleware.js");
@@ -36,7 +34,6 @@ beforeEach(() => {
     payload.atual = { id: "u1", iat: 1000, sid: "f1" };
     usuarios.atual = { id: "u1", tipoUsuario: "candidato", ativo: true, bloqueado: false };
     sessoes.familiaViva.mockResolvedValue(true);
-    totp.estadoDoAcesso.mockResolvedValue("ok");
 });
 
 describe("autenticacaoMiddleware com sessões e dispositivos", () => {
@@ -55,14 +52,6 @@ describe("autenticacaoMiddleware com sessões e dispositivos", () => {
 
         expect(erro).toMatchObject({ statusCode: 401, detalhes: { codigo: "SESSAO_ENCERRADA" } });
         expect(req.user).toBeUndefined();
-    });
-
-    it("a conferência da sessão vem antes de qualquer outra regra (inclusive do TOTP)", async () => {
-        sessoes.familiaViva.mockResolvedValue(false);
-
-        await rodar(autenticacao);
-
-        expect(totp.estadoDoAcesso).not.toHaveBeenCalled();
     });
 
     it("token antigo, sem sid: vale até expirar (transição), sem consultar sessão", async () => {

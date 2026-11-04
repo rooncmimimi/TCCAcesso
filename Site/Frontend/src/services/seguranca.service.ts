@@ -1,7 +1,7 @@
 import type { AxiosError } from "axios";
 
 import clienteApi, { extrairMensagemErro, guardarDispositivoConfiavel } from "./api";
-import type { RespostaLogin, RespostaLoginContaPausada, RespostaLoginEmailNaoVerificado, RespostaLoginMfa } from "@/types";
+import type { RespostaLogin, RespostaLoginContaPausada, RespostaLoginEmailNaoVerificado } from "@/types";
 
 /** Um aparelho que a pessoa marcou como de confiança. Nunca traz o token nem o hash. */
 export interface DispositivoConfiavel {
@@ -32,7 +32,7 @@ export interface EstadoDoRecurso {
   ativo: boolean;
 }
 
-export type RespostaDoCodigoPorEmail = RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado | RespostaLoginMfa;
+export type RespostaDoCodigoPorEmail = RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado;
 
 /** `detalhes.codigo` que o servidor usa nos erros desta funcionalidade. */
 export function codigoDoErroSeguranca(erro: unknown): string | undefined {

@@ -13,7 +13,7 @@ Configurações → Sessões e contas conectadas → **Dispositivos e sessões**
 | 5 | Sem teto de sessões por conta | `SESSOES_MAXIMO_POR_CONTA` (padrão 20): ao passar, o dispositivo menos recente é encerrado. Conta **dispositivos**, não linhas (achado na rodada funcional: duas abas renovando juntas davam duas linhas e o teto encerrava o dispositivo em uso) | não |
 | 6 | `<Badge>` (div) dentro de `<p>`: HTML inválido no console | A seção usa `div` | não |
 
-Também: o Site mostra o tipo do aparelho (celular, tablet, computador, aplicativo), o selo "Verificada em duas etapas", a atual sempre primeiro e sem botão de encerrar, e a confirmação das "outras" diz quantos dispositivos perdem o acesso. Quando o servidor encerra a sessão, o Site mostra "Esta sessão foi encerrada. Entre novamente." em vez de tentar renovar e cair mudo.
+Também: o Site mostra o tipo do aparelho (celular, tablet, computador, aplicativo), a atual sempre primeiro e sem botão de encerrar, e a confirmação das "outras" diz quantos dispositivos perdem o acesso. Quando o servidor encerra a sessão, o Site mostra "Esta sessão foi encerrada. Entre novamente." em vez de tentar renovar e cair mudo.
 
 ## Como ligar
 
@@ -40,11 +40,11 @@ O Sequelize seleciona e insere todas as colunas do model. Se o código subir ant
 
 ## Testes
 
-- **Backend:** 1101 testes (serviço, middleware com `sid`, migration, avisos, model condicionado às chaves e mutação das proteções).
+- **Backend:** 1049 testes (suíte completa, depois da remoção do TOTP) (serviço, middleware com `sid`, migration, avisos, model condicionado às chaves e mutação das proteções).
 - **Rodada funcional contra Postgres descartável** (PGlite):
-  - 46 verificações com as migrations 0001 a 0009: três dispositivos reais, renovações sequenciais e **simultâneas**, encerramento imediato, sessão de outra pessoa (404), "encerrar as outras" sem derrubar quem pediu, logout só com o access token, troca de senha, teto, limpeza e junto do TOTP;
+  - 42 verificações com as migrations 0001 a 0007, 0009 e 0010 (a 0008 foi removida): três dispositivos reais, renovações sequenciais e **simultâneas**, encerramento imediato, sessão de outra pessoa (404), "encerrar as outras" sem derrubar quem pediu, logout só com o access token, troca de senha, teto e limpeza;
   - **implantação:** banco só até a 0008 e chave desligada (8/8, com login, renovação, lista e "encerrar outras" funcionando); depois a 0009 aplicada sobre sessões existentes com a chave ligada (10/10: nenhuma linha antiga perdida, token antigo segue valendo e entra no sistema novo); e chave ligada **sem** a migration (o aviso aparece no log, 2/2).
-- **Site:** 574 testes de componente, `tsc` limpo, build ok.
+- **Site:** 543 testes de componente, `tsc` limpo, build ok.
 - **Navegador real (Chrome embutido):** lista com 4 dispositivos de verdade (notebook, Android, iPhone e o próprio navegador), encerrar o iPhone pela interface derrubou o token dele na hora (401 `SESSAO_ENCERRADA`) sem afetar os outros, e encerrar o próprio navegador a partir do Android mostrou a mensagem e voltou ao estado de visitante.
 
 **Não verificado:** aparelhos físicos, leitor de tela real, e o aplicativo Android do ACESSO (outro código e outro banco; não foi tocado). O nome do dispositivo vem do `user-agent` que o próprio cliente informa, então é uma ajuda para reconhecer o aparelho, não uma identificação confiável. Não há localização por IP (exigiria serviço externo).

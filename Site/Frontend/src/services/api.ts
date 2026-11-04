@@ -86,25 +86,8 @@ export function dispararSessaoExpirada(motivo?: string) {
   listeners.forEach((fn) => fn(motivo));
 }
 
-/**
- * O servidor avisa, com 403, que o administrador ainda precisa configurar o TOTP (`MFA_NAO_CONFIGURADO`, por
- * exemplo depois de outro administrador reiniciar o dele) ou que esta sessão não passou pelo segundo fator
- * (`MFA_NECESSARIO`). O primeiro leva à tela de configuração (quem escuta relê o perfil); o segundo
- * encerra a sessão, e a pessoa entra de novo e digita o código.
- */
-const CODIGO_MFA_NAO_CONFIGURADO = "MFA_NAO_CONFIGURADO";
 /** 401 de uma sessão encerrada (em outro dispositivo, ou pelo logout): renovar não adianta, o refresh token também foi revogado. */
 const CODIGO_SESSAO_ENCERRADA = "SESSAO_ENCERRADA";
-const CODIGO_MFA_NECESSARIO = "MFA_NECESSARIO";
-
-type MfaListener = () => void;
-const listenersMfa = new Set<MfaListener>();
-export function aoExigirConfiguracaoMfa(fn: MfaListener) {
-  listenersMfa.add(fn);
-  return () => {
-    listenersMfa.delete(fn);
-  };
-}
 
 /** `detalhes.codigo` que o backend usa para marcar 403 de bloqueio administrativo; nunca confiar só no texto da mensagem. */
 const CODIGO_CONTA_BLOQUEADA = "CONTA_BLOQUEADA";
@@ -230,21 +213,6 @@ clienteApi.interceptors.response.use(
       limparTokens();
       dispararSessaoExpirada(extrairMensagemErro(erro));
       return Promise.reject(erro);
-    }
-
-    if (erro.response?.status === 403 && !ehRotaAutenticacao) {
-      const codigo = codigoDoErro(erro);
-
-      if (codigo === CODIGO_MFA_NECESSARIO) {
-        limparTokens();
-        dispararSessaoExpirada(extrairMensagemErro(erro));
-        return Promise.reject(erro);
-      }
-
-      if (codigo === CODIGO_MFA_NAO_CONFIGURADO) {
-        listenersMfa.forEach((fn) => fn());
-        return Promise.reject(erro);
-      }
     }
 
     // Sessão encerrada por outro dispositivo ou pelo próprio logout: o acesso acabou na hora. Tentar renovar só atrasaria a

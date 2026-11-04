@@ -1,6 +1,5 @@
 import { verificarJwt } from "../utils/jwt.js";
 import { Usuario } from "../models/index.js";
-import TotpService from "../services/TotpService.js";
 import SessaoService from "../services/SessaoService.js";
 import env from "../config/env.js";
 
@@ -9,10 +8,6 @@ import env from "../config/env.js";
  * pedindo (para aplicar privacidade e bloqueio) sem exigir login, como o perfil de empresa e o
  * detalhe de vaga. Com um token válido, preenche `req.user` normalmente; sem token, ou com token
  * inválido, segue sem erro e `req.user` fica `undefined` (visitante anônimo).
- *
- * Administrador sem o TOTP configurado e verificado também segue como visitante: o poder de
- * administrador não vale em rota pública antes do segundo fator, do mesmo jeito que não vale nas
- * protegidas.
  */
 const autenticacaoOpcionalMiddleware = async (req, res, next) => {
     try {
@@ -35,7 +30,7 @@ const autenticacaoOpcionalMiddleware = async (req, res, next) => {
         const sessaoViva =
             !env.sessoes.dispositivosHabilitado || !payload.sid || (await SessaoService.familiaViva(usuario?.id, payload.sid));
 
-        if (usuario && sessaoViva && usuario.ativo && !usuario.bloqueado && (await TotpService.estadoDoAcesso(usuario, payload)) === "ok") {
+        if (usuario && sessaoViva && usuario.ativo && !usuario.bloqueado) {
             req.user = usuario;
         }
 

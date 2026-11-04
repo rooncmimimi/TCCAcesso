@@ -4,7 +4,6 @@ import AdminConteudoService from "../services/AdminConteudoService.js";
 import AdminRelatorioService from "../services/AdminRelatorioService.js";
 import UsuarioService from "../services/UsuarioService.js";
 import AdminAuditoriaService from "../services/AdminAuditoriaService.js";
-import TotpService from "../services/TotpService.js";
 import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
 /**
@@ -117,25 +116,6 @@ class AdminController {
                 contextoRequisicao(req)
             );
             return res.status(200).json({ sucesso: true, ...dados });
-        } catch (erro) {
-            return next(erro);
-        }
-    }
-
-    /**
-     * Reinicia a verificação em duas etapas de OUTRA conta (quem perdeu o aplicativo e os códigos). Nunca da
-     * própria: o `TotpService` recusa. Exige motivo, encerra as sessões da conta e fica na auditoria.
-     */
-    async reiniciarTotp(req, res, next) {
-        try {
-            const resultado = await TotpService.reiniciar(req.params.id, {
-                origem: "administrador",
-                solicitante: req.user,
-                motivo: req.body.motivo,
-                contexto: contextoRequisicao(req)
-            });
-
-            return res.status(200).json({ sucesso: true, ...resultado });
         } catch (erro) {
             return next(erro);
         }

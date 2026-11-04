@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
-import { guardarDesafio } from "@/lib/desafioMfa";
 import { guardarVerificacao } from "@/lib/verificacaoDispositivo";
 import {
   guardarProva,
@@ -150,15 +149,6 @@ function RetornoGoogle() {
       }
 
       const resultado = await iniciarSessao(retorno);
-
-      // O Google provou quem é, mas a conta tem verificação em duas etapas: falta o código. O Google não
-      // substitui o segundo fator do ACESSO.
-      if ("mfaNecessario" in resultado) {
-        limparVinculo();
-        guardarDesafio(resultado.desafioMfa);
-        navigate({ to: "/verificacao-em-duas-etapas", replace: true });
-        return;
-      }
 
       // O Google provou quem é, mas este aparelho não é reconhecido: o código de 6 números foi para o e-mail da conta.
       if ("verificacaoDispositivo" in resultado) {

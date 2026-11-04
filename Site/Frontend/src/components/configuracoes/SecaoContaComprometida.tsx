@@ -17,8 +17,8 @@ import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
 
 /**
  * "Acho que invadiram minha conta", para quem ainda está logado: encerra as OUTRAS sessões, remove a confiança nos
- * dispositivos e leva à troca de senha. Pede a senha atual (um aparelho esquecido logado não pode usar isto). Não desliga a
- * verificação em duas etapas. Só aparece com o recurso ligado.
+ * dispositivos e leva à troca de senha. Pede a senha atual (um aparelho esquecido logado não pode usar isto). Só aparece com o
+ * recurso ligado.
  */
 export function SecaoContaComprometida() {
   const { usuario } = useSessao();
@@ -76,8 +76,7 @@ export function SecaoContaComprometida() {
           <ShieldAlert className="size-5 text-destructive" aria-hidden="true" /> Acho que invadiram minha conta
         </CardTitle>
         <CardDescription>
-          Encerra as outras sessões, remove a confiança nos dispositivos e leva você a criar uma nova senha. A verificação em duas
-          etapas, se você usa, continua ativa.
+          Encerra as outras sessões, remove a confiança nos dispositivos e leva você a criar uma nova senha.
         </CardDescription>
       </CardHeader>
       <CardContent>

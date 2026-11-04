@@ -21,22 +21,8 @@ afterEach(() => {
 });
 
 describe("Sessao: colunas condicionadas à chave do recurso", () => {
-    it("com a verificação em duas etapas DESLIGADA (padrão), nenhuma coluna da 0008 entra nas consultas", async () => {
-        vi.stubEnv("MFA_TOTP_HABILITADO", "false");
-        const Sessao = await carregar();
-
-        expect(Object.keys(Sessao.rawAttributes)).not.toContain("mfaVerificadoEm");
-    });
-
-    it("com ela LIGADA, a coluna passa a existir", async () => {
-        vi.stubEnv("MFA_TOTP_HABILITADO", "true");
-        const Sessao = await carregar();
-
-        expect(Object.keys(Sessao.rawAttributes)).toContain("mfaVerificadoEm");
-    });
-
     it("as colunas da 0001 continuam sempre presentes", async () => {
-        vi.stubEnv("MFA_TOTP_HABILITADO", "false");
+        vi.stubEnv("SESSOES_DISPOSITIVOS_HABILITADO", "false");
         const Sessao = await carregar();
 
         for (const coluna of ["usuarioId", "tokenHash", "expiraEm", "revogadaEm", "substituidaPorId", "userAgent", "ip"]) {
@@ -60,14 +46,5 @@ describe("Sessao: colunas da migration 0009 (sessões e dispositivos)", () => {
         const Sessao = await carregar();
 
         for (const coluna of COLUNAS) expect(Object.keys(Sessao.rawAttributes)).toContain(coluna);
-    });
-
-    it("as duas chaves são independentes", async () => {
-        vi.stubEnv("MFA_TOTP_HABILITADO", "true");
-        vi.stubEnv("SESSOES_DISPOSITIVOS_HABILITADO", "false");
-        const Sessao = await carregar();
-
-        expect(Object.keys(Sessao.rawAttributes)).toContain("mfaVerificadoEm");
-        expect(Object.keys(Sessao.rawAttributes)).not.toContain("familiaId");
     });
 });

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AppWindow, Laptop, Loader2, LogOut, ShieldAlert, ShieldCheck, Smartphone, Tablet } from "lucide-react";
+import { AppWindow, Laptop, Loader2, LogOut, ShieldAlert, Smartphone, Tablet } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -144,11 +144,6 @@ export function SecaoSessoes() {
                       {sessao.atual && (
                         <Badge variant="secondary" className="font-medium">
                           Esta sessão
-                        </Badge>
-                      )}
-                      {sessao.verificadaEmDuasEtapas && (
-                        <Badge variant="outline" className="gap-1 font-medium">
-                          <ShieldCheck className="size-3" aria-hidden="true" /> Verificada em duas etapas
                         </Badge>
                       )}
                     </div>

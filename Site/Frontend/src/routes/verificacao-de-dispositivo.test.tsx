@@ -33,7 +33,6 @@ vi.mock("sonner", () => ({ toast }));
 
 const { Route } = await import("./verificacao-de-dispositivo");
 const { guardarVerificacao, lerVerificacao } = await import("@/lib/verificacaoDispositivo");
-const { lerDesafio } = await import("@/lib/desafioMfa");
 const Tela = (Route as unknown as { component: () => ReactNode }).component;
 
 const erroDoServidor = (mensagem: string, codigo: string, status = 400, extra: Record<string, unknown> = {}) => ({
@@ -190,18 +189,6 @@ describe("confirmar o código", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Sua conta está pausada" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Voltar para o login" })).toHaveAttribute("href", "/entrar");
-  });
-
-  it("a conta ganhou a verificação em duas etapas no meio: segue para a tela do TOTP com o desafio dela", async () => {
-    concluirLogin.mockResolvedValue({ mfaNecessario: true, desafioMfa: "desafio-totp", metodosMfa: ["totp"] });
-    iniciarSessao.mockResolvedValue({ mfaNecessario: true, desafioMfa: "desafio-totp", metodosMfa: ["totp"] });
-    render(<Tela />);
-
-    digitar("123456");
-    confirmar();
-
-    await waitFor(() => expect(navegar).toHaveBeenCalledWith({ to: "/verificacao-em-duas-etapas", replace: true }));
-    expect(lerDesafio()?.desafio).toBe("desafio-totp");
   });
 
   it("não envia duas vezes com cliques seguidos", async () => {

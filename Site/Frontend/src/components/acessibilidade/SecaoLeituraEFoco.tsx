@@ -67,7 +67,7 @@ export function SecaoLeituraEFoco() {
         />
       )}
       <Link to="/diagnostico-de-voz" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline underline-offset-2">
-        <Stethoscope className="size-4" aria-hidden="true" /> Testar a voz deste aparelho
+        <Stethoscope className="size-4" aria-hidden="true" /> Testar a leitura em voz alta neste aparelho
       </Link>
 
       <ToggleRow

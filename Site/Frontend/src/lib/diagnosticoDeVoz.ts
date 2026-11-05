@@ -110,6 +110,9 @@ export async function testarEventosDePalavra(sintetizador: SintetizadorDeFala | 
     sintetizador.speak(u);
 
     void relogio.esperar(limiteMs).then(() => {
+      // O teste já terminou: esta espera de segurança não pode cancelar a fala do PRÓXIMO teste (que começa logo em seguida).
+      if (fechado) return;
+
       sintetizador.cancel();
       fechar({ terminou: false });
     });

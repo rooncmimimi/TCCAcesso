@@ -6,8 +6,8 @@ import { DiagnosticoDeVoz } from "@/components/diagnostico/DiagnosticoDeVoz";
 export const Route = createFileRoute("/diagnostico-de-voz")({
   head: () => ({
     meta: [
-      { title: "Diagnóstico de voz — ACESSO" },
-      { name: "description", content: "Teste a voz do seu aparelho: se ela informa cada palavra, se a pausa funciona e como é a leitura do ACESSO. Gera um relatório para copiar." },
+      { title: "Teste da leitura em voz alta — ACESSO" },
+      { name: "description", content: "Confira, em cerca de 1 minuto, se a leitura em voz alta do ACESSO marca as palavras e se Pausar e Continuar funcionam no seu aparelho." },
     ],
   }),
   component: DiagnosticoPagina,
@@ -16,8 +16,8 @@ export const Route = createFileRoute("/diagnostico-de-voz")({
 function DiagnosticoPagina() {
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Diagnóstico de voz</h1>
-      <p className="mt-2 text-muted-foreground">Descubra o que a voz do seu aparelho consegue fazer: se informa cada palavra para o destaque, se a pausa funciona e como é a leitura do ACESSO. Serve também para testar celulares e navegadores diferentes.</p>
+      <h1 className="text-3xl font-extrabold">Teste da leitura em voz alta</h1>
+      <p className="mt-2 text-muted-foreground">Descubra se a leitura em voz alta do ACESSO funciona bem no seu aparelho.</p>
       <DiagnosticoDeVoz />
     </EstruturaApp>
   );

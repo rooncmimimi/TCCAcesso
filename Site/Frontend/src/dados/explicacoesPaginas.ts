@@ -69,9 +69,9 @@ export const EXPLICACOES: readonly ExplicacaoDePagina[] = [
   },
   {
     padrao: "/diagnostico-de-voz",
-    nome: "Diagnóstico de voz",
-    texto: "Uma tela para testar a voz do seu aparelho: se ela informa cada palavra (para o destaque), se a pausa funciona e como fica a leitura do ACESSO. No fim há um relatório para copiar.",
-    proximosPassos: "Aperte os botões de teste, um de cada vez, ouça a leitura de exemplo, marque o que você percebeu e copie o relatório.",
+    nome: "Teste da leitura em voz alta",
+    texto: "Uma tela para conferir, em cerca de 1 minuto, se a leitura em voz alta do ACESSO marca as palavras e se Pausar e Continuar funcionam no seu aparelho.",
+    proximosPassos: "Siga as três etapas: ouça o trecho, pause e continue, e (se quiser) faça o teste automático. No fim, dá para copiar o resultado.",
   },
   {
     padrao: "/comunicacao",

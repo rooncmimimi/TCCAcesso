@@ -66,7 +66,7 @@ alinhamento por palavra.
 
 ## 5. O que falta, e só pode ser feito com aparelhos reais
 
-A página **Diagnóstico de voz** (`/diagnostico-de-voz`, link em Configurações → Leitura, foco e cores) mede
-em cada aparelho: vozes locais e de rede, quantas palavras a voz informa, se `pause()` pausa ou cancela, e
-registra o que a pessoa viu na leitura de verdade. Ela gera um relatório para copiar. O roteiro e a tabela de
+A página **Teste da leitura em voz alta** (`/diagnostico-de-voz`, link em Configurações → Leitura, foco e cores) mede
+em cada aparelho, em três etapas simples: quantas palavras a voz informa, se `pause()` pausa ou cancela, e
+registra o que a pessoa viu na leitura de verdade. Explica o resultado em português comum e gera um texto para copiar. O roteiro e a tabela de
 aparelhos estão em [acessibilidade-avancada-verificacoes.md](acessibilidade-avancada-verificacoes.md).

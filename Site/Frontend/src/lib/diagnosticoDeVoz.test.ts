@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { contarPalavras, montarRelatorio, resumirVozes, testarEventosDePalavra, testarPausaNativa, type CriarEnunciado, type DadosDoRelatorio, type EnunciadoDeFala, type SintetizadorDeFala, type VozDoAparelho } from "@/lib/diagnosticoDeVoz";
 
@@ -116,6 +116,26 @@ describe("testarEventosDePalavra", () => {
     const r = await testarEventosDePalavra(s, criar, voz(), texto, 5000, relogio);
 
     expect(r).toMatchObject({ situacao: "executado", palavrasInformadas: 0, primeiroEventoMs: null, terminou: false });
+  });
+
+  it("depois de terminar, a espera de segurança atrasada NÃO cancela a fala do teste seguinte", async () => {
+    let liberar: () => void = () => {};
+    const relogio = {
+      agora: () => 0,
+      esperar: (ms: number) => (ms === 15_000 ? new Promise<void>((r) => (liberar = r)) : Promise.resolve()),
+    };
+    const s = sintetizadorFalso({ palavras: [0, 3, 8, 13], terminaSozinha: true });
+    const cancelar = vi.spyOn(s, "cancel");
+
+    await testarEventosDePalavra(s, criar, voz(), texto, 15_000, relogio);
+
+    const chamadasAoTerminar = cancelar.mock.calls.length;
+
+    liberar(); // 15 s depois, na vida real
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(cancelar.mock.calls.length).toBe(chamadasAoTerminar);
   });
 
   it("eventos repetidos para a mesma posição contam uma vez", async () => {

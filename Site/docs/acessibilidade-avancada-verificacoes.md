@@ -67,23 +67,28 @@ agora**, por licença (GPL-3.0), peso e falta de medição em aparelhos reais.
 
 ## 3. Aparelhos reais: voz, destaque e pausa
 
-**Ferramenta:** `/diagnostico-de-voz` (também em Configurações → Leitura, foco e cores → "Testar a voz deste
-aparelho"). Faz três coisas: lista as vozes (locais e de rede); mede, falando, **quantas palavras a voz informa** e **se
-o `pause()` do navegador pausa, cancela ou trava**; e deixa conferir a **leitura de verdade** do ACESSO e marcar o que
-se viu. No fim gera um **relatório de texto para copiar**. Nada é enviado.
+**Ferramenta:** a página **Teste da leitura em voz alta** (`/diagnostico-de-voz`; também em Configurações → Leitura,
+foco e cores → "Testar a leitura em voz alta neste aparelho"). Tem **três etapas**, em português comum: (1) ouvir um
+trecho e dizer o que se viu na marcação das palavras; (2) apertar Pausar e Continuar e dizer o que aconteceu; (3)
+opcional, um **teste automático** em que o ACESSO fala duas frases e explica o resultado ("Bom", "Atenção", "Problema"
+ou "Não deu para saber"), com os números em "Detalhes técnicos". Por baixo, ele mede **quantas palavras a voz informa** e
+**se o `pause()` do navegador pausa, cancela ou trava**. No fim há **Copiar resultado**, um texto para enviar a quem
+acompanha o projeto, e a lista de vozes fica recolhida. Nada é enviado pela página.
 
 **Medido até agora (um aparelho):** Windows 11, navegador do app (Chromium 152), vozes locais "Microsoft Daniel" e
 "Microsoft Maria" (português do Brasil): **16 de 16 palavras informadas**, primeiro evento em 150 ms; `pause()` marcou
 pausado e a fala **voltou até o fim** depois de `resume()`. É **um** aparelho com voz **local**: nada disso vale para
 Android, iPhone, Mac nem para vozes de rede.
 
-**Roteiro para quem for testar** (cada aparelho, uns 5 minutos):
+**Roteiro para quem for testar** (cada aparelho, uns 2 minutos):
 1. Abra `/diagnostico-de-voz` no navegador do aparelho, com o volume alto e em lugar silencioso.
-2. Em "Voz para os testes", deixe a padrão e rode **"Testar palavra por palavra"** e **"Testar pausa e continuar"**.
-   Repita com **uma voz de rede** (as "Google", no Chrome) e **uma local**, se o aparelho tiver as duas.
-3. Em "A leitura de verdade", aperte **Ouvir**. Observe o destaque. Aperte **Pausar**, espere uns 5 segundos, aperte
-   **Continuar**. Marque o que viu nos três campos.
-4. Aperte **Copiar relatório** e guarde o texto (um por aparelho e voz).
+2. **Etapa 1:** aperte **Ouvir**, observe a marcação das palavras e responda "O que você viu".
+3. **Etapa 2:** aperte **Ouvir** de novo; na barra que aparece embaixo, **Pausar**, espere uns 5 segundos, **Continuar**;
+   responda as duas perguntas.
+4. **Etapa 3:** aperte **Fazer o teste automático** e espere uns 20 segundos.
+5. Para comparar com **uma voz que usa a internet** (as "Google", no Chrome) e **uma instalada**, abra "Vozes instaladas
+   neste aparelho", escolha a voz e repita a etapa 3.
+6. Aperte **Copiar resultado** e guarde o texto (um por aparelho e voz).
 
 **Aparelhos que fazem sentido cobrir** (preencher conforme forem testados):
 

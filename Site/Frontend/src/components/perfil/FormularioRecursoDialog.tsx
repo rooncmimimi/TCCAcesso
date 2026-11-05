@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { Switch } from "@/components/ui/switch";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
@@ -200,6 +201,7 @@ export function FormularioRecursoDialog({
                   <DicaDeCampoBotao dica="experienciaDescricao" nomeDoCampo="Descrição" />
                 </div>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
+                <DitadoParaCampo campoId="descricao" />
               </div>
             </>
           )}
@@ -240,6 +242,7 @@ export function FormularioRecursoDialog({
                   <DicaDeCampoBotao dica="formacaoDescricao" nomeDoCampo="Descrição" />
                 </div>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
+                <DitadoParaCampo campoId="descricao" />
               </div>
             </>
           )}

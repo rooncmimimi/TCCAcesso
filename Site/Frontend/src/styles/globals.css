@@ -677,3 +677,87 @@ div[vw].enabled {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* ------------------------------------------------------------------------------------------------
+   Bloco 4: motricidade. Alvos de toque maiores e a varredura com um botão.
+   `data-target-size` vem de `AcessibilidadeProvider` ("padrao" não muda nada). O tamanho vale para
+   controles de verdade (botões, links de navegação, campos e opções); links no meio de um texto
+   corrido não são alargados, para não quebrar a linha.
+   ------------------------------------------------------------------------------------------------ */
+
+html[data-target-size="grande"] {
+  --a11y-alvo: 3.5rem; /* 56 px */
+  --a11y-alvo-marca: 1.75rem; /* caixas de seleção e opções: 28 px */
+}
+
+html[data-target-size="maior"] {
+  --a11y-alvo: 4.5rem; /* 72 px */
+  --a11y-alvo-marca: 2.25rem; /* 36 px */
+}
+
+html[data-target-size="grande"] :where(button, [role="button"], summary, select, input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="file"]), nav a, header a, li > a:only-child),
+html[data-target-size="maior"] :where(button, [role="button"], summary, select, input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"], [type="file"]), nav a, header a, li > a:only-child) {
+  min-height: var(--a11y-alvo);
+}
+
+html[data-target-size="grande"] :where(button, [role="button"], nav a, header a),
+html[data-target-size="maior"] :where(button, [role="button"], nav a, header a) {
+  min-width: var(--a11y-alvo);
+}
+
+html[data-target-size="grande"] :where(nav a, header a, li > a:only-child),
+html[data-target-size="maior"] :where(nav a, header a, li > a:only-child) {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Caixas de seleção, opções e interruptores: o desenho cresce junto com a área de toque. */
+html[data-target-size="grande"] :where(button[role="checkbox"], button[role="radio"], input[type="checkbox"], input[type="radio"]),
+html[data-target-size="maior"] :where(button[role="checkbox"], button[role="radio"], input[type="checkbox"], input[type="radio"]) {
+  width: var(--a11y-alvo-marca);
+  height: var(--a11y-alvo-marca);
+  min-width: var(--a11y-alvo-marca);
+  min-height: var(--a11y-alvo-marca);
+}
+
+html[data-target-size="grande"] :where(button[role="switch"]),
+html[data-target-size="maior"] :where(button[role="switch"]) {
+  min-width: calc(var(--a11y-alvo-marca) * 1.8);
+  min-height: var(--a11y-alvo-marca);
+}
+
+/* Mais espaço entre os controles de uma mesma fila, para errar menos o alvo. */
+html[data-target-size="grande"] :where(.flex, .grid):has(> button, > a) {
+  gap: max(0.5rem, var(--gap, 0.5rem));
+}
+
+html[data-target-size="maior"] :where(.flex, .grid):has(> button, > a) {
+  gap: max(0.75rem, var(--gap, 0.75rem));
+}
+
+/* Varredura: o controle destacado ganha um contorno grosso de duas cores (visível em fundo claro
+   e escuro) e o painel de comandos nunca é varrido nem escondido. */
+.varredura-realce {
+  position: fixed;
+  z-index: 2147483000;
+  pointer-events: none;
+  border-radius: 0.5rem;
+  outline: 4px solid #000;
+  box-shadow: 0 0 0 4px #ffd400, 0 0 0 8px #000;
+  transition: top 120ms, left 120ms, width 120ms, height 120ms;
+}
+
+.varredura-realce[data-grupo="true"] {
+  outline-style: dashed;
+}
+
+.a11y-reduce-motion .varredura-realce {
+  transition: none;
+}
+
+/* O painel da varredura é sempre usado com o resto da tela à vista: mesmo com os alvos no tamanho
+   máximo, os botões dele param em 56 px, para não cobrir um terço da tela do celular. */
+html[data-target-size] section[data-varredura-ignorar] button {
+  min-height: min(var(--a11y-alvo, 2.75rem), 3.5rem);
+  min-width: min(var(--a11y-alvo, 2.75rem), 3.5rem);
+}

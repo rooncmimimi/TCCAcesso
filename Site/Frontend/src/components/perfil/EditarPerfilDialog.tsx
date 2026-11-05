@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { EstadoSelect } from "@/components/cadastro/EstadoSelect";
 import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
@@ -243,6 +244,7 @@ export function EditarPerfilDialog({
                   maxLength={2000}
                   defaultValue={candidato.biografia ?? ""}
                 />
+                <DitadoParaCampo campoId="biografia" />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

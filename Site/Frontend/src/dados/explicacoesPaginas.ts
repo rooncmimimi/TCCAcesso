@@ -68,6 +68,30 @@ export const EXPLICACOES: readonly ExplicacaoDePagina[] = [
     proximosPassos: "Escolha candidatura ou entrevista. Você pode pausar e continuar depois.",
   },
   {
+    padrao: "/comunicacao",
+    nome: "Central de comunicação",
+    texto: "Aqui ficam frases prontas, como “Preciso de um momento para responder”. Você pode mostrar a frase em letras grandes, ouvi-la em voz alta ou copiá-la. Também pode criar as suas.",
+    proximosPassos: "Escolha um cartão e use Mostrar, Ouvir ou Copiar. Seus cartões ficam só neste navegador.",
+  },
+  {
+    padrao: "/profissoes",
+    nome: "Dicionário de profissões",
+    texto: "Uma lista de profissões explicadas em linguagem simples, com o que a pessoa faz, as ferramentas, as habilidades e um exemplo de dia de trabalho.",
+    proximosPassos: "Procure uma profissão pelo nome, abra a ficha e, se quiser, procure vagas dessa profissão.",
+  },
+  {
+    padrao: "/objetivos",
+    nome: "O que você quer fazer?",
+    texto: "Aqui você escolhe um objetivo, como encontrar emprego ou se candidatar, e vê só os passos de que precisa, em ordem.",
+    proximosPassos: "Escolha um objetivo e siga o passo destacado como “Próximo passo”. Marque os que já fez.",
+  },
+  {
+    padrao: "/comparar",
+    nome: "Comparar vagas",
+    texto: "Mostra até três vagas lado a lado: modalidade, ambiente, acessibilidade física e adaptações. A tela não diz qual vaga é melhor: você decide pelo que importa para você.",
+    proximosPassos: "As linhas marcadas como “Diferente” mostram onde as vagas se separam. Abra uma vaga pelo título.",
+  },
+  {
     padrao: "/feed",
     nome: "Publicações",
     texto: "Aqui ficam as publicações de pessoas e empresas que você segue, como numa rede social profissional.",

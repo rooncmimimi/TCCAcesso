@@ -8,6 +8,7 @@ import {
   AcessibilidadeContext,
 } from "@/contexts/AcessibilidadeContext";
 import { ehCorHex } from "@/lib/contraste";
+import { normalizarPreferencias } from "@/lib/preferenciasMotoras";
 
 const CHAVE_PREFERENCIAS = "acesso:a11y-prefs";
 
@@ -15,7 +16,7 @@ function lerPreferenciasSalvas(): PreferenciasAcessibilidade | null {
   try {
     const bruto = window.localStorage.getItem(CHAVE_PREFERENCIAS);
     if (!bruto) return null;
-    return { ...PREFERENCIAS_PADRAO, ...(JSON.parse(bruto) as Partial<PreferenciasAcessibilidade>) };
+    return normalizarPreferencias(JSON.parse(bruto) as Partial<PreferenciasAcessibilidade>);
   } catch {
     return null;
   }
@@ -36,6 +37,7 @@ function aplicarNoDocumento(p: PreferenciasAcessibilidade) {
   raiz.classList.toggle("a11y-focus-mode", p.focusMode);
   raiz.classList.toggle("a11y-reading-mode", p.readingMode);
   raiz.classList.toggle("a11y-colorblind", p.colorBlind);
+  raiz.setAttribute("data-target-size", p.targetSize);
   raiz.setAttribute("data-reading-bg", p.readingBg);
   raiz.setAttribute("data-reading-font", p.readingFont);
 

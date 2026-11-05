@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BoasVindasRouteImport } from './routes/boas-vindas'
 import { Route as CompararRouteImport } from './routes/comparar'
+import { Route as ComunicacaoRouteImport } from './routes/comunicacao'
 import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
 import { Route as ContaComprometidaRouteImport } from './routes/conta-comprometida'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -24,8 +25,10 @@ import { Route as MensagensRouteImport } from './routes/mensagens'
 import { Route as MinhaAcessibilidadeRouteImport } from './routes/minha-acessibilidade'
 import { Route as MinhaAtividadeRouteImport } from './routes/minha-atividade'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
+import { Route as ObjetivosRouteImport } from './routes/objetivos'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as ProfissoesRouteImport } from './routes/profissoes'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as RetornoGoogleRouteImport } from './routes/retorno-google'
@@ -87,6 +90,11 @@ const CompararRoute = CompararRouteImport.update({
   path: '/comparar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComunicacaoRoute = ComunicacaoRouteImport.update({
+  id: '/comunicacao',
+  path: '/comunicacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConfirmarEmailRoute = ConfirmarEmailRouteImport.update({
   id: '/confirmar-email',
   path: '/confirmar-email',
@@ -142,6 +150,11 @@ const NotificacoesRoute = NotificacoesRouteImport.update({
   path: '/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ObjetivosRoute = ObjetivosRouteImport.update({
+  id: '/objetivos',
+  path: '/objetivos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -150,6 +163,11 @@ const PerfilRoute = PerfilRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfissoesRoute = ProfissoesRouteImport.update({
+  id: '/profissoes',
+  path: '/profissoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
@@ -363,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
   '/comparar': typeof CompararRoute
+  '/comunicacao': typeof ComunicacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
@@ -374,8 +393,10 @@ export interface FileRoutesByFullPath {
   '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
+  '/objetivos': typeof ObjetivosRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/privacidade': typeof PrivacidadeRoute
+  '/profissoes': typeof ProfissoesRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
@@ -421,6 +442,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/boas-vindas': typeof BoasVindasRoute
   '/comparar': typeof CompararRoute
+  '/comunicacao': typeof ComunicacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/descobrir': typeof DescobrirRoute
@@ -431,7 +453,9 @@ export interface FileRoutesByTo {
   '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
+  '/objetivos': typeof ObjetivosRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/profissoes': typeof ProfissoesRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
@@ -477,6 +501,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
   '/comparar': typeof CompararRoute
+  '/comunicacao': typeof ComunicacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
@@ -488,8 +513,10 @@ export interface FileRoutesById {
   '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
+  '/objetivos': typeof ObjetivosRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/privacidade': typeof PrivacidadeRoute
+  '/profissoes': typeof ProfissoesRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
@@ -538,6 +565,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/boas-vindas'
     | '/comparar'
+    | '/comunicacao'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/dashboard'
@@ -549,8 +577,10 @@ export interface FileRouteTypes {
     | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
+    | '/objetivos'
     | '/perfil'
     | '/privacidade'
+    | '/profissoes'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
@@ -596,6 +626,7 @@ export interface FileRouteTypes {
     | '/'
     | '/boas-vindas'
     | '/comparar'
+    | '/comunicacao'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/descobrir'
@@ -606,7 +637,9 @@ export interface FileRouteTypes {
     | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
+    | '/objetivos'
     | '/privacidade'
+    | '/profissoes'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
@@ -651,6 +684,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/boas-vindas'
     | '/comparar'
+    | '/comunicacao'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/dashboard'
@@ -662,8 +696,10 @@ export interface FileRouteTypes {
     | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
+    | '/objetivos'
     | '/perfil'
     | '/privacidade'
+    | '/profissoes'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
@@ -711,6 +747,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   BoasVindasRoute: typeof BoasVindasRoute
   CompararRoute: typeof CompararRoute
+  ComunicacaoRoute: typeof ComunicacaoRoute
   ConfirmarEmailRoute: typeof ConfirmarEmailRoute
   ContaComprometidaRoute: typeof ContaComprometidaRoute
   DashboardRoute: typeof DashboardRouteWithChildren
@@ -722,8 +759,10 @@ export interface RootRouteChildren {
   MinhaAcessibilidadeRoute: typeof MinhaAcessibilidadeRoute
   MinhaAtividadeRoute: typeof MinhaAtividadeRoute
   NotificacoesRoute: typeof NotificacoesRoute
+  ObjetivosRoute: typeof ObjetivosRoute
   PerfilRoute: typeof PerfilRouteWithChildren
   PrivacidadeRoute: typeof PrivacidadeRoute
+  ProfissoesRoute: typeof ProfissoesRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   RetornoGoogleRoute: typeof RetornoGoogleRoute
@@ -777,6 +816,13 @@ declare module '@tanstack/react-router' {
       path: '/comparar'
       fullPath: '/comparar'
       preLoaderRoute: typeof CompararRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunicacao': {
+      id: '/comunicacao'
+      path: '/comunicacao'
+      fullPath: '/comunicacao'
+      preLoaderRoute: typeof ComunicacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confirmar-email': {
@@ -856,6 +902,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/objetivos': {
+      id: '/objetivos'
+      path: '/objetivos'
+      fullPath: '/objetivos'
+      preLoaderRoute: typeof ObjetivosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/perfil': {
       id: '/perfil'
       path: '/perfil'
@@ -868,6 +921,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profissoes': {
+      id: '/profissoes'
+      path: '/profissoes'
+      fullPath: '/profissoes'
+      preLoaderRoute: typeof ProfissoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recuperar-senha': {
@@ -1239,6 +1299,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   BoasVindasRoute: BoasVindasRoute,
   CompararRoute: CompararRoute,
+  ComunicacaoRoute: ComunicacaoRoute,
   ConfirmarEmailRoute: ConfirmarEmailRoute,
   ContaComprometidaRoute: ContaComprometidaRoute,
   DashboardRoute: DashboardRouteWithChildren,
@@ -1250,8 +1311,10 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaAcessibilidadeRoute: MinhaAcessibilidadeRoute,
   MinhaAtividadeRoute: MinhaAtividadeRoute,
   NotificacoesRoute: NotificacoesRoute,
+  ObjetivosRoute: ObjetivosRoute,
   PerfilRoute: PerfilRouteWithChildren,
   PrivacidadeRoute: PrivacidadeRoute,
+  ProfissoesRoute: ProfissoesRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   RetornoGoogleRoute: RetornoGoogleRoute,

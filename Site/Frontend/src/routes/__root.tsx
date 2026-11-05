@@ -13,6 +13,12 @@ import { LeituraDestacadaProvider } from "@/contexts/LeituraDestacadaProvider";
 import { ControleDeLeitura } from "@/components/acessibilidade/ControleDeLeitura";
 import { FerramentasDeLeitura } from "@/components/acessibilidade/FerramentasDeLeitura";
 import { ReguaDeLeitura } from "@/components/acessibilidade/ReguaDeLeitura";
+import { BarraDeVarredura } from "@/components/acessibilidade/BarraDeVarredura";
+import { AjudaDeAtalhos } from "@/components/acessibilidade/AjudaDeAtalhos";
+import { AvisoDeCliqueIgnorado } from "@/components/acessibilidade/AvisoDeCliqueIgnorado";
+import { ComandosDeVoz } from "@/components/acessibilidade/ComandosDeVoz";
+import { useGuardaDeAcionamentos } from "@/hooks/useGuardaDeAcionamentos";
+import { useAtalhosDeTeclado } from "@/hooks/useAtalhosDeTeclado";
 import { useCursorDeLeitura } from "@/hooks/useCursorDeLeitura";
 import { useLeituraAutomatica } from "@/hooks/useLeituraAutomatica";
 import { useIdioma } from "@/hooks/useIdioma";
@@ -107,6 +113,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function AppFrame() {
   useLeituraAutomatica();
   useCursorDeLeitura();
+  useGuardaDeAcionamentos();
+  useAtalhosDeTeclado();
 
   return (
     <>
@@ -116,6 +124,10 @@ function AppFrame() {
       <FerramentasDeLeitura />
       <ControleDeLeitura />
       <ReguaDeLeitura />
+      <BarraDeVarredura />
+      <AjudaDeAtalhos />
+      <AvisoDeCliqueIgnorado />
+      <ComandosDeVoz />
       <Toaster />
     </>
   );

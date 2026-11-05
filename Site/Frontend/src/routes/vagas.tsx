@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useIdioma } from "@/hooks/useIdioma";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Briefcase, Loader2 } from "lucide-react";
 
@@ -30,6 +30,8 @@ export const Route = createFileRoute("/vagas")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  // `?q=` preenche a busca (usado pelo comando de voz e pelo dicionário de profissões).
+  validateSearch: (busca: Record<string, unknown>): { q?: string } => ({ q: typeof busca.q === "string" && busca.q.trim() ? busca.q.trim().slice(0, 80) : undefined }),
   component: Vagas,
 });
 
@@ -45,9 +47,19 @@ function Vagas() {
   const { usuario } = useSessao();
   const { t } = useIdioma();
   const queryClient = useQueryClient();
-  const [rascunho, setRascunho] = useState<FiltrosVagasEstado>(FILTROS_INICIAIS);
-  const [filtros, setFiltros] = useState<FiltrosVagasEstado>(FILTROS_INICIAIS);
+  const { q: buscaDaUrl } = Route.useSearch();
+  const [rascunho, setRascunho] = useState<FiltrosVagasEstado>({ ...FILTROS_INICIAIS, busca: buscaDaUrl ?? "" });
+  const [filtros, setFiltros] = useState<FiltrosVagasEstado>({ ...FILTROS_INICIAIS, busca: buscaDaUrl ?? "" });
   const [pagina, setPagina] = useState(1);
+
+  // Uma nova busca pela URL (por exemplo, por voz estando já nesta página) substitui o termo.
+  useEffect(() => {
+    if (buscaDaUrl === undefined) return;
+
+    setRascunho((atual) => ({ ...atual, busca: buscaDaUrl }));
+    setFiltros((atual) => ({ ...atual, busca: buscaDaUrl }));
+    setPagina(1);
+  }, [buscaDaUrl]);
 
   const ehCandidato = usuario?.tipo === "candidato";
 

@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /** O mínimo da Web Speech API (`SpeechRecognition`) que o ditado usa. Não é padrão em todos os navegadores. */
-interface ResultadoDeFala {
+export interface ResultadoDeFala {
   isFinal: boolean;
   0: { transcript: string };
 }
 
-interface EventoDeResultado {
+export interface EventoDeResultado {
   resultIndex: number;
   results: ArrayLike<ResultadoDeFala>;
 }
 
-interface Reconhecimento {
+export interface Reconhecimento {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
@@ -25,7 +25,7 @@ interface Reconhecimento {
 
 type ConstrutorDeReconhecimento = new () => Reconhecimento;
 
-function construtor(): ConstrutorDeReconhecimento | null {
+export function construtor(): ConstrutorDeReconhecimento | null {
   if (typeof window === "undefined") return null;
   const w = window as unknown as { SpeechRecognition?: ConstrutorDeReconhecimento; webkitSpeechRecognition?: ConstrutorDeReconhecimento };
 
@@ -37,7 +37,7 @@ export function ditadoSuportado(): boolean {
   return construtor() !== null;
 }
 
-const MENSAGENS_DE_ERRO: Record<string, string> = {
+export const MENSAGENS_DE_ERRO: Record<string, string> = {
   "not-allowed": "O navegador não deixou usar o microfone. Libere o microfone nas permissões do site e tente de novo.",
   "service-not-allowed": "O navegador não deixou usar o reconhecimento de voz neste site.",
   "audio-capture": "Não encontramos um microfone. Confira se ele está conectado.",

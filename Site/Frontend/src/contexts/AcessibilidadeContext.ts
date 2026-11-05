@@ -58,6 +58,24 @@ export type PreferenciasAcessibilidade = {
   colorFocus: string;
   /** Paleta que não depende de vermelho x verde, com links sublinhados e estados com ícone. */
   colorBlind: boolean;
+
+  // Bloco 4 (motricidade e comunicação). Também ficam só no navegador, sem coluna no backend.
+
+  /** Varredura com um botão: a barra de controle aparece e percorre os controles da página. */
+  scanning: boolean;
+  /** Segundos em cada controle durante a varredura automática. */
+  scanSpeed: number; // 0.6 – 5
+  /** Tecla extra que seleciona o controle destacado (além de Espaço e Enter). Vazio = nenhuma. */
+  scanKey: string;
+  /** Varre primeiro por grupos (cabeçalho, menu, cada seção) e só depois pelos controles do grupo. */
+  scanGroups: boolean;
+  /** Ignora um segundo acionamento do mesmo controle logo após o primeiro (mãos com tremor). */
+  tremorGuard: boolean;
+  tremorDelay: number; // ms, 300 – 2000
+  /** Tamanho mínimo da área de toque dos controles. */
+  targetSize: "padrao" | "grande" | "maior";
+  /** Atalhos de teclado em sequência (G e depois uma letra). Podem ser desligados. */
+  shortcuts: boolean;
 };
 
 export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
@@ -91,6 +109,14 @@ export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
   colorLink: "#0b3d91",
   colorFocus: "#c2410c",
   colorBlind: false,
+  scanning: false,
+  scanSpeed: 1.5,
+  scanKey: "",
+  scanGroups: true,
+  tremorGuard: false,
+  tremorDelay: 700,
+  targetSize: "padrao",
+  shortcuts: true,
 };
 
 export const CHAVE_ESCOLHA_VOZ = "acesso:voice-choice";

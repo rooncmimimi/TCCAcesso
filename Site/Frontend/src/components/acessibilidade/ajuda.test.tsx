@@ -17,7 +17,10 @@ const { ler, salvarPrefs, preferencias, rota, voz } = vi.hoisted(() => ({
   voz: { suportado: true },
 }));
 
+const navegar = vi.fn();
+
 vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => navegar,
   useRouterState: ({ select }: { select: (s: { location: { pathname: string } }) => unknown }) => select({ location: { pathname: rota.caminho } }),
   Link: ({ children, to, ...props }: { children: React.ReactNode; to: string }) => (
     <a href={to} {...props}>
@@ -85,6 +88,25 @@ describe("FerramentasDeLeitura", () => {
     for (const rotulo of ["Régua de leitura", "Modo foco", "Modo leitura", "Manter avisos até eu fechar"]) {
       expect(within(dialogo).getByRole("switch", { name: rotulo }), rotulo).toBeTruthy();
     }
+  });
+
+  it("oferece outras formas de navegar: comando de voz, atalhos, objetivos, central de comunicação e profissões", () => {
+    const dialogo = abrirFerramentas();
+
+    for (const nome of ["Falar um comando", "Atalhos de teclado", "O que você quer fazer?", "Central de comunicação", "Dicionário de profissões"]) {
+      expect(within(dialogo).getByRole("button", { name: new RegExp(nome) }), nome).toBeTruthy();
+    }
+  });
+
+  it("escolher uma página do menu fecha o diálogo e navega até ela", () => {
+    navegar.mockClear();
+
+    const dialogo = abrirFerramentas();
+
+    act(() => within(dialogo).getByRole("button", { name: /Central de comunicação/ }).click());
+
+    expect(navegar).toHaveBeenCalledWith({ to: "/comunicacao" });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("Onde estou? usa a página lida ANTES de abrir o diálogo", () => {

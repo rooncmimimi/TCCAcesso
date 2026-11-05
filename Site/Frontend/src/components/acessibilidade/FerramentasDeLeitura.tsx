@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, BookMarked, BookOpenText, Compass, HelpCircle, History, Settings2 } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { ArrowLeft, BookMarked, BookOpenText, BookUser, Compass, HelpCircle, History, Keyboard, MessageSquareText, Mic, Settings2, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import {
   type FotoDaPagina,
 } from "@/components/acessibilidade/PaineisDeAjuda";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { abrirAjudaDeAtalhos } from "@/hooks/useAtalhosDeTeclado";
+import { pedirComandoDeVoz } from "@/hooks/useComandoDeVoz";
+import { ditadoSuportado } from "@/hooks/useDitado";
 import { termosNoTexto } from "@/dados/glossario";
 import { coletarOndeEstou } from "@/lib/ondeEstou";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
@@ -76,6 +79,12 @@ export function FerramentasDeLeitura() {
     setAberto(true);
   };
 
+  const navegar = useNavigate();
+  const irPara = (destino: string) => {
+    setAberto(false);
+    void navegar({ to: destino });
+  };
+
   const { titulo, descricao } = TITULOS[visao];
 
   return (
@@ -113,6 +122,36 @@ export function FerramentasDeLeitura() {
                 <BotaoDoMenu icone={BookMarked} titulo="Glossário" detalhe="CLT, PJ, híbrido, cotas e outros termos." onClick={() => setVisao("glossario")} />
                 <BotaoDoMenu icone={History} titulo="Meu histórico de instruções" detalhe="O que você salvou para ver depois." onClick={() => setVisao("historico")} />
               </div>
+
+              <section aria-labelledby="mais-recursos" className="space-y-2">
+                <h3 id="mais-recursos" className="text-sm font-bold">
+                  Navegar de outras formas
+                </h3>
+                <div className="grid gap-2">
+                  <BotaoDoMenu
+                    icone={Mic}
+                    titulo="Falar um comando"
+                    detalhe={ditadoSuportado() ? "Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede." : "Este navegador não oferece reconhecimento de voz no site."}
+                    onClick={() => {
+                      setAberto(false);
+                      // Espera o diálogo fechar para o comando agir sobre a página, e não sobre o diálogo.
+                      setTimeout(pedirComandoDeVoz, 200);
+                    }}
+                  />
+                  <BotaoDoMenu
+                    icone={Keyboard}
+                    titulo="Atalhos de teclado"
+                    detalhe="G e V para vagas, ? para a lista completa."
+                    onClick={() => {
+                      setAberto(false);
+                      setTimeout(abrirAjudaDeAtalhos, 200);
+                    }}
+                  />
+                  <BotaoDoMenu icone={Target} titulo="O que você quer fazer?" detalhe="Caminhos guiados, só com os passos necessários." onClick={() => irPara("/objetivos")} />
+                  <BotaoDoMenu icone={MessageSquareText} titulo="Central de comunicação" detalhe="Cartões e frases prontas." onClick={() => irPara("/comunicacao")} />
+                  <BotaoDoMenu icone={BookUser} titulo="Dicionário de profissões" detalhe="O que cada profissão faz." onClick={() => irPara("/profissoes")} />
+                </div>
+              </section>
 
               <section aria-labelledby="ajustes-rapidos" className="space-y-2">
                 <h3 id="ajustes-rapidos" className="text-sm font-bold">

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
 import { urlArquivo } from "@/utils/arquivos";
@@ -142,6 +143,7 @@ export function FormularioPostagem() {
               >
                 {t("formPost.restantes", { n: restantes })}
               </p>
+              <DitadoParaCampo campoId="novo-post" />
             </div>
           </div>
 

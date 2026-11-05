@@ -17,6 +17,7 @@ import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { useVoz } from "@/hooks/useVoz";
 import { SliderRow, ToggleRow } from "@/components/acessibilidade/LinhasDeControle";
 import { SecaoLeituraEFoco } from "@/components/acessibilidade/SecaoLeituraEFoco";
+import { SecaoMotricidade } from "@/components/acessibilidade/SecaoMotricidade";
 
 /** Amostra que reage imediatamente às preferências escolhidas. */
 export function PreviaAcessibilidade() {
@@ -162,6 +163,8 @@ export function PainelAcessibilidade() {
       </section>
 
       <SecaoLeituraEFoco />
+
+      <SecaoMotricidade />
 
       <section aria-labelledby="grupo-assistivo" className="space-y-3">
         <h3

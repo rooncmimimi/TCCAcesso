@@ -10,7 +10,7 @@ import type { CatalogoDeAdaptacoes, EscolhaDeCompartilhamento, MinhaAcessibilida
  * o que a tela manda e o que ela exige.
  */
 
-const { servicoAdaptacoes, servicoMinha, toast } = vi.hoisted(() => ({
+const { servicoAdaptacoes, servicoMinha, servicoVagas, servicoAmbiente, toast } = vi.hoisted(() => ({
   servicoAdaptacoes: {
     obterRascunho: vi.fn(),
     salvarRascunho: vi.fn(),
@@ -19,10 +19,14 @@ const { servicoAdaptacoes, servicoMinha, toast } = vi.hoisted(() => ({
     enviar: vi.fn(),
   },
   servicoMinha: { catalogo: vi.fn(), obter: vi.fn() },
+  servicoVagas: { detalhar: vi.fn() },
+  servicoAmbiente: { catalogo: vi.fn() },
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
 vi.mock("@/services/adaptacoes.service", () => ({ candidaturaAdaptacoesService: servicoAdaptacoes, minhaAcessibilidadeService: servicoMinha }));
+vi.mock("@/services/vagas.service", () => ({ default: servicoVagas, vagasService: servicoVagas }));
+vi.mock("@/services/ambiente.service", () => ({ ambienteService: servicoAmbiente }));
 vi.mock("sonner", () => ({ toast }));
 
 const { CandidaturaDialog, ESPERA_DO_RASCUNHO_NO_SERVIDOR_MS } = await import("./CandidaturaDialog");
@@ -87,6 +91,8 @@ beforeEach(() => {
   servicoAdaptacoes.descartarRascunho.mockResolvedValue(undefined);
   servicoAdaptacoes.previa.mockImplementation(async (_vaga: string, escolha: EscolhaDeCompartilhamento) => previaPara(escolha));
   servicoAdaptacoes.enviar.mockResolvedValue({ id: "cd-1" });
+  servicoVagas.detalhar.mockResolvedValue({ id: "v1", titulo: "Analista" });
+  servicoAmbiente.catalogo.mockResolvedValue({ ambienteSensorial: [], itensFisicos: [], situacoesFisicas: [], origensFisicas: [], entrevista: [{ chave: "perguntas_por_escrito", rotulo: "Perguntas por escrito" }, { chave: "tempo_adicional", rotulo: "Tempo adicional na entrevista" }] });
 });
 
 afterEach(cleanup);
@@ -112,6 +118,53 @@ describe("começo e retomada", () => {
     expect(screen.getByRole("checkbox", { name: /legendas/i })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: /voltar/i }));
     expect(await screen.findByDisplayValue("Olá, tenho interesse")).toBeInTheDocument();
+  });
+});
+
+describe("o que a vaga já oferece na entrevista", () => {
+  const irParaAdaptacoes = async () => {
+    renderizar();
+    await comecar();
+    fireEvent.click(screen.getByRole("button", { name: /^continuar$/i }));
+    await etapa(2, "Adaptações");
+  };
+
+  it("mostra, na etapa de adaptações, o que a empresa informou, sem compartilhar nada da pessoa", async () => {
+    servicoVagas.detalhar.mockResolvedValue({ id: "v1", titulo: "Analista", entrevistaAdaptacoes: ["perguntas_por_escrito", "tempo_adicional"], entrevistaObservacao: "Podemos remarcar sem custo." });
+
+    await irParaAdaptacoes();
+
+    const caixa = await screen.findByRole("region", { name: /o que esta vaga já oferece na entrevista/i });
+
+    expect(caixa).toHaveTextContent("Perguntas por escrito");
+    expect(caixa).toHaveTextContent("Tempo adicional na entrevista");
+    expect(caixa).toHaveTextContent("Podemos remarcar sem custo.");
+    expect(caixa).toHaveTextContent(/não compartilha nada seu/i);
+    expect(servicoAdaptacoes.salvarRascunho).not.toHaveBeenCalled();
+  });
+
+  it("não mostra a caixa quando a empresa não informou nada", async () => {
+    await irParaAdaptacoes();
+
+    expect(screen.queryByRole("region", { name: /o que esta vaga já oferece/i })).not.toBeInTheDocument();
+  });
+
+  it("se os dados da vaga falharem, a etapa segue normalmente", async () => {
+    servicoVagas.detalhar.mockRejectedValue(new Error("falha"));
+
+    await irParaAdaptacoes();
+
+    expect(screen.queryByRole("region", { name: /o que esta vaga já oferece/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /legendas/i })).toBeInTheDocument();
+  });
+
+  it("não aparece nas outras etapas", async () => {
+    servicoVagas.detalhar.mockResolvedValue({ id: "v1", titulo: "Analista", entrevistaAdaptacoes: ["perguntas_por_escrito"] });
+
+    renderizar();
+    await comecar();
+
+    expect(screen.queryByRole("region", { name: /o que esta vaga já oferece/i })).not.toBeInTheDocument();
   });
 });
 

@@ -1,5 +1,6 @@
 import clienteApi from "./api";
 import type { AnexoPostagem } from "@/types";
+import type { AcessibilidadeFisica } from "@/types/ambiente";
 
 /* Tipos devolvidos pelas rotas /admin do backend */
 
@@ -88,6 +89,8 @@ export interface VagaAdmin {
   modalidade?: string | null;
   status: "aberta" | "pausada" | "encerrada";
   oculta?: boolean;
+  /** Mapa de acessibilidade física declarado pela empresa (e o que a moderação já verificou). */
+  acessibilidadeFisica?: AcessibilidadeFisica | null;
   empresa?: { id: string; nomeFantasia?: string | null; statusAprovacao?: string };
 }
 
@@ -267,6 +270,18 @@ export async function alterarStatusVaga(id: string, status: VagaAdmin["status"])
 
 export async function removerVaga(id: string): Promise<void> {
   await clienteApi.delete(`/vagas/${id}`);
+}
+
+/**
+ * Marca (ou desmarca) itens do mapa de acessibilidade física como "verificado". Só o administrador
+ * pode; cada chamada fica no registro de auditoria. Devolve as chaves que de fato mudaram.
+ */
+export async function verificarAcessibilidadeFisica(id: string, itens: string[], verificado: boolean) {
+  const { data } = await clienteApi.post<{ alteradas: string[]; acessibilidadeFisica: AcessibilidadeFisica }>(
+    `/admin/vagas/${id}/acessibilidade-fisica/verificacao`,
+    { itens, verificado },
+  );
+  return data;
 }
 
 export async function ocultarVaga(id: string, oculta: boolean) {

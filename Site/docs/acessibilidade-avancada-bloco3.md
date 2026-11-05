@@ -78,8 +78,18 @@ verificado que não mudou mantém o selo, item alterado o perde; só o administr
 (`vaga_midias.legenda_vtt`, até 256 KB), e não como arquivo no bucket: o `<track>` exige mesma origem ou CORS, e assim o
 navegador monta um Blob local sem depender de nenhum dos dois.
 
-**Limites conhecidos:** a verificação do mapa físico tem a **rota** de administrador, mas ainda não tem tela no painel
-admin; o diálogo de candidatura não lista "o que a vaga oferece" na entrevista (a página da vaga lista, e o pedido de
-adaptações do Bloco 2 continua por candidatura); a revisão de texto alternativo só olha as publicações que o endpoint de
-listagem devolve (até 100 por vez).
+**Fechamento das pendências do bloco:**
+
+- **Tela de verificação do mapa físico** (`/admin/vagas`): cada vaga mostra em texto "Mapa físico: N itens, M verificados" e
+  um botão "Mapa físico" que abre o diálogo `VerificarMapaFisicoDialog`. Ele lista só os itens que a empresa informou
+  (declarado ou verificado, com a data), permite escolher itens e exige marcar "Conferi estes itens pessoalmente ou por
+  fotos ou documento" antes de **Marcar como verificado**. "Voltar a declarado" não exige a confirmação. Cada ação chama
+  `POST /admin/vagas/:id/acessibilidade-fisica/verificacao` e fica no registro de auditoria.
+- **Entrevista na candidatura:** a etapa "Adaptações" do `CandidaturaDialog` mostra a caixa "O que esta vaga já oferece na
+  entrevista" (`EntrevistaOferecida`) com o que a empresa informou e a observação dela. É informação da vaga: não compartilha
+  nada da pessoa, não grava rascunho e some quando a empresa não informou nada. O diálogo busca a vaga pela mesma chave de
+  cache da página, então vale também para quem continua um rascunho pela lista de candidaturas em andamento.
+
+**Limites conhecidos:** a revisão de texto alternativo só olha as publicações que o endpoint de listagem devolve (até 100
+por vez); a tela admin foi conferida com servidor simulado e testes automatizados, não com um administrador real em produção.
 

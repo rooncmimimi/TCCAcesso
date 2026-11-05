@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { EscolhaDeAdaptacoes } from "@/components/candidatura/EscolhaDeAdaptacoes";
 import { PreviaDePrivacidade } from "@/components/candidatura/PreviaDePrivacidade";
 import { CampoComDitado } from "@/components/acessibilidade/CampoComDitado";
+import { EntrevistaOferecida } from "@/components/candidatura/EntrevistaOferecida";
 import { candidaturaAdaptacoesService, minhaAcessibilidadeService } from "@/services/adaptacoes.service";
+import vagasService from "@/services/vagas.service";
 import { extrairMensagemErro } from "@/services/api";
 import { completarEscolha, escolhaTemConteudo, escolhaVazia, type EscolhaDeCompartilhamento, type EtapaDoRascunho } from "@/types/adaptacoes";
 
@@ -50,6 +52,10 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
   const catalogo = useQuery({ queryKey: ["minha-acessibilidade", "catalogo"], queryFn: () => minhaAcessibilidadeService.catalogo(), enabled: aberto, staleTime: 60 * 60 * 1000 });
   const perfil = useQuery({ queryKey: ["minha-acessibilidade"], queryFn: () => minhaAcessibilidadeService.obter(), enabled: aberto });
   const rascunho = useQuery({ queryKey: ["candidaturas", "rascunho", vaga.id], queryFn: () => candidaturaAdaptacoesService.obterRascunho(vaga.id), enabled: aberto });
+
+  // O que a vaga já oferece na entrevista (informação da empresa). Mesma chave da página da vaga, então
+  // normalmente já está em cache; se falhar, a etapa segue sem a caixa e nada se perde.
+  const dadosDaVaga = useQuery({ queryKey: ["vaga", vaga.id], queryFn: () => vagasService.detalhar(vaga.id), enabled: aberto, staleTime: 60 * 1000 });
 
   // Ao abrir: recomeça limpo, e depois traz o rascunho salvo (uma vez).
   useEffect(() => {
@@ -197,16 +203,19 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
             ) : null}
 
             {etapa === "adaptacoes" ? (
-              <EscolhaDeAdaptacoes
-                catalogo={catalogo.data}
-                perfil={perfil.data}
-                escolha={escolha}
-                aoMudar={(proxima) => {
-                  setEscolha(proxima);
-                  setAceita(false);
-                  setSujo(true);
-                }}
-              />
+              <>
+                <EntrevistaOferecida adaptacoes={dadosDaVaga.data?.entrevistaAdaptacoes} observacao={dadosDaVaga.data?.entrevistaObservacao} />
+                <EscolhaDeAdaptacoes
+                  catalogo={catalogo.data}
+                  perfil={perfil.data}
+                  escolha={escolha}
+                  aoMudar={(proxima) => {
+                    setEscolha(proxima);
+                    setAceita(false);
+                    setSujo(true);
+                  }}
+                />
+              </>
             ) : null}
 
             {etapa === "revisao" ? (

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Briefcase, Trash2 } from "lucide-react";
+import { BadgeCheck, Briefcase, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,8 @@ import {
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
+import { VerificarMapaFisicoDialog } from "@/components/admin/VerificarMapaFisicoDialog";
+import { resumoDoMapa, textoDoResumo } from "@/lib/mapaFisicoAdmin";
 import { useSessao } from "@/hooks/useSessao";
 import {
   alterarStatusVaga,
@@ -46,6 +48,7 @@ export function VagasTabela() {
 
   const [pagina, setPagina] = useState(1);
   const [alvo, setAlvo] = useState<VagaAdmin | null>(null);
+  const [mapaId, setMapaId] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "vagas", pagina],
@@ -120,7 +123,10 @@ export function VagasTabela() {
         <TableBody>
           {vagas.map((vaga) => (
             <TableRow key={vaga.id}>
-              <TableCell className="font-medium">{vaga.titulo}</TableCell>
+              <TableCell className="font-medium">
+                {vaga.titulo}
+                <span className="block text-xs font-normal text-muted-foreground">{textoDoResumo(resumoDoMapa(vaga.acessibilidadeFisica))}</span>
+              </TableCell>
               <TableCell>
                 {[vaga.cidade, vaga.estado].filter(Boolean).join("/") || vaga.modalidade || "—"}
               </TableCell>
@@ -147,6 +153,16 @@ export function VagasTabela() {
                 </Select>
               </TableCell>
               <TableCell className="text-right">
+                <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() => setMapaId(vaga.id)}
+                  aria-label={`Verificar o mapa de acessibilidade física da vaga ${vaga.titulo}`}
+                >
+                  <BadgeCheck className="size-4" aria-hidden="true" /> Mapa físico
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -155,6 +171,7 @@ export function VagasTabela() {
                 >
                   <Trash2 className="size-4" aria-hidden="true" /> Remover
                 </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
@@ -167,6 +184,8 @@ export function VagasTabela() {
         total={data?.total ?? 0}
         onPaginaChange={setPagina}
       />
+
+      <VerificarMapaFisicoDialog vaga={vagas.find((v) => v.id === mapaId) ?? null} aoFechar={() => setMapaId(null)} />
 
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}

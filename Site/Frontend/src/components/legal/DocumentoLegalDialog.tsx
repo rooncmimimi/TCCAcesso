@@ -80,7 +80,9 @@ export function DocumentoLegalDialog({
 }
 
 /** Corpo do documento, compartilhado entre o diálogo e a página inteira. */
-export function CorpoDocumento({ doc }: { doc: DocumentoLegal }) {
+export function CorpoDocumento({ doc, nivelDasSecoes = 3 }: { doc: DocumentoLegal; /** 3 dentro do diálogo (o título dele é h2); 2 na página inteira (o título é h1). */ nivelDasSecoes?: 2 | 3 }) {
+  const TituloDaSecao = nivelDasSecoes === 2 ? "h2" : "h3";
+
   return (
     <>
       {CONTEUDO_PENDENTE && (
@@ -100,7 +102,7 @@ export function CorpoDocumento({ doc }: { doc: DocumentoLegal }) {
       <div className="space-y-6">
         {doc.secoes.map((secao) => (
           <section key={secao.titulo}>
-            <h3 className="mb-2 text-base font-bold">{secao.titulo}</h3>
+            <TituloDaSecao className="mb-2 text-base font-bold">{secao.titulo}</TituloDaSecao>
             <div className="space-y-2">
               {secao.paragrafos.map((paragrafo) => (
                 <p key={paragrafo} className="text-sm leading-relaxed text-muted-foreground">

@@ -69,7 +69,7 @@ export const es: Record<ChaveDeTexto, string> = {
 
   // Login
   "auth.pularConteudo": "Saltar al contenido principal",
-  "auth.voltarPaginaInicial": "Volver a la página de inicio",
+  "auth.voltarPaginaInicial": "ACESSO, volver a la página de inicio",
   "auth.acessibilidade": "Accesibilidad",
   "auth.configAcessibilidade": "Configuración de accesibilidad",
   "auth.continuarGoogle": "Continuar con Google",

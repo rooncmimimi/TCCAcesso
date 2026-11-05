@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BotoesCurriculo } from "@/components/perfil/BotoesCurriculo";
+import { AdaptacoesPedidasEmpresa } from "@/components/candidatura/AdaptacoesPedidasEmpresa";
 import { candidaturasService } from "@/services/dashboard.service";
+import type { AdaptacoesDaEmpresa } from "@/types/adaptacoes";
 import type { StatusCandidatura, Vaga } from "@/types";
 
 const OPCOES_STATUS: StatusCandidatura[] = ["pendente", "em_analise", "aprovada", "rejeitada"];
@@ -108,6 +110,13 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                       </SelectContent>
                     </Select>
                   </div>
+                  {candidatura.adaptacoes ? (
+                    <AdaptacoesPedidasEmpresa
+                      candidaturaId={candidatura.id}
+                      nome={candidatura.candidato?.usuario?.nome ?? "candidato"}
+                      adaptacoes={candidatura.adaptacoes as AdaptacoesDaEmpresa}
+                    />
+                  ) : null}
                 </li>
               ))}
             </ul>

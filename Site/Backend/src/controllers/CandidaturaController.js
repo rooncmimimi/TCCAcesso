@@ -1,8 +1,11 @@
 import CandidaturaService from "../services/CandidaturaService.js";
+import CandidaturaAdaptacaoService from "../services/CandidaturaAdaptacaoService.js";
+import CandidaturaRascunhoService from "../services/CandidaturaRascunhoService.js";
 
 /**
- * Candidaturas. Candidatar-se e a lista da empresa ficam em `/vagas/:vagaId/candidaturas`; as
- * minhas, o detalhe, o status e o cancelamento, em `/candidaturas`.
+ * Candidaturas. Candidatar-se, a prévia de privacidade, o rascunho e a lista da empresa ficam em
+ * `/vagas/:vagaId/...`; as minhas, o detalhe, o status, o cancelamento e as adaptações
+ * autorizadas, em `/candidaturas`.
  */
 class CandidaturaController {
     async criar(req, res, next) {
@@ -10,10 +13,99 @@ class CandidaturaController {
             const candidatura = await CandidaturaService.criar(
                 req.params.vagaId,
                 req.body.mensagem,
-                req.user
+                req.user,
+                { compartilhar: req.body.compartilhar, aceita: req.body.aceita }
             );
 
             return res.status(201).json({ sucesso: true, candidatura });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async previa(req, res, next) {
+        try {
+            const previa = await CandidaturaAdaptacaoService.montarPrevia(
+                req.params.vagaId,
+                req.body.compartilhar ?? {},
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, previa });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async obterRascunho(req, res, next) {
+        try {
+            const rascunho = await CandidaturaRascunhoService.obter(req.params.vagaId, req.user);
+
+            return res.status(200).json({ sucesso: true, rascunho });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async salvarRascunho(req, res, next) {
+        try {
+            const rascunho = await CandidaturaRascunhoService.salvar(req.params.vagaId, req.body, req.user);
+
+            return res.status(200).json({ sucesso: true, rascunho });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async descartarRascunho(req, res, next) {
+        try {
+            const resultado = await CandidaturaRascunhoService.descartar(req.params.vagaId, req.user);
+
+            return res.status(200).json({ sucesso: true, ...resultado });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async meusRascunhos(req, res, next) {
+        try {
+            const rascunhos = await CandidaturaRascunhoService.listar(req.user);
+
+            return res.status(200).json({ sucesso: true, rascunhos });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async editarAdaptacoes(req, res, next) {
+        try {
+            const adaptacoes = await CandidaturaAdaptacaoService.editar(
+                req.params.id,
+                { ...(req.body.compartilhar ?? {}), aceita: req.body.aceita },
+                req.user
+            );
+
+            return res.status(200).json({ sucesso: true, adaptacoes });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async retirarAdaptacoes(req, res, next) {
+        try {
+            const adaptacoes = await CandidaturaAdaptacaoService.retirar(req.params.id, req.user);
+
+            return res.status(200).json({ sucesso: true, adaptacoes });
+        } catch (erro) {
+            return next(erro);
+        }
+    }
+
+    async responderAdaptacoes(req, res, next) {
+        try {
+            const adaptacoes = await CandidaturaAdaptacaoService.responder(req.params.id, req.body, req.user);
+
+            return res.status(200).json({ sucesso: true, adaptacoes });
         } catch (erro) {
             return next(erro);
         }

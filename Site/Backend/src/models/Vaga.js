@@ -76,6 +76,43 @@ const Vaga = sequelize.define(
             defaultValue: []
         },
 
+        // Bloco 3 da acessibilidade: tudo escrito pela empresa sobre a vaga, tudo opcional. O que não
+        // foi informado não existe aqui (a tela diz "a empresa não informou"). Ver `utils/ambienteDeTrabalho.js`.
+        entrevistaAdaptacoes: {
+            type: DataTypes.ARRAY(DataTypes.TEXT),
+            allowNull: false,
+            defaultValue: []
+        },
+
+        entrevistaObservacao: {
+            type: DataTypes.STRING(500)
+        },
+
+        ambienteSensorial: {
+            type: DataTypes.JSONB,
+            allowNull: false,
+            defaultValue: {}
+        },
+
+        // Cada item guarda `origem`: "declarado" (a empresa) ou "verificado" (só a moderação marca).
+        acessibilidadeFisica: {
+            type: DataTypes.JSONB,
+            allowNull: false,
+            defaultValue: {}
+        },
+
+        atividades: {
+            type: DataTypes.TEXT
+        },
+
+        requisitosDesejaveis: {
+            type: DataTypes.TEXT
+        },
+
+        etapasSelecao: {
+            type: DataTypes.TEXT
+        },
+
         status: {
             type: DataTypes.ENUM("aberta", "pausada", "encerrada"),
             allowNull: false,

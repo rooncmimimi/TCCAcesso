@@ -19,14 +19,44 @@ import { createContext } from "react";
  */
 export type EscolhaVoz = "accepted" | "declined" | null;
 
+/** Evento `boundary` da `speechSynthesis`, reduzido ao que o Site usa. */
+export type LimiteDeFala = {
+  /** Posição, no texto falado, onde começa a palavra ou frase que a voz acabou de alcançar. */
+  charIndex: number;
+  charLength?: number;
+  /** `"word"` ou `"sentence"`. Nem toda voz informa, e várias só emitem um dos dois. */
+  name: string;
+};
+
+export type OpcoesFala = {
+  /** Corta o que estiver sendo falado antes de começar. Padrão: `true`. */
+  interrupt?: boolean;
+  aoIniciar?: () => void;
+  /**
+   * Chamado a cada palavra (ou frase) alcançada. Depende do navegador e da voz: várias vozes de
+   * rede não emitem este evento, e quem usa precisa de um plano B (`useLeituraDestacada`).
+   */
+  aoLimite?: (limite: LimiteDeFala) => void;
+  /** Fim natural, erro ou cancelamento. Cancelar por uma fala nova também chama. */
+  aoTerminar?: (motivo: "fim" | "erro" | "cancelada") => void;
+};
+
 export type VozContextValue = {
   suportado: boolean;
   falando: boolean;
+  /** Fala em andamento que foi pausada com `pausar`. */
+  pausado: boolean;
   /** Registro de "já perguntou?" do primeiro acesso: não usar para decidir se a voz está ativa (use `preferencias.screenReader`). */
   escolha: EscolhaVoz;
   perguntouNestaSessao: boolean;
-  falar: (text: string, opts?: { interrupt?: boolean }) => void;
+  /**
+   * Fala `text`. O texto é aparado (`trim`) antes de falar, e `charIndex` de `aoLimite` vale para
+   * o texto **já aparado**: quem sincroniza destaque deve passar um texto que já esteja aparado.
+   */
+  falar: (text: string, opts?: OpcoesFala) => void;
   parar: () => void;
+  pausar: () => void;
+  retomar: () => void;
   definirEscolha: (choice: Exclude<EscolhaVoz, null>) => void;
   limparEscolha: () => void;
 };

@@ -33,6 +33,7 @@ import { formatarTempoRelativo } from "@/utils/formatacao";
 import type { PostagemCompleta } from "@/types";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
+import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { CompartilharDialog } from "./CompartilharDialog";
 import { GaleriaAnexos } from "./GaleriaAnexos";
 import { SecaoComentarios } from "./SecaoComentarios";
@@ -213,7 +214,9 @@ export function PostagemCard({
             </div>
           ) : (
             <>
-              <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">{traducao.texto("conteudo")}</p>
+              <TextoOuvivel rotulo="Ouvir a publicação" className="mt-4">
+                <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{traducao.texto("conteudo")}</p>
+              </TextoOuvivel>
               {postagem.conteudo.trim() && <ControleDeTraducao traducao={traducao} conteudo="publicacao" />}
             </>
           )}

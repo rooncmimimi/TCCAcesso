@@ -9,6 +9,17 @@ import {
 
 import { AcessibilidadeProvider } from "@/contexts/AcessibilidadeProvider";
 import { VozProvider } from "@/contexts/VozProvider";
+import { LeituraDestacadaProvider } from "@/contexts/LeituraDestacadaProvider";
+import { ControleDeLeitura } from "@/components/acessibilidade/ControleDeLeitura";
+import { FerramentasDeLeitura } from "@/components/acessibilidade/FerramentasDeLeitura";
+import { ReguaDeLeitura } from "@/components/acessibilidade/ReguaDeLeitura";
+import { BarraDeVarredura } from "@/components/acessibilidade/BarraDeVarredura";
+import { AjudaDeAtalhos } from "@/components/acessibilidade/AjudaDeAtalhos";
+import { AvisoDeCliqueIgnorado } from "@/components/acessibilidade/AvisoDeCliqueIgnorado";
+import { ComandosDeVoz } from "@/components/acessibilidade/ComandosDeVoz";
+import { useGuardaDeAcionamentos } from "@/hooks/useGuardaDeAcionamentos";
+import { useAtalhosDeTeclado } from "@/hooks/useAtalhosDeTeclado";
+import { useCursorDeLeitura } from "@/hooks/useCursorDeLeitura";
 import { useLeituraAutomatica } from "@/hooks/useLeituraAutomatica";
 import { useIdioma } from "@/hooks/useIdioma";
 import { SessaoProvider } from "@/contexts/SessaoProvider";
@@ -101,12 +112,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function AppFrame() {
   useLeituraAutomatica();
+  useCursorDeLeitura();
+  useGuardaDeAcionamentos();
+  useAtalhosDeTeclado();
 
   return (
     <>
       <HeadContent />
       <Outlet />
       <VLibras />
+      <FerramentasDeLeitura />
+      <ControleDeLeitura />
+      <ReguaDeLeitura />
+      <BarraDeVarredura />
+      <AjudaDeAtalhos />
+      <AvisoDeCliqueIgnorado />
+      <ComandosDeVoz />
       <Toaster />
     </>
   );
@@ -119,11 +140,13 @@ function ComponenteRaiz() {
     <QueryClientProvider client={queryClient}>
       <AcessibilidadeProvider>
         <VozProvider>
-          <SessaoProvider>
-            <IdiomaProvider>
-              <AppFrame />
-            </IdiomaProvider>
-          </SessaoProvider>
+          <LeituraDestacadaProvider>
+            <SessaoProvider>
+              <IdiomaProvider>
+                <AppFrame />
+              </IdiomaProvider>
+            </SessaoProvider>
+          </LeituraDestacadaProvider>
         </VozProvider>
       </AcessibilidadeProvider>
     </QueryClientProvider>

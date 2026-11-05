@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
 import type { TextosCadastro } from "@/components/cadastro/idioma";
@@ -288,6 +289,7 @@ export function EtapaCurriculoPerfil({
             onChange={(e) => setBiografia(e.target.value)}
             aria-describedby={descricao("biografia", true, false)}
           />
+          <DitadoParaCampo campoId="biografia" />
         </Campo>
       </div>
 

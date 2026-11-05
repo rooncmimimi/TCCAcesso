@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { EstadoSelect } from "@/components/cadastro/EstadoSelect";
 import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
@@ -34,6 +35,12 @@ import { CapaUploader } from "./CapaUploader";
 import { FotoUploader } from "./FotoUploader";
 import { DicaDimensaoImagem } from "./DicaDimensaoImagem";
 import type { Candidato } from "@/types";
+import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
+import { AvisoDeRascunho } from "@/components/acessibilidade/AvisoDeRascunho";
+import { useRascunhoDeFormulario } from "@/hooks/useRascunhoDeFormulario";
+
+/** Os únicos campos deste formulário que entram no rascunho automático. */
+const CAMPOS_DO_RASCUNHO = ["tituloProfissional", "biografia"] as const;
 
 /** Edição do perfil pessoal: dados de conta (todos os tipos) + dados de candidato (quando aplicável). */
 export function EditarPerfilDialog({
@@ -50,6 +57,12 @@ export function EditarPerfilDialog({
   const [pais, setPais] = useState(candidato?.pais ?? "");
   const { usuario, atualizar } = useSessao();
   const queryClient = useQueryClient();
+  // Rascunho só do texto longo (nunca nome, telefone, datas nem nada pessoal): ver `lib/rascunhoDeFormulario.ts`.
+  const rascunho = useRascunhoDeFormulario({
+    chave: `perfil:${usuario?.id ?? "anonimo"}`,
+    campos: CAMPOS_DO_RASCUNHO,
+    ativo: aberto,
+  });
 
   // Reabrir o diálogo sempre reflete os dados mais recentes do candidato.
   useEffect(() => {
@@ -98,6 +111,7 @@ export function EditarPerfilDialog({
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("Perfil atualizado.");
+      rascunho.limpar();
       setAberto(false);
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil.")),
@@ -190,7 +204,8 @@ export function EditarPerfilDialog({
           </div>
         </div>
 
-        <form onSubmit={enviar} className="space-y-4 border-t pt-4">
+        <form ref={rascunho.ref} onSubmit={enviar} className="space-y-4 border-t pt-4">
+          <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="space-y-2">
             <Label htmlFor="nome">Nome</Label>
             <Input id="nome" name="nome" required minLength={3} maxLength={150} defaultValue={usuario?.nome ?? ""} />
@@ -204,7 +219,10 @@ export function EditarPerfilDialog({
           {candidato ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="tituloProfissional">Título profissional</Label>
+                <div className="flex flex-wrap items-center justify-between gap-x-2">
+                  <Label htmlFor="tituloProfissional">Título profissional</Label>
+                  <DicaDeCampoBotao dica="tituloProfissional" nomeDoCampo="Título profissional" />
+                </div>
                 <Input
                   id="tituloProfissional"
                   name="tituloProfissional"
@@ -215,7 +233,10 @@ export function EditarPerfilDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="biografia">Sobre mim</Label>
+                <div className="flex flex-wrap items-center justify-between gap-x-2">
+                  <Label htmlFor="biografia">Sobre mim</Label>
+                  <DicaDeCampoBotao dica="biografia" nomeDoCampo="Sobre mim" />
+                </div>
                 <Textarea
                   id="biografia"
                   name="biografia"
@@ -223,6 +244,7 @@ export function EditarPerfilDialog({
                   maxLength={2000}
                   defaultValue={candidato.biografia ?? ""}
                 />
+                <DitadoParaCampo campoId="biografia" />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

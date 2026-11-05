@@ -9,6 +9,8 @@ import type { Conversa, Mensagem } from "@/lib/tiposApi";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { LinkAutor } from "@/components/perfil/LinkAutor";
 import { BolhaMensagem } from "./BolhaMensagem";
+import { FrasesProntas } from "./FrasesProntas";
+import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { fotoParticipante, nomeParticipante, participanteOposto } from "./utils";
 
 type JanelaConversaProps = {
@@ -128,6 +130,8 @@ export function JanelaConversa({
           {avisoSemParticipante}
         </p>
       ) : (
+        <>
+        <FrasesProntas aoEscolher={(frase) => setTexto((atual) => (atual.trim() ? `${atual.trimEnd()} ${frase}` : frase))} />
         <form onSubmit={enviarMensagem} className="flex items-end gap-2 border-t border-border p-3">
           <label htmlFor="mensagem-texto" className="sr-only">
             Escreva uma mensagem
@@ -152,6 +156,10 @@ export function JanelaConversa({
             <Send aria-hidden="true" />
           </Button>
         </form>
+        <div className="max-h-64 overflow-y-auto px-3 pb-3">
+          <DitadoParaCampo campoId="mensagem-texto" />
+        </div>
+        </>
       )}
     </section>
   );

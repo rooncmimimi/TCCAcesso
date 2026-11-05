@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
+import { AvisoDeRascunho } from "@/components/acessibilidade/AvisoDeRascunho";
+import { AvaliadorDeVagaPainel } from "@/components/vagas/AvaliadorDeVagaPainel";
+import { SecaoAmbienteDaVaga } from "@/components/vagas/SecaoAmbienteDaVaga";
+import { formularioVazio, payloadDoAmbiente, type FormularioDoAmbiente } from "@/lib/ambienteDaVagaForm";
+import { lerDadosParaAvaliar } from "@/lib/dadosDoFormularioDaVaga";
+import { useRascunhoDeFormulario } from "@/hooks/useRascunhoDeFormulario";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
@@ -32,6 +39,9 @@ import {
   ROTULO_RECURSO_ACESSIBILIDADE,
 } from "./constantesVaga";
 
+/** Os únicos campos deste formulário que entram no rascunho automático. */
+const CAMPOS_DO_RASCUNHO = ["titulo", "descricao", "requisitos", "requisitosDesejaveis", "atividades", "etapasSelecao", "beneficios", "acessibilidade"] as const;
+
 /**
  * Publicação real de vaga pela empresa autenticada (POST /vagas).
  * Os campos e limites espelham o validador do backend.
@@ -43,12 +53,18 @@ export function NovaVagaDialog() {
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
   const queryClient = useQueryClient();
+  // Rascunho só dos textos da vaga (nada pessoal): ver `lib/rascunhoDeFormulario.ts`.
+  const rascunho = useRascunhoDeFormulario({ chave: "vaga:nova", campos: CAMPOS_DO_RASCUNHO, ativo: aberto });
+  const formRef = useRef<HTMLFormElement | null>(null);
+  // Ambiente de trabalho e entrevista (Bloco 3): tudo opcional, começa em "não informado".
+  const [ambiente, setAmbiente] = useState<FormularioDoAmbiente>(formularioVazio());
 
   // Cada "Nova vaga" começa em branco, mesmo que o diálogo já tenha sido aberto antes.
   useEffect(() => {
     if (aberto) {
       setCidade("");
       setEstado("");
+      setAmbiente(formularioVazio());
     }
   }, [aberto]);
 
@@ -56,6 +72,7 @@ export function NovaVagaDialog() {
     mutationFn: (payload: Record<string, unknown>) => vagasService.criar(payload),
     onSuccess: (vaga) => {
       toast.success(`Vaga "${vaga.titulo}" publicada com sucesso.`);
+      rascunho.limpar();
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-empresa"] });
@@ -81,6 +98,10 @@ export function NovaVagaDialog() {
       estado: texto("estado").toUpperCase() || null,
       cargaHoraria: texto("cargaHoraria") || null,
       acessibilidade: texto("acessibilidade") || null,
+      atividades: texto("atividades") || null,
+      requisitosDesejaveis: texto("requisitosDesejaveis") || null,
+      etapasSelecao: texto("etapasSelecao") || null,
+      ...payloadDoAmbiente(ambiente),
       publicoAlvo,
       recursosAcessibilidade,
     });
@@ -108,26 +129,68 @@ export function NovaVagaDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={enviar} className="space-y-4">
+        <form
+          ref={(el) => {
+            formRef.current = el;
+            rascunho.ref(el);
+          }}
+          onSubmit={enviar}
+          className="space-y-4"
+        >
+          <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="space-y-2">
             <Label htmlFor="titulo">Título da vaga</Label>
             <Input id="titulo" name="titulo" required minLength={5} maxLength={200} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descricao">Descrição</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="descricao">Descrição</Label>
+              <DicaDeCampoBotao dica="vagaDescricao" nomeDoCampo="Descrição da vaga" />
+            </div>
             <Textarea id="descricao" name="descricao" required minLength={20} rows={5} />
             <p className="text-xs text-muted-foreground">Mínimo de 20 caracteres.</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="requisitos">Requisitos</Label>
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="requisitos">Requisitos obrigatórios</Label>
+                <DicaDeCampoBotao dica="vagaRequisitos" nomeDoCampo="Requisitos" />
+              </div>
               <Textarea id="requisitos" name="requisitos" rows={3} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="beneficios">Benefícios</Label>
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="beneficios">Benefícios</Label>
+                <DicaDeCampoBotao dica="vagaBeneficios" nomeDoCampo="Benefícios" />
+              </div>
               <Textarea id="beneficios" name="beneficios" rows={3} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="atividades">Atividades (uma por linha)</Label>
+              <DicaDeCampoBotao dica="vagaAtividades" nomeDoCampo="Atividades" />
+            </div>
+            <Textarea id="atividades" name="atividades" rows={3} maxLength={4000} />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="requisitosDesejaveis">Requisitos desejáveis</Label>
+                <DicaDeCampoBotao dica="vagaRequisitosDesejaveis" nomeDoCampo="Requisitos desejáveis" />
+              </div>
+              <Textarea id="requisitosDesejaveis" name="requisitosDesejaveis" rows={3} maxLength={4000} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="etapasSelecao">Etapas da seleção</Label>
+                <DicaDeCampoBotao dica="vagaEtapas" nomeDoCampo="Etapas da seleção" />
+              </div>
+              <Textarea id="etapasSelecao" name="etapasSelecao" rows={3} maxLength={4000} />
             </div>
           </div>
 
@@ -237,7 +300,10 @@ export function NovaVagaDialog() {
           </fieldset>
 
           <div className="space-y-2">
-            <Label htmlFor="acessibilidade">Detalhes adicionais de acessibilidade</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="acessibilidade">Detalhes adicionais de acessibilidade</Label>
+              <DicaDeCampoBotao dica="vagaAcessibilidade" nomeDoCampo="Detalhes de acessibilidade" />
+            </div>
             <Textarea
               id="acessibilidade"
               name="acessibilidade"
@@ -245,6 +311,15 @@ export function NovaVagaDialog() {
               placeholder="Descreva qualquer recurso que não esteja na lista acima"
             />
           </div>
+
+          <details className="rounded-lg border border-border p-3">
+            <summary className="min-h-11 cursor-pointer text-sm font-bold text-primary">Ambiente de trabalho e entrevista (opcional)</summary>
+            <div className="mt-3">
+              <SecaoAmbienteDaVaga valor={ambiente} aoMudar={setAmbiente} />
+            </div>
+          </details>
+
+          <AvaliadorDeVagaPainel obterDados={() => lerDadosParaAvaliar(formRef.current, { ambiente, recursos: recursosAcessibilidade })} />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>

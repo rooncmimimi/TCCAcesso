@@ -118,7 +118,7 @@ function ConfirmarEmail() {
 
   return (
     <AutenticacaoLayout>
-        <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
+        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="mb-6 inline-flex">
           <Logo />
         </Link>
         <Card className="shadow-card">

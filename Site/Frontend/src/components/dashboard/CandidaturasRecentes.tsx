@@ -17,8 +17,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/StatusBadge";
+import { AdaptacoesDaMinhaCandidatura } from "@/components/candidatura/AdaptacoesDaMinhaCandidatura";
+import { RascunhosDeCandidatura } from "@/components/candidatura/RascunhosDeCandidatura";
 import { candidaturasService } from "@/services/dashboard.service";
 import type { Candidatura } from "@/types";
+import type { AdaptacoesDoCandidato } from "@/types/adaptacoes";
 
 /** Lista as candidaturas recentes do candidato, com opção de cancelamento. */
 export function CandidaturasRecentes() {
@@ -49,6 +52,7 @@ export function CandidaturasRecentes() {
         <CardTitle className="text-lg">Minhas candidaturas recentes</CardTitle>
       </CardHeader>
       <CardContent>
+        <RascunhosDeCandidatura />
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
             <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando candidaturas…
@@ -110,6 +114,15 @@ export function CandidaturasRecentes() {
                       </AlertDialog>
                     ) : null}
                   </div>
+                  {candidatura.adaptacoes && candidatura.vaga ? (
+                    <AdaptacoesDaMinhaCandidatura
+                      candidaturaId={candidatura.id}
+                      vagaId={candidatura.vaga.id}
+                      tituloDaVaga={candidatura.vaga.titulo}
+                      adaptacoes={candidatura.adaptacoes as AdaptacoesDoCandidato}
+                      podeAlterar={candidatura.status !== "cancelada" && candidatura.status !== "rejeitada"}
+                    />
+                  ) : null}
                 </li>
               ))}
             </ul>

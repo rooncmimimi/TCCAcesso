@@ -11,6 +11,7 @@ import { resolverPaginacao, montarResposta } from "../utils/paginacao.js";
 import { garantirDono, ehAdministrador } from "../utils/autorizacao.js";
 import {
     podeVerDadosPrivados,
+    podeVerDadosDaCandidatura,
     aplicarPrivacidadeCandidato
 } from "../utils/candidatoPrivacidade.js";
 import { gerarUrlAssinada } from "../utils/supabaseStorage.js";
@@ -170,8 +171,9 @@ class CandidatoService {
         }
 
         const autorizado = await podeVerDadosPrivados(candidato, solicitante);
+        const contatoLiberado = autorizado || (await podeVerDadosDaCandidatura(candidato, solicitante));
 
-        return aplicarPrivacidadeCandidato(candidato, autorizado);
+        return aplicarPrivacidadeCandidato(candidato, autorizado, { contatoLiberado });
     }
 
     /*
@@ -191,7 +193,9 @@ class CandidatoService {
             throw ErroApi.naoEncontrado("Candidato não encontrado.");
         }
 
-        const autorizado = await podeVerDadosPrivados(candidato, solicitante);
+        // Currículo: a própria pessoa, o administrador ou a empresa dona da vaga com candidatura ATIVA
+        // (nem cancelada nem rejeitada). Ter uma candidatura qualquer, em qualquer vaga, não basta.
+        const autorizado = await podeVerDadosDaCandidatura(candidato, solicitante);
 
         if (!autorizado) {
             throw ErroApi.acessoNegado(

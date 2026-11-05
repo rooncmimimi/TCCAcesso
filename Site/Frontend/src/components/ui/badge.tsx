@@ -28,7 +28,9 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
+  // `data-variant` deixa o modo para daltonismo (globals.css) reforçar erro e aviso com um símbolo,
+  // sem depender só da cor.
+  return <div data-variant={variant ?? "default"} className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 export { Badge, badgeVariants };

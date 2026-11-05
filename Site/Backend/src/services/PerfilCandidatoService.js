@@ -14,6 +14,7 @@ import {
 } from "../utils/autorizacao.js";
 import {
     podeVerDadosPrivados,
+    podeVerDadosDaCandidatura,
     aplicarPrivacidadeCandidato
 } from "../utils/candidatoPrivacidade.js";
 import BloqueioService from "./BloqueioService.js";
@@ -142,8 +143,9 @@ class PerfilCandidatoService {
         // autenticado receberia o candidato inteiro (CPF, currículo, endereço, necessidades de
         // acessibilidade).
         const autorizado = await podeVerDadosPrivados(candidato, solicitante);
+        const contatoLiberado = autorizado || (await podeVerDadosDaCandidatura(candidato, solicitante));
 
-        return aplicarPrivacidadeCandidato(candidato, autorizado);
+        return aplicarPrivacidadeCandidato(candidato, autorizado, { contatoLiberado });
     }
 
     /**

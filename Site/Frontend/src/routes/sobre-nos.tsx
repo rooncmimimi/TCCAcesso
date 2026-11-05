@@ -169,13 +169,13 @@ function SobreNos() {
                   <h2 id="contato" className="text-2xl font-extrabold">
                     Fale com a gente
                   </h2>
-                  <p className="mt-2 flex items-center gap-2 text-primary-foreground/90">
+                  <p className="mt-2 flex items-center gap-2 text-primary-foreground">
                     <Mail className="size-4 shrink-0" aria-hidden="true" />
                     <a href="mailto:projetoacessoinclusivo@gmail.com" className="underline">
                       projetoacessoinclusivo@gmail.com
                     </a>
                   </p>
-                  <p className="mt-1 flex items-center gap-2 text-primary-foreground/90">
+                  <p className="mt-1 flex items-center gap-2 text-primary-foreground">
                     <MessageCircleHeart className="size-4 shrink-0" aria-hidden="true" />
                     Dúvidas, sugestões e denúncias são bem-vindas a qualquer momento.
                   </p>

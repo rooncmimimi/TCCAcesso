@@ -142,7 +142,7 @@ function CadastroCandidato() {
       {/* Quebra em duas linhas quando logo + idioma + acessibilidade não cabem (celular estreito),
           em vez de espremer e cortar o último botão. */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
           <Logo />
         </Link>
         <div className="flex flex-1 items-center justify-end gap-2">

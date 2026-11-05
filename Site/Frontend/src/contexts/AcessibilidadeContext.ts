@@ -27,6 +27,60 @@ export type PreferenciasAcessibilidade = {
   voiceConsent: boolean | null;
   speechRate: number;
   vlibras: boolean;
+  /**
+   * Cursor de leitura: com a leitura por voz ligada, ↑ e ↓ percorrem o conteúdo da página, bloco a
+   * bloco (`hooks/useCursorDeLeitura.ts`). Fica só no navegador, como as demais preferências sem
+   * campo no backend; desligado por padrão porque as setas também rolam a página.
+   */
+  arrowReading: boolean;
+
+  // Bloco 1 da acessibilidade avançada. Todas ficam só no navegador (sem coluna no backend).
+
+  /** Destaca a palavra que a voz está dizendo (`hooks/useLeituraDestacada.ts`). */
+  wordHighlight: boolean;
+  /**
+   * Com uma voz que não informa as palavras, estima a palavra dentro de cada frase (aproximado). Desligado,
+   * esse caso destaca só a frase. Não muda nada com vozes que informam as palavras.
+   */
+  estimatedHighlight: boolean;
+  /** Régua de leitura: faixa clara que acompanha o mouse ou o foco, com o resto da tela escurecido. */
+  readingRuler: boolean;
+  rulerHeight: number; // px, 24 – 160
+  rulerDim: number; // 0.2 – 0.85: quanto o resto da tela escurece
+  /** Avisos (toasts) ficam na tela até a pessoa fechar. */
+  persistentToasts: boolean;
+  /** Esconde elementos secundários (colunas laterais, rodapé de suporte). */
+  focusMode: boolean;
+  /** Modo leitura: coluna estreita, texto à esquerda, mais respiro e fundo à escolha. */
+  readingMode: boolean;
+  readingBg: "padrao" | "creme" | "escuro";
+  readingFont: "padrao" | "hiperlegivel" | "sem-serifa" | "serifada";
+  /** Cores à escolha da pessoa, sempre em `#rrggbb`. */
+  customColors: boolean;
+  colorText: string;
+  colorBg: string;
+  colorLink: string;
+  colorFocus: string;
+  /** Paleta que não depende de vermelho x verde, com links sublinhados e estados com ícone. */
+  colorBlind: boolean;
+
+  // Bloco 4 (motricidade e comunicação). Também ficam só no navegador, sem coluna no backend.
+
+  /** Varredura com um botão: a barra de controle aparece e percorre os controles da página. */
+  scanning: boolean;
+  /** Segundos em cada controle durante a varredura automática. */
+  scanSpeed: number; // 0.6 – 5
+  /** Tecla extra que seleciona o controle destacado (além de Espaço e Enter). Vazio = nenhuma. */
+  scanKey: string;
+  /** Varre primeiro por grupos (cabeçalho, menu, cada seção) e só depois pelos controles do grupo. */
+  scanGroups: boolean;
+  /** Ignora um segundo acionamento do mesmo controle logo após o primeiro (mãos com tremor). */
+  tremorGuard: boolean;
+  tremorDelay: number; // ms, 300 – 2000
+  /** Tamanho mínimo da área de toque dos controles. */
+  targetSize: "padrao" | "grande" | "maior";
+  /** Atalhos de teclado em sequência (G e depois uma letra). Podem ser desligados. */
+  shortcuts: boolean;
 };
 
 export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
@@ -44,6 +98,31 @@ export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
   voiceConsent: null,
   speechRate: 1,
   vlibras: true,
+  arrowReading: false,
+  wordHighlight: true,
+  estimatedHighlight: true,
+  readingRuler: false,
+  rulerHeight: 64,
+  rulerDim: 0.6,
+  persistentToasts: false,
+  focusMode: false,
+  readingMode: false,
+  readingBg: "padrao",
+  readingFont: "padrao",
+  customColors: false,
+  colorText: "#111111",
+  colorBg: "#ffffff",
+  colorLink: "#0b3d91",
+  colorFocus: "#c2410c",
+  colorBlind: false,
+  scanning: false,
+  scanSpeed: 1.5,
+  scanKey: "",
+  scanGroups: true,
+  tremorGuard: false,
+  tremorDelay: 700,
+  targetSize: "padrao",
+  shortcuts: true,
 };
 
 export const CHAVE_ESCOLHA_VOZ = "acesso:voice-choice";

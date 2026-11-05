@@ -10,6 +10,6 @@
  * pode mostrar a anterior, e ela foi, de fato, o texto exibido. Um teste do Site confere que as duas
  * pontas concordam.
  */
-export const VERSAO_DOCUMENTOS_VIGENTE = "2026-11-02";
+export const VERSAO_DOCUMENTOS_VIGENTE = "2026-11-04";
 
-export const VERSOES_DE_DOCUMENTOS_CONHECIDAS = ["2026-10-13", VERSAO_DOCUMENTOS_VIGENTE];
+export const VERSOES_DE_DOCUMENTOS_CONHECIDAS = ["2026-10-13", "2026-11-02", VERSAO_DOCUMENTOS_VIGENTE];

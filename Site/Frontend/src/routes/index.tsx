@@ -300,7 +300,7 @@ function Inicio() {
             <CardContent className="grid items-center gap-6 p-8 md:grid-cols-[minmax(0,1fr)_auto]">
               <div className="min-w-0">
                 <h2 className="text-3xl font-extrabold">Comece pela sua acessibilidade</h2>
-                <p className="mt-2 text-primary-foreground/85">
+                <p className="mt-2 text-primary-foreground">
                   Ao criar sua conta, você configura a experiência do jeito que funciona para você —
                   e vê cada mudança em tempo real.
                 </p>

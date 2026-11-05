@@ -92,6 +92,7 @@ export function BarraBusca() {
       <PopoverTrigger asChild>
         <button
           type="button"
+          data-busca-global
           aria-label="Pesquisar pessoas, empresas ou vagas no ACESSO"
           className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary md:w-28 md:justify-start md:px-4 lg:w-64"
         >

@@ -36,6 +36,11 @@ import Mensagem from "./Mensagem.js";
 import Notificacao from "./Notificacao.js";
 import Denuncia from "./Denuncia.js";
 import RegistroAuditoria from "./RegistroAuditoria.js";
+import PerfilAdaptacao from "./PerfilAdaptacao.js";
+import PreferenciaComunicacao from "./PreferenciaComunicacao.js";
+import CandidaturaAdaptacao from "./CandidaturaAdaptacao.js";
+import CandidaturaRascunho from "./CandidaturaRascunho.js";
+import VagaMidia from "./VagaMidia.js";
 
 /**
  * Registro central dos models e das associações.
@@ -131,6 +136,27 @@ Candidatura.belongsTo(Vaga, { foreignKey: "vagaId", as: "vaga" });
 
 Candidato.hasMany(Candidatura, { foreignKey: "candidatoId", as: "candidaturas" });
 Candidatura.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
+
+/* Adaptações e rascunhos (Bloco 2 de acessibilidade): sempre ligados ao candidato dono */
+
+Candidato.hasOne(PerfilAdaptacao, { foreignKey: "candidatoId", as: "perfilAdaptacao" });
+PerfilAdaptacao.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
+
+Candidato.hasOne(PreferenciaComunicacao, { foreignKey: "candidatoId", as: "preferenciaComunicacao" });
+PreferenciaComunicacao.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
+
+Candidatura.hasOne(CandidaturaAdaptacao, { foreignKey: "candidaturaId", as: "adaptacoes" });
+CandidaturaAdaptacao.belongsTo(Candidatura, { foreignKey: "candidaturaId", as: "candidatura" });
+
+Candidato.hasMany(CandidaturaRascunho, { foreignKey: "candidatoId", as: "rascunhos" });
+CandidaturaRascunho.belongsTo(Candidato, { foreignKey: "candidatoId", as: "candidato" });
+Vaga.hasMany(CandidaturaRascunho, { foreignKey: "vagaId", as: "rascunhos" });
+CandidaturaRascunho.belongsTo(Vaga, { foreignKey: "vagaId", as: "vaga" });
+
+/* Vídeo da vaga em Libras (Bloco 3): um por vaga, apagado junto com ela */
+
+Vaga.hasOne(VagaMidia, { foreignKey: "vagaId", as: "midia" });
+VagaMidia.belongsTo(Vaga, { foreignKey: "vagaId", as: "vaga" });
 
 /* Favoritos e empresas seguidas (N:N) */
 
@@ -293,5 +319,10 @@ export {
     Mensagem,
     Notificacao,
     Denuncia,
-    RegistroAuditoria
+    RegistroAuditoria,
+    PerfilAdaptacao,
+    PreferenciaComunicacao,
+    CandidaturaAdaptacao,
+    CandidaturaRascunho,
+    VagaMidia
 };

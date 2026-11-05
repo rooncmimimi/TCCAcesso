@@ -12,21 +12,28 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BoasVindasRouteImport } from './routes/boas-vindas'
+import { Route as CompararRouteImport } from './routes/comparar'
+import { Route as ComunicacaoRouteImport } from './routes/comunicacao'
 import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
 import { Route as ContaComprometidaRouteImport } from './routes/conta-comprometida'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DescobrirRouteImport } from './routes/descobrir'
+import { Route as DiagnosticoDeVozRouteImport } from './routes/diagnostico-de-voz'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as FaleConoscoRouteImport } from './routes/fale-conosco'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as MensagensRouteImport } from './routes/mensagens'
+import { Route as MinhaAcessibilidadeRouteImport } from './routes/minha-acessibilidade'
 import { Route as MinhaAtividadeRouteImport } from './routes/minha-atividade'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
+import { Route as ObjetivosRouteImport } from './routes/objetivos'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as ProfissoesRouteImport } from './routes/profissoes'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as RetornoGoogleRouteImport } from './routes/retorno-google'
+import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as SobreNosRouteImport } from './routes/sobre-nos'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VagasRouteImport } from './routes/vagas'
@@ -79,6 +86,16 @@ const BoasVindasRoute = BoasVindasRouteImport.update({
   path: '/boas-vindas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompararRoute = CompararRouteImport.update({
+  id: '/comparar',
+  path: '/comparar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComunicacaoRoute = ComunicacaoRouteImport.update({
+  id: '/comunicacao',
+  path: '/comunicacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConfirmarEmailRoute = ConfirmarEmailRouteImport.update({
   id: '/confirmar-email',
   path: '/confirmar-email',
@@ -97,6 +114,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const DescobrirRoute = DescobrirRouteImport.update({
   id: '/descobrir',
   path: '/descobrir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagnosticoDeVozRoute = DiagnosticoDeVozRouteImport.update({
+  id: '/diagnostico-de-voz',
+  path: '/diagnostico-de-voz',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntrarRoute = EntrarRouteImport.update({
@@ -119,6 +141,11 @@ const MensagensRoute = MensagensRouteImport.update({
   path: '/mensagens',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MinhaAcessibilidadeRoute = MinhaAcessibilidadeRouteImport.update({
+  id: '/minha-acessibilidade',
+  path: '/minha-acessibilidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MinhaAtividadeRoute = MinhaAtividadeRouteImport.update({
   id: '/minha-atividade',
   path: '/minha-atividade',
@@ -129,6 +156,11 @@ const NotificacoesRoute = NotificacoesRouteImport.update({
   path: '/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ObjetivosRoute = ObjetivosRouteImport.update({
+  id: '/objetivos',
+  path: '/objetivos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -137,6 +169,11 @@ const PerfilRoute = PerfilRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfissoesRoute = ProfissoesRouteImport.update({
+  id: '/profissoes',
+  path: '/profissoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
@@ -152,6 +189,11 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
 const RetornoGoogleRoute = RetornoGoogleRouteImport.update({
   id: '/retorno-google',
   path: '/retorno-google',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimuladorRoute = SimuladorRouteImport.update({
+  id: '/simulador',
+  path: '/simulador',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SobreNosRoute = SobreNosRouteImport.update({
@@ -344,21 +386,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
+  '/comparar': typeof CompararRoute
+  '/comunicacao': typeof ComunicacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
+  '/diagnostico-de-voz': typeof DiagnosticoDeVozRoute
   '/entrar': typeof EntrarRoute
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
+  '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
+  '/objetivos': typeof ObjetivosRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/privacidade': typeof PrivacidadeRoute
+  '/profissoes': typeof ProfissoesRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
+  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -399,19 +448,26 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/boas-vindas': typeof BoasVindasRoute
+  '/comparar': typeof CompararRoute
+  '/comunicacao': typeof ComunicacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/descobrir': typeof DescobrirRoute
+  '/diagnostico-de-voz': typeof DiagnosticoDeVozRoute
   '/entrar': typeof EntrarRoute
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
+  '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
+  '/objetivos': typeof ObjetivosRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/profissoes': typeof ProfissoesRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
+  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -452,21 +508,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
+  '/comparar': typeof CompararRoute
+  '/comunicacao': typeof ComunicacaoRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
+  '/diagnostico-de-voz': typeof DiagnosticoDeVozRoute
   '/entrar': typeof EntrarRoute
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
   '/mensagens': typeof MensagensRoute
+  '/minha-acessibilidade': typeof MinhaAcessibilidadeRoute
   '/minha-atividade': typeof MinhaAtividadeRoute
   '/notificacoes': typeof NotificacoesRoute
+  '/objetivos': typeof ObjetivosRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/privacidade': typeof PrivacidadeRoute
+  '/profissoes': typeof ProfissoesRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
+  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -510,21 +573,28 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/boas-vindas'
+    | '/comparar'
+    | '/comunicacao'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/dashboard'
     | '/descobrir'
+    | '/diagnostico-de-voz'
     | '/entrar'
     | '/fale-conosco'
     | '/feed'
     | '/mensagens'
+    | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
+    | '/objetivos'
     | '/perfil'
     | '/privacidade'
+    | '/profissoes'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
+    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -565,19 +635,26 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/boas-vindas'
+    | '/comparar'
+    | '/comunicacao'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/descobrir'
+    | '/diagnostico-de-voz'
     | '/entrar'
     | '/fale-conosco'
     | '/feed'
     | '/mensagens'
+    | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
+    | '/objetivos'
     | '/privacidade'
+    | '/profissoes'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
+    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -617,21 +694,28 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/boas-vindas'
+    | '/comparar'
+    | '/comunicacao'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/dashboard'
     | '/descobrir'
+    | '/diagnostico-de-voz'
     | '/entrar'
     | '/fale-conosco'
     | '/feed'
     | '/mensagens'
+    | '/minha-acessibilidade'
     | '/minha-atividade'
     | '/notificacoes'
+    | '/objetivos'
     | '/perfil'
     | '/privacidade'
+    | '/profissoes'
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
+    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -674,21 +758,28 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   BoasVindasRoute: typeof BoasVindasRoute
+  CompararRoute: typeof CompararRoute
+  ComunicacaoRoute: typeof ComunicacaoRoute
   ConfirmarEmailRoute: typeof ConfirmarEmailRoute
   ContaComprometidaRoute: typeof ContaComprometidaRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DescobrirRoute: typeof DescobrirRoute
+  DiagnosticoDeVozRoute: typeof DiagnosticoDeVozRoute
   EntrarRoute: typeof EntrarRoute
   FaleConoscoRoute: typeof FaleConoscoRoute
   FeedRoute: typeof FeedRoute
   MensagensRoute: typeof MensagensRoute
+  MinhaAcessibilidadeRoute: typeof MinhaAcessibilidadeRoute
   MinhaAtividadeRoute: typeof MinhaAtividadeRoute
   NotificacoesRoute: typeof NotificacoesRoute
+  ObjetivosRoute: typeof ObjetivosRoute
   PerfilRoute: typeof PerfilRouteWithChildren
   PrivacidadeRoute: typeof PrivacidadeRoute
+  ProfissoesRoute: typeof ProfissoesRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   RetornoGoogleRoute: typeof RetornoGoogleRoute
+  SimuladorRoute: typeof SimuladorRoute
   SobreNosRoute: typeof SobreNosRoute
   TermosRoute: typeof TermosRoute
   VagasRoute: typeof VagasRoute
@@ -733,6 +824,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BoasVindasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comparar': {
+      id: '/comparar'
+      path: '/comparar'
+      fullPath: '/comparar'
+      preLoaderRoute: typeof CompararRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunicacao': {
+      id: '/comunicacao'
+      path: '/comunicacao'
+      fullPath: '/comunicacao'
+      preLoaderRoute: typeof ComunicacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/confirmar-email': {
       id: '/confirmar-email'
       path: '/confirmar-email'
@@ -759,6 +864,13 @@ declare module '@tanstack/react-router' {
       path: '/descobrir'
       fullPath: '/descobrir'
       preLoaderRoute: typeof DescobrirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagnostico-de-voz': {
+      id: '/diagnostico-de-voz'
+      path: '/diagnostico-de-voz'
+      fullPath: '/diagnostico-de-voz'
+      preLoaderRoute: typeof DiagnosticoDeVozRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entrar': {
@@ -789,6 +901,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MensagensRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/minha-acessibilidade': {
+      id: '/minha-acessibilidade'
+      path: '/minha-acessibilidade'
+      fullPath: '/minha-acessibilidade'
+      preLoaderRoute: typeof MinhaAcessibilidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/minha-atividade': {
       id: '/minha-atividade'
       path: '/minha-atividade'
@@ -803,6 +922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/objetivos': {
+      id: '/objetivos'
+      path: '/objetivos'
+      fullPath: '/objetivos'
+      preLoaderRoute: typeof ObjetivosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/perfil': {
       id: '/perfil'
       path: '/perfil'
@@ -815,6 +941,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profissoes': {
+      id: '/profissoes'
+      path: '/profissoes'
+      fullPath: '/profissoes'
+      preLoaderRoute: typeof ProfissoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recuperar-senha': {
@@ -836,6 +969,13 @@ declare module '@tanstack/react-router' {
       path: '/retorno-google'
       fullPath: '/retorno-google'
       preLoaderRoute: typeof RetornoGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulador': {
+      id: '/simulador'
+      path: '/simulador'
+      fullPath: '/simulador'
+      preLoaderRoute: typeof SimuladorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sobre-nos': {
@@ -1178,21 +1318,28 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   BoasVindasRoute: BoasVindasRoute,
+  CompararRoute: CompararRoute,
+  ComunicacaoRoute: ComunicacaoRoute,
   ConfirmarEmailRoute: ConfirmarEmailRoute,
   ContaComprometidaRoute: ContaComprometidaRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DescobrirRoute: DescobrirRoute,
+  DiagnosticoDeVozRoute: DiagnosticoDeVozRoute,
   EntrarRoute: EntrarRoute,
   FaleConoscoRoute: FaleConoscoRoute,
   FeedRoute: FeedRoute,
   MensagensRoute: MensagensRoute,
+  MinhaAcessibilidadeRoute: MinhaAcessibilidadeRoute,
   MinhaAtividadeRoute: MinhaAtividadeRoute,
   NotificacoesRoute: NotificacoesRoute,
+  ObjetivosRoute: ObjetivosRoute,
   PerfilRoute: PerfilRouteWithChildren,
   PrivacidadeRoute: PrivacidadeRoute,
+  ProfissoesRoute: ProfissoesRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   RetornoGoogleRoute: RetornoGoogleRoute,
+  SimuladorRoute: SimuladorRoute,
   SobreNosRoute: SobreNosRoute,
   TermosRoute: TermosRoute,
   VagasRoute: VagasRoute,

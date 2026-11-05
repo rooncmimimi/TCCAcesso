@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
+import { AvisoDeRascunho } from "@/components/acessibilidade/AvisoDeRascunho";
+import { AvaliadorDeVagaPainel } from "@/components/vagas/AvaliadorDeVagaPainel";
+import { SecaoAmbienteDaVaga } from "@/components/vagas/SecaoAmbienteDaVaga";
+import { VideoDaVagaGestao } from "@/components/vagas/VideoDaVagaGestao";
+import { formularioDaVaga, origensDoMapa, payloadDoAmbiente, type FormularioDoAmbiente } from "@/lib/ambienteDaVagaForm";
+import { lerDadosParaAvaliar } from "@/lib/dadosDoFormularioDaVaga";
+import { useRascunhoDeFormulario } from "@/hooks/useRascunhoDeFormulario";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
@@ -32,6 +40,9 @@ import {
 } from "./constantesVaga";
 import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "@/types";
 
+/** Os únicos campos deste formulário que entram no rascunho automático. */
+const CAMPOS_DO_RASCUNHO = ["titulo", "descricao", "requisitos", "requisitosDesejaveis", "atividades", "etapasSelecao", "beneficios", "acessibilidade"] as const;
+
 /**
  * Edição de uma vaga já publicada (PUT /vagas/:id). Mesmos campos e limites
  * do formulário de criação: o backend já valida posse e aprovação da
@@ -46,14 +57,22 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
   const [cidade, setCidade] = useState(vaga.cidade ?? "");
   const [estado, setEstado] = useState(vaga.estado ?? "");
   const queryClient = useQueryClient();
+  // Rascunho só dos textos da vaga (nada pessoal): ver `lib/rascunhoDeFormulario.ts`.
+  const rascunho = useRascunhoDeFormulario({ chave: `vaga:${vaga.id}`, campos: CAMPOS_DO_RASCUNHO, ativo: aberto });
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [ambiente, setAmbiente] = useState<FormularioDoAmbiente>(() => formularioDaVaga(vaga));
+  const [video, setVideo] = useState<{ legenda: boolean } | null>(null);
 
   // Reabrir o diálogo sempre reflete os dados mais recentes da vaga.
   useEffect(() => {
     if (aberto) {
       setCidade(vaga.cidade ?? "");
       setEstado(vaga.estado ?? "");
+      setAmbiente(formularioDaVaga(vaga));
     }
-  }, [aberto, vaga.cidade, vaga.estado]);
+    // O ambiente é relido da vaga a cada abertura; `vaga` inteira mudaria a cada atualização do cache.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto, vaga.cidade, vaga.estado, vaga.id]);
 
   function alternarRecurso(recurso: RecursoAcessibilidadeVaga, marcado: boolean) {
     setRecursosAcessibilidade((atuais) =>
@@ -65,6 +84,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
     onSuccess: () => {
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
       toast.success("Vaga atualizada com sucesso.");
+      rascunho.limpar();
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["vaga", vaga.id] });
@@ -90,6 +110,10 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
       estado: texto("estado").toUpperCase() || null,
       cargaHoraria: texto("cargaHoraria") || null,
       acessibilidade: texto("acessibilidade") || null,
+      atividades: texto("atividades") || null,
+      requisitosDesejaveis: texto("requisitosDesejaveis") || null,
+      etapasSelecao: texto("etapasSelecao") || null,
+      ...payloadDoAmbiente(ambiente),
       publicoAlvo,
       recursosAcessibilidade,
     });
@@ -105,7 +129,15 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           <DialogDescription>Atualize as informações desta vaga.</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={enviar} className="space-y-4">
+        <form
+          ref={(el) => {
+            formRef.current = el;
+            rascunho.ref(el);
+          }}
+          onSubmit={enviar}
+          className="space-y-4"
+        >
+          <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="space-y-2">
             <Label htmlFor={`titulo-${vaga.id}`}>Título da vaga</Label>
             <Input
@@ -119,7 +151,10 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`descricao-${vaga.id}`}>Descrição</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor={`descricao-${vaga.id}`}>Descrição</Label>
+              <DicaDeCampoBotao dica="vagaDescricao" nomeDoCampo="Descrição da vaga" />
+            </div>
             <Textarea
               id={`descricao-${vaga.id}`}
               name="descricao"
@@ -133,12 +168,43 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor={`requisitos-${vaga.id}`}>Requisitos</Label>
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor={`requisitos-${vaga.id}`}>Requisitos obrigatórios</Label>
+                <DicaDeCampoBotao dica="vagaRequisitos" nomeDoCampo="Requisitos" />
+              </div>
               <Textarea id={`requisitos-${vaga.id}`} name="requisitos" rows={3} defaultValue={vaga.requisitos ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`beneficios-${vaga.id}`}>Benefícios</Label>
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor={`beneficios-${vaga.id}`}>Benefícios</Label>
+                <DicaDeCampoBotao dica="vagaBeneficios" nomeDoCampo="Benefícios" />
+              </div>
               <Textarea id={`beneficios-${vaga.id}`} name="beneficios" rows={3} defaultValue={vaga.beneficios ?? ""} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="atividades">Atividades (uma por linha)</Label>
+              <DicaDeCampoBotao dica="vagaAtividades" nomeDoCampo="Atividades" />
+            </div>
+            <Textarea id="atividades" name="atividades" rows={3} maxLength={4000} defaultValue={vaga.atividades ?? ""} />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="requisitosDesejaveis">Requisitos desejáveis</Label>
+                <DicaDeCampoBotao dica="vagaRequisitosDesejaveis" nomeDoCampo="Requisitos desejáveis" />
+              </div>
+              <Textarea id="requisitosDesejaveis" name="requisitosDesejaveis" rows={3} maxLength={4000} defaultValue={vaga.requisitosDesejaveis ?? ""} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-x-2">
+                <Label htmlFor="etapasSelecao">Etapas da seleção</Label>
+                <DicaDeCampoBotao dica="vagaEtapas" nomeDoCampo="Etapas da seleção" />
+              </div>
+              <Textarea id="etapasSelecao" name="etapasSelecao" rows={3} maxLength={4000} defaultValue={vaga.etapasSelecao ?? ""} />
             </div>
           </div>
 
@@ -259,7 +325,10 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           </fieldset>
 
           <div className="space-y-2">
-            <Label htmlFor={`acessibilidade-${vaga.id}`}>Detalhes adicionais de acessibilidade</Label>
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor={`acessibilidade-${vaga.id}`}>Detalhes adicionais de acessibilidade</Label>
+              <DicaDeCampoBotao dica="vagaAcessibilidade" nomeDoCampo="Detalhes de acessibilidade" />
+            </div>
             <Textarea
               id={`acessibilidade-${vaga.id}`}
               name="acessibilidade"
@@ -268,6 +337,17 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               defaultValue={vaga.acessibilidade ?? ""}
             />
           </div>
+
+          <details className="rounded-lg border border-border p-3">
+            <summary className="min-h-11 cursor-pointer text-sm font-bold text-primary">Ambiente de trabalho e entrevista (opcional)</summary>
+            <div className="mt-3">
+              <SecaoAmbienteDaVaga valor={ambiente} aoMudar={setAmbiente} origens={origensDoMapa(vaga.acessibilidadeFisica)} />
+            </div>
+          </details>
+
+          <VideoDaVagaGestao vagaId={vaga.id} aoMudar={setVideo} />
+
+          <AvaliadorDeVagaPainel obterDados={() => lerDadosParaAvaliar(formRef.current, { ambiente, recursos: recursosAcessibilidade, video })} />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>

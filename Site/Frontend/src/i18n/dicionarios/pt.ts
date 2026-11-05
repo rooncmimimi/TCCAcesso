@@ -73,7 +73,7 @@ export const pt = {
 
   // Login
   "auth.pularConteudo": "Pular para o conteúdo principal",
-  "auth.voltarPaginaInicial": "Voltar para a página inicial",
+  "auth.voltarPaginaInicial": "ACESSO, voltar para a página inicial",
   "auth.acessibilidade": "Acessibilidade",
   "auth.configAcessibilidade": "Configurações de acessibilidade",
   "auth.continuarGoogle": "Continuar com Google",

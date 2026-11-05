@@ -54,7 +54,14 @@ export const MIME_VIDEOS = {
     "video/webm": ".webm"
 };
 
-const TODAS_EXTENSOES = { ...MIME_IMAGENS, ...MIME_DOCUMENTOS, ...MIME_VIDEOS };
+/** Legenda de vídeo (WebVTT). Fica em memória e é guardada como texto (`vaga_midias.legenda_vtt`), nunca como arquivo. */
+export const MIME_LEGENDAS = {
+    "text/vtt": ".vtt"
+};
+
+export const LIMITE_LEGENDA_BYTES = 256 * 1024;
+
+const TODAS_EXTENSOES = { ...MIME_IMAGENS, ...MIME_DOCUMENTOS, ...MIME_VIDEOS, ...MIME_LEGENDAS };
 
 /** Limite de tamanho por mimetype: vídeo nunca reaproveita o limite de imagem/documento. */
 const LIMITE_BYTES_POR_MIME = {
@@ -66,7 +73,8 @@ const LIMITE_BYTES_POR_MIME = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         env.security.maxUploadBytes,
     "video/mp4": env.security.maxVideoUploadBytes,
-    "video/webm": env.security.maxVideoUploadBytes
+    "video/webm": env.security.maxVideoUploadBytes,
+    "text/vtt": LIMITE_LEGENDA_BYTES
 };
 
 const destino = path.resolve(process.cwd(), env.security.uploadDir);
@@ -141,6 +149,12 @@ function assinaturaValida(buffer, mimetype) {
                 buffer[2] === 0xdf &&
                 buffer[3] === 0xa3
             );
+
+        case "text/vtt": {
+            // WebVTT começa com "WEBVTT" (com ou sem BOM UTF-8), seguido de espaço, tabulação ou quebra de linha.
+            const inicio = buffer.subarray(0, 16).toString("utf8").replace(/^\uFEFF/, "");
+            return /^WEBVTT(\s|$)/.test(inicio);
+        }
 
         default:
             return false;
@@ -322,6 +336,21 @@ export const uploadAnexos = criarUpload(
         limiteMaximo: env.security.maxVideoUploadBytes
     }
 );
+
+/** Vídeo da vaga em Libras: um arquivo, mp4 ou webm, com o limite de vídeo. */
+export const uploadVideoDaVaga = criarUpload(MIME_VIDEOS, {
+    files: 1,
+    mensagem: "Formato inválido. Envie um vídeo MP4 ou WEBM.",
+    limiteMaximo: env.security.maxVideoUploadBytes
+});
+
+/** Legenda WebVTT: só em memória, até 256 KB. */
+export const uploadLegenda = criarUpload(MIME_LEGENDAS, {
+    files: 1,
+    emMemoria: true,
+    mensagem: "Formato inválido. Envie uma legenda no formato WebVTT (.vtt).",
+    limiteMaximo: LIMITE_LEGENDA_BYTES
+});
 
 /**
  * Middleware (fábrica) para usar logo depois de qualquer `upload*.single()` ou `.array()`. Sempre

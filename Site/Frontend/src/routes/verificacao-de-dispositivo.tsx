@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useSessao } from "@/hooks/useSessao";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
+import { PrazoDoCodigo } from "@/components/acessibilidade/PrazoDoCodigo";
 import { lerVerificacao, limparVerificacao, renovarVerificacao, segundosParaReenviar } from "@/lib/verificacaoDispositivo";
 import segurancaService, { codigoDoErroSeguranca, desafioDeDispositivoVenceu, mensagemDeErroSeguranca, segundosDeEspera } from "@/services/seguranca.service";
 
@@ -216,6 +217,8 @@ function VerificacaoDeDispositivo() {
                   </p>
                 </div>
               </div>
+
+              <PrazoDoCodigo enviadoEm={verificacao.enviadoEm} aoPedirMaisTempo={() => void pedirOutroCodigo()} podePedir={faltam <= 0} ocupado={enviando || reenviando} />
 
               <CampoCodigo
                 id="codigo-dispositivo"

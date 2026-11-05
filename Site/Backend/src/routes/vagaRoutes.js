@@ -7,12 +7,17 @@ import autenticacaoOpcionalMiddleware from "../middlewares/autenticacaoOpcionalM
 import exigirTipoUsuarioMiddleware from "../middlewares/exigirTipoUsuarioMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
+import { criarProcessadorArmazenamento, uploadLegenda, uploadVideoDaVaga } from "../middlewares/uploadMiddleware.js";
 import {
     validarCriacaoVaga,
     validarAtualizacaoVaga,
     validarStatusVaga
 } from "../validators/vagaValidator.js";
-import { validarCriacaoCandidatura } from "../validators/candidaturaValidator.js";
+import {
+    validarCriacaoCandidatura,
+    validarPreviaDaCandidatura,
+    validarRascunhoDaCandidatura
+} from "../validators/candidaturaValidator.js";
 
 const router = Router();
 
@@ -25,6 +30,72 @@ router.get(
     autenticacaoMiddleware,
     exigirTipoUsuarioMiddleware("empresa"),
     VagaController.minhas
+);
+
+// O vídeo da vaga em Libras vai para o bucket PRIVADO (URL assinada, temporária), em `vagas/<empresaUsuarioId>`.
+const processarVideoDaVaga = criarProcessadorArmazenamento({
+    pasta: (req) => `vagas/${req.user.id}`,
+    privado: true
+});
+
+// Antes de "/:id", para "catalogo-acessibilidade" não ser lido como um identificador.
+router.get("/catalogo-acessibilidade", VagaController.catalogoDeAcessibilidade);
+
+router.get(
+    "/:id/midia",
+    autenticacaoOpcionalMiddleware,
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.obterMidia
+);
+
+// Vídeo (mp4 ou webm) + transcrição obrigatória no mesmo envio. Só a empresa dona (o service confere).
+router.put(
+    "/:id/midia/video",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    uploadVideoDaVaga.single("video"),
+    processarVideoDaVaga,
+    VagaController.enviarVideo
+);
+
+router.put(
+    "/:id/midia/legenda",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    uploadLegenda.single("legenda"),
+    VagaController.enviarLegenda
+);
+
+router.delete(
+    "/:id/midia/legenda",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.removerLegenda
+);
+
+router.patch(
+    "/:id/midia",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.atualizarMidia
+);
+
+router.delete(
+    "/:id/midia",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("empresa"),
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    VagaController.removerMidia
 );
 
 router.get(
@@ -88,6 +159,44 @@ router.post(
     validarCriacaoCandidatura,
     validacaoMiddleware,
     CandidaturaController.criar
+);
+
+/* Prévia de privacidade: o que a empresa receberia, sem enviar nada */
+router.post(
+    "/:vagaId/candidaturas/previa",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarPreviaDaCandidatura,
+    validacaoMiddleware,
+    CandidaturaController.previa
+);
+
+/* Rascunho da candidatura: só a própria pessoa; a empresa nunca vê */
+router.get(
+    "/:vagaId/rascunho",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarUuidParam("vagaId"),
+    validacaoMiddleware,
+    CandidaturaController.obterRascunho
+);
+
+router.put(
+    "/:vagaId/rascunho",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarRascunhoDaCandidatura,
+    validacaoMiddleware,
+    CandidaturaController.salvarRascunho
+);
+
+router.delete(
+    "/:vagaId/rascunho",
+    autenticacaoMiddleware,
+    exigirTipoUsuarioMiddleware("candidato"),
+    validarUuidParam("vagaId"),
+    validacaoMiddleware,
+    CandidaturaController.descartarRascunho
 );
 
 router.get(

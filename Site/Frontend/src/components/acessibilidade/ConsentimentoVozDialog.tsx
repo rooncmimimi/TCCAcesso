@@ -83,9 +83,14 @@ export function ConsentimentoVozDialog() {
           <AlertDialogTitle className="text-center text-2xl">
             Deseja ativar a leitura por voz?
           </AlertDialogTitle>
+          {/* O aviso sobre leitor de tela é o ponto principal desta pergunta, não um detalhe: não há como o site
+              saber se um já está em uso (nenhum navegador informa isso), e ativar os dois faz cada botão ser falado
+              duas vezes. Quem mais sofreria com isso é justamente parte do público do ACESSO. */}
           <AlertDialogDescription className="text-center text-base">
-            O ACESSO pode ler em voz alta os conteúdos enquanto você navega. Você pode alterar essa
-            escolha depois em Configurações de acessibilidade.
+            O ACESSO pode ler em voz alta os conteúdos enquanto você navega.{" "}
+            <strong className="font-semibold text-foreground">Se você já usa um leitor de tela</strong> (NVDA, JAWS,
+            Narrador, VoiceOver ou TalkBack), escolha “Não, obrigado”: com os dois ligados, cada item seria falado duas
+            vezes. Você pode alterar essa escolha depois em Configurações de acessibilidade.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="sm:justify-center">

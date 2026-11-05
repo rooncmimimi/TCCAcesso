@@ -13,11 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { extrairMensagemErro } from "@/services/api";
+import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
 import {
   aprovarEmpresa,
   listarEmpresas,
@@ -92,22 +92,13 @@ export function EmpresasPendentesTabela() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2 p-4" aria-busy="true" aria-live="polite">
-        {Array.from({ length: 4 }).map((_, indice) => (
-          <Skeleton key={indice} className="h-12 w-full" />
-        ))}
-      </div>
+      <ListaCarregando rotulo="Carregando as empresas…" linhas={4} />
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar as empresas.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
-        </Button>
-      </div>
+      <ListaComErro mensagem="Não foi possível carregar as empresas." aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -115,10 +106,7 @@ export function EmpresasPendentesTabela() {
 
   if (empresas.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
-        <Building2 className="size-8" aria-hidden="true" />
-        <p className="text-sm">Nenhuma empresa cadastrada até o momento.</p>
-      </div>
+      <ListaVazia icone={Building2} mensagem="Nenhuma empresa cadastrada até o momento." />
     );
   }
 

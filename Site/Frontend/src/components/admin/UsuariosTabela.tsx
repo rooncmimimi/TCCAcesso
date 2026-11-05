@@ -14,7 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -26,6 +25,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { useSessao } from "@/hooks/useSessao";
+import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
 import {
   ativarUsuario,
   desativarUsuario,
@@ -120,23 +120,11 @@ export function UsuariosTabela() {
       </form>
 
       {isLoading ? (
-        <div className="space-y-2 p-4" aria-busy="true" aria-live="polite">
-          {Array.from({ length: 5 }).map((_, indice) => (
-            <Skeleton key={indice} className="h-12 w-full" />
-          ))}
-        </div>
+        <ListaCarregando rotulo="Carregando os usuários…" linhas={5} />
       ) : isError ? (
-        <div className="flex flex-col items-center gap-3 p-8 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar os usuários.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
+        <ListaComErro mensagem="Não foi possível carregar os usuários." aoTentarDeNovo={() => refetch()} />
       ) : usuarios.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
-          <Users className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhum usuário encontrado com esses filtros.</p>
-        </div>
+        <ListaVazia icone={Users} mensagem="Nenhum usuário encontrado com esses filtros." />
       ) : (
         <>
           <Table>

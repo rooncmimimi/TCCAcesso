@@ -180,7 +180,7 @@ export function PainelAcessibilidade() {
           id="a11y-voice"
           icon={Volume2}
           titulo="Leitura por voz"
-          descricao="Lê em voz alta os elementos ao navegar pelo site."
+          descricao="Lê em voz alta os elementos ao navegar pelo site. É para quem não usa um leitor de tela: se você já usa NVDA, JAWS, Narrador, VoiceOver ou TalkBack, deixe desligado, senão cada item é falado duas vezes."
           chave="screenReader"
         />
         <ToggleRow

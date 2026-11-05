@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CampoDeArquivoOculto } from "@/components/ui/campo-de-arquivo-oculto";
 import { extrairMensagemErro } from "@/services/api";
 import { urlArquivo } from "@/utils/arquivos";
 import { atributoAccept, verificarArquivo } from "@/lib/arquivos";
@@ -46,14 +47,7 @@ export function CapaUploader({
       className="relative h-32 w-full bg-primary bg-cover bg-center sm:h-40"
       style={url ? { backgroundImage: `url(${url})` } : undefined}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        tabIndex={-1}
-        accept={atributoAccept(["imagem"])}
-        className="sr-only"
-        onChange={(e) => tratarArquivo(e.target.files?.[0])}
-      />
+      <CampoDeArquivoOculto ref={inputRef} rotulo={rotulo} accept={atributoAccept(["imagem"])} aoEscolher={(e) => tratarArquivo(e.target.files?.[0])} />
       <Button
         type="button"
         size="sm"

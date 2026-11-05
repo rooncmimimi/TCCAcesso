@@ -314,7 +314,9 @@ function Entrar() {
                   rotulo={t("login.senha")}
                   erro={errors.senha?.message}
                   acao={
-                    <Link to="/recuperar-senha" className="text-sm font-semibold text-primary underline">
+                    /* `min-h-11`: é um link solto (não no meio de uma frase), então precisa de uma área de toque
+                       confortável, e não só da altura da linha de texto. */
+                    <Link to="/recuperar-senha" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline">
                       {t("login.esqueceuSenha")}
                     </Link>
                   }

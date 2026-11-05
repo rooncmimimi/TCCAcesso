@@ -12,7 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
+import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
 import denunciaService, {
   MOTIVO_ROTULO,
   type EntidadeDenunciaTipo,
@@ -192,23 +192,11 @@ export function DenunciasTabela() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2 p-4" aria-busy="true" aria-live="polite">
-          {Array.from({ length: 5 }).map((_, indice) => (
-            <Skeleton key={indice} className="h-12 w-full" />
-          ))}
-        </div>
+        <ListaCarregando rotulo="Carregando as denúncias…" linhas={5} />
       ) : isError ? (
-        <div className="flex flex-col items-center gap-3 p-8 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar as denúncias.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
+        <ListaComErro mensagem="Não foi possível carregar as denúncias." aoTentarDeNovo={() => refetch()} />
       ) : denuncias.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
-          <Flag className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhuma denúncia encontrada com esses filtros.</p>
-        </div>
+        <ListaVazia icone={Flag} mensagem="Nenhuma denúncia encontrada com esses filtros." />
       ) : (
         <>
           <Table>

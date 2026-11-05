@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CampoDeArquivoOculto } from "@/components/ui/campo-de-arquivo-oculto";
 import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
@@ -252,26 +253,8 @@ export function FormularioPostagem() {
           ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <input
-              ref={inputImagemRef}
-              id="anexos-postagem-imagem"
-              type="file"
-              multiple
-              tabIndex={-1}
-              accept={TIPOS_IMAGEM_ACEITOS.join(",")}
-              onChange={adicionarArquivos}
-              className="sr-only"
-            />
-            <input
-              ref={inputVideoRef}
-              id="anexos-postagem-video"
-              type="file"
-              multiple
-              tabIndex={-1}
-              accept={TIPOS_VIDEO_ACEITOS.join(",")}
-              onChange={adicionarArquivos}
-              className="sr-only"
-            />
+            <CampoDeArquivoOculto ref={inputImagemRef} id="anexos-postagem-imagem" rotulo={t("formPost.addFotoRotulo")} accept={TIPOS_IMAGEM_ACEITOS.join(",")} multiple aoEscolher={adicionarArquivos} />
+            <CampoDeArquivoOculto ref={inputVideoRef} id="anexos-postagem-video" rotulo={t("formPost.addVideoRotulo")} accept={TIPOS_VIDEO_ACEITOS.join(",")} multiple aoEscolher={adicionarArquivos} />
             <Button
               type="button"
               variant="ghost"

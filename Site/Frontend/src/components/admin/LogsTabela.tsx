@@ -13,11 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { DetalheLogSheet } from "@/components/admin/DetalheLogSheet";
 import { listarLogs, type LogAdmin } from "@/services/admin.service";
 import { formatarDataHora } from "@/utils/formatacao";
+import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
 
 /**
  * Visualizador de `registros_auditoria`, somente leitura: os registros são imutáveis e não há rota de
@@ -73,23 +73,11 @@ export function LogsTabela({
       )}
 
       {isLoading ? (
-        <div className="space-y-2 p-4" aria-busy="true" aria-live="polite">
-          {Array.from({ length: 5 }).map((_, indice) => (
-            <Skeleton key={indice} className="h-12 w-full" />
-          ))}
-        </div>
+        <ListaCarregando rotulo="Carregando os registros de auditoria…" linhas={5} />
       ) : isError ? (
-        <div className="flex flex-col items-center gap-3 p-8 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar os logs.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
+        <ListaComErro mensagem="Não foi possível carregar os logs." aoTentarDeNovo={() => refetch()} />
       ) : logs.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
-          <ScrollText className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhum registro de auditoria encontrado.</p>
-        </div>
+        <ListaVazia icone={ScrollText} mensagem="Nenhum registro de auditoria encontrado." />
       ) : (
         <>
           <Table>

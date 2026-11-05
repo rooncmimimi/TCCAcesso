@@ -111,6 +111,19 @@ describe("ConsentimentoVozDialog — fonte da verdade é preferencias.voiceConse
         expect(voz.falar).toHaveBeenCalled();
     });
 
+    it("avisa quem já usa leitor de tela para recusar, senão tudo seria falado duas vezes", async () => {
+        useAcessibilidadeMock.mockReturnValue(acessibilidadeFake(null));
+        useVozMock.mockReturnValue(vozFake());
+
+        render(<ConsentimentoVozDialog />);
+
+        const dialogo = await screen.findByRole("alertdialog");
+
+        expect(dialogo).toHaveTextContent(/se você já usa um leitor de tela/i);
+        expect(dialogo).toHaveTextContent(/NVDA/);
+        expect(dialogo).toHaveTextContent(/duas vezes/i);
+    });
+
     it("aceitar chama definirEscolha('accepted')", async () => {
         useAcessibilidadeMock.mockReturnValue(acessibilidadeFake(null));
         const voz = vozFake();

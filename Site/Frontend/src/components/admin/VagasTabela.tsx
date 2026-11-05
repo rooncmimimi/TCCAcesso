@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -25,6 +24,7 @@ import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { VerificarMapaFisicoDialog } from "@/components/admin/VerificarMapaFisicoDialog";
 import { resumoDoMapa, textoDoResumo } from "@/lib/mapaFisicoAdmin";
 import { useSessao } from "@/hooks/useSessao";
+import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
 import {
   alterarStatusVaga,
   listarVagas,
@@ -78,22 +78,13 @@ export function VagasTabela() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2 p-4" aria-busy="true" aria-live="polite">
-        {Array.from({ length: 5 }).map((_, indice) => (
-          <Skeleton key={indice} className="h-12 w-full" />
-        ))}
-      </div>
+      <ListaCarregando rotulo="Carregando as vagas…" linhas={5} />
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar as vagas.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
-        </Button>
-      </div>
+      <ListaComErro mensagem="Não foi possível carregar as vagas." aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -101,10 +92,7 @@ export function VagasTabela() {
 
   if (vagas.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
-        <Briefcase className="size-8" aria-hidden="true" />
-        <p className="text-sm">Nenhuma vaga publicada até o momento.</p>
-      </div>
+      <ListaVazia icone={Briefcase} mensagem="Nenhuma vaga publicada até o momento." />
     );
   }
 

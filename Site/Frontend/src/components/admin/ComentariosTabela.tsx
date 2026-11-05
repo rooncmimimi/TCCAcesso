@@ -15,12 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { DetalheComentarioSheet } from "@/components/admin/DetalheComentarioSheet";
 import { extrairMensagemErro } from "@/services/api";
 import { listarComentarios, removerComentario, type ComentarioAdmin } from "@/services/admin.service";
+import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
 
 type RespostaLista = Awaited<ReturnType<typeof listarComentarios>>;
 
@@ -88,22 +88,13 @@ export function ComentariosTabela() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2 p-4" aria-busy="true" aria-live="polite">
-        {Array.from({ length: 5 }).map((_, indice) => (
-          <Skeleton key={indice} className="h-12 w-full" />
-        ))}
-      </div>
+      <ListaCarregando rotulo="Carregando os comentários…" linhas={5} />
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar os comentários.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
-        </Button>
-      </div>
+      <ListaComErro mensagem="Não foi possível carregar os comentários." aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -126,10 +117,7 @@ export function ComentariosTabela() {
       </form>
 
       {comentarios.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
-          <MessageSquare className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhum comentário encontrado.</p>
-        </div>
+        <ListaVazia icone={MessageSquare} mensagem="Nenhum comentário encontrado." />
       ) : (
         <>
           <Table>

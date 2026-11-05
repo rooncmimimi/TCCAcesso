@@ -15,7 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { PaginacaoTabela } from "@/components/admin/PaginacaoTabela";
 import { DetalhePostagemSheet } from "@/components/admin/DetalhePostagemSheet";
@@ -23,6 +22,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { useSessao } from "@/hooks/useSessao";
 import { listarPostagens, removerPostagem, type PostagemAdmin } from "@/services/admin.service";
 import { formatarDataHora } from "@/utils/formatacao";
+import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
 
 type RespostaLista = Awaited<ReturnType<typeof listarPostagens>>;
 
@@ -99,22 +99,13 @@ export function PostagensTabela() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2 p-4" aria-busy="true" aria-live="polite">
-        {Array.from({ length: 5 }).map((_, indice) => (
-          <Skeleton key={indice} className="h-12 w-full" />
-        ))}
-      </div>
+      <ListaCarregando rotulo="Carregando as publicações…" linhas={5} />
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar as publicações.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
-        </Button>
-      </div>
+      <ListaComErro mensagem="Não foi possível carregar as publicações." aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -139,10 +130,7 @@ export function PostagensTabela() {
       </form>
 
       {postagens.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
-          <FileText className="size-8" aria-hidden="true" />
-          <p className="text-sm">Nenhuma publicação encontrada.</p>
-        </div>
+        <ListaVazia icone={FileText} mensagem="Nenhuma publicação encontrada." />
       ) : (
         <>
           <Table>

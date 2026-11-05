@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { CampoDeArquivoOculto } from "@/components/ui/campo-de-arquivo-oculto";
 import { extrairMensagemErro } from "@/services/api";
 import { urlArquivo } from "@/utils/arquivos";
 import { atributoAccept, verificarArquivo } from "@/lib/arquivos";
@@ -54,15 +55,7 @@ export function FotoUploader({
           {fallback}
         </AvatarFallback>
       </Avatar>
-      <input
-        ref={inputRef}
-        type="file"
-        tabIndex={-1}
-        accept={atributoAccept(["imagem"])}
-        className="sr-only"
-        id="upload-foto-perfil"
-        onChange={(e) => tratarArquivo(e.target.files?.[0])}
-      />
+      <CampoDeArquivoOculto ref={inputRef} id="upload-foto-perfil" rotulo={rotulo} accept={atributoAccept(["imagem"])} aoEscolher={(e) => tratarArquivo(e.target.files?.[0])} />
       <Button
         type="button"
         size="icon"

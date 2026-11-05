@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CampoDeArquivoOculto } from "@/components/ui/campo-de-arquivo-oculto";
 import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
@@ -197,12 +198,11 @@ export function EtapaCurriculoPerfil({
     <div className="space-y-6">
       {/* Currículo: opcional, e nunca a única forma de preencher o perfil. */}
       <div className="rounded-xl border-2 border-dashed border-border p-5">
-        <input
+        <CampoDeArquivoOculto
           ref={campoArquivoRef}
-          type="file"
+          rotulo={t.anexarCurriculo}
           accept={atributoAccept(["documento"], { tipos: TIPOS_IMPORTAVEIS, extensoes: EXTENSOES_IMPORTAVEIS })}
-          className="sr-only"
-          onChange={(e) => {
+          aoEscolher={(e) => {
             const escolhido = e.target.files?.[0];
             if (escolhido) void importar(escolhido);
             e.target.value = "";

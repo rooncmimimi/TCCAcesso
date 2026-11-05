@@ -27,9 +27,15 @@ const Alert = React.forwardRef<
 ));
 Alert.displayName = "Alert";
 
-const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+/**
+ * Título do aviso. É um parágrafo em negrito, **não** um título de seção: o `Alert` já tem `role="alert"`, que faz
+ * o leitor de tela anunciar o aviso inteiro, e um aviso de erro não é uma seção da página. Como `<h5>` (o padrão
+ * que veio da biblioteca), ele entrava no índice de títulos logo depois do `<h1>` da página e quebrava a ordem
+ * (h1 → h5), que o axe aponta e que atrapalha quem navega de título em título.
+ */
+const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <h5
+    <p
       ref={ref}
       className={cn("mb-1 font-medium leading-none tracking-tight", className)}
       {...props}

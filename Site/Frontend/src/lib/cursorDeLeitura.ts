@@ -15,6 +15,7 @@
  */
 
 import { descreverElemento, SELETOR_DIALOGO, SELETOR_INTERATIVO } from "@/lib/leitorSemantico";
+import { vocabularioPara } from "@/lib/vocabularioDeLeitura";
 
 export type Parada = {
   el: HTMLElement;
@@ -155,8 +156,8 @@ function nivelDoTitulo(el: HTMLElement): string | null {
 function prefixoDoTitulo(el: HTMLElement): string {
   const ehTitulo = /^H[1-6]$/.test(el.tagName) || el.getAttribute("role") === "heading";
   if (!ehTitulo) return "";
-  const nivel = nivelDoTitulo(el);
-  return `${nivel ? `Título de nível ${nivel}` : "Título"}: `;
+  // "Título de nível 2" no idioma do próprio título (a tela pode estar só em parte traduzida).
+  return `${vocabularioPara(el.textContent ?? "", undefined, el).titulo(nivelDoTitulo(el))}: `;
 }
 
 function falaDoTexto(el: HTMLElement, texto: string): string {

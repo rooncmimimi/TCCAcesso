@@ -1,8 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { toast } from "sonner";
+
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { CHAVE_ESCOLHA_VOZ } from "@/contexts/AcessibilidadeContext";
 import { type EscolhaVoz, type OpcoesFala, type VozContextValue, VozContext } from "@/contexts/VozContext";
+import { localeDe } from "@/i18n/idiomas";
+import { escolherVoz, idiomaDoSite, idiomaParaFalar } from "@/lib/idiomaDaFala";
+import { mensagemSemVoz } from "@/lib/vocabularioDeLeitura";
+
+/** Avisa uma vez por sessão e por idioma que o aparelho não tem voz dele (senão cada frase repetiria o aviso). */
+function avisarSemVoz(idiomaDoTexto: ReturnType<typeof idiomaParaFalar>) {
+  const chave = `acesso:voz:sem-voz:${idiomaDoTexto}`;
+
+  try {
+    if (window.sessionStorage.getItem(chave) === "1") return;
+    window.sessionStorage.setItem(chave, "1");
+  } catch {
+    /* Sem sessionStorage, o aviso pode se repetir: melhor do que nunca avisar. */
+  }
+
+  toast(mensagemSemVoz(idiomaDoTexto, idiomaDoSite()));
+}
 
 type FalaAtual = {
   /** O texto inteiro da leitura, desde o começo. */
@@ -119,8 +138,17 @@ export function VozProvider({ children }: { children: ReactNode }) {
     }
 
     const fala = new SpeechSynthesisUtterance(textoLimpo);
-    // A voz fala no idioma do site (`<html lang>`, mantido pelo seletor de idioma); sem ele, português.
-    fala.lang = (typeof document !== "undefined" && document.documentElement.lang) || "pt-BR";
+    // O idioma e a voz acompanham o TEXTO lido (uma tela ainda não traduzida segue em português mesmo com o
+    // site em inglês); na dúvida, vale o idioma do site (`<html lang>`), e sem ele, português. Sem voz do
+    // idioma no aparelho, o navegador usa a que tiver e a pessoa é avisada uma vez.
+    const idioma = idiomaParaFalar(original, undefined, typeof document === "undefined" ? null : document.activeElement);
+    fala.lang = localeDe(idioma);
+
+    const vozes = window.speechSynthesis.getVoices?.() ?? [];
+    const vozDoIdioma = escolherVoz(vozes, fala.lang);
+
+    if (vozDoIdioma) fala.voice = vozDoIdioma;
+    else if (vozes.length > 0) avisarSemVoz(idioma);
     fala.rate = velocidadeRef.current;
     naFilaRef.current += 1;
     const minhaGeracao = geracaoRef.current;

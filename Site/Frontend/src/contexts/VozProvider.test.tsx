@@ -3,12 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VozContextValue } from "@/contexts/VozContext";
 
-const { preferencias, salvar } = vi.hoisted(() => ({
+const { preferencias, salvar, toast } = vi.hoisted(() => ({
   preferencias: { speechRate: 1.4, screenReader: true, voiceConsent: true },
   salvar: vi.fn(),
+  toast: vi.fn(),
 }));
 
 vi.mock("@/hooks/useAcessibilidade", () => ({ useAcessibilidade: () => ({ preferencias, salvar }) }));
+vi.mock("sonner", () => ({ toast }));
 
 const { VozProvider } = await import("./VozProvider");
 const { useVoz } = await import("@/hooks/useVoz");
@@ -16,6 +18,7 @@ const { useVoz } = await import("@/hooks/useVoz");
 /** Fala simulada: guarda os manipuladores que o provider liga, e o teste os dispara. */
 class FalaFalsa {
   lang = "";
+  voice: unknown = null;
   rate = 1;
   onstart: (() => void) | null = null;
   onend: (() => void) | null = null;
@@ -30,6 +33,7 @@ let sintese: {
   cancel: ReturnType<typeof vi.fn>;
   pause: ReturnType<typeof vi.fn>;
   resume: ReturnType<typeof vi.fn>;
+  getVoices: ReturnType<typeof vi.fn>;
   speaking: boolean;
 };
 let voz: VozContextValue;
@@ -46,8 +50,12 @@ beforeEach(() => {
     cancel: vi.fn(),
     pause: vi.fn(),
     resume: vi.fn(),
+    getVoices: vi.fn(() => []),
     speaking: true,
   };
+  toast.mockClear();
+  window.sessionStorage.clear();
+  document.documentElement.lang = "";
   vi.stubGlobal("SpeechSynthesisUtterance", FalaFalsa);
   Object.defineProperty(window, "speechSynthesis", { value: sintese, configurable: true });
   render(
@@ -152,6 +160,87 @@ describe("VozProvider: falar", () => {
 
     act(() => falas[1].onend?.());
     expect(voz.falando).toBe(false);
+  });
+});
+
+const vozDe = (name: string, lang: string, extra: { localService?: boolean; default?: boolean } = {}) => ({ name, lang, localService: extra.localService ?? true, default: extra.default ?? false });
+
+describe("VozProvider: idioma e voz acompanham o texto", () => {
+  it("texto em português com o site em inglês é falado em português (tela ainda não traduzida)", () => {
+    document.documentElement.lang = "en-US";
+    act(() => voz.falar("O que a pessoa faz: receber clientes e responder dúvidas."));
+
+    expect(falas[0].lang).toBe("pt-BR");
+  });
+
+  it("texto em inglês com o site em português é falado em inglês", () => {
+    document.documentElement.lang = "pt-BR";
+    act(() => voz.falar("Sign in to see the jobs that are open for you and your team."));
+
+    expect(falas[0].lang).toBe("en-US");
+  });
+
+  it("texto curto e ambíguo segue o idioma do site", () => {
+    document.documentElement.lang = "es-ES";
+    act(() => voz.falar("Entrar"));
+
+    expect(falas[0].lang).toBe("es-ES");
+  });
+
+  it("escolhe a voz do aparelho que fala o idioma, preferindo a padrão e a local", () => {
+    const daria = vozDe("Voz de rede en", "en-US", { localService: false });
+    const local = vozDe("Voz local en", "en-US", { localService: true });
+
+    sintese.getVoices.mockReturnValue([vozDe("Maria", "pt-BR", { default: true }), daria, local]);
+    act(() => voz.falar("Sign in to see the jobs that are open for you and your team."));
+
+    expect((falas[0].voice as { name: string }).name).toBe("Voz local en");
+    expect(toast).not.toHaveBeenCalled();
+  });
+
+  it("depois de uma pausa por reinício, a voz e o idioma continuam os mesmos", () => {
+    sintese.getVoices.mockReturnValue([vozDe("Voz en", "en-US")]);
+    act(() => voz.falar("Sign in to see the jobs that are open for you and your team."));
+    act(() => falas[0].onstart?.());
+    act(() => falas[0].onboundary?.({ charIndex: 8, name: "word" }));
+    act(() => voz.pausar());
+    act(() => voz.retomar());
+
+    expect(falas).toHaveLength(2);
+    expect(falas[1].lang).toBe("en-US");
+    expect((falas[1].voice as { name: string }).name).toBe("Voz en");
+  });
+
+  it("sem voz do idioma no aparelho: fala mesmo assim e avisa UMA vez, no idioma do site", () => {
+    document.documentElement.lang = "pt-BR";
+    sintese.getVoices.mockReturnValue([vozDe("Maria", "pt-BR", { default: true })]);
+
+    act(() => voz.falar("Sign in to see the jobs that are open for you and your team."));
+    act(() => voz.falar("Open the page with the list of jobs that are available now."));
+
+    expect(falas).toHaveLength(2);
+    expect(falas[0].voice).toBeNull();
+    expect(toast).toHaveBeenCalledTimes(1);
+    expect(toast).toHaveBeenCalledWith("Seu aparelho não tem uma voz em inglês. A leitura usará outra voz e pode soar estranha.");
+  });
+
+  it("o aviso de falta de voz sai no idioma do site", () => {
+    document.documentElement.lang = "en-US";
+    sintese.getVoices.mockReturnValue([vozDe("Maria", "pt-BR")]);
+
+    act(() => voz.falar("Veja as vagas abertas para o seu perfil e a sua cidade."));
+    // O português aqui tem voz: nenhum aviso. Agora um idioma sem voz:
+    expect(toast).not.toHaveBeenCalled();
+
+    act(() => voz.falar("Usted puede ver los empleos abiertos para su perfil y su ciudad."));
+    expect(toast).toHaveBeenCalledWith("Your device has no Spanish voice. The reading will use another voice and may sound odd.");
+  });
+
+  it("lista de vozes ainda vazia (o navegador ainda não carregou): não avisa nada", () => {
+    sintese.getVoices.mockReturnValue([]);
+    act(() => voz.falar("Sign in to see the jobs that are open for you and your team."));
+
+    expect(toast).not.toHaveBeenCalled();
   });
 });
 

@@ -5,6 +5,7 @@ import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
 import { useVoz } from "@/hooks/useVoz";
 import { acharParada, listarParadas, raizDaLeitura, setaPertenceAoComponente, type Parada } from "@/lib/cursorDeLeitura";
 import { resolverAlvoFalavel } from "@/lib/leitorSemantico";
+import { vocabularioDoSite } from "@/lib/vocabularioDeLeitura";
 
 /**
  * Cursor de leitura: com a leitura por voz e a opção "Navegar pelo conteúdo com as setas" ligadas,
@@ -98,7 +99,7 @@ export function useCursorDeLeitura() {
       const raiz = raizDaLeitura();
       const proxima = acharParada(listarParadas(raiz), referencia(raiz), direcao);
       if (proxima) ir(proxima);
-      else falar(direcao === 1 ? "Fim da página." : "Início da página.");
+      else falar(direcao === 1 ? vocabularioDoSite().fimDaPagina : vocabularioDoSite().inicioDaPagina);
     };
 
     const aoTeclar = (e: KeyboardEvent) => {

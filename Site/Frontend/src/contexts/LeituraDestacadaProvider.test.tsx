@@ -9,18 +9,20 @@ import type { LeituraDestacadaContextValue } from "@/contexts/LeituraDestacadaCo
  * `aoLimite` e `aoTerminar` como o navegador faria. A CSS Custom Highlight API também é simulada
  * (o jsdom não a tem), com um registro que o teste lê.
  */
-const { falar, pararVoz, pausar, retomar, preferencias } = vi.hoisted(() => ({
+const { falar, pararVoz, pausar, retomar, preferencias, estadoVoz } = vi.hoisted(() => ({
   falar: vi.fn(),
   pararVoz: vi.fn(),
   pausar: vi.fn(),
   retomar: vi.fn(),
-  preferencias: { wordHighlight: true },
+  preferencias: { wordHighlight: true, estimatedHighlight: false, speechRate: 1 },
+  estadoVoz: { pausado: false },
 }));
 
-vi.mock("@/hooks/useVoz", () => ({ useVoz: () => ({ falar, parar: pararVoz, pausar, retomar, pausado: false }) }));
+vi.mock("@/hooks/useVoz", () => ({ useVoz: () => ({ falar, parar: pararVoz, pausar, retomar, pausado: estadoVoz.pausado }) }));
 vi.mock("@/hooks/useAcessibilidade", () => ({ useAcessibilidade: () => ({ preferencias }) }));
 
 const { LeituraDestacadaProvider, ESPERA_DO_PRIMEIRO_LIMITE_MS } = await import("./LeituraDestacadaProvider");
+const { criarCronograma, lerRitmo, PESO_POR_SEGUNDO_PADRAO } = await import("@/lib/leituraEstimada");
 const { useLeituraDestacada } = await import("@/hooks/useLeituraDestacada");
 
 type Registro = Map<string, { ranges: Range[] }>;
@@ -57,6 +59,9 @@ beforeEach(() => {
   vi.useFakeTimers();
   window.sessionStorage.clear();
   preferencias.wordHighlight = true;
+  preferencias.estimatedHighlight = false;
+  preferencias.speechRate = 1;
+  estadoVoz.pausado = false;
 
   cssOriginal = global.CSS;
   highlightOriginal = global.Highlight;
@@ -269,6 +274,157 @@ describe("plano B por frase (voz sem evento de palavra)", () => {
     });
 
     expect(falar).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("destaque aproximado (voz sem evento de palavra, com a estimativa ligada)", () => {
+  /** Faz a voz "não emitir palavra": passa a espera e cai para frases. */
+  function cairParaFrases(html: string) {
+    preferencias.estimatedHighlight = true;
+    window.sessionStorage.setItem("acesso:voz:so-frases", "1");
+
+    const alvo = montar(html);
+
+    act(() => leitura.ler(alvo));
+
+    return alvo;
+  }
+
+  it("o modo diz que é aproximado, e a frase e a palavra são destacadas ao mesmo tempo", () => {
+    cairParaFrases("<p>Você vai organizar a agenda.</p>");
+
+    expect(leitura.modo).toBe("estimado");
+
+    act(() => fala(0).opcoes.aoIniciar?.());
+
+    expect(frase()).toBe("Você vai organizar a agenda.");
+    expect(palavra()).toBe("Você");
+  });
+
+  it("a palavra avança com o tempo, na ordem, e fica na última até a fala acabar", () => {
+    cairParaFrases("<p>Um dois três quatro cinco seis sete oito nove dez.</p>");
+    act(() => fala(0).opcoes.aoIniciar?.());
+
+    const vistas: string[] = [];
+    const texto = "Um dois três quatro cinco seis sete oito nove dez.";
+    const cronograma = criarCronograma(texto, PESO_POR_SEGUNDO_PADRAO, 1);
+
+    for (let t = 0; t <= cronograma.duracaoMs + 600; t += 100) {
+      act(() => void vi.advanceTimersByTime(100));
+      const p = palavra();
+
+      if (p && vistas[vistas.length - 1] !== p) vistas.push(p);
+    }
+
+    expect(vistas).toEqual(["Um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez"]);
+    expect(palavra()).toBe("dez"); // passou do tempo estimado: não some nem passa do fim
+    expect(frase()).toBe(texto);
+  });
+
+  it("a pausa congela a palavra, e continuar a solta de onde parou", () => {
+    preferencias.estimatedHighlight = true;
+    window.sessionStorage.setItem("acesso:voz:so-frases", "1");
+
+    // Função: um elemento novo a cada chamada, senão o React nem refaz o render no `rerender`.
+    // O mesmo objeto de HTML nas duas renderizações: um objeto novo faria o React reescrever o DOM e soltar os nós do destaque.
+    const html = { __html: "<p>Um dois três quatro cinco seis sete oito nove dez.</p>" };
+    const arvore = () => (
+      <LeituraDestacadaProvider>
+        <Capturar />
+        <div id="alvo" dangerouslySetInnerHTML={html} />
+      </LeituraDestacadaProvider>
+    );
+    const { rerender } = render(arvore());
+
+    act(() => leitura.ler(document.getElementById("alvo") as HTMLElement));
+    act(() => fala(0).opcoes.aoIniciar?.());
+    act(() => void vi.advanceTimersByTime(900));
+
+    const antes = palavra();
+
+    expect(antes).toBeTruthy();
+
+    // A voz diz que está pausada: o provider relê o estado no render seguinte.
+    estadoVoz.pausado = true;
+    rerender(arvore());
+    act(() => void vi.advanceTimersByTime(10_000));
+    expect(palavra()).toBe(antes); // congelada, mesmo com 10 s de relógio
+
+    estadoVoz.pausado = false;
+    rerender(arvore());
+    act(() => void vi.advanceTimersByTime(900));
+    expect(palavra()).not.toBe(antes); // continuou de onde parou
+  });
+
+  it("ao terminar a frase, apaga a palavra e aprende o ritmo da voz", () => {
+    cairParaFrases("<p>Esta é uma frase de teste com bastante palavras para medir o ritmo.</p>");
+    act(() => fala(0).opcoes.aoIniciar?.());
+    act(() => void vi.advanceTimersByTime(3000));
+
+    const antes = lerRitmo();
+
+    act(() => fala(0).opcoes.aoTerminar?.("fim"));
+
+    expect(palavra()).toBeUndefined();
+    expect(lerRitmo()).not.toBe(antes);
+  });
+
+  it("cancelar a fala não ensina nada e não deixa palavra para trás", () => {
+    cairParaFrases("<p>Esta é uma frase de teste com bastante palavras para medir o ritmo.</p>");
+    act(() => fala(0).opcoes.aoIniciar?.());
+    act(() => void vi.advanceTimersByTime(3000));
+
+    const antes = lerRitmo();
+
+    act(() => leitura.parar());
+
+    expect(palavra()).toBeUndefined();
+    expect(lerRitmo()).toBe(antes);
+  });
+
+  it("com a estimativa desligada, só a frase é destacada", () => {
+    preferencias.estimatedHighlight = false;
+    window.sessionStorage.setItem("acesso:voz:so-frases", "1");
+
+    const alvo = montar("<p>Você vai organizar a agenda.</p>");
+
+    act(() => leitura.ler(alvo));
+    act(() => fala(0).opcoes.aoIniciar?.());
+    act(() => void vi.advanceTimersByTime(2000));
+
+    expect(leitura.modo).toBe("frase");
+    expect(frase()).toBe("Você vai organizar a agenda.");
+    expect(palavra()).toBeUndefined();
+  });
+
+  it("o prefixo falado antes do texto não é destacado, e a palavra certa vem depois dele", () => {
+    preferencias.estimatedHighlight = true;
+    window.sessionStorage.setItem("acesso:voz:so-frases", "1");
+
+    const alvo = montar("<h2>Requisitos obrigatórios da vaga</h2>");
+
+    act(() => leitura.ler(alvo, { prefixo: "Título de nível 2: " }));
+    act(() => fala(0).opcoes.aoIniciar?.());
+
+    // No começo a voz ainda diz o prefixo: nada a destacar.
+    expect(palavra()).toBeUndefined();
+
+    const completo = "Título de nível 2: Requisitos obrigatórios da vaga";
+    const cronograma = criarCronograma(completo, PESO_POR_SEGUNDO_PADRAO, 1);
+
+    act(() => void vi.advanceTimersByTime(cronograma.duracaoMs - 50));
+    expect(palavra()).toBe("vaga");
+  });
+
+  it("a velocidade escolhida acelera a estimativa", () => {
+    preferencias.speechRate = 2;
+    cairParaFrases("<p>Um dois três quatro cinco seis sete oito nove dez.</p>");
+    act(() => fala(0).opcoes.aoIniciar?.());
+
+    const lento = criarCronograma("Um dois três quatro cinco seis sete oito nove dez.", PESO_POR_SEGUNDO_PADRAO, 1).duracaoMs;
+
+    act(() => void vi.advanceTimersByTime(lento / 2 + 50));
+    expect(palavra()).toBe("dez");
   });
 });
 

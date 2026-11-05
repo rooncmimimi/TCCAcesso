@@ -66,6 +66,9 @@ export function PainelAcessibilidade() {
 
   return (
     <div className="space-y-6">
+      {/* Os grupos abaixo são títulos de nível 3; este nível 2 (só para leitor de tela) mantém a ordem dos títulos
+          em todas as telas onde o painel aparece (configurações, boas-vindas e cadastro). */}
+      <h2 className="sr-only">Preferências de acessibilidade</h2>
       <PreviaAcessibilidade />
 
       <section aria-labelledby="grupo-visual" className="space-y-3">

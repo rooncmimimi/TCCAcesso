@@ -3,11 +3,13 @@ import { createContext } from "react";
 /**
  * Como o trecho que está sendo lido aparece destacado:
  * - `palavra`: a palavra que a voz está dizendo (precisa do evento `boundary` da voz);
- * - `frase`: a frase inteira, uma de cada vez (vozes sem `boundary` de palavra);
+ * - `estimado`: a frase inteira e, dentro dela, a palavra ESTIMADA pelo tempo (vozes sem `boundary` de
+ *   palavra); pode adiantar ou atrasar uma ou duas palavras;
+ * - `frase`: só a frase inteira, uma de cada vez (vozes sem `boundary` de palavra, com a estimativa desligada);
  * - `bloco`: o bloco todo, sem acompanhar a fala (navegador sem CSS Custom Highlight API, ou o
  *   destaque por palavra desligado nas preferências).
  */
-export type ModoDestaque = "palavra" | "frase" | "bloco";
+export type ModoDestaque = "palavra" | "estimado" | "frase" | "bloco";
 
 export type LeituraDestacadaContextValue = {
   /** Há uma leitura destacada em andamento (inclui pausada). */

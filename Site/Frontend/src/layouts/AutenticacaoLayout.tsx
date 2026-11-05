@@ -31,9 +31,9 @@ export function AutenticacaoLayout({
       >
         {t("auth.pularConteudo")}
       </a>
-      <div id="conteudo" tabIndex={-1} className={cn("w-full max-w-md outline-none", className)}>
+      <main id="conteudo" tabIndex={-1} className={cn("w-full max-w-md outline-none", className)}>
         {children}
-      </div>
+      </main>
     </div>
   );
 }

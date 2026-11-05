@@ -28,8 +28,10 @@ describe("razaoDeContraste", () => {
   it("bate com valores conhecidos do WCAG", () => {
     // Cinza #767676 sobre branco é o limite clássico de 4,54:1.
     expect(razaoDeContraste("#767676", "#ffffff")).toBeCloseTo(4.54, 1);
-    // O verde da marca (#178035) com branco, citado como 5,03:1 em globals.css.
-    expect(razaoDeContraste("#178035", "#ffffff")).toBeCloseTo(5.03, 1);
+    // O verde do tema (#16772f) com branco, citado como 5,65:1 em globals.css.
+    expect(razaoDeContraste("#16772f", "#ffffff")).toBeCloseTo(5.65, 1);
+    // E sobre o fundo tingido da página, onde o #178035 media só 4,47:1.
+    expect(razaoDeContraste("#16772f", "#edf2f9")).toBeGreaterThanOrEqual(4.5);
   });
 
   it("as cores do modo para daltonismo passam de 4,5:1 com texto branco", () => {

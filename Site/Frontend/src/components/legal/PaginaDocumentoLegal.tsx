@@ -16,7 +16,7 @@ export function PaginaDocumentoLegal({ doc }: { doc: DocumentoLegal }) {
     <div className="min-h-dvh bg-secondary">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
-          <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+          <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
             <Logo />
           </Link>
           <Button asChild variant="ghost" className="min-h-11 gap-1.5">
@@ -34,7 +34,7 @@ export function PaginaDocumentoLegal({ doc }: { doc: DocumentoLegal }) {
 
         <Card className="mt-8 shadow-card">
           <CardContent className="p-6 sm:p-8">
-            <CorpoDocumento doc={doc} />
+            <CorpoDocumento doc={doc} nivelDasSecoes={2} />
           </CardContent>
         </Card>
       </main>

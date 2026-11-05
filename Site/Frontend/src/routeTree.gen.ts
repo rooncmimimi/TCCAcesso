@@ -18,6 +18,7 @@ import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
 import { Route as ContaComprometidaRouteImport } from './routes/conta-comprometida'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DescobrirRouteImport } from './routes/descobrir'
+import { Route as DiagnosticoDeVozRouteImport } from './routes/diagnostico-de-voz'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as FaleConoscoRouteImport } from './routes/fale-conosco'
 import { Route as FeedRouteImport } from './routes/feed'
@@ -113,6 +114,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const DescobrirRoute = DescobrirRouteImport.update({
   id: '/descobrir',
   path: '/descobrir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagnosticoDeVozRoute = DiagnosticoDeVozRouteImport.update({
+  id: '/diagnostico-de-voz',
+  path: '/diagnostico-de-voz',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntrarRoute = EntrarRouteImport.update({
@@ -386,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
+  '/diagnostico-de-voz': typeof DiagnosticoDeVozRoute
   '/entrar': typeof EntrarRoute
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/descobrir': typeof DescobrirRoute
+  '/diagnostico-de-voz': typeof DiagnosticoDeVozRoute
   '/entrar': typeof EntrarRoute
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
@@ -506,6 +514,7 @@ export interface FileRoutesById {
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/descobrir': typeof DescobrirRoute
+  '/diagnostico-de-voz': typeof DiagnosticoDeVozRoute
   '/entrar': typeof EntrarRoute
   '/fale-conosco': typeof FaleConoscoRoute
   '/feed': typeof FeedRoute
@@ -570,6 +579,7 @@ export interface FileRouteTypes {
     | '/conta-comprometida'
     | '/dashboard'
     | '/descobrir'
+    | '/diagnostico-de-voz'
     | '/entrar'
     | '/fale-conosco'
     | '/feed'
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/descobrir'
+    | '/diagnostico-de-voz'
     | '/entrar'
     | '/fale-conosco'
     | '/feed'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/conta-comprometida'
     | '/dashboard'
     | '/descobrir'
+    | '/diagnostico-de-voz'
     | '/entrar'
     | '/fale-conosco'
     | '/feed'
@@ -752,6 +764,7 @@ export interface RootRouteChildren {
   ContaComprometidaRoute: typeof ContaComprometidaRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DescobrirRoute: typeof DescobrirRoute
+  DiagnosticoDeVozRoute: typeof DiagnosticoDeVozRoute
   EntrarRoute: typeof EntrarRoute
   FaleConoscoRoute: typeof FaleConoscoRoute
   FeedRoute: typeof FeedRoute
@@ -851,6 +864,13 @@ declare module '@tanstack/react-router' {
       path: '/descobrir'
       fullPath: '/descobrir'
       preLoaderRoute: typeof DescobrirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagnostico-de-voz': {
+      id: '/diagnostico-de-voz'
+      path: '/diagnostico-de-voz'
+      fullPath: '/diagnostico-de-voz'
+      preLoaderRoute: typeof DiagnosticoDeVozRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entrar': {
@@ -1304,6 +1324,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContaComprometidaRoute: ContaComprometidaRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DescobrirRoute: DescobrirRoute,
+  DiagnosticoDeVozRoute: DiagnosticoDeVozRoute,
   EntrarRoute: EntrarRoute,
   FaleConoscoRoute: FaleConoscoRoute,
   FeedRoute: FeedRoute,

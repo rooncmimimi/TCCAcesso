@@ -92,7 +92,7 @@ function CadastroComGoogle() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
           <Logo />
         </Link>
       </div>

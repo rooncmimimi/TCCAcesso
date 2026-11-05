@@ -28,7 +28,7 @@ const ICONES: Record<IconeDeProfissao, LucideIcon> = {
 function Lista({ titulo, itens }: { titulo: string; itens: string[] }) {
   return (
     <div>
-      <h4 className="text-sm font-bold">{titulo}</h4>
+      <h3 className="text-sm font-bold">{titulo}</h3>
       <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
         {itens.map((i) => (
           <li key={i}>{i}</li>
@@ -48,7 +48,7 @@ function FichaDaProfissao({ profissao: p }: { profissao: Profissao }) {
           <Icone className="size-10" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h3 className="text-lg font-bold">{p.nome}</h3>
+          <h2 className="text-lg font-bold">{p.nome}</h2>
           <p className="mt-1 text-sm">{p.resumo}</p>
         </div>
       </header>

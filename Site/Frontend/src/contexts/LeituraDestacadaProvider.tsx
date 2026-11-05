@@ -7,6 +7,7 @@ import {
   type ModoDestaque,
   LeituraDestacadaContext,
 } from "@/contexts/LeituraDestacadaContext";
+import { criarCronograma, criarRelogio, gravarRitmo, lerRitmo, novaCalibracao, palavraNoInstante, type Cronograma, type RelogioDeFala } from "@/lib/leituraEstimada";
 import {
   aplicarDestaque,
   criarRange,
@@ -22,6 +23,9 @@ import {
 
 /** Quanto esperar por um evento de palavra antes de concluir que esta voz não emite. */
 export const ESPERA_DO_PRIMEIRO_LIMITE_MS = 1500;
+
+/** De quanto em quanto tempo a palavra estimada é conferida. */
+export const INTERVALO_DA_ESTIMATIVA_MS = 60;
 
 const CHAVE_SO_FRASES = "acesso:voz:so-frases";
 
@@ -65,6 +69,8 @@ function gravarSoFrases(): void {
 export function LeituraDestacadaProvider({ children }: { children: ReactNode }) {
   const { preferencias } = useAcessibilidade();
   const { falar, parar: pararVoz, pausar, retomar, pausado } = useVoz();
+  const pausadoRef = useRef(pausado);
+  pausadoRef.current = pausado;
   const [lendo, setLendo] = useState(false);
   const [modo, setModo] = useState<ModoDestaque | null>(null);
 
@@ -73,8 +79,38 @@ export function LeituraDestacadaProvider({ children }: { children: ReactNode }) 
   const vigiaRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const destaquePorPalavraRef = useRef(preferencias.wordHighlight);
   destaquePorPalavraRef.current = preferencias.wordHighlight;
+  const estimarRef = useRef(preferencias.estimatedHighlight);
+  estimarRef.current = preferencias.estimatedHighlight;
+  const velocidadeRef = useRef(preferencias.speechRate);
+  velocidadeRef.current = preferencias.speechRate;
+
+  /** A frase em andamento no modo aproximado: cronograma estimado, relógio e o relógio de conferência. */
+  const estimativaRef = useRef<{ cronograma: Cronograma; relogio: RelogioDeFala; tique: ReturnType<typeof setInterval> } | null>(null);
+
+  const pararEstimativa = useCallback((medir: boolean) => {
+    const atual = estimativaRef.current;
+
+    if (!atual) return;
+
+    clearInterval(atual.tique);
+    estimativaRef.current = null;
+
+    // Só uma frase que foi até o fim ensina o ritmo da voz.
+    if (medir) {
+      const novo = novaCalibracao(lerRitmo(), atual.cronograma.pesoTotal, atual.relogio.decorridoMs(), velocidadeRef.current);
+
+      if (novo !== null) gravarRitmo(novo);
+    }
+  }, []);
+
+  // A pausa da leitura congela o relógio da estimativa (e o retomar o solta).
+  useEffect(() => {
+    if (pausado) estimativaRef.current?.relogio.pausar();
+    else estimativaRef.current?.relogio.retomar();
+  }, [pausado]);
 
   const limparMarcas = useCallback(() => {
+    pararEstimativa(false);
     limparDestaques();
     blocoMarcadoRef.current?.removeAttribute("data-speaking");
     blocoMarcadoRef.current = null;
@@ -82,7 +118,7 @@ export function LeituraDestacadaProvider({ children }: { children: ReactNode }) 
       clearTimeout(vigiaRef.current);
       vigiaRef.current = null;
     }
-  }, []);
+  }, [pararEstimativa]);
 
   const concluir = useCallback(
     (id: number) => {
@@ -105,25 +141,63 @@ export function LeituraDestacadaProvider({ children }: { children: ReactNode }) 
   const lerPorFrases = useCallback(
     (id: number, mapa: MapaDeTexto, prefixo: string) => {
       const frases = dividirEmFrases(mapa.texto);
-      setModo("frase");
+      const estimar = estimarRef.current;
+
+      setModo(estimar ? "estimado" : "frase");
 
       frases.forEach(([inicio, fim], indice) => {
         const ultima = indice === frases.length - 1;
-        falar(`${indice === 0 ? prefixo : ""}${mapa.texto.slice(inicio, fim)}`, {
+        const prefixoDaFrase = indice === 0 ? prefixo : "";
+
+        falar(`${prefixoDaFrase}${mapa.texto.slice(inicio, fim)}`, {
           // Só a primeira corta o que estava sendo dito; as demais entram na fila.
           interrupt: indice === 0,
           aoIniciar: () => {
             if (idRef.current !== id) return;
             aplicarDestaque(DESTAQUE_FRASE, criarRange(mapa, inicio, fim));
+
+            if (!estimar) return;
+
+            // Palavra APROXIMADA: o tempo da frase repartido entre as palavras, no ritmo medido nesta sessão.
+            pararEstimativa(false);
+
+            const cronograma = criarCronograma(`${prefixoDaFrase}${mapa.texto.slice(inicio, fim)}`, lerRitmo(), velocidadeRef.current);
+            const relogio = criarRelogio();
+
+            if (pausadoRef.current) relogio.pausar();
+
+            let anterior: number | null = null;
+
+            const conferir = () => {
+              const palavraAtual = palavraNoInstante(cronograma, relogio.decorridoMs());
+
+              if (!palavraAtual || palavraAtual.inicio < prefixoDaFrase.length) {
+                if (anterior !== -1) aplicarDestaque(DESTAQUE_PALAVRA, null);
+                anterior = -1;
+
+                return;
+              }
+
+              if (anterior === palavraAtual.inicio) return;
+
+              anterior = palavraAtual.inicio;
+              const deslocamento = inicio - prefixoDaFrase.length;
+
+              aplicarDestaque(DESTAQUE_PALAVRA, criarRange(mapa, palavraAtual.inicio + deslocamento, palavraAtual.fim + deslocamento));
+            };
+
+            estimativaRef.current = { cronograma, relogio, tique: setInterval(conferir, INTERVALO_DA_ESTIMATIVA_MS) };
+            conferir();
           },
           aoTerminar: (motivo) => {
             if (idRef.current !== id) return;
+            pararEstimativa(motivo === "fim");
             if (motivo !== "fim" || ultima) concluir(id);
           },
         });
       });
     },
-    [falar, concluir],
+    [falar, concluir, pararEstimativa],
   );
 
   const ler = useCallback<LeituraDestacadaContextValue["ler"]>(

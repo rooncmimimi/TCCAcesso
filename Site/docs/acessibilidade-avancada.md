@@ -93,7 +93,7 @@ informou" nas etapas. Para ter esses dados de verdade é preciso incluir campos 
 
 ### Limitações de navegador (registradas, não universais)
 
-- **Destaque por palavra** depende do evento `boundary` da voz e da CSS Custom Highlight API
+- **Destaque por palavra** (nas vozes que não informam as palavras, desde 05/11/2026 há o **destaque aproximado**, por estimativa de tempo; ver a seção de verificações) depende do evento `boundary` da voz e da CSS Custom Highlight API
   (Chrome/Edge 105+, Safari 17.2+, Firefox 140+). **Testado de verdade apenas no navegador do app
   com as vozes locais "Microsoft Maria" e "Daniel"**, onde as palavras vieram em ordem e certas.
   Vozes de rede costumam não emitir `boundary`: nelas o destaque cai para frase e o aviso na tela diz
@@ -103,6 +103,11 @@ informou" nas etapas. Para ter esses dados de verdade é preciso incluir campos 
 - **Não testado** com NVDA, JAWS, VoiceOver, TalkBack nem com dispositivo de acionamento.
 
 ### Pendências deixadas de propósito para o fim de todos os blocos
+
+> **Atualização de 05/11/2026:** as quatro foram tratadas até onde dá sem pessoas e aparelhos reais. O estado de cada uma
+> e o que falta estão em [acessibilidade-avancada-verificacoes.md](acessibilidade-avancada-verificacoes.md); a decisão sobre o
+> motor de voz está em [acessibilidade-avancada-voz-propria.md](acessibilidade-avancada-voz-propria.md). A tabela abaixo é o registro
+> original de por que ficaram para o fim.
 
 | Pendência | Por quê | O que fazer no fim |
 |---|---|---|

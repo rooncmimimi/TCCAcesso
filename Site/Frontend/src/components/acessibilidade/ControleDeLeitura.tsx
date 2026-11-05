@@ -5,6 +5,7 @@ import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
 
 const EXPLICACAO_DO_MODO = {
   palavra: "Destacando palavra por palavra",
+  estimado: "Destaque aproximado: a frase, e a palavra estimada pelo tempo (esta voz não informa cada palavra)",
   frase: "Destacando frase por frase (esta voz não informa cada palavra)",
   bloco: "Destacando o bloco inteiro",
 } as const;

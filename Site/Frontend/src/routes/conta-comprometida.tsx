@@ -38,7 +38,7 @@ export const Route = createFileRoute("/conta-comprometida")({
 function Cabecalho() {
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
-      <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+      <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
         <Logo />
       </Link>
       <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">

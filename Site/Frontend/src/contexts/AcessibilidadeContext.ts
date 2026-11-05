@@ -38,6 +38,11 @@ export type PreferenciasAcessibilidade = {
 
   /** Destaca a palavra que a voz está dizendo (`hooks/useLeituraDestacada.ts`). */
   wordHighlight: boolean;
+  /**
+   * Com uma voz que não informa as palavras, estima a palavra dentro de cada frase (aproximado). Desligado,
+   * esse caso destaca só a frase. Não muda nada com vozes que informam as palavras.
+   */
+  estimatedHighlight: boolean;
   /** Régua de leitura: faixa clara que acompanha o mouse ou o foco, com o resto da tela escurecido. */
   readingRuler: boolean;
   rulerHeight: number; // px, 24 – 160
@@ -95,6 +100,7 @@ export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
   vlibras: true,
   arrowReading: false,
   wordHighlight: true,
+  estimatedHighlight: true,
   readingRuler: false,
   rulerHeight: 64,
   rulerDim: 0.6,

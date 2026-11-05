@@ -158,14 +158,15 @@
   /* Cores da marca (verde, vermelho, amarelo, azul) com `oklch(from <hex> l c h)`,
      a sintaxe de cor relativa do CSS: o navegador calcula o valor exato a
      partir do hex oficial, sem conversão à mão.
-     `--primary` usa o verde mais escuro da marca (#178035), que mede 5,03:1
-     com texto branco; o verde vivo (#21a848) mediria só 3,11:1, abaixo dos
-     4,5:1 do WCAG 1.4.3, em todos os botões primários. `--primary-soft` é o
+     `--primary` usa um verde mais escuro que o da marca (#16772f), que mede 5,65:1
+     com texto branco e 5,0:1 sobre os fundos tingidos da página (#edf2f9); o
+     #178035 media 4,47:1 ali, e o verde vivo (#21a848) só 3,11:1, abaixo dos
+     4,5:1 do WCAG 1.4.3 (medido com o axe no navegador, 05/11/2026). `--primary-soft` é o
      fundo claro atrás de `text-primary` (iniciais de avatar, ícones de badge). */
-  --primary: oklch(from #178035 l c h);
+  --primary: oklch(from #16772f l c h);
   --primary-foreground: oklch(from #ffffff l c h);
   --primary-soft: oklch(from #eefaf1 l c h);
-  --primary-strong: oklch(from #178035 l c h);
+  --primary-strong: oklch(from #16772f l c h);
 
   --secondary: oklch(0.96 0.01 255);
   --secondary-foreground: oklch(0.28 0.04 260);
@@ -191,8 +192,8 @@
 
   --border: oklch(0.91 0.01 255);
   --input: oklch(0.91 0.01 255);
-  /* Mesmo verde de `--primary`: o contorno de foco mede 5,03:1 contra o branco. */
-  --ring: oklch(from #178035 l c h);
+  /* Mesmo verde de `--primary`: o contorno de foco mede 5,65:1 contra o branco. */
+  --ring: oklch(from #16772f l c h);
 
   /* Paleta dos gráficos. `--chart-1` é o verde da marca, usado nas barras
      dos relatórios; `--chart-2` a `--chart-5` são tons distintos e legíveis

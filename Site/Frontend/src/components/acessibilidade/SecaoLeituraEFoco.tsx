@@ -1,4 +1,6 @@
+import { Link } from "@tanstack/react-router";
 import {
+  Stethoscope,
   BellRing,
   BookOpen,
   Focus,
@@ -52,9 +54,21 @@ export function SecaoLeituraEFoco() {
         id="a11y-word-highlight"
         icon={Highlighter}
         titulo="Destacar a palavra que está sendo lida"
-        descricao="Com o botão Ouvir ou o cursor de leitura, a palavra dita fica marcada. Se a voz do seu navegador não informar as palavras, o destaque passa a ser por frase."
+        descricao="Com o botão Ouvir ou o cursor de leitura, a palavra dita fica marcada. Se a voz do seu navegador não informar as palavras, o destaque passa a ser por frase (e, se a estimativa abaixo estiver ligada, com a palavra aproximada)."
         chave="wordHighlight"
       />
+      {preferencias.wordHighlight && (
+        <ToggleRow
+          id="a11y-estimated-highlight"
+          icon={Highlighter}
+          titulo="Estimar a palavra em vozes que não informam as palavras"
+          descricao="Algumas vozes (como as de rede e várias de celular) dizem só quando a frase começa e termina. Ligado, o site estima a palavra pelo tempo: é aproximado e pode adiantar ou atrasar uma ou duas palavras. Desligado, só a frase fica destacada."
+          chave="estimatedHighlight"
+        />
+      )}
+      <Link to="/diagnostico-de-voz" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline underline-offset-2">
+        <Stethoscope className="size-4" aria-hidden="true" /> Testar a voz deste aparelho
+      </Link>
 
       <ToggleRow
         id="a11y-ruler"

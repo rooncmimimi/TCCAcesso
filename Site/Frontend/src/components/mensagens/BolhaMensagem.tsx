@@ -56,7 +56,7 @@ export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propr
         <div
           className={cn(
             "mt-1 flex items-center justify-end gap-1 text-[11px]",
-            propria ? "text-primary-foreground/80" : "text-muted-foreground",
+            propria ? "text-primary-foreground" : "text-muted-foreground",
           )}
         >
           <span>{formatarHora(mensagem.criadoEm)}</span>

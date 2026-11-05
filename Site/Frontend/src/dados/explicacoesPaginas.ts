@@ -68,6 +68,12 @@ export const EXPLICACOES: readonly ExplicacaoDePagina[] = [
     proximosPassos: "Escolha candidatura ou entrevista. Você pode pausar e continuar depois.",
   },
   {
+    padrao: "/diagnostico-de-voz",
+    nome: "Diagnóstico de voz",
+    texto: "Uma tela para testar a voz do seu aparelho: se ela informa cada palavra (para o destaque), se a pausa funciona e como fica a leitura do ACESSO. No fim há um relatório para copiar.",
+    proximosPassos: "Aperte os botões de teste, um de cada vez, ouça a leitura de exemplo, marque o que você percebeu e copie o relatório.",
+  },
+  {
     padrao: "/comunicacao",
     nome: "Central de comunicação",
     texto: "Aqui ficam frases prontas, como “Preciso de um momento para responder”. Você pode mostrar a frase em letras grandes, ouvi-la em voz alta ou copiá-la. Também pode criar as suas.",

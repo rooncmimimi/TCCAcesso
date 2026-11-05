@@ -218,3 +218,45 @@ describe("itensDoTexto", () => {
     expect(itensDoTexto("  \n  ")).toEqual([]);
   });
 });
+
+describe("montarResumoVaga: campos do Bloco 3 (atividades, desejáveis e etapas)", () => {
+  const enriquecida: Vaga = {
+    ...vagaCompleta,
+    atividades: "- Atender clientes no balcão\n- Registrar pedidos no sistema",
+    requisitosDesejaveis: "Inglês básico; Conhecer planilhas",
+    etapasSelecao: "1. Conversa por mensagem\n2. Entrevista curta\n3. Resposta em até 5 dias",
+  };
+
+  it("usa as atividades que a empresa escreveu em vez do começo da descrição", () => {
+    const s = secao(enriquecida, "atividades");
+
+    expect(s.informado).toBe(true);
+    expect(s.tipo === "lista" && s.itens).toEqual(["Atender clientes no balcão", "Registrar pedidos no sistema"]);
+  });
+
+  it("com os desejáveis preenchidos, separa obrigatórios de desejáveis e não diz mais que a empresa não separou", () => {
+    const obrigatorios = secao(enriquecida, "requisitos");
+    const desejaveis = secao(enriquecida, "desejaveis");
+
+    expect(obrigatorios.titulo).toBe("Requisitos obrigatórios");
+    expect(obrigatorios.tipo === "lista" && obrigatorios.observacao).toBeUndefined();
+    expect(desejaveis.tipo === "lista" && desejaveis.itens).toEqual(["Inglês básico", "Conhecer planilhas"]);
+  });
+
+  it("as etapas da seleção passam a aparecer quando a empresa as informou", () => {
+    const s = secao(enriquecida, "etapas");
+
+    expect(s.informado).toBe(true);
+    expect(s.tipo === "lista" && s.itens).toEqual(["Conversa por mensagem", "Entrevista curta", "Resposta em até 5 dias"]);
+  });
+
+  it("sem os campos novos, tudo continua como antes (não informado, sem inventar)", () => {
+    expect(secao(vagaCompleta, "etapas").informado).toBe(false);
+    expect(montarResumoVaga(vagaCompleta).secoes.find((s) => s.id === "desejaveis")).toBeUndefined();
+    expect(secao(vagaCompleta, "requisitos").titulo).toBe("O que a empresa pede");
+  });
+
+  it("o texto falado inclui as seções novas", () => {
+    expect(montarResumoVaga(enriquecida).textoFalado).toMatch(/Requisitos desejáveis: Inglês básico, Conhecer planilhas/);
+  });
+});

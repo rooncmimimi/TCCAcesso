@@ -11,6 +11,7 @@ import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { ListaSeguidoresDialog } from "@/components/perfil/ListaSeguidoresDialog";
 import { CandidaturasRecentes } from "@/components/dashboard/CandidaturasRecentes";
 import { VagasFavoritas } from "@/components/dashboard/VagasFavoritas";
+import { RevisaoDeTextoAlternativo } from "@/components/acessibilidade/RevisaoDeTextoAlternativo";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
 import { urlArquivo } from "@/utils/arquivos";
@@ -64,6 +65,7 @@ function MinhaAtividade() {
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           {data.ehCandidato && <CandidaturasRecentes />}
           {data.ehCandidato && <VagasFavoritas />}
+          {usuario?.id ? <RevisaoDeTextoAlternativo usuarioId={usuario.id} /> : null}
 
           <Card className="shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">

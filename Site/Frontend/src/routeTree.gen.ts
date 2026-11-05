@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BoasVindasRouteImport } from './routes/boas-vindas'
+import { Route as CompararRouteImport } from './routes/comparar'
 import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
 import { Route as ContaComprometidaRouteImport } from './routes/conta-comprometida'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -79,6 +80,11 @@ const AdminRoute = AdminRouteImport.update({
 const BoasVindasRoute = BoasVindasRouteImport.update({
   id: '/boas-vindas',
   path: '/boas-vindas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompararRoute = CompararRouteImport.update({
+  id: '/comparar',
+  path: '/comparar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfirmarEmailRoute = ConfirmarEmailRouteImport.update({
@@ -356,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
+  '/comparar': typeof CompararRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
@@ -413,6 +420,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/boas-vindas': typeof BoasVindasRoute
+  '/comparar': typeof CompararRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/descobrir': typeof DescobrirRoute
@@ -468,6 +476,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/boas-vindas': typeof BoasVindasRoute
+  '/comparar': typeof CompararRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
   '/conta-comprometida': typeof ContaComprometidaRoute
   '/dashboard': typeof DashboardRouteWithChildren
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/boas-vindas'
+    | '/comparar'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/dashboard'
@@ -585,6 +595,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/boas-vindas'
+    | '/comparar'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/descobrir'
@@ -639,6 +650,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/boas-vindas'
+    | '/comparar'
     | '/confirmar-email'
     | '/conta-comprometida'
     | '/dashboard'
@@ -698,6 +710,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   BoasVindasRoute: typeof BoasVindasRoute
+  CompararRoute: typeof CompararRoute
   ConfirmarEmailRoute: typeof ConfirmarEmailRoute
   ContaComprometidaRoute: typeof ContaComprometidaRoute
   DashboardRoute: typeof DashboardRouteWithChildren
@@ -757,6 +770,13 @@ declare module '@tanstack/react-router' {
       path: '/boas-vindas'
       fullPath: '/boas-vindas'
       preLoaderRoute: typeof BoasVindasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comparar': {
+      id: '/comparar'
+      path: '/comparar'
+      fullPath: '/comparar'
+      preLoaderRoute: typeof CompararRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/confirmar-email': {
@@ -1218,6 +1238,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   BoasVindasRoute: BoasVindasRoute,
+  CompararRoute: CompararRoute,
   ConfirmarEmailRoute: ConfirmarEmailRoute,
   ContaComprometidaRoute: ContaComprometidaRoute,
   DashboardRoute: DashboardRouteWithChildren,

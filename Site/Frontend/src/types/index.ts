@@ -1,4 +1,5 @@
 import type { AdaptacoesDaEmpresa, AdaptacoesDoCandidato } from "./adaptacoes";
+import type { AcessibilidadeFisica, AmbienteSensorial } from "./ambiente";
 
 /** Perfis de usuário suportados pela plataforma. */
 export type TipoUsuario = "candidato" | "empresa" | "administrador";
@@ -314,6 +315,14 @@ export interface Vaga {
   publicoAlvo?: PublicoAlvoVaga;
   acessibilidade?: string | null;
   recursosAcessibilidade?: RecursoAcessibilidadeVaga[] | null;
+  /** Bloco 3: tudo escrito pela empresa e opcional. Ausente ou vazio = a empresa não informou. */
+  atividades?: string | null;
+  requisitosDesejaveis?: string | null;
+  etapasSelecao?: string | null;
+  entrevistaAdaptacoes?: string[] | null;
+  entrevistaObservacao?: string | null;
+  ambienteSensorial?: AmbienteSensorial | null;
+  acessibilidadeFisica?: AcessibilidadeFisica | null;
   status: StatusVaga;
   criadoEm?: string;
   dataEncerramento?: string | null;

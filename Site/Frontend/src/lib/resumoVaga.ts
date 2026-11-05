@@ -179,6 +179,9 @@ export function montarResumoVaga(vaga: Vaga): ResumoDaVaga {
   const local = [limpar(vaga.cidade), limpar(vaga.estado)].filter(Boolean).join(" - ");
 
   const requisitos = itensDoTexto(vaga.requisitos);
+  const atividades = itensDoTexto(vaga.atividades);
+  const desejaveis = itensDoTexto(vaga.requisitosDesejaveis);
+  const etapas = itensDoTexto(vaga.etapasSelecao);
   const beneficios = itensDoTexto(vaga.beneficios);
   const recursos = (vaga.recursosAcessibilidade ?? []).map((r) => RECURSO[r]).filter(Boolean);
   const detalhesDeAcessibilidade = limpar(vaga.acessibilidade);
@@ -192,7 +195,8 @@ export function montarResumoVaga(vaga: Vaga): ResumoDaVaga {
       "Cargo",
       limpar(vaga.titulo) ? `${limpar(vaga.titulo)}${nomeEmpresa ? `, na empresa ${nomeEmpresa}` : ""}.` : null,
     ),
-    textoSecao("atividades", "O que você vai fazer", resumirDescricao(vaga.descricao)),
+    // Com as atividades preenchidas pela empresa, o resumo as usa. Sem elas, cai no começo da descrição.
+    atividades.length > 0 ? listaSecao("atividades", "O que você vai fazer", atividades) : textoSecao("atividades", "O que você vai fazer", resumirDescricao(vaga.descricao)),
     textoSecao(
       "local",
       "Onde você vai trabalhar",
@@ -204,12 +208,14 @@ export function montarResumoVaga(vaga: Vaga): ResumoDaVaga {
     textoSecao("salario", "Salário", salario ? `${salario}, valor informado pela empresa.` : null),
     textoSecao("jornada", "Jornada", jornada ? comPontoFinal(jornada) : null),
     textoSecao("contrato", "Tipo de contrato", vaga.contrato ? CONTRATO[vaga.contrato] : null),
+    // Com os desejáveis preenchidos, a empresa separou os dois tipos: os de sempre são os obrigatórios.
     listaSecao(
       "requisitos",
-      "O que a empresa pede",
+      desejaveis.length > 0 ? "Requisitos obrigatórios" : "O que a empresa pede",
       requisitos,
-      requisitos.length > 0 ? "A empresa não separou o que é obrigatório do que é desejável." : undefined,
+      requisitos.length > 0 && desejaveis.length === 0 ? "A empresa não separou o que é obrigatório do que é desejável." : undefined,
     ),
+    ...(desejaveis.length > 0 ? [listaSecao("desejaveis", "Requisitos desejáveis", desejaveis)] : []),
     listaSecao("beneficios", "Benefícios", beneficios),
     listaSecao(
       "acessibilidade",
@@ -217,8 +223,8 @@ export function montarResumoVaga(vaga: Vaga): ResumoDaVaga {
       recursos,
       detalhesDeAcessibilidade ? `Detalhes da empresa: ${comPontoFinal(detalhesDeAcessibilidade)}` : undefined,
     ),
-    // O cadastro de vagas ainda não tem campo para as etapas: o resumo diz isso, sem supor.
-    textoSecao("etapas", "Etapas da seleção", null),
+    // Sem etapas preenchidas pela empresa, o resumo diz que não foram informadas, sem supor.
+    etapas.length > 0 ? listaSecao("etapas", "Etapas da seleção", etapas) : textoSecao("etapas", "Etapas da seleção", null),
   ];
 
   // Só texto de acessibilidade, sem a lista de recursos: vira texto, não "não informado".

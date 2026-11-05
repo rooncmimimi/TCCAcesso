@@ -54,6 +54,21 @@ export const DICAS_DE_CAMPO = {
     passos: ["O acesso ao prédio e ao banheiro.", "Equipamentos e programas adaptados.", "Horários flexíveis ou trabalho remoto, se houver."],
     exemplo: "Prédio com rampa e elevador. Computadores com leitor de tela instalado. Entrada flexível entre 8h e 10h.",
   },
+  vagaAtividades: {
+    orientacao: "Liste o que a pessoa vai fazer no dia a dia, uma tarefa por linha.",
+    passos: ["Comece cada linha por um verbo, como atender, registrar, organizar.", "Cite a ferramenta, se importar (planilha, sistema, telefone).", "Deixe a descrição geral para o contexto."],
+    exemplo: "Atender clientes por telefone e e-mail\nRegistrar os pedidos no sistema\nOrganizar os documentos do setor",
+  },
+  vagaRequisitosDesejaveis: {
+    orientacao: "Coloque aqui o que seria um diferencial, mas que a pessoa pode aprender no trabalho.",
+    passos: ["Tudo o que não for indispensável vai aqui.", "Assim ninguém desiste de se candidatar por não ter algo que não era obrigatório."],
+    exemplo: "Inglês básico; Conhecimento de planilhas; Experiência anterior com atendimento",
+  },
+  vagaEtapas: {
+    orientacao: "Conte quantas etapas tem o processo e o que acontece em cada uma. Quem se candidata se sente mais seguro sabendo o caminho.",
+    passos: ["Uma etapa por linha, na ordem.", "Diga como cada etapa acontece (mensagem, vídeo, presencial).", "Informe em quanto tempo a empresa responde."],
+    exemplo: "1. Conversa por mensagem (até 15 minutos)\n2. Entrevista com a gestora, por vídeo ou presencial\n3. Resposta em até 5 dias úteis",
+  },
   empresaDescricao: {
     orientacao: "Apresente a empresa para quem vai se candidatar, em poucas frases.",
     passos: ["O que a empresa faz.", "Há quanto tempo existe e quantas pessoas trabalham nela.", "Onde fica."],

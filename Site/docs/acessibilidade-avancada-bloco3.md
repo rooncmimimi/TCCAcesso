@@ -1,7 +1,7 @@
 # Acessibilidade avançada: Bloco 3 (empresas e ambientes)
 
-Auditoria e **proposta** de modelo de dados. Nada foi implementado nem aplicado: aguarda a validação do modelo
-(migration `0013`). Complementa [acessibilidade-avancada.md](acessibilidade-avancada.md) e
+Auditoria, modelo de dados (aprovado) e o que foi **implementado** (seção 4). A migration `0013` foi aplicada no
+banco de **produção** com autorização expressa. Complementa [acessibilidade-avancada.md](acessibilidade-avancada.md) e
 [acessibilidade-avancada-bloco2.md](acessibilidade-avancada-bloco2.md).
 
 ## 1. Auditoria
@@ -47,3 +47,39 @@ acrescenta, e o cabeçalho traz a ordem de implantação e como voltar atrás.
    URL assinada, como o vídeo de postagem.
 4. **As três colunas de texto novas** (`atividades`, `requisitos_desejaveis`, `etapas_selecao`).
 5. **Banco para testar a `0013`:** o projeto `acesso-desenvolvimento` (hoje pausado) serve de banco descartável.
+
+Respostas (2026-11-04): todas as cinco propostas aprovadas; a migration foi aplicada **direto em produção**, por
+autorização expressa (o projeto de desenvolvimento não foi reativado).
+
+## 4. O que foi implementado
+
+**Backend** (commit `485a446`, migration `0013`): listas fechadas em `utils/ambienteDeTrabalho.js` (valor fora da lista
+dá 400, nunca é ignorado em silêncio); a `origem` do mapa físico é decidida pelo **servidor** (a empresa só declara; item
+verificado que não mudou mantém o selo, item alterado o perde; só o administrador marca, por
+`POST /admin/vagas/:id/acessibilidade-fisica/verificacao`, com registro de auditoria); vídeo no bucket privado
+(`vagas/<usuarioId>/`), um por vaga, transcrição obrigatória (mín. 20 caracteres), mp4/webm até 50 MB; rotas públicas
+`GET /vagas/catalogo-acessibilidade` e `GET /vagas/:id/midia` (URL assinada do vídeo gerada na hora).
+
+**Frontend:**
+
+| Recurso | Onde |
+|---|---|
+| Entrevista adaptável | seção "Ambiente de trabalho e entrevista" nos diálogos de nova vaga e de edição; mostrada em "Entrevista adaptável" na página da vaga |
+| Prévia sensorial e mapa físico | mesma seção; página da vaga mostra só o que foi informado, com "declarado pela empresa" ou "verificado pela equipe do ACESSO" em texto |
+| Vídeo em Libras, legenda, transcrição | gestão na edição da vaga (`VideoDaVagaGestao`); player acessível na página da vaga (controles nativos, sem autoplay, legenda por `<track>`, transcrição aberta, botão "Ampliar o vídeo") |
+| Avaliador de acessibilidade | painel "Avaliar a acessibilidade e a clareza da vaga" nos dois diálogos; regras determinísticas, não bloqueia nada, não é certificação legal |
+| Linguagem restritiva | dentro do avaliador (aponta, explica, quem decide é a empresa) |
+| Explicação de requisitos | "Entenda estas expressões" na página da vaga (competências: o que significa, quando é necessária, outras formas de demonstrar, o que perguntar) |
+| Comparador de vagas | botão "Comparar esta vaga" na página da vaga, tela `/comparar` (até 3, guardado só na sessão do navegador); marca "Diferente" em texto; sem nota, sem ranking |
+| Revisão de texto alternativo | seção "Descrever minhas imagens" em `/minha-atividade`; reaproveita o endpoint e o hook de edição de descrição que já existiam |
+| Vagas mais completas | campos `atividades`, `requisitos desejáveis` e `etapas da seleção` nos formulários, na página da vaga e no resumo em linguagem simples |
+
+**Diferenças em relação ao modelo aprovado:** a legenda WebVTT é guardada como **texto** na própria linha
+(`vaga_midias.legenda_vtt`, até 256 KB), e não como arquivo no bucket: o `<track>` exige mesma origem ou CORS, e assim o
+navegador monta um Blob local sem depender de nenhum dos dois.
+
+**Limites conhecidos:** a verificação do mapa físico tem a **rota** de administrador, mas ainda não tem tela no painel
+admin; o diálogo de candidatura não lista "o que a vaga oferece" na entrevista (a página da vaga lista, e o pedido de
+adaptações do Bloco 2 continua por candidatura); a revisão de texto alternativo só olha as publicações que o endpoint de
+listagem devolve (até 100 por vez).
+

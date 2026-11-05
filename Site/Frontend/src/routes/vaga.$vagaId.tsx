@@ -34,6 +34,11 @@ import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { TermosDoTexto } from "@/components/acessibilidade/TermosDoTexto";
 import { CandidaturaDialog } from "@/components/candidatura/CandidaturaDialog";
 import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
+import { ambienteService } from "@/services/ambiente.service";
+import { AmbienteDaVaga } from "@/components/vagas/AmbienteDaVaga";
+import { PlayerDeVideoAcessivel } from "@/components/vagas/PlayerDeVideoAcessivel";
+import { ExplicacaoDeRequisitos } from "@/components/acessibilidade/ExplicacaoDeRequisitos";
+import { BotaoComparar } from "@/components/vagas/BotaoComparar";
 
 export const Route = createFileRoute("/vaga/$vagaId")({
   head: () => ({
@@ -76,6 +81,12 @@ function DetalheVaga() {
     enabled: ehCandidato,
   });
 
+  // Vídeo em Libras (se a empresa enviou). 404 vira "sem vídeo" no próprio serviço.
+  const { data: midia } = useQuery({
+    queryKey: ["vagas", vagaId, "midia"],
+    queryFn: () => ambienteService.midia(vagaId),
+  });
+
   const jaCandidatado = (minhas?.dados ?? []).some((c) => c.vaga?.id === vagaId);
   const favoritada = (favoritos?.dados ?? []).some((v) => v.id === vagaId);
 
@@ -115,6 +126,9 @@ function DetalheVaga() {
     titulo: vaga?.titulo ?? "",
     descricao: vaga?.descricao ?? "",
     requisitos: vaga?.requisitos ?? "",
+    requisitosDesejaveis: vaga?.requisitosDesejaveis ?? "",
+    atividades: vaga?.atividades ?? "",
+    etapasSelecao: vaga?.etapasSelecao ?? "",
     beneficios: vaga?.beneficios ?? "",
     acessibilidade: vaga?.acessibilidade ?? "",
   });
@@ -286,7 +300,10 @@ function DetalheVaga() {
           </>
         )}
 
-        <ControleDeTraducao traducao={traducao} conteudo="vaga" className="mt-3" />
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <ControleDeTraducao traducao={traducao} conteudo="vaga" />
+          <BotaoComparar vagaId={vaga.id} />
+        </div>
 
         <ResumoVagaSimples vaga={vaga} />
 
@@ -300,13 +317,45 @@ function DetalheVaga() {
               <TermosDoTexto texto={vaga.descricao} />
             </section>
 
+            {midia ? <PlayerDeVideoAcessivel midia={midia} tituloDaVaga={vaga.titulo} /> : null}
+
+            {vaga.atividades && (
+              <section>
+                <h2 className="text-lg font-bold">Atividades do dia a dia</h2>
+                <TextoOuvivel rotulo="Ouvir as atividades da vaga" className="mt-2">
+                  <p className="whitespace-pre-line text-sm">{traducao.texto("atividades")}</p>
+                </TextoOuvivel>
+              </section>
+            )}
+
             {vaga.requisitos && (
               <section>
-                <h2 className="text-lg font-bold">{t("vagaDetalhe.requisitos")}</h2>
+                <h2 className="text-lg font-bold">Requisitos obrigatórios</h2>
                 <TextoOuvivel rotulo="Ouvir os requisitos da vaga" className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("requisitos")}</p>
                 </TextoOuvivel>
                 <TermosDoTexto texto={vaga.requisitos} />
+              </section>
+            )}
+
+            {vaga.requisitosDesejaveis && (
+              <section>
+                <h2 className="text-lg font-bold">Requisitos desejáveis</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Diferenciais. Quem não tem algum deles pode se candidatar do mesmo jeito.</p>
+                <TextoOuvivel rotulo="Ouvir os requisitos desejáveis da vaga" className="mt-2">
+                  <p className="whitespace-pre-line text-sm">{traducao.texto("requisitosDesejaveis")}</p>
+                </TextoOuvivel>
+              </section>
+            )}
+
+            <ExplicacaoDeRequisitos texto={[vaga.requisitos, vaga.requisitosDesejaveis, vaga.atividades].filter(Boolean).join("\n")} />
+
+            {vaga.etapasSelecao && (
+              <section>
+                <h2 className="text-lg font-bold">Etapas da seleção</h2>
+                <TextoOuvivel rotulo="Ouvir as etapas da seleção" className="mt-2">
+                  <p className="whitespace-pre-line text-sm">{traducao.texto("etapasSelecao")}</p>
+                </TextoOuvivel>
               </section>
             )}
 
@@ -347,6 +396,8 @@ function DetalheVaga() {
                 </TextoOuvivel>
               </section>
             )}
+
+            <AmbienteDaVaga vaga={vaga} />
 
             {vaga.cargaHoraria && (
               <section>

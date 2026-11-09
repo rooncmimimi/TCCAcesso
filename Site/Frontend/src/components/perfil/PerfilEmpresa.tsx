@@ -69,7 +69,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
     return (
       <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil da empresa…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("perfil.perfilEmpresa.carregandoPerfilDaEmpresa")}
         </div>
       </EstruturaApp>
     );
@@ -80,8 +80,8 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
       <EstruturaApp>
         <div role="alert" className="py-10 text-sm text-destructive">
           {proprioPerfil
-            ? "Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde."
-            : "Este perfil não está disponível."}
+            ? t("dashboard.empresa.naoFoiPossivelCarregarOsDados")
+            : t("perfil.perfilEmpresa.estePerfilNaoEstaDisponivel")}
         </div>
       </EstruturaApp>
     );
@@ -130,7 +130,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
             {proprioPerfil ? (
               <EditarEmpresaDialog empresa={empresa}>
                 <Button variant="outline" className="min-h-11 shrink-0">
-                  <Pencil aria-hidden="true" /> Editar perfil da empresa
+                  <Pencil aria-hidden="true" /> {t("perfil.editarEmpresaDialog.editarPerfilDaEmpresa")}
                 </Button>
               </EditarEmpresaDialog>
             ) : (
@@ -180,11 +180,12 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                 rel="noreferrer noopener"
                 className="flex items-center gap-1 font-medium text-primary hover:underline"
               >
-                <Globe className="size-4" aria-hidden="true" /> Site
+                <Globe className="size-4" aria-hidden="true" /> {t("perfil.editarEmpresaDialog.site")}
               </a>
             ) : null}
             <span className="flex items-center gap-1">
-              <Users className="size-4" aria-hidden="true" /> {resumo?.totalSeguidores ?? 0} seguidores
+              <Users className="size-4" aria-hidden="true" /> {resumo?.totalSeguidores ?? 0}{" "}
+              {t("perfil.seguidores", { n: resumo?.totalSeguidores ?? 0 })}
             </span>
           </div>
         </CardContent>
@@ -214,7 +215,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
           <h2 className="text-lg font-bold">{t("perfil.perfilEmpresa.vagasPublicadas")}</h2>
           {carregandoVagas ? (
             <div role="status" aria-live="polite" className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando vagas…
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("dashboard.minhasVagas.carregandoVagas")}
             </div>
           ) : !vagas || vagas.length === 0 ? (
             <p className="mt-2 text-sm text-muted-foreground">{t("perfil.perfilEmpresa.nenhumaVagaPublicadaAinda")}</p>
@@ -231,7 +232,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                       {vaga.titulo}
                     </Link>
                     <p className="text-sm text-muted-foreground">
-                      {vaga.cidade ?? "Local não informado"} · {vaga.modalidade}
+                      {vaga.cidade ?? t("perfil.perfilEmpresa.localNaoInformado")} · {vaga.modalidade}
                     </p>
                   </div>
                   <Badge variant={vaga.status === "aberta" ? "default" : "secondary"} className="shrink-0 font-medium">

@@ -54,7 +54,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" aria-pressed={ditado.ouvindo} onClick={ditado.ouvindo ? ditado.parar : ditado.iniciar}>
               {ditado.ouvindo ? <MicOff className="size-4" aria-hidden="true" /> : <Mic className="size-4" aria-hidden="true" />}
-              {ditado.ouvindo ? "Parar ditado" : "Ditar texto"}
+              {ditado.ouvindo ? "Parar ditado" : t("acessibilidade.painelDeDitado.ditarTexto")}
             </Button>
 
             <p role="status" className="text-sm font-semibold text-primary">
@@ -123,7 +123,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
                       Trocar “<strong>{s.trecho}</strong>{t("acessibilidade.painelDeDitado.por")}<strong>{s.sugestao}</strong>”? <span className="text-muted-foreground">{s.motivo}</span>
                     </span>
                     <Button type="button" size="sm" variant="secondary" onClick={() => setRevisao((atual) => (atual === null ? atual : aplicarSugestao(atual, s)))}>
-                      Aceitar
+                      {t("acessibilidade.painelDeDitado.aceitar")}
                     </Button>
                     <Button type="button" size="sm" variant="ghost" onClick={() => setIgnoradas((atuais) => [...atuais, `${s.inicio}:${s.sugestao}`])}>
                       {t("acessibilidade.painelDeDitado.manterComoEsta")}
@@ -139,7 +139,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
               {t("acessibilidade.painelDeDitado.inserirNoCampo")}
             </Button>
             <Button type="button" variant="ghost" onClick={() => setRevisao(null)}>
-              Descartar
+              {t("acessibilidade.painelDeDitado.descartar")}
             </Button>
           </div>
         </section>

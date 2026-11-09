@@ -9,6 +9,7 @@ import {
   Sparkles,
   Users2,
 } from "lucide-react";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
 import { Logo } from "@/components/Logo";
@@ -18,16 +19,16 @@ import { Card, CardContent } from "@/components/ui/card";
 export const Route = createFileRoute("/sobre-nos")({
   head: () => ({
     meta: [
-      { title: "Sobre nós — ACESSO" },
+      { title: textoDaPagina("sobre-nos.sobreNosAcesso") },
       {
         name: "description",
         content:
-          "Conheça a missão do ACESSO, nosso compromisso com a acessibilidade e como funciona a plataforma que conecta talentos PCD e profissionais 50+ a empresas inclusivas.",
+          textoDaPagina("sobre-nos.conhecaAMissaoDoAcessoNosso"),
       },
-      { property: "og:title", content: "Sobre nós — ACESSO" },
+      { property: "og:title", content: textoDaPagina("sobre-nos.sobreNosAcesso") },
       {
         property: "og:description",
-        content: "Missão, acessibilidade e como funciona o ACESSO.",
+        content: textoDaPagina("sobre-nos.missaoAcessibilidadeEComo"),
       },
     ],
   }),
@@ -185,8 +186,7 @@ function SobreNos() {
               </Link>
             </nav>
             <p className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Languages className="size-4 shrink-0" aria-hidden="true" /> ACESSO · WCAG 2.2 · VLibras
-              integrado
+              <Languages className="size-4 shrink-0" aria-hidden="true" /> {t("sobre-nos.acessoWcag22VlibrasIntegrado")}
             </p>
           </div>
         </div>

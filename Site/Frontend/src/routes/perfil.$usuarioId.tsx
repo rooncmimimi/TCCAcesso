@@ -10,12 +10,13 @@ import { empresasService } from "@/services/empresas.service";
 import { PerfilPessoal } from "@/components/perfil/PerfilPessoal";
 import { PerfilEmpresa } from "@/components/perfil/PerfilEmpresa";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/perfil/$usuarioId")({
   head: () => ({
     meta: [
-      { title: "Perfil — ACESSO" },
-      { name: "description", content: "Perfil profissional acessível no ACESSO." },
+      { title: textoDaPagina("perfilusuarioId.perfilAcesso") },
+      { name: "description", content: textoDaPagina("perfilusuarioId.perfilProfissionalAcessivelNo") },
     ],
   }),
   component: () => (
@@ -96,7 +97,7 @@ function PerfilDeTerceiro() {
   return (
     <EstruturaApp>
       <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil…
+        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("perfil.perfilPessoal.carregandoPerfil")}
       </div>
     </EstruturaApp>
   );

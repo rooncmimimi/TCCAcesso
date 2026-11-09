@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { ComparadorDeVagasTela } from "@/components/vagas/ComparadorDeVagasTela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/comparar")({
   head: () => ({
     meta: [
-      { title: "Comparar vagas — ACESSO" },
-      { name: "description", content: "Compare até três vagas lado a lado: ambiente, acessibilidade física e adaptações. Sem notas e sem escolher por você." },
+      { title: textoDaPagina("comparar.compararVagasAcesso") },
+      { name: "description", content: textoDaPagina("comparar.compareAteTresVagasLadoALado") },
     ],
   }),
   component: CompararPagina,

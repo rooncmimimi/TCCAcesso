@@ -20,7 +20,7 @@ export function FrasesProntas({ aoEscolher }: { aoEscolher: (texto: string) => v
   return (
     <div className="border-t border-border px-3 pt-2">
       <Button type="button" variant="ghost" size="sm" className="min-h-11 gap-2" aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>
-        <MessageSquareText className="size-4" aria-hidden="true" /> Frases prontas
+        <MessageSquareText className="size-4" aria-hidden="true" /> {t("mensagens.frasesProntas.frasesProntas")}
       </Button>
 
       {aberto ? (

@@ -26,7 +26,7 @@ export function VagasFavoritas() {
       <CardContent>
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando favoritas…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("dashboard.vagasFavoritas.carregandoFavoritas")}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
@@ -37,7 +37,7 @@ export function VagasFavoritas() {
           </div>
         ) : !data || data.dados.length === 0 ? (
           <p className="py-6 text-sm text-muted-foreground">
-            Você ainda não favoritou nenhuma vaga.{" "}
+            {t("dashboard.vagasFavoritas.voceAindaNaoFavoritouNenhuma")}{" "}
             <Link to="/vagas" className="font-medium text-primary underline">
               {t("dashboard.vagasFavoritas.explorarVagas")}
             </Link>
@@ -53,7 +53,7 @@ export function VagasFavoritas() {
                   </p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="size-3" aria-hidden="true" />
-                    {vaga.cidade ?? "Local não informado"} · {vaga.modalidade}
+                    {vaga.cidade ?? t("dashboard.vagasFavoritas.localNaoInformado")} · {vaga.modalidade}
                   </p>
                   <Badge variant="secondary" className="mt-2 font-medium">
                     {vaga.status}

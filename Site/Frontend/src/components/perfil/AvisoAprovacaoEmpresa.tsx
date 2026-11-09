@@ -45,24 +45,24 @@ export function AvisoAprovacaoEmpresa({
   );
 
   const titulo = pendente
-    ? "Sua empresa está em análise"
+    ? t("perfil.avisoAprovacaoEmpresa.suaEmpresaEstaEmAnalise")
     : suspensa
-      ? "Conta empresarial suspensa"
-      : "Seu cadastro empresarial não foi aprovado";
+      ? t("perfil.avisoAprovacaoEmpresa.contaEmpresarialSuspensa")
+      : t("perfil.avisoAprovacaoEmpresa.seuCadastroEmpresarialNaoFoi");
 
   const motivo = suspensa ? empresa.motivoSuspensao : empresa.motivoReprovacao;
 
   const descricaoFalada = pendente
-    ? "Sua empresa está em análise. Seu cadastro foi recebido e está aguardando a aprovação de um administrador do ACESSO. Você receberá uma notificação quando a análise for concluída."
+    ? t("perfil.avisoAprovacaoEmpresa.suaEmpresaEstaEmAnaliseSeu")
     : suspensa
       ? `Conta empresarial suspensa. Sua empresa foi suspensa pela moderação do ACESSO.${motivo ? ` Motivo: ${motivo}` : ""}`
       : `Seu cadastro empresarial não foi aprovado.${motivo ? ` Motivo: ${motivo}` : ""}`;
 
   const descricaoVisivel = pendente
-    ? "Seu cadastro foi recebido e está aguardando a aprovação de um administrador do ACESSO. Você receberá uma notificação quando a análise for concluída. Enquanto isso, publicar vagas, editar o perfil da empresa e visualizar candidaturas ficam indisponíveis."
+    ? t("perfil.avisoAprovacaoEmpresa.seuCadastroFoiRecebidoEEsta")
     : suspensa
-      ? "Sua empresa foi suspensa pela moderação do ACESSO. Enquanto a suspensão estiver ativa, o acesso à plataforma permanece bloqueado."
-      : "A equipe do ACESSO analisou seu cadastro e ele não foi aprovado. Os recursos empresariais (publicar vagas, editar o perfil, visualizar candidaturas) ficam indisponíveis enquanto esse status não mudar.";
+      ? t("perfil.avisoAprovacaoEmpresa.suaEmpresaFoiSuspensaPela")
+      : t("perfil.avisoAprovacaoEmpresa.aEquipeDoAcessoAnalisouSeu");
 
   return (
     <Card className="mt-4 shadow-card">

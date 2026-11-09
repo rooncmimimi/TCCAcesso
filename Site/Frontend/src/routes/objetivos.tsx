@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { NavegacaoPorObjetivos } from "@/components/objetivos/NavegacaoPorObjetivos";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/objetivos")({
   head: () => ({
     meta: [
-      { title: "O que você quer fazer? — ACESSO" },
-      { name: "description", content: "Escolha um objetivo e veja só os passos de que você precisa, em ordem." },
+      { title: textoDaPagina("objetivos.oQueVoceQuerFazerAcesso") },
+      { name: "description", content: textoDaPagina("objetivos.escolhaUmObjetivoEVejaSoOs") },
     ],
   }),
   component: ObjetivosPagina,

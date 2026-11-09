@@ -208,7 +208,7 @@ export function PostagemCard({
                     setTextoEdicao(postagem.conteudo);
                   }}
                 >
-                  Cancelar
+                  {t("post.cancelar")}
                 </Button>
               </div>
             </div>

@@ -62,7 +62,7 @@ export function PostagensTabela() {
       queryClient.setQueryData<RespostaLista>(chaveConsulta, (atual) => removerDaResposta(atual, postagem.id));
       return { anterior };
     },
-    onSuccess: () => toast.success("Publicação removida."),
+    onSuccess: () => toast.success(t("admin.postagensTabela.publicacaoRemovida")),
     onError: (erro, _postagem, contexto) => {
       const status = (erro as AxiosError)?.response?.status;
 
@@ -70,7 +70,7 @@ export function PostagensTabela() {
       // resultado que o admin queria já é verdade no servidor; mantém a
       // remoção otimista, só avisa em tom neutro, sem desfazer.
       if (status === 409 || status === 404) {
-        toast.info(status === 409 ? "Esta publicação já havia sido removida." : "Esta publicação não existe mais.");
+        toast.info(status === 409 ? "Esta publicação já havia sido removida." : t("admin.postagensTabela.estaPublicacaoNaoExisteMais"));
         return;
       }
 
@@ -78,7 +78,7 @@ export function PostagensTabela() {
       if (contexto?.anterior) {
         queryClient.setQueryData(chaveConsulta, contexto.anterior);
       }
-      toast.error(extrairMensagemErro(erro, "Não foi possível remover a publicação."));
+      toast.error(extrairMensagemErro(erro, t("admin.postagensTabela.naoFoiPossivelRemoverA")));
     },
     onSettled: () => {
       setAlvo(null);
@@ -127,7 +127,7 @@ export function PostagensTabela() {
           />
         </div>
         <Button type="submit" className="min-h-11 gap-1.5">
-          <Search className="size-4" aria-hidden="true" /> Buscar
+          <Search className="size-4" aria-hidden="true" /> {t("filtro.buscar")}
         </Button>
       </form>
 
@@ -158,18 +158,18 @@ export function PostagensTabela() {
                         size="sm"
                         variant="ghost"
                         onClick={() => setDetalhe(postagem)}
-                        aria-label={`Ver detalhes da publicação de ${postagem.usuario?.nome ?? "usuário"}`}
+                        aria-label={t("admin.postagensTabela.verDetalhesDaPublicacaoDe", { var1: postagem.usuario?.nome ?? t("admin.postagensTabela.usuario") })}
                       >
-                        <Eye className="size-4" aria-hidden="true" /> Ver detalhes
+                        <Eye className="size-4" aria-hidden="true" /> {t("admin.postagensTabela.verDetalhes")}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setAlvo(postagem)}
-                        aria-label={`Remover publicação de ${postagem.usuario?.nome ?? "usuário"}`}
+                        aria-label={t("admin.postagensTabela.removerPublicacaoDe", { var1: postagem.usuario?.nome ?? t("admin.postagensTabela.usuario") })}
                       >
-                        <Trash2 className="size-4" aria-hidden="true" /> Remover
+                        <Trash2 className="size-4" aria-hidden="true" /> {t("acessibilidade.paineisDeAjuda.remover")}
                       </Button>
                     </div>
                   </TableCell>

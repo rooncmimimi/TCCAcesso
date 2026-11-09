@@ -56,19 +56,19 @@ export function ComentariosTabela() {
       queryClient.setQueryData<RespostaLista>(chaveConsulta, (atual) => removerDaResposta(atual, id));
       return { anterior };
     },
-    onSuccess: () => toast.success("Comentário removido."),
+    onSuccess: () => toast.success(t("admin.comentariosTabela.comentarioRemovido")),
     onError: (erro, _id, contexto) => {
       const status = (erro as AxiosError)?.response?.status;
 
       if (status === 409 || status === 404) {
-        toast.info(status === 409 ? "Este comentário já havia sido removido." : "Este comentário não existe mais.");
+        toast.info(status === 409 ? "Este comentário já havia sido removido." : t("admin.comentariosTabela.esteComentarioNaoExisteMais"));
         return;
       }
 
       if (contexto?.anterior) {
         queryClient.setQueryData(chaveConsulta, contexto.anterior);
       }
-      toast.error(extrairMensagemErro(erro, "Não foi possível remover o comentário."));
+      toast.error(extrairMensagemErro(erro, t("admin.comentariosTabela.naoFoiPossivelRemoverO")));
     },
     onSettled: () => {
       setAlvo(null);
@@ -114,7 +114,7 @@ export function ComentariosTabela() {
           />
         </div>
         <Button type="submit" className="min-h-11 gap-1.5">
-          <Search className="size-4" aria-hidden="true" /> Buscar
+          <Search className="size-4" aria-hidden="true" /> {t("filtro.buscar")}
         </Button>
       </form>
 
@@ -141,9 +141,9 @@ export function ComentariosTabela() {
                         size="sm"
                         variant="ghost"
                         onClick={() => setDetalhe(comentario)}
-                        aria-label={`Ver detalhes do comentário de ${comentario.usuario?.nome ?? "usuário"}`}
+                        aria-label={t("admin.comentariosTabela.verDetalhesDoComentarioDe", { var1: comentario.usuario?.nome ?? t("admin.comentariosTabela.usuario") })}
                       >
-                        <Eye className="size-4" aria-hidden="true" /> Ver detalhes
+                        <Eye className="size-4" aria-hidden="true" /> {t("admin.comentariosTabela.verDetalhes")}
                       </Button>
                       <Button
                         size="sm"
@@ -152,7 +152,7 @@ export function ComentariosTabela() {
                         onClick={() => setAlvo(comentario)}
                         aria-label={t("admin.comentariosTabela.removerComentario")}
                       >
-                        <Trash2 className="size-4" aria-hidden="true" /> Remover
+                        <Trash2 className="size-4" aria-hidden="true" /> {t("acessibilidade.paineisDeAjuda.remover")}
                       </Button>
                     </div>
                   </TableCell>

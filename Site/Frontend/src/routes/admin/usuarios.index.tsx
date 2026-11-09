@@ -3,14 +3,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { UsuariosTabela } from "@/components/admin/UsuariosTabela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/usuarios/")({
   head: () => ({
     meta: [
-      { title: "Usuários — Administração ACESSO" },
-      { name: "description", content: "Bloqueie ou remova contas de usuários da plataforma ACESSO." },
-      { property: "og:title", content: "Usuários — Administração ACESSO" },
-      { property: "og:description", content: "Moderação de contas de usuários." },
+      { title: textoDaPagina("admin.usuariosindex.usuariosAdministracaoAcesso") },
+      { name: "description", content: textoDaPagina("admin.usuariosindex.bloqueieOuRemovaContasDe") },
+      { property: "og:title", content: textoDaPagina("admin.usuariosindex.usuariosAdministracaoAcesso") },
+      { property: "og:description", content: textoDaPagina("admin.usuariosindex.moderacaoDeContasDeUsuarios") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

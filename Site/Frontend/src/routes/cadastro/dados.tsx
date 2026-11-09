@@ -17,13 +17,15 @@ import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
 import { criarEsquemaCandidato } from "@/components/cadastro/esquemaCandidato";
-import { textosDoCadastro } from "@/components/cadastro/idioma";
+import { textosDoCadastro, type TextosCadastro } from "@/components/cadastro/idioma";
+import { useIdioma } from "@/hooks/useIdioma";
 import { LegendaObrigatorio } from "@/components/cadastro/MarcaObrigatorio";
 import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
 import { useSessao } from "@/hooks/useSessao";
 import { formatarCpf, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 /**
  * Dados pessoais de quem criou a conta direto pelo Google (etapa 6 da auditoria).
@@ -41,7 +43,7 @@ export const Route = createFileRoute("/cadastro/dados")({
     /** `?depois=empresa`: quem veio por "Sou empresa" segue para o cadastro institucional ao final. */
     depois: z.enum(["empresa"]).optional(),
   }),
-  head: () => ({ meta: [{ title: "Complete seus dados — ACESSO" }] }),
+  head: () => ({ meta: [{ title: textoDaPagina("cadastro.dados.completeSeusDadosAcesso") }] }),
   component: () => (
     <GuardaAcesso tipos={["candidato"]}>
       <CompletarDados />
@@ -49,8 +51,9 @@ export const Route = createFileRoute("/cadastro/dados")({
   ),
 });
 
-const t = textosDoCadastro("pt");
-const esquema = criarEsquemaCandidato(t).pick({
+/** O esquema nasce dos textos do idioma atual: antes estava fixo em "pt" e a tela toda ficava em português. */
+const criarEsquema = (t: TextosCadastro) =>
+  criarEsquemaCandidato(t).pick({
   pais: true,
   cpf: true,
   telefone: true,
@@ -58,9 +61,12 @@ const esquema = criarEsquemaCandidato(t).pick({
   cidade: true,
   estado: true,
 });
-type Formulario = z.infer<typeof esquema>;
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 function CompletarDados() {
+  const { idioma } = useIdioma();
+  const t = useMemo(() => textosDoCadastro(idioma), [idioma]);
+  const esquema = useMemo(() => criarEsquema(t), [t]);
   const { depois } = Route.useSearch();
   const navigate = useNavigate();
   const { usuario, recarregar } = useSessao();
@@ -124,7 +130,7 @@ function CompletarDados() {
           // A sessão passa a saber que não há mais pendência; o efeito acima leva adiante.
           await recarregar();
         } catch (erro) {
-          const mensagem = extrairMensagemErro(erro, "Não foi possível salvar seus dados agora. Tente novamente.");
+          const mensagem = extrairMensagemErro(erro, t.erroSalvarDados);
           // CPF repetido é o único erro que aponta para um campo; o resto fica no aviso.
           if (/CPF/i.test(mensagem)) setError("cpf", { message: mensagem });
           toast.error(mensagem);
@@ -132,7 +138,7 @@ function CompletarDados() {
           setEnviando(false);
         }
       }),
-    [handleSubmit, usuario, candidato, recarregar, setError],
+    [handleSubmit, usuario, candidato, recarregar, setError, t.erroSalvarDados],
   );
 
   const erros = errors;
@@ -140,7 +146,7 @@ function CompletarDados() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t.voltarAoInicio} className="inline-flex">
           <Logo />
         </Link>
       </div>
@@ -150,10 +156,10 @@ function CompletarDados() {
           <form onSubmit={aoEnviar} noValidate className="space-y-5">
             <div>
               <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-                Complete seus dados
+                {t.completeSeusDados}
               </h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Sua conta com o Google já está criada. Falta só o que a plataforma precisa para te apresentar às empresas.
+                {t.contaGoogleJaCriada}
               </p>
             </div>
 

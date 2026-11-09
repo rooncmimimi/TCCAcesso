@@ -53,10 +53,10 @@ export function SecaoRecursoPerfil({
   const remover = useMutation({
     mutationFn: (id: string) => perfilService.removerRecurso(recurso, id),
     onSuccess: () => {
-      toast.success("Registro removido.");
+      toast.success(t("perfil.secaoRecursoPerfil.registroRemovido"));
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso", recurso] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.secaoRecursoPerfil.naoFoiPossivelRemover"))),
   });
 
   if (somenteLeitura && (lista?.length ?? 0) === 0) {
@@ -72,7 +72,7 @@ export function SecaoRecursoPerfil({
         {somenteLeitura ? null : (
           <FormularioRecursoDialog recurso={recurso}>
             <Button type="button" size="sm" variant="outline" className="min-h-9 gap-1">
-              <Plus className="size-4" aria-hidden="true" /> Adicionar
+              <Plus className="size-4" aria-hidden="true" /> {t("perfil.secaoDeficiencias.adicionar")}
             </Button>
           </FormularioRecursoDialog>
         )}
@@ -80,7 +80,7 @@ export function SecaoRecursoPerfil({
 
       {somenteLeitura ? null : isLoading ? (
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando…
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("feed.carregando")}
         </div>
       ) : isError ? (
         <p role="alert" className="py-3 text-sm text-destructive">

@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Indicador de progresso do cadastro.
@@ -29,16 +30,17 @@ export function PassosCadastro({
   /** Palavras de estado para leitor de tela, no idioma escolhido. */
   rotulos?: { concluida: string; atual: string; pendente: string; lista: string };
 }) {
+  const { t } = useIdioma();
   const total = passos.length;
   const numeroAtual = Math.min(atual + 1, total);
   const texto = frase
     ? frase(numeroAtual, total, passos[atual])
-    : `Etapa ${numeroAtual} de ${total} — ${passos[atual]}`;
+    : t("cadastro.passosCadastro.etapaDeNome", { numero: numeroAtual, total, nome: passos[atual] });
   const estados = rotulos ?? {
-    concluida: "concluída",
-    atual: "etapa atual",
-    pendente: "ainda não preenchida",
-    lista: "Etapas do cadastro",
+    concluida: t("cadastro.passosCadastro.concluida"),
+    atual: t("cadastro.passosCadastro.etapaAtual"),
+    pendente: t("cadastro.passosCadastro.aindaNaoPreenchida"),
+    lista: t("cadastro.passosCadastro.etapasDoCadastro"),
   };
 
   return (

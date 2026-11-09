@@ -19,11 +19,11 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
           {t("candidatura.previaDePrivacidade.dadosProfissionais")}
         </h3>
         <ul className="list-disc space-y-1 pl-5 text-sm">
-          <li>Nome: {d.nome ?? "não informado"}</li>
-          <li>E-mail de contato: {d.emailDeContato ?? "não informado"}</li>
-          <li>Título profissional: {d.tituloProfissional ?? "não informado"}</li>
-          <li>Cidade e estado: {local || "não informado"}</li>
-          <li>Escolaridade: {d.escolaridade ?? "não informada"}</li>
+          <li>Nome: {d.nome ?? t("candidatura.previaDePrivacidade.naoInformado")}</li>
+          <li>E-mail de contato: {d.emailDeContato ?? t("candidatura.previaDePrivacidade.naoInformado")}</li>
+          <li>Título profissional: {d.tituloProfissional ?? t("candidatura.previaDePrivacidade.naoInformado")}</li>
+          <li>Cidade e estado: {local || t("candidatura.previaDePrivacidade.naoInformado")}</li>
+          <li>Escolaridade: {d.escolaridade ?? t("candidatura.previaDePrivacidade.naoInformada")}</li>
         </ul>
       </section>
 
@@ -32,11 +32,11 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
           {t("candidatura.previaDePrivacidade.curriculoEPerfil")}
         </h3>
         <ul className="list-disc space-y-1 pl-5 text-sm">
-          <li>Currículo: {d.curriculo ?? "você ainda não enviou um currículo"}</li>
+          <li>Currículo: {d.curriculo ?? t("candidatura.previaDePrivacidade.voceAindaNaoEnviouUmCurriculo")}</li>
           <li>Experiências: {d.experiencias}</li>
           <li>Formação: {d.formacoes}</li>
           <li>Habilidades: {d.habilidades}</li>
-          <li>Sobre mim: {d.biografia ? "será mostrado" : "não preenchido"}</li>
+          <li>Sobre mim: {d.biografia ? "será mostrado" : t("candidatura.previaDePrivacidade.naoPreenchido")}</li>
         </ul>
       </section>
 

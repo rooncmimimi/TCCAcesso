@@ -24,7 +24,7 @@ export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosP
       <p className="text-xs text-muted-foreground">{t("vagas.avaliadorDeVagaPainel.umaConferenciaRapidaDoQueEsta")}</p>
 
       <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" onClick={() => setResultado(avaliarVaga(obterDados()))}>
-        <ListChecks className="size-4" aria-hidden="true" /> {resultado ? "Avaliar de novo" : "Avaliar agora"}
+        <ListChecks className="size-4" aria-hidden="true" /> {resultado ? "Avaliar de novo" : t("vagas.avaliadorDeVagaPainel.avaliarAgora")}
       </Button>
 
       {resultado ? (

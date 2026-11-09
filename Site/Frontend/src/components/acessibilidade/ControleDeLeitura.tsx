@@ -3,13 +3,14 @@ import { Pause, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
 const EXPLICACAO_DO_MODO = {
-  palavra: "Destacando palavra por palavra",
-  estimado: "Destaque aproximado: a frase, e a palavra estimada pelo tempo (esta voz não informa cada palavra)",
-  frase: "Destacando frase por frase (esta voz não informa cada palavra)",
-  bloco: "Destacando o bloco inteiro",
-} as const;
+  palavra: "acessibilidade.controleDeLeitura.destacandoPalavra",
+  estimado: "acessibilidade.controleDeLeitura.destaqueAproximado",
+  frase: "acessibilidade.controleDeLeitura.destacandoFrase",
+  bloco: "acessibilidade.controleDeLeitura.destacandoBloco",
+} as const satisfies Record<string, ChaveBase>;
 
 /**
  * Pausar, continuar e parar a leitura destacada. Só aparece enquanto há uma leitura. O texto do
@@ -31,18 +32,18 @@ export function ControleDeLeitura() {
       <div className="flex gap-2">
         {pausado ? (
           <Button type="button" size="sm" className="min-h-11" onClick={retomar}>
-            <Play aria-hidden="true" /> Continuar
+            <Play aria-hidden="true" /> {t("acessibilidade.controleDeLeitura.continuar")}
           </Button>
         ) : (
           <Button type="button" size="sm" className="min-h-11" onClick={pausar}>
-            <Pause aria-hidden="true" /> Pausar
+            <Pause aria-hidden="true" /> {t("acessibilidade.controleDeLeitura.pausar")}
           </Button>
         )}
         <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={parar}>
-          <Square aria-hidden="true" /> Parar
+          <Square aria-hidden="true" /> {t("acessibilidade.barraDeVarredura.parar")}
         </Button>
       </div>
-      {modo && <p className="min-w-0 flex-1 text-xs text-muted-foreground">{EXPLICACAO_DO_MODO[modo]}</p>}
+      {modo && <p className="min-w-0 flex-1 text-xs text-muted-foreground">{t(EXPLICACAO_DO_MODO[modo])}</p>}
     </section>
   );
 }

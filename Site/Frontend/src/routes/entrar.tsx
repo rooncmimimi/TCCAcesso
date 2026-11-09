@@ -22,6 +22,7 @@ import { guardarVerificacao } from "@/lib/verificacaoDispositivo";
 import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
 import { useIdioma } from "@/hooks/useIdioma";
 import { SeletorDeIdioma } from "@/components/SeletorDeIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 type TFuncao = ReturnType<typeof useIdioma>["t"];
 
@@ -37,10 +38,10 @@ type FormularioLogin = z.infer<ReturnType<typeof criarEsquemaLogin>>;
 export const Route = createFileRoute("/entrar")({
   head: () => ({
     meta: [
-      { title: "Entrar — ACESSO" },
-      { name: "description", content: "Acesse sua conta ACESSO e continue sua jornada profissional inclusiva." },
-      { property: "og:title", content: "Entrar — ACESSO" },
-      { property: "og:description", content: "Acesse sua conta na rede profissional acessível." },
+      { title: textoDaPagina("meta.entrarTitulo") },
+      { name: "description", content: textoDaPagina("entrar.acesseSuaContaAcessoEContinue") },
+      { property: "og:title", content: textoDaPagina("meta.entrarTitulo") },
+      { property: "og:description", content: textoDaPagina("entrar.acesseSuaContaNaRede") },
     ],
   }),
   component: Entrar,

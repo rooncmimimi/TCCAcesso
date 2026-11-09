@@ -16,6 +16,7 @@ import { seguidoresService } from "@/services/empresas.service";
 import { extrairMensagemErro } from "@/services/api";
 import type { SugestaoEmpresa, SugestaoPerfil } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 /**
  * Mesma chave de query do perfil (`PerfilPessoal.tsx`) para o resumo de seguidores, de propósito: o
@@ -31,10 +32,10 @@ const CHAVE_EMPRESAS = ["descobrir-empresas"] as const;
 export const Route = createFileRoute("/descobrir")({
   head: () => ({
     meta: [
-      { title: "Descobrir — ACESSO" },
+      { title: textoDaPagina("descobrir.descobrirAcesso") },
       {
         name: "description",
-        content: "Encontre pessoas e empresas para seguir no ACESSO, com sugestões explicadas.",
+        content: textoDaPagina("descobrir.encontrePessoasEEmpresasPara"),
       },
     ],
   }),
@@ -73,7 +74,7 @@ function Descobrir() {
 
       <section className="mt-8" aria-labelledby="titulo-pessoas">
         <h2 id="titulo-pessoas" className="flex items-center gap-2 text-xl font-bold">
-          <Users className="size-5 text-primary" aria-hidden="true" /> Pessoas
+          <Users className="size-5 text-primary" aria-hidden="true" /> {t("barraBusca.pessoas")}
         </h2>
         <div className="mt-4">
           {pessoas.isLoading ? (
@@ -97,7 +98,7 @@ function Descobrir() {
       {ehCandidato && (
         <section className="mt-10" aria-labelledby="titulo-empresas">
           <h2 id="titulo-empresas" className="flex items-center gap-2 text-xl font-bold">
-            <Building2 className="size-5 text-primary" aria-hidden="true" /> Empresas
+            <Building2 className="size-5 text-primary" aria-hidden="true" /> {t("admin.navegacaoAdmin.empresas")}
           </h2>
           <div className="mt-4">
             {empresas.isLoading ? (
@@ -147,6 +148,7 @@ function EstadoVazio({ texto }: { texto: string }) {
 }
 
 function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
+  const { t } = useIdioma();
   // Preenche a chave de cache que o `SeguirButton` lê: é esta busca que diz se o perfil é público
   // ou privado, se já é seguido, se há solicitação pendente ou bloqueio. `sugestoesPessoas` já
   // exclui bloqueados e quem a pessoa segue; falta só o estado de privacidade e solicitação, que só
@@ -159,7 +161,7 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
   return (
     <Card className="h-full shadow-none">
       <CardContent className="flex h-full flex-col items-center gap-3 p-5 text-center">
-        <Link to="/perfil/$usuarioId" params={{ usuarioId: pessoa.id }} aria-label={`Ver perfil de ${pessoa.nome}`}>
+        <Link to="/perfil/$usuarioId" params={{ usuarioId: pessoa.id }} aria-label={t("descobrir.verPerfilDe", { var1: pessoa.nome })}>
           <Avatar className="size-16">
             <AvatarImage src={urlArquivo(pessoa.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-lg font-bold text-primary">
@@ -199,18 +201,18 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
   const seguir = useMutation({
     mutationFn: () => seguidoresService.alternarEmpresa(empresa.id),
     onSuccess: () => {
-      toast.success(`Agora você está seguindo ${nome}.`);
+      toast.success(t("descobrir.agoraVoceEstaSeguindo", { var1: nome }));
       queryClient.setQueryData<SugestaoEmpresa[]>(CHAVE_EMPRESAS, (atual) =>
         atual?.filter((item) => item.id !== empresa.id),
       );
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível seguir esta empresa.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("descobrir.naoFoiPossivelSeguirEsta"))),
   });
 
   return (
     <Card className="h-full shadow-none">
       <CardContent className="flex h-full flex-col items-center gap-3 p-5 text-center">
-        <Link to="/perfil/$usuarioId" params={{ usuarioId: empresa.usuarioId ?? "" }} aria-label={`Ver perfil de ${nome}`}>
+        <Link to="/perfil/$usuarioId" params={{ usuarioId: empresa.usuarioId ?? "" }} aria-label={t("descobrir.verPerfilDe2", { var1: nome })}>
           <Avatar className="size-16 rounded-md">
             <AvatarImage src={urlArquivo(empresa.logo)} alt="" />
             <AvatarFallback className="rounded-md bg-primary-soft text-lg font-bold text-primary">
@@ -259,7 +261,7 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
           ) : (
             <UserPlus className="size-4" aria-hidden="true" />
           )}
-          Seguir
+          {t("perfil.seguirButton.seguir")}
         </Button>
       </CardContent>
     </Card>

@@ -1,3 +1,4 @@
+import type { ChaveBase } from "@/i18n/dicionarios";
 /**
  * Fale conosco: assuntos, limites e o e-mail de contato.
  *
@@ -5,15 +6,15 @@
  * as listas e os limites não divergem.
  */
 export const ASSUNTOS_DE_CONTATO = {
-  duvida: "Dúvida sobre a plataforma",
-  conta: "Minha conta",
-  problema_tecnico: "Problema técnico",
-  acessibilidade: "Acessibilidade",
-  privacidade: "Privacidade e dados pessoais (LGPD)",
-  denuncia: "Denúncia ou conteúdo inadequado",
-  sugestao: "Sugestão",
-  outro: "Outro assunto",
-} as const;
+  duvida: "faleConosco.assunto.duvida",
+  conta: "faleConosco.assunto.conta",
+  problema_tecnico: "faleConosco.assunto.problemaTecnico",
+  acessibilidade: "faleConosco.assunto.acessibilidade",
+  privacidade: "faleConosco.assunto.privacidade",
+  denuncia: "faleConosco.assunto.denuncia",
+  sugestao: "faleConosco.assunto.sugestao",
+  outro: "faleConosco.assunto.outro",
+} as const satisfies Record<string, ChaveBase>;
 
 export type AssuntoDeContato = keyof typeof ASSUNTOS_DE_CONTATO;
 

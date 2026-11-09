@@ -20,6 +20,7 @@ import {
   limparVinculo,
   tirarCodigoDaUrl,
 } from "@/lib/googleNavegador";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
 import googleService, { mensagemDeErroGoogle } from "@/services/google.service";
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/retorno-google")({
     codigo: z.string().optional(),
     erro: z.enum(["cancelado", "falha"]).optional(),
   }),
-  head: () => ({ meta: [{ title: "Entrando com Google — ACESSO" }] }),
+  head: () => ({ meta: [{ title: textoDaPagina("retorno-google.entrandoComGoogleAcesso") }] }),
   component: RetornoGoogle,
 });
 
@@ -160,7 +161,7 @@ function RetornoGoogle() {
           // A prova cumpriu o papel e não deve ficar na aba para outro cadastro.
           limparProva();
           await iniciarSessao(sessaoNova);
-          toast.success("Conta criada com o Google.");
+          toast.success(t("retorno-google.contaCriadaComOGoogle"));
           navigate({ to: "/cadastro/dados", search: { depois }, replace: true });
           return;
         }
@@ -197,7 +198,7 @@ function RetornoGoogle() {
         return;
       }
 
-      toast.success("Login realizado com sucesso!");
+      toast.success(t("login.sucesso"));
       // `replace`: o botão "voltar" não pode reabrir esta tela de passagem e abrir outra sessão.
       navigate({ ...destinoAposEntrar(resultado), replace: true });
     } catch (falha) {
@@ -246,7 +247,7 @@ function RetornoGoogle() {
           ) : estado.tipo === "conflito" ? (
             <Aviso
               titulo={t("retorno-google.estaContaJaExisteNoAcesso")}
-              texto={`Já há uma conta com o e-mail ${estado.email}, criada com e-mail e senha. Entre com ela. Se for uma conta de candidato, depois de entrar você pode vincular o Google em Configurações, Segurança, Contas conectadas. Por segurança, o ACESSO não junta duas contas só porque o e-mail é igual.`}
+              texto={t("retorno-google.jaHaUmaContaComOEMailCriadaCom", { var1: estado.email })}
             >
               <Button asChild className="min-h-12 w-full text-base">
                 <Link to="/entrar">{t("retorno-google.entrarComEMailESenha")}</Link>
@@ -262,10 +263,10 @@ function RetornoGoogle() {
               <Button type="button" className="min-h-12 w-full text-base" disabled={reativando} onClick={reativar}>
                 {reativando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Reativando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("login.reativando")}
                   </>
                 ) : (
-                  "Reativar minha conta"
+                  t("login.reativar")
                 )}
               </Button>
               <VoltarParaOLogin variante="ghost" />
@@ -273,7 +274,7 @@ function RetornoGoogle() {
           ) : estado.tipo === "emailNaoVerificado" ? (
             <Aviso
               titulo={t("login.confirmeEmail")}
-              texto={`Enviamos um e-mail de confirmação para ${estado.email}. Verifique sua caixa de entrada e também a pasta de spam, e clique no link antes de entrar.`}
+              texto={t("retorno-google.enviamosUmEMailDeConfirmacao", { var1: estado.email })}
               icone={<Mail className="size-5" />}
               falar={t("login.confirmeEmailVoz")}
             >

@@ -18,14 +18,15 @@ import { urlArquivo } from "@/utils/arquivos";
 import { atividadeService } from "@/services/atividade.service";
 import type { InteracaoFeedItem } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/minha-atividade")({
   head: () => ({
     meta: [
-      { title: "Minha atividade — ACESSO" },
+      { title: textoDaPagina("minha-atividade.minhaAtividadeAcesso") },
       {
         name: "description",
-        content: "Veja, só você, um resumo das suas candidaturas, vagas favoritas, seguidos e interações no feed.",
+        content: textoDaPagina("minha-atividade.vejaSoVoceUmResumoDasSuas"),
       },
     ],
   }),
@@ -54,7 +55,7 @@ function MinhaAtividade() {
 
       {isLoading ? (
         <div role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando sua atividade…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("minha-atividade.carregandoSuaAtividade")}
         </div>
       ) : isError || !data ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
@@ -75,7 +76,7 @@ function MinhaAtividade() {
               {usuario && data.seguindo.pessoas.total > 0 ? (
                 <ListaSeguidoresDialog usuarioId={usuario.id} modo="seguindo" total={data.seguindo.pessoas.total}>
                   <Button variant="ghost" size="sm">
-                    Ver tudo
+                    {t("minha-atividade.verTudo")}
                   </Button>
                 </ListaSeguidoresDialog>
               ) : null}
@@ -83,9 +84,9 @@ function MinhaAtividade() {
             <CardContent>
               {data.seguindo.pessoas.itens.length === 0 ? (
                 <p className="py-6 text-sm text-muted-foreground">
-                  Você ainda não segue ninguém.{" "}
+                  {t("minha-atividade.voceAindaNaoSegueNinguem")}{" "}
                   <Link to="/feed" className="font-medium text-primary underline">
-                    Ver o feed
+                    {t("minha-atividade.verOFeed")}
                   </Link>
                 </p>
               ) : (
@@ -119,7 +120,7 @@ function MinhaAtividade() {
             <CardContent>
               {data.seguindo.empresas.itens.length === 0 ? (
                 <p className="py-6 text-sm text-muted-foreground">
-                  Você ainda não segue nenhuma empresa.{" "}
+                  {t("minha-atividade.voceAindaNaoSegueNenhuma")}{" "}
                   <Link to="/vagas" className="font-medium text-primary underline">
                     {t("minha-atividade.explorarVagas")}
                   </Link>
@@ -200,6 +201,7 @@ function ListaInteracao({
   total: number;
   vazio: string;
 }) {
+  const { t } = useIdioma();
   return (
     <div>
       <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -216,7 +218,7 @@ function ListaInteracao({
                 params={{ postagemId: item.postagem?.id ?? "" }}
                 className="block truncate rounded-md px-2 py-1.5 text-sm hover:bg-secondary focus-visible:bg-secondary"
               >
-                {item.postagem?.conteudo?.trim() || "Publicação com anexo"}
+                {item.postagem?.conteudo?.trim() || t("minha-atividade.publicacaoComAnexo")}
               </Link>
             </li>
           ))}

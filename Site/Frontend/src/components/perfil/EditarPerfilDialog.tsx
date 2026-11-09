@@ -112,20 +112,20 @@ export function EditarPerfilDialog({
       atualizar({ nome: usuarioAtualizado.nome, telefone: usuarioAtualizado.telefone });
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Perfil atualizado.");
+      toast.success(t("perfil.editarPerfilDialog.perfilAtualizado"));
       rascunho.limpar();
       setAberto(false);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.editarPerfilDialog.naoFoiPossivelAtualizarOPerfil"))),
   });
 
   const removerBanner = useMutation({
     mutationFn: () => perfilService.atualizarUsuario(usuario!.id, { capaPerfil: null }),
     onSuccess: (usuarioAtualizado) => {
       atualizar({ capaPerfil: usuarioAtualizado.capaPerfil });
-      toast.success("Banner removido.");
+      toast.success(t("perfil.editarEmpresaDialog.bannerRemovido"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.editarEmpresaDialog.naoFoiPossivelRemoverOBanner"))),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -186,7 +186,7 @@ export function EditarPerfilDialog({
                 disabled={removerBanner.isPending}
                 onClick={() => removerBanner.mutate()}
               >
-                <Trash2 className="size-4" aria-hidden="true" /> Remover banner
+                <Trash2 className="size-4" aria-hidden="true" /> {t("perfil.editarEmpresaDialog.removerBanner")}
               </Button>
             ) : null}
           </div>
@@ -229,7 +229,7 @@ export function EditarPerfilDialog({
                   id="tituloProfissional"
                   name="tituloProfissional"
                   maxLength={150}
-                  placeholder="Ex.: Assistente Administrativo"
+                  placeholder={t("perfil.editarPerfilDialog.exAssistenteAdministrativo")}
                   defaultValue={candidato.tituloProfissional ?? ""}
                 />
               </div>
@@ -369,11 +369,11 @@ export function EditarPerfilDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t("post.cancelar")}
             </Button>
             <Button type="submit" disabled={salvar.isPending} className="min-h-11 gap-2">
               {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Salvar
+              {t("post.salvar")}
             </Button>
           </DialogFooter>
         </form>

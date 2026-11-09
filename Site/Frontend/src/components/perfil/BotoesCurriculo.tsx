@@ -43,7 +43,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
       }
     } catch (erro) {
       aba?.close();
-      toast.error(extrairMensagemErro(erro, "Não foi possível abrir o currículo."));
+      toast.error(extrairMensagemErro(erro, t("perfil.botoesCurriculo.naoFoiPossivelAbrirOCurriculo")));
     } finally {
       setVisualizando(false);
     }
@@ -63,7 +63,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
       link.click();
       link.remove();
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível baixar o currículo."));
+      toast.error(extrairMensagemErro(erro, t("perfil.botoesCurriculo.naoFoiPossivelBaixarOCurriculo")));
     } finally {
       setBaixando(false);
     }
@@ -85,7 +85,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
         ) : (
           <Eye className="size-4" aria-hidden="true" />
         )}
-        Visualizar currículo
+        {t("perfil.botoesCurriculo.visualizarCurriculo")}
       </Button>
       <Button
         type="button"
@@ -101,7 +101,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
         ) : (
           <Download className="size-4" aria-hidden="true" />
         )}
-        Baixar currículo
+        {t("perfil.botoesCurriculo.baixarCurriculo")}
       </Button>
     </div>
   );

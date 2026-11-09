@@ -52,7 +52,7 @@ export function EditarAdaptacoesDialog({ candidaturaId, vagaId, tituloDaVaga, at
   const salvar = useMutation({
     mutationFn: () => candidaturaAdaptacoesService.editar(candidaturaId, escolha, aceita),
     onSuccess: () => {
-      toast.success(escolhaTemConteudo(escolha) ? "O que você compartilha nesta candidatura foi atualizado." : "Autorização retirada.");
+      toast.success(escolhaTemConteudo(escolha) ? "O que você compartilha nesta candidatura foi atualizado." : t("candidatura.editarAdaptacoesDialog.autorizacaoRetirada"));
       void queryClient.invalidateQueries({ queryKey: ["candidaturas"] });
       aoFechar();
     },
@@ -71,7 +71,7 @@ export function EditarAdaptacoesDialog({ candidaturaId, vagaId, tituloDaVaga, at
 
         {catalogo.isLoading || perfil.isLoading ? (
           <div role="status" className="flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("feed.carregando")}
           </div>
         ) : !catalogo.data || !perfil.data ? (
           <p role="alert" className="text-sm text-destructive">
@@ -97,10 +97,10 @@ export function EditarAdaptacoesDialog({ candidaturaId, vagaId, tituloDaVaga, at
 
         <DialogFooter>
           <Button variant="outline" onClick={aoFechar}>
-            Cancelar
+            {t("post.cancelar")}
           </Button>
           <Button onClick={() => salvar.mutate()} disabled={salvar.isPending || (tem && !aceita) || !previa.data}>
-            {salvar.isPending ? "Salvando…" : tem ? "Salvar alteração" : "Retirar autorização"}
+            {salvar.isPending ? "Salvando…" : tem ? "Salvar alteração" : t("candidatura.adaptacoesDaMinhaCandidatura.retirarAutorizacao")}
           </Button>
         </DialogFooter>
       </DialogContent>

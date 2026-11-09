@@ -13,14 +13,15 @@ import { dashboardService } from "@/services/dashboard.service";
 import { empresasService } from "@/services/empresas.service";
 import type { Vaga } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/dashboard/empresa")({
   head: () => ({
     meta: [
-      { title: "Painel da empresa — ACESSO" },
+      { title: textoDaPagina("dashboard.empresa.painelDaEmpresaAcesso") },
       {
         name: "description",
-        content: "Acompanhe vagas publicadas, candidaturas recebidas e seguidores da sua empresa.",
+        content: textoDaPagina("dashboard.empresa.acompanheVagasPublicadas"),
       },
     ],
   }),
@@ -59,7 +60,7 @@ function PainelEmpresa() {
     return (
       <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando painel da empresa…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("dashboard.empresa.carregandoPainelDaEmpresa")}
         </div>
       </EstruturaApp>
     );
@@ -92,7 +93,7 @@ function PainelEmpresa() {
 
       {isLoading ? (
         <div role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando suas métricas…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("dashboard.candidato.carregandoSuasMetricas")}
         </div>
       ) : isError ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">

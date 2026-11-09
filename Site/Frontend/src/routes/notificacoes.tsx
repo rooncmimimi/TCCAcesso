@@ -21,6 +21,7 @@ import {
   UserCheck,
   UserPlus,
 } from "lucide-react";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { LucideIcon } from "lucide-react";
 
@@ -44,14 +45,14 @@ import type { Notificacao } from "@/types";
 export const Route = createFileRoute("/notificacoes")({
   head: () => ({
     meta: [
-      { title: "Notificações — ACESSO" },
+      { title: textoDaPagina("notificacoes.notificacoesAcesso") },
       {
         name: "description",
         content:
-          "Acompanhe candidaturas, vagas compatíveis e novidades da sua rede na plataforma ACESSO.",
+          textoDaPagina("notificacoes.acompanheCandidaturasVagas"),
       },
-      { property: "og:title", content: "Notificações — ACESSO" },
-      { property: "og:description", content: "Novidades sobre suas candidaturas e vagas." },
+      { property: "og:title", content: textoDaPagina("notificacoes.notificacoesAcesso") },
+      { property: "og:description", content: textoDaPagina("notificacoes.novidadesSobreSuasCandidaturas") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -174,7 +175,7 @@ function Notificacoes() {
   const marcarTodas = useMutation({
     mutationFn: () => notificacoesService.marcarTodas(),
     onSuccess: () => {
-      toast.success("Todas as notificações foram marcadas como lidas.");
+      toast.success(t("notificacoes.todasAsNotificacoesForam"));
       invalidar();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
@@ -183,7 +184,7 @@ function Notificacoes() {
   const remover = useMutation({
     mutationFn: (id: string) => notificacoesService.remover(id),
     onSuccess: () => {
-      toast.success("Notificação removida.");
+      toast.success(t("notificacoes.notificacaoRemovida"));
       invalidar();
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
@@ -192,12 +193,12 @@ function Notificacoes() {
   const aceitarSolicitacao = useMutation({
     mutationFn: (solicitacaoId: string) => seguidoresService.aceitarSolicitacao(solicitacaoId),
     onSuccess: (_dados, solicitacaoId) => {
-      toast.success("Solicitação aceita.");
+      toast.success(t("notificacoes.solicitacaoAceita"));
       setSolicitacoesProcessadas((atual) => new Map(atual).set(solicitacaoId, "aceita"));
       invalidar();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível aceitar a solicitação."));
+      toast.error(extrairMensagemErro(erro, t("notificacoes.naoFoiPossivelAceitarA")));
       // 404 aqui normalmente significa que a solicitação já foi processada
       // (corrida com outra aba, ou o solicitante cancelou): atualiza a
       // lista pra tirar os botões de uma solicitação que não existe mais.
@@ -208,12 +209,12 @@ function Notificacoes() {
   const recusarSolicitacao = useMutation({
     mutationFn: (solicitacaoId: string) => seguidoresService.recusarSolicitacao(solicitacaoId),
     onSuccess: (_dados, solicitacaoId) => {
-      toast.success("Solicitação recusada.");
+      toast.success(t("notificacoes.solicitacaoRecusada"));
       setSolicitacoesProcessadas((atual) => new Map(atual).set(solicitacaoId, "recusada"));
       invalidar();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível recusar a solicitação."));
+      toast.error(extrairMensagemErro(erro, t("notificacoes.naoFoiPossivelRecusarA")));
       invalidar();
     },
   });
@@ -234,8 +235,8 @@ function Notificacoes() {
             {isLoading
               ? "Carregando…"
               : naoLidas > 0
-                ? `${naoLidas} não lida${naoLidas === 1 ? "" : "s"}`
-                : "Nenhuma notificação não lida."}
+                ? t("notificacoes.naoLidas", { n: naoLidas })
+                : t("notificacoes.nenhumaNotificacaoNaoLida")}
           </p>
         </div>
         <Button
@@ -244,7 +245,7 @@ function Notificacoes() {
           disabled={naoLidas === 0 || marcarTodas.isPending}
           onClick={() => marcarTodas.mutate()}
         >
-          <CheckCheck className="size-4" aria-hidden="true" /> Marcar todas como lidas
+          <CheckCheck className="size-4" aria-hidden="true" /> {t("notificacoes.marcarTodasComoLidas")}
         </Button>
       </div>
 
@@ -280,7 +281,7 @@ function Notificacoes() {
             const Icon = iconeDe(n);
             const destino = destinoDe(n);
             const tempo = formatarTempoRelativo(n.criadoEm);
-            const estadoLida = n.lida ? "lida" : "não lida";
+            const estadoLida = n.lida ? "lida" : t("notificacoes.naoLida");
             const resultadoSolicitacao = n.entidadeId
               ? solicitacoesProcessadas.get(n.entidadeId)
               : undefined;
@@ -342,7 +343,7 @@ function Notificacoes() {
                             size="sm"
                             variant="ghost"
                             className="min-h-11"
-                            aria-label={`Marcar "${n.titulo}" como lida`}
+                            aria-label={t("notificacoes.marcarComoLida", { var1: n.titulo })}
                             disabled={marcarUma.isPending}
                             onClick={() => marcarUma.mutate(n.id)}
                           >
@@ -379,7 +380,7 @@ function Notificacoes() {
                               disabled={aceitarSolicitacao.isPending || recusarSolicitacao.isPending}
                               onClick={() => n.entidadeId && aceitarSolicitacao.mutate(n.entidadeId)}
                             >
-                              Aceitar
+                              {t("notificacoes.aceitar")}
                             </Button>
                             <Button
                               size="sm"
@@ -388,7 +389,7 @@ function Notificacoes() {
                               disabled={aceitarSolicitacao.isPending || recusarSolicitacao.isPending}
                               onClick={() => n.entidadeId && recusarSolicitacao.mutate(n.entidadeId)}
                             >
-                              Recusar
+                              {t("notificacoes.recusar")}
                             </Button>
                           </div>
                         )

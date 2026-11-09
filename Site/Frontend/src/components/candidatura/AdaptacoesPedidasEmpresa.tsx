@@ -26,7 +26,7 @@ export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoRe
   const responder = useMutation({
     mutationFn: () => candidaturaAdaptacoesService.responder(candidaturaId, resposta as RespostaDaEmpresa, mensagem.trim()),
     onSuccess: () => {
-      toast.success("Resposta enviada à pessoa candidata.");
+      toast.success(t("candidatura.adaptacoesPedidasEmpresa.respostaEnviadaAPessoa"));
       void queryClient.invalidateQueries({ queryKey: ["candidaturas-da-vaga"] });
       aoResponder?.();
     },
@@ -68,7 +68,7 @@ export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoRe
         </div>
 
         <Button type="submit" size="sm" className="min-h-11" disabled={!resposta || responder.isPending}>
-          {responder.isPending ? "Enviando…" : adaptacoes.resposta ? "Atualizar resposta" : "Enviar resposta"}
+          {responder.isPending ? "Enviando…" : adaptacoes.resposta ? "Atualizar resposta" : t("candidatura.adaptacoesPedidasEmpresa.enviarResposta")}
         </Button>
         {adaptacoes.resposta ? (
           <p role="status" className="text-xs text-muted-foreground">

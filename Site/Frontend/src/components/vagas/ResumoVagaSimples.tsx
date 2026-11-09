@@ -68,7 +68,7 @@ export function ResumoVagaSimples({ vaga }: { vaga: Vaga }) {
                     if (conteudo.current) ler(conteudo.current);
                   }}
                 >
-                  <Volume2 className="size-4" aria-hidden="true" /> Ouvir resumo
+                  <Volume2 className="size-4" aria-hidden="true" /> {t("vagas.resumoVagaSimples.ouvirResumo")}
                 </Button>
               )}
               <SalvarInstrucao titulo={`Vaga: ${vaga.titulo}`} texto={resumo.textoFalado} />

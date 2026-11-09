@@ -10,6 +10,7 @@ import { ArrowLeft, BadgeCheck, Building2, Heart, MapPin, MessagesSquare, MoreVe
 import {
   ICONE_RECURSO_ACESSIBILIDADE,
 } from "@/components/dashboard/constantesVaga";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Badge } from "@/components/ui/badge";
@@ -43,13 +44,13 @@ import { BotaoComparar } from "@/components/vagas/BotaoComparar";
 export const Route = createFileRoute("/vaga/$vagaId")({
   head: () => ({
     meta: [
-      { title: "Detalhes da vaga — ACESSO" },
+      { title: textoDaPagina("vagavagaId.detalhesDaVagaAcesso") },
       {
         name: "description",
-        content: "Veja requisitos, benefícios e recursos de acessibilidade da vaga e candidate-se.",
+        content: textoDaPagina("vagavagaId.vejaRequisitosBeneficiosE"),
       },
-      { property: "og:title", content: "Detalhes da vaga — ACESSO" },
-      { property: "og:description", content: "Requisitos, benefícios e acessibilidade da vaga." },
+      { property: "og:title", content: textoDaPagina("vagavagaId.detalhesDaVagaAcesso") },
+      { property: "og:description", content: textoDaPagina("vagavagaId.requisitosBeneficiosE") },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],

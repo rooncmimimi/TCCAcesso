@@ -34,7 +34,7 @@ export function DetalhePostagemSheet({
         {postagem && (
           <>
             <SheetHeader>
-              <SheetTitle>Publicação de {postagem.usuario?.nome ?? "usuário"}</SheetTitle>
+              <SheetTitle>Publicação de {postagem.usuario?.nome ?? t("admin.detalhePostagemSheet.usuario")}</SheetTitle>
               <SheetDescription>
                 Publicado em {formatarDataHora(postagem.criadoEm)}
                 {postagem.usuario?.email ? ` · ${postagem.usuario.email}` : ""}
@@ -44,7 +44,7 @@ export function DetalhePostagemSheet({
             <div className="mt-4 space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Badge variant={postagem.publica === false ? "outline" : "secondary"}>
-                  {postagem.publica === false ? "Não visível a visitantes anônimos" : "Visível a visitantes anônimos"}
+                  {postagem.publica === false ? "Não visível a visitantes anônimos" : t("admin.detalhePostagemSheet.visivelAVisitantesAnonimos")}
                 </Badge>
                 {postagem.ativo === false && <Badge variant="destructive">{t("admin.detalhePostagemSheet.removidaPelaModeracao")}</Badge>}
               </div>
@@ -55,15 +55,14 @@ export function DetalhePostagemSheet({
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <Heart className="size-4" aria-hidden="true" /> {postagem.totalCurtidas ?? 0} curtidas
+                  <Heart className="size-4" aria-hidden="true" /> {t("admin.detalhePostagemSheet.curtidas", { n: postagem.totalCurtidas ?? 0 })}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <MessageCircle className="size-4" aria-hidden="true" /> {postagem.totalComentarios ?? 0} comentários
+                  <MessageCircle className="size-4" aria-hidden="true" /> {t("admin.detalhePostagemSheet.comentarios", { n: postagem.totalComentarios ?? 0 })}
                 </span>
                 {postagem.anexos && postagem.anexos.length > 0 && (
                   <span className="flex items-center gap-1.5">
-                    <Paperclip className="size-4" aria-hidden="true" /> {postagem.anexos.length} anexo
-                    {postagem.anexos.length === 1 ? "" : "s"}
+                    <Paperclip className="size-4" aria-hidden="true" /> {t("admin.detalhePostagemSheet.anexos", { n: postagem.anexos.length })}
                   </span>
                 )}
               </div>

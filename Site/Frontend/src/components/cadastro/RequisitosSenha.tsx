@@ -27,7 +27,7 @@ export function RequisitosSenha({
   senha,
   rotulos,
   atendidoTexto = "atendido",
-  pendenteTexto = "ainda não atendido",
+  pendenteTexto,
 }: {
   id: string;
   senha: string;
@@ -58,7 +58,7 @@ export function RequisitosSenha({
             <span className={atendido ? "font-medium text-foreground" : "text-muted-foreground"}>
               {rotulos?.[indice] ?? t(requisito.rotulo)}
             </span>
-            <span className="sr-only">{atendido ? atendidoTexto : pendenteTexto}</span>
+            <span className="sr-only">{atendido ? atendidoTexto : (pendenteTexto ?? t("cadastro.requisitosSenha.aindaNaoAtendido"))}</span>
           </li>
         );
       })}

@@ -16,6 +16,8 @@ import { PrazoDoCodigo } from "@/components/acessibilidade/PrazoDoCodigo";
 import { lerVerificacao, limparVerificacao, renovarVerificacao, segundosParaReenviar } from "@/lib/verificacaoDispositivo";
 import segurancaService, { codigoDoErroSeguranca, desafioDeDispositivoVenceu, mensagemDeErroSeguranca, segundosDeEspera } from "@/services/seguranca.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { Frase } from "@/i18n/Frase";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 /**
  * Passo 2 do login num aparelho que o servidor ainda não reconhece: o código de 6 números que chegou por e-mail.
@@ -27,8 +29,8 @@ import { useIdioma } from "@/hooks/useIdioma";
 export const Route = createFileRoute("/verificacao-de-dispositivo")({
   head: () => ({
     meta: [
-      { title: "Confirme este dispositivo — ACESSO" },
-      { name: "description", content: "Digite o código que enviamos por e-mail para entrar neste dispositivo." },
+      { title: textoDaPagina("verificacao-de-dispositivo.confirmeEsteDispositivoAcesso") },
+      { name: "description", content: textoDaPagina("verificacao-de-dispositivo.digiteOCodigoQueEnviamosPorE") },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -89,7 +91,7 @@ function VerificacaoDeDispositivo() {
     if (enviandoRef.current || !verificacao) return;
 
     if (!/^\d{6}$/.test(codigo.replace(/\s+/g, ""))) {
-      setErro("Digite os 6 números que enviamos por e-mail.");
+      setErro(t("verificacao-de-dispositivo.digiteOs6NumerosQueEnviamosPor"));
       campoRef.current?.focus();
       return;
     }
@@ -115,21 +117,21 @@ function VerificacaoDeDispositivo() {
         return;
       }
 
-      toast.success(lembrar ? "Login realizado. Este dispositivo foi lembrado." : "Login realizado com sucesso!");
+      toast.success(lembrar ? "Login realizado. Este dispositivo foi lembrado." : t("login.sucesso"));
 
       // `replace`: o botão "voltar" não pode reabrir esta tela de passagem.
       void navigate({ ...destinoAposEntrar(resultado), replace: true });
     } catch (falha) {
       if (desafioDeDispositivoVenceu(falha)) {
         limparVerificacao();
-        toast.error(mensagemDeErroSeguranca(falha, "A verificação expirou. Entre novamente."));
+        toast.error(mensagemDeErroSeguranca(falha, t("verificacao-de-dispositivo.aVerificacaoExpirouEntre")));
         void navigate({ to: "/entrar", replace: true });
         return;
       }
 
       const limiteDeTentativas = codigoDoErroSeguranca(falha) === "DISPOSITIVO_TENTATIVAS_DEMAIS";
 
-      setErro(mensagemDeErroSeguranca(falha, "Não foi possível verificar agora. Tente novamente."));
+      setErro(mensagemDeErroSeguranca(falha, t("verificacao-de-dispositivo.naoFoiPossivelVerificarAgora")));
       setCodigo("");
       // Sem tentativas, o botão de pedir outro código é o caminho: o foco vai para ele em vez do campo.
       if (!limiteDeTentativas) setPedirFoco((n) => n + 1);
@@ -153,11 +155,11 @@ function VerificacaoDeDispositivo() {
       setPodePedirOutro(false);
       setCodigo("");
       setPedirFoco((n) => n + 1);
-      toast.success("Enviamos um novo código. O anterior deixou de valer.");
+      toast.success(t("verificacao-de-dispositivo.enviamosUmNovoCodigoOAnterior"));
     } catch (falha) {
       if (desafioDeDispositivoVenceu(falha)) {
         limparVerificacao();
-        toast.error(mensagemDeErroSeguranca(falha, "A verificação expirou. Entre novamente."));
+        toast.error(mensagemDeErroSeguranca(falha, t("verificacao-de-dispositivo.aVerificacaoExpirouEntre")));
         void navigate({ to: "/entrar", replace: true });
         return;
       }
@@ -170,7 +172,7 @@ function VerificacaoDeDispositivo() {
         setPodePedirOutro(false);
       }
 
-      setErro(mensagemDeErroSeguranca(falha, "Não foi possível enviar outro código agora."));
+      setErro(mensagemDeErroSeguranca(falha, t("verificacao-de-dispositivo.naoFoiPossivelEnviarOutro")));
     } finally {
       setReenviando(false);
     }
@@ -215,7 +217,11 @@ function VerificacaoDeDispositivo() {
                     {t("verificacao-de-dispositivo.confirmeEsteDispositivo")}
                   </h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Não reconhecemos este dispositivo. Enviamos um código de 6 números para <strong>{verificacao.emailMascarado}</strong>. Ele vale por 15 minutos.
+                    <Frase
+                      chave="verificacao-de-dispositivo.naoReconhecemosEsteDispositivo"
+                      vars={{ email: verificacao.emailMascarado }}
+                      partes={[(texto) => <strong>{texto}</strong>]}
+                    />
                   </p>
                 </div>
               </div>
@@ -251,10 +257,10 @@ function VerificacaoDeDispositivo() {
               <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
                 {enviando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Verificando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("verificacao-de-dispositivo.verificando")}
                   </>
                 ) : (
-                  "Confirmar e entrar"
+                  t("verificacao-de-dispositivo.confirmarEEntrar")
                 )}
               </Button>
 
@@ -262,12 +268,12 @@ function VerificacaoDeDispositivo() {
                 <Button type="button" variant="link" className="min-h-11 justify-start px-0" onClick={pedirOutroCodigo} disabled={enviando || reenviando || faltam > 0}>
                   {reenviando ? (
                     <>
-                      <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                      <Loader2 className="animate-spin" aria-hidden="true" /> {t("comentario.enviando")}
                     </>
                   ) : faltam > 0 ? (
-                    `Pedir outro código em ${faltam} s`
+                    t("verificacao-de-dispositivo.pedirOutroCodigoEmS", { var1: faltam })
                   ) : (
-                    "Não recebi: pedir outro código"
+                    t("verificacao-de-dispositivo.naoRecebiPedirOutroCodigo")
                   )}
                 </Button>
                 {/* Avisa uma única vez, quando a espera acaba, sem narrar a contagem inteira. */}
@@ -276,7 +282,7 @@ function VerificacaoDeDispositivo() {
                 </p>
                 <Button asChild variant="ghost" className="min-h-11 justify-start px-0">
                   <Link to="/entrar" onClick={limparVerificacao}>
-                    <ArrowLeft aria-hidden="true" /> Voltar para o login
+                    <ArrowLeft aria-hidden="true" /> {t("cadastro.google.voltarParaOLogin")}
                   </Link>
                 </Button>
               </div>

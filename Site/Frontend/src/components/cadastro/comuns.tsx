@@ -17,6 +17,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { limparEtapa } from "@/lib/etapaCadastro";
 import { cn } from "@/lib/utils";
 import { useIdioma } from "@/hooks/useIdioma";
+import { Frase } from "@/i18n/Frase";
 
 /**
  * Peças usadas pelos dois cadastros, que a partir da separação em `/cadastro/candidato` e
@@ -257,7 +258,7 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
       // Antes a falha era engolida e a pessoa ia para o feed como se tivesse terminado. Agora vê o que
       // houve; o servidor diz exatamente o que falta. As preferências de acessibilidade já foram salvas
       // pelo próprio painel, então nada se perde ao tentar de novo.
-      toast.error(extrairMensagemErro(erro, "Não foi possível concluir o cadastro agora. Tente novamente."));
+      toast.error(extrairMensagemErro(erro, t("cadastro.comuns.naoFoiPossivelConcluirOCadastro")));
     } finally {
       setEnviando(false);
     }
@@ -276,7 +277,7 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
       <Button type="button" className="mt-8 min-h-12 w-full text-base" disabled={enviando} onClick={finalizar}>
         {enviando ? (
           <>
-            <Loader2 className="animate-spin" aria-hidden="true" /> Finalizando…
+            <Loader2 className="animate-spin" aria-hidden="true" /> {t("cadastro.comuns.finalizando2")}
           </>
         ) : (
           <>
@@ -315,9 +316,9 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
     try {
       await autenticacaoService.reenviarConfirmacaoCadastro(email);
       setReenviado(true);
-      toast.success("Um novo e-mail de confirmação foi enviado.");
+      toast.success(t("cadastro.comuns.umNovoEMailDeConfirmacao"));
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível reenviar o e-mail agora."));
+      toast.error(extrairMensagemErro(erro, t("cadastro.comuns.naoFoiPossivelReenviarOEMail")));
     } finally {
       setEnviando(false);
     }
@@ -338,9 +339,11 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
       </div>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        {t("cadastro.comuns.suaContaFoiCriadaMasOCadastro")}
-        para <strong className="text-foreground">{email}</strong> — verifique a caixa de entrada e também a
-        pasta de spam.
+        <Frase
+          chave="cadastro.comuns.suaContaFoiCriadaConfirme"
+          vars={{ email }}
+          partes={[(texto) => <strong className="text-foreground">{texto}</strong>]}
+        />
       </p>
 
       <ol className="mt-5 space-y-3" aria-label={t("cadastro.comuns.oQueFaltaParaTerminarOCadastro")}>
@@ -393,7 +396,7 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
       >
         {enviando ? (
           <>
-            <Loader2 className="animate-spin" aria-hidden="true" /> Reenviando…
+            <Loader2 className="animate-spin" aria-hidden="true" /> {t("cadastro.comuns.reenviando2")}
           </>
         ) : reenviado ? (
           "E-mail reenviado"

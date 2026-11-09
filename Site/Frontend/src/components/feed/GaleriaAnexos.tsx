@@ -50,7 +50,7 @@ function DescricaoAnexo({
             placeholder={t("feed.galeriaAnexos.descrevaOQueApareceParaPessoas")}
             onChange={(e) => setRascunho(e.target.value)}
             className="h-8 text-xs"
-            aria-label={`Descrição acessível do anexo ${anexo.nomeOriginal ?? ""}`}
+            aria-label={t("feed.galeriaAnexos.descricaoAcessivelDoAnexo", { var1: anexo.nomeOriginal ?? "" })}
           />
         )}
         <div className="flex items-center gap-1.5">
@@ -66,7 +66,7 @@ function DescricaoAnexo({
               )
             }
           >
-            Salvar
+            {t("post.salvar")}
           </Button>
           <Button
             type="button"
@@ -79,7 +79,7 @@ function DescricaoAnexo({
               setEditando(false);
             }}
           >
-            <X className="size-3.5" aria-hidden="true" /> Cancelar
+            <X className="size-3.5" aria-hidden="true" /> {t("post.cancelar")}
           </Button>
         </div>
       </div>
@@ -98,7 +98,7 @@ function DescricaoAnexo({
           type="button"
           onClick={() => setEditando(true)}
           className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-          aria-label={`Editar descrição do anexo ${anexo.nomeOriginal ?? ""}`}
+          aria-label={t("feed.galeriaAnexos.editarDescricaoDoAnexo", { var1: anexo.nomeOriginal ?? "" })}
         >
           <Pencil className="size-3" aria-hidden="true" /> {anexo.descricao ? "Editar" : "Adicionar"}
         </button>
@@ -159,7 +159,7 @@ export function GaleriaAnexos({
               >
                 <img
                   src={urlArquivo(imagem.url)}
-                  alt={imagem.descricao || imagem.nomeOriginal || "Imagem sem descrição fornecida pelo autor da publicação"}
+                  alt={imagem.descricao || imagem.nomeOriginal || t("feed.galeriaAnexos.imagemSemDescricaoFornecida")}
                   className="max-h-96 w-full object-cover"
                   loading="lazy"
                 />
@@ -181,7 +181,7 @@ export function GaleriaAnexos({
                   src={urlArquivo(video.url)}
                   controls
                   preload="metadata"
-                  aria-label={video.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
+                  aria-label={video.descricao || t("feed.galeriaAnexos.videoAnexadoAPublicacaoSem")}
                   className="max-h-96 w-full"
                 >
                   {t("feed.galeriaAnexos.seuNavegadorNaoSuportaA")}
@@ -216,7 +216,7 @@ export function GaleriaAnexos({
                 className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
               >
                 <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
-                <span className="truncate">{documento.nomeOriginal ?? "Documento anexado"}</span>
+                <span className="truncate">{documento.nomeOriginal ?? t("feed.galeriaAnexos.documentoAnexado")}</span>
               </a>
             </li>
           ))}

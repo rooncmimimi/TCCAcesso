@@ -19,7 +19,7 @@ export function ExplicacaoDeRequisitos({ texto }: { texto: string | null | undef
       <ul className="space-y-4 border-t border-border px-3 py-3">
         {achadas.map((c) => (
           <li key={c.id}>
-            <TextoOuvivel rotulo={`Ouvir a explicação de ${c.termo}`}>
+            <TextoOuvivel rotulo={t("acessibilidade.explicacaoDeRequisitos.ouvirAExplicacaoDe", { var1: c.termo })}>
               <p>
                 <span className="font-semibold">{c.termo}:</span> {c.significa}
               </p>

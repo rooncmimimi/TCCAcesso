@@ -44,10 +44,10 @@ export function SecaoTrocarEmail() {
   const solicitar = useMutation({
     mutationFn: () => autenticacaoService.solicitarTrocaEmail(senhaAtual, novoEmail),
     onSuccess: () => {
-      toast.success("Código enviado para o novo e-mail.");
+      toast.success(t("configuracoes.secaoTrocarEmail.codigoEnviadoParaONovoEMail"));
       setEtapa("confirmar");
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível solicitar a troca de e-mail.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.secaoTrocarEmail.naoFoiPossivelSolicitarATroca"))),
   });
 
   const confirmar = useMutation({
@@ -55,12 +55,12 @@ export function SecaoTrocarEmail() {
     onSuccess: (usuarioAtualizado) => {
       atualizar({ email: usuarioAtualizado.email });
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("E-mail atualizado com sucesso.");
+      toast.success(t("configuracoes.secaoTrocarEmail.eMailAtualizadoComSucesso"));
       setAberto(false);
       reiniciar();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Código inválido. Tente novamente."));
+      toast.error(extrairMensagemErro(erro, t("configuracoes.secaoTrocarEmail.codigoInvalidoTenteNovamente")));
       setCodigo("");
     },
   });
@@ -68,7 +68,7 @@ export function SecaoTrocarEmail() {
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-lg">E-mail</CardTitle>
+        <CardTitle className="text-lg">{t("login.email")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
@@ -77,7 +77,7 @@ export function SecaoTrocarEmail() {
 
         {/* Trocar o e-mail pede a senha atual; conta que entra só pelo Google ainda não tem uma. */}
         {usuario?.temSenha === false ? (
-          <AvisoSemSenha recurso="alterar o e-mail" />
+          <AvisoSemSenha recurso={t("configuracoes.secaoTrocarEmail.alterarOEMail")} />
         ) : (
 
           <Dialog
@@ -89,7 +89,7 @@ export function SecaoTrocarEmail() {
           >
             <DialogTrigger asChild>
               <Button variant="outline" className="min-h-11 gap-2">
-                <Mail className="size-4" aria-hidden="true" /> Alterar e-mail
+                <Mail className="size-4" aria-hidden="true" /> {t("configuracoes.secaoTrocarEmail.alterarEMail")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -131,7 +131,7 @@ export function SecaoTrocarEmail() {
                     </div>
                     <DialogFooter>
                       <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-                        Cancelar
+                        {t("post.cancelar")}
                       </Button>
                       <Button
                         type="submit"
@@ -139,7 +139,7 @@ export function SecaoTrocarEmail() {
                         className="min-h-11 gap-2"
                       >
                         {solicitar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                        Enviar código
+                        {t("configuracoes.secaoTrocarEmail.enviarCodigo")}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -167,11 +167,11 @@ export function SecaoTrocarEmail() {
                     </InputOTP>
                     <DialogFooter className="pt-2">
                       <Button type="button" variant="outline" onClick={() => setEtapa("pedido")}>
-                        Voltar
+                        {t("auth.voltar")}
                       </Button>
                       <Button type="submit" disabled={confirmar.isPending || codigo.length !== 6} className="min-h-11 gap-2">
                         {confirmar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                        Confirmar
+                        {t("configuracoes.secaoTrocarEmail.confirmar")}
                       </Button>
                     </DialogFooter>
                   </form>

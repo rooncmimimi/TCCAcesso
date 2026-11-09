@@ -65,7 +65,7 @@ export function BloquearUsuarioMenu({
       void navigate({ to: "/feed" });
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível bloquear este usuário."));
+      toast.error(extrairMensagemErro(erro, t("perfil.bloquearUsuarioMenu.naoFoiPossivelBloquearEste")));
     },
   });
 
@@ -88,7 +88,7 @@ export function BloquearUsuarioMenu({
             className="gap-2 text-destructive focus:text-destructive"
             onSelect={() => setConfirmando(true)}
           >
-            <ShieldOff aria-hidden="true" className="size-4" /> Bloquear usuário
+            <ShieldOff aria-hidden="true" className="size-4" /> {t("perfil.bloquearUsuarioMenu.bloquearUsuario")}
           </DropdownMenuItem>
           {denunciaEntidadeId && (
             <DropdownMenuItem className="gap-2" onSelect={() => setDenunciando(true)}>
@@ -118,10 +118,9 @@ export function BloquearUsuarioMenu({
           }}
         >
           <AlertDialogHeader>
-            <AlertDialogTitle>Bloquear {nome}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("moderacao.denunciarDialog.bloquearAlguem", { nome })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {nome} não vai mais conseguir ver seu perfil, seguir você ou enviar mensagens — e o mesmo vale para
-              você em relação a {nome}. Você pode desbloquear depois em Configurações → Privacidade.
+              {t("perfil.bloquearUsuarioMenu.naoVaiMaisConseguirVerSeuPerfil", { nome })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -135,7 +134,7 @@ export function BloquearUsuarioMenu({
               }}
             >
               {bloquear.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Bloquear
+              {t("admin.usuariosTabela.bloquear")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

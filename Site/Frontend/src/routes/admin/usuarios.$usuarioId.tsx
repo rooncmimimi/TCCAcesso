@@ -10,10 +10,11 @@ import { LogsTabela } from "@/components/admin/LogsTabela";
 import adminService from "@/services/admin.service";
 import denunciaService, { MOTIVO_ROTULO } from "@/services/denuncia.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/usuarios/$usuarioId")({
   head: () => ({
-    meta: [{ title: "Detalhe do usuário — Administração ACESSO" }],
+    meta: [{ title: textoDaPagina("admin.usuariosusuarioId.detalheDoUsuarioAdministracao") }],
   }),
   component: AdminUsuarioDetalhe,
 });
@@ -54,7 +55,7 @@ function AdminUsuarioDetalhe() {
         to="/admin/usuarios"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para usuários
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("admin.usuariosusuarioId.voltarParaUsuarios")}
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -68,7 +69,7 @@ function AdminUsuarioDetalhe() {
             params={{ usuarioId }}
             className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-secondary"
           >
-            <ExternalLink className="size-4" aria-hidden="true" /> Ver perfil público
+            <ExternalLink className="size-4" aria-hidden="true" /> {t("admin.usuariosusuarioId.verPerfilPublico")}
           </Link>
         </div>
       </div>
@@ -76,7 +77,7 @@ function AdminUsuarioDetalhe() {
       <Card className="mt-4 shadow-none">
         <CardContent className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">E-mail</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{t("login.email")}</p>
             <p className="mt-1 text-sm">{usuario.email}</p>
           </div>
           <div>
@@ -92,7 +93,7 @@ function AdminUsuarioDetalhe() {
           <div>
             <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.usuariosusuarioId.ultimaAtividade")}</p>
             <p className="mt-1 text-sm">
-              {usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString("pt-BR") : "Nunca acessou"}
+              {usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString("pt-BR") : t("admin.usuariosusuarioId.nuncaAcessou")}
             </p>
           </div>
         </CardContent>

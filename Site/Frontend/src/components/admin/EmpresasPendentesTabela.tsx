@@ -10,6 +10,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { ChaveBase } from "@/i18n/dicionarios";
+
+/** O verbo da acao, no idioma da tela. */
+const ACAO_EM_PALAVRAS = {
+  aprovar: "admin.empresasPendentesTabela.acaoAprovar",
+  reprovar: "admin.empresasPendentesTabela.acaoReprovar",
+  suspender: "admin.empresasPendentesTabela.acaoSuspender",
+  reativar: "admin.empresasPendentesTabela.acaoReativar",
+} as const satisfies Record<string, ChaveBase>;
+
 import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -77,12 +87,12 @@ export function EmpresasPendentesTabela() {
     },
     onSuccess: (_dados, payload) => {
       const mensagens: Record<Acao, string> = {
-        aprovar: "Empresa aprovada.",
-        reprovar: "Empresa reprovada.",
-        suspender: "Empresa suspensa.",
-        reativar: "Empresa reativada.",
-        verificar: "Empresa verificada.",
-        desverificar: "Selo de verificada removido.",
+        aprovar: t("admin.empresasPendentesTabela.empresaAprovada"),
+        reprovar: t("admin.empresasPendentesTabela.empresaReprovada"),
+        suspender: t("admin.empresasPendentesTabela.empresaSuspensa"),
+        reativar: t("admin.empresasPendentesTabela.empresaReativada"),
+        verificar: t("admin.empresasPendentesTabela.empresaVerificada"),
+        desverificar: t("admin.empresasPendentesTabela.seloDeVerificadaRemovido"),
       };
       toast.success(mensagens[payload.acao]);
       queryClient.invalidateQueries({ queryKey: ["admin", "empresas"] });
@@ -144,7 +154,7 @@ export function EmpresasPendentesTabela() {
               <TableCell>
                 {empresa.empresaVerificada ? (
                   <StatusBadge tom="sucesso">
-                    <BadgeCheck className="size-3.5" aria-hidden="true" /> Verificada
+                    <BadgeCheck className="size-3.5" aria-hidden="true" /> {t("vaga.verificada")}
                   </StatusBadge>
                 ) : (
                   <span className="text-sm text-muted-foreground">{t("admin.empresasPendentesTabela.naoVerificada")}</span>
@@ -157,9 +167,9 @@ export function EmpresasPendentesTabela() {
                       size="sm"
                       variant="outline"
                       onClick={() => setAlvo({ empresa, acao: "desverificar" })}
-                      aria-label={`Remover selo de verificada de ${empresa.razaoSocial}`}
+                      aria-label={t("admin.empresasPendentesTabela.removerSeloDeVerificadaDe", { var1: empresa.razaoSocial })}
                     >
-                      <BadgeX className="size-4" aria-hidden="true" /> Remover selo
+                      <BadgeX className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.removerSelo")}
                     </Button>
                   ) : (
                     <Button
@@ -168,7 +178,7 @@ export function EmpresasPendentesTabela() {
                       onClick={() => setAlvo({ empresa, acao: "verificar" })}
                       aria-label={`Verificar ${empresa.razaoSocial}`}
                     >
-                      <BadgeCheck className="size-4" aria-hidden="true" /> Verificar
+                      <BadgeCheck className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.verificar")}
                     </Button>
                   )}
                   {empresa.statusAprovacao === "suspensa" ? (
@@ -177,7 +187,7 @@ export function EmpresasPendentesTabela() {
                       onClick={() => setAlvo({ empresa, acao: "reativar" })}
                       aria-label={`Reativar ${empresa.razaoSocial}`}
                     >
-                      <RotateCcw className="size-4" aria-hidden="true" /> Reativar
+                      <RotateCcw className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.reativar")}
                     </Button>
                   ) : (
                     <>
@@ -187,7 +197,7 @@ export function EmpresasPendentesTabela() {
                         onClick={() => setAlvo({ empresa, acao: "aprovar" })}
                         aria-label={`Aprovar ${empresa.razaoSocial}`}
                       >
-                        <Check className="size-4" aria-hidden="true" /> Aprovar
+                        <Check className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.aprovar")}
                       </Button>
                       <Button
                         size="sm"
@@ -196,7 +206,7 @@ export function EmpresasPendentesTabela() {
                         onClick={() => setAlvo({ empresa, acao: "reprovar" })}
                         aria-label={`Reprovar ${empresa.razaoSocial}`}
                       >
-                        <X className="size-4" aria-hidden="true" /> Reprovar
+                        <X className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.reprovar")}
                       </Button>
                       {empresa.statusAprovacao === "aprovada" && (
                         <Button
@@ -206,7 +216,7 @@ export function EmpresasPendentesTabela() {
                           onClick={() => setAlvo({ empresa, acao: "suspender" })}
                           aria-label={`Suspender ${empresa.razaoSocial}`}
                         >
-                          <Ban className="size-4" aria-hidden="true" /> Suspender
+                          <Ban className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.suspender")}
                         </Button>
                       )}
                     </>
@@ -235,12 +245,12 @@ export function EmpresasPendentesTabela() {
         }}
         titulo={
           {
-            aprovar: "Aprovar empresa",
-            reprovar: "Reprovar empresa",
-            suspender: "Suspender empresa",
-            reativar: "Reativar empresa",
-            verificar: "Verificar empresa",
-            desverificar: "Remover selo de verificada",
+            aprovar: t("admin.empresasPendentesTabela.aprovarEmpresa"),
+            reprovar: t("admin.empresasPendentesTabela.reprovarEmpresa"),
+            suspender: t("admin.empresasPendentesTabela.suspenderEmpresa"),
+            reativar: t("admin.empresasPendentesTabela.reativarEmpresa"),
+            verificar: t("admin.empresasPendentesTabela.verificarEmpresa"),
+            desverificar: t("admin.empresasPendentesTabela.removerSeloDeVerificada"),
           }[alvo?.acao ?? "aprovar"]
         }
         descricao={
@@ -248,23 +258,17 @@ export function EmpresasPendentesTabela() {
             {alvo?.acao === "verificar" || alvo?.acao === "desverificar" ? (
               <p>
                 {alvo.acao === "verificar"
-                  ? 'Confirma conceder o selo "Empresa verificada" a'
-                  : "Confirma remover o selo de verificada de"}{" "}
+                  ? t("admin.empresasPendentesTabela.confirmaConcederOSeloDe")
+                  : t("admin.empresasPendentesTabela.confirmaRemoverOSeloDe")}{" "}
                 &quot;{alvo?.empresa.nomeFantasia || alvo?.empresa.razaoSocial}&quot;? Isso é
                 independente do status de aprovação cadastral, que não muda.
               </p>
             ) : (
               <p>
-                Confirma{" "}
-                {
-                  {
-                    aprovar: "aprovar",
-                    reprovar: "reprovar",
-                    suspender: "suspender",
-                    reativar: "reativar",
-                  }[alvo?.acao as "aprovar" | "reprovar" | "suspender" | "reativar"]
-                }{" "}
-                o cadastro de &quot;{alvo?.empresa.nomeFantasia || alvo?.empresa.razaoSocial}&quot;?
+                {t("admin.empresasPendentesTabela.confirmaOCadastroDe", {
+                  acao: t(ACAO_EM_PALAVRAS[alvo?.acao as keyof typeof ACAO_EM_PALAVRAS] ?? "admin.empresasPendentesTabela.acaoAprovar"),
+                  empresa: alvo?.empresa.nomeFantasia || alvo?.empresa.razaoSocial || "",
+                })}
               </p>
             )}
             {(alvo?.acao === "reprovar" || alvo?.acao === "suspender") && (
@@ -287,7 +291,7 @@ export function EmpresasPendentesTabela() {
             suspender: "Suspender",
             reativar: "Reativar",
             verificar: "Verificar",
-            desverificar: "Remover selo",
+            desverificar: t("admin.empresasPendentesTabela.removerSelo"),
           }[alvo?.acao ?? "aprovar"]
         }
         destrutivo={alvo?.acao === "reprovar" || alvo?.acao === "suspender" || alvo?.acao === "desverificar"}

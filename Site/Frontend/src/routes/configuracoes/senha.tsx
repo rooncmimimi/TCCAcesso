@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowLeft, KeyRound, Loader2, MailCheck, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -16,32 +16,31 @@ import { autenticacaoService } from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useSessao } from "@/hooks/useSessao";
 import { useIdioma } from "@/hooks/useIdioma";
+import { Frase } from "@/i18n/Frase";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
+import type { TFuncao } from "@/contexts/IdiomaContext";
+import { criarRegrasDeSenha } from "@/lib/regrasDeSenha";
 
-const esquema = z
-  .object({
-    senhaAtual: z.string().min(1, "Informe sua senha atual."),
-    novaSenha: z
-      .string()
-      .min(8, "A senha deve ter entre 8 e 72 caracteres.")
-      .max(72, "A senha deve ter entre 8 e 72 caracteres.")
-      .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
-      .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
-      .regex(/\d/, "A senha deve conter ao menos um número.")
-      .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial."),
-    confirmarSenha: z.string().min(1, "Confirme a nova senha."),
-  })
-  .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
-    message: "As senhas não coincidem.",
-    path: ["confirmarSenha"],
-  });
+/** O esquema nasce do idioma atual: as mensagens de erro saem na língua da tela. */
+const criarEsquema = (t: TFuncao) =>
+  z
+    .object({
+      senhaAtual: z.string().min(1, t("validacao.informeSenhaAtual")),
+      novaSenha: criarRegrasDeSenha(t),
+      confirmarSenha: z.string().min(1, t("validacao.confirmeNovaSenha")),
+    })
+    .refine((valores) => valores.novaSenha === valores.confirmarSenha, {
+      message: t("validacao.senhasNaoCoincidem"),
+      path: ["confirmarSenha"],
+    });
 
-type Formulario = z.infer<typeof esquema>;
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 export const Route = createFileRoute("/configuracoes/senha")({
   head: () => ({
     meta: [
-      { title: "Alterar senha — ACESSO" },
-      { name: "description", content: "Altere a senha da sua conta ACESSO." },
+      { title: textoDaPagina("configuracoes.senha.alterarSenhaAcesso") },
+      { name: "description", content: textoDaPagina("configuracoes.senha.altereASenhaDaSuaContaAcesso") },
     ],
   }),
   component: () => (
@@ -77,7 +76,7 @@ function DefinirSenha({ email }: { email: string }) {
       await autenticacaoService.esqueciSenha(email);
       setEnviado(true);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível enviar o e-mail. Tente novamente."));
+      toast.error(extrairMensagemErro(erro, t("configuracoes.senha.naoFoiPossivelEnviarOEMail")));
     } finally {
       setEnviando(false);
     }
@@ -89,7 +88,7 @@ function DefinirSenha({ email }: { email: string }) {
         to="/configuracoes/conta"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("auth.voltar")}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">
@@ -109,15 +108,17 @@ function DefinirSenha({ email }: { email: string }) {
           {enviado ? (
             <div role="status" className="space-y-3">
               <p className="flex items-center gap-2 font-semibold">
-                <MailCheck className="size-5 text-primary" aria-hidden="true" /> E-mail enviado
+                <MailCheck className="size-5 text-primary" aria-hidden="true" /> {t("configuracoes.senha.eMailEnviado")}
               </p>
               <p className="text-sm text-muted-foreground">
-                Enviamos para <span className="font-medium text-foreground">{email}</span> um link para escolher a
-                senha. Ele vale por pouco tempo. Quando você definir a senha, as suas sessões se encerram e você
-                entra de novo, pelo Google ou com a senha nova.
+                <Frase
+                  chave="configuracoes.senha.enviamosUmLinkPara"
+                  vars={{ email }}
+                  partes={[(texto) => <span className="font-medium text-foreground">{texto}</span>]}
+                />
               </p>
               <p className="text-sm text-muted-foreground">
-                Prefere digitar o código que veio no e-mail?{" "}
+                {t("configuracoes.senha.prefereDigitarOCodigoQueVeioNo")}{" "}
                 <Link
                   to="/redefinir-senha"
                   search={{ email }}
@@ -130,16 +131,19 @@ function DefinirSenha({ email }: { email: string }) {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Por segurança, vamos mandar para <span className="font-medium text-foreground">{email}</span> um link
-                para você escolher a senha.
+                <Frase
+                  chave="configuracoes.senha.vamosMandarUmLinkPara"
+                  vars={{ email }}
+                  partes={[(texto) => <span className="font-medium text-foreground">{texto}</span>]}
+                />
               </p>
               <Button type="button" className="min-h-12 w-full text-base" disabled={enviando} onClick={enviar}>
                 {enviando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("comentario.enviando")}
                   </>
                 ) : (
-                  "Enviar e-mail para definir a senha"
+                  t("configuracoes.senha.enviarEMailParaDefinirASenha")
                 )}
               </Button>
             </>
@@ -163,7 +167,7 @@ function AlterarSenha() {
     setError,
     formState: { errors },
   } = useForm<Formulario>({
-    resolver: zodResolver(esquema),
+    resolver: zodResolver(useMemo(() => criarEsquema(t), [t])),
     defaultValues: { senhaAtual: "", novaSenha: "", confirmarSenha: "" },
   });
 
@@ -176,10 +180,10 @@ function AlterarSenha() {
       // conta, como na redefinição por código.
       await sair();
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Senha alterada com sucesso. Entre novamente com a nova senha.");
+      toast.success(t("configuracoes.senha.senhaAlteradaComSucessoEntre"));
       void navigate({ to: "/entrar" });
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível alterar a senha.");
+      const mensagem = extrairMensagemErro(erro, t("configuracoes.senha.naoFoiPossivelAlterarASenha"));
       setError("senhaAtual", { message: mensagem });
       toast.error(mensagem);
     } finally {
@@ -193,7 +197,7 @@ function AlterarSenha() {
         to="/configuracoes/conta"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("auth.voltar")}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">
@@ -269,10 +273,10 @@ function AlterarSenha() {
             <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
               {enviando ? (
                 <>
-                  <Loader2 className="animate-spin" aria-hidden="true" /> Salvando…
+                  <Loader2 className="animate-spin" aria-hidden="true" /> {t("configuracoes.senha.salvando")}
                 </>
               ) : (
-                "Salvar nova senha"
+                t("configuracoes.senha.salvarNovaSenha")
               )}
             </Button>
           </form>

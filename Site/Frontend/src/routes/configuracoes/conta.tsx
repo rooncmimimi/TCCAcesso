@@ -14,12 +14,14 @@ import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
 import { empresasService } from "@/services/empresas.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
 export const Route = createFileRoute("/configuracoes/conta")({
   head: () => ({
     meta: [
-      { title: "Conta — ACESSO" },
-      { name: "description", content: "Gerencie os dados da sua conta ACESSO." },
+      { title: textoDaPagina("configuracoes.conta.contaAcesso") },
+      { name: "description", content: textoDaPagina("configuracoes.conta.gerencieOsDadosDaSuaConta") },
     ],
   }),
   component: () => (
@@ -38,10 +40,10 @@ function formatarDataLonga(iso?: string | null): string {
   }
 }
 
-const RUBRICA_TIPO: Record<string, string> = {
-  candidato: "Pessoa candidata",
-  empresa: "Empresa",
-  administrador: "Administrador",
+const RUBRICA_TIPO: Record<string, ChaveBase> = {
+  candidato: "configuracoes.conta.pessoaCandidata",
+  empresa: "admin.denunciasTabela.empresa",
+  administrador: "configuracoes.conta.administrador",
 };
 
 function Conta() {
@@ -66,7 +68,7 @@ function Conta() {
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para configurações
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("configuracoes.conta.voltarParaConfiguracoes")}
       </Link>
 
       <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">{t("configuracoes.conta.conta")}</h1>
@@ -100,13 +102,13 @@ function Conta() {
             {usuario?.tipo === "empresa" && empresa ? (
               <EditarEmpresaDialog empresa={empresa}>
                 <Button variant="outline" className="min-h-11 gap-2">
-                  <Pencil className="size-4" aria-hidden="true" /> Editar dados da empresa
+                  <Pencil className="size-4" aria-hidden="true" /> {t("configuracoes.conta.editarDadosDaEmpresa")}
                 </Button>
               </EditarEmpresaDialog>
             ) : usuario?.tipo === "candidato" ? (
               <EditarPerfilDialog candidato={candidato}>
                 <Button variant="outline" className="min-h-11 gap-2">
-                  <Pencil className="size-4" aria-hidden="true" /> Editar nome, telefone e localidade
+                  <Pencil className="size-4" aria-hidden="true" /> {t("configuracoes.conta.editarNomeTelefoneELocalidade")}
                 </Button>
               </EditarPerfilDialog>
             ) : null}

@@ -99,7 +99,7 @@ export function DenunciarDialog({
       }),
     onSuccess: () => {
       // Os toasts já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Denúncia enviada. Nossa equipe vai analisar.");
+      toast.success(t("moderacao.denunciarDialog.denunciaEnviadaNossaEquipeVai"));
       if (autorUsuarioId) {
         setOferecendoBloqueio(true);
       } else {
@@ -107,18 +107,18 @@ export function DenunciarDialog({
       }
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível enviar a denúncia."));
+      toast.error(extrairMensagemErro(erro, t("moderacao.denunciarDialog.naoFoiPossivelEnviarADenuncia")));
     },
   });
 
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(autorUsuarioId as string),
     onSuccess: () => {
-      toast.success(nomeParaBloqueio ? `${nomeParaBloqueio} foi bloqueado(a).` : "Usuário bloqueado.");
+      toast.success(nomeParaBloqueio ? `${nomeParaBloqueio} foi bloqueado(a).` : t("moderacao.denunciarDialog.usuarioBloqueado"));
       fecharTudo();
     },
     onError: (erro) => {
-      toast.error(extrairMensagemErro(erro, "Não foi possível bloquear este usuário."));
+      toast.error(extrairMensagemErro(erro, t("moderacao.denunciarDialog.naoFoiPossivelBloquearEste")));
     },
   });
 
@@ -137,11 +137,9 @@ export function DenunciarDialog({
         {oferecendoBloqueio ? (
           <>
             <DialogHeader>
-              <DialogTitle>Bloquear{nomeParaBloqueio ? ` ${nomeParaBloqueio}` : " este usuário"}?</DialogTitle>
+              <DialogTitle>{t("moderacao.denunciarDialog.bloquearAlguem", { nome: nomeParaBloqueio ?? t("moderacao.denunciarDialog.estePerfil") })}</DialogTitle>
               <DialogDescription>
-                {nomeParaBloqueio ?? "Esta pessoa"} não vai mais conseguir ver seu perfil, seguir você ou enviar
-                mensagens — e o mesmo vale para você. Você pode desbloquear depois em Configurações →
-                Privacidade.
+                {t("moderacao.denunciarDialog.naoVaiMaisConseguirVerSeuPerfil", { nome: nomeParaBloqueio ?? t("moderacao.denunciarDialog.estaPessoa") })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -159,7 +157,7 @@ export function DenunciarDialog({
                 ) : (
                   <ShieldOff className="size-4" aria-hidden="true" />
                 )}
-                Bloquear
+                {t("admin.usuariosTabela.bloquear")}
               </Button>
             </DialogFooter>
           </>
@@ -204,7 +202,7 @@ export function DenunciarDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={fecharTudo} disabled={enviar.isPending}>
-                Cancelar
+                {t("post.cancelar")}
               </Button>
               <Button
                 type="button"
@@ -213,7 +211,7 @@ export function DenunciarDialog({
                 onClick={() => enviar.mutate()}
               >
                 {enviar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                Enviar denúncia
+                {t("moderacao.denunciarDialog.enviarDenuncia")}
               </Button>
             </DialogFooter>
           </>

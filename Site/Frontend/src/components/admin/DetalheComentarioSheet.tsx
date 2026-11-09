@@ -28,9 +28,9 @@ export function DetalheComentarioSheet({
         {comentario && (
           <>
             <SheetHeader>
-              <SheetTitle>Comentário de {comentario.usuario?.nome ?? "usuário"}</SheetTitle>
+              <SheetTitle>Comentário de {comentario.usuario?.nome ?? t("admin.detalheComentarioSheet.usuario")}</SheetTitle>
               <SheetDescription>
-                {dataCriacao ? `Comentado em ${formatarDataHora(dataCriacao)}` : "Data não registrada"}
+                {dataCriacao ? t("admin.detalheComentarioSheet.comentadoEm", { var1: formatarDataHora(dataCriacao) }) : t("admin.detalheComentarioSheet.dataNaoRegistrada")}
                 {comentario.usuario?.email ? ` · ${comentario.usuario.email}` : ""}
               </SheetDescription>
             </SheetHeader>
@@ -45,7 +45,7 @@ export function DetalheComentarioSheet({
                   {t("admin.detalheComentarioSheet.publicacaoRelacionada")}
                 </h3>
                 <p className="line-clamp-3 text-muted-foreground">
-                  {comentario.postagem?.conteudo ?? "Publicação não disponível."}
+                  {comentario.postagem?.conteudo ?? t("admin.detalheComentarioSheet.publicacaoNaoDisponivel")}
                 </p>
               </div>
 

@@ -10,6 +10,7 @@ import { LIMITES, nomeDaTecla } from "@/lib/preferenciasMotoras";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { Frase } from "@/i18n/Frase";
 
 const OPCOES_DE_ALVO: ReadonlyArray<{ valor: PreferenciasAcessibilidade["targetSize"]; rotulo: ChaveBase }> = [
   { valor: "padrao", rotulo: "acessibilidade.secaoMotricidade.padrao44Px" },
@@ -35,9 +36,9 @@ function EscolhaDaTeclaExtra() {
       e.stopPropagation();
 
       if (e.key === "Escape") {
-        setAviso("Escolha cancelada.");
+        setAviso(t("acessibilidade.secaoMotricidade.escolhaCancelada"));
       } else if (TECLAS_RESERVADAS.has(e.key)) {
-        setAviso(`${nomeDaTecla(e.key)} não pode ser a tecla extra (Espaço e Enter já selecionam). Aperte outra tecla ou Esc para cancelar.`);
+        setAviso(t("acessibilidade.secaoMotricidade.naoPodeSerATeclaExtraEspacoE", { var1: nomeDaTecla(e.key) }));
 
         return;
       } else {
@@ -51,7 +52,7 @@ function EscolhaDaTeclaExtra() {
     window.addEventListener("keydown", aoApertar, true);
 
     return () => window.removeEventListener("keydown", aoApertar, true);
-  }, [ouvindo, definir]);
+  }, [ouvindo, definir, t]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -62,11 +63,11 @@ function EscolhaDaTeclaExtra() {
           Tecla atual: <strong>{preferencias.scanKey ? nomeDaTecla(preferencias.scanKey) : "nenhuma"}</strong>
         </span>
         <Button type="button" variant="outline" className="min-h-11" onClick={() => { setAviso(""); setOuvindo(true); }} aria-pressed={ouvindo}>
-          {ouvindo ? "Aperte a tecla…" : "Escolher tecla"}
+          {ouvindo ? "Aperte a tecla…" : t("acessibilidade.secaoMotricidade.escolherTecla")}
         </Button>
         {preferencias.scanKey ? (
           <Button type="button" variant="ghost" className="min-h-11" onClick={() => { definir("scanKey", ""); setAviso("Tecla extra removida."); }}>
-            Remover
+            {t("acessibilidade.paineisDeAjuda.remover")}
           </Button>
         ) : null}
       </div>
@@ -168,7 +169,7 @@ export function SecaoMotricidade() {
         chave="shortcuts"
       />
       <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={abrirAjudaDeAtalhos}>
-        <Keyboard className="size-4" aria-hidden="true" /> Ver a lista de atalhos
+        <Keyboard className="size-4" aria-hidden="true" /> {t("acessibilidade.secaoMotricidade.verAListaDeAtalhos")}
       </Button>
 
       <div className="grid gap-2 pt-2">
@@ -178,7 +179,10 @@ export function SecaoMotricidade() {
         <p className="flex items-start gap-2 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
           <Mic className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
           <span>
-            <strong className="text-foreground">{t("acessibilidade.secaoMotricidade.comandosDeVoz")}</strong> abra “Ajuda de leitura” (botão no canto da tela) e escolha “Falar um comando”. O microfone só liga quando você pede.
+            <Frase
+              chave="acessibilidade.secaoMotricidade.comandosDeVozExplicacao"
+              partes={[(texto) => <strong className="text-foreground">{texto}</strong>]}
+            />
           </span>
         </p>
       </div>

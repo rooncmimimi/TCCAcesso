@@ -15,6 +15,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { lerProva, limparProva } from "@/lib/googleNavegador";
 import googleService, { mensagemDeErroGoogle, perfilDaProvaGoogle } from "@/services/google.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 /**
  * Criar a conta direto do retorno do Google (etapa 6 da auditoria), quando o servidor está com a
@@ -37,8 +38,8 @@ export const Route = createFileRoute("/cadastro/google")({
   }),
   head: () => ({
     meta: [
-      { title: "Criar conta com o Google — ACESSO" },
-      { name: "description", content: "Crie sua conta no ACESSO com o Google." },
+      { title: textoDaPagina("cadastro.google.criarContaComOGoogleAcesso") },
+      { name: "description", content: textoDaPagina("cadastro.google.crieSuaContaNoAcessoComOGoogle") },
     ],
   }),
   component: CadastroComGoogle,
@@ -67,7 +68,7 @@ function CadastroComGoogle() {
     if (criando) return;
 
     if (!aceitou) {
-      setErroDoAceite("Aceite os Termos de Uso e o Aviso de Privacidade para criar a conta.");
+      setErroDoAceite(t("cadastro.google.aceiteOsTermosDeUsoEOAvisoDe"));
       return;
     }
 
@@ -80,11 +81,11 @@ function CadastroComGoogle() {
       // A prova cumpriu o papel e não deve ficar na aba para outro cadastro.
       limparProva();
       await iniciarSessao(sessao);
-      toast.success("Conta criada com o Google.");
+      toast.success(t("cadastro.google.contaCriadaComOGoogle"));
       // `replace`: o botão "voltar" não pode reabrir esta tela e tentar criar de novo.
       void navigate({ to: "/cadastro/dados", search: { depois }, replace: true });
     } catch (falha) {
-      const mensagem = mensagemDeErroGoogle(falha, "Não foi possível criar a conta agora. Tente novamente.");
+      const mensagem = mensagemDeErroGoogle(falha, t("cadastro.google.naoFoiPossivelCriarAContaAgora"));
       setErro(mensagem);
       toast.error(mensagem);
       setCriando(false);
@@ -159,7 +160,7 @@ function CadastroComGoogle() {
                 <div role="alert" className="space-y-2 rounded-lg border border-destructive/40 p-3 text-sm">
                   <p className="font-medium text-destructive">{erro}</p>
                   <p className="text-muted-foreground">
-                    Já tem conta no ACESSO?{" "}
+                    {t("cadastro.google.jaTemContaNoAcesso")}{" "}
                     <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
                       {t("cadastro.google.entreComEla")}
                     </Link>
@@ -171,15 +172,15 @@ function CadastroComGoogle() {
               <Button type="submit" className="min-h-12 w-full text-base" disabled={criando}>
                 {criando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Criando sua conta…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("cadastro.google.criandoSuaConta")}
                   </>
                 ) : (
-                  "Criar minha conta"
+                  t("inicio.criarMinhaConta")
                 )}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                Prefere definir uma senha e preencher tudo agora?{" "}
+                {t("cadastro.google.prefereDefinirUmaSenhaE")}{" "}
                 <Link
                   to="/cadastro/candidato"
                   search={{ google: true, depois }}

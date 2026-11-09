@@ -12,12 +12,13 @@ import { extrairMensagemErro } from "@/services/api";
 import notificacoesService from "@/services/notificacoes.service";
 import type { PreferenciasNotificacao } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/configuracoes/notificacoes")({
   head: () => ({
     meta: [
-      { title: "Notificações — ACESSO" },
-      { name: "description", content: "Escolha quais notificações você quer receber no ACESSO." },
+      { title: textoDaPagina("configuracoes.notificacoes.notificacoesAcesso") },
+      { name: "description", content: textoDaPagina("configuracoes.notificacoes.escolhaQuaisNotificacoesVoce2") },
     ],
   }),
   component: () => (
@@ -68,7 +69,7 @@ function PreferenciasNotificacaoPagina() {
     },
     onError: (erro, _payload, contexto) => {
       if (contexto?.anterior) queryClient.setQueryData(CHAVE, contexto.anterior);
-      toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência."));
+      toast.error(extrairMensagemErro(erro, t("configuracoes.notificacoes.naoFoiPossivelSalvarA")));
     },
   });
 
@@ -78,7 +79,7 @@ function PreferenciasNotificacaoPagina() {
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para configurações
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("configuracoes.conta.voltarParaConfiguracoes")}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">
@@ -97,7 +98,7 @@ function PreferenciasNotificacaoPagina() {
         <CardContent className="divide-y p-0">
           {isLoading ? (
             <div role="status" aria-live="polite" className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando preferências…
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("configuracoes.notificacoes.carregandoPreferencias")}
             </div>
           ) : isError ? (
             <div role="alert" className="space-y-2 p-5 text-sm text-destructive">

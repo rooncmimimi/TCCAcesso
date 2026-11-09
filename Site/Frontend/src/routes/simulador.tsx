@@ -4,14 +4,15 @@ import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { PaginaSimulador } from "@/components/simulador/PaginaSimulador";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/simulador")({
   head: () => ({
     meta: [
-      { title: "Simulador de candidatura e entrevista — ACESSO" },
+      { title: textoDaPagina("simulador.simuladorDeCandidaturaE2") },
       {
         name: "description",
-        content: "Treine uma candidatura e uma entrevista com uma vaga fictícia, no seu ritmo. Nada é enviado a empresas.",
+        content: textoDaPagina("simulador.treineUmaCandidaturaEUma"),
       },
     ],
   }),

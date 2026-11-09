@@ -85,14 +85,14 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
     mutationFn: (payload: Record<string, unknown>) => vagasService.atualizar(vaga.id, payload),
     onSuccess: () => {
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Vaga atualizada com sucesso.");
+      toast.success(t("dashboard.editarVagaDialog.vagaAtualizadaComSucesso"));
       rascunho.limpar();
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["vaga", vaga.id] });
       void queryClient.invalidateQueries({ queryKey: ["vagas"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar a vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("dashboard.editarVagaDialog.naoFoiPossivelAtualizarAVaga"))),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -281,7 +281,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               <Input
                 id={`cargaHoraria-${vaga.id}`}
                 name="cargaHoraria"
-                placeholder="40h semanais"
+                placeholder={t("dashboard.editarVagaDialog.40hSemanais")}
                 defaultValue={vaga.cargaHoraria ?? ""}
               />
             </div>
@@ -353,11 +353,11 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t("post.cancelar")}
             </Button>
             <Button type="submit" disabled={salvar.isPending} className="min-h-11 gap-2">
               {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Salvar alterações
+              {t("dashboard.editarVagaDialog.salvarAlteracoes")}
             </Button>
           </DialogFooter>
         </form>

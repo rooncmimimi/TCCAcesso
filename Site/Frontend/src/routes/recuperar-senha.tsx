@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowRight, Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -14,18 +14,22 @@ import { Label } from "@/components/ui/label";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
+import type { TFuncao } from "@/contexts/IdiomaContext";
 
-const esquema = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-});
+/** O esquema nasce do idioma atual: as mensagens de erro saem na língua da tela. */
+const criarEsquema = (t: TFuncao) =>
+  z.object({
+    email: z.string().trim().min(1, t("validacao.informeSeuEmail")).email(t("validacao.emailValido")),
+  });
 
-type Formulario = z.infer<typeof esquema>;
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 export const Route = createFileRoute("/recuperar-senha")({
   head: () => ({
     meta: [
-      { title: "Recuperar senha — ACESSO" },
-      { name: "description", content: "Solicite um link para redefinir sua senha do ACESSO." },
+      { title: textoDaPagina("recuperar-senha.recuperarSenhaAcesso") },
+      { name: "description", content: textoDaPagina("recuperar-senha.soliciteUmLinkParaRedefinirSua") },
     ],
   }),
   component: RecuperarSenha,
@@ -42,7 +46,7 @@ function RecuperarSenha() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Formulario>({ resolver: zodResolver(esquema), defaultValues: { email: "" } });
+  } = useForm<Formulario>({ resolver: zodResolver(useMemo(() => criarEsquema(t), [t])), defaultValues: { email: "" } });
 
   const aoEnviar = handleSubmit(async (valores) => {
     setEnviando(true);
@@ -50,7 +54,7 @@ function RecuperarSenha() {
       await autenticacaoService.esqueciSenha(valores.email);
       setEnviado(true);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível solicitar a recuperação de senha."));
+      toast.error(extrairMensagemErro(erro, t("recuperar-senha.naoFoiPossivelSolicitarA")));
     } finally {
       setEnviando(false);
     }
@@ -71,7 +75,7 @@ function RecuperarSenha() {
                   {t("recuperar-senha.seEncontrarmosUmaConta")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Está no aplicativo ACESSO?{" "}
+                  {t("recuperar-senha.estaNoAplicativoAcesso")}{" "}
                   <Link to="/redefinir-senha" className="font-semibold text-primary underline">
                     {t("recuperar-senha.usarOCodigoDoEMail")}
                   </Link>
@@ -85,7 +89,7 @@ function RecuperarSenha() {
                 </p>
                 <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
+                    <Label htmlFor="email">{t("login.email")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -104,25 +108,25 @@ function RecuperarSenha() {
                   <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
                     {enviando ? (
                       <>
-                        <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                        <Loader2 className="animate-spin" aria-hidden="true" /> {t("comentario.enviando")}
                       </>
                     ) : (
                       <>
-                        Enviar link <ArrowRight aria-hidden="true" />
+                        {t("recuperar-senha.enviarLink")} <ArrowRight aria-hidden="true" />
                       </>
                     )}
                   </Button>
                 </form>
                 <p className="mt-6 text-sm text-muted-foreground">
-                  Já tem um código?{" "}
+                  {t("recuperar-senha.jaTemUmCodigo")}{" "}
                   <Link to="/redefinir-senha" className="font-semibold text-primary underline">
                     {t("recuperar-senha.redefinirSenha")}
                   </Link>
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Lembrou a senha?{" "}
+                  {t("auth.lembrouASenha")}{" "}
                   <Link to="/entrar" className="font-semibold text-primary underline">
-                    Entrar
+                    {t("cabecalho.entrar")}
                   </Link>
                 </p>
               </>

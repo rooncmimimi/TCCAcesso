@@ -50,7 +50,7 @@ export function AdaptacoesDaMinhaCandidatura({
   const retirar = useMutation({
     mutationFn: () => candidaturaAdaptacoesService.retirar(candidaturaId),
     onSuccess: () => {
-      toast.success("Autorização retirada. A empresa não pode mais consultar essas informações.");
+      toast.success(t("candidatura.adaptacoesDaMinhaCandidatura.autorizacaoRetiradaAEmpresaNao"));
       void queryClient.invalidateQueries({ queryKey: ["candidaturas"] });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
@@ -59,7 +59,7 @@ export function AdaptacoesDaMinhaCandidatura({
   if (adaptacoes.estado === "retirada") {
     return (
       <p className="basis-full text-sm text-muted-foreground">
-        Você retirou, em {formatarData(adaptacoes.retiradoEm)}, a autorização para compartilhar informações de acessibilidade nesta candidatura. A empresa não pode mais consultá-las.
+        {t("candidatura.adaptacoesDaMinhaCandidatura.voceRetirouAAutorizacao", { data: formatarData(adaptacoes.retiradoEm) })}
       </p>
     );
   }

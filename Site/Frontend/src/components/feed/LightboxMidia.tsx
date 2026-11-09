@@ -72,7 +72,7 @@ export function LightboxMidia({
       link.click();
       link.remove();
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível baixar o arquivo."));
+      toast.error(extrairMensagemErro(erro, t("feed.lightboxMidia.naoFoiPossivelBaixarOArquivo")));
     } finally {
       setBaixando(false);
     }
@@ -135,7 +135,7 @@ export function LightboxMidia({
                   controls
                   preload="metadata"
                   className="max-h-[75dvh] w-full"
-                  aria-label={item.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
+                  aria-label={item.descricao || t("feed.lightboxMidia.videoAnexadoAPublicacaoSem")}
                 >
                   {t("feed.lightboxMidia.seuNavegadorNaoSuportaA")}
                 </video>
@@ -143,7 +143,7 @@ export function LightboxMidia({
                 <img
                   key={item.id}
                   src={urlArquivo(item.url)}
-                  alt={item.descricao || item.nomeOriginal || "Imagem sem descrição fornecida pelo autor da publicação"}
+                  alt={item.descricao || item.nomeOriginal || t("feed.lightboxMidia.imagemSemDescricaoFornecida")}
                   className="max-h-[75dvh] w-full object-contain"
                 />
               )}
@@ -168,7 +168,7 @@ export function LightboxMidia({
                   ) : (
                     <Download className="size-4" aria-hidden="true" />
                   )}
-                  Baixar
+                  {t("feed.lightboxMidia.baixar")}
                 </Button>
               )}
             </div>

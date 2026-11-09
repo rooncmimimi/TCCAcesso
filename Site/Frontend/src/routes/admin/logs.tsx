@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { LogsTabela } from "@/components/admin/LogsTabela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/logs")({
   head: () => ({
     meta: [
-      { title: "Logs de auditoria — Administração ACESSO" },
-      { name: "description", content: "Histórico somente leitura das ações administrativas na plataforma ACESSO." },
+      { title: textoDaPagina("admin.logs.logsDeAuditoriaAdministracao") },
+      { name: "description", content: textoDaPagina("admin.logs.historicoSomenteLeituraDas") },
     ],
   }),
   component: AdminLogs,

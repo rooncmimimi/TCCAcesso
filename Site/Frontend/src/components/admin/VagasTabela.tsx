@@ -62,20 +62,20 @@ export function VagasTabela() {
     mutationFn: (payload: { id: string; status: VagaAdmin["status"] }) =>
       alterarStatusVaga(payload.id, payload.status),
     onSuccess: () => {
-      toast.success("Status da vaga atualizado.");
+      toast.success(t("admin.vagasTabela.statusDaVagaAtualizado"));
       queryClient.invalidateQueries({ queryKey: ["admin", "vagas"] });
     },
-    onError: (erro: Error) => toast.error(erro.message || "Não foi possível atualizar o status."),
+    onError: (erro: Error) => toast.error(erro.message || t("dashboard.candidaturasDaVaga.naoFoiPossivelAtualizarOStatus")),
   });
 
   const remocaoMutacao = useMutation({
     mutationFn: (vaga: VagaAdmin) => removerVaga(vaga.id),
     onSuccess: () => {
-      toast.success("Vaga removida.");
+      toast.success(t("admin.vagasTabela.vagaRemovida"));
       queryClient.invalidateQueries({ queryKey: ["admin", "vagas"] });
       setAlvo(null);
     },
-    onError: (erro: Error) => toast.error(erro.message || "Não foi possível remover a vaga."),
+    onError: (erro: Error) => toast.error(erro.message || t("admin.vagasTabela.naoFoiPossivelRemoverAVaga")),
   });
 
   if (isLoading) {
@@ -130,7 +130,7 @@ export function VagasTabela() {
                     statusMutacao.mutate({ id: vaga.id, status: valor as VagaAdmin["status"] })
                   }
                 >
-                  <SelectTrigger className="w-36" aria-label={`Alterar status da vaga ${vaga.titulo}`}>
+                  <SelectTrigger className="w-36" aria-label={t("admin.vagasTabela.alterarStatusDaVaga", { var1: vaga.titulo })}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -149,9 +149,9 @@ export function VagasTabela() {
                   variant="outline"
                   className="min-h-11"
                   onClick={() => setMapaId(vaga.id)}
-                  aria-label={`Verificar o mapa de acessibilidade física da vaga ${vaga.titulo}`}
+                  aria-label={t("admin.vagasTabela.verificarOMapaDeAcessibilidade", { var1: vaga.titulo })}
                 >
-                  <BadgeCheck className="size-4" aria-hidden="true" /> Mapa físico
+                  <BadgeCheck className="size-4" aria-hidden="true" /> {t("admin.vagasTabela.mapaFisico")}
                 </Button>
                 <Button
                   size="sm"
@@ -159,7 +159,7 @@ export function VagasTabela() {
                   onClick={() => setAlvo(vaga)}
                   aria-label={`Remover vaga ${vaga.titulo}`}
                 >
-                  <Trash2 className="size-4" aria-hidden="true" /> Remover
+                  <Trash2 className="size-4" aria-hidden="true" /> {t("acessibilidade.paineisDeAjuda.remover")}
                 </Button>
                 </div>
               </TableCell>
@@ -181,7 +181,7 @@ export function VagasTabela() {
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
         titulo={t("admin.vagasTabela.removerVaga")}
-        descricao={`A vaga "${alvo?.titulo}" será removida da plataforma. Deseja continuar?`}
+        descricao={t("admin.vagasTabela.aVagaSeraRemovidaDaPlataforma", { var1: alvo?.titulo ?? "" })}
         textoConfirmar={t("admin.vagasTabela.remover")}
         destrutivo
         carregando={remocaoMutacao.isPending}

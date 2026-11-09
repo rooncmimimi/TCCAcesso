@@ -7,6 +7,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { urlArquivo } from "@/utils/arquivos";
 import { atributoAccept, verificarArquivo } from "@/lib/arquivos";
 import { toast } from "sonner";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Avatar com upload real de imagem (PNG/JPEG/WEBP), usado em perfis de pessoa e empresa. */
 export function FotoUploader({
@@ -15,7 +16,7 @@ export function FotoUploader({
   fallback,
   onEnviar,
   tamanho = "size-24",
-  rotulo = "Alterar foto",
+  rotulo,
 }: {
   nome: string;
   fotoUrl?: string | null;
@@ -24,6 +25,10 @@ export function FotoUploader({
   tamanho?: string;
   rotulo?: string;
 }) {
+  const { t } = useIdioma();
+  // O rotulo e usado em dois lugares (campo escondido e aria-label): calculado uma vez, para nenhum
+  // deles ficar sem nome quando a tela nao passa um rotulo proprio.
+  const rotuloDoBotao = rotulo ?? t("perfil.fotoUploader.alterarFoto");
   const inputRef = useRef<HTMLInputElement>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -38,9 +43,9 @@ export function FotoUploader({
     try {
       setEnviando(true);
       await onEnviar(arquivo);
-      toast.success("Foto atualizada.");
+      toast.success(t("perfil.fotoUploader.fotoAtualizada"));
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível enviar a foto."));
+      toast.error(extrairMensagemErro(erro, t("perfil.fotoUploader.naoFoiPossivelEnviarAFoto")));
     } finally {
       setEnviando(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -50,18 +55,18 @@ export function FotoUploader({
   return (
     <div className="relative inline-block">
       <Avatar className={`${tamanho} border-4 border-card`}>
-        <AvatarImage src={urlArquivo(fotoUrl ?? undefined)} alt={`Foto de ${nome}`} />
+        <AvatarImage src={urlArquivo(fotoUrl ?? undefined)} alt={t("perfil.fotoUploader.fotoDe", { var1: nome })} />
         <AvatarFallback className="bg-primary-soft text-2xl font-bold text-primary">
           {fallback}
         </AvatarFallback>
       </Avatar>
-      <CampoDeArquivoOculto ref={inputRef} id="upload-foto-perfil" rotulo={rotulo} accept={atributoAccept(["imagem"])} aoEscolher={(e) => tratarArquivo(e.target.files?.[0])} />
+      <CampoDeArquivoOculto ref={inputRef} id="upload-foto-perfil" rotulo={rotuloDoBotao} accept={atributoAccept(["imagem"])} aoEscolher={(e) => tratarArquivo(e.target.files?.[0])} />
       <Button
         type="button"
         size="icon"
         variant="secondary"
         className="absolute -bottom-1 -right-1 min-h-11 min-w-11 rounded-full border-2 border-card shadow"
-        aria-label={rotulo}
+        aria-label={rotuloDoBotao}
         disabled={enviando}
         onClick={() => inputRef.current?.click()}
       >

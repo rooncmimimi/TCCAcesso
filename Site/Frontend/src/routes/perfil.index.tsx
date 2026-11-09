@@ -3,14 +3,15 @@ import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { useSessao } from "@/hooks/useSessao";
 import { PerfilPessoal } from "@/components/perfil/PerfilPessoal";
 import { PerfilEmpresa } from "@/components/perfil/PerfilEmpresa";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/perfil/")({
   head: () => ({
     meta: [
-      { title: "Meu perfil — ACESSO" },
-      { name: "description", content: "Seu perfil profissional acessível no ACESSO." },
-      { property: "og:title", content: "Meu perfil — ACESSO" },
-      { property: "og:description", content: "Perfil profissional com informações de acessibilidade." },
+      { title: textoDaPagina("perfilindex.meuPerfilAcesso") },
+      { name: "description", content: textoDaPagina("perfilindex.seuPerfilProfissionalAcessivel") },
+      { property: "og:title", content: textoDaPagina("perfilindex.meuPerfilAcesso") },
+      { property: "og:description", content: textoDaPagina("perfilindex.perfilProfissionalCom") },
     ],
   }),
   component: () => (

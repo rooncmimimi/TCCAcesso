@@ -111,7 +111,7 @@ export function SecaoLeituraEFoco() {
         id="a11y-persistent-toasts"
         icon={BellRing}
         titulo={t("acessibilidade.secaoLeituraEFoco.manterAvisosNaTelaAteEuFechar")}
-        descricao={`Confirmações e erros ganham um botão de fechar e não somem sozinhos. Por segurança, saem depois de ${minutosDoAviso} minutos.`}
+        descricao={t("acessibilidade.secaoLeituraEFoco.confirmacoesEErrosGanhamUm", { var1: minutosDoAviso })}
         chave="persistentToasts"
       />
 
@@ -217,8 +217,8 @@ function CoresPersonalizadas() {
                 <span className="tabular-nums">{formatarRazao(razao)}</span>
                 <span className={ok ? "text-muted-foreground" : "font-semibold text-destructive"}>
                   {ok
-                    ? `legível (mínimo ${formatarRazao(minimo)})`
-                    : `difícil de ler: o mínimo recomendado é ${formatarRazao(minimo)}`}
+                    ? t("acessibilidade.secaoLeituraEFoco.legivelMinimo", { var1: formatarRazao(minimo) })
+                    : t("acessibilidade.secaoLeituraEFoco.dificilDeLerOMinimoRecomendado", { var1: formatarRazao(minimo) })}
                 </span>
               </li>
             );

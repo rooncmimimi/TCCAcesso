@@ -8,17 +8,18 @@ import { GraficosRelatorios } from "@/components/admin/GraficosRelatorios";
 import { obterRelatorios } from "@/services/admin.service";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Relatórios administrativos — ACESSO" },
+      { title: textoDaPagina("admin.index.relatoriosAdministrativos") },
       {
         name: "description",
-        content: "Métricas de usuários, empresas, vagas e candidaturas da plataforma ACESSO.",
+        content: textoDaPagina("admin.index.metricasDeUsuariosEmpresas"),
       },
-      { property: "og:title", content: "Relatórios administrativos — ACESSO" },
-      { property: "og:description", content: "Indicadores da plataforma em tempo real." },
+      { property: "og:title", content: textoDaPagina("admin.index.relatoriosAdministrativos") },
+      { property: "og:description", content: textoDaPagina("admin.index.indicadoresDaPlataformaEmTempo") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -90,7 +91,7 @@ function RelatoriosAdmin() {
     { categoria: "Empresas", total: totais.empresas },
     { categoria: "Vagas", total: totais.vagas },
     { categoria: "Candidaturas", total: totais.candidaturas },
-    { categoria: "Publicações", total: totais.postagens },
+    { categoria: t("barraBusca.publicacoes"), total: totais.postagens },
   ];
 
   return (
@@ -128,7 +129,7 @@ function RelatoriosAdmin() {
             <ul className="space-y-2">
               {data.deficienciasMaisComuns.map((item) => (
                 <li key={item.deficienciaId} className="flex justify-between text-sm">
-                  <span>{item.deficiencia?.nome ?? "Não informada"}</span>
+                  <span>{item.deficiencia?.nome ?? t("admin.index.naoInformada")}</span>
                   <span className="font-bold">{item.total}</span>
                 </li>
               ))}

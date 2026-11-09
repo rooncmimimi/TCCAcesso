@@ -111,7 +111,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
   const descartar = useMutation({
     mutationFn: () => candidaturaAdaptacoesService.descartarRascunho(vaga.id),
     onSuccess: () => {
-      toast.success("Rascunho descartado.");
+      toast.success(t("candidatura.candidaturaDialog.rascunhoDescartado"));
       void queryClient.invalidateQueries({ queryKey: ["candidaturas", "rascunho"] });
       void queryClient.invalidateQueries({ queryKey: ["candidaturas", "rascunhos"] });
       setSujo(false);
@@ -123,7 +123,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
   const enviar = useMutation({
     mutationFn: () => candidaturaAdaptacoesService.enviar(vaga.id, { mensagem, compartilhar: escolha, aceita: tem ? aceita : false }),
     onSuccess: () => {
-      toast.success("Candidatura enviada.");
+      toast.success(t("candidatura.candidaturaDialog.candidaturaEnviada"));
       void queryClient.invalidateQueries({ queryKey: ["candidaturas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
       setSujo(false);
@@ -155,9 +155,9 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
     <Dialog open={aberto} onOpenChange={(v) => (!v ? fechar() : undefined)}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Candidatar-se: {vaga.titulo}</DialogTitle>
+          <DialogTitle>{t("candidatura.candidaturaDialog.candidatarSe", { vaga: vaga.titulo })}</DialogTitle>
           <DialogDescription>
-            Você pode parar a qualquer momento: o que preencher fica salvo como rascunho e só vira candidatura quando você enviar.
+            {t("candidatura.candidaturaDialog.vocePodePararAQualquerMomento")}
           </DialogDescription>
         </DialogHeader>
 
@@ -167,7 +167,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
 
         {carregando ? (
           <div role="status" className="flex items-center gap-2 py-8 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("feed.carregando")}
           </div>
         ) : catalogo.isError || perfil.isError || !catalogo.data || !perfil.data ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
@@ -226,7 +226,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
                 <h3 className="text-sm font-bold">{t("candidatura.candidaturaDialog.oQueAEmpresaRecebera")}</h3>
                 {previa.isLoading ? (
                   <div role="status" className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Montando a prévia…
+                    <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("candidatura.candidaturaDialog.montandoAPrevia")}
                   </div>
                 ) : previa.isError || !previa.data ? (
                   <div role="alert" className="space-y-2 text-sm text-destructive">
@@ -264,8 +264,8 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
 
         <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={() => salvar.mutate(undefined, { onSuccess: () => { toast.success("Rascunho salvo. Você pode continuar depois."); aoFechar(); } })} disabled={carregando || salvar.isPending}>
-              <Save className="size-4" aria-hidden="true" /> Salvar e continuar depois
+            <Button type="button" variant="outline" onClick={() => salvar.mutate(undefined, { onSuccess: () => { toast.success(t("candidatura.candidaturaDialog.rascunhoSalvoVocePodeContinuar")); aoFechar(); } })} disabled={carregando || salvar.isPending}>
+              <Save className="size-4" aria-hidden="true" /> {t("candidatura.candidaturaDialog.salvarEContinuarDepois")}
             </Button>
             {rascunho.data ? (
               <Button type="button" variant="ghost" onClick={() => descartar.mutate()} disabled={descartar.isPending}>
@@ -277,21 +277,21 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
           <div className="flex flex-wrap gap-2">
             {indice > 0 ? (
               <Button type="button" variant="outline" onClick={() => irPara(ETAPAS[indice - 1].chave)}>
-                Voltar
+                {t("auth.voltar")}
               </Button>
             ) : null}
             {etapa !== "revisao" ? (
               <Button type="button" onClick={() => irPara(ETAPAS[indice + 1].chave)} disabled={carregando}>
-                Continuar
+                {t("acessibilidade.controleDeLeitura.continuar")}
               </Button>
             ) : (
               <Button type="button" onClick={() => enviar.mutate()} disabled={!podeEnviar}>
                 {enviar.isPending ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("comentario.enviando")}
                   </>
                 ) : (
-                  "Enviar candidatura"
+                  t("candidatura.candidaturaDialog.enviarCandidatura")
                 )}
               </Button>
             )}

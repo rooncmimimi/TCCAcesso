@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BotoesCurriculo } from "@/components/perfil/BotoesCurriculo";
@@ -21,11 +22,11 @@ import type { StatusCandidatura, Vaga } from "@/types";
 
 const OPCOES_STATUS: StatusCandidatura[] = ["pendente", "em_analise", "aprovada", "rejeitada"];
 
-const ROTULOS: Record<string, string> = {
-  pendente: "Pendente",
-  em_analise: "Em análise",
-  aprovada: "Aprovada",
-  rejeitada: "Rejeitada",
+const ROTULOS: Record<string, ChaveBase> = {
+  pendente: "status.pendente",
+  em_analise: "status.emAnalise",
+  aprovada: "status.aprovada",
+  rejeitada: "status.rejeitada",
 };
 
 /** Candidaturas recebidas para uma vaga específica, com atualização de status. */
@@ -43,11 +44,11 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       candidaturasService.atualizarStatus(id, status),
     onSuccess: () => {
-      toast.success("Status da candidatura atualizado.");
+      toast.success(t("dashboard.candidaturasDaVaga.statusDaCandidaturaAtualizado"));
       queryClient.invalidateQueries({ queryKey: ["candidaturas-da-vaga", vaga.id] });
       queryClient.invalidateQueries({ queryKey: ["metricas-empresa"] });
     },
-    onError: () => toast.error("Não foi possível atualizar o status."),
+    onError: () => toast.error(t("dashboard.candidaturasDaVaga.naoFoiPossivelAtualizarOStatus")),
   });
 
   return (
@@ -58,7 +59,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
       <CardContent>
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando candidaturas…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("dashboard.candidaturasDaVaga.carregandoCandidaturas")}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
@@ -79,7 +80,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                       {candidatura.candidato?.usuario?.nome ?? "Candidato"}
                     </p>
                     <p className="truncate text-sm text-muted-foreground">
-                      {candidatura.candidato?.tituloProfissional ?? "Sem título informado"}
+                      {candidatura.candidato?.tituloProfissional ?? t("dashboard.candidaturasDaVaga.semTituloInformado")}
                     </p>
                     {/* `curriculoNome` só vem preenchido quando o backend já
                         confirmou que esta empresa está autorizada (tem
@@ -106,7 +107,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                       <SelectContent>
                         {OPCOES_STATUS.map((status) => (
                           <SelectItem key={status} value={status}>
-                            {ROTULOS[status]}
+                            {t(ROTULOS[status])}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -33,8 +33,7 @@ import googleService, { mensagemDeErroGoogle } from "@/services/google.service";
 
 const CHAVE_GOOGLE = ["seguranca", "google"] as const;
 
-const OUTRO_NAVEGADOR =
-  "Esta vinculação com o Google não começou neste navegador. Clique em Vincular de novo para recomeçar.";
+const OUTRO_NAVEGADOR: ChaveBase = "configuracoes.secaoContasConectadas.outroNavegador";
 
 /**
  * O que acontece quando o Google devolve o navegador a esta tela: o código vem no fragmento
@@ -45,6 +44,7 @@ const OUTRO_NAVEGADOR =
  * descartado — o código é de uso único.
  */
 function useRetornoDaVinculacao(aoMudar: () => void) {
+  const { t } = useIdioma();
   // Em desenvolvimento o React monta duas vezes; sem isto o código seria trocado duas vezes.
   const jaTratou = useRef(false);
 
@@ -62,25 +62,25 @@ function useRetornoDaVinculacao(aoMudar: () => void) {
       limparVinculo();
       toast.error(
         erro === "cancelado"
-          ? "Você cancelou a vinculação com o Google."
-          : "Não foi possível vincular a conta Google. Tente novamente.",
+          ? t("configuracoes.secaoContasConectadas.voceCancelouAVinculacaoComO")
+          : t("configuracoes.secaoContasConectadas.naoFoiPossivelVincularAConta"),
       );
       return;
     }
 
     if (lerVinculo() === null) {
-      toast.error(OUTRO_NAVEGADOR);
+      toast.error(t(OUTRO_NAVEGADOR));
       return;
     }
 
     googleService
       .vincular(codigo)
       .then(() => {
-        toast.success("Conta Google vinculada. Agora você também pode entrar com ela.");
+        toast.success(t("configuracoes.secaoContasConectadas.contaGoogleVinculadaAgoraVoce"));
         aoMudar();
       })
       .catch((falha) =>
-        toast.error(mensagemDeErroGoogle(falha, "Não foi possível vincular a conta Google. Tente novamente.")),
+        toast.error(mensagemDeErroGoogle(falha, t("configuracoes.secaoContasConectadas.naoFoiPossivelVincularAConta"))),
       )
       .finally(limparVinculo);
     // `aoMudar` só invalida uma consulta; a vinculação roda uma vez por retorno.
@@ -170,7 +170,7 @@ function DialogoSenha({
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" disabled={enviando} onClick={aoFechar}>
-              Cancelar
+              {t("post.cancelar")}
             </Button>
             <Button type="submit" disabled={enviando || !senha} variant={acao === "desvincular" ? "destructive" : "default"}>
               {enviando ? (
@@ -230,17 +230,17 @@ export function SecaoContasConectadas() {
     mutationFn: (senha: string) => googleService.iniciarVinculo(senha),
     // Segue para o Google: a tela é trocada, então o diálogo fica como está até lá.
     onSuccess: (url) => window.location.assign(url),
-    onError: (falha) => setErro(mensagemDoErro(falha, "Não foi possível começar a vinculação.")),
+    onError: (falha) => setErro(mensagemDoErro(falha, t("configuracoes.secaoContasConectadas.naoFoiPossivelComecarA"))),
   });
 
   const desvincular = useMutation({
     mutationFn: (senha: string) => googleService.desvincular(senha),
     onSuccess: () => {
-      toast.success("Conta Google desvinculada. Você entra apenas com e-mail e senha.");
+      toast.success(t("configuracoes.secaoContasConectadas.contaGoogleDesvinculadaVoce"));
       fechar();
       void atualizar();
     },
-    onError: (falha) => setErro(mensagemDoErro(falha, "Não foi possível desvincular a conta Google.")),
+    onError: (falha) => setErro(mensagemDoErro(falha, t("configuracoes.secaoContasConectadas.naoFoiPossivelDesvincularA"))),
   });
 
   if (!ehCandidato) return null;
@@ -261,7 +261,7 @@ export function SecaoContasConectadas() {
       <CardContent>
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando contas conectadas…
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("configuracoes.secaoContasConectadas.carregandoContasConectadas")}
           </div>
         ) : isError || !conta ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
@@ -279,13 +279,13 @@ export function SecaoContasConectadas() {
               <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                 Google
                 <Badge variant={conta.vinculado ? "secondary" : "outline"} className="font-medium">
-                  {conta.vinculado ? "Vinculada" : "Não vinculada"}
+                  {conta.vinculado ? "Vinculada" : t("configuracoes.secaoContasConectadas.naoVinculada")}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
                 {conta.vinculado
-                  ? "Você pode entrar no ACESSO com a sua conta Google."
-                  : "Vincule para entrar com um toque, sem digitar a senha do ACESSO."}
+                  ? t("configuracoes.secaoContasConectadas.vocePodeEntrarNoAcessoComASua")
+                  : t("configuracoes.secaoContasConectadas.vinculeParaEntrarComUmToqueSem")}
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1">
@@ -297,7 +297,7 @@ export function SecaoContasConectadas() {
                   onClick={() => setAcao("desvincular")}
                   aria-label={t("configuracoes.secaoContasConectadas.desvincularContaGoogle")}
                 >
-                  Desvincular
+                  {t("configuracoes.secaoContasConectadas.desvincular")}
                 </Button>
               ) : (
                 <Button
@@ -307,7 +307,7 @@ export function SecaoContasConectadas() {
                   onClick={() => setAcao("vincular")}
                   aria-label={t("configuracoes.secaoContasConectadas.vincularContaGoogle")}
                 >
-                  Vincular
+                  {t("configuracoes.secaoContasConectadas.vincular")}
                 </Button>
               )}
             </div>
@@ -317,7 +317,7 @@ export function SecaoContasConectadas() {
         {/* Sem senha, o Google é o único jeito de entrar: desvincular a deixaria sem acesso. */}
         {conta?.vinculado && usuario?.temSenha === false && (
           <div className="mt-3">
-            <AvisoSemSenha recurso="desvincular o Google" />
+            <AvisoSemSenha recurso={t("configuracoes.secaoContasConectadas.desvincularOGoogle")} />
           </div>
         )}
       </CardContent>

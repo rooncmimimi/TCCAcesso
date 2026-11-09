@@ -9,14 +9,15 @@ import { CandidaturasRecentes } from "@/components/dashboard/CandidaturasRecente
 import { VagasFavoritas } from "@/components/dashboard/VagasFavoritas";
 import { dashboardService } from "@/services/dashboard.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/dashboard/candidato")({
   head: () => ({
     meta: [
-      { title: "Meu painel — ACESSO" },
+      { title: textoDaPagina("dashboard.candidato.meuPainelAcesso") },
       {
         name: "description",
-        content: "Acompanhe suas candidaturas, vagas favoritas e desempenho no ACESSO.",
+        content: textoDaPagina("dashboard.candidato.acompanheSuasCandidaturasVagas2"),
       },
     ],
   }),
@@ -41,14 +42,14 @@ function PainelCandidato() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Meu painel</h1>
+      <h1 className="text-3xl font-extrabold">{t("dashboard.candidato.meuPainel")}</h1>
       <p className="mt-2 text-muted-foreground">
         {t("dashboard.candidato.acompanheSuasCandidaturasVagas")}
       </p>
 
       {isLoading ? (
         <div role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando suas métricas…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("dashboard.candidato.carregandoSuasMetricas")}
         </div>
       ) : isError ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">

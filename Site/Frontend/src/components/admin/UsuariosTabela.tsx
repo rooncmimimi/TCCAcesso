@@ -67,11 +67,11 @@ export function UsuariosTabela() {
     mutationFn: (usuario: UsuarioAdmin) =>
       usuario.ativo ? desativarUsuario(usuario.id) : ativarUsuario(usuario.id),
     onSuccess: (_dados, usuario) => {
-      toast.success(usuario.ativo ? "Usuário bloqueado." : "Usuário desbloqueado.");
+      toast.success(usuario.ativo ? "Usuário bloqueado." : t("admin.usuariosTabela.usuarioDesbloqueado"));
       queryClient.invalidateQueries({ queryKey: ["admin", "usuarios"] });
       setAlvo(null);
     },
-    onError: (erro: Error) => toast.error(erro.message || "Não foi possível concluir a ação."),
+    onError: (erro: Error) => toast.error(erro.message || t("perfil.seguirButton.naoFoiPossivelConcluirAAcao")),
   });
 
   const usuarios = data?.usuarios ?? [];
@@ -117,7 +117,7 @@ export function UsuariosTabela() {
           </Select>
         </div>
         <Button type="submit" className="min-h-11">
-          Filtrar
+          {t("admin.usuariosTabela.filtrar")}
         </Button>
       </form>
 
@@ -133,7 +133,7 @@ export function UsuariosTabela() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("admin.usuariosTabela.nome")}</TableHead>
-                <TableHead>E-mail</TableHead>
+                <TableHead>{t("login.email")}</TableHead>
                 <TableHead>{t("admin.usuariosTabela.tipo")}</TableHead>
                 <TableHead>{t("admin.usuariosTabela.situacao")}</TableHead>
                 <TableHead className="text-right">{t("admin.usuariosTabela.acoes")}</TableHead>
@@ -172,11 +172,11 @@ export function UsuariosTabela() {
                       >
                         {usuario.ativo ? (
                           <>
-                            <Lock className="size-4" aria-hidden="true" /> Bloquear
+                            <Lock className="size-4" aria-hidden="true" /> {t("admin.usuariosTabela.bloquear")}
                           </>
                         ) : (
                           <>
-                            <Unlock className="size-4" aria-hidden="true" /> Desbloquear
+                            <Unlock className="size-4" aria-hidden="true" /> {t("admin.usuariosTabela.desbloquear")}
                           </>
                         )}
                       </Button>
@@ -199,8 +199,8 @@ export function UsuariosTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo={alvo?.ativo ? "Bloquear usuário" : "Desbloquear usuário"}
-        descricao={`Confirma ${alvo?.ativo ? "bloquear" : "desbloquear"} o acesso de "${alvo?.nome}"?`}
+        titulo={alvo?.ativo ? "Bloquear usuário" : t("admin.usuariosTabela.desbloquearUsuario")}
+        descricao={t("admin.usuariosTabela.confirmaOAcessoDe", { var1: alvo?.ativo ? t("admin.usuariosTabela.bloquear") : t("admin.usuariosTabela.desbloquear"), var2: alvo?.nome ?? "" })}
         textoConfirmar={alvo?.ativo ? "Bloquear" : "Desbloquear"}
         destrutivo={Boolean(alvo?.ativo)}
         carregando={mutacao.isPending}

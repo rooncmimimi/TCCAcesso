@@ -57,7 +57,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
   const enviar = useMutation({
     mutationFn: () => ambienteService.enviarVideo(vagaId, { video: arquivo as File, transcricao, descricao }),
     onSuccess: () => {
-      toast.success("Vídeo enviado.");
+      toast.success(t("vagas.videoDaVagaGestao.videoEnviado"));
       setArquivo(null);
       void aposMudar();
     },
@@ -67,7 +67,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
   const salvarTextos = useMutation({
     mutationFn: () => ambienteService.atualizarTextos(vagaId, { transcricao, descricao }),
     onSuccess: () => {
-      toast.success("Textos do vídeo salvos.");
+      toast.success(t("vagas.videoDaVagaGestao.textosDoVideoSalvos"));
       void aposMudar();
     },
     onError: falha,
@@ -76,7 +76,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
   const enviarLegenda = useMutation({
     mutationFn: (arq: File) => ambienteService.enviarLegenda(vagaId, arq),
     onSuccess: () => {
-      toast.success("Legenda enviada.");
+      toast.success(t("vagas.videoDaVagaGestao.legendaEnviada"));
       void aposMudar();
     },
     onError: falha,
@@ -85,7 +85,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
   const removerLegenda = useMutation({
     mutationFn: () => ambienteService.removerLegenda(vagaId),
     onSuccess: () => {
-      toast.success("Legenda removida.");
+      toast.success(t("vagas.videoDaVagaGestao.legendaRemovida"));
       void aposMudar();
     },
     onError: falha,
@@ -94,7 +94,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
   const removerVideo = useMutation({
     mutationFn: () => ambienteService.removerMidia(vagaId),
     onSuccess: () => {
-      toast.success("Vídeo removido.");
+      toast.success(t("vagas.videoDaVagaGestao.videoRemovido"));
       void aposMudar();
     },
     onError: falha,
@@ -106,12 +106,12 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
     if (!arq) return;
 
     if (!TIPOS_DE_VIDEO.includes(arq.type)) {
-      setErroDoArquivo("Formato inválido. Envie um vídeo MP4 ou WEBM.");
+      setErroDoArquivo(t("vagas.videoDaVagaGestao.formatoInvalidoEnvieUmVideoMp4"));
       return;
     }
 
     if (arq.size > LIMITE_DO_VIDEO_BYTES) {
-      setErroDoArquivo("O vídeo passa de 50 MB. Reduza o tamanho e envie de novo.");
+      setErroDoArquivo(t("vagas.videoDaVagaGestao.oVideoPassaDe50MbReduzaO"));
       return;
     }
 
@@ -138,16 +138,16 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
       </p>
 
       {!midia || arquivo !== null ? (
-        <p className="text-xs text-muted-foreground">{midia ? "Você escolheu um novo vídeo: ele vai substituir o atual e a legenda atual será removida." : "Esta vaga ainda não tem vídeo."}</p>
+        <p className="text-xs text-muted-foreground">{midia ? "Você escolheu um novo vídeo: ele vai substituir o atual e a legenda atual será removida." : t("vagas.videoDaVagaGestao.estaVagaAindaNaoTemVideo")}</p>
       ) : (
         <p className="text-sm">
-          Vídeo enviado. Legenda: <strong>{midia.legendaVtt ? "enviada" : "não enviada"}</strong>.
+          Vídeo enviado. Legenda: <strong>{midia.legendaVtt ? "enviada" : t("vagas.videoDaVagaGestao.naoEnviada")}</strong>.
         </p>
       )}
 
       <div className="space-y-1">
         <Label htmlFor={`${idBase}-arquivo`} className="text-sm">
-          {midia ? "Trocar o vídeo (opcional)" : "Arquivo de vídeo"}
+          {midia ? "Trocar o vídeo (opcional)" : t("vagas.videoDaVagaGestao.arquivoDeVideo")}
         </Label>
         <Input id={`${idBase}-arquivo`} type="file" accept="video/mp4,video/webm" onChange={(e) => escolherVideo(e.target.files?.[0] ?? null)} aria-describedby={erroDoArquivo ? `${idBase}-erro` : undefined} />
         {erroDoArquivo ? (
@@ -163,7 +163,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
         </Label>
         <Textarea id={`${idBase}-transcricao`} rows={5} maxLength={8000} value={transcricao} onChange={(e) => setTranscricao(e.target.value)} aria-describedby={`${idBase}-transcricao-ajuda`} />
         <p id={`${idBase}-transcricao-ajuda`} className={`text-xs ${transcricao && !transcricaoValida ? "font-medium text-destructive" : "text-muted-foreground"}`}>
-          Escreva o que é dito no vídeo, em português, com no mínimo {TRANSCRICAO_MINIMA} caracteres.
+          {t("vagas.videoDaVagaGestao.escrevaOQueEDitoNoVideo", { minimo: TRANSCRICAO_MINIMA })}
         </p>
       </div>
 
@@ -177,7 +177,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
       <div className="flex flex-wrap gap-2">
         {arquivo || !midia ? (
           <Button type="button" className="min-h-11" disabled={!arquivo || !transcricaoValida || enviar.isPending} onClick={() => enviar.mutate()}>
-            {enviar.isPending ? "Enviando…" : midia ? "Enviar o novo vídeo" : "Enviar vídeo"}
+            {enviar.isPending ? "Enviando…" : midia ? "Enviar o novo vídeo" : t("vagas.videoDaVagaGestao.enviarVideo")}
           </Button>
         ) : (
           <Button type="button" variant="outline" className="min-h-11" disabled={!transcricaoValida || salvarTextos.isPending} onClick={() => salvarTextos.mutate()}>

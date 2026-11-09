@@ -29,7 +29,7 @@ export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
     onSuccess: (conversa) => {
       void navigate({ to: "/mensagens", search: { conversaId: conversa.id } });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível abrir a conversa.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("vagaDetalhe.conversaFalha"))),
   });
 
   if (consulta.isLoading) {
@@ -61,7 +61,7 @@ export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
           {t("perfil.enviarMensagemButton.mensagensIndisponiveis")}
         </Button>
         <p id={`motivo-mensagem-${alvoId}`} className="max-w-64 text-right text-xs text-muted-foreground">
-          {motivo ?? "Não é possível enviar mensagens para este usuário."}
+          {motivo ?? t("perfil.enviarMensagemButton.naoEPossivelEnviarMensagens")}
         </p>
       </div>
     );
@@ -80,7 +80,7 @@ export function EnviarMensagemButton({ alvoId }: { alvoId: string }) {
       ) : (
         <MessageSquare className="size-4" aria-hidden="true" />
       )}
-      Enviar mensagem
+      {t("mensagens.janelaConversa.enviarMensagem")}
     </Button>
   );
 }

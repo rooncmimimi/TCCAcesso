@@ -29,12 +29,12 @@ export function DicaDeCampoBotao({ dica, nomeDoCampo }: { dica: ChaveDeDica; nom
         onClick={() => setAberta((v) => !v)}
       >
         <CircleHelp className="size-4" aria-hidden="true" />
-        Como preencher<span className="sr-only">: {nomeDoCampo}</span>
+        {t("acessibilidade.dicaDeCampoBotao.comoPreencher")}<span className="sr-only">: {nomeDoCampo}</span>
       </Button>
 
       <div id={idDoPainel} hidden={!aberta} role="note" className="basis-full rounded-lg border border-border bg-muted/40 p-3 text-sm">
         {aberta && (
-          <TextoOuvivel rotulo={`Ouvir a orientação: ${nomeDoCampo}`}>
+          <TextoOuvivel rotulo={t("acessibilidade.dicaDeCampoBotao.ouvirAOrientacao", { var1: nomeDoCampo })}>
             <p>{orientacao}</p>
             <ul className="mt-2 list-disc space-y-0.5 pl-5">
               {passos.map((passo) => (

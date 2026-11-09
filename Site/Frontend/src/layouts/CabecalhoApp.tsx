@@ -228,12 +228,12 @@ export function CabecalhoApp() {
               <>
                 <DropdownMenuItem asChild>
                   <Link to="/minha-acessibilidade">
-                    <Accessibility aria-hidden="true" /> Minha Acessibilidade
+                    <Accessibility aria-hidden="true" /> {t("simulador.paginaSimulador.minhaAcessibilidade")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/simulador">
-                    <GraduationCap aria-hidden="true" /> Simulador de candidatura
+                    <GraduationCap aria-hidden="true" /> {t("layouts.cabecalhoApp.simuladorDeCandidatura")}
                   </Link>
                 </DropdownMenuItem>
               </>

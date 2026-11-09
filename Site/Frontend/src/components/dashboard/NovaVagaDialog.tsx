@@ -73,14 +73,14 @@ export function NovaVagaDialog() {
   const criar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => vagasService.criar(payload),
     onSuccess: (vaga) => {
-      toast.success(`Vaga "${vaga.titulo}" publicada com sucesso.`);
+      toast.success(t("dashboard.novaVagaDialog.vagaPublicadaComSucesso", { var1: vaga.titulo }));
       rascunho.limpar();
       setAberto(false);
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-empresa"] });
       void queryClient.invalidateQueries({ queryKey: ["vagas"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível publicar a vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("dashboard.novaVagaDialog.naoFoiPossivelPublicarAVaga"))),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -119,7 +119,7 @@ export function NovaVagaDialog() {
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild>
         <Button size="sm" className="min-h-11 gap-1">
-          <Plus className="size-4" aria-hidden="true" /> Nova vaga
+          <Plus className="size-4" aria-hidden="true" /> {t("dashboard.novaVagaDialog.novaVaga")}
         </Button>
       </DialogTrigger>
 
@@ -258,7 +258,7 @@ export function NovaVagaDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="cargaHoraria">{t("vagaDetalhe.cargaHoraria")}</Label>
-              <Input id="cargaHoraria" name="cargaHoraria" placeholder="40h semanais" />
+              <Input id="cargaHoraria" name="cargaHoraria" placeholder={t("dashboard.novaVagaDialog.40hSemanais")} />
             </div>
           </div>
 
@@ -325,11 +325,11 @@ export function NovaVagaDialog() {
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t("post.cancelar")}
             </Button>
             <Button type="submit" disabled={criar.isPending} className="min-h-11 gap-2">
               {criar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Publicar vaga
+              {t("dashboard.novaVagaDialog.publicarVaga")}
             </Button>
           </DialogFooter>
         </form>

@@ -57,21 +57,21 @@ export function SecaoDeficiencias({
     mutationFn: (payload: { deficienciaId: string; observacoes?: string }) =>
       perfilService.adicionarDeficiencia(candidato.id, payload),
     onSuccess: () => {
-      toast.success("Deficiência adicionada ao perfil.");
+      toast.success(t("perfil.secaoDeficiencias.deficienciaAdicionadaAoPerfil"));
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
       setAberto(false);
       setDeficienciaId("");
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível adicionar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.secaoDeficiencias.naoFoiPossivelAdicionar"))),
   });
 
   const remover = useMutation({
     mutationFn: (id: string) => perfilService.removerDeficiencia(candidato.id, id),
     onSuccess: () => {
-      toast.success("Deficiência removida do perfil.");
+      toast.success(t("perfil.secaoDeficiencias.deficienciaRemovidaDoPerfil"));
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.secaoDeficiencias.naoFoiPossivelRemover"))),
   });
 
   function enviar(evento: React.FormEvent<HTMLFormElement>) {
@@ -98,7 +98,7 @@ export function SecaoDeficiencias({
           <Dialog open={aberto} onOpenChange={setAberto}>
             <DialogTrigger asChild>
               <Button type="button" size="sm" variant="outline" className="min-h-9 gap-1">
-                <Plus className="size-4" aria-hidden="true" /> Adicionar
+                <Plus className="size-4" aria-hidden="true" /> {t("perfil.secaoDeficiencias.adicionar")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -133,11 +133,11 @@ export function SecaoDeficiencias({
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-                    Cancelar
+                    {t("post.cancelar")}
                   </Button>
                   <Button type="submit" disabled={!deficienciaId || adicionar.isPending} className="min-h-11 gap-2">
                     {adicionar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                    Adicionar
+                    {t("perfil.secaoDeficiencias.adicionar")}
                   </Button>
                 </DialogFooter>
               </form>

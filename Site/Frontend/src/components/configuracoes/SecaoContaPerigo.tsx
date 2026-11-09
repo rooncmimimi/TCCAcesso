@@ -37,21 +37,21 @@ export function SecaoContaPerigo() {
   const pausar = useMutation({
     mutationFn: () => autenticacaoService.pausarConta(senhaPausar),
     onSuccess: async () => {
-      toast.success("Conta pausada. Você pode reativá-la a qualquer momento fazendo login novamente.");
+      toast.success(t("configuracoes.secaoContaPerigo.contaPausadaVocePodeReativaLaA"));
       await sair();
       void navigate({ to: "/entrar" });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível pausar a conta.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.secaoContaPerigo.naoFoiPossivelPausarAConta"))),
   });
 
   const excluir = useMutation({
     mutationFn: () => autenticacaoService.excluirConta(senhaExcluir),
     onSuccess: async () => {
-      toast.success("Conta excluída. Sentiremos sua falta.");
+      toast.success(t("configuracoes.secaoContaPerigo.contaExcluidaSentiremosSua"));
       await sair();
       void navigate({ to: "/" });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a conta.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.secaoContaPerigo.naoFoiPossivelExcluirAConta"))),
   });
 
   // Conta que entra só pelo Google: pausar e excluir pedem a senha, que ainda não existe.
@@ -90,7 +90,7 @@ export function SecaoContaPerigo() {
           >
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="min-h-11 gap-2">
-                <PauseCircle className="size-4" aria-hidden="true" /> Pausar conta
+                <PauseCircle className="size-4" aria-hidden="true" /> {t("configuracoes.secaoContaPerigo.pausarConta")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -122,7 +122,7 @@ export function SecaoContaPerigo() {
                   <AlertDialogCancel type="button">{t("post.cancelar")}</AlertDialogCancel>
                   <Button type="submit" disabled={pausar.isPending || !senhaPausar} className="min-h-11 gap-2">
                     {pausar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                    Pausar conta
+                    {t("configuracoes.secaoContaPerigo.pausarConta")}
                   </Button>
                 </AlertDialogFooter>
               </form>
@@ -146,7 +146,7 @@ export function SecaoContaPerigo() {
           >
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="min-h-11 gap-2">
-                <Trash2 className="size-4" aria-hidden="true" /> Excluir conta
+                <Trash2 className="size-4" aria-hidden="true" /> {t("configuracoes.secaoContaPerigo.excluirConta")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -183,7 +183,7 @@ export function SecaoContaPerigo() {
                     className="min-h-11 gap-2"
                   >
                     {excluir.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                    Excluir permanentemente
+                    {t("configuracoes.secaoContaPerigo.excluirPermanentemente")}
                   </Button>
                 </AlertDialogFooter>
               </form>

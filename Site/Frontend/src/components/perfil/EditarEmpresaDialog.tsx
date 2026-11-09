@@ -66,20 +66,20 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
     mutationFn: (payload: Record<string, unknown>) => empresasService.atualizar(empresa.id, payload),
     onSuccess: () => {
       void invalidarEmpresa();
-      toast.success("Perfil da empresa atualizado.");
+      toast.success(t("perfil.editarEmpresaDialog.perfilDaEmpresaAtualizado"));
       rascunho.limpar();
       setAberto(false);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível atualizar o perfil da empresa.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.editarEmpresaDialog.naoFoiPossivelAtualizarOPerfil"))),
   });
 
   const removerBanner = useMutation({
     mutationFn: () => empresasService.atualizar(empresa.id, { capa: null }),
     onSuccess: () => {
       void invalidarEmpresa();
-      toast.success("Banner removido.");
+      toast.success(t("perfil.editarEmpresaDialog.bannerRemovido"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível remover o banner.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.editarEmpresaDialog.naoFoiPossivelRemoverOBanner"))),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -133,7 +133,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
                 disabled={removerBanner.isPending}
                 onClick={() => removerBanner.mutate()}
               >
-                <Trash2 className="size-4" aria-hidden="true" /> Remover banner
+                <Trash2 className="size-4" aria-hidden="true" /> {t("perfil.editarEmpresaDialog.removerBanner")}
               </Button>
             ) : null}
           </div>
@@ -262,11 +262,11 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t("post.cancelar")}
             </Button>
             <Button type="submit" disabled={salvar.isPending} className="min-h-11 gap-2">
               {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Salvar
+              {t("post.salvar")}
             </Button>
           </DialogFooter>
         </form>

@@ -119,7 +119,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
                   {i.rotulo}
                   {verificado ? (
                     <span className="ml-2 inline-flex items-center gap-1 rounded bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary">
-                      <BadgeCheck className="size-3.5" aria-hidden="true" /> verificado
+                      <BadgeCheck className="size-3.5" aria-hidden="true" /> {t("vagas.secaoAmbienteDaVaga.verificado")}
                     </span>
                   ) : null}
                 </Label>

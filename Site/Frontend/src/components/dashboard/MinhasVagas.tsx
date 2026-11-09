@@ -32,7 +32,7 @@ function ListaVagasPorStatus({
   if (isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando vagas…
+        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("dashboard.minhasVagas.carregandoVagas")}
       </div>
     );
   }
@@ -50,9 +50,9 @@ function ListaVagasPorStatus({
 
   if (!data || data.dados.length === 0) {
     const mensagem: Record<StatusVaga, string> = {
-      aberta: "Você ainda não tem vagas ativas. Publique a primeira acima.",
-      pausada: "Nenhuma vaga arquivada por aqui.",
-      encerrada: "Nenhuma vaga encerrada por aqui.",
+      aberta: t("dashboard.minhasVagas.voceAindaNaoTemVagasAtivas"),
+      pausada: t("dashboard.minhasVagas.nenhumaVagaArquivadaPorAqui"),
+      encerrada: t("dashboard.minhasVagas.nenhumaVagaEncerradaPorAqui"),
     };
     return <p className="py-6 text-sm text-muted-foreground">{mensagem[status]}</p>;
   }

@@ -26,7 +26,7 @@ export function PaginacaoTabela({ pagina, totalPaginas, total, onPaginaChange }:
           onClick={() => onPaginaChange(pagina - 1)}
           aria-label={t("vagas.paginaAnterior")}
         >
-          <ChevronLeft className="size-4" aria-hidden="true" /> Anterior
+          <ChevronLeft className="size-4" aria-hidden="true" /> {t("admin.paginacaoTabela.anterior")}
         </Button>
         <Button
           variant="outline"
@@ -35,7 +35,7 @@ export function PaginacaoTabela({ pagina, totalPaginas, total, onPaginaChange }:
           onClick={() => onPaginaChange(pagina + 1)}
           aria-label={t("vagas.proximaPagina")}
         >
-          Próxima <ChevronRight className="size-4" aria-hidden="true" />
+          {t("admin.paginacaoTabela.proxima")} <ChevronRight className="size-4" aria-hidden="true" />
         </Button>
       </div>
     </div>

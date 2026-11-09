@@ -24,11 +24,12 @@ function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode
 }
 
 function LinkDaConta({ id, nome }: { id?: string; nome?: string }) {
+  const { t } = useIdioma();
   if (!id) return <>{nome ?? "—"}</>;
 
   return (
     <Link to="/admin/usuarios/$usuarioId" params={{ usuarioId: id }} className="font-semibold text-primary underline-offset-2 hover:underline">
-      {nome ?? "Abrir conta"}
+      {nome ?? t("admin.conteudoDenunciado.abrirConta")}
     </Link>
   );
 }
@@ -63,7 +64,7 @@ export function ConteudoDenunciado({ tipo, previa }: { tipo: EntidadeDenunciaTip
           <LinkDaConta id={texto(previa.id)} nome={texto(previa.nome)} />
         </Campo>
         <Campo rotulo={t("admin.conteudoDenunciado.tipoDeConta")}>{TIPO_DE_CONTA[texto(previa.tipoUsuario)] ?? texto(previa.tipoUsuario)}</Campo>
-        <Campo rotulo="E-mail">{texto(previa.email)}</Campo>
+        <Campo rotulo={t("login.email")}>{texto(previa.email)}</Campo>
         <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{previa.bloqueado ? "Bloqueada" : "Ativa"}</Campo>
       </dl>
     );
@@ -82,7 +83,7 @@ export function ConteudoDenunciado({ tipo, previa }: { tipo: EntidadeDenunciaTip
         </div>
         <Campo rotulo={tipo === "postagem" ? "Texto da publicação" : "Texto do comentário"}>
           <blockquote className="whitespace-pre-wrap break-words rounded-lg bg-secondary p-3">
-            {corpo || "(sem texto)"}
+            {corpo || t("admin.conteudoDenunciado.semTexto")}
           </blockquote>
         </Campo>
       </dl>

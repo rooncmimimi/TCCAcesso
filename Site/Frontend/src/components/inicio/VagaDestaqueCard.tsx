@@ -9,10 +9,10 @@ import { useIdioma } from "@/hooks/useIdioma";
 /** Card compacto de vaga em destaque, usado na página inicial. */
 export function VagaDestaqueCard({ vaga }: { vaga: Vaga }) {
   const { t } = useIdioma();
-  const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa parceira";
+  const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? t("inicio.vagaDestaqueCard.empresaParceira");
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
   // Ver o comentário equivalente em VagaCard.tsx: só afeta o leitor de voz próprio do ACESSO.
-  const resumoParaVoz = `Vaga de ${vaga.titulo}, empresa ${nomeEmpresa}, ${local || "local não informado"}, modalidade ${vaga.modalidade}.`;
+  const resumoParaVoz = t("inicio.vagaDestaqueCard.vagaDeEmpresaModalidade", { var1: vaga.titulo, var2: nomeEmpresa, var3: local || t("vaga.localNaoInformado"), var4: vaga.modalidade });
 
   return (
     <Card className="h-full border-border shadow-none transition-shadow hover:shadow-card">

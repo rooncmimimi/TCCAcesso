@@ -2,6 +2,7 @@ import { Toaster as Sonner } from "sonner";
 
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { DURACAO_MAXIMA_DO_AVISO } from "@/lib/avisos";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -14,6 +15,7 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
  * vez por aviso: manter o aviso na tela não o repete. O botão de fechar tem nome acessível.
  */
 const Toaster = ({ ...props }: ToasterProps) => {
+  const { t } = useIdioma();
   const { preferencias } = useAcessibilidade();
   const persistir = preferencias.persistentToasts;
 
@@ -27,7 +29,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         // `undefined` mantém a duração padrão do `sonner`; um aviso com `duration` própria (como o
         // de conta bloqueada) trata a preferência por conta própria (`duracaoDoAviso`).
         duration: persistir ? DURACAO_MAXIMA_DO_AVISO : undefined,
-        closeButtonAriaLabel: "Fechar aviso",
+        closeButtonAriaLabel: t("ui.sonner.fecharAviso"),
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",

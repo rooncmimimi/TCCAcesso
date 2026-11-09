@@ -18,6 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
 import { extrairMensagemErro } from "@/services/api";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
@@ -34,17 +36,17 @@ import denunciaService, {
 
 export const Route = createFileRoute("/admin/denuncias/$denunciaId")({
   head: () => ({
-    meta: [{ title: "Detalhe da denúncia — Administração ACESSO" }],
+    meta: [{ title: textoDaPagina("admin.denunciasdenunciaId.detalheDaDenunciaAdministracao") }],
   }),
   component: AdminDenunciaDetalhe,
 });
 
-const STATUS_ROTULO: Record<StatusDenuncia, string> = {
-  pendente: "Pendente",
-  em_analise: "Em análise",
-  resolvida: "Resolvida",
-  rejeitada: "Rejeitada",
-  arquivada: "Arquivada",
+const STATUS_ROTULO: Record<StatusDenuncia, ChaveBase> = {
+  pendente: "status.pendente",
+  em_analise: "status.emAnalise",
+  resolvida: "status.resolvida",
+  rejeitada: "status.rejeitada",
+  arquivada: "status.arquivada",
 };
 
 const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neutro"> = {
@@ -55,11 +57,11 @@ const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neu
   arquivada: "neutro",
 };
 
-const ACAO_ROTULO: Record<string, string> = {
-  bloquear: "bloquear este usuário",
-  remover: "remover este conteúdo",
-  ocultar: "ocultar esta vaga",
-  suspender: "suspender esta empresa",
+const ACAO_ROTULO: Record<string, ChaveBase> = {
+  bloquear: "admin.denunciasdenunciaId.bloquearEsteUsuario",
+  remover: "admin.denunciasdenunciaId.removerEsteConteudo",
+  ocultar: "admin.denunciasdenunciaId.ocultarEstaVaga",
+  suspender: "admin.denunciasdenunciaId.suspenderEstaEmpresa",
 };
 
 function AdminDenunciaDetalhe() {
@@ -105,7 +107,7 @@ function AdminDenunciaDetalhe() {
             }
           : atual,
       );
-      toast.success("Denúncia atribuída a você.");
+      toast.success(t("admin.denunciasdenunciaId.denunciaAtribuidaAVoce"));
       setConfirmarAssumir(false);
       invalidar();
     },
@@ -130,12 +132,12 @@ function AdminDenunciaDetalhe() {
       return denunciaService.arquivarDenuncia(denunciaId, observacao.trim() || undefined);
     },
     onSuccess: () => {
-      toast.success("Denúncia atualizada.");
+      toast.success(t("admin.denunciasdenunciaId.denunciaAtualizada"));
       setDialogoTransicao(null);
       setObservacao("");
       invalidar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível concluir a ação.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("admin.denunciasdenunciaId.naoFoiPossivelConcluirAAcao"))),
   });
 
   if (isLoading) {
@@ -168,12 +170,12 @@ function AdminDenunciaDetalhe() {
         to="/admin/denuncias"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para denúncias
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("admin.denunciasdenunciaId.voltarParaDenuncias")}
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold sm:text-3xl">Denúncia de {denuncia.entidadeTipo}</h1>
-        <StatusBadge tom={STATUS_TOM[denuncia.status]}>{STATUS_ROTULO[denuncia.status]}</StatusBadge>
+        <StatusBadge tom={STATUS_TOM[denuncia.status]}>{t(STATUS_ROTULO[denuncia.status])}</StatusBadge>
       </div>
 
       <Card className="mt-4 shadow-none">
@@ -188,7 +190,7 @@ function AdminDenunciaDetalhe() {
               <p className="mt-1 text-sm">
                 {denuncia.denunciante
                   ? `${denuncia.denunciante.nome} (${denuncia.denunciante.email})`
-                  : "Usuário removido"}
+                  : t("admin.denunciasdenunciaId.usuarioRemovido")}
               </p>
             </div>
             <div>
@@ -199,7 +201,7 @@ function AdminDenunciaDetalhe() {
               <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.responsavel")}</p>
               <p className="mt-1 text-sm">{denuncia.administradorResponsavel
                   ? `${denuncia.administradorResponsavel.nome}${souResponsavel ? " (você)" : ""}`
-                  : "Ninguém atribuído"}</p>
+                  : t("admin.denunciasdenunciaId.ninguemAtribuido")}</p>
             </div>
           </div>
 
@@ -235,7 +237,7 @@ function AdminDenunciaDetalhe() {
                 className="mt-3 gap-2"
                 onClick={() => setContextoAberto(true)}
               >
-                <MessageSquareText className="size-4" aria-hidden="true" /> Ver contexto da mensagem
+                <MessageSquareText className="size-4" aria-hidden="true" /> {t("admin.denunciasdenunciaId.verContextoDaMensagem")}
               </Button>
             </div>
           ) : (
@@ -267,15 +269,15 @@ function AdminDenunciaDetalhe() {
                 onClick={() => (comOutroAdministrador ? setConfirmarAssumir(true) : atribuir.mutate(false))}
               >
                 {atribuir.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                {comOutroAdministrador ? "Assumir denúncia" : "Atribuir a mim"}
+                {comOutroAdministrador ? "Assumir denúncia" : t("admin.denunciasdenunciaId.atribuirAMim")}
               </Button>
             )}
             <Button onClick={() => setDialogoTransicao("resolver")}>{t("admin.denunciasdenunciaId.resolver")}</Button>
             <Button variant="outline" onClick={() => setDialogoTransicao("rejeitar")}>
-              Rejeitar
+              {t("admin.denunciasdenunciaId.rejeitar")}
             </Button>
             <Button variant="outline" onClick={() => setDialogoTransicao("arquivar")}>
-              Arquivar
+              {t("dashboard.vagaEmpresaCard.arquivar")}
             </Button>
           </CardContent>
         </Card>
@@ -285,7 +287,7 @@ function AdminDenunciaDetalhe() {
         open={confirmarAssumir}
         onOpenChange={setConfirmarAssumir}
         titulo={t("admin.denunciasdenunciaId.assumirEstaDenuncia")}
-        descricao={`Esta denúncia está com ${denuncia.administradorResponsavel?.nome ?? "outro administrador"}. Deseja assumi-la? O histórico guarda quem a tinha antes.`}
+        descricao={t("admin.denunciasdenunciaId.estaDenunciaEstaComDeseja", { var1: denuncia.administradorResponsavel?.nome ?? "outro administrador" })}
         textoConfirmar={t("admin.denunciasdenunciaId.assumir")}
         carregando={atribuir.isPending}
         onConfirmar={() => atribuir.mutate(true)}
@@ -304,10 +306,10 @@ function AdminDenunciaDetalhe() {
           <DialogHeader>
             <DialogTitle>
               {dialogoTransicao === "resolver"
-                ? "Resolver denúncia"
+                ? t("admin.denunciasdenunciaId.resolverDenuncia")
                 : dialogoTransicao === "rejeitar"
-                  ? "Rejeitar denúncia"
-                  : "Arquivar denúncia"}
+                  ? t("admin.denunciasdenunciaId.rejeitarDenuncia")
+                  : t("admin.denunciasdenunciaId.arquivarDenuncia")}
             </DialogTitle>
           </DialogHeader>
 
@@ -331,7 +333,7 @@ function AdminDenunciaDetalhe() {
                   onCheckedChange={(valor) => setComAcao(Boolean(valor))}
                 />
                 <Label htmlFor="com-acao" className="text-sm font-normal leading-snug">
-                  Também {ACAO_ROTULO[acaoEsperada] ?? acaoEsperada} ao resolver
+                  {t("admin.denunciasdenunciaId.tambemAoResolver", { acao: ACAO_ROTULO[acaoEsperada] ? t(ACAO_ROTULO[acaoEsperada]) : acaoEsperada })}
                 </Label>
               </div>
             )}
@@ -347,11 +349,11 @@ function AdminDenunciaDetalhe() {
                 setObservacao("");
               }}
             >
-              Cancelar
+              {t("post.cancelar")}
             </Button>
             <Button type="button" disabled={transicao.isPending} onClick={() => transicao.mutate()}>
               {transicao.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Confirmar
+              {t("admin.denunciasdenunciaId.confirmar")}
             </Button>
           </DialogFooter>
         </DialogContent>

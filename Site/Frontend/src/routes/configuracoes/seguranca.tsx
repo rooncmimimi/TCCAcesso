@@ -9,12 +9,13 @@ import { SecaoContasConectadas } from "@/components/configuracoes/SecaoContasCon
 import { SecaoDispositivosConfiaveis } from "@/components/configuracoes/SecaoDispositivosConfiaveis";
 import { SecaoSessoes } from "@/components/configuracoes/SecaoSessoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/configuracoes/seguranca")({
   head: () => ({
     meta: [
-      { title: "Sessões e contas conectadas — ACESSO" },
-      { name: "description", content: "Gerencie a segurança da sua conta ACESSO." },
+      { title: textoDaPagina("configuracoes.seguranca.sessoesEContasConectadasAcesso") },
+      { name: "description", content: textoDaPagina("configuracoes.seguranca.gerencieASegurancaDaSuaConta") },
     ],
   }),
   component: () => (
@@ -32,7 +33,7 @@ function Seguranca() {
         to="/configuracoes/privacidade"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para Privacidade e Segurança
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("configuracoes.bloqueados.voltarParaPrivacidadeE")}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">

@@ -62,19 +62,19 @@ export function SecaoSessoes() {
   const encerrar = useMutation({
     mutationFn: (id: string) => autenticacaoService.encerrarSessao(id),
     onSuccess: () => {
-      toast.success("Sessão encerrada.");
+      toast.success(t("configuracoes.secaoSessoes.sessaoEncerrada"));
       void atualizar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível encerrar a sessão.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.secaoSessoes.naoFoiPossivelEncerrarASessao"))),
   });
 
   const encerrarOutras = useMutation({
     mutationFn: () => autenticacaoService.encerrarOutrasSessoes(),
     onSuccess: () => {
-      toast.success("As outras sessões foram encerradas.");
+      toast.success(t("configuracoes.secaoSessoes.asOutrasSessoesForamEncerradas"));
       void atualizar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível encerrar as outras sessões.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.secaoSessoes.naoFoiPossivelEncerrarAsOutras"))),
   });
 
   const ordenadas = useMemo(() => ordenar(sessoes ?? []), [sessoes]);
@@ -88,7 +88,7 @@ export function SecaoSessoes() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive" disabled={encerrarOutras.isPending}>
-                <LogOut className="size-4" aria-hidden="true" /> Encerrar as outras
+                <LogOut className="size-4" aria-hidden="true" /> {t("configuracoes.secaoSessoes.encerrarAsOutras")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -96,8 +96,8 @@ export function SecaoSessoes() {
                 <AlertDialogTitle>{t("configuracoes.secaoSessoes.encerrarAsOutrasSessoes")}</AlertDialogTitle>
                 <AlertDialogDescription>
                   {outrasSessoes.length === 1
-                    ? "O outro dispositivo conectado à sua conta perde o acesso agora e precisará entrar novamente."
-                    : `Os outros ${outrasSessoes.length} dispositivos conectados à sua conta perdem o acesso agora e precisarão entrar novamente.`}{" "}
+                    ? t("configuracoes.secaoSessoes.oOutroDispositivoConectadoASua")
+                    : t("configuracoes.secaoSessoes.osOutrosDispositivosConectados", { var1: outrasSessoes.length })}{" "}
                   Esta sessão (a que você está usando) continua ativa.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -112,7 +112,7 @@ export function SecaoSessoes() {
       <CardContent className="space-y-3">
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando sessões…
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("configuracoes.secaoSessoes.carregandoSessoes")}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
@@ -152,10 +152,11 @@ export function SecaoSessoes() {
                     <p className="text-xs text-muted-foreground">
                       Entrou em {dataHoraCurta(entrou)}
                       {sessao.atual ? (
-                        " · em uso agora"
+                        <>{" · "}{t("configuracoes.secaoSessoes.emUsoAgora")}</>
                       ) : (
                         <>
-                          {" · última atividade "}
+                          {" · "}
+                          {t("configuracoes.secaoSessoes.ultimaAtividade")}{" "}
                           <time dateTime={ultimaAtividade} title={dataHoraCurta(ultimaAtividade)}>
                             {tempoRelativo(ultimaAtividade)}
                           </time>
@@ -171,9 +172,9 @@ export function SecaoSessoes() {
                       className="text-destructive hover:text-destructive"
                       disabled={encerrar.isPending}
                       onClick={() => encerrar.mutate(sessao.id)}
-                      aria-label={`Encerrar sessão em ${dispositivo.rotulo}, última atividade ${tempoRelativo(ultimaAtividade)}`}
+                      aria-label={t("configuracoes.secaoSessoes.encerrarSessaoEmUltima", { var1: dispositivo.rotulo, var2: tempoRelativo(ultimaAtividade) })}
                     >
-                      Encerrar
+                      {t("dashboard.vagaEmpresaCard.encerrar")}
                     </Button>
                   )}
                 </li>
@@ -184,7 +185,7 @@ export function SecaoSessoes() {
 
         {!isLoading && !isError && outrasSessoes.length === 0 && ordenadas.length > 0 && (
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" /> Nenhuma outra sessão ativa além desta.
+            <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" /> {t("configuracoes.secaoSessoes.nenhumaOutraSessaoAtivaAlem")}
           </p>
         )}
       </CardContent>

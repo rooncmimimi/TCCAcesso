@@ -12,6 +12,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
 
 import {
@@ -36,10 +37,10 @@ import { ROTULO_CONTRATO } from "./constantesVaga";
 import { EditarVagaDialog } from "./EditarVagaDialog";
 import type { ContratoVaga, StatusVaga, Vaga } from "@/types";
 
-const MENSAGEM_STATUS: Record<StatusVaga, string> = {
-  aberta: "Vaga reaberta.",
-  pausada: "Vaga arquivada.",
-  encerrada: "Vaga encerrada.",
+const MENSAGEM_STATUS: Record<StatusVaga, ChaveBase> = {
+  aberta: "dashboard.vagaEmpresaCard.vagaReaberta",
+  pausada: "dashboard.vagaEmpresaCard.vagaArquivada",
+  encerrada: "dashboard.vagaEmpresaCard.vagaEncerrada",
 };
 
 /** Card de gestão de uma vaga: dados principais + ações (editar, arquivar, reabrir, encerrar, excluir). */
@@ -66,19 +67,19 @@ export function VagaEmpresaCard({
   const alterarStatus = useMutation({
     mutationFn: (status: StatusVaga) => vagasService.alterarStatus(vaga.id, status),
     onSuccess: (_dados, status) => {
-      toast.success(MENSAGEM_STATUS[status]);
+      toast.success(t(MENSAGEM_STATUS[status]));
       invalidarListas();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível alterar o status da vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("dashboard.vagaEmpresaCard.naoFoiPossivelAlterarOStatusDa"))),
   });
 
   const remover = useMutation({
     mutationFn: () => vagasService.remover(vaga.id),
     onSuccess: () => {
-      toast.success("Vaga excluída.");
+      toast.success(t("dashboard.vagaEmpresaCard.vagaExcluida"));
       invalidarListas();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível excluir a vaga.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("dashboard.vagaEmpresaCard.naoFoiPossivelExcluirAVaga"))),
   });
 
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
@@ -122,18 +123,18 @@ export function VagaEmpresaCard({
             className="min-h-9 gap-1"
             onClick={() => onVerCandidaturas(vaga)}
           >
-            <Users className="size-4" aria-hidden="true" /> Candidaturas
+            <Users className="size-4" aria-hidden="true" /> {t("admin.graficosRelatorios.candidaturas")}
           </Button>
 
           <Button asChild size="sm" variant="outline" className="min-h-9 gap-1">
             <Link to="/vaga/$vagaId" params={{ vagaId: vaga.id }}>
-              <Eye className="size-4" aria-hidden="true" /> Ver detalhes
+              <Eye className="size-4" aria-hidden="true" /> {t("dashboard.vagaEmpresaCard.verDetalhes")}
             </Link>
           </Button>
 
           <EditarVagaDialog vaga={vaga}>
             <Button size="sm" variant="outline" className="min-h-9 gap-1">
-              <Pencil className="size-4" aria-hidden="true" /> Editar
+              <Pencil className="size-4" aria-hidden="true" /> {t("post.editar")}
             </Button>
           </EditarVagaDialog>
 
@@ -146,7 +147,7 @@ export function VagaEmpresaCard({
                 disabled={alterarStatus.isPending}
                 onClick={() => alterarStatus.mutate("pausada")}
               >
-                <Archive className="size-4" aria-hidden="true" /> Arquivar
+                <Archive className="size-4" aria-hidden="true" /> {t("dashboard.vagaEmpresaCard.arquivar")}
               </Button>
               <Button
                 size="sm"
@@ -155,7 +156,7 @@ export function VagaEmpresaCard({
                 disabled={alterarStatus.isPending}
                 onClick={() => alterarStatus.mutate("encerrada")}
               >
-                <XCircle className="size-4" aria-hidden="true" /> Encerrar
+                <XCircle className="size-4" aria-hidden="true" /> {t("dashboard.vagaEmpresaCard.encerrar")}
               </Button>
             </>
           ) : (
@@ -166,7 +167,7 @@ export function VagaEmpresaCard({
               disabled={alterarStatus.isPending}
               onClick={() => alterarStatus.mutate("aberta")}
             >
-              <RotateCcw className="size-4" aria-hidden="true" /> Reabrir
+              <RotateCcw className="size-4" aria-hidden="true" /> {t("dashboard.vagaEmpresaCard.reabrir")}
             </Button>
           )}
 
@@ -178,7 +179,7 @@ export function VagaEmpresaCard({
               disabled={alterarStatus.isPending}
               onClick={() => alterarStatus.mutate("encerrada")}
             >
-              <XCircle className="size-4" aria-hidden="true" /> Encerrar
+              <XCircle className="size-4" aria-hidden="true" /> {t("dashboard.vagaEmpresaCard.encerrar")}
             </Button>
           ) : null}
 
@@ -190,7 +191,7 @@ export function VagaEmpresaCard({
                 className="min-h-9 gap-1 text-destructive hover:text-destructive"
                 aria-label={`Excluir vaga ${vaga.titulo}`}
               >
-                <Trash2 className="size-4" aria-hidden="true" /> Excluir
+                <Trash2 className="size-4" aria-hidden="true" /> {t("post.excluir")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -198,7 +199,7 @@ export function VagaEmpresaCard({
                 <AlertDialogTitle>{t("dashboard.vagaEmpresaCard.excluirEstaVaga")}</AlertDialogTitle>
                 <AlertDialogDescription>
                   {t("dashboard.vagaEmpresaCard.essaAcaoNaoPodeSerDesfeitaE")}
-                  {vaga.totalCandidaturas ? ` Esta vaga tem ${vaga.totalCandidaturas} candidatura(s) registrada(s).` : ""}
+                  {vaga.totalCandidaturas ? t("dashboard.vagaEmpresaCard.estaVagaTemCandidaturaS", { var1: vaga.totalCandidaturas }) : ""}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

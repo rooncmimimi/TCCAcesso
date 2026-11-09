@@ -45,10 +45,10 @@ export function PainelOndeEstou({ foto }: { foto: FotoDaPagina }) {
 export function PainelExplicaPagina({ foto }: { foto: FotoDaPagina }) {
   const { t } = useIdioma();
   const explicacao = explicacaoDaPagina(foto.caminho);
-  const nome = explicacao?.nome ?? foto.onde.pagina ?? "esta página";
+  const nome = explicacao?.nome ?? foto.onde.pagina ?? t("acessibilidade.paineisDeAjuda.estaPagina");
   // Sem uma explicação escrita para a rota, só diz o nome: não supõe o que a página faz.
   const texto =
-    explicacao?.texto ?? `Você está na página "${nome}". Ainda não temos uma explicação escrita para ela. Use Onde estou? para ver a seção e a ação principal.`;
+    explicacao?.texto ?? t("acessibilidade.paineisDeAjuda.voceEstaNaPaginaAindaNaoTemos", { var1: nome });
   const passos = explicacao?.proximosPassos;
 
   return (
@@ -62,7 +62,7 @@ export function PainelExplicaPagina({ foto }: { foto: FotoDaPagina }) {
           </p>
         )}
       </TextoOuvivel>
-      <SalvarInstrucao titulo={`Página: ${nome}`} texto={[texto, passos].filter(Boolean).join(" ")} />
+      <SalvarInstrucao titulo={t("acessibilidade.paineisDeAjuda.pagina", { var1: nome })} texto={[texto, passos].filter(Boolean).join(" ")} />
     </div>
   );
 }
@@ -72,10 +72,12 @@ function semAcento(t: string): string {
 }
 
 function Termo({ termo }: { termo: TermoDoGlossario }) {
+  const { t } = useIdioma();
+
   return (
     <li className="rounded-lg border border-border p-3">
       <h4 className="text-sm font-bold">{termo.termo}</h4>
-      <TextoOuvivel rotulo={`Ouvir a explicação de ${termo.termo}`}>
+      <TextoOuvivel rotulo={t("acessibilidade.paineisDeAjuda.ouvirAExplicacaoDe", { var1: termo.termo })}>
         <p className="mt-1 text-sm">{termo.explicacao}</p>
         {termo.exemplo && <p className="mt-1 text-sm text-muted-foreground">Exemplo: {termo.exemplo}</p>}
       </TextoOuvivel>
@@ -124,7 +126,7 @@ export function PainelGlossario({ foto }: { foto: FotoDaPagina }) {
 
       <section aria-labelledby="glossario-todos" className="space-y-2">
         <h3 id="glossario-todos" className="text-sm font-bold">
-          {busca.trim() ? "Resultado da busca" : daPagina.length > 0 ? "Outros termos" : "Todos os termos"}
+          {busca.trim() ? "Resultado da busca" : daPagina.length > 0 ? "Outros termos" : t("acessibilidade.paineisDeAjuda.todosOsTermos")}
         </h3>
         {filtrados.length === 0 ? (
           <p role="status" className="text-sm text-muted-foreground">
@@ -150,7 +152,7 @@ export function PainelHistorico() {
   if (itens.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Você ainda não salvou nada. Em qualquer explicação, use "Salvar para consultar depois" e ela aparece aqui.
+        {t("acessibilidade.paineisDeAjuda.vocaAindaNaoSalvouNada", { botao: t("acessibilidade.salvarInstrucao.salvarParaConsultarDepois") })}
       </p>
     );
   }
@@ -170,10 +172,10 @@ export function PainelHistorico() {
               size="sm"
               variant="ghost"
               className="min-h-11 gap-1.5 text-destructive"
-              aria-label={`Remover do histórico: ${item.titulo}`}
+              aria-label={t("acessibilidade.paineisDeAjuda.removerDoHistorico", { var1: item.titulo })}
               onClick={() => remover(item.id)}
             >
-              <Trash2 className="size-4" aria-hidden="true" /> Remover
+              <Trash2 className="size-4" aria-hidden="true" /> {t("acessibilidade.paineisDeAjuda.remover")}
             </Button>
           </li>
         ))}
@@ -192,10 +194,10 @@ export function PainelHistorico() {
               setConfirmando(false);
             }}
           >
-            Sim, apagar tudo
+            {t("acessibilidade.paineisDeAjuda.simApagarTudo")}
           </Button>
           <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setConfirmando(false)}>
-            Cancelar
+            {t("post.cancelar")}
           </Button>
         </div>
       ) : (

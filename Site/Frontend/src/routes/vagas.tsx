@@ -14,18 +14,19 @@ import { useSessao } from "@/hooks/useSessao";
 import vagasService from "@/services/vagas.service";
 import dashboardService from "@/services/dashboard.service";
 import { extrairMensagemErro } from "@/services/api";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/vagas")({
   head: () => ({
     meta: [
-      { title: "Vagas inclusivas — ACESSO" },
+      { title: textoDaPagina("vagas.vagasInclusivasAcesso") },
       {
         name: "description",
         content:
-          "Busque vagas com recursos de acessibilidade declarados por empresas verificadas na plataforma ACESSO.",
+          textoDaPagina("vagas.busqueVagasComRecursosDe"),
       },
-      { property: "og:title", content: "Vagas inclusivas — ACESSO" },
-      { property: "og:description", content: "Oportunidades para PCD e profissionais 50+." },
+      { property: "og:title", content: textoDaPagina("vagas.vagasInclusivasAcesso") },
+      { property: "og:description", content: textoDaPagina("vagas.oportunidadesParaPcdE") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -44,8 +45,8 @@ const FILTROS_INICIAIS: FiltrosVagasEstado = {
 };
 
 function Vagas() {
-  const { usuario } = useSessao();
   const { t } = useIdioma();
+  const { usuario } = useSessao();
   const queryClient = useQueryClient();
   const { q: buscaDaUrl } = Route.useSearch();
   const [rascunho, setRascunho] = useState<FiltrosVagasEstado>({ ...FILTROS_INICIAIS, busca: buscaDaUrl ?? "" });

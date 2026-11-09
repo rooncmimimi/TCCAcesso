@@ -23,7 +23,7 @@ export function PaginaDocumentoLegal({ doc }: { doc: DocumentoLegal }) {
           </Link>
           <Button asChild variant="ghost" className="min-h-11 gap-1.5">
             <Link to="/">
-              <ArrowLeft aria-hidden="true" /> Início
+              <ArrowLeft aria-hidden="true" /> {t("cabecalho.inicio")}
             </Link>
           </Button>
         </div>

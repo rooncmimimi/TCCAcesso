@@ -52,7 +52,7 @@ export function ListaSeguidoresDialog({
 
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("feed.carregando")}
           </div>
         ) : isError ? (
           <p role="alert" className="py-4 text-sm text-destructive">

@@ -10,18 +10,19 @@ import { useSessao } from "@/hooks/useSessao";
 import acessibilidadeService, { preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/boas-vindas")({
   head: () => ({
     meta: [
-      { title: "Configure sua acessibilidade — ACESSO" },
+      { title: textoDaPagina("boas-vindas.configureSuaAcessibilidade") },
       {
         name: "description",
         content:
-          "Primeiro acesso: ajuste contraste, fonte, voz e Libras e veja cada mudança em tempo real antes de salvar.",
+          textoDaPagina("boas-vindas.primeiroAcessoAjusteContraste"),
       },
-      { property: "og:title", content: "Configure sua acessibilidade — ACESSO" },
-      { property: "og:description", content: "Personalize a plataforma antes de começar a usar." },
+      { property: "og:title", content: textoDaPagina("boas-vindas.configureSuaAcessibilidade") },
+      { property: "og:description", content: textoDaPagina("boas-vindas.personalizeAPlataformaAntesDe") },
     ],
   }),
   component: BoasVindas,
@@ -65,22 +66,22 @@ function BoasVindas() {
                   await acessibilidadeService.salvar(preferenciasParaApi(rascunho));
 
                 } catch (erro) {
-                  toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. As preferências ficaram salvas neste dispositivo."));
+                  toast.error(extrairMensagemErro(erro, t("boas-vindas.naoFoiPossivelSalvarNaSuaConta")));
                 }
               }
               atualizar({ onboarded: true });
-              toast.success("Preferências salvas na sua conta.");
+              toast.success(t("boas-vindas.preferenciasSalvasNaSuaConta"));
               navigate({ to: "/feed" });
             }}
           >
-            <Check aria-hidden="true" /> Salvar e ir para o feed
+            <Check aria-hidden="true" /> {t("boas-vindas.salvarEIrParaOFeed")}
           </Button>
           <Button
             variant="ghost"
             className="min-h-12 text-base"
             onClick={() => navigate({ to: "/feed" })}
           >
-            Pular por agora <ArrowRight aria-hidden="true" />
+            {t("boas-vindas.pularPorAgora")} <ArrowRight aria-hidden="true" />
           </Button>
         </div>
       </main>

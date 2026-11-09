@@ -28,14 +28,14 @@ export function SecaoAtividadeDeSeguranca() {
     <Card className="shadow-none">
       <CardHeader className="space-y-1.5">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <History className="size-5" aria-hidden="true" /> Atividade de segurança
+          <History className="size-5" aria-hidden="true" /> {t("configuracoes.secaoAtividadeDeSeguranca.atividadeDeSeguranca")}
         </CardTitle>
         <CardDescription>{t("configuracoes.secaoAtividadeDeSeguranca.osUltimosAcontecimentosDe")}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando atividade…
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("configuracoes.secaoAtividadeDeSeguranca.carregandoAtividade")}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">

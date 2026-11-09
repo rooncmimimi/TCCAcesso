@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,18 +53,18 @@ const TIPO_OPCOES: (EntidadeDenunciaTipo | "todos")[] = [
 const MOTIVO_OPCOES = Object.keys(MOTIVO_ROTULO) as MotivoDenuncia[];
 
 const ATRIBUICAO_OPCOES = ["todas", "minhas", "sem_responsavel"] as const;
-const ATRIBUICAO_ROTULO: Record<(typeof ATRIBUICAO_OPCOES)[number], string> = {
-  todas: "Todas as denúncias",
-  minhas: "Atribuídas a mim",
-  sem_responsavel: "Sem responsável",
+const ATRIBUICAO_ROTULO: Record<(typeof ATRIBUICAO_OPCOES)[number], ChaveBase> = {
+  todas: "admin.denunciasTabela.todasAsDenuncias",
+  minhas: "admin.denunciasTabela.atribuidasAMim",
+  sem_responsavel: "admin.denunciasTabela.semResponsavel",
 };
 
-const STATUS_ROTULO: Record<StatusDenuncia, string> = {
-  pendente: "Pendente",
-  em_analise: "Em análise",
-  resolvida: "Resolvida",
-  rejeitada: "Rejeitada",
-  arquivada: "Arquivada",
+const STATUS_ROTULO: Record<StatusDenuncia, ChaveBase> = {
+  pendente: "status.pendente",
+  em_analise: "status.emAnalise",
+  resolvida: "status.resolvida",
+  rejeitada: "status.rejeitada",
+  arquivada: "status.arquivada",
 };
 
 const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neutro"> = {
@@ -74,13 +75,13 @@ const STATUS_TOM: Record<StatusDenuncia, "sucesso" | "atencao" | "perigo" | "neu
   arquivada: "neutro",
 };
 
-const TIPO_ROTULO: Record<EntidadeDenunciaTipo, string> = {
-  postagem: "Postagem",
-  comentario: "Comentário",
-  usuario: "Usuário",
+const TIPO_ROTULO: Record<EntidadeDenunciaTipo, ChaveBase> = {
+  postagem: "admin.denunciasTabela.postagem",
+  comentario: "admin.denunciasTabela.comentario",
+  usuario: "admin.denunciasTabela.usuario",
   mensagem: "admin.denunciasTabela.mensagem",
-  vaga: "Vaga",
-  empresa: "Empresa",
+  vaga: "admin.denunciasTabela.vaga",
+  empresa: "admin.denunciasTabela.empresa",
 };
 
 /** Fila de denúncias, com filtros por status e tipo e link para o detalhe de cada uma. */
@@ -124,7 +125,7 @@ export function DenunciasTabela() {
             <SelectContent>
               {STATUS_OPCOES.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {item === "todos" ? "Todos os status" : STATUS_ROTULO[item]}
+                  {item === "todos" ? t("admin.denunciasTabela.todosOsStatus") : t(STATUS_ROTULO[item])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -144,7 +145,7 @@ export function DenunciasTabela() {
             <SelectContent>
               {TIPO_OPCOES.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {item === "todos" ? "Todos os tipos" : TIPO_ROTULO[item]}
+                  {item === "todos" ? t("admin.denunciasTabela.todosOsTipos") : t(TIPO_ROTULO[item])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -216,15 +217,15 @@ export function DenunciasTabela() {
             <TableBody>
               {denuncias.map((denuncia) => (
                 <TableRow key={denuncia.id}>
-                  <TableCell>{TIPO_ROTULO[denuncia.entidadeTipo] ?? denuncia.entidadeTipo}</TableCell>
+                  <TableCell>{TIPO_ROTULO[denuncia.entidadeTipo] ? t(TIPO_ROTULO[denuncia.entidadeTipo]) : denuncia.entidadeTipo}</TableCell>
                   <TableCell>{MOTIVO_ROTULO[denuncia.motivo] ?? denuncia.motivo}</TableCell>
-                  <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? "Usuário removido"}</TableCell>
+                  <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? t("admin.denunciasTabela.usuarioRemovido")}</TableCell>
                   <TableCell className="max-w-40 truncate text-sm">
                     {denuncia.administradorResponsavel?.nome ?? <span className="text-muted-foreground">{t("admin.denunciasTabela.semResponsavel")}</span>}
                   </TableCell>
                   <TableCell>
                     <StatusBadge tom={STATUS_TOM[denuncia.status]}>
-                      {STATUS_ROTULO[denuncia.status]}
+                      {t(STATUS_ROTULO[denuncia.status])}
                     </StatusBadge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -233,7 +234,7 @@ export function DenunciasTabela() {
                   <TableCell className="text-right">
                     <Button asChild size="sm" variant="outline">
                       <Link to="/admin/denuncias/$denunciaId" params={{ denunciaId: denuncia.id }}>
-                        Ver detalhes
+                        {t("admin.denunciasTabela.verDetalhes")}
                       </Link>
                     </Button>
                   </TableCell>

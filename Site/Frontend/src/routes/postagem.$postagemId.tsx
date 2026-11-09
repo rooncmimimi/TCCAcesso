@@ -8,17 +8,18 @@ import { PostagemCard } from "@/components/feed/PostagemCard";
 import { usePostagemDetalhe } from "@/components/feed/hooks";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/postagem/$postagemId")({
   head: () => ({
     meta: [
-      { title: "Publicação — ACESSO" },
+      { title: textoDaPagina("postagempostagemId.publicacaoAcesso") },
       {
         name: "description",
-        content: "Leia a publicação completa, os comentários e participe da conversa na comunidade ACESSO.",
+        content: textoDaPagina("postagempostagemId.leiaAPublicacaoCompletaOs"),
       },
-      { property: "og:title", content: "Publicação — ACESSO" },
-      { property: "og:description", content: "Publicação da comunidade ACESSO." },
+      { property: "og:title", content: textoDaPagina("postagempostagemId.publicacaoAcesso") },
+      { property: "og:description", content: textoDaPagina("postagempostagemId.publicacaoDaComunidadeAcesso") },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -41,7 +42,7 @@ function DetalhePostagem() {
         to="/feed"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para o feed
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("postagempostagemId.voltarParaOFeed")}
       </Link>
 
       <h1 className="sr-only">{t("postagempostagemId.publicacao")}</h1>

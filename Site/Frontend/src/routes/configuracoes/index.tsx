@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   UserCog,
 } from "lucide-react";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,10 +16,10 @@ import { GuardaAcesso } from "@/components/GuardaAcesso";
 export const Route = createFileRoute("/configuracoes/")({
   head: () => ({
     meta: [
-      { title: "Configurações — ACESSO" },
-      { name: "description", content: "Gerencie conta, segurança, notificações, acessibilidade e aparência." },
-      { property: "og:title", content: "Configurações — ACESSO" },
-      { property: "og:description", content: "Central de preferências da sua conta ACESSO." },
+      { title: textoDaPagina("configuracoes.index.configuracoesAcesso") },
+      { name: "description", content: textoDaPagina("configuracoes.index.gerencieContaSeguranca") },
+      { property: "og:title", content: textoDaPagina("configuracoes.index.configuracoesAcesso") },
+      { property: "og:description", content: textoDaPagina("configuracoes.index.centralDePreferenciasDaSua") },
     ],
   }),
   component: () => (

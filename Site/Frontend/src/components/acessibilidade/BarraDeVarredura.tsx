@@ -107,7 +107,7 @@ function BarraAtiva() {
         {parada ? (
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Button type="button" className="min-h-11 gap-2" onClick={v.iniciar}>
-              <ScanLine className="size-4" aria-hidden="true" /> Iniciar varredura
+              <ScanLine className="size-4" aria-hidden="true" /> {t("acessibilidade.barraDeVarredura.iniciarVarredura")}
             </Button>
             <Button type="button" variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={t("acessibilidade.barraDeVarredura.desligarAVarreduraComUmBotao")} onClick={() => salvar({ ...rascunho, scanning: false })}>
               <X className="size-4" aria-hidden="true" />
@@ -126,24 +126,24 @@ function BarraAtiva() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" className="min-h-11 gap-2" onClick={v.selecionar} disabled={v.emCampo}>
-                <MousePointerClick className="size-4" aria-hidden="true" /> Selecionar
+                <MousePointerClick className="size-4" aria-hidden="true" /> {t("acessibilidade.barraDeVarredura.selecionar")}
               </Button>
               <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={rodando ? v.pausar : v.retomar}>
                 {rodando ? <Pause className="size-4" aria-hidden="true" /> : <Play className="size-4" aria-hidden="true" />} {rodando ? "Pausar" : "Continuar"}
               </Button>
               <Button type="button" variant="outline" className="min-h-11 gap-1" onClick={v.anterior} aria-label={t("acessibilidade.barraDeVarredura.voltarAoItemAnterior")} disabled={v.emCampo}>
-                <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
+                <ArrowLeft className="size-4" aria-hidden="true" /> {t("auth.voltar")}
               </Button>
               <Button type="button" variant="outline" className="min-h-11 gap-1" onClick={v.proximo} aria-label={t("acessibilidade.barraDeVarredura.avancarParaOProximoItem")} disabled={v.emCampo}>
-                Avançar <ArrowRight className="size-4" aria-hidden="true" />
+                {t("acessibilidade.barraDeVarredura.avancar")} <ArrowRight className="size-4" aria-hidden="true" />
               </Button>
               {dentro ? (
                 <Button type="button" variant="secondary" className="min-h-11 gap-2" onClick={v.sairDoGrupo}>
-                  <CornerLeftUp className="size-4" aria-hidden="true" /> Sair do grupo
+                  <CornerLeftUp className="size-4" aria-hidden="true" /> {t("acessibilidade.barraDeVarredura.sairDoGrupo")}
                 </Button>
               ) : null}
               <Button type="button" variant="destructive" className="min-h-11 gap-2" onClick={v.parar}>
-                <Square className="size-4" aria-hidden="true" /> Parar
+                <Square className="size-4" aria-hidden="true" /> {t("acessibilidade.barraDeVarredura.parar")}
               </Button>
             </div>
 

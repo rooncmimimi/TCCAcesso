@@ -31,7 +31,7 @@ export function PaginaMinhaAcessibilidade() {
   if (catalogo.isLoading || minha.isLoading) {
     return (
       <div role="status" className="mt-8 flex items-center gap-2 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando…
+        <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("feed.carregando")}
       </div>
     );
   }
@@ -66,7 +66,7 @@ export function PaginaMinhaAcessibilidade() {
       <SecaoPrivacidade minha={minha.data} />
 
       <p className="text-sm text-muted-foreground">
-        Quer treinar antes de se candidatar de verdade?{" "}
+        {t("minha-acessibilidade.paginaMinhaAcessibilidade.querTreinarAntesDeSeCandidatar")}{" "}
         <Link to="/simulador" className="font-semibold text-primary underline">
           {t("minha-acessibilidade.paginaMinhaAcessibilidade.abraOSimuladorDeCandidaturaE")}
         </Link>
@@ -101,7 +101,7 @@ function SecaoAdaptacoes({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; 
     setObservacao(minha.observacao ?? "");
   }, [minha.adaptacoes, minha.observacao]);
 
-  const salvar = useSalvarMinha("Adaptações salvas.");
+  const salvar = useSalvarMinha(t("minha-acessibilidade.paginaMinhaAcessibilidade.adaptacoesSalvas"));
 
   const alterado = !mesmaLista(escolhidas, minha.adaptacoes) || observacao.trim() !== (minha.observacao ?? "");
 
@@ -146,12 +146,12 @@ function SecaoAdaptacoes({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; 
             <Label htmlFor={`${idBase}-obs`}>{t("minha-acessibilidade.paginaMinhaAcessibilidade.observacaoOpcional")}</Label>
             <Textarea id={`${idBase}-obs`} rows={3} maxLength={500} value={observacao} onChange={(e) => setObservacao(e.target.value)} aria-describedby={`${idBase}-obs-ajuda`} />
             <p id={`${idBase}-obs-ajuda`} className="text-xs text-muted-foreground">
-              Escreva o que ajuda, por exemplo “prefiro instruções curtas, uma por vez”. Não escreva diagnóstico, laudo, nome de doença nem medicação: isso não é necessário.
+              {t("minha-acessibilidade.paginaMinhaAcessibilidade.escrevaOQueAjuda")}
             </p>
           </div>
 
           <Button type="submit" disabled={!alterado || salvar.isPending} className="min-h-11">
-            {salvar.isPending ? "Salvando…" : "Salvar adaptações"}
+            {salvar.isPending ? "Salvando…" : t("minha-acessibilidade.paginaMinhaAcessibilidade.salvarAdaptacoes")}
           </Button>
         </form>
       </CardContent>
@@ -175,7 +175,7 @@ function SecaoComunicacao({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes;
     setObservacao(c.observacao ?? "");
   }, [c.canaisPreferidos, c.canaisAEvitar, c.melhorHorario, c.observacao]);
 
-  const salvar = useSalvarMinha("Preferências de comunicação salvas.");
+  const salvar = useSalvarMinha(t("minha-acessibilidade.paginaMinhaAcessibilidade.preferenciasDeComunicacao"));
 
   const conflito = preferidos.filter((p) => evitar.includes(p));
   const alterado =
@@ -248,7 +248,7 @@ function SecaoComunicacao({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes;
           </div>
 
           <Button type="submit" disabled={!alterado || conflito.length > 0 || salvar.isPending} className="min-h-11">
-            {salvar.isPending ? "Salvando…" : "Salvar preferências"}
+            {salvar.isPending ? "Salvando…" : t("configuracoes.acessibilidade.salvarPreferencias")}
           </Button>
         </form>
       </CardContent>
@@ -260,7 +260,7 @@ function SecaoPrivacidade({ minha }: { minha: MinhaAcessibilidade }) {
   const { t } = useIdioma();
   const idBase = useId();
   const ligado = minha.privacidade.exibirDeficienciaNoPerfil;
-  const salvar = useSalvarMinha("Privacidade atualizada.");
+  const salvar = useSalvarMinha(t("minha-acessibilidade.paginaMinhaAcessibilidade.privacidadeAtualizada"));
 
   return (
     <Card className="shadow-none">

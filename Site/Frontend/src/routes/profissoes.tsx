@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { DicionarioDeProfissoes } from "@/components/profissoes/DicionarioDeProfissoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/profissoes")({
   head: () => ({
     meta: [
-      { title: "Dicionário de profissões — ACESSO" },
-      { name: "description", content: "Veja o que cada profissão faz: atividades, ferramentas, habilidades e um exemplo de rotina, em linguagem simples." },
+      { title: textoDaPagina("profissoes.dicionarioDeProfissoesAcesso") },
+      { name: "description", content: textoDaPagina("profissoes.vejaOQueCadaProfissaoFaz") },
     ],
   }),
   component: ProfissoesPagina,

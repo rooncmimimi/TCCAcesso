@@ -69,7 +69,7 @@ export function ControleDeTraducao({
 
       {/*
         A escolha fica ao lado da explicação que a motivou (o texto sai do aparelho), e não num diálogo:
-        "Agora não" é um caminho de volta de verdade, não um X de canto.
+        t("traducao.recusar") é um caminho de volta de verdade, não um X de canto.
       */}
       {precisaDeAutorizacao ? (
         <div className="flex flex-wrap gap-2">

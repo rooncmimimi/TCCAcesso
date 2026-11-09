@@ -4,8 +4,9 @@ import { BadgeCheck } from "lucide-react";
 import { ambienteService } from "@/services/ambiente.service";
 import type { Vaga } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
-const SITUACAO: Record<string, string> = { sim: "Sim", parcial: "Parcial", nao: "Não" };
+const SITUACAO: Record<string, ChaveBase> = { sim: "comum.sim", parcial: "comum.parcial", nao: "comum.nao" };
 
 /**
  * O que a empresa informou sobre o ambiente da vaga: prévia sensorial, acessibilidade física e o que
@@ -85,10 +86,10 @@ export function AmbienteDaVaga({ vaga }: { vaga: Vaga }) {
                 return (
                   <li key={i.chave} className="flex flex-wrap items-baseline gap-x-2">
                     <span className="font-semibold">{i.rotulo}:</span>
-                    <span>{SITUACAO[item.situacao] ?? item.situacao}</span>
+                    <span>{SITUACAO[item.situacao] ? t(SITUACAO[item.situacao]) : item.situacao}</span>
                     {item.origem === "verificado" ? (
                       <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary">
-                        <BadgeCheck className="size-3.5" aria-hidden="true" /> Verificado pela equipe do ACESSO
+                        <BadgeCheck className="size-3.5" aria-hidden="true" /> {t("vagas.ambienteDaVaga.verificadoPelaEquipeDoAcesso")}
                       </span>
                     ) : (
                       <span className="text-xs text-muted-foreground">{t("vagas.ambienteDaVaga.declaradoPelaEmpresa")}</span>

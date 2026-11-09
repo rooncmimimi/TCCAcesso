@@ -13,6 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { Frase } from "@/i18n/Frase";
 import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,11 +52,12 @@ type Registro = {
   nome?: string;
 };
 
-const TITULOS: Record<RecursoPerfil, string> = {
-  experiencias: "experiência",
-  formacoes: "formação",
-  certificados: "certificado",
-  habilidades: "habilidade",
+/** A chave do nome do recurso: quem renderiza chama `t` com ela e monta o titulo no idioma do site. */
+const TITULOS: Record<RecursoPerfil, ChaveBase> = {
+  experiencias: "perfil.recurso.experiencia",
+  formacoes: "perfil.recurso.formacao",
+  certificados: "perfil.recurso.certificado",
+  habilidades: "perfil.recurso.habilidade",
 };
 
 /** Formulário de criação/edição para os 4 tipos de recurso do perfil (experiência, formação, certificado, habilidade). */
@@ -95,12 +98,12 @@ export function FormularioRecursoDialog({
         ? perfilService.atualizarRecurso(recurso, registro!.id!, payload)
         : perfilService.criarRecurso(recurso, payload),
     onSuccess: () => {
-      toast.success(editando ? "Registro atualizado." : "Registro adicionado.");
+      toast.success(editando ? "Registro atualizado." : t("perfil.formularioRecursoDialog.registroAdicionado"));
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso", recurso] });
       rascunho.limpar();
       setAberto(false);
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.formularioRecursoDialog.naoFoiPossivelSalvar"))),
   });
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -151,11 +154,22 @@ export function FormularioRecursoDialog({
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {editando ? `Editar ${TITULOS[recurso]}` : `Adicionar ${TITULOS[recurso]}`}
+            {editando
+              ? t("perfil.formularioRecursoDialog.editarRecurso", { recurso: t(TITULOS[recurso]) })
+              : t("perfil.formularioRecursoDialog.adicionarRecurso", { recurso: t(TITULOS[recurso]) })}
           </DialogTitle>
           <DialogDescription>
-            Essas informações aparecem no seu perfil público. Campos com <span aria-hidden="true">*</span>
-            <span className="sr-only">asterisco</span> são obrigatórios.
+            <Frase
+              chave="perfil.formularioRecursoDialog.camposObrigatorios"
+              partes={[
+                (texto) => (
+                  <>
+                    <span aria-hidden="true">*</span>
+                    <span className="sr-only">{texto}</span>
+                  </>
+                ),
+              ]}
+            />
           </DialogDescription>
         </DialogHeader>
 
@@ -189,7 +203,7 @@ export function FormularioRecursoDialog({
                   <Input id="dataInicio" name="dataInicio" type="date" required defaultValue={registro?.dataInicio?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dataFim">Fim</Label>
+                  <Label htmlFor="dataFim">{t("perfil.formularioRecursoDialog.fim")}</Label>
                   <Input id="dataFim" name="dataFim" type="date" disabled={atual} defaultValue={registro?.dataFim?.slice(0, 10) ?? ""} />
                 </div>
               </div>
@@ -291,11 +305,11 @@ export function FormularioRecursoDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-              Cancelar
+              {t("post.cancelar")}
             </Button>
             <Button type="submit" disabled={salvar.isPending} className="min-h-11 gap-2">
               {salvar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Salvar
+              {t("post.salvar")}
             </Button>
           </DialogFooter>
         </form>

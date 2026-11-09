@@ -4,14 +4,15 @@ import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { PaginaMinhaAcessibilidade } from "@/components/minha-acessibilidade/PaginaMinhaAcessibilidade";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/minha-acessibilidade")({
   head: () => ({
     meta: [
-      { title: "Minha Acessibilidade — ACESSO" },
+      { title: textoDaPagina("minha-acessibilidade.minhaAcessibilidadeAcesso") },
       {
         name: "description",
-        content: "Registre, só para você, as adaptações que ajudam nos processos seletivos e escolha, candidatura por candidatura, o que compartilhar.",
+        content: textoDaPagina("minha-acessibilidade.registreSoParaVoceAsAdaptacoes"),
       },
     ],
   }),

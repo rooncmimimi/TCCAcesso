@@ -1,22 +1,24 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { StatusCandidatura, StatusVaga } from "@/types";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Rótulos e variantes seguem exatamente os ENUMs do backend:
  * candidatura (Pendente, Visualizada, EmAnalise, Aprovada, Rejeitada, Cancelada)
  * e vaga (Aberta, Pausada, Encerrada).
  */
-const ROTULOS: Record<string, string> = {
-  pendente: "Pendente",
-  visualizada: "Visualizada",
-  em_analise: "Em análise",
-  aprovada: "Aprovada",
-  rejeitada: "Rejeitada",
-  cancelada: "Cancelada",
-  aberta: "Aberta",
-  pausada: "Arquivada",
-  encerrada: "Encerrada",
+const ROTULOS: Record<string, ChaveBase> = {
+  pendente: "status.pendente",
+  visualizada: "status.visualizada",
+  em_analise: "status.emAnalise",
+  aprovada: "status.aprovada",
+  rejeitada: "status.rejeitada",
+  cancelada: "status.cancelada",
+  aberta: "status.aberta",
+  pausada: "status.arquivada",
+  encerrada: "status.encerrada",
 };
 
 const VARIANTES: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -48,6 +50,8 @@ type StatusBadgeProps =
  * um texto livre (`children`) num dos tons das tabelas administrativas.
  */
 export function StatusBadge(props: StatusBadgeProps) {
+  const { t } = useIdioma();
+
   if (props.tom) {
     return (
       <Badge variant={TONS[props.tom] ?? "outline"} className="font-medium">
@@ -60,7 +64,7 @@ export function StatusBadge(props: StatusBadgeProps) {
 
   return (
     <Badge variant={VARIANTES[status] ?? "outline"} className="font-medium">
-      {ROTULOS[status] ?? status}
+      {ROTULOS[status] ? t(ROTULOS[status]) : status}
     </Badge>
   );
 }

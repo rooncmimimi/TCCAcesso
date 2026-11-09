@@ -43,7 +43,7 @@ export function ComandosDeVoz() {
         case "navegar":
           void navigate({ to: comando.para });
 
-          return `Indo para ${comando.descricao}.`;
+          return t("acessibilidade.comandosDeVoz.indoPara", { var1: comando.descricao });
         case "voltar":
           window.history.back();
 
@@ -54,27 +54,27 @@ export function ComandosDeVoz() {
           if (botao) {
             botao.click();
 
-            return "Indo para a próxima página.";
+            return t("acessibilidade.comandosDeVoz.indoParaAProximaPagina");
           }
 
           window.scrollBy({ top: Math.round(window.innerHeight * 0.85), behavior: "smooth" });
 
-          return "Não achei um botão de próxima página aqui, então desci a tela.";
+          return t("acessibilidade.comandosDeVoz.naoAcheiUmBotaoDeProximaPagina");
         }
         case "pesquisar-vagas":
           void navigate({ to: "/vagas", search: { q: comando.termo } });
 
-          return `Pesquisando vagas por “${comando.termo}”.`;
+          return t("acessibilidade.comandosDeVoz.pesquisandoVagasPor", { var1: comando.termo });
         case "candidatar": {
           const botao = acharControle(/^(candidatar|continuar candidatura)/i);
 
           if (botao) {
             botao.click();
 
-            return "Abrindo a candidatura. Revise e envie com as mãos.";
+            return t("acessibilidade.comandosDeVoz.abrindoACandidaturaReviseE");
           }
 
-          return "Não achei o botão de candidatura. Abra primeiro uma vaga.";
+          return t("acessibilidade.comandosDeVoz.naoAcheiOBotaoDeCandidatura");
         }
         case "preferencia":
           salvar({ ...rascunho, [comando.chave]: comando.valor });
@@ -83,18 +83,18 @@ export function ComandosDeVoz() {
         case "parar-leitura":
           pararLeitura();
 
-          return "Leitura parada.";
+          return t("acessibilidade.comandosDeVoz.leituraParada");
         case "atalhos":
           abrirAjudaDeAtalhos();
 
-          return "Mostrando os atalhos.";
+          return t("acessibilidade.comandosDeVoz.mostrandoOsAtalhos");
         case "recusado":
           return comando.motivo;
         default:
-          return `Não entendi “${ouvido}”. Tente, por exemplo: ${EXEMPLOS_DE_COMANDOS.slice(0, 3).join(", ")}.`;
+          return t("acessibilidade.comandosDeVoz.naoEntendiTentePorExemplo", { var1: ouvido, var2: EXEMPLOS_DE_COMANDOS.slice(0, 3).join(", ") });
       }
     },
-    [navigate, pararLeitura, rascunho, salvar],
+    [navigate, pararLeitura, rascunho, salvar, t],
   );
 
   const aoOuvir = useCallback(
@@ -122,7 +122,7 @@ export function ComandosDeVoz() {
       // Com o microfone bloqueado, abrir a escuta só faria o navegador recusar calado: é melhor dizer
       // de uma vez o que está acontecendo e onde se libera.
       if (microfone === "negado") {
-        setResposta({ ouvido: null, texto: `O microfone está bloqueado para este site no seu navegador. ${comoLiberarOMicrofone()}`, erro: true });
+        setResposta({ ouvido: null, texto: t("acessibilidade.comandosDeVoz.oMicrofoneEstaBloqueadoPara", { var1: comoLiberarOMicrofone() }), erro: true });
 
         return;
       }
@@ -134,7 +134,7 @@ export function ComandosDeVoz() {
     window.addEventListener(EVENTO_PEDIR_COMANDO_DE_VOZ, pedir);
 
     return () => window.removeEventListener(EVENTO_PEDIR_COMANDO_DE_VOZ, pedir);
-  }, [iniciar, microfone, suportado]);
+  }, [iniciar, microfone, suportado, t]);
 
   // O aviso de resposta some sozinho depois de um tempo, exceto erros (que a pessoa precisa ler).
   useEffect(() => {
@@ -154,7 +154,7 @@ export function ComandosDeVoz() {
           <span aria-hidden="true" className="inline-block size-3 shrink-0 animate-pulse rounded-full bg-destructive" />
           <p className="flex-1 text-sm font-semibold">{t("acessibilidade.comandosDeVoz.microfoneLigadoDigaUmComando")}</p>
           <Button type="button" variant="destructive" size="sm" className="min-h-11 gap-2" onClick={voz.parar}>
-            <MicOff className="size-4" aria-hidden="true" /> Parar
+            <MicOff className="size-4" aria-hidden="true" /> {t("acessibilidade.barraDeVarredura.parar")}
           </Button>
         </div>
       ) : (
@@ -168,10 +168,10 @@ export function ComandosDeVoz() {
           ) : null}
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" onClick={() => { setResposta(null); voz.iniciar(); }}>
-              <Mic className="size-4" aria-hidden="true" /> Falar outro comando
+              <Mic className="size-4" aria-hidden="true" /> {t("acessibilidade.comandosDeVoz.falarOutroComando")}
             </Button>
             <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={() => setResposta(null)}>
-              Fechar
+              {t("ui.dialog.fechar")}
             </Button>
           </div>
         </div>

@@ -151,6 +151,11 @@ const pt = {
   erroContaGenerico: "Não foi possível criar sua conta agora.",
   erroPerfilGenerico: "Não foi possível salvar seu perfil agora.",
   erroCurriculo: "Não foi possível ler este arquivo. Tente outro, ou preencha manualmente.",
+  voltarAoInicio: "ACESSO, voltar para a página inicial",
+  completeSeusDados: "Complete seus dados",
+  contaGoogleJaCriada: "Sua conta com o Google já está criada. Falta só o que a plataforma precisa para te apresentar às empresas.",
+  erroSalvarDados: "Não foi possível salvar seus dados agora. Tente novamente.",
+  abrindoSeusDados: "Abrindo seus dados…",
 };
 
 /** O dicionário de português define a forma; inglês e espanhol precisam ter exatamente as mesmas chaves. */
@@ -294,6 +299,11 @@ const en: Textos = {
   erroContaGenerico: "We could not create your account right now.",
   erroPerfilGenerico: "We could not save your profile right now.",
   erroCurriculo: "We could not read this file. Try another one, or fill in the fields manually.",
+  voltarAoInicio: "ACESSO, back to the home page",
+  completeSeusDados: "Complete your details",
+  contaGoogleJaCriada: "Your Google account is already created. All that is left is what the platform needs in order to introduce you to companies.",
+  erroSalvarDados: "We could not save your details right now. Try again.",
+  abrindoSeusDados: "Opening your details…",
 };
 
 const es: Textos = {
@@ -434,6 +444,11 @@ const es: Textos = {
   erroContaGenerico: "No fue posible crear tu cuenta ahora.",
   erroPerfilGenerico: "No fue posible guardar tu perfil ahora.",
   erroCurriculo: "No fue posible leer este archivo. Prueba con otro o completa los campos manualmente.",
+  voltarAoInicio: "ACESSO, volver a la página de inicio",
+  completeSeusDados: "Completa tus datos",
+  contaGoogleJaCriada: "Tu cuenta con Google ya está creada. Solo falta lo que la plataforma necesita para presentarte a las empresas.",
+  erroSalvarDados: "No fue posible guardar tus datos ahora. Inténtalo de nuevo.",
+  abrindoSeusDados: "Abriendo tus datos…",
 };
 
 const DICIONARIOS: Record<CodigoIdioma, Textos> = { pt, en, es };

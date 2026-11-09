@@ -32,7 +32,7 @@ export function PaisAutocomplete({
   temErro,
   descrito,
   desabilitado,
-  placeholder = "Digite para buscar",
+  placeholder,
 }: {
   id: string;
   /** Código ISO 3166-1 alpha-2 já escolhido, ou "" quando não há escolha. */
@@ -141,7 +141,7 @@ export function PaisAutocomplete({
           autoComplete="country-name"
           disabled={desabilitado}
           value={texto}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t("cadastro.paisAutocomplete.digiteParaBuscar")}
           className="min-h-12 pl-9"
           onChange={(evento) => {
             setTexto(evento.target.value);

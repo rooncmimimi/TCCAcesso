@@ -91,10 +91,10 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   const enviarCurriculo = useMutation({
     mutationFn: (arquivo: File) => perfilService.enviarCurriculo(meuCandidato!.id, arquivo),
     onSuccess: () => {
-      toast.success("Currículo enviado.");
+      toast.success(t("perfil.perfilPessoal.curriculoEnviado"));
       void queryClient.invalidateQueries({ queryKey: ["meu-candidato"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível enviar o currículo.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.perfilPessoal.naoFoiPossivelEnviarOCurriculo"))),
   });
 
   function aoEnviarCurriculo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -128,7 +128,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     return (
       <EstruturaApp>
         <div role="status" aria-live="polite" className="flex items-center gap-2 py-10 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil…
+          <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("perfil.perfilPessoal.carregandoPerfil")}
         </div>
       </EstruturaApp>
     );
@@ -138,7 +138,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   const ehCandidato = proprioPerfil ? usuario?.tipo === "candidato" : Boolean(candidatoAlheio);
   const carregandoCandidato = proprioPerfil && carregandoMeuCandidato;
 
-  const nome = proprioPerfil ? usuario!.nome : candidato?.usuario?.nome ?? usuarioGenerico?.nome ?? "Usuário";
+  const nome = proprioPerfil ? usuario!.nome : candidato?.usuario?.nome ?? usuarioGenerico?.nome ?? t("post.usuario");
   const fotoPerfil = proprioPerfil
     ? usuario!.fotoPerfil
     : candidato?.usuario?.fotoPerfil ?? usuarioGenerico?.fotoPerfil;
@@ -178,7 +178,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
             {proprioPerfil ? (
               <EditarPerfilDialog candidato={ehCandidato ? candidato : null}>
                 <Button variant="outline" className="min-h-11 shrink-0">
-                  <Pencil aria-hidden="true" /> Editar perfil
+                  <Pencil aria-hidden="true" /> {t("perfil.editarPerfilDialog.editarPerfil")}
                 </Button>
               </EditarPerfilDialog>
             ) : (
@@ -227,12 +227,14 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
             <ListaSeguidoresDialog usuarioId={alvoId} modo="seguidores" total={resumoSeguidores?.totalSeguidores ?? 0}>
               <button type="button" className="font-semibold hover:underline focus-visible:underline">
-                {resumoSeguidores?.totalSeguidores ?? 0} <span className="font-normal text-muted-foreground">seguidores</span>
+                {resumoSeguidores?.totalSeguidores ?? 0}{" "}
+                <span className="font-normal text-muted-foreground">{t("perfil.seguidores", { n: resumoSeguidores?.totalSeguidores ?? 0 })}</span>
               </button>
             </ListaSeguidoresDialog>
             <ListaSeguidoresDialog usuarioId={alvoId} modo="seguindo" total={resumoSeguidores?.totalSeguindo ?? 0}>
               <button type="button" className="font-semibold hover:underline focus-visible:underline">
-                {resumoSeguidores?.totalSeguindo ?? 0} <span className="font-normal text-muted-foreground">seguindo</span>
+                {resumoSeguidores?.totalSeguindo ?? 0}{" "}
+                <span className="font-normal text-muted-foreground">{t("perfil.seguindo")}</span>
               </button>
             </ListaSeguidoresDialog>
           </div>
@@ -267,7 +269,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
             )}
             <Button asChild variant="link" className="mt-4 h-11 px-0 font-semibold">
               <Link to="/configuracoes/acessibilidade">
-                <Accessibility aria-hidden="true" /> Ajustar preferências de acessibilidade
+                <Accessibility aria-hidden="true" /> {t("perfil.perfilPessoal.ajustarPreferenciasDe")}
               </Link>
             </Button>
           </CardContent>
@@ -277,7 +279,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
       {ehCandidato ? (
         carregandoCandidato ? (
           <div role="status" aria-live="polite" className="mt-4 flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando perfil profissional…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("perfil.perfilPessoal.carregandoPerfilProfissional")}
           </div>
         ) : candidato ? (
           <Card className="mt-4 shadow-card">
@@ -285,7 +287,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
               {proprioPerfil && (
                 <section aria-labelledby="secao-curriculo" className="border-t pt-6 first:border-t-0 first:pt-0">
                   <h2 id="secao-curriculo" className="text-lg font-bold">
-                    Currículo
+                    {t("perfil.perfilPessoal.curriculo")}
                   </h2>
                   {candidato.curriculoNome ? (
                     <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
@@ -313,7 +315,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                       ) : (
                         <Upload className="size-4" aria-hidden="true" />
                       )}
-                      {candidato.curriculoNome ? "Atualizar currículo" : "Enviar currículo"}
+                      {candidato.curriculoNome ? "Atualizar currículo" : t("perfil.perfilPessoal.enviarCurriculo")}
                     </label>
                     <input
                       id="input-enviar-curriculo"
@@ -325,7 +327,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                     />
                     <ImportarCurriculoDialog candidatoId={candidato.id}>
                       <Button type="button" variant="outline" size="sm" className="min-h-9 gap-1.5">
-                        <Sparkles className="size-4" aria-hidden="true" /> Importar dados do currículo
+                        <Sparkles className="size-4" aria-hidden="true" /> {t("perfil.importarCurriculoDialog.importarDadosDoCurriculo")}
                       </Button>
                     </ImportarCurriculoDialog>
                   </div>
@@ -341,7 +343,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                 // sem revelar se existe ou não um currículo.
                 <section aria-labelledby="secao-curriculo-terceiro" className="border-t pt-6 first:border-t-0 first:pt-0">
                   <h2 id="secao-curriculo-terceiro" className="text-lg font-bold">
-                    Currículo
+                    {t("perfil.perfilPessoal.curriculo")}
                   </h2>
                   <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                     <FileText className="size-4 shrink-0" aria-hidden="true" />

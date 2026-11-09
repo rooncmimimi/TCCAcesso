@@ -13,12 +13,13 @@ import bloqueioService from "@/services/bloqueio.service";
 import { urlArquivo } from "@/utils/arquivos";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/configuracoes/bloqueados")({
   head: () => ({
     meta: [
-      { title: "Usuários bloqueados — ACESSO" },
-      { name: "description", content: "Gerencie os usuários que você bloqueou no ACESSO." },
+      { title: textoDaPagina("configuracoes.bloqueados.usuariosBloqueadosAcesso") },
+      { name: "description", content: textoDaPagina("configuracoes.bloqueados.gerencieOsUsuariosQueVoce") },
     ],
   }),
   component: () => (
@@ -44,10 +45,10 @@ function UsuariosBloqueados() {
     onSuccess: (_dados, usuarioId) => {
       const pessoa = data?.dados.find((u) => u.id === usuarioId);
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success(pessoa ? `${pessoa.nome} foi desbloqueado(a).` : "Usuário desbloqueado.");
+      toast.success(pessoa ? `${pessoa.nome} foi desbloqueado(a).` : t("configuracoes.bloqueados.usuarioDesbloqueado"));
       void queryClient.invalidateQueries({ queryKey: CHAVE });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível desbloquear este usuário.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.bloqueados.naoFoiPossivelDesbloquearEste"))),
   });
 
   const bloqueados = data?.dados ?? [];
@@ -58,7 +59,7 @@ function UsuariosBloqueados() {
         to="/configuracoes/privacidade"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para Privacidade e Segurança
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("configuracoes.bloqueados.voltarParaPrivacidadeE")}
       </Link>
 
       <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">{t("configuracoes.bloqueados.usuariosBloqueados")}</h1>
@@ -70,7 +71,7 @@ function UsuariosBloqueados() {
         <CardContent className="p-0">
           {isLoading ? (
             <div role="status" aria-live="polite" className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando…
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("feed.carregando")}
             </div>
           ) : isError ? (
             <div role="alert" className="space-y-2 p-5 text-sm text-destructive">

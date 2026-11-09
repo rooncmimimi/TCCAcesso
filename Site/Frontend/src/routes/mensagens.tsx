@@ -19,6 +19,7 @@ import {
   ouvirEvento,
   sairDaConversa,
 } from "@/services/socket";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { Conversa, Mensagem } from "@/lib/tiposApi";
 
@@ -26,14 +27,14 @@ export const Route = createFileRoute("/mensagens")({
   validateSearch: z.object({ conversaId: z.string().uuid().optional() }),
   head: () => ({
     meta: [
-      { title: "Mensagens — ACESSO" },
+      { title: textoDaPagina("mensagens.mensagensAcesso") },
       {
         name: "description",
         content:
-          "Converse em tempo real com empresas parceiras sobre vagas e processos seletivos inclusivos.",
+          textoDaPagina("mensagens.converseEmTempoRealComEmpresas"),
       },
-      { property: "og:title", content: "Mensagens — ACESSO" },
-      { property: "og:description", content: "Suas conversas com empresas inclusivas." },
+      { property: "og:title", content: textoDaPagina("mensagens.mensagensAcesso") },
+      { property: "og:description", content: textoDaPagina("mensagens.suasConversasComEmpresas") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -140,7 +141,7 @@ function Mensagens() {
       void queryClient.invalidateQueries({ queryKey: ["mensagens", selecionadaId] });
       void queryClient.invalidateQueries({ queryKey: ["conversas"] });
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível enviar a mensagem.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("mensagens.naoFoiPossivelEnviarAMensagem"))),
   });
 
   function selecionar(conversa: Conversa) {

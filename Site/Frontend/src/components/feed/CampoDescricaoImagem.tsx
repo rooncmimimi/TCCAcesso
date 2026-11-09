@@ -31,7 +31,7 @@ export function CampoDescricaoImagem({
   value,
   onChange,
   obterImagem,
-  rotulo = "Descrição da imagem (opcional)",
+  rotulo,
 }: {
   id: string;
   value: string;
@@ -59,7 +59,7 @@ export function CampoDescricaoImagem({
       // na tela. Nunca fala sozinho se a pessoa desligou esse recurso.
       // Não é um toast: nenhuma duplicação possível aqui.
       if (preferencias.screenReader) {
-        falar(`Sugestão da inteligência artificial: ${descricao}`);
+        falar(t("feed.campoDescricaoImagem.sugestaoDaInteligencia", { var1: descricao }));
       }
     },
   });
@@ -81,7 +81,7 @@ export function CampoDescricaoImagem({
               sugerir.mutate();
             }}
           >
-            <Sparkles className="size-3.5" aria-hidden="true" /> Descrever com IA
+            <Sparkles className="size-3.5" aria-hidden="true" /> {t("feed.campoDescricaoImagem.descreverComIa")}
           </Button>
           <Button
             type="button"
@@ -90,7 +90,7 @@ export function CampoDescricaoImagem({
             className="h-9 gap-1.5 text-xs"
             onClick={() => setModo("manual")}
           >
-            <Pencil className="size-3.5" aria-hidden="true" /> Escrever minha própria descrição
+            <Pencil className="size-3.5" aria-hidden="true" /> {t("feed.campoDescricaoImagem.escreverMinhaPropriaDescricao")}
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
@@ -107,15 +107,15 @@ export function CampoDescricaoImagem({
       <div className="space-y-2">
         <div id={idAnuncio} role="status" aria-live="polite" className="sr-only">
           {sugerir.isPending
-            ? "Gerando sugestão de descrição da imagem. Aguarde."
+            ? t("feed.campoDescricaoImagem.gerandoSugestaoDeDescricaoDa")
             : sugerir.isSuccess
-              ? "Sugestão de descrição gerada. Revise o texto antes de confirmar."
+              ? t("feed.campoDescricaoImagem.sugestaoDeDescricaoGerada")
               : ""}
         </div>
 
         {sugerir.isPending && (
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> Gerando sugestão de descrição…
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> {t("feed.campoDescricaoImagem.gerandoSugestaoDeDescricao")}
           </p>
         )}
 
@@ -128,7 +128,7 @@ export function CampoDescricaoImagem({
             <p className="text-[11px] text-muted-foreground">{extrairMensagemErro(sugerir.error, "")}</p>
             <div className="flex gap-2">
               <Button type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={() => sugerir.mutate()}>
-                <RefreshCw className="size-3.5" aria-hidden="true" /> Tentar novamente
+                <RefreshCw className="size-3.5" aria-hidden="true" /> {t("raiz.tentarNovamente")}
               </Button>
               <Button type="button" size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setModo("manual")}>
                 {t("feed.campoDescricaoImagem.escreverMinhaPropriaDescricao")}
@@ -159,7 +159,7 @@ export function CampoDescricaoImagem({
                 disabled={sugerir.isPending}
                 onClick={() => sugerir.mutate()}
               >
-                <RefreshCw className="size-3.5" aria-hidden="true" /> Gerar novamente
+                <RefreshCw className="size-3.5" aria-hidden="true" /> {t("feed.campoDescricaoImagem.gerarNovamente")}
               </Button>
               <Button
                 type="button"
@@ -171,7 +171,7 @@ export function CampoDescricaoImagem({
                   setModo("manual");
                 }}
               >
-                <X className="size-3.5" aria-hidden="true" /> Escrever minha própria
+                <X className="size-3.5" aria-hidden="true" /> {t("feed.campoDescricaoImagem.escreverMinhaPropria")}
               </Button>
             </div>
             <OrientacaoDeDescricao />
@@ -185,7 +185,7 @@ export function CampoDescricaoImagem({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-semibold">
-        {rotulo}
+        {rotulo ?? t("feed.campoDescricaoImagem.descricaoDaImagem")}
       </Label>
       <Input
         id={id}
@@ -202,7 +202,7 @@ export function CampoDescricaoImagem({
         className="h-auto p-0 text-xs font-semibold"
         onClick={() => setModo("escolha")}
       >
-        <Sparkles className="size-3.5" aria-hidden="true" /> Descrever com IA em vez disso
+        <Sparkles className="size-3.5" aria-hidden="true" /> {t("feed.campoDescricaoImagem.descreverComIaEmVezDisso")}
       </Button>
       <OrientacaoDeDescricao />
     </div>

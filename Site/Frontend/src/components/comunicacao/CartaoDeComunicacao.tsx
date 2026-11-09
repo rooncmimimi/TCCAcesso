@@ -32,15 +32,15 @@ export function CartaoDeComunicacao({ texto, aoMostrar, aoRemover }: Props) {
   const { falar } = useVoz();
 
   async function copiar() {
-    if (await copiarTexto(texto)) toast.success("Frase copiada.");
-    else toast.error("Não foi possível copiar. Selecione o texto e copie com o teclado.");
+    if (await copiarTexto(texto)) toast.success(t("comunicacao.cartaoDeComunicacao.fraseCopiada"));
+    else toast.error(t("comunicacao.cartaoDeComunicacao.naoFoiPossivelCopiarSelecioneO"));
   }
 
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
       <p className="text-base font-semibold leading-snug">{texto}</p>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" className="min-h-11 gap-2" onClick={() => aoMostrar(texto)} aria-label={`Mostrar em tela cheia: ${texto}`}>
+        <Button type="button" className="min-h-11 gap-2" onClick={() => aoMostrar(texto)} aria-label={t("comunicacao.cartaoDeComunicacao.mostrarEmTelaCheia", { var1: texto })}>
           <Maximize2 className="size-4" aria-hidden="true" /> {t("comunicacao.cartaoDeComunicacao.mostrar")}
         </Button>
         <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => falar(texto)} aria-label={`Ouvir: ${texto}`}>
@@ -50,7 +50,7 @@ export function CartaoDeComunicacao({ texto, aoMostrar, aoRemover }: Props) {
           <Copy className="size-4" aria-hidden="true" /> {t("comunicacao.cartaoDeComunicacao.copiar")}
         </Button>
         {aoRemover ? (
-          <Button type="button" variant="ghost" className="min-h-11 gap-2 text-destructive hover:text-destructive" onClick={aoRemover} aria-label={`Remover o cartão: ${texto}`}>
+          <Button type="button" variant="ghost" className="min-h-11 gap-2 text-destructive hover:text-destructive" onClick={aoRemover} aria-label={t("comunicacao.cartaoDeComunicacao.removerOCartao", { var1: texto })}>
             <Trash2 className="size-4" aria-hidden="true" /> {t("comunicacao.cartaoDeComunicacao.remover")}
           </Button>
         ) : null}

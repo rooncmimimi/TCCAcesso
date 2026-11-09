@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 import { Accessibility, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +28,10 @@ import {
   NavegacaoEtapa,
   TituloEtapa,
 } from "@/components/cadastro/comuns";
+import { criarRegrasDeSenha } from "@/lib/regrasDeSenha";
+import type { TFuncao } from "@/contexts/IdiomaContext";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
 import { ehCodigoDePais, PAIS_POR_CODIGO } from "@/dados/paises";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
@@ -38,69 +42,69 @@ import { normalizarNome } from "@/lib/validacoesPessoais";
 import { esquemaNome } from "@/components/cadastro/regrasPessoais";
 import { PORTES_EMPRESA } from "@/utils/formatacao";
 
-/** As mesmas cinco regras de `regrasSenha` no backend (`validators/autenticacaoValidator.js`). */
-const regraSenha = z
-  .string()
-  .min(8, "A senha deve ter entre 8 e 72 caracteres.")
-  .max(72, "A senha deve ter entre 8 e 72 caracteres.")
-  .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula.")
-  .regex(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
-  .regex(/\d/, "A senha deve conter ao menos um número.")
-  .regex(/[^A-Za-z0-9]/, "A senha deve conter ao menos um caractere especial.");
-
 /**
  * Cadastro institucional. Obrigatório é o que o backend exige hoje
  * (`validarCadastroEmpresa`): CNPJ, razão social, nome e e-mail do responsável e senha. O resto
  * compõe o perfil e fica opcional — não inventei exigência que o backend não faz.
+ *
+ * O esquema nasce do idioma atual: as mensagens de erro saem na língua da tela.
  */
-const esquemaEmpresa = z.object({
-  cnpj: z.string().trim().refine((v) => somenteDigitos(v).length === 14, "Digite um CNPJ válido, com 14 números."),
-  razaoSocial: z.string().trim().min(3, "Informe a razão social (3 a 200 caracteres).").max(200),
-  nomeFantasia: z.string().trim().max(200).optional(),
-  setor: z.string().trim().max(120).optional(),
-  porte: z.string().trim().optional(),
+const criarEsquemaEmpresa = (t: TFuncao) =>
+  z.object({
+    cnpj: z.string().trim().refine((v) => somenteDigitos(v).length === 14, t("cadastro.empresa.erroCnpj")),
+    razaoSocial: z.string().trim().min(3, t("cadastro.empresa.erroRazaoSocial")).max(200),
+    nomeFantasia: z.string().trim().max(200).optional(),
+    setor: z.string().trim().max(120).optional(),
+    porte: z.string().trim().optional(),
 
-  nome: esquemaNome({
-    erroNome: "Informe o nome de quem responde pela conta.",
-    erroNomeCaracteres: "Use só letras, espaços, hífen, apóstrofo e ponto. Não use números nem símbolos.",
-  }),
-  email: z.string().trim().min(1, "Informe o e-mail.").email("Digite um endereço de e-mail válido.").max(150),
-  telefone: z
-    .string()
-    .trim()
-    .optional()
-    .refine(
-      (v) => !v || (somenteDigitos(v).length >= 10 && somenteDigitos(v).length <= 11),
-      "Digite um telefone válido, com DDD.",
-    ),
-  senha: regraSenha,
+    nome: esquemaNome({
+      erroNome: t("cadastro.empresa.erroNomeResponsavel"),
+      erroNomeCaracteres: t("validacao.nomeCaracteres"),
+    }),
+    email: z.string().trim().min(1, t("cadastro.empresa.erroEmail")).email(t("cadastro.empresa.erroEmailFormato")).max(150),
+    telefone: z
+      .string()
+      .trim()
+      .optional()
+      .refine(
+        (v) => !v || (somenteDigitos(v).length >= 10 && somenteDigitos(v).length <= 11),
+        t("cadastro.empresa.erroTelefone"),
+      ),
+    senha: criarRegrasDeSenha(t),
 
-  pais: z.string().trim().optional().refine((v) => !v || ehCodigoDePais(v), "Escolha um país da lista."),
-  cep: z
-    .string()
-    .trim()
-    .optional()
-    .refine((v) => !v || somenteDigitos(v).length === 8, "Digite um CEP válido, com 8 números."),
-  estado: z.string().trim().optional().refine((v) => !v || v.length === 2, "Informe a UF com 2 letras."),
-  cidade: z.string().trim().max(100).optional(),
-  endereco: z.string().trim().max(255).optional(),
+    pais: z.string().trim().optional().refine((v) => !v || ehCodigoDePais(v), t("cadastro.empresa.erroPais")),
+    cep: z
+      .string()
+      .trim()
+      .optional()
+      .refine((v) => !v || somenteDigitos(v).length === 8, t("cadastro.empresa.erroCep")),
+    estado: z.string().trim().optional().refine((v) => !v || v.length === 2, t("cadastro.empresa.erroUf")),
+    cidade: z.string().trim().max(100).optional(),
+    endereco: z.string().trim().max(255).optional(),
 
-  descricao: z.string().trim().max(4000).optional(),
-  site: z
-    .string()
-    .trim()
-    .optional()
-    .refine((v) => !v || /^https?:\/\/.+/i.test(v), "Digite uma URL completa, começando com http:// ou https://."),
-  culturaInclusiva: z.string().trim().max(4000).optional(),
+    descricao: z.string().trim().max(4000).optional(),
+    site: z
+      .string()
+      .trim()
+      .optional()
+      .refine((v) => !v || /^https?:\/\/.+/i.test(v), t("cadastro.empresa.erroSite")),
+    culturaInclusiva: z.string().trim().max(4000).optional(),
 
-  termos: z.literal(true, {
-    errorMap: () => ({ message: "É preciso aceitar os Termos de Uso e a Política de Privacidade para criar a conta." }),
-  }),
-});
+    termos: z.literal(true, {
+      errorMap: () => ({ message: t("cadastro.empresa.erroTermos") }),
+    }),
+  });
 
-type FormEmpresa = z.infer<typeof esquemaEmpresa>;
+type FormEmpresa = z.infer<ReturnType<typeof criarEsquemaEmpresa>>;
 
-const PASSOS = ["Empresa", "Responsável", "Endereço", "Apresentação", "Conclusão", "Acessibilidade"] as const;
+const PASSOS = [
+  "cadastro.empresa.passoEmpresa",
+  "cadastro.empresa.passoResponsavel",
+  "cadastro.empresa.passoEndereco",
+  "cadastro.empresa.passoApresentacao",
+  "cadastro.empresa.passoConclusao",
+  "cadastro.empresa.passoAcessibilidade",
+] as const satisfies readonly ChaveBase[];
 
 /** Campos validados antes de liberar cada etapa. O índice é o da etapa. */
 const CAMPOS: FieldPath<FormEmpresa>[][] = [
@@ -123,13 +127,13 @@ const EMPRESA = {
 export const Route = createFileRoute("/cadastro/empresa")({
   head: () => ({
     meta: [
-      { title: "Criar conta de empresa — ACESSO" },
+      { title: textoDaPagina("cadastro.empresa.criarContaDeEmpresaAcesso") },
       {
         name: "description",
-        content: "Crie o perfil institucional da sua empresa, divulgue vagas inclusivas e acompanhe candidaturas.",
+        content: textoDaPagina("cadastro.empresa.crieOPerfilInstitucionalDaSua"),
       },
-      { property: "og:title", content: "Criar conta de empresa — ACESSO" },
-      { property: "og:description", content: "Cadastro institucional na rede profissional inclusiva." },
+      { property: "og:title", content: textoDaPagina("cadastro.empresa.criarContaDeEmpresaAcesso") },
+      { property: "og:description", content: textoDaPagina("cadastro.empresa.cadastroInstitucionalNaRede") },
     ],
   }),
   component: CadastroEmpresa,
@@ -161,14 +165,14 @@ function CadastroEmpresa() {
 
             <Button asChild className="mt-6 min-h-12 w-full text-base">
               <Link to="/cadastro/candidato" search={{ depois: "empresa" }}>
-                Criar minha conta de candidato <ArrowRight aria-hidden="true" />
+                {t("cadastro.empresa.criarMinhaContaDeCandidato")} <ArrowRight aria-hidden="true" />
               </Link>
             </Button>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              Já tem conta de candidato?{" "}
+              {t("cadastro.empresa.jaTemContaDeCandidato")}{" "}
               <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
-                Entrar
+                {t("cabecalho.entrar")}
               </Link>
             </p>
           </CardContent>
@@ -203,9 +207,9 @@ function CadastroEmpresa() {
 
       {!emailPendente && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Já tem uma conta?{" "}
+          {t("cadastro.empresa.jaTemUmaConta")}{" "}
           <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
-            Entrar
+            {t("cabecalho.entrar")}
           </Link>
         </p>
       )}
@@ -237,7 +241,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
   }
 
   const form = useForm<FormEmpresa>({
-    resolver: zodResolver(esquemaEmpresa),
+    resolver: zodResolver(useMemo(() => criarEsquemaEmpresa(t), [t])),
     mode: "onTouched",
     defaultValues: {
       cnpj: "",
@@ -300,10 +304,10 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
         return;
       }
 
-      toast.success("Conta criada com sucesso!");
+      toast.success(t("cadastro.empresa.contaCriadaComSucesso"));
       irPara(EMPRESA.ACESSIBILIDADE);
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível criar a conta agora."));
+      toast.error(extrairMensagemErro(erro, t("cadastro.empresa.naoFoiPossivelCriarAContaAgora")));
     } finally {
       setEnviando(false);
     }
@@ -324,14 +328,14 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
   };
 
   if (passo === EMPRESA.ACESSIBILIDADE) {
-    return <EtapaAcessibilidade passos={PASSOS} indice={EMPRESA.ACESSIBILIDADE} />;
+    return <EtapaAcessibilidade passos={PASSOS.map((p) => t(p))} indice={EMPRESA.ACESSIBILIDADE} />;
   }
 
   const senha = watch("senha") ?? "";
 
   return (
     <form onSubmit={aoEnviar} noValidate>
-      <PassosCadastro passos={PASSOS} atual={passo} />
+      <PassosCadastro passos={PASSOS.map((p) => t(p))} atual={passo} />
 
       {passo === EMPRESA.IDENTIFICACAO && (
         <>
@@ -341,7 +345,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             focar={navegou.current}
           />
           {/*
-            Não há "Continuar com Google" aqui: esta tela só é alcançável por quem já entrou com a
+            Não há "Continuar com o Google" aqui: esta tela só é alcançável por quem já entrou com a
             conta de candidato, e o botão levaria o navegador para o Google no meio do formulário —
             ao voltar, a sessão já existe, o retorno manda para o feed e tudo que foi digitado se
             perde. A conta da empresa é uma segunda conta, com senha própria, criada a partir da
@@ -452,7 +456,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="email-empresa"
-              rotulo="E-mail profissional"
+              rotulo={t("cadastro.empresa.eMailProfissional")}
               ajuda={t("cadastro.empresa.ePorEleQueAEmpresaEntraNa")}
               erro={erros.email?.message}
               obrigatorio
@@ -526,7 +530,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="cep" rotulo="CEP (opcional)" erro={erros.cep?.message}>
+            <Campo id="cep" rotulo={t("cadastro.empresa.cepOpcional")} erro={erros.cep?.message}>
               <Input
                 id="cep"
                 inputMode="numeric"
@@ -689,8 +693,8 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
       titulo: "vaga.empresa",
       itens: [
         ["CNPJ", valores.cnpj],
-        ["Razão social", valores.razaoSocial],
-        ["Nome fantasia", valores.nomeFantasia],
+        [t("admin.conteudoDenunciado.razaoSocial"), valores.razaoSocial],
+        [t("perfil.editarEmpresaDialog.nomeFantasia"), valores.nomeFantasia],
         ["Setor", valores.setor],
         ["Porte", PORTES_EMPRESA.find((p) => p.valor === valores.porte)?.rotulo],
       ],
@@ -708,19 +712,19 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
       passo: EMPRESA.ENDERECO,
       titulo: "cadastro.empresa.endereco",
       itens: [
-        ["País", valores.pais ? PAIS_POR_CODIGO.get(valores.pais) : ""],
+        [t("cadastro.empresa.pais"), valores.pais ? PAIS_POR_CODIGO.get(valores.pais) : ""],
         ["CEP", valores.cep],
         ["Cidade", valores.cidade],
         ["Estado", valores.estado],
-        ["Endereço", valores.endereco],
+        [t("perfil.editarEmpresaDialog.endereco"), valores.endereco],
       ],
     },
     {
       passo: EMPRESA.APRESENTACAO,
       titulo: "cadastro.empresa.apresentacao",
       itens: [
-        ["Descrição", valores.descricao],
-        ["Cultura inclusiva", valores.culturaInclusiva],
+        [t("vagaDetalhe.descricao"), valores.descricao],
+        [t("cadastro.empresa.culturaInclusiva"), valores.culturaInclusiva],
         ["Site", valores.site],
       ],
     },
@@ -743,7 +747,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
                 className="min-h-9 text-sm"
                 onClick={() => aoEditar(grupo.passo)}
               >
-                Editar
+                {t("post.editar")}
               </Button>
             </div>
 

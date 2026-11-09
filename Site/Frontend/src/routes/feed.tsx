@@ -14,17 +14,18 @@ import { urlArquivo } from "@/utils/arquivos";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/feed")({
   head: () => ({
     meta: [
-      { title: "Feed — ACESSO" },
+      { title: textoDaPagina("feed.feedAcesso") },
       {
         name: "description",
-        content: "Acompanhe vagas inclusivas, histórias da comunidade e novidades das empresas parceiras.",
+        content: textoDaPagina("feed.acompanheVagasInclusivas"),
       },
-      { property: "og:title", content: "Feed — ACESSO" },
-      { property: "og:description", content: "Vagas, comunidade e inclusão em um só lugar." },
+      { property: "og:title", content: textoDaPagina("feed.feedAcesso") },
+      { property: "og:description", content: textoDaPagina("feed.vagasComunidadeEInclusaoEmUmSo") },
     ],
   }),
   component: () => (
@@ -35,8 +36,8 @@ export const Route = createFileRoute("/feed")({
 });
 
 function Feed() {
-  const { usuario } = useSessao();
   const { t } = useIdioma();
+  const { usuario } = useSessao();
   useFeedTempoReal();
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeedInfinito({
     limit: 10,

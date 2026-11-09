@@ -3,14 +3,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { EmpresasPendentesTabela } from "@/components/admin/EmpresasPendentesTabela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/empresas")({
   head: () => ({
     meta: [
-      { title: "Empresas — Administração ACESSO" },
-      { name: "description", content: "Aprove ou reprove cadastros de empresas na plataforma ACESSO." },
-      { property: "og:title", content: "Empresas — Administração ACESSO" },
-      { property: "og:description", content: "Moderação de cadastros de empresas." },
+      { title: textoDaPagina("admin.empresas.empresasAdministracaoAcesso") },
+      { name: "description", content: textoDaPagina("admin.empresas.aproveOuReproveCadastrosDe") },
+      { property: "og:title", content: textoDaPagina("admin.empresas.empresasAdministracaoAcesso") },
+      { property: "og:description", content: textoDaPagina("admin.empresas.moderacaoDeCadastrosDeEmpresas") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

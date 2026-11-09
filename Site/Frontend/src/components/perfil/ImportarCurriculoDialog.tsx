@@ -104,7 +104,7 @@ export function ImportarCurriculoDialog({
       );
       setHabilidades(dados.habilidades.map((nome) => ({ incluir: true, nome })));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível extrair o currículo.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.importarCurriculoDialog.naoFoiPossivelExtrairO"))),
   });
 
   const confirmar = useMutation({
@@ -122,29 +122,23 @@ export function ImportarCurriculoDialog({
       if (salvos === 0) {
         toast.warning(
           repetidos > 0
-            ? "Tudo o que você marcou já estava no seu perfil, então nada foi adicionado de novo."
-            : "Nada foi salvo — marque ao menos um item e preencha os campos obrigatórios.",
+            ? t("perfil.importarCurriculoDialog.tudoOQueVoceMarcouJaEstavaNo")
+            : t("perfil.importarCurriculoDialog.nadaFoiSalvoMarqueAoMenosUm"),
         );
         return;
       }
 
-      const partes = [`${salvos} ${salvos === 1 ? "item adicionado" : "itens adicionados"} ao perfil.`];
-      if (repetidos > 0) {
-        partes.push(
-          `${repetidos} já ${repetidos === 1 ? "estava" : "estavam"} no perfil e ${repetidos === 1 ? "não foi repetido" : "não foram repetidos"}.`,
-        );
-      }
-      if (ignorados > 0) {
-        partes.push(
-          `${ignorados} ${ignorados === 1 ? "item foi ignorado" : "itens foram ignorados"} por falta de campo obrigatório (cargo/empresa/data ou instituição/curso).`,
-        );
-      }
+      // Plural pelo dicionario (`_um`/`_outros`): a frase montada com ternario em portugues saia meio
+      // traduzida, e o numero muda a frase de maneira diferente em cada idioma.
+      const partes = [t("perfil.importarCurriculoDialog.itensAdicionados", { n: salvos })];
+      if (repetidos > 0) partes.push(t("perfil.importarCurriculoDialog.jaEstavamNoPerfil", { n: repetidos }));
+      if (ignorados > 0) partes.push(t("perfil.importarCurriculoDialog.itensIgnorados", { n: ignorados }));
 
       toast.success(partes.join(" "));
       setAberto(false);
       resetar();
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar os itens confirmados.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("perfil.importarCurriculoDialog.naoFoiPossivelSalvarOsItens"))),
   });
 
   function aoSelecionarArquivo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -155,7 +149,7 @@ export function ImportarCurriculoDialog({
     // O mesmo conjunto de regras do envio de currículo, restrito ao que a importação sabe ler (PDF e DOCX).
     const verificacao = verificarArquivo(arquivo, ["documento"], {
       tipos: TIPOS_IMPORTAVEIS,
-      formatos: "um arquivo PDF ou DOCX",
+      formatos: t("perfil.importarCurriculoDialog.umArquivoPdfOuDocx"),
     });
     if (!verificacao.ok) {
       toast.error(verificacao.mensagem);
@@ -437,7 +431,7 @@ export function ImportarCurriculoDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setAberto(false)}>
-            Cancelar
+            {t("post.cancelar")}
           </Button>
           {rascunho && (
             <Button
@@ -447,7 +441,7 @@ export function ImportarCurriculoDialog({
               onClick={() => confirmar.mutate()}
             >
               {confirmar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              Confirmar e salvar itens marcados
+              {t("perfil.importarCurriculoDialog.confirmarESalvarItensMarcados")}
             </Button>
           )}
         </DialogFooter>

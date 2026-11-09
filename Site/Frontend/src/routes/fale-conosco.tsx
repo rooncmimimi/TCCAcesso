@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -22,6 +22,9 @@ import {
   LIMITES_DE_CONTATO,
   type AssuntoDeContato,
 } from "@/dados/assuntosDeContato";
+import { Frase } from "@/i18n/Frase";
+import type { TFuncao } from "@/contexts/IdiomaContext";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
 import { useSessao } from "@/hooks/useSessao";
 import { cn } from "@/lib/utils";
@@ -31,8 +34,8 @@ import contatoService from "@/services/contato.service";
 export const Route = createFileRoute("/fale-conosco")({
   head: () => ({
     meta: [
-      { title: "Fale conosco — ACESSO" },
-      { name: "description", content: "Entre em contato com a equipe do ACESSO: dúvidas, problemas, sugestões e pedidos sobre seus dados." },
+      { title: textoDaPagina("fale-conosco.faleConoscoAcesso") },
+      { name: "description", content: textoDaPagina("fale-conosco.entreEmContatoComAEquipeDo") },
     ],
   }),
   component: FaleConosco,
@@ -40,28 +43,30 @@ export const Route = createFileRoute("/fale-conosco")({
 
 const CHAVES_DE_ASSUNTO = Object.keys(ASSUNTOS_DE_CONTATO) as [AssuntoDeContato, ...AssuntoDeContato[]];
 
-const esquema = z.object({
-  nome: esquemaNome({
-    erroNome: "Informe o seu nome (ao menos 3 caracteres).",
-    erroNomeCaracteres: "Use só letras, espaços, hífen, apóstrofo e ponto. Não use números nem símbolos.",
-  }),
-  email: z
-    .string()
-    .trim()
-    .min(1, "Informe o e-mail em que quer receber a resposta.")
-    .email("Esse e-mail não parece válido. Confira se digitou tudo.")
-    .max(LIMITES_DE_CONTATO.emailMaximo, `O e-mail deve ter no máximo ${LIMITES_DE_CONTATO.emailMaximo} caracteres.`),
-  assunto: z.enum(CHAVES_DE_ASSUNTO, { errorMap: () => ({ message: "Escolha um assunto." }) }),
-  mensagem: z
-    .string()
-    .trim()
-    .min(LIMITES_DE_CONTATO.mensagemMinimo, `Escreva ao menos ${LIMITES_DE_CONTATO.mensagemMinimo} caracteres.`)
-    .max(LIMITES_DE_CONTATO.mensagemMaximo, `A mensagem pode ter no máximo ${LIMITES_DE_CONTATO.mensagemMaximo} caracteres.`),
-  // Campo-isca (ver abaixo): fica vazio para qualquer pessoa.
-  website: z.string(),
-});
+/** O esquema nasce do idioma atual: as mensagens de erro saem na língua da tela. */
+const criarEsquema = (t: TFuncao) =>
+  z.object({
+    nome: esquemaNome({
+      erroNome: t("faleConosco.erroNome"),
+      erroNomeCaracteres: t("validacao.nomeCaracteres"),
+    }),
+    email: z
+      .string()
+      .trim()
+      .min(1, t("faleConosco.erroEmail"))
+      .email(t("faleConosco.erroEmailFormato"))
+      .max(LIMITES_DE_CONTATO.emailMaximo, t("faleConosco.erroEmailTamanho", { maximo: LIMITES_DE_CONTATO.emailMaximo })),
+    assunto: z.enum(CHAVES_DE_ASSUNTO, { errorMap: () => ({ message: t("faleConosco.erroAssunto") }) }),
+    mensagem: z
+      .string()
+      .trim()
+      .min(LIMITES_DE_CONTATO.mensagemMinimo, t("faleConosco.erroMensagemMinimo", { minimo: LIMITES_DE_CONTATO.mensagemMinimo }))
+      .max(LIMITES_DE_CONTATO.mensagemMaximo, t("faleConosco.erroMensagemMaximo", { maximo: LIMITES_DE_CONTATO.mensagemMaximo })),
+    // Campo-isca (ver abaixo): fica vazio para qualquer pessoa.
+    website: z.string(),
+  });
 
-type Formulario = z.infer<typeof esquema>;
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 /** Código HTTP da resposta de erro, quando houver (para distinguir "indisponível" de "limite"). */
 function statusDoErro(erro: unknown): number | undefined {
@@ -83,7 +88,7 @@ function FaleConosco() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<Formulario>({
-    resolver: zodResolver(esquema),
+    resolver: zodResolver(useMemo(() => criarEsquema(t), [t])),
     mode: "onTouched",
     defaultValues: { nome: "", email: "", assunto: undefined, mensagem: "", website: "" },
   });
@@ -108,7 +113,7 @@ function FaleConosco() {
     } catch (erro) {
       // 503: o envio de e-mails não está configurado ou o provedor falhou; a pessoa precisa saber disso e ter outro caminho.
       if (statusDoErro(erro) === 503) setIndisponivel(true);
-      toast.error(extrairMensagemErro(erro, "Não foi possível enviar a sua mensagem agora. Tente de novo em instantes."));
+      toast.error(extrairMensagemErro(erro, t("fale-conosco.naoFoiPossivelEnviarASua")));
     }
   });
 
@@ -133,10 +138,18 @@ function FaleConosco() {
                 {t("fale-conosco.mensagemEnviada")}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Recebemos a sua mensagem e vamos responder para <strong className="text-foreground">{enviadoPara}</strong>.
+                <Frase
+                  chave="fale-conosco.recebemosASuaMensagem"
+                  vars={{ email: enviadoPara }}
+                  partes={[(texto) => <strong className="text-foreground">{texto}</strong>]}
+                />
               </p>
               <p className="mt-4 text-sm">
-                Protocolo: <strong className="font-mono">{protocolo}</strong>
+                <Frase
+                  chave="fale-conosco.protocolo"
+                  vars={{ protocolo }}
+                  partes={[(texto) => <strong className="font-mono">{texto}</strong>]}
+                />
               </p>
               <p className="mt-1 text-xs text-muted-foreground">{t("fale-conosco.guardeEsteNumeroParaCitarA")}</p>
               <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
@@ -161,7 +174,7 @@ function FaleConosco() {
               <div>
                 <h1 className="text-2xl font-extrabold">{t("rodape.faleConosco")}</h1>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  Dúvidas, problemas, sugestões ou pedidos sobre os seus dados: escreva para a equipe do ACESSO.
+                  {t("fale-conosco.duvidasProblemasSugestoes")}
                 </p>
               </div>
 
@@ -216,7 +229,7 @@ function FaleConosco() {
                   </option>
                   {CHAVES_DE_ASSUNTO.map((chave) => (
                     <option key={chave} value={chave}>
-                      {ASSUNTOS_DE_CONTATO[chave]}
+                      {t(ASSUNTOS_DE_CONTATO[chave])}
                     </option>
                   ))}
                 </select>
@@ -225,7 +238,7 @@ function FaleConosco() {
               <Campo
                 id="mensagem"
                 rotulo={t("fale-conosco.mensagem")}
-                ajuda={`${tamanho} de ${LIMITES_DE_CONTATO.mensagemMaximo} caracteres. Não escreva senhas nem números de documentos.`}
+                ajuda={t("fale-conosco.deCaracteresNaoEscrevaSenhas", { var1: tamanho, var2: LIMITES_DE_CONTATO.mensagemMaximo })}
                 erro={errors.mensagem?.message}
                 obrigatorio
                 dicaObrigatorio={t("fale-conosco.campoObrigatorio")}
@@ -255,7 +268,7 @@ function FaleConosco() {
                 <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
                   <p className="font-semibold">{t("fale-conosco.oEnvioPorAquiNaoEstaDisponivel")}</p>
                   <p className="mt-1 text-muted-foreground">
-                    Você pode escrever direto para{" "}
+                    {t("fale-conosco.vocePodeEscreverDiretoPara")}{" "}
                     <a href={`mailto:${EMAIL_DE_CONTATO}`} className="font-semibold text-primary underline underline-offset-2">
                       {EMAIL_DE_CONTATO}
                     </a>
@@ -265,7 +278,7 @@ function FaleConosco() {
               )}
 
               <p className="text-xs text-muted-foreground">
-                Ao enviar, você concorda que a equipe leia a mensagem para responder. Veja como tratamos os dados no{" "}
+                {t("fale-conosco.aoEnviarVoceConcordaQueAEquipe")}{" "}
                 <Link to="/privacidade" className="font-semibold text-primary underline underline-offset-2">
                   {t("rodape.privacidade")}
                 </Link>
@@ -275,11 +288,11 @@ function FaleConosco() {
               <Button type="submit" className="min-h-12 w-full text-base" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("comentario.enviando")}
                   </>
                 ) : (
                   <>
-                    <Mail aria-hidden="true" /> Enviar mensagem
+                    <Mail aria-hidden="true" /> {t("mensagens.janelaConversa.enviarMensagem")}
                   </>
                 )}
               </Button>
@@ -290,7 +303,7 @@ function FaleConosco() {
 
       {!protocolo && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Prefere e-mail? Escreva para{" "}
+          {t("fale-conosco.prefereEMailEscrevaPara")}{" "}
           <a href={`mailto:${EMAIL_DE_CONTATO}`} className="font-semibold text-primary underline underline-offset-2">
             {EMAIL_DE_CONTATO}
           </a>

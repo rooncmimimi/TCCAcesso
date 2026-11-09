@@ -57,18 +57,18 @@ export function PlayerDeVideoAcessivel({ midia, tituloDaVaga }: { midia: MidiaDa
             controls
             preload="metadata"
             playsInline
-            aria-label={`Vídeo em Libras: ${tituloDaVaga}`}
+            aria-label={t("vagas.playerDeVideoAcessivel.videoEmLibras", { var1: tituloDaVaga })}
             className="aspect-video w-full max-w-3xl rounded-lg bg-black"
             onError={() => setErro(true)}
           >
             <source src={midia.video.url} type={midia.video.tipoMime} />
             {urlDaLegenda ? <track kind="captions" src={urlDaLegenda} srcLang="pt-BR" label={t("vagas.playerDeVideoAcessivel.portugues")} default /> : null}
-            Seu navegador não reproduz este vídeo. Leia a transcrição abaixo.
+            {t("vagas.playerDeVideoAcessivel.seuNavegadorNaoReproduzEste")}
           </video>
 
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" onClick={() => void ampliar()}>
-              <Maximize2 className="size-4" aria-hidden="true" /> Ampliar o vídeo
+              <Maximize2 className="size-4" aria-hidden="true" /> {t("vagas.playerDeVideoAcessivel.ampliarOVideo")}
             </Button>
             {!urlDaLegenda ? <p className="text-xs text-muted-foreground">{t("vagas.playerDeVideoAcessivel.esteVideoNaoTemLegendaA")}</p> : null}
           </div>

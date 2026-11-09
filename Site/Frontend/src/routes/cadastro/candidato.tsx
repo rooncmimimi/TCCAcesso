@@ -40,6 +40,7 @@ import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 import { lerEtapaSalva, salvarEtapa } from "@/lib/etapaCadastro";
 import { normalizarNome } from "@/lib/validacoesPessoais";
 import { limitesDataNascimento } from "@/components/cadastro/regrasPessoais";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 type FormCandidato = z.infer<ReturnType<typeof criarEsquemaCandidato>>;
 /** Campos validados antes de liberar cada etapa do candidato. O índice é o da etapa. */
@@ -68,13 +69,13 @@ export const Route = createFileRoute("/cadastro/candidato")({
   }),
   head: () => ({
     meta: [
-      { title: "Criar conta de candidato — ACESSO" },
+      { title: textoDaPagina("cadastro.candidato.criarContaDeCandidatoAcesso") },
       {
         name: "description",
-        content: "Monte seu perfil profissional no ACESSO e configure a acessibilidade do seu jeito.",
+        content: textoDaPagina("cadastro.candidato.monteSeuPerfilProfissionalNo"),
       },
-      { property: "og:title", content: "Criar conta de candidato — ACESSO" },
-      { property: "og:description", content: "Cadastro gratuito na rede profissional inclusiva." },
+      { property: "og:title", content: textoDaPagina("cadastro.candidato.criarContaDeCandidatoAcesso") },
+      { property: "og:description", content: textoDaPagina("cadastro.candidato.cadastroGratuitoNaRede") },
     ],
   }),
   component: CadastroCandidato,
@@ -142,7 +143,7 @@ function CadastroCandidato() {
       {/* Quebra em duas linhas quando logo + idioma + acessibilidade não cabem (celular estreito),
           em vez de espremer e cortar o último botão. */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
-        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t.voltarAoInicio} className="inline-flex">
           <Logo />
         </Link>
         <div className="flex flex-1 items-center justify-end gap-2">
@@ -164,7 +165,7 @@ function CadastroCandidato() {
             </p>
           ) : faltamDadosPessoais ? (
             <p role="status" className="py-6 text-sm text-muted-foreground">
-              Abrindo seus dados…
+              {t.abrindoSeusDados}
             </p>
           ) : (
             <WizardCandidato

@@ -41,11 +41,11 @@ export function CandidaturasRecentes() {
   const cancelar = useMutation({
     mutationFn: (id: string) => candidaturasService.cancelar(id),
     onSuccess: () => {
-      toast.success("Candidatura cancelada.");
+      toast.success(t("dashboard.candidaturasRecentes.candidaturaCancelada"));
       queryClient.invalidateQueries({ queryKey: ["candidaturas", "minhas"] });
       queryClient.invalidateQueries({ queryKey: ["metricas-candidato"] });
     },
-    onError: () => toast.error("Não foi possível cancelar a candidatura."),
+    onError: () => toast.error(t("dashboard.candidaturasRecentes.naoFoiPossivelCancelarA")),
   });
 
   return (
@@ -57,7 +57,7 @@ export function CandidaturasRecentes() {
         <RascunhosDeCandidatura />
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Carregando candidaturas…
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("dashboard.candidaturasDaVaga.carregandoCandidaturas")}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
@@ -68,7 +68,7 @@ export function CandidaturasRecentes() {
           </div>
         ) : !data || data.dados.length === 0 ? (
           <p className="py-6 text-sm text-muted-foreground">
-            Você ainda não se candidatou a nenhuma vaga.{" "}
+            {t("dashboard.candidaturasRecentes.voceAindaNaoSeCandidatouA")}{" "}
             <Link to="/vagas" className="font-medium text-primary underline">
               {t("dashboard.candidaturasRecentes.explorarVagas")}
             </Link>
@@ -93,9 +93,9 @@ export function CandidaturasRecentes() {
                             variant="ghost"
                             size="sm"
                             className="min-h-11 gap-1 text-destructive hover:text-destructive"
-                            aria-label={`Cancelar candidatura à vaga ${candidatura.vaga?.titulo ?? ""}`}
+                            aria-label={t("dashboard.candidaturasRecentes.cancelarCandidaturaAVaga", { var1: candidatura.vaga?.titulo ?? "" })}
                           >
-                            <XCircle className="size-4" aria-hidden="true" /> Cancelar
+                            <XCircle className="size-4" aria-hidden="true" /> {t("post.cancelar")}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

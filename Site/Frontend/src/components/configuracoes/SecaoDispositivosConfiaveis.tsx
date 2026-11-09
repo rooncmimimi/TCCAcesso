@@ -46,20 +46,20 @@ export function SecaoDispositivosConfiaveis() {
     mutationFn: (dispositivo: DispositivoConfiavel) => segurancaService.removerDispositivo(dispositivo.id).then(() => dispositivo),
     onSuccess: (dispositivo) => {
       if (dispositivo.atual) esquecerDispositivoConfiavel();
-      toast.success("A confiança neste dispositivo foi removida.");
+      toast.success(t("configuracoes.secaoDispositivosConfiaveis.aConfiancaNesteDispositivoFoi"));
       void atualizar();
     },
-    onError: (erro) => toast.error(mensagemDeErroSeguranca(erro, "Não foi possível remover o dispositivo.")),
+    onError: (erro) => toast.error(mensagemDeErroSeguranca(erro, t("configuracoes.secaoDispositivosConfiaveis.naoFoiPossivelRemoverO"))),
   });
 
   const removerTodos = useMutation({
     mutationFn: () => segurancaService.removerTodosDispositivos(),
     onSuccess: () => {
       esquecerDispositivoConfiavel();
-      toast.success("A confiança em todos os dispositivos foi removida.");
+      toast.success(t("configuracoes.secaoDispositivosConfiaveis.aConfiancaEmTodosOs"));
       void atualizar();
     },
-    onError: (erro) => toast.error(mensagemDeErroSeguranca(erro, "Não foi possível remover os dispositivos.")),
+    onError: (erro) => toast.error(mensagemDeErroSeguranca(erro, t("configuracoes.secaoDispositivosConfiaveis.naoFoiPossivelRemoverOs"))),
   });
 
   if (!estado?.habilitado) return null;
@@ -71,19 +71,19 @@ export function SecaoDispositivosConfiaveis() {
       <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
         <div className="space-y-1.5">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <MailCheck className="size-5" aria-hidden="true" /> Dispositivos de confiança
+            <MailCheck className="size-5" aria-hidden="true" /> {t("configuracoes.secaoDispositivosConfiaveis.dispositivosDeConfianca")}
           </CardTitle>
           <CardDescription>
             {estado.ativo
-              ? "Nestes aparelhos não pedimos o código por e-mail ao entrar. Em qualquer outro, a senha sozinha não basta."
-              : "A verificação por e-mail está temporariamente inativa neste servidor."}
+              ? t("configuracoes.secaoDispositivosConfiaveis.nestesAparelhosNaoPedimosO")
+              : t("configuracoes.secaoDispositivosConfiaveis.aVerificacaoPorEMailEsta")}
           </CardDescription>
         </div>
         {lista.length > 1 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive" disabled={removerTodos.isPending}>
-                <Trash2 className="size-4" aria-hidden="true" /> Remover todos
+                <Trash2 className="size-4" aria-hidden="true" /> {t("configuracoes.secaoDispositivosConfiaveis.removerTodos")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -104,7 +104,7 @@ export function SecaoDispositivosConfiaveis() {
       <CardContent>
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando dispositivos…
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("configuracoes.secaoDispositivosConfiaveis.carregandoDispositivos")}
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
@@ -131,11 +131,12 @@ export function SecaoDispositivosConfiaveis() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Confiável desde {dataHoraCurta(dispositivo.criadoEm)} · último uso{" "}
+                    {t("configuracoes.secaoDispositivosConfiaveis.confiavelDesdeUltimoUso", { data: dataHoraCurta(dispositivo.criadoEm) })}{" "}
                     <time dateTime={dispositivo.ultimoUsoEm} title={dataHoraCurta(dispositivo.ultimoUsoEm)}>
                       {tempoRelativo(dispositivo.ultimoUsoEm)}
                     </time>
-                    {" · vale até "}
+                    {" · "}
+                    {t("configuracoes.secaoDispositivosConfiaveis.valeAte")}{" "}
                     {dataHoraCurta(dispositivo.expiraEm)}
                     {dispositivo.ip ? ` · IP ${dispositivo.ip}` : ""}
                   </p>
@@ -146,9 +147,9 @@ export function SecaoDispositivosConfiaveis() {
                   className="text-destructive hover:text-destructive"
                   disabled={remover.isPending}
                   onClick={() => remover.mutate(dispositivo)}
-                  aria-label={`Remover a confiança em ${dispositivo.rotulo}, confiável desde ${dataHoraCurta(dispositivo.criadoEm)}`}
+                  aria-label={t("configuracoes.secaoDispositivosConfiaveis.removerAConfiancaEmConfiavel", { var1: dispositivo.rotulo, var2: dataHoraCurta(dispositivo.criadoEm) })}
                 >
-                  Remover
+                  {t("acessibilidade.paineisDeAjuda.remover")}
                 </Button>
               </li>
             ))}

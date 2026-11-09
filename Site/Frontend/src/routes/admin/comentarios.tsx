@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { ComentariosTabela } from "@/components/admin/ComentariosTabela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/comentarios")({
   head: () => ({
     meta: [
-      { title: "Comentários — Administração ACESSO" },
-      { name: "description", content: "Modere comentários publicados na plataforma ACESSO." },
+      { title: textoDaPagina("admin.comentarios.comentariosAdministracaoAcesso") },
+      { name: "description", content: textoDaPagina("admin.comentarios.modereComentariosPublicadosNa") },
     ],
   }),
   component: AdminComentarios,

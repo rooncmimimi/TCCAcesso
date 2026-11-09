@@ -1,4 +1,5 @@
 import { useIdioma } from "@/hooks/useIdioma";
+import { Frase } from "@/i18n/Frase";
 /**
  * Orientação contextual para descrever uma imagem (texto alternativo). Fixa e escrita à mão: não
  * analisa a imagem, só ensina a pessoa a descrevê-la. Fica fechada por padrão para não pesar na tela.
@@ -19,9 +20,15 @@ export function OrientacaoDeDescricao() {
           <li>{t("feed.orientacaoDeDescricao.conteOQueAImagemAcrescentaASua")}</li>
         </ul>
         <p>
-          <span className="font-semibold">{t("feed.orientacaoDeDescricao.imagemInformativa")}</span> mostra algo que a publicação precisa. Descreva sempre.
+          <Frase
+            chave="feed.orientacaoDeDescricao.imagemInformativaExplicacao"
+            partes={[(texto) => <span className="font-semibold">{texto}</span>]}
+          />
           <br />
-          <span className="font-semibold">{t("feed.orientacaoDeDescricao.imagemDecorativa")}</span> só enfeita e não traz informação nova. Marque “decorativa” e ela será ignorada por leitores de tela.
+          <Frase
+            chave="feed.orientacaoDeDescricao.imagemDecorativaExplicacao"
+            partes={[(texto) => <span className="font-semibold">{texto}</span>]}
+          />
         </p>
         <p className="italic">{t("feed.orientacaoDeDescricao.exemploEquipeDeCincoPessoas")}</p>
       </div>

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { esquecerDispositivoConfiavel } from "@/services/api";
 import segurancaService, { codigoDoErroSeguranca, mensagemDeErroSeguranca } from "@/services/seguranca.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 /**
  * "Acho que invadiram minha conta", para quem NÃO está logado (ou já perdeu o acesso).
@@ -28,8 +29,8 @@ export const Route = createFileRoute("/conta-comprometida")({
   validateSearch: z.object({ token: z.coerce.string().optional() }),
   head: () => ({
     meta: [
-      { title: "Proteger minha conta — ACESSO" },
-      { name: "description", content: "Encerre todas as sessões da sua conta ACESSO se você acha que ela foi invadida." },
+      { title: textoDaPagina("conta-comprometida.protegerMinhaContaAcesso") },
+      { name: "description", content: textoDaPagina("conta-comprometida.encerreTodasAsSessoesDaSua") },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -84,7 +85,7 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
     if (enviandoRef.current) return;
 
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setErro("Informe um e-mail válido.");
+      setErro(t("login.erroEmailFormato"));
       return;
     }
 
@@ -95,7 +96,7 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
     try {
       setMensagem(await segurancaService.solicitarProtecao(email.trim()));
     } catch (falha) {
-      setErro(mensagemDeErroSeguranca(falha, "Não foi possível enviar agora. Tente novamente em instantes."));
+      setErro(mensagemDeErroSeguranca(falha, t("conta-comprometida.naoFoiPossivelEnviarAgoraTente")));
     } finally {
       enviandoRef.current = false;
       setEnviando(false);
@@ -132,7 +133,7 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
             {t("login.contaComprometida")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Informe o e-mail da conta. Enviaremos um link para protegê-la: ele encerra todas as sessões abertas e deixa você criar uma nova senha.
+            {t("conta-comprometida.informeOEMailDaConta")}
           </p>
         </div>
       </div>
@@ -157,16 +158,16 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
       <Button type="submit" className="min-h-12 w-full text-base" disabled={enviando}>
         {enviando ? (
           <>
-            <Loader2 className="animate-spin" aria-hidden="true" /> Enviando…
+            <Loader2 className="animate-spin" aria-hidden="true" /> {t("comentario.enviando")}
           </>
         ) : (
-          "Enviar link de proteção"
+          t("conta-comprometida.enviarLinkDeProtecao")
         )}
       </Button>
 
       <Button asChild variant="ghost" className="min-h-11 justify-start px-0">
         <Link to="/entrar">
-          <ArrowLeft aria-hidden="true" /> Voltar para o login
+          <ArrowLeft aria-hidden="true" /> {t("cadastro.google.voltarParaOLogin")}
         </Link>
       </Button>
     </form>
@@ -195,7 +196,7 @@ function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefOb
       if (codigoDoErroSeguranca(falha) === "LINK_DE_SEGURANCA_INVALIDO") {
         setLinkInvalido(true);
       } else {
-        setErro(mensagemDeErroSeguranca(falha, "Não foi possível proteger a conta agora. Tente novamente."));
+        setErro(mensagemDeErroSeguranca(falha, t("conta-comprometida.naoFoiPossivelProtegerAConta")));
       }
     } finally {
       enviandoRef.current = false;
@@ -264,16 +265,16 @@ function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefOb
       <Button type="button" variant="destructive" className="min-h-12 w-full text-base" onClick={proteger} disabled={enviando}>
         {enviando ? (
           <>
-            <Loader2 className="animate-spin" aria-hidden="true" /> Protegendo…
+            <Loader2 className="animate-spin" aria-hidden="true" /> {t("configuracoes.secaoContaComprometida.protegendo")}
           </>
         ) : (
-          "Proteger minha conta"
+          t("conta-comprometida.protegerMinhaConta")
         )}
       </Button>
 
       <Button asChild variant="ghost" className="min-h-11 justify-start px-0">
         <Link to="/entrar">
-          <ArrowLeft aria-hidden="true" /> Não é isso: voltar para o login
+          <ArrowLeft aria-hidden="true" /> {t("conta-comprometida.naoEIssoVoltarParaOLogin")}
         </Link>
       </Button>
     </div>

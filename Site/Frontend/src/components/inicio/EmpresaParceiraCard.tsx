@@ -14,7 +14,7 @@ export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
       {logo ? (
         <img
           src={logo}
-          alt={`Logo de ${nome}`}
+          alt={t("inicio.empresaParceiraCard.logoDe", { var1: nome })}
           className="size-11 shrink-0 rounded-lg object-cover"
         />
       ) : (
@@ -36,7 +36,7 @@ export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
           )}
         </span>
         <span className="block truncate text-sm text-muted-foreground">
-          {empresa.setor ?? "Empresa parceira"}
+          {empresa.setor ?? t("inicio.empresaParceiraCard.empresaParceira")}
           {typeof empresa.totalVagas === "number" ? ` · ${empresa.totalVagas} vagas` : ""}
         </span>
       </span>

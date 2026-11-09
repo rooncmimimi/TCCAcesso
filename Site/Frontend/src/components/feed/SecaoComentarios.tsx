@@ -56,7 +56,7 @@ function LinhaComentario({
           <Avatar className="size-8">
             <AvatarImage src={urlArquivo(autor?.fotoPerfil)} alt="" />
             <AvatarFallback className="bg-primary-soft text-xs font-bold text-primary">
-              {iniciaisDoNome(autor?.nome ?? "Usuário")}
+              {iniciaisDoNome(autor?.nome ?? t("post.usuario"))}
             </AvatarFallback>
           </Avatar>
         </LinkAutor>
@@ -148,8 +148,8 @@ function LinhaComentario({
 
 /** Lista de comentários (com respostas de 1 nível) e formulário de novo comentário/resposta. */
 export function SecaoComentarios({ postagemId }: { postagemId: string }) {
-  const { usuario } = useSessao();
   const { t } = useIdioma();
+  const { usuario } = useSessao();
   const { data, isLoading, isError } = useComentarios(postagemId);
   const criar = useCriarComentario(postagemId);
   const [texto, setTexto] = useState("");

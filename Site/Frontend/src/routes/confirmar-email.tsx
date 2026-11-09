@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { CheckCircle2, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -14,19 +14,23 @@ import { Label } from "@/components/ui/label";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
+import type { TFuncao } from "@/contexts/IdiomaContext";
 
-const esquema = z.object({
-  email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
-  // 6 dígitos, o mesmo tamanho gerado por `gerarCodigoNumerico(6)` no backend
-  // (`AutenticacaoService.enviarCodigoConfirmacaoCadastro`).
-  codigo: z
-    .string()
-    .trim()
-    .length(6, "O código deve ter 6 dígitos.")
-    .regex(/^\d{6}$/, "O código deve conter apenas números."),
-});
+/** O esquema nasce do idioma atual: as mensagens de erro saem na língua da tela. */
+const criarEsquema = (t: TFuncao) =>
+  z.object({
+    email: z.string().trim().min(1, t("validacao.informeSeuEmail")).email(t("validacao.emailValido")),
+    // 6 dígitos, o mesmo tamanho gerado por `gerarCodigoNumerico(6)` no backend
+    // (`AutenticacaoService.enviarCodigoConfirmacaoCadastro`).
+    codigo: z
+      .string()
+      .trim()
+      .length(6, t("validacao.codigoSeisDigitos"))
+      .regex(/^\d{6}$/, t("validacao.codigoApenasNumeros")),
+  });
 
-type Formulario = z.infer<typeof esquema>;
+type Formulario = z.infer<ReturnType<typeof criarEsquema>>;
 
 export const Route = createFileRoute("/confirmar-email")({
   // `z.coerce.string()`, e não `z.string()`: o parser de search params do TanStack Router converte
@@ -39,8 +43,8 @@ export const Route = createFileRoute("/confirmar-email")({
   }),
   head: () => ({
     meta: [
-      { title: "Confirmar e-mail — ACESSO" },
-      { name: "description", content: "Confirme seu endereço de e-mail para ativar sua conta no ACESSO." },
+      { title: textoDaPagina("confirmar-email.confirmarEMailAcesso") },
+      { name: "description", content: textoDaPagina("confirmar-email.confirmeSeuEnderecoDeEMailPara") },
     ],
   }),
   component: ConfirmarEmail,
@@ -71,7 +75,7 @@ function ConfirmarEmail() {
     setFocus,
     formState: { errors },
   } = useForm<Formulario>({
-    resolver: zodResolver(esquema),
+    resolver: zodResolver(useMemo(() => criarEsquema(t), [t])),
     defaultValues: { email: email ?? "", codigo: codigo ?? "" },
   });
 
@@ -81,7 +85,7 @@ function ConfirmarEmail() {
       await autenticacaoService.confirmarCadastro(valores.email, valores.codigo);
       setEstado("sucesso");
     } catch (erro) {
-      const mensagem = extrairMensagemErro(erro, "Não foi possível confirmar seu e-mail.");
+      const mensagem = extrairMensagemErro(erro, t("confirmar-email.naoFoiPossivelConfirmarSeuE"));
       setEstado("formulario");
       setError("codigo", { message: mensagem });
       setFocus("codigo");
@@ -110,9 +114,9 @@ function ConfirmarEmail() {
     try {
       await autenticacaoService.reenviarConfirmacaoCadastro(emailAtual);
       setReenviado(true);
-      toast.success("Um novo código de confirmação foi enviado.");
+      toast.success(t("confirmar-email.umNovoCodigoDeConfirmacaoFoi"));
     } catch (erro) {
-      toast.error(extrairMensagemErro(erro, "Não foi possível reenviar o código agora."));
+      toast.error(extrairMensagemErro(erro, t("confirmar-email.naoFoiPossivelReenviarOCodigo")));
     } finally {
       setReenviando(false);
     }
@@ -178,7 +182,7 @@ function ConfirmarEmail() {
 
                 <form className="mt-6 space-y-4" onSubmit={confirmar} noValidate>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
+                    <Label htmlFor="email">{t("login.email")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -215,30 +219,30 @@ function ConfirmarEmail() {
                   <Button type="submit" className="min-h-12 w-full text-base" disabled={confirmando}>
                     {confirmando ? (
                       <>
-                        <Loader2 className="animate-spin" aria-hidden="true" /> Confirmando…
+                        <Loader2 className="animate-spin" aria-hidden="true" /> {t("confirmar-email.confirmando")}
                       </>
                     ) : (
-                      "Confirmar e-mail"
+                      t("confirmar-email.confirmarEMail")
                     )}
                   </Button>
                 </form>
 
                 <div className="mt-6 space-y-2 text-sm text-muted-foreground">
                   <p>
-                    Não recebeu o código?{" "}
+                    {t("confirmar-email.naoRecebeuOCodigo")}{" "}
                     <button
                       type="button"
                       className="font-semibold text-primary underline disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={reenviando || reenviado}
                       onClick={() => void reenviar()}
                     >
-                      {reenviando ? "Reenviando…" : reenviado ? "Código reenviado" : "Reenviar código"}
+                      {reenviando ? "Reenviando…" : reenviado ? "Código reenviado" : t("confirmar-email.reenviarCodigo")}
                     </button>
                   </p>
                   <p>
-                    Já confirmou?{" "}
+                    {t("confirmar-email.jaConfirmou")}{" "}
                     <Link to="/entrar" className="font-semibold text-primary underline">
-                      Entrar
+                      {t("cabecalho.entrar")}
                     </Link>
                   </p>
                 </div>

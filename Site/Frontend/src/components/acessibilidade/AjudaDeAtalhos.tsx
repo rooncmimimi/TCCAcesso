@@ -33,7 +33,7 @@ export function AjudaDeAtalhos() {
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Keyboard className="size-5" aria-hidden="true" /> Atalhos de teclado
+            <Keyboard className="size-5" aria-hidden="true" /> {t("acessibilidade.ajudaDeAtalhos.atalhosDeTeclado")}
           </DialogTitle>
           <DialogDescription>{t("acessibilidade.ajudaDeAtalhos.aperteAsTeclasEmSequenciaSem")}</DialogDescription>
         </DialogHeader>

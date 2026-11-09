@@ -3,14 +3,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { PostagensTabela } from "@/components/admin/PostagensTabela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/postagens")({
   head: () => ({
     meta: [
-      { title: "Publicações — Administração ACESSO" },
-      { name: "description", content: "Modere publicações e comentários da comunidade ACESSO." },
-      { property: "og:title", content: "Publicações — Administração ACESSO" },
-      { property: "og:description", content: "Moderação de publicações e comentários." },
+      { title: textoDaPagina("admin.postagens.publicacoesAdministracaoAcesso") },
+      { name: "description", content: textoDaPagina("admin.postagens.moderePublicacoesEComentarios") },
+      { property: "og:title", content: textoDaPagina("admin.postagens.publicacoesAdministracaoAcesso") },
+      { property: "og:description", content: textoDaPagina("admin.postagens.moderacaoDePublicacoesE") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

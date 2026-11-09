@@ -40,7 +40,7 @@ export function PreviaAcessibilidade() {
             className="min-h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
             onClick={() =>
               falar(
-                "Exemplo de leitura por voz do ACESSO. Assistente Administrativo Júnior, vaga inclusiva no Grupo Aurora.",
+                t("acessibilidade.painelAcessibilidade.exemploDeLeituraPorVozDoAcesso"),
               )
             }
           >
@@ -75,7 +75,7 @@ export function PainelAcessibilidade() {
 
       <section aria-labelledby="grupo-visual" className="space-y-3">
         <h3 id="grupo-visual" className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-          Visual
+          {t("acessibilidade.painelAcessibilidade.visual")}
         </h3>
         <ToggleRow
           id="a11y-contrast"
@@ -191,8 +191,8 @@ export function PainelAcessibilidade() {
           titulo={t("acessibilidade.painelAcessibilidade.navegarPeloConteudoComAsSetas")}
           descricao={
             preferencias.screenReader
-              ? "As setas ↑ e ↓ percorrem títulos, textos e botões, e a voz lê cada um. Esc para de ler. Listas de opções, menus e controles deslizantes continuam usando as setas normalmente. Se você já usa NVDA, JAWS ou VoiceOver, deixe desligado."
-              : "Ative a leitura por voz para usar as setas na leitura do conteúdo."
+              ? t("acessibilidade.painelAcessibilidade.asSetasEPercorremTitulosTextos")
+              : t("acessibilidade.painelAcessibilidade.ativeALeituraPorVozParaUsarAs")
           }
           chave="arrowReading"
           desabilitado={!preferencias.screenReader}
@@ -211,7 +211,7 @@ export function PainelAcessibilidade() {
         <ToggleRow
           id="a11y-vlibras"
           icon={Languages}
-          titulo="VLibras (Libras)"
+          titulo={t("acessibilidade.painelAcessibilidade.vlibrasLibras")}
           descricao={t("acessibilidade.painelAcessibilidade.tradutorOficialDoGoverno")}
           chave="vlibras"
         />

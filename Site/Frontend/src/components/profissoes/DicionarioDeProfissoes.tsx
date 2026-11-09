@@ -56,9 +56,9 @@ function FichaDaProfissao({ profissao: p }: { profissao: Profissao }) {
       </header>
 
       <details className="mt-3 rounded-lg border border-border">
-        <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold text-primary">Ver atividades, ferramentas, habilidades e rotina</summary>
+        <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold text-primary">{t("profissoes.dicionarioDeProfissoes.verAtividadesFerramentas")}</summary>
         <div className="space-y-4 border-t border-border p-3">
-          <TextoOuvivel rotulo={`Ouvir a ficha de ${p.nome}`}>
+          <TextoOuvivel rotulo={t("profissoes.dicionarioDeProfissoes.ouvirAFichaDe", { var1: p.nome })}>
             <div className="space-y-4">
               <Lista titulo={t("profissoes.dicionarioDeProfissoes.oQueAPessoaFaz")} itens={p.atividades} />
               <Lista titulo={t("profissoes.dicionarioDeProfissoes.ferramentasQueUsa")} itens={p.ferramentas} />
@@ -84,6 +84,7 @@ function FichaDaProfissao({ profissao: p }: { profissao: Profissao }) {
  * um ícone (sem imagens de terceiros) com descrição em texto.
  */
 export function DicionarioDeProfissoes() {
+  const { t } = useIdioma();
   const idBusca = useId();
   const [busca, setBusca] = useState("");
   const lista = buscarProfissoes(busca);
@@ -92,9 +93,9 @@ export function DicionarioDeProfissoes() {
     <div className="mt-6 space-y-4">
       <div className="space-y-1">
         <Label htmlFor={idBusca} className="flex items-center gap-2">
-          <Briefcase className="size-4" aria-hidden="true" /> Procurar uma profissão
+          <Briefcase className="size-4" aria-hidden="true" /> {t("profissoes.dicionarioDeProfissoes.procurarUmaProfissao")}
         </Label>
-        <Input id={idBusca} type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: atendente, planilhas, cozinha" maxLength={60} />
+        <Input id={idBusca} type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={t("profissoes.dicionarioDeProfissoes.exAtendentePlanilhasCozinha")} maxLength={60} />
       </div>
 
       <p role="status" className="text-sm text-muted-foreground">

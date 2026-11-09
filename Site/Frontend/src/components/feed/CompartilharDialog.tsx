@@ -35,17 +35,17 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
       await navigator.clipboard.writeText(urlDaPostagem(postagemId));
       setLinkCopiado(true);
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success("Link copiado!");
+      toast.success(t("feed.compartilharDialog.linkCopiado"));
       setTimeout(() => setLinkCopiado(false), 2000);
     } catch {
-      toast.error("Não foi possível copiar o link.");
+      toast.error(t("feed.compartilharDialog.naoFoiPossivelCopiarOLink"));
     }
   }
 
   async function compartilharNativo() {
     try {
       await navigator.share({
-        title: "Publicação no ACESSO",
+        title: t("feed.compartilharDialog.publicacaoNoAcesso"),
         url: urlDaPostagem(postagemId),
       });
     } catch {
@@ -74,7 +74,7 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
             ) : (
               <Copy className="size-4" aria-hidden="true" />
             )}
-            {linkCopiado ? "Link copiado!" : "Copiar link"}
+            {linkCopiado ? "Link copiado!" : t("feed.compartilharDialog.copiarLink")}
           </Button>
 
           {podeCompartilharNativo ? (
@@ -84,14 +84,14 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
               className="min-h-11 justify-start gap-2"
               onClick={compartilharNativo}
             >
-              <Share2 className="size-4" aria-hidden="true" /> Compartilhar em outras redes
+              <Share2 className="size-4" aria-hidden="true" /> {t("feed.compartilharDialog.compartilharEmOutrasRedes")}
             </Button>
           ) : null}
         </div>
 
         <div className="mt-2 border-t pt-4">
           <label htmlFor="comentario-compartilhar" className="flex items-center gap-2 text-sm font-medium">
-            <Repeat2 className="size-4" aria-hidden="true" /> Compartilhar no ACESSO
+            <Repeat2 className="size-4" aria-hidden="true" /> {t("feed.compartilharDialog.compartilharNoAcesso")}
           </label>
           <Textarea
             id="comentario-compartilhar"
@@ -118,7 +118,7 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
               )
             }
           >
-            {compartilhar.isPending ? "Compartilhando…" : "Compartilhar no ACESSO"}
+            {compartilhar.isPending ? "Compartilhando…" : t("feed.compartilharDialog.compartilharNoAcesso")}
           </Button>
         </DialogFooter>
       </DialogContent>

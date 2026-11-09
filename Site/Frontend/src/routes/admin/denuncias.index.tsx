@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { DenunciasTabela } from "@/components/admin/DenunciasTabela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/denuncias/")({
   head: () => ({
     meta: [
-      { title: "Denúncias — Administração ACESSO" },
-      { name: "description", content: "Fila de denúncias enviadas pelos usuários da plataforma ACESSO." },
+      { title: textoDaPagina("admin.denunciasindex.denunciasAdministracaoAcesso") },
+      { name: "description", content: textoDaPagina("admin.denunciasindex.filaDeDenunciasEnviadasPelos") },
     ],
   }),
   component: AdminDenuncias,

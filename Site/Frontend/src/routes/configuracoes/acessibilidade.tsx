@@ -13,18 +13,19 @@ import { useSessao } from "@/hooks/useSessao";
 import acessibilidadeService, { preferenciasDaApi, preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/configuracoes/acessibilidade")({
   head: () => ({
     meta: [
-      { title: "Configurações de acessibilidade — ACESSO" },
+      { title: textoDaPagina("configuracoes.acessibilidade.configuracoesDeAcessibilidade") },
       {
         name: "description",
         content:
-          "Ajuste contraste, tipografia, espaçamentos, cursor, voz e VLibras com pré-visualização em tempo real.",
+          textoDaPagina("configuracoes.acessibilidade.ajusteContrasteTipografia"),
       },
-      { property: "og:title", content: "Configurações de acessibilidade — ACESSO" },
-      { property: "og:description", content: "Personalize a acessibilidade e veja as mudanças na hora." },
+      { property: "og:title", content: textoDaPagina("configuracoes.acessibilidade.configuracoesDeAcessibilidade") },
+      { property: "og:description", content: textoDaPagina("configuracoes.acessibilidade.personalizeAAcessibilidadeE") },
     ],
   }),
   component: ConfiguracoesAcessibilidade,
@@ -86,19 +87,19 @@ function ConfiguracoesAcessibilidade() {
               try {
                 await acessibilidadeService.salvar(preferenciasParaApi(rascunho));
 
-                toast.success("Preferências de acessibilidade salvas na sua conta.");
+                toast.success(t("configuracoes.acessibilidade.preferenciasDeAcessibilidade"));
               } catch (erro) {
-                toast.error(extrairMensagemErro(erro, "Não foi possível salvar na sua conta. Ficou salvo neste dispositivo."));
+                toast.error(extrairMensagemErro(erro, t("configuracoes.acessibilidade.naoFoiPossivelSalvarNaSuaConta")));
               } finally {
                 setSalvando(false);
               }
             } else {
-              toast.success("Preferências de acessibilidade salvas neste dispositivo.");
+              toast.success(t("configuracoes.acessibilidade.preferenciasDeAcessibilidade2"));
             }
           }}
         >
           {salvando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Save aria-hidden="true" />}
-          Salvar preferências
+          {t("configuracoes.acessibilidade.salvarPreferencias")}
         </Button>
         <Button
           variant="outline"
@@ -106,7 +107,7 @@ function ConfiguracoesAcessibilidade() {
           disabled={!alterado}
           onClick={() => descartar()}
         >
-          <Undo2 aria-hidden="true" /> Descartar alterações
+          <Undo2 aria-hidden="true" /> {t("configuracoes.acessibilidade.descartarAlteracoes")}
         </Button>
         <Button
           variant="ghost"
@@ -120,16 +121,16 @@ function ConfiguracoesAcessibilidade() {
               try {
                 await acessibilidadeService.restaurar();
               } catch (erro) {
-                toast.error(extrairMensagemErro(erro, "Não foi possível redefinir na sua conta."));
+                toast.error(extrairMensagemErro(erro, t("configuracoes.acessibilidade.naoFoiPossivelRedefinirNaSua")));
               } finally {
                 setRestaurando(false);
               }
             }
-            toast.info("Preferências redefinidas. A pergunta sobre voz será feita novamente.");
+            toast.info(t("configuracoes.acessibilidade.preferenciasRedefinidasA"));
           }}
         >
           {restaurando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <RotateCcw aria-hidden="true" />}
-          Redefinir tudo
+          {t("configuracoes.acessibilidade.redefinirTudo")}
         </Button>
       </div>
     </EstruturaApp>

@@ -13,6 +13,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import raioAcesso from "@/assets/raio-acesso.svg";
 import { Logo } from "@/components/Logo";
 import { SeletorDeIdioma } from "@/components/SeletorDeIdioma";
@@ -30,16 +31,16 @@ import { useSessao } from "@/hooks/useSessao";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ACESSO — Vagas inclusivas para PCD e profissionais 50+" },
+      { title: textoDaPagina("inicio.tituloDaAba") },
       {
         name: "description",
         content:
-          "Conectamos talentos PCD e profissionais 50+ a empresas comprometidas com inclusão. Acessibilidade real: VLibras, leitura por voz e preferências que acompanham você.",
+          textoDaPagina("index.conectamosTalentosPcdE"),
       },
-      { property: "og:title", content: "ACESSO — Vagas inclusivas para PCD e 50+" },
+      { property: "og:title", content: textoDaPagina("index.acessoVagasInclusivasParaPcdE") },
       {
         property: "og:description",
-        content: "Oportunidades que transformam vidas, com acessibilidade desde o primeiro clique.",
+        content: textoDaPagina("index.oportunidadesQueTransformam"),
       },
     ],
   }),
@@ -107,7 +108,7 @@ function Inicio() {
             {/*
               O seletor de idioma precisa estar na primeira tela: quem não lê português chega aqui antes
               de qualquer outra página, e até agora só encontrava a troca de idioma depois de entrar.
-              Em tela estreita ele sai do cabeçalho (não cabe com "Entrar" e "Criar conta") e aparece no
+              Em tela estreita ele sai do cabeçalho (não cabe com "Entrar" e t("cabecalho.criarConta")) e aparece no
               rodapé, que é onde esse controle costuma estar.
             */}
             <SeletorDeIdioma className="hidden lg:flex" />

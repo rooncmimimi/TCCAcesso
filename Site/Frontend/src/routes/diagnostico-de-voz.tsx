@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { DiagnosticoDeVoz } from "@/components/diagnostico/DiagnosticoDeVoz";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/diagnostico-de-voz")({
   head: () => ({
     meta: [
-      { title: "Teste da leitura em voz alta — ACESSO" },
-      { name: "description", content: "Confira, em cerca de 1 minuto, se a leitura em voz alta do ACESSO marca as palavras e se Pausar e Continuar funcionam no seu aparelho." },
+      { title: textoDaPagina("diagnostico-de-voz.testeDaLeituraEmVozAltaAcesso") },
+      { name: "description", content: textoDaPagina("diagnostico-de-voz.confiraEmCercaDe1MinutoSeA") },
     ],
   }),
   component: DiagnosticoPagina,

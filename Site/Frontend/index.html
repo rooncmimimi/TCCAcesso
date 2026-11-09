@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <title>ACESSO — Inclusão profissional para PCD e 50+</title>
+    <!-- Descrição padrão, em português, para quem lê a página sem executar JavaScript. Com JavaScript, a
+         rota põe a dela no idioma escolhido e o script abaixo tira esta, senão a página fica com duas. -->
     <meta
+      data-padrao
       name="description"
       content="Rede profissional acessível que conecta pessoas com deficiência e profissionais 50+ a empresas com vagas realmente inclusivas."
     />
@@ -16,6 +19,37 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
     />
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/opendyslexic" />
+    <script>
+      // O idioma do documento ANTES do React montar. O título e as <meta> acima são o padrão (português) e o
+      // roteador os troca ao montar, mas o `lang` manda no leitor de tela desde a primeira pintura: com ele
+      // errado, a página inteira é anunciada com a pronúncia do idioma errado nesse intervalo.
+      // Mesma regra do IdiomaProvider: a escolha da pessoa, senão o idioma do navegador, senão português.
+      (function () {
+        try {
+          var locais = { pt: "pt-BR", en: "en-US", es: "es-ES" };
+          var escolhido = window.localStorage.getItem("acesso:idioma");
+
+          if (!locais[escolhido]) {
+            escolhido = (navigator.languages || [navigator.language || ""]).map(function (l) {
+              return String(l).toLowerCase().split("-")[0];
+            }).find(function (l) {
+              return locais[l];
+            });
+          }
+
+          if (locais[escolhido]) document.documentElement.lang = locais[escolhido];
+        } catch (e) {
+          // Armazenamento bloqueado: fica o pt-BR do atributo.
+        }
+
+        // A rota sempre põe a sua própria `description`: a padrão acima só existe para quem não executa
+        // JavaScript. Mantê-la daqui em diante deixaria a página com duas, e a primeira (em português)
+        // é a que vale para quem indexa.
+        var padrao = document.querySelector("meta[data-padrao][name=description]");
+
+        if (padrao) padrao.remove();
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

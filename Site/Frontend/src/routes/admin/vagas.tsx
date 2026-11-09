@@ -3,14 +3,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { VagasTabela } from "@/components/admin/VagasTabela";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/admin/vagas")({
   head: () => ({
     meta: [
-      { title: "Vagas — Administração ACESSO" },
-      { name: "description", content: "Modere e oculte vagas publicadas na plataforma ACESSO." },
-      { property: "og:title", content: "Vagas — Administração ACESSO" },
-      { property: "og:description", content: "Moderação de vagas publicadas." },
+      { title: textoDaPagina("admin.vagas.vagasAdministracaoAcesso") },
+      { name: "description", content: textoDaPagina("admin.vagas.modereEOculteVagasPublicadasNa") },
+      { property: "og:title", content: textoDaPagina("admin.vagas.vagasAdministracaoAcesso") },
+      { property: "og:description", content: textoDaPagina("admin.vagas.moderacaoDeVagasPublicadas") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

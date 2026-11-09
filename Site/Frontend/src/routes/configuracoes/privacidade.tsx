@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
@@ -35,8 +36,8 @@ const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: string
 export const Route = createFileRoute("/configuracoes/privacidade")({
   head: () => ({
     meta: [
-      { title: "Privacidade e Segurança — ACESSO" },
-      { name: "description", content: "Controle quem pode ver seu perfil, quem pode falar com você e a segurança da sua conta." },
+      { title: textoDaPagina("configuracoes.privacidade.privacidadeESegurancaAcesso") },
+      { name: "description", content: textoDaPagina("configuracoes.privacidade.controleQuemPodeVerSeuPerfil") },
     ],
   }),
   component: () => (
@@ -88,19 +89,19 @@ function Privacidade() {
     onSuccess: (resultado) => {
       atualizar({ perfilPublico: resultado.perfilPublico });
       toast.success(
-        resultado.perfilPublico ? "Seu perfil agora é público." : "Seu perfil agora é privado.",
+        resultado.perfilPublico ? "Seu perfil agora é público." : t("configuracoes.privacidade.seuPerfilAgoraEPrivado"),
       );
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.privacidade.naoFoiPossivelSalvarA"))),
   });
 
   const atualizarMensagens = useMutation({
     mutationFn: (valor: PreferenciaMensagens) => bloqueioService.atualizarPreferenciaMensagens(valor),
     onSuccess: (resultado) => {
       atualizar({ preferenciaMensagens: resultado.preferenciaMensagens });
-      toast.success("Preferência de mensagens atualizada.");
+      toast.success(t("configuracoes.privacidade.preferenciaDeMensagens"));
     },
-    onError: (erro) => toast.error(extrairMensagemErro(erro, "Não foi possível salvar a preferência.")),
+    onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.privacidade.naoFoiPossivelSalvarA"))),
   });
 
   return (
@@ -109,7 +110,7 @@ function Privacidade() {
         to="/configuracoes"
         className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para configurações
+        <ArrowLeft className="size-4" aria-hidden="true" /> {t("configuracoes.conta.voltarParaConfiguracoes")}
       </Link>
 
       <div className="mt-4 flex items-center gap-3">
@@ -144,7 +145,7 @@ function Privacidade() {
               checked={perfilPublico}
               disabled={atualizarPrivacidade.isPending}
               onCheckedChange={(valor) => atualizarPrivacidade.mutate(valor)}
-              aria-label={`Perfil público, ${perfilPublico ? "ativado" : "desativado"}`}
+              aria-label={t("configuracoes.privacidade.perfilPublico2", { var1: perfilPublico ? "ativado" : "desativado" })}
             />
           </div>
         </CardContent>
@@ -230,8 +231,8 @@ function Privacidade() {
           />
           <p className="text-sm text-muted-foreground" data-testid="registro-de-aceite">
             {usuario?.termosAceitosEm
-              ? `Você aceitou a versão ${usuario.termosVersao ?? "anterior ao registro de versões"} em ${formatarData(usuario.termosAceitosEm)}.`
-              : "Sua conta é anterior ao registro de aceite dos documentos, então não há versão aceita registrada."}
+              ? t("configuracoes.privacidade.voceAceitouAVersaoEm", { var1: usuario.termosVersao ?? t("configuracoes.privacidade.anteriorAoRegistroDeVersoes"), var2: formatarData(usuario.termosAceitosEm) })
+              : t("configuracoes.privacidade.suaContaEAnteriorAoRegistroDe")}
           </p>
         </CardContent>
       </Card>

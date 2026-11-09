@@ -50,7 +50,7 @@ export function JanelaConversa({
   // com o mesmo texto do backend, que também recusa o envio.
   const semParticipante = !contato;
   const avisoSemParticipante =
-    "Esta conversa não permite novas mensagens porque o outro usuário foi removido.";
+    t("mensagens.janelaConversa.estaConversaNaoPermiteNovas");
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ block: "end" });
@@ -65,12 +65,12 @@ export function JanelaConversa({
   }
 
   return (
-    <section aria-label={`Conversa com ${nome}`} className="flex h-full flex-col">
+    <section aria-label={t("mensagens.janelaConversa.conversaCom", { var1: nome })} className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border p-4">
         <LinkAutor
           autorId={contato?.id}
           className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          ariaLabel={`Ver perfil de ${nome}`}
+          ariaLabel={t("mensagens.janelaConversa.verPerfilDe", { var1: nome })}
         >
           <Avatar className="size-10">
             {foto && <AvatarImage src={foto} alt="" />}
@@ -87,7 +87,7 @@ export function JanelaConversa({
           </p>
           {contatoDigitando && (
             <p className="text-xs font-medium text-primary" role="status" aria-live="polite">
-              digitando…
+              {t("mensagens.janelaConversa.digitando")}
             </p>
           )}
         </div>
@@ -107,13 +107,13 @@ export function JanelaConversa({
         {!carregando && erro && (
           <Alert variant="destructive">
             <AlertTitle>{t("mensagens.janelaConversa.naoFoiPossivelCarregarAs")}</AlertTitle>
-            <AlertDescription>{mensagemErro ?? "Tente novamente em instantes."}</AlertDescription>
+            <AlertDescription>{mensagemErro ?? t("mensagens.janelaConversa.tenteNovamenteEmInstantes")}</AlertDescription>
           </Alert>
         )}
 
         {!carregando && !erro && mensagens.length === 0 && (
           <p className="p-4 text-center text-sm text-muted-foreground" role="status">
-            {semParticipante ? avisoSemParticipante : `Nenhuma mensagem ainda. Envie a primeira mensagem para ${nome}.`}
+            {semParticipante ? avisoSemParticipante : t("mensagens.janelaConversa.nenhumaMensagemAindaEnvieA", { var1: nome })}
           </p>
         )}
 

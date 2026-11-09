@@ -48,7 +48,7 @@ export function SecaoContaComprometida() {
     if (enviandoRef.current) return;
 
     if (pedeSenha && !senha) {
-      setErro("Informe a sua senha atual.");
+      setErro(t("configuracoes.secaoContaComprometida.informeASuaSenhaAtual"));
       return;
     }
 
@@ -61,10 +61,10 @@ export function SecaoContaComprometida() {
       esquecerDispositivoConfiavel();
       void queryClient.invalidateQueries({ queryKey: ["seguranca"] });
       setAberto(false);
-      toast.success("Conta protegida. Troque a sua senha agora.");
+      toast.success(t("configuracoes.secaoContaComprometida.contaProtegidaTroqueASuaSenha"));
       void navigate({ to: "/configuracoes/senha" });
     } catch (falha) {
-      setErro(mensagemDeErroSeguranca(falha, "Não foi possível proteger a conta agora."));
+      setErro(mensagemDeErroSeguranca(falha, t("configuracoes.secaoContaComprometida.naoFoiPossivelProtegerAConta")));
     } finally {
       enviandoRef.current = false;
       setEnviando(false);
@@ -75,7 +75,7 @@ export function SecaoContaComprometida() {
     <Card className="border-destructive/40 shadow-none">
       <CardHeader className="space-y-1.5">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <ShieldAlert className="size-5 text-destructive" aria-hidden="true" /> Acho que invadiram minha conta
+          <ShieldAlert className="size-5 text-destructive" aria-hidden="true" /> {t("login.contaComprometida")}
         </CardTitle>
         <CardDescription>
           {t("configuracoes.secaoContaComprometida.encerraAsOutrasSessoesRemoveA")}
@@ -121,15 +121,15 @@ export function SecaoContaComprometida() {
 
             <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="ghost" className="min-h-11" onClick={() => setAberto(false)} disabled={enviando}>
-                Cancelar
+                {t("post.cancelar")}
               </Button>
               <Button type="submit" variant="destructive" className="min-h-11" disabled={enviando}>
                 {enviando ? (
                   <>
-                    <Loader2 className="animate-spin" aria-hidden="true" /> Protegendo…
+                    <Loader2 className="animate-spin" aria-hidden="true" /> {t("configuracoes.secaoContaComprometida.protegendo")}
                   </>
                 ) : (
-                  "Proteger a conta"
+                  t("configuracoes.secaoContaComprometida.protegerAConta")
                 )}
               </Button>
             </DialogFooter>

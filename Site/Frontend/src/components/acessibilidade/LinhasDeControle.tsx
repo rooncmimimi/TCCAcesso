@@ -4,6 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
 
 /** Chaves das preferências que são liga/desliga. */
@@ -115,9 +117,13 @@ export function SelectRow<V extends string>({
   icon: LucideIcon;
   titulo: string;
   valor: V;
-  opcoes: ReadonlyArray<{ valor: V; rotulo: string }>;
+  /** O rotulo e a CHAVE do dicionario: o proprio SelectRow traduz. Tipado, o compilador cobra.
+   * Antes era `string` e o render mostrava a chave crua na tela. */
+  opcoes: ReadonlyArray<{ valor: V; rotulo: ChaveBase }>;
   onChange: (v: V) => void;
 }) {
+  const { t } = useIdioma();
+
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,14rem)]">
       <span aria-hidden="true" className={CAIXA_DO_ICONE}>
@@ -134,7 +140,7 @@ export function SelectRow<V extends string>({
       >
         {opcoes.map((o) => (
           <option key={o.valor} value={o.valor}>
-            {o.rotulo}
+            {t(o.rotulo)}
           </option>
         ))}
       </select>

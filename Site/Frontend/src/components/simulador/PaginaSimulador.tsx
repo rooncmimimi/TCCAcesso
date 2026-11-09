@@ -18,19 +18,21 @@ import {
   VAGA_FICTICIA,
   type Importancia,
 } from "@/dados/simulador";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { Frase } from "@/i18n/Frase";
 import { useIdioma } from "@/hooks/useIdioma";
 import { explicarClassificacao, retornoDaResposta } from "@/lib/feedbackDeResposta";
 import { temProgresso, useProgressoDoSimulador } from "@/hooks/useProgressoDoSimulador";
 
 const ETAPAS_DA_CANDIDATURA = [
-  "Ler a vaga",
-  "Entender os requisitos",
-  "Apresentação",
-  "Escolher experiências",
-  "Escolher habilidades",
-  "Pedir uma adaptação",
-  "Revisar",
-] as const;
+  "simulador.etapa.lerAVaga",
+  "simulador.etapa.entenderOsRequisitos",
+  "simulador.etapa.apresentacao",
+  "simulador.etapa.escolherExperiencias",
+  "simulador.etapa.escolherHabilidades",
+  "simulador.etapa.pedirUmaAdaptacao",
+  "simulador.etapa.revisar",
+] as const satisfies readonly ChaveBase[];
 
 /**
  * Área de treino. Duas atividades: simular uma candidatura a uma vaga FICTÍCIA e simular uma
@@ -74,7 +76,7 @@ function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progre
           </CardHeader>
           <CardContent>
             <Button className="min-h-11" onClick={() => aoEscolher("candidatura")}>
-              {progresso.passoCandidatura > 0 ? "Continuar de onde parei" : "Começar"}
+              {progresso.passoCandidatura > 0 ? "Continuar de onde parei" : t("simulador.paginaSimulador.comecar")}
             </Button>
           </CardContent>
         </Card>
@@ -86,7 +88,7 @@ function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progre
           </CardHeader>
           <CardContent>
             <Button className="min-h-11" onClick={() => aoEscolher("entrevista")}>
-              {progresso.passoEntrevista > 0 ? "Continuar de onde parei" : "Começar"}
+              {progresso.passoEntrevista > 0 ? "Continuar de onde parei" : t("simulador.paginaSimulador.comecar")}
             </Button>
           </CardContent>
         </Card>
@@ -96,21 +98,27 @@ function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progre
         <li>{t("simulador.paginaSimulador.podeRepetirQuantasVezesQuiser")}</li>
         <li>{t("simulador.paginaSimulador.oQueVoceEscreveAquiFicaSoNeste")}</li>
         <li>
-          Para se candidatar de verdade, abra uma{" "}
-          <Link to="/vagas" className="font-semibold text-primary underline">
-            vaga
-          </Link>
-          . Para registrar suas adaptações, vá em{" "}
-          <Link to="/minha-acessibilidade" className="font-semibold text-primary underline">
-            {t("simulador.paginaSimulador.minhaAcessibilidade")}
-          </Link>
-          .
+          <Frase
+            chave="simulador.paginaSimulador.paraSeCandidatarDeVerdade"
+            partes={[
+              (texto) => (
+                <Link to="/vagas" className="font-semibold text-primary underline">
+                  {texto}
+                </Link>
+              ),
+              (texto) => (
+                <Link to="/minha-acessibilidade" className="font-semibold text-primary underline">
+                  {texto}
+                </Link>
+              ),
+            ]}
+          />
         </li>
       </ul>
 
       {temProgresso(progresso) ? (
         <Button variant="ghost" onClick={aoRecomecar} className="min-h-11 gap-2">
-          <RotateCcw className="size-4" aria-hidden="true" /> Apagar o que escrevi e recomeçar do zero
+          <RotateCcw className="size-4" aria-hidden="true" /> {t("simulador.paginaSimulador.apagarOQueEscreviERecomecarDo")}
         </Button>
       ) : null}
     </div>
@@ -118,6 +126,7 @@ function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progre
 }
 
 function Cabecalho({ rotulo, passo, total, titulo, aoPausar }: { rotulo: string; passo: number; total: number; titulo: string; aoPausar: () => void }) {
+  const { t } = useIdioma();
   const tituloRef = useRef<HTMLHeadingElement>(null);
 
   // Ao mudar de etapa, o foco vai para o título, para o leitor de tela anunciar onde a pessoa está.
@@ -132,7 +141,7 @@ function Cabecalho({ rotulo, passo, total, titulo, aoPausar }: { rotulo: string;
           Etapa {passo + 1} de {total} — {titulo}
         </p>
         <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" onClick={aoPausar}>
-          <Pause className="size-4" aria-hidden="true" /> Pausar e continuar depois
+          <Pause className="size-4" aria-hidden="true" /> {t("simulador.paginaSimulador.pausarEContinuarDepois")}
         </Button>
       </div>
       <h2 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
@@ -148,12 +157,12 @@ function Navegacao({ passo, total, aoVoltar, aoAvancar, aoTerminar }: { passo: n
     <div className="flex flex-wrap gap-2 pt-2">
       {passo > 0 ? (
         <Button type="button" variant="outline" className="min-h-11" onClick={aoVoltar}>
-          Voltar
+          {t("auth.voltar")}
         </Button>
       ) : null}
       {passo < total - 1 ? (
         <Button type="button" className="min-h-11" onClick={aoAvancar}>
-          Continuar
+          {t("acessibilidade.controleDeLeitura.continuar")}
         </Button>
       ) : (
         <Button type="button" className="min-h-11" onClick={aoTerminar}>
@@ -175,7 +184,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
   return (
     <Card className="shadow-none">
       <CardContent className="space-y-4 p-6">
-        <Cabecalho rotulo={ETAPAS_DA_CANDIDATURA[passo]} passo={passo} total={total} titulo={ETAPAS_DA_CANDIDATURA[passo]} aoPausar={() => atualizar({ modo: "menu" })} />
+        <Cabecalho rotulo={t(ETAPAS_DA_CANDIDATURA[passo])} passo={passo} total={total} titulo={t(ETAPAS_DA_CANDIDATURA[passo])} aoPausar={() => atualizar({ modo: "menu" })} />
 
         {passo === 0 ? (
           <div className="space-y-3">
@@ -198,8 +207,10 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
         {passo === 1 ? (
           <div className="space-y-3">
             <p className="text-sm">
-              A vaga diz que são <strong>{t("simulador.paginaSimulador.indispensaveis")}</strong> {t("simulador.paginaSimulador.oEnsinoMedioEscreverEMails")} <strong>diferenciais</strong>, e ter
-              trabalhado com atendimento é “ótimo, mas não obrigatório”. Marque cada requisito como obrigatório ou desejável.
+              <Frase
+                chave="simulador.paginaSimulador.aVagaDizQueSao"
+                partes={[(texto) => <strong>{texto}</strong>, (texto) => <strong>{texto}</strong>]}
+              />
             </p>
             <ul className="space-y-4">
               {REQUISITOS_DA_VAGA.map((r) => {
@@ -292,7 +303,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
         {passo === 5 ? (
           <div className="space-y-2">
             <p className="text-sm">
-              Pedir uma adaptação é um direito e é normal. Diga o que você precisa para participar, sem precisar explicar a sua condição. Veja um modelo e escreva o seu:
+              {t("simulador.paginaSimulador.pedirUmaAdaptacaoEUmDireito")}
             </p>
             <blockquote className="rounded-lg border-l-4 border-primary bg-muted/40 p-3 text-sm italic">{MODELO_DE_PEDIDO_DE_ADAPTACAO}</blockquote>
             <Label htmlFor="sim-adaptacao">{t("simulador.paginaSimulador.seuPedidoDeAdaptacao")}</Label>
@@ -317,7 +328,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
               </div>
               <div>
                 <dt className="font-semibold">{t("simulador.paginaSimulador.apresentacao")}</dt>
-                <dd className="whitespace-pre-line">{texto("apresentacao") || "Você não escreveu ainda."}</dd>
+                <dd className="whitespace-pre-line">{texto("apresentacao") || t("simulador.paginaSimulador.voceNaoEscreveuAinda")}</dd>
               </div>
               <div>
                 <dt className="font-semibold">{t("simulador.paginaSimulador.experienciasEscolhidas")}</dt>
@@ -329,7 +340,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
               </div>
               <div>
                 <dt className="font-semibold">{t("simulador.paginaSimulador.pedidoDeAdaptacao")}</dt>
-                <dd className="whitespace-pre-line">{texto("adaptacao") || "Você não escreveu ainda."}</dd>
+                <dd className="whitespace-pre-line">{texto("adaptacao") || t("simulador.paginaSimulador.voceNaoEscreveuAinda")}</dd>
               </div>
             </dl>
           </div>

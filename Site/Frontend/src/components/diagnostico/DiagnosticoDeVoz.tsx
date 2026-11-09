@@ -12,20 +12,45 @@ import { suporteDestaque } from "@/lib/leituraDestacada";
 import { montarRelatorio, resumirVozes, testarEventosDePalavra, testarPausaNativa, type CriarEnunciado, type DadosDoRelatorio, type EnunciadoDeFala, type ResultadoDePalavras, type ResultadoDePausa, type SintetizadorDeFala, type VozDoAparelho } from "@/lib/diagnosticoDeVoz";
 import { RESUMO_POR_NIVEL, ROTULO_DO_NIVEL, explicarMarcacaoDasPalavras, explicarPausaEContinuar, piorNivel, type Explicacao, type Nivel } from "@/lib/explicacaoDoDiagnostico";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
 /** Como o ACESSO está marcando o texto agora, em palavras de todo dia. */
-const MODO_EM_PALAVRAS: Record<string, string> = {
-  palavra: "a palavra certa fica marcada (exato)",
-  estimado: "a frase fica marcada e a palavra é estimada pelo tempo (aproximado)",
-  frase: "só a frase fica marcada",
-  bloco: "o bloco inteiro fica marcado",
+const MODO_EM_PALAVRAS: Record<string, ChaveBase> = {
+  palavra: "diagnostico.modo.palavra",
+  estimado: "diagnostico.modo.estimado",
+  frase: "diagnostico.modo.frase",
+  bloco: "diagnostico.modo.bloco",
 };
 
-const OPCOES_DESTAQUE = ["A palavra certa ficou marcada", "Marcou, mas errou algumas palavras", "Só a frase ficou marcada", "O bloco inteiro ficou marcado", "Nada ficou marcado"];
-const OPCOES_PAUSA = ["Parou na hora", "Demorou para parar", "Cortou a fala", "Não parou"];
-const OPCOES_CONTINUAR = ["Continuou de onde parou", "Recomeçou do começo da frase", "Recomeçou do começo do texto", "Não voltou a falar"];
+/**
+ * O `valor` é o que o diagnóstico (`lib/diagnosticoDeVoz`) compara e NÃO muda com o idioma; o
+ * `rotulo` é o que a pessoa lê. Antes o rótulo era o próprio valor, e traduzir a tela quebrava a
+ * comparação: em espanhol nenhuma resposta era reconhecida.
+ */
+type OpcaoDeResposta = { valor: string; rotulo: ChaveBase };
 
-const TEXTO_DE_LEITURA = "Esta é a leitura de verdade do ACESSO. Confira se cada palavra fica marcada enquanto a voz fala. Depois, aperte Pausar, espere alguns segundos e aperte Continuar. A leitura deve voltar do ponto em que parou.";
+const OPCOES_DESTAQUE: readonly OpcaoDeResposta[] = [
+  { valor: "A palavra certa ficou marcada", rotulo: "diagnostico.resposta.palavraCerta" },
+  { valor: "Marcou, mas errou algumas palavras", rotulo: "diagnostico.resposta.errouAlgumas" },
+  { valor: "Só a frase ficou marcada", rotulo: "diagnostico.resposta.soAFrase" },
+  { valor: "O bloco inteiro ficou marcado", rotulo: "diagnostico.resposta.blocoInteiro" },
+  { valor: "Nada ficou marcado", rotulo: "diagnostico.resposta.nadaMarcado" },
+];
+const OPCOES_PAUSA: readonly OpcaoDeResposta[] = [
+  { valor: "Parou na hora", rotulo: "diagnostico.resposta.parouNaHora" },
+  { valor: "Demorou para parar", rotulo: "diagnostico.resposta.demorouParaParar" },
+  { valor: "Cortou a fala", rotulo: "diagnostico.resposta.cortouAFala" },
+  { valor: "Não parou", rotulo: "diagnostico.resposta.naoParou" },
+];
+const OPCOES_CONTINUAR: readonly OpcaoDeResposta[] = [
+  { valor: "Continuou de onde parou", rotulo: "diagnostico.resposta.continuouDeOndeParou" },
+  { valor: "Recomeçou do começo da frase", rotulo: "diagnostico.resposta.recomecouAFrase" },
+  { valor: "Recomeçou do começo do texto", rotulo: "diagnostico.resposta.recomecouOTexto" },
+  { valor: "Não voltou a falar", rotulo: "diagnostico.resposta.naoVoltouAFalar" },
+];
+const SEM_TESTE: OpcaoDeResposta = { valor: "", rotulo: "diagnostico.diagnosticoDeVoz.naoTestei" };
+
+const TEXTO_DE_LEITURA: ChaveBase = "diagnostico.diagnosticoDeVoz.textoDeLeitura";
 
 const NATIVO = "flex min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
 
@@ -53,17 +78,18 @@ function sintetizadorDoNavegador(): SintetizadorDeFala | null {
 }
 
 /** Perguntas com poucas respostas: botões de opção (rádio) em vez de uma lista escondida. */
-function Pergunta({ legenda, nome, opcoes, valor, aoMudar }: { legenda: string; nome: string; opcoes: string[]; valor: string; aoMudar: (v: string) => void }) {
+function Pergunta({ legenda, nome, opcoes, valor, aoMudar }: { legenda: string; nome: string; opcoes: readonly OpcaoDeResposta[]; valor: string; aoMudar: (v: string) => void }) {
+  const { t } = useIdioma();
   return (
     <fieldset className="space-y-1">
       <legend className="text-sm font-semibold">{legenda}</legend>
-      {[...opcoes, "Não testei"].map((o) => {
-        const escolhido = o === "Não testei" ? valor === "" : valor === o;
+      {[...opcoes, SEM_TESTE].map((o) => {
+        const escolhido = valor === o.valor;
 
         return (
-          <label key={o} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
-            <input type="radio" name={nome} className="size-5" checked={escolhido} onChange={() => aoMudar(o === "Não testei" ? "" : o)} />
-            {o}
+          <label key={o.valor} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+            <input type="radio" name={nome} className="size-5" checked={escolhido} onChange={() => aoMudar(o.valor)} />
+            {t(o.rotulo)}
           </label>
         );
       })}
@@ -179,9 +205,9 @@ export function DiagnosticoDeVoz() {
   async function copiar() {
     try {
       await navigator.clipboard.writeText(relatorio);
-      toast.success("Resultado copiado.");
+      toast.success(t("diagnostico.diagnosticoDeVoz.resultadoCopiado"));
     } catch {
-      toast.error("Não foi possível copiar sozinho. Selecione o texto e copie com o teclado.");
+      toast.error(t("diagnostico.diagnosticoDeVoz.naoFoiPossivelCopiarSozinho"));
     }
   }
 
@@ -202,16 +228,16 @@ export function DiagnosticoDeVoz() {
 
       <section aria-labelledby={`${idBase}-e1`} className="space-y-4">
         <h2 id={`${idBase}-e1`} className="text-xl font-bold">
-          Etapa 1 de 3: ouça um trecho
+          {t("diagnostico.diagnosticoDeVoz.etapa1De3")}
         </h2>
         <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.aperteOuvirEnquantoAVozLeA")}</p>
 
         <TextoOuvivel rotulo={t("diagnostico.diagnosticoDeVoz.ouvirOTextoDeTeste")}>
-          <p className="rounded-lg border border-border p-4 text-base">{TEXTO_DE_LEITURA}</p>
+          <p className="rounded-lg border border-border p-4 text-base">{t(TEXTO_DE_LEITURA)}</p>
         </TextoOuvivel>
 
         <p role="status" className="text-sm font-semibold">
-          {lendo && modo ? `Agora, no ACESSO: ${MODO_EM_PALAVRAS[modo]}.` : ""}
+          {lendo && modo ? t("diagnostico.diagnosticoDeVoz.agoraNoAcesso", { modo: t(MODO_EM_PALAVRAS[modo]) }) : ""}
         </p>
 
         <Pergunta legenda={t("diagnostico.diagnosticoDeVoz.oQueVoceViuEnquantoAVozLia")} nome={`${idBase}-destaque`} opcoes={OPCOES_DESTAQUE} valor={destaque} aoMudar={setDestaque} />
@@ -219,7 +245,7 @@ export function DiagnosticoDeVoz() {
 
       <section aria-labelledby={`${idBase}-e2`} className="space-y-4">
         <h2 id={`${idBase}-e2`} className="text-xl font-bold">
-          Etapa 2 de 3: pause e continue
+          {t("diagnostico.diagnosticoDeVoz.etapa2De3")}
         </h2>
         <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.aperteOuvirDeNovoQuando")}</p>
 
@@ -239,7 +265,7 @@ export function DiagnosticoDeVoz() {
         <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.aquiOAcessoTestaSozinhoAVozDo")}</p>
 
         <Button type="button" className="min-h-11 gap-2" disabled={!sintetizador || rodando !== null} onClick={() => void testarSozinho()}>
-          <Play className="size-4" aria-hidden="true" /> {rodando ? "Testando…" : "Fazer o teste automático"}
+          <Play className="size-4" aria-hidden="true" /> {rodando ? "Testando…" : t("diagnostico.diagnosticoDeVoz.fazerOTesteAutomatico")}
         </Button>
 
         <p role="status" className="text-sm font-semibold">
@@ -263,7 +289,7 @@ export function DiagnosticoDeVoz() {
         </h2>
         <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.seVoceEstaAjudandoATestarO")}</p>
         <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => void copiar()}>
-          <ClipboardCopy className="size-4" aria-hidden="true" /> Copiar resultado
+          <ClipboardCopy className="size-4" aria-hidden="true" /> {t("diagnostico.diagnosticoDeVoz.copiarResultado")}
         </Button>
         <details className="rounded-lg border border-border">
           <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold">{t("diagnostico.diagnosticoDeVoz.verOTextoQueSeraCopiado")}</summary>
@@ -277,7 +303,7 @@ export function DiagnosticoDeVoz() {
         <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold">Vozes instaladas neste aparelho ({resumoDasVozes.total})</summary>
         <div className="space-y-3 border-t border-border p-3">
           <p role="status" className="text-sm">
-            {resumoDasVozes.total === 0 ? "Nenhuma voz encontrada ainda. Se acabou de abrir a página, espere um instante." : `${resumoDasVozes.portugues} em português (${resumoDasVozes.locaisEmPortugues} instaladas no aparelho, ${resumoDasVozes.deRedeEmPortugues} que usam a internet).`}
+            {resumoDasVozes.total === 0 ? "Nenhuma voz encontrada ainda. Se acabou de abrir a página, espere um instante." : t("diagnostico.diagnosticoDeVoz.emPortuguesInstaladasNo", { var1: resumoDasVozes.portugues, var2: resumoDasVozes.locaisEmPortugues, var3: resumoDasVozes.deRedeEmPortugues })}
           </p>
           <div className="space-y-1">
             <Label htmlFor={`${idBase}-voz`}>{t("diagnostico.diagnosticoDeVoz.vozUsadaNoTesteAutomatico")}</Label>
@@ -285,7 +311,7 @@ export function DiagnosticoDeVoz() {
               <option value="">{t("diagnostico.diagnosticoDeVoz.aVozPadraoDoAparelho")}</option>
               {vozes.map((v) => (
                 <option key={`${v.name}-${v.lang}`} value={v.name}>
-                  {v.name} ({v.lang}, {v.localService ? "instalada" : "usa a internet"})
+                  {v.name} ({v.lang}, {v.localService ? "instalada" : t("diagnostico.diagnosticoDeVoz.usaAInternet")})
                 </option>
               ))}
             </select>

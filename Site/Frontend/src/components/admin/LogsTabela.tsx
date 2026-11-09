@@ -64,12 +64,12 @@ export function LogsTabela({
               id="filtro-acao"
               value={acao}
               onChange={(evento) => setAcao(evento.target.value)}
-              placeholder="Ex.: BLOQUEAR_USUARIO"
+              placeholder={t("admin.logsTabela.exBloquearUsuario")}
               className="mt-1"
             />
           </div>
           <Button type="submit" className="min-h-11">
-            Filtrar
+            {t("admin.logsTabela.filtrar")}
           </Button>
         </form>
       )}
@@ -115,7 +115,7 @@ export function LogsTabela({
                   <TableCell className="text-xs text-muted-foreground">
                     {log.entidadeTipo ?? "—"}
                   </TableCell>
-                  <TableCell>{log.administrador?.nome ?? "Conta removida"}</TableCell>
+                  <TableCell>{log.administrador?.nome ?? t("admin.conteudoDenunciado.contaRemovida")}</TableCell>
                   <TableCell className="max-w-72 truncate">{log.descricao ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatarDataHora(log.criadoEm)}

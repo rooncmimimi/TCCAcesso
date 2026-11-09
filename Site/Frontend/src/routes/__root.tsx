@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -6,6 +7,7 @@ import {
   useRouter,
   HeadContent,
 } from "@tanstack/react-router";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 import { AcessibilidadeProvider } from "@/contexts/AcessibilidadeProvider";
 import { VozProvider } from "@/contexts/VozProvider";
@@ -52,9 +54,9 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  const { t } = useIdioma();
   console.error(error);
   const router = useRouter();
-  const { t } = useIdioma();
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
@@ -90,16 +92,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
-      { title: "ACESSO — Inclusão profissional para PCD e 50+" },
+      { title: textoDaPagina("__root.acessoInclusaoProfissionalPara") },
       {
         name: "description",
         content:
-          "Rede profissional acessível que conecta pessoas com deficiência e profissionais 50+ a empresas com vagas realmente inclusivas.",
+          textoDaPagina("__root.redeProfissionalAcessivelQue"),
       },
-      { property: "og:title", content: "ACESSO — Inclusão profissional para PCD e 50+" },
+      { property: "og:title", content: textoDaPagina("__root.acessoInclusaoProfissionalPara") },
       {
         property: "og:description",
-        content: "Vagas inclusivas, comunidade e acessibilidade de verdade em cada tela.",
+        content: textoDaPagina("__root.vagasInclusivasComunidadeE"),
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -115,6 +117,16 @@ function AppFrame() {
   useCursorDeLeitura();
   useGuardaDeAcionamentos();
   useAtalhosDeTeclado();
+
+  // O `head()` das rotas roda fora do React e lê o idioma do aparelho (`textoDaPagina`). Ele é recalculado a cada
+  // navegação, mas não quando a pessoa troca o idioma com a página aberta: sem isto, o título da aba e a `description`
+  // ficariam no idioma anterior até a próxima navegação.
+  const { idioma } = useIdioma();
+  const roteador = useRouter();
+
+  useEffect(() => {
+    void roteador.invalidate();
+  }, [idioma, roteador]);
 
   return (
     <>

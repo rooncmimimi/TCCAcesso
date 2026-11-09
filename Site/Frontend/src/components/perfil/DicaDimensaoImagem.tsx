@@ -1,4 +1,5 @@
 import { limiteEmMb } from "@/lib/arquivos";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Dica de dimensão/formato/tamanho para campos de upload de imagem
@@ -10,11 +11,12 @@ import { limiteEmMb } from "@/lib/arquivos";
  *   proporção ~4:1, a mesma de 1584×396.
  */
 export function DicaDimensaoImagem({ tipo }: { tipo: "foto" | "banner" }) {
+  const { t } = useIdioma();
   const recomendado = tipo === "foto" ? "400 × 400 px" : "1584 × 396 px";
 
   return (
     <p className="mt-1.5 text-xs text-muted-foreground">
-      Recomendado: {recomendado} · Formatos: JPG, PNG ou WEBP · Tamanho máximo: {limiteEmMb("imagem")} MB
+      {t("perfil.dicaDimensaoImagem.recomendadoFormatos", { medida: recomendado, mb: limiteEmMb("imagem") })}
     </p>
   );
 }

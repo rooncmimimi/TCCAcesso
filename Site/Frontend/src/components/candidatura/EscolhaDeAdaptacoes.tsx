@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CatalogoDeAdaptacoes, EscolhaDeCompartilhamento, MinhaAcessibilidade } from "@/types/adaptacoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { Frase } from "@/i18n/Frase";
 
 type Props = {
   catalogo: CatalogoDeAdaptacoes;
@@ -39,8 +40,10 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
   return (
     <div className="space-y-6">
       <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
-        Nada do seu perfil de acessibilidade é enviado sozinho. Marque só o que quiser pedir ou compartilhar com{" "}
-        <strong>{t("candidatura.escolhaDeAdaptacoes.estaEmpresaNestaCandidatura")}</strong>. Você não precisa informar diagnóstico.
+        <Frase
+          chave="candidatura.escolhaDeAdaptacoes.nadaDoSeuPerfilEEnviado"
+          partes={[(texto) => <strong>{texto}</strong>]}
+        />
       </p>
 
       {catalogo.grupos.map((grupo) => {
@@ -97,7 +100,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
               id={`${idBase}-horario`}
               marcada={escolha.comunicacao.melhorHorario}
               aoMudar={(v) => aoMudar({ ...escolha, comunicacao: { ...escolha.comunicacao, melhorHorario: v } })}
-              rotulo={`Melhor horário: ${comunicacao.melhorHorario}`}
+              rotulo={t("candidatura.escolhaDeAdaptacoes.melhorHorario", { horario: comunicacao.melhorHorario })}
             />
           ) : null}
           {comunicacao.observacao ? (
@@ -105,7 +108,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
               id={`${idBase}-obs-comunicacao`}
               marcada={escolha.observacaoDeComunicacao}
               aoMudar={(v) => aoMudar({ ...escolha, observacaoDeComunicacao: v })}
-              rotulo={`Minha observação sobre comunicação: “${comunicacao.observacao}”`}
+              rotulo={t("candidatura.escolhaDeAdaptacoes.observacaoSobreComunicacao", { observacao: comunicacao.observacao })}
             />
           ) : null}
         </fieldset>
@@ -128,7 +131,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
               id={`${idBase}-obs-adaptacao`}
               marcada={escolha.observacaoDeAdaptacao}
               aoMudar={(v) => aoMudar({ ...escolha, observacaoDeAdaptacao: v })}
-              rotulo={`Minha observação sobre adaptações: “${perfil.observacao}”`}
+              rotulo={t("candidatura.escolhaDeAdaptacoes.observacaoSobreAdaptacoes", { observacao: perfil.observacao })}
             />
           ) : null}
         </fieldset>
@@ -147,7 +150,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
           aria-describedby={`${idBase}-outra-ajuda`}
         />
         <p id={`${idBase}-outra-ajuda`} className="text-xs text-muted-foreground">
-          Descreva o que precisa para participar, não a sua condição de saúde. Exemplo: “Preciso das perguntas por escrito antes da entrevista”.
+          {t("candidatura.escolhaDeAdaptacoes.descrevaOQuePrecisa")}
         </p>
       </div>
     </div>

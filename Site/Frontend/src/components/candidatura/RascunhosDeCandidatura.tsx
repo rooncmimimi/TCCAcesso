@@ -7,8 +7,13 @@ import { CandidaturaDialog } from "@/components/candidatura/CandidaturaDialog";
 import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
-const ROTULO_DA_ETAPA = { mensagem: "mensagem", adaptacoes: "adaptações", revisao: "revisão" } as const;
+const ROTULO_DA_ETAPA = {
+  mensagem: "candidatura.etapa.mensagem",
+  adaptacoes: "candidatura.etapa.adaptacoes",
+  revisao: "candidatura.etapa.revisao",
+} as const satisfies Record<string, ChaveBase>;
 
 /**
  * Candidaturas em andamento (rascunhos): a pessoa continua de onde parou ou descarta. Só aparecem
@@ -24,7 +29,7 @@ export function RascunhosDeCandidatura() {
   const descartar = useMutation({
     mutationFn: (vagaId: string) => candidaturaAdaptacoesService.descartarRascunho(vagaId),
     onSuccess: () => {
-      toast.success("Rascunho descartado.");
+      toast.success(t("candidatura.rascunhosDeCandidatura.rascunhoDescartado"));
       void queryClient.invalidateQueries({ queryKey: ["candidaturas"] });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro)),
@@ -46,7 +51,8 @@ export function RascunhosDeCandidatura() {
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{r.vaga!.titulo}</p>
               <p className="text-xs text-muted-foreground">
-                {r.vaga!.empresa ?? "Empresa"} · parou na etapa de {ROTULO_DA_ETAPA[r.etapa]}
+                {r.vaga!.empresa ?? t("admin.denunciasTabela.empresa")} ·{" "}
+                {t("candidatura.rascunhos.parouNaEtapaDe", { etapa: t(ROTULO_DA_ETAPA[r.etapa]) })}
               </p>
             </div>
             <div className="flex gap-2">
@@ -54,7 +60,7 @@ export function RascunhosDeCandidatura() {
                 {r.vaga!.status === "aberta" ? "Continuar" : "Vaga encerrada"}
               </Button>
               <Button size="sm" variant="ghost" className="min-h-11" onClick={() => descartar.mutate(r.vaga!.id)} disabled={descartar.isPending}>
-                Descartar
+                {t("candidatura.rascunhosDeCandidatura.descartar")}
               </Button>
             </div>
           </li>

@@ -52,7 +52,7 @@ export function PrazoDoCodigo({ enviadoEm, aoPedirMaisTempo, podePedir, ocupado 
       <div role="status" className={situacao === "folga" ? "sr-only" : "mt-2"}>
         {situacao === "acabando" ? (
           <p className="font-medium">
-            {faltam <= 1 ? "Falta menos de 1 minuto" : `Faltam cerca de ${faltam} minutos`} para o código vencer. Se precisar de mais tempo, peça outro código.
+            {t("acessibilidade.prazoDoCodigo.faltamParaVencer", { quanto: faltam <= 1 ? t("acessibilidade.prazoDoCodigo.menosDeUmMinuto") : t("acessibilidade.prazoDoCodigo.cercaDeMinutos", { n: faltam }) })}
           </p>
         ) : null}
         {situacao === "venceu" ? <p className="font-medium">{t("acessibilidade.prazoDoCodigo.oCodigoVenceuPecaOutroPara")}</p> : null}
@@ -60,7 +60,7 @@ export function PrazoDoCodigo({ enviadoEm, aoPedirMaisTempo, podePedir, ocupado 
 
       {situacao !== "folga" ? (
         <Button type="button" variant="outline" className="mt-2 h-auto min-h-11 w-full whitespace-normal py-2 text-center sm:w-auto" onClick={aoPedirMaisTempo} disabled={!podePedir || ocupado}>
-          Preciso de mais tempo: enviar outro código
+          {t("acessibilidade.prazoDoCodigo.precisoDeMaisTempo")}
         </Button>
       ) : null}
       {situacao !== "folga" && !podePedir ? <p className="mt-1 text-xs text-muted-foreground">{t("acessibilidade.prazoDoCodigo.oBotaoLiberaEmInstantesO")}</p> : null}

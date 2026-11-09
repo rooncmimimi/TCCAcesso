@@ -113,7 +113,7 @@ export function SeguirButton({
     },
     onError: (erro, _v, contexto) => {
       if (contexto?.anterior) queryClient.setQueryData(chaveResumo, contexto.anterior);
-      toast.error(extrairMensagemErro(erro, "Não foi possível concluir a ação."));
+      toast.error(extrairMensagemErro(erro, t("perfil.seguirButton.naoFoiPossivelConcluirAAcao")));
     },
     onSuccess: (resultado, acaoExecutada) => {
       queryClient.setQueryData<ResumoSeguidores>(chaveResumo, (atual) => {
@@ -135,11 +135,11 @@ export function SeguirButton({
       });
 
       if (acaoExecutada === "cancelar-solicitacao") {
-        toast.success("Solicitação cancelada.");
+        toast.success(t("perfil.seguirButton.solicitacaoCancelada"));
       } else if (acaoExecutada === "solicitar" && !resultado.seguindo) {
-        toast.success("Solicitação enviada.");
+        toast.success(t("perfil.seguirButton.solicitacaoEnviada2"));
       } else {
-        toast.success(resultado.seguindo ? "Agora você está seguindo." : "Você deixou de seguir.");
+        toast.success(resultado.seguindo ? "Agora você está seguindo." : t("perfil.seguirButton.voceDeixouDeSeguir"));
       }
     },
   });

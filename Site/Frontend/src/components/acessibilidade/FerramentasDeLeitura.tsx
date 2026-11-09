@@ -134,7 +134,7 @@ export function FerramentasDeLeitura() {
                   <BotaoDoMenu
                     icone={Mic}
                     titulo={t("acessibilidade.ferramentasDeLeitura.falarUmComando")}
-                    detalhe={reconhecimentoDeFalaSuportado() ? "Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede." : "Este navegador não oferece reconhecimento de voz no site."}
+                    detalhe={reconhecimentoDeFalaSuportado() ? "Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede." : t("acessibilidade.ferramentasDeLeitura.esteNavegadorNaoOferece")}
                     onClick={() => {
                       setAberto(false);
                       // Espera o diálogo fechar para o comando agir sobre a página, e não sobre o diálogo.

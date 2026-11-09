@@ -28,9 +28,9 @@ export function ComparadorDeVagasTela() {
     return (
       <div className="mt-6 space-y-3 rounded-xl border border-border p-6">
         <p>{t("vagas.comparadorDeVagasTela.voceAindaNaoEscolheuVagasPara")}</p>
-        <p className="text-sm text-muted-foreground">Abra uma vaga e use o botão “Comparar esta vaga”. Você pode comparar até {LIMITE_DE_VAGAS} vagas.</p>
+        <p className="text-sm text-muted-foreground">{t("vagas.comparadorDeVagasTela.abraUmaVagaEUseOBotao", { limite: LIMITE_DE_VAGAS })}</p>
         <Button asChild className="min-h-11">
-          <Link to="/vagas">Ver as vagas</Link>
+          <Link to="/vagas">{t("vagas.comparadorDeVagasTela.verAsVagas")}</Link>
         </Button>
       </div>
     );
@@ -57,7 +57,7 @@ export function ComparadorDeVagasTela() {
     <div className="mt-6 space-y-4">
       {falhas > 0 ? (
         <p role="alert" className="text-sm font-medium text-destructive">
-          {falhas === 1 ? "Uma vaga não pôde ser carregada e ficou fora da tabela." : `${falhas} vagas não puderam ser carregadas e ficaram fora da tabela.`}
+          {falhas === 1 ? "Uma vaga não pôde ser carregada e ficou fora da tabela." : t("vagas.comparadorDeVagasTela.vagasNaoPuderamSerCarregadasE", { var1: falhas })}
         </p>
       ) : null}
 
@@ -72,7 +72,7 @@ export function ComparadorDeVagasTela() {
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th scope="col" className="p-3 font-semibold">
-                Item
+                {t("vagas.comparadorDeVagasTela.item")}
               </th>
               {vagas.map((v) => (
                 <th key={v.id} scope="col" className="min-w-40 p-3 align-top font-semibold">
@@ -80,8 +80,8 @@ export function ComparadorDeVagasTela() {
                     {v.titulo}
                   </Link>
                   <span className="block text-xs font-normal text-muted-foreground">{nomeDe(v)}</span>
-                  <Button type="button" variant="ghost" size="sm" className="mt-1 min-h-11 px-2" onClick={() => removerDaComparacao(v.id)} aria-label={`Tirar “${v.titulo}” da comparação`}>
-                    Tirar
+                  <Button type="button" variant="ghost" size="sm" className="mt-1 min-h-11 px-2" onClick={() => removerDaComparacao(v.id)} aria-label={t("vagas.comparadorDeVagasTela.tirarDaComparacao", { var1: v.titulo })}>
+                    {t("vagas.comparadorDeVagasTela.tirar")}
                   </Button>
                 </th>
               ))}

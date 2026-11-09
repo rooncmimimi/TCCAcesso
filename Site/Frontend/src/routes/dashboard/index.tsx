@@ -3,12 +3,13 @@ import { Loader2 } from "lucide-react";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { useSessao } from "@/hooks/useSessao";
 import { useIdioma } from "@/hooks/useIdioma";
+import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({
     meta: [
-      { title: "Painel — ACESSO" },
-      { name: "description", content: "Acesse seu painel de métricas na plataforma ACESSO." },
+      { title: textoDaPagina("dashboard.index.painelAcesso") },
+      { name: "description", content: textoDaPagina("dashboard.index.acesseSeuPainelDeMetricasNa") },
     ],
   }),
   component: RedirecionarDashboard,

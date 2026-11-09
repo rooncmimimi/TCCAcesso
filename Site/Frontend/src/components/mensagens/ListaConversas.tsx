@@ -78,15 +78,15 @@ export function ListaConversas({
         {!carregando && erro && (
           <Alert variant="destructive" className="m-3">
             <AlertTitle>{t("mensagens.listaConversas.naoFoiPossivelCarregarAs")}</AlertTitle>
-            <AlertDescription>{mensagemErro ?? "Tente novamente em instantes."}</AlertDescription>
+            <AlertDescription>{mensagemErro ?? t("mensagens.listaConversas.tenteNovamenteEmInstantes")}</AlertDescription>
           </Alert>
         )}
 
         {!carregando && !erro && filtradas.length === 0 && (
           <p className="p-4 text-center text-sm text-muted-foreground" role="status">
             {conversas.length === 0
-              ? "Você ainda não tem conversas. Candidate-se a uma vaga para começar a conversar com empresas."
-              : "Nenhuma conversa encontrada para essa busca."}
+              ? t("mensagens.listaConversas.voceAindaNaoTemConversas")
+              : t("mensagens.listaConversas.nenhumaConversaEncontradaPara")}
           </p>
         )}
 
@@ -118,13 +118,13 @@ export function ListaConversas({
                     <div className="min-w-0">
                       <p className={cn("truncate", naoLidas > 0 ? "font-extrabold" : "font-bold")}>{nome}</p>
                       <p className="truncate text-sm text-muted-foreground">
-                        {conversa.ultimaMensagemPrevia || "Sem mensagens ainda"}
+                        {conversa.ultimaMensagemPrevia || t("mensagens.listaConversas.semMensagensAinda")}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-xs text-muted-foreground">{formatarDataRelativa(conversa.atualizadoEm)}</p>
                       {naoLidas > 0 && (
-                        <Badge className="mt-1" aria-label={`${naoLidas} mensagens não lidas`}>
+                        <Badge className="mt-1" aria-label={t("mensagens.listaConversas.mensagensNaoLidas", { var1: naoLidas })}>
                           {naoLidas}
                         </Badge>
                       )}

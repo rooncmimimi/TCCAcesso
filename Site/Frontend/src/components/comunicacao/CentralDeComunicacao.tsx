@@ -101,10 +101,10 @@ export function CentralDeComunicacao() {
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => mostrando && falar(mostrando)}>
-              <Volume2 className="size-4" aria-hidden="true" /> Ouvir
+              <Volume2 className="size-4" aria-hidden="true" /> {t("acessibilidade.textoOuvivel.ouvir")}
             </Button>
             <Button type="button" className="min-h-11" onClick={() => setMostrando(null)}>
-              Fechar
+              {t("ui.dialog.fechar")}
             </Button>
           </div>
         </DialogContent>

@@ -10,6 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { Frase } from "@/i18n/Frase";
 import { useIdioma } from "@/hooks/useIdioma";
 import { toast } from "sonner";
 import { useVoz } from "@/hooks/useVoz";
@@ -18,8 +20,7 @@ import { useSessao } from "@/hooks/useSessao";
 import acessibilidadeService, { preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
 
-const PERGUNTA =
-  "Olá! Bem-vindo ao ACESSO. Deseja utilizar o sistema de leitura por voz como padrão durante toda a sua navegação? Escolha sim ou não.";
+const PERGUNTA: ChaveBase = "acessibilidade.consentimentoVozDialog.perguntaFalada";
 
 /**
  * Primeiro acesso: pergunta (em voz alta e visualmente) se a leitura por voz
@@ -40,10 +41,10 @@ export function ConsentimentoVozDialog() {
     if (!inicializado || !suportado || preferencias.voiceConsent !== null) return;
     const timer = window.setTimeout(() => {
       setOpen(true);
-      falar(PERGUNTA);
+      falar(t(PERGUNTA));
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [inicializado, suportado, preferencias.voiceConsent, falar]);
+  }, [inicializado, suportado, preferencias.voiceConsent, falar, t]);
 
   if (!open) return null;
 
@@ -53,7 +54,7 @@ export function ConsentimentoVozDialog() {
     setOpen(false);
     if (valor === "accepted") {
       window.setTimeout(
-        () => falar("Leitura por voz ativada. Use a tecla Tab para navegar pelo site."),
+        () => falar(t("acessibilidade.consentimentoVozDialog.leituraPorVozAtivadaUseATecla")),
         250,
       );
     }
@@ -66,7 +67,7 @@ export function ConsentimentoVozDialog() {
         .salvar(preferenciasParaApi({ ...preferencias, screenReader: aceito, voiceConsent: aceito }))
         .catch((erro) => {
           toast.error(
-            extrairMensagemErro(erro, "Não foi possível salvar essa escolha na sua conta. Ficou salva neste dispositivo."),
+            extrairMensagemErro(erro, t("acessibilidade.consentimentoVozDialog.naoFoiPossivelSalvarEssa")),
           );
         });
     }
@@ -89,10 +90,10 @@ export function ConsentimentoVozDialog() {
               saber se um já está em uso (nenhum navegador informa isso), e ativar os dois faz cada botão ser falado
               duas vezes. Quem mais sofreria com isso é justamente parte do público do ACESSO. */}
           <AlertDialogDescription className="text-center text-base">
-            O ACESSO pode ler em voz alta os conteúdos enquanto você navega.{" "}
-            <strong className="font-semibold text-foreground">{t("acessibilidade.consentimentoVozDialog.seVoceJaUsaUmLeitorDeTela")}</strong> (NVDA, JAWS,
-            Narrador, VoiceOver ou TalkBack), escolha “Não, obrigado”: com os dois ligados, cada item seria falado duas
-            vezes. Você pode alterar essa escolha depois em Configurações de acessibilidade.
+            <Frase
+              chave="acessibilidade.consentimentoVozDialog.oAcessoPodeLerEmVozAlta"
+              partes={[(texto) => <strong className="font-semibold text-foreground">{texto}</strong>]}
+            />
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="sm:justify-center">
@@ -100,10 +101,10 @@ export function ConsentimentoVozDialog() {
             className="min-h-12 text-base"
             onClick={() => decidir("declined")}
           >
-            <VolumeX aria-hidden="true" /> Não, obrigado
+            <VolumeX aria-hidden="true" /> {t("acessibilidade.consentimentoVozDialog.naoObrigado")}
           </AlertDialogCancel>
           <AlertDialogAction className="min-h-12 text-base" onClick={() => decidir("accepted")}>
-            <Volume2 aria-hidden="true" /> Sim, ativar leitura
+            <Volume2 aria-hidden="true" /> {t("acessibilidade.consentimentoVozDialog.simAtivarLeitura")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

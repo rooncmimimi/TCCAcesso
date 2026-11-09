@@ -5,25 +5,26 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
 import { Badge } from "@/components/ui/badge";
 import { formatarDataHora } from "@/utils/formatacao";
 import type { LogAdmin } from "@/services/admin.service";
 
-const ROTULOS_SNAPSHOT: Record<string, string> = {
-  id: "ID",
-  autorId: "ID do autor",
-  nomeAutor: "Autor",
-  conteudo: "Conteúdo",
-  midiaPorTipo: "Anexos por tipo",
-  totalAnexos: "Total de anexos",
-  totalCurtidas: "Curtidas",
-  totalComentarios: "Comentários",
-  publica: "Visível a visitantes anônimos",
-  criadaEm: "Criado em",
-  postagemId: "ID da publicação",
-  autorPostagemId: "ID do autor da publicação",
-  nomeAutorPostagem: "Autor da publicação",
+const ROTULOS_SNAPSHOT: Record<string, ChaveBase> = {
+  id: "admin.detalheLogSheet.id",
+  autorId: "admin.detalheLogSheet.idDoAutor",
+  nomeAutor: "admin.detalheLogSheet.autor",
+  conteudo: "admin.detalheLogSheet.conteudo",
+  midiaPorTipo: "admin.detalheLogSheet.anexosPorTipo",
+  totalAnexos: "admin.detalheLogSheet.totalDeAnexos",
+  totalCurtidas: "admin.detalheLogSheet.curtidas",
+  totalComentarios: "admin.detalheLogSheet.comentarios",
+  publica: "admin.detalheLogSheet.visivelAVisitantes",
+  criadaEm: "admin.detalheLogSheet.criadoEm",
+  postagemId: "admin.detalheLogSheet.idDaPublicacao",
+  autorPostagemId: "admin.detalheLogSheet.idDoAutorDaPublicacao",
+  nomeAutorPostagem: "admin.detalheLogSheet.autorDaPublicacao",
 };
 
 function formatarValorSnapshot(chave: string, valor: unknown): string {
@@ -67,12 +68,12 @@ export function DetalheLogSheet({
             <div className="mt-4 space-y-4 text-sm">
               <div className="flex flex-wrap gap-2">
                 {log.entidadeTipo && <Badge variant="outline">{log.entidadeTipo}</Badge>}
-                <Badge variant="secondary">Admin: {log.administrador?.nome ?? "Conta removida"}</Badge>
+                <Badge variant="secondary">Admin: {log.administrador?.nome ?? t("admin.conteudoDenunciado.contaRemovida")}</Badge>
               </div>
 
               <div>
                 <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">{t("vagaDetalhe.descricao")}</h3>
-                <p>{log.descricao ?? "Sem descrição registrada."}</p>
+                <p>{log.descricao ?? t("admin.detalheLogSheet.semDescricaoRegistrada")}</p>
               </div>
 
               {retrato && (
@@ -85,7 +86,7 @@ export function DetalheLogSheet({
                       .filter(([chave]) => chave !== "conteudo")
                       .map(([chave, valor]) => (
                         <div key={chave} className="flex justify-between gap-3">
-                          <dt className="text-muted-foreground">{ROTULOS_SNAPSHOT[chave] ?? chave}</dt>
+                          <dt className="text-muted-foreground">{ROTULOS_SNAPSHOT[chave] ? t(ROTULOS_SNAPSHOT[chave]) : chave}</dt>
                           <dd className="text-right font-medium">{formatarValorSnapshot(chave, valor)}</dd>
                         </div>
                       ))}

@@ -18,6 +18,7 @@ import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { useVoz } from "@/hooks/useVoz";
 import { SliderRow, ToggleRow } from "@/components/acessibilidade/LinhasDeControle";
 import { SecaoLeituraEFoco } from "@/components/acessibilidade/SecaoLeituraEFoco";
+import { SecaoPersonalizacaoVisual } from "@/components/acessibilidade/SecaoPersonalizacaoVisual";
 import { SecaoMotricidade } from "@/components/acessibilidade/SecaoMotricidade";
 
 /** Amostra que reage imediatamente às preferências escolhidas. */
@@ -166,6 +167,8 @@ export function PainelAcessibilidade() {
           chave="focusHighlight"
         />
       </section>
+
+      <SecaoPersonalizacaoVisual />
 
       <SecaoLeituraEFoco />
 

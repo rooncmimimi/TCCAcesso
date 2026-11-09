@@ -160,14 +160,9 @@ export function SecaoLeituraEFoco() {
         </>
       )}
 
-      <ToggleRow
-        id="a11y-colorblind"
-        icon={Palette}
-        titulo={t("acessibilidade.secaoLeituraEFoco.modoParaDaltonismo")}
-        descricao={t("acessibilidade.secaoLeituraEFoco.trocaVermelhoEVerdePorLaranjaE")}
-        chave="colorBlind"
-      />
-
+      {/* O antigo "modo para daltonismo" virou a seção "Personalização visual", que tem padrão por
+          tipo e ajustes. Quem tinha o interruptor ligado foi migrado para o "Padrão acessível"
+          (ver `normalizarVisual`), que é exatamente o que ele fazia. */}
       <ToggleRow
         id="a11y-custom-colors"
         icon={Palette}

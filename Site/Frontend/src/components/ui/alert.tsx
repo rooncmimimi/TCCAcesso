@@ -11,6 +11,12 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        // Nestas três o texto fica na cor normal e quem dá o sentido são a borda, o fundo tingido
+        // e o ícone que quem chama passa — nunca a cor sozinha (WCAG 1.4.1). O texto na cor do
+        // estado sobre o fundo tingido do mesmo estado perderia contraste.
+        success: "border-success/60 bg-success/10 text-foreground",
+        warning: "border-warning bg-warning/15 text-foreground",
+        info: "border-info/60 bg-info/10 text-foreground",
       },
     },
     defaultVariants: {
@@ -23,7 +29,15 @@ const Alert = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
 >(({ className, variant, ...props }, ref) => (
-  <div ref={ref} role="alert" className={cn(alertVariants({ variant }), className)} {...props} />
+  // `data-variant`: o modo para daltonismo (globals.css) usa isto para reforçar erro e aviso com
+  // um símbolo quando o aviso não traz ícone próprio.
+  <div
+    ref={ref}
+    role="alert"
+    data-variant={variant ?? "default"}
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
 ));
 Alert.displayName = "Alert";
 

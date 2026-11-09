@@ -1,4 +1,5 @@
 import { PREFERENCIAS_PADRAO, type PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
+import { normalizarVisual } from "@/lib/preferenciasVisuais";
 
 /** Limites das preferências do Bloco 4. Valores salvos fora deles (ou de outro tipo) voltam ao padrão. */
 export const LIMITES = {
@@ -32,5 +33,8 @@ export function normalizarPreferencias(salvas: Partial<PreferenciasAcessibilidad
     tremorDelay: numeroEntre(base.tremorDelay, LIMITES.tremorDelay.min, LIMITES.tremorDelay.max, padrao.tremorDelay),
     targetSize: (TAMANHOS_DE_ALVO as readonly string[]).includes(base.targetSize) ? base.targetSize : padrao.targetSize,
     shortcuts: typeof base.shortcuts === "boolean" ? base.shortcuts : padrao.shortcuts,
+    // Padrão inventado à mão, número fora da faixa, cor que não é `#rrggbb`: tudo isso volta ao
+    // padrão. Melhor o site nas cores da marca do que uma variável CSS com lixo dentro.
+    ...normalizarVisual(base, padrao),
   };
 }

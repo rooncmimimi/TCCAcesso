@@ -178,11 +178,21 @@
   --accent-foreground: oklch(0.32 0.09 70);
   --brand-accent: oklch(from #0a98e7 l c h);
 
-  --success: oklch(from #21a848 l c h);
+  /* Verde da marca ESCURECIDO. O verde vivo (#21a848) mede 3,11:1 com texto branco e 2,76:1
+     sobre o fundo tingido da página — abaixo dos 4,5:1 do WCAG 1.4.3 —, então um selo "Aprovada"
+     preenchido com ele seria ilegível. #157a33 mede 5,44:1 com branco e 4,83:1 sobre o fundo.
+     Mesma conta de `--primary`, acima. */
+  --success: oklch(from #157a33 l c h);
   --success-foreground: oklch(0.99 0.005 250);
 
   --warning: oklch(from #fad905 l c h);
   --warning-foreground: oklch(from #050407 l c h);
+
+  /* Azul da marca (#0a98e7) escurecido para aguentar texto branco: #0a6394 mede 6,51:1 com branco
+     e 5,79:1 sobre o fundo da página. O azul vivo mede 3,15:1 e só serve como enfeite
+     (`--brand-accent`). */
+  --info: oklch(from #0a6394 l c h);
+  --info-foreground: oklch(0.99 0.005 250);
 
   /* `#d5131c`, um vermelho da marca um pouco mais escuro, mede 5,33:1 com
      texto branco nos botões destrutivos (excluir conta, bloquear, excluir
@@ -246,8 +256,18 @@
   --accent: oklch(0.33 0.05 70);
   --accent-foreground: oklch(0.95 0.05 85);
   --brand-accent: oklch(from #0a98e7 0.8 c h);
+
+  /* Sucesso e informação precisam ser redefinidos aqui pelo mesmo motivo de `--destructive`,
+     abaixo: sem isso o modo escuro herdaria os valores do tema claro, que foram escolhidos para
+     fundo claro. Mesma técnica de `--primary` neste bloco: fundo mais claro e texto escuro. */
+  --success: oklch(from #21a848 0.72 c h);
+  --success-foreground: oklch(from #21a848 0.17 c h);
+
   --warning: oklch(from #fad905 l c h);
   --warning-foreground: oklch(from #050407 l c h);
+
+  --info: oklch(from #0a98e7 0.72 c h);
+  --info-foreground: oklch(0.16 0 0);
 
   /* `--destructive` precisa ser redefinido aqui: sem isso, o modo escuro
      herdaria o vermelho genérico do bloco .dark de fábrica do shadcn, que
@@ -293,6 +313,13 @@
   --muted-foreground: oklch(0.22 0 0);
   --accent: oklch(0.95 0.08 90);
   --accent-foreground: oklch(0 0 0);
+
+  /* Estados em alto contraste: hues escuros e saturados, com texto branco. */
+  --success: oklch(0.36 0.14 150);
+  --success-foreground: oklch(1 0 0);
+  --info: oklch(0.33 0.16 250);
+  --info-foreground: oklch(1 0 0);
+
   --border: oklch(0 0 0);
   --input: oklch(0 0 0);
   --ring: oklch(0 0 0);
@@ -321,6 +348,13 @@
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.14 0 0);
   --muted-foreground: oklch(0.92 0 0);
+
+  /* Estados em alto contraste no escuro: hues claros, com texto preto. */
+  --success: oklch(0.86 0.19 150);
+  --success-foreground: oklch(0 0 0);
+  --info: oklch(0.82 0.15 240);
+  --info-foreground: oklch(0 0 0);
+
   --border: oklch(1 0 0);
   --input: oklch(1 0 0);
   --ring: oklch(0.95 0.18 100);
@@ -351,6 +385,8 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --shadow-card: var(--shadow-card);
@@ -662,15 +698,22 @@ div[vw].enabled {
   --destructive-foreground: #ffffff;
   --success: #0072b2;
   --success-foreground: #ffffff;
+  /* `--info` sai do azul aqui: neste modo o azul JÁ É o sucesso. O roxo (#6a3d9a, 7,64:1 com
+     texto branco) é o terceiro tom da paleta de Okabe e Ito que continua distinto do azul e do
+     laranja nos tipos comuns de daltonismo. */
+  --info: #6a3d9a;
+  --info-foreground: #ffffff;
   --chart-1: #0072b2;
   --chart-5: #b84a00;
 }
 
-.a11y-colorblind [data-variant="destructive"]::before {
+/* O símbolo é a reserva de quem não tem ícone próprio. Os selos de status já levam um ícone
+   (`StatusBadge`), e nesses o `::before` apareceria em cima: "✕ ✕ Recusada". */
+.a11y-colorblind [data-variant="destructive"]:not(:has(svg))::before {
   content: "✕ " / "";
 }
 
-.a11y-colorblind [data-variant="warning"]::before {
+.a11y-colorblind [data-variant="warning"]:not(:has(svg))::before {
   content: "⚠ " / "";
 }
 

@@ -8,6 +8,8 @@ import {
   AcessibilidadeContext,
 } from "@/contexts/AcessibilidadeContext";
 import { ehCorHex } from "@/lib/contraste";
+import { VARIAVEIS_DOS_PADROES, variaveisDoPadrao } from "@/lib/padroesVisuais";
+import { ajustesVisuais } from "@/lib/preferenciasVisuais";
 import { normalizarPreferencias } from "@/lib/preferenciasMotoras";
 
 const CHAVE_PREFERENCIAS = "acesso:a11y-prefs";
@@ -36,7 +38,25 @@ function aplicarNoDocumento(p: PreferenciasAcessibilidade) {
 
   raiz.classList.toggle("a11y-focus-mode", p.focusMode);
   raiz.classList.toggle("a11y-reading-mode", p.readingMode);
-  raiz.classList.toggle("a11y-colorblind", p.colorBlind);
+  // A classe liga o que não é cor: links sublinhados e o símbolo de reserva em quem não tem
+  // ícone. Vale para QUALQUER padrão escolhido, e não só para o interruptor antigo.
+  raiz.classList.toggle("a11y-colorblind", p.colorBlind || p.visualPattern !== "nenhum");
+
+  // Padrão visual para daltonismo. As cores vão como variáveis NO ELEMENTO RAIZ, então vencem
+  // qualquer bloco do `globals.css` — inclusive o de alto contraste. É de propósito: todas as
+  // paletas medem no mínimo 4,5:1 com o seu texto nos dois temas (o teste refaz essa conta), e
+  // quem escolheu um padrão escolheu para usar. O alto contraste continua mandando no fundo, no
+  // texto e nas bordas, que o padrão não toca.
+  raiz.setAttribute("data-padrao-visual", p.visualPattern);
+
+  const coresDoPadrao = variaveisDoPadrao(p.visualPattern, p.darkMode, ajustesVisuais(p));
+
+  for (const nome of VARIAVEIS_DOS_PADROES) {
+    const valor = coresDoPadrao[nome];
+
+    if (valor) raiz.style.setProperty(nome, valor);
+    else raiz.style.removeProperty(nome);
+  }
   raiz.setAttribute("data-target-size", p.targetSize);
   raiz.setAttribute("data-reading-bg", p.readingBg);
   raiz.setAttribute("data-reading-font", p.readingFont);

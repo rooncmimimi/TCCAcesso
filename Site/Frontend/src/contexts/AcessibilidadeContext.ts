@@ -1,5 +1,7 @@
 import { createContext } from "react";
 
+import type { IdDoPadrao, PapelDeCor } from "@/lib/padroesVisuais";
+
 /**
  * Preferências de acessibilidade do Site. Visitantes guardam só no localStorage; com sessão, elas
  * também são sincronizadas com a conta: no login e no cadastro (`SessaoProvider`) e ao salvar em
@@ -63,6 +65,21 @@ export type PreferenciasAcessibilidade = {
   colorFocus: string;
   /** Paleta que não depende de vermelho x verde, com links sublinhados e estados com ícone. */
   colorBlind: boolean;
+  /**
+   * Padrão de apresentação das cores que carregam informação (sucesso, erro, alerta, informação).
+   * É escolha de apresentação, nunca diagnóstico: ver `lib/padroesVisuais.ts`. "nenhum" deixa as
+   * cores da marca como estão.
+   */
+  visualPattern: IdDoPadrao;
+  /** 0 mantém as cores da marca, 100 usa as do padrão inteiras, e o meio é o meio do caminho. */
+  visualIntensity: number;
+  /** Multiplicadores em porcentagem (100 = como está). São preferência visual, não correção. */
+  visualSaturation: number;
+  visualBrightness: number;
+  /** Contraste MÍNIMO entre um preenchimento e o texto em cima dele: 4.5, 7 ou 10. */
+  visualContrast: number;
+  /** A cor escolhida à mão para um significado; vence o padrão. Sempre em `#rrggbb`. */
+  visualColors: Partial<Record<PapelDeCor, string>>;
 
   // Bloco 4 (motricidade e comunicação). Também ficam só no navegador, sem coluna no backend.
 
@@ -115,6 +132,12 @@ export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
   colorLink: "#0b3d91",
   colorFocus: "#c2410c",
   colorBlind: false,
+  visualPattern: "nenhum",
+  visualIntensity: 100,
+  visualSaturation: 100,
+  visualBrightness: 100,
+  visualContrast: 4.5,
+  visualColors: {},
   scanning: false,
   scanSpeed: 1.5,
   scanKey: "",

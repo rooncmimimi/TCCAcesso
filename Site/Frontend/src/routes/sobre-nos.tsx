@@ -9,6 +9,7 @@ import {
   Sparkles,
   Users2,
 } from "lucide-react";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -33,41 +34,17 @@ export const Route = createFileRoute("/sobre-nos")({
   component: SobreNos,
 });
 
-const pilares = [
-  {
-    icon: HeartHandshake,
-    titulo: "sobre-nos.sobreNosSobrenosmissao",
-    texto:
-      "sobre-nos.sobreNos",
-  },
-  {
-    icon: Accessibility,
-    titulo: "rodape.acessibilidade",
-    texto:
-      "sobre-nos.sobreNos2",
-  },
-  {
-    icon: ShieldCheck,
-    titulo: "inicio.recurso.empresas.titulo",
-    texto:
-      "sobre-nos.sobreNos3",
-  },
+const pilares: ReadonlyArray<{ icon: typeof HeartHandshake; titulo: ChaveBase; texto: ChaveBase }> = [
+  { icon: HeartHandshake, titulo: "sobre-nos.missao", texto: "sobre-nos.conectarPessoasComDeficienciaE" },
+  { icon: Accessibility, titulo: "rodape.acessibilidade", texto: "sobre-nos.seguimosAsDiretrizesWcag22" },
+  { icon: ShieldCheck, titulo: "inicio.recurso.empresas.titulo", texto: "sobre-nos.cadaEmpresaParceiraPassaPorUma" },
 ];
 
-const passos = [
-  { titulo: "sobre-nos.sobreNosSobrenoscriesuaconta", texto: "sobre-nos.sobreNosSobrenos" },
-  {
-    titulo: "sobre-nos.sobreNosSobrenos2",
-    texto: "sobre-nos.sobreNosSobrenos3",
-  },
-  {
-    titulo: "sobre-nos.sobreNos4",
-    texto: "sobre-nos.sobreNosSobrenos4",
-  },
-  {
-    titulo: "sobre-nos.sobreNos5",
-    texto: "sobre-nos.sobreNosSobrenos5",
-  },
+const passos: ReadonlyArray<{ titulo: ChaveBase; texto: ChaveBase }> = [
+  { titulo: "sobre-nos.crieSuaConta", texto: "sobre-nos.cadastreSeComoCandidatoOu" },
+  { titulo: "sobre-nos.personalizeSuaExperiencia", texto: "sobre-nos.ajusteContrasteFonteLeituraPor" },
+  { titulo: "sobre-nos.encontreOportunidades", texto: "sobre-nos.busqueVagasPorCidadeModalidade" },
+  { titulo: "sobre-nos.converseEmTempoReal", texto: "sobre-nos.faleDiretamenteComEmpresasPelo" },
 ];
 
 function SobreNos() {
@@ -126,8 +103,8 @@ function SobreNos() {
                       >
                         <p.icon className="size-5" />
                       </span>
-                      <h3 className="text-lg font-bold">{p.titulo}</h3>
-                      <p className="mt-2 text-sm text-muted-foreground">{p.texto}</p>
+                      <h3 className="text-lg font-bold">{t(p.titulo)}</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">{t(p.texto)}</p>
                     </CardContent>
                   </Card>
                 </li>
@@ -152,8 +129,8 @@ function SobreNos() {
                       {i + 1}
                     </span>
                     <div className="min-w-0">
-                      <h3 className="font-bold">{p.titulo}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{p.texto}</p>
+                      <h3 className="font-bold">{t(p.titulo)}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{t(p.texto)}</p>
                     </div>
                   </CardContent>
                 </Card>

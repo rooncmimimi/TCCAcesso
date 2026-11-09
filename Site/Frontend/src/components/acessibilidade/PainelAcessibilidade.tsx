@@ -50,7 +50,7 @@ export function PreviaAcessibilidade() {
             type="button"
             className="min-h-11 rounded-lg border border-input px-4 text-sm font-semibold"
           >
-            Botão de exemplo (teste o foco com Tab)
+            {t("acessibilidade.painelAcessibilidade.botaoDeExemplo")}
           </button>
         </div>
       </CardContent>

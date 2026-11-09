@@ -63,11 +63,8 @@ function ConfiguracoesAcessibilidade() {
     <EstruturaApp>
       <h1 className="text-3xl font-extrabold">{t("cabecalho.configAcessibilidade")}</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">
-        {t("configuracoes.acessibilidade.todasAsMudancasAparecem")}
-        seu jeito.{" "}
-        {usuario
-          ? "Ao salvar, as preferências ficam vinculadas à sua conta."
-          : "Sem login, as preferências ficam salvas neste dispositivo."}
+        {t("configuracoes.acessibilidade.todasAsMudancasAparecem")}{" "}
+        {usuario ? t("configuracoes.acessibilidade.aoSalvarAsPreferenciasFicam") : t("configuracoes.acessibilidade.semLoginAsPreferenciasFicam")}
       </p>
 
       <SecaoIdioma />

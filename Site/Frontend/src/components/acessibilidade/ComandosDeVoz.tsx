@@ -11,6 +11,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { useVoz } from "@/hooks/useVoz";
 import { EXEMPLOS_DE_COMANDOS, interpretarComando, type Comando } from "@/lib/comandosDeVoz";
 import { comoLiberarOMicrofone } from "@/lib/microfone";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Acha, na página, o botão ou link cujo nome começa com algum dos termos (e está ativo). */
 function acharControle(termos: RegExp): HTMLElement | null {
@@ -29,6 +30,7 @@ function acharControle(termos: RegExp): HTMLElement | null {
  * a revisão e o aceite na tela). Ver `lib/comandosDeVoz.ts`.
  */
 export function ComandosDeVoz() {
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const { rascunho, salvar } = useAcessibilidade();
   const { usuario, autenticado } = useSessao();
@@ -112,7 +114,7 @@ export function ComandosDeVoz() {
   useEffect(() => {
     const pedir = () => {
       if (!suportado) {
-        setResposta({ ouvido: null, texto: "Este navegador não oferece reconhecimento de voz dentro do site. Use o Chrome ou o Edge, ou os atalhos de teclado.", erro: true });
+        setResposta({ ouvido: null, texto: t("acessibilidade.comandosDeVoz.esteNavegadorNaoOferece"), erro: true });
 
         return;
       }
@@ -150,7 +152,7 @@ export function ComandosDeVoz() {
       {voz.ouvindo ? (
         <div className="flex items-center gap-3">
           <span aria-hidden="true" className="inline-block size-3 shrink-0 animate-pulse rounded-full bg-destructive" />
-          <p className="flex-1 text-sm font-semibold">Microfone ligado. Diga um comando.</p>
+          <p className="flex-1 text-sm font-semibold">{t("acessibilidade.comandosDeVoz.microfoneLigadoDigaUmComando")}</p>
           <Button type="button" variant="destructive" size="sm" className="min-h-11 gap-2" onClick={voz.parar}>
             <MicOff className="size-4" aria-hidden="true" /> Parar
           </Button>
@@ -174,7 +176,7 @@ export function ComandosDeVoz() {
           </div>
         </div>
       )}
-      <p className="mt-2 text-xs text-muted-foreground">O ACESSO não grava áudio. No Chrome e no Edge, o navegador usa um serviço online para reconhecer a fala, então precisa de internet.</p>
+      <p className="mt-2 text-xs text-muted-foreground">{t("acessibilidade.comandosDeVoz.oAcessoNaoGravaAudioNoChromeE")}</p>
     </div>
   );
 }

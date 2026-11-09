@@ -12,6 +12,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 import {
   AlertDialog,
@@ -51,6 +52,7 @@ export function VagaEmpresaCard({
   selecionada: boolean;
   onVerCandidaturas: (vaga: Vaga) => void;
 }) {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
 
   const invalidarListas = () => {
@@ -193,19 +195,19 @@ export function VagaEmpresaCard({
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Excluir esta vaga?</AlertDialogTitle>
+                <AlertDialogTitle>{t("dashboard.vagaEmpresaCard.excluirEstaVaga")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Essa ação não pode ser desfeita e pode afetar dados relacionados à vaga, como candidaturas recebidas.
+                  {t("dashboard.vagaEmpresaCard.essaAcaoNaoPodeSerDesfeitaE")}
                   {vaga.totalCandidaturas ? ` Esta vaga tem ${vaga.totalCandidaturas} candidatura(s) registrada(s).` : ""}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t("post.cancelar")}</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={() => remover.mutate()}
                 >
-                  Excluir vaga
+                  {t("dashboard.vagaEmpresaCard.excluirVaga")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

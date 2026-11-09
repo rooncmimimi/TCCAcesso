@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { PROFISSOES, buscarProfissoes, type IconeDeProfissao, type Profissao } from "@/dados/profissoes";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const ICONES: Record<IconeDeProfissao, LucideIcon> = {
   atendimento: Headset,
@@ -39,6 +40,7 @@ function Lista({ titulo, itens }: { titulo: string; itens: string[] }) {
 }
 
 function FichaDaProfissao({ profissao: p }: { profissao: Profissao }) {
+  const { t } = useIdioma();
   const Icone = ICONES[p.icone];
 
   return (
@@ -58,13 +60,13 @@ function FichaDaProfissao({ profissao: p }: { profissao: Profissao }) {
         <div className="space-y-4 border-t border-border p-3">
           <TextoOuvivel rotulo={`Ouvir a ficha de ${p.nome}`}>
             <div className="space-y-4">
-              <Lista titulo="O que a pessoa faz" itens={p.atividades} />
-              <Lista titulo="Ferramentas que usa" itens={p.ferramentas} />
-              <Lista titulo="Habilidades que ajudam" itens={p.habilidades} />
-              <Lista titulo="Exemplo de um dia de trabalho" itens={p.rotina} />
+              <Lista titulo={t("profissoes.dicionarioDeProfissoes.oQueAPessoaFaz")} itens={p.atividades} />
+              <Lista titulo={t("profissoes.dicionarioDeProfissoes.ferramentasQueUsa")} itens={p.ferramentas} />
+              <Lista titulo={t("profissoes.dicionarioDeProfissoes.habilidadesQueAjudam")} itens={p.habilidades} />
+              <Lista titulo={t("profissoes.dicionarioDeProfissoes.exemploDeUmDiaDeTrabalho")} itens={p.rotina} />
             </div>
           </TextoOuvivel>
-          <p className="text-xs text-muted-foreground">Isto é um exemplo geral. A rotina de cada empresa pode ser diferente.</p>
+          <p className="text-xs text-muted-foreground">{t("profissoes.dicionarioDeProfissoes.istoEUmExemploGeralARotinaDe")}</p>
           <Button asChild variant="outline" className="min-h-11">
             <Link to="/vagas" search={{ q: p.nome.split(" ou ")[0] }}>
               Procurar vagas de {p.nome.split(" ou ")[0].toLowerCase()}

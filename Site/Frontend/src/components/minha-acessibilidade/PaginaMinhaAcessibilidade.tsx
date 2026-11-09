@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { extrairMensagemErro } from "@/services/api";
 import { minhaAcessibilidadeService } from "@/services/adaptacoes.service";
 import type { CatalogoDeAdaptacoes, ItemDoCatalogo, MinhaAcessibilidade } from "@/types/adaptacoes";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const mesmaLista = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
@@ -23,6 +24,7 @@ const mesmaLista = (a: string[], b: string[]) => a.length === b.length && a.ever
  * escolhido a cada candidatura, depois de uma prévia. Não pede diagnóstico.
  */
 export function PaginaMinhaAcessibilidade() {
+  const { t } = useIdioma();
   const catalogo = useQuery({ queryKey: ["minha-acessibilidade", "catalogo"], queryFn: () => minhaAcessibilidadeService.catalogo(), staleTime: 60 * 60 * 1000 });
   const minha = useQuery({ queryKey: ["minha-acessibilidade"], queryFn: () => minhaAcessibilidadeService.obter() });
 
@@ -37,9 +39,9 @@ export function PaginaMinhaAcessibilidade() {
   if (catalogo.isError || minha.isError || !catalogo.data || !minha.data) {
     return (
       <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
-        <p>Não foi possível carregar a sua página de acessibilidade.</p>
+        <p>{t("minha-acessibilidade.paginaMinhaAcessibilidade.naoFoiPossivelCarregarASua")}</p>
         <Button variant="outline" size="sm" onClick={() => { void catalogo.refetch(); void minha.refetch(); }}>
-          Tentar novamente
+          {t("raiz.tentarNovamente")}
         </Button>
       </div>
     );
@@ -49,13 +51,13 @@ export function PaginaMinhaAcessibilidade() {
     <div className="mt-6 space-y-6">
       <section aria-labelledby="como-funciona" className="rounded-lg border bg-muted/40 p-4 text-sm">
         <h2 id="como-funciona" className="font-bold">
-          Como isto funciona
+          {t("minha-acessibilidade.paginaMinhaAcessibilidade.comoIstoFunciona")}
         </h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>Só você vê esta página. Você não precisa informar diagnóstico: conte o que ajuda, não a sua condição.</li>
-          <li>Nada daqui é enviado a uma empresa sozinho. Em cada candidatura você vê uma prévia e escolhe o que compartilhar.</li>
-          <li>O que você autorizar vira uma cópia só daquela candidatura. Mudar esta página depois não muda o que já foi autorizado.</li>
-          <li>Você pode retirar uma autorização quando quiser. A empresa deixa de poder consultá-la, mas o que já tiver visto não pode ser apagado da memória de quem viu.</li>
+          <li>{t("minha-acessibilidade.paginaMinhaAcessibilidade.soVoceVeEstaPaginaVoceNao")}</li>
+          <li>{t("minha-acessibilidade.paginaMinhaAcessibilidade.nadaDaquiEEnviadoAUmaEmpresa")}</li>
+          <li>{t("minha-acessibilidade.paginaMinhaAcessibilidade.oQueVoceAutorizarViraUmaCopia")}</li>
+          <li>{t("minha-acessibilidade.paginaMinhaAcessibilidade.vocePodeRetirarUmaAutorizacao")}</li>
         </ul>
       </section>
 
@@ -66,7 +68,7 @@ export function PaginaMinhaAcessibilidade() {
       <p className="text-sm text-muted-foreground">
         Quer treinar antes de se candidatar de verdade?{" "}
         <Link to="/simulador" className="font-semibold text-primary underline">
-          Abra o simulador de candidatura e entrevista
+          {t("minha-acessibilidade.paginaMinhaAcessibilidade.abraOSimuladorDeCandidaturaE")}
         </Link>
         .
       </p>
@@ -89,6 +91,7 @@ function useSalvarMinha(mensagem: string) {
 }
 
 function SecaoAdaptacoes({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; minha: MinhaAcessibilidade }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const [escolhidas, setEscolhidas] = useState<string[]>(minha.adaptacoes);
   const [observacao, setObservacao] = useState(minha.observacao ?? "");
@@ -105,8 +108,8 @@ function SecaoAdaptacoes({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; 
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-xl">Minhas adaptações profissionais</CardTitle>
-        <CardDescription>Marque o que ajuda você a participar de um processo seletivo e do trabalho. É uma lista de necessidades funcionais.</CardDescription>
+        <CardTitle className="text-xl">{t("minha-acessibilidade.paginaMinhaAcessibilidade.minhasAdaptacoesProfissionais")}</CardTitle>
+        <CardDescription>{t("minha-acessibilidade.paginaMinhaAcessibilidade.marqueOQueAjudaVoceAParticipar")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form
@@ -140,7 +143,7 @@ function SecaoAdaptacoes({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; 
           ))}
 
           <div className="space-y-2">
-            <Label htmlFor={`${idBase}-obs`}>Observação (opcional)</Label>
+            <Label htmlFor={`${idBase}-obs`}>{t("minha-acessibilidade.paginaMinhaAcessibilidade.observacaoOpcional")}</Label>
             <Textarea id={`${idBase}-obs`} rows={3} maxLength={500} value={observacao} onChange={(e) => setObservacao(e.target.value)} aria-describedby={`${idBase}-obs-ajuda`} />
             <p id={`${idBase}-obs-ajuda`} className="text-xs text-muted-foreground">
               Escreva o que ajuda, por exemplo “prefiro instruções curtas, uma por vez”. Não escreva diagnóstico, laudo, nome de doença nem medicação: isso não é necessário.
@@ -157,6 +160,7 @@ function SecaoAdaptacoes({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; 
 }
 
 function SecaoComunicacao({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; minha: MinhaAcessibilidade }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const c = minha.comunicacao;
   const [preferidos, setPreferidos] = useState<string[]>(c.canaisPreferidos);
@@ -198,8 +202,8 @@ function SecaoComunicacao({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes;
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-xl">Como prefiro ser contatado(a)</CardTitle>
-        <CardDescription>Uma preferência de contato não é diagnóstico e só chega a uma empresa se você marcar isso numa candidatura.</CardDescription>
+        <CardTitle className="text-xl">{t("candidatura.escolhaDeAdaptacoes.comoPrefiroSerContatadoA")}</CardTitle>
+        <CardDescription>{t("minha-acessibilidade.paginaMinhaAcessibilidade.umaPreferenciaDeContatoNaoE")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form
@@ -218,28 +222,28 @@ function SecaoComunicacao({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes;
           }}
         >
           <fieldset className="space-y-2">
-            <legend className="text-sm font-bold">Canais que eu prefiro</legend>
+            <legend className="text-sm font-bold">{t("minha-acessibilidade.paginaMinhaAcessibilidade.canaisQueEuPrefiro")}</legend>
             {lista(catalogo.canaisPreferidos, preferidos, setPreferidos, "pref")}
           </fieldset>
 
           <fieldset className="space-y-2">
-            <legend className="text-sm font-bold">Canais que eu prefiro evitar</legend>
+            <legend className="text-sm font-bold">{t("minha-acessibilidade.paginaMinhaAcessibilidade.canaisQueEuPrefiroEvitar")}</legend>
             {lista(catalogo.canaisAEvitar, evitar, setEvitar, "evitar")}
           </fieldset>
 
           {conflito.length > 0 ? (
             <p role="alert" className="text-sm font-medium text-destructive">
-              Um mesmo canal não pode estar entre os preferidos e os evitados. Desmarque um dos dois.
+              {t("minha-acessibilidade.paginaMinhaAcessibilidade.umMesmoCanalNaoPodeEstarEntre")}
             </p>
           ) : null}
 
           <div className="space-y-2">
-            <Label htmlFor={`${idBase}-horario`}>Melhor horário para contato (opcional)</Label>
-            <Input id={`${idBase}-horario`} maxLength={120} value={horario} onChange={(e) => setHorario(e.target.value)} placeholder="Ex.: de manhã, depois das 14h" />
+            <Label htmlFor={`${idBase}-horario`}>{t("minha-acessibilidade.paginaMinhaAcessibilidade.melhorHorarioParaContato")}</Label>
+            <Input id={`${idBase}-horario`} maxLength={120} value={horario} onChange={(e) => setHorario(e.target.value)} placeholder={t("minha-acessibilidade.paginaMinhaAcessibilidade.exDeManhaDepoisDas14h")} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`${idBase}-obs`}>Observação (opcional)</Label>
+            <Label htmlFor={`${idBase}-obs`}>{t("minha-acessibilidade.paginaMinhaAcessibilidade.observacaoOpcional")}</Label>
             <Textarea id={`${idBase}-obs`} rows={2} maxLength={300} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
           </div>
 
@@ -253,6 +257,7 @@ function SecaoComunicacao({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes;
 }
 
 function SecaoPrivacidade({ minha }: { minha: MinhaAcessibilidade }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const ligado = minha.privacidade.exibirDeficienciaNoPerfil;
   const salvar = useSalvarMinha("Privacidade atualizada.");
@@ -260,9 +265,9 @@ function SecaoPrivacidade({ minha }: { minha: MinhaAcessibilidade }) {
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-xl">Privacidade da categoria de deficiência</CardTitle>
+        <CardTitle className="text-xl">{t("minha-acessibilidade.paginaMinhaAcessibilidade.privacidadeDaCategoriaDe")}</CardTitle>
         <CardDescription>
-          A categoria que você declarou no perfil é privada por padrão. Só você a vê, a menos que você escolha o contrário aqui ou numa candidatura.
+          {t("minha-acessibilidade.paginaMinhaAcessibilidade.aCategoriaQueVoceDeclarouNo")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -271,14 +276,14 @@ function SecaoPrivacidade({ minha }: { minha: MinhaAcessibilidade }) {
             Categoria declarada: <strong>{minha.deficiencias.map((d) => d.nome).join(", ")}</strong>
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground">Você não declarou nenhuma categoria no perfil.</p>
+          <p className="text-sm text-muted-foreground">{t("minha-acessibilidade.paginaMinhaAcessibilidade.voceNaoDeclarouNenhuma")}</p>
         )}
 
         <div className="flex items-start gap-3">
           <Switch id={`${idBase}-exibir`} checked={ligado} disabled={salvar.isPending} onCheckedChange={(v) => salvar.mutate(() => minhaAcessibilidadeService.salvarPrivacidade(v))} aria-describedby={`${idBase}-exibir-ajuda`} />
           <div>
             <Label htmlFor={`${idBase}-exibir`} className="text-sm font-semibold">
-              Mostrar a categoria de deficiência no meu perfil público
+              {t("minha-acessibilidade.paginaMinhaAcessibilidade.mostrarACategoriaDeDeficiencia")}
             </Label>
             <p id={`${idBase}-exibir-ajuda`} className="mt-1 text-xs text-muted-foreground">
               Desligado, ninguém além de você vê. Ligar isto não compartilha nenhuma outra informação nem autoriza nada em candidaturas: cada candidatura continua sendo uma escolha

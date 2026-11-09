@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { CONTEUDO_PENDENTE, DOCUMENTOS, type DocumentoLegal } from "@/dados/documentosLegais";
 
@@ -35,6 +36,7 @@ export function DocumentoLegalDialog({
   /** O texto clicável que abre o documento. */
   children: ReactNode;
 }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const doc = DOCUMENTOS[documento];
 
@@ -71,7 +73,7 @@ export function DocumentoLegalDialog({
             </a>
           </Button>
           <Button type="button" className="min-h-11" onClick={() => setAberto(false)}>
-            Voltar ao cadastro
+            {t("legal.documentoLegalDialog.voltarAoCadastro")}
           </Button>
         </div>
       </DialogContent>
@@ -81,6 +83,7 @@ export function DocumentoLegalDialog({
 
 /** Corpo do documento, compartilhado entre o diálogo e a página inteira. */
 export function CorpoDocumento({ doc, nivelDasSecoes = 3 }: { doc: DocumentoLegal; /** 3 dentro do diálogo (o título dele é h2); 2 na página inteira (o título é h1). */ nivelDasSecoes?: 2 | 3 }) {
+  const { t } = useIdioma();
   const TituloDaSecao = nivelDasSecoes === 2 ? "h2" : "h3";
 
   return (
@@ -92,7 +95,7 @@ export function CorpoDocumento({ doc, nivelDasSecoes = 3 }: { doc: DocumentoLega
         >
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
           <p className="text-sm">
-            <strong className="font-bold">Documento ainda não publicado.</strong> O texto oficial do{" "}
+            <strong className="font-bold">{t("legal.documentoLegalDialog.documentoAindaNaoPublicado")}</strong> O texto oficial do{" "}
             {doc.titulo.toLowerCase()} está em elaboração. O que você lê abaixo é apenas a relação dos
             assuntos que ele vai cobrir — não é um contrato e não tem valor jurídico.
           </p>

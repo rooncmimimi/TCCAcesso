@@ -1,4 +1,5 @@
 import type { EventoDaDenuncia } from "@/services/denuncia.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Histórico de tratamento da denúncia, do mais antigo ao mais novo: o registro dela e tudo o que a
@@ -14,10 +15,11 @@ export function HistoricoDaDenuncia({
   denunciante: string | null;
   eventos: EventoDaDenuncia[];
 }) {
+  const { t } = useIdioma();
   const quando = (data: string) => new Date(data).toLocaleString("pt-BR");
 
   return (
-    <ol className="mt-3 space-y-3" aria-label="Histórico de tratamento">
+    <ol className="mt-3 space-y-3" aria-label={t("admin.historicoDaDenuncia.historicoDeTratamento")}>
       <li className="border-l-2 border-border pl-3 text-sm">
         <p className="font-semibold">Denúncia registrada{denunciante ? ` por ${denunciante}` : ""}</p>
         <p className="text-xs text-muted-foreground">
@@ -36,7 +38,7 @@ export function HistoricoDaDenuncia({
       ))}
 
       {eventos.length === 0 && (
-        <li className="pl-3 text-sm text-muted-foreground">Ninguém tratou esta denúncia ainda.</li>
+        <li className="pl-3 text-sm text-muted-foreground">{t("admin.historicoDaDenuncia.ninguemTratouEstaDenunciaAinda")}</li>
       )}
     </ol>
   );

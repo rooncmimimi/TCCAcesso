@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Textarea } from "@/components/ui/textarea";
 import { useCompartilharPostagem } from "./hooks";
 
@@ -21,6 +22,7 @@ function urlDaPostagem(postagemId: string): string {
 
 /** Diálogo de compartilhamento: recompartilhar no ACESSO, copiar link ou usar o compartilhamento nativo do sistema. */
 export function CompartilharDialog({ postagemId, trigger }: { postagemId: string; trigger: React.ReactNode }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [comentario, setComentario] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
@@ -56,8 +58,8 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Compartilhar publicação</DialogTitle>
-          <DialogDescription>Recompartilhe no ACESSO, copie o link ou envie por outro aplicativo.</DialogDescription>
+          <DialogTitle>{t("feed.compartilharDialog.compartilharPublicacao")}</DialogTitle>
+          <DialogDescription>{t("feed.compartilharDialog.recompartilheNoAcessoCopieO")}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2 sm:grid-cols-2">
@@ -95,7 +97,7 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
             id="comentario-compartilhar"
             value={comentario}
             onChange={(e) => setComentario(e.target.value)}
-            placeholder="O que você achou dessa publicação? (opcional)"
+            placeholder={t("feed.compartilharDialog.oQueVoceAchouDessaPublicacao")}
             className="mt-2 resize-none"
           />
         </div>

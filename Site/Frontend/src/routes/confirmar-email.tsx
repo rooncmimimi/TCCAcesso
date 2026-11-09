@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const esquema = z.object({
   email: z.string().trim().min(1, "Informe seu e-mail.").email("Informe um e-mail válido."),
@@ -53,6 +54,7 @@ type Estado = "confirmando-link" | "formulario" | "sucesso";
  * confirma sozinho ao montar, ou digitar o código de 6 dígitos neste formulário.
  */
 function ConfirmarEmail() {
+  const { t } = useIdioma();
   const { email, codigo } = Route.useSearch();
   const [estado, setEstado] = useState<Estado>(email && codigo ? "confirmando-link" : "formulario");
   const [confirmando, setConfirmando] = useState(false);
@@ -118,7 +120,7 @@ function ConfirmarEmail() {
 
   return (
     <AutenticacaoLayout>
-        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="mb-6 inline-flex">
+        <Link to="/" aria-label={t("auth.voltarPaginaInicial")} className="mb-6 inline-flex">
           <Logo />
         </Link>
         <Card className="shadow-card">
@@ -135,7 +137,7 @@ function ConfirmarEmail() {
                   aria-live="polite"
                   className="mt-4 text-xl font-extrabold outline-none"
                 >
-                  Confirmando seu e-mail…
+                  {t("confirmar-email.confirmandoSeuEMail")}
                 </h1>
               </div>
             ) : estado === "sucesso" ? (
@@ -144,18 +146,17 @@ function ConfirmarEmail() {
                   <CheckCircle2 className="size-10 text-primary" aria-hidden="true" />
                 </div>
                 <h1 ref={tituloRef} tabIndex={-1} className="mt-4 text-xl font-extrabold outline-none">
-                  E-mail confirmado com sucesso!
+                  {t("confirmar-email.eMailConfirmadoComSucesso")}
                 </h1>
                 {/*
                   Sem prometer que acabou: quem confirma vindo do cadastro ainda tem as duas
                   últimas etapas pela frente, e o login leva direto para elas (`?retomar=true`).
                 */}
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Agora é só entrar. Se o seu cadastro ficou pela metade, continuamos de onde você
-                  parou.
+                  {t("confirmar-email.agoraESoEntrarSeOSeuCadastro")}
                 </p>
                 <Button asChild className="mt-6 min-h-12 w-full text-base">
-                  <Link to="/entrar">Entrar no ACESSO</Link>
+                  <Link to="/entrar">{t("login.titulo")}</Link>
                 </Button>
               </div>
             ) : (
@@ -168,12 +169,11 @@ function ConfirmarEmail() {
                     <Mail className="size-5" />
                   </span>
                   <h1 ref={tituloRef} tabIndex={-1} className="text-xl font-extrabold outline-none">
-                    Confirme seu e-mail
+                    {t("login.confirmeEmail")}
                   </h1>
                 </div>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  Enviamos um código de confirmação de 6 dígitos para o seu e-mail. Digite o código recebido, ou use
-                  o botão de confirmação diretamente na mensagem.
+                  {t("confirmar-email.enviamosUmCodigoDeConfirmacao")}
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={confirmar} noValidate>
@@ -195,7 +195,7 @@ function ConfirmarEmail() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="codigo">Código de confirmação</Label>
+                    <Label htmlFor="codigo">{t("confirmar-email.codigoDeConfirmacao")}</Label>
                     <Input
                       id="codigo"
                       inputMode="numeric"

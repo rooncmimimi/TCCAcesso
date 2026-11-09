@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { NavegacaoPorObjetivos } from "@/components/objetivos/NavegacaoPorObjetivos";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/objetivos")({
   head: () => ({
@@ -14,10 +15,11 @@ export const Route = createFileRoute("/objetivos")({
 });
 
 function ObjetivosPagina() {
+  const { t } = useIdioma();
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">O que você quer fazer?</h1>
-      <p className="mt-2 text-muted-foreground">Escolha um objetivo. Mostramos só os passos necessários, um depois do outro. Nada é feito por você: cada passo leva à página certa.</p>
+      <h1 className="text-3xl font-extrabold">{t("objetivos.oQueVoceQuerFazer")}</h1>
+      <p className="mt-2 text-muted-foreground">{t("objetivos.escolhaUmObjetivoMostramosSoOs")}</p>
       <NavegacaoPorObjetivos />
     </EstruturaApp>
   );

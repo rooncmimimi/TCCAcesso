@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { useVoz } from "@/hooks/useVoz";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type Props = {
   texto: string;
@@ -27,6 +28,7 @@ async function copiarTexto(texto: string): Promise<boolean> {
  * ouvir em voz alta e copiar. Nada é enviado a ninguém por aqui.
  */
 export function CartaoDeComunicacao({ texto, aoMostrar, aoRemover }: Props) {
+  const { t } = useIdioma();
   const { falar } = useVoz();
 
   async function copiar() {
@@ -39,17 +41,17 @@ export function CartaoDeComunicacao({ texto, aoMostrar, aoRemover }: Props) {
       <p className="text-base font-semibold leading-snug">{texto}</p>
       <div className="flex flex-wrap gap-2">
         <Button type="button" className="min-h-11 gap-2" onClick={() => aoMostrar(texto)} aria-label={`Mostrar em tela cheia: ${texto}`}>
-          <Maximize2 className="size-4" aria-hidden="true" /> Mostrar
+          <Maximize2 className="size-4" aria-hidden="true" /> {t("comunicacao.cartaoDeComunicacao.mostrar")}
         </Button>
         <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => falar(texto)} aria-label={`Ouvir: ${texto}`}>
-          <Volume2 className="size-4" aria-hidden="true" /> Ouvir
+          <Volume2 className="size-4" aria-hidden="true" /> {t("comunicacao.cartaoDeComunicacao.ouvir")}
         </Button>
         <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => void copiar()} aria-label={`Copiar: ${texto}`}>
-          <Copy className="size-4" aria-hidden="true" /> Copiar
+          <Copy className="size-4" aria-hidden="true" /> {t("comunicacao.cartaoDeComunicacao.copiar")}
         </Button>
         {aoRemover ? (
           <Button type="button" variant="ghost" className="min-h-11 gap-2 text-destructive hover:text-destructive" onClick={aoRemover} aria-label={`Remover o cartão: ${texto}`}>
-            <Trash2 className="size-4" aria-hidden="true" /> Remover
+            <Trash2 className="size-4" aria-hidden="true" /> {t("comunicacao.cartaoDeComunicacao.remover")}
           </Button>
         ) : null}
       </div>

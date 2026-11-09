@@ -1,5 +1,6 @@
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Lista dos requisitos de senha, marcada em tempo real conforme a pessoa digita.
@@ -14,11 +15,11 @@ import { cn } from "@/lib/utils";
  */
 
 const REQUISITOS = [
-  { rotulo: "Pelo menos 8 caracteres", testar: (s: string) => s.length >= 8 && s.length <= 72 },
-  { rotulo: "Uma letra maiúscula", testar: (s: string) => /[A-Z]/.test(s) },
-  { rotulo: "Uma letra minúscula", testar: (s: string) => /[a-z]/.test(s) },
-  { rotulo: "Um número", testar: (s: string) => /\d/.test(s) },
-  { rotulo: "Um caractere especial", testar: (s: string) => /[^A-Za-z0-9]/.test(s) },
+  { rotulo: "cadastro.requisitosSenha.peloMenos8Caracteres", testar: (s: string) => s.length >= 8 && s.length <= 72 },
+  { rotulo: "cadastro.requisitosSenha.umaLetraMaiuscula", testar: (s: string) => /[A-Z]/.test(s) },
+  { rotulo: "cadastro.requisitosSenha.umaLetraMinuscula", testar: (s: string) => /[a-z]/.test(s) },
+  { rotulo: "cadastro.requisitosSenha.umNumero", testar: (s: string) => /\d/.test(s) },
+  { rotulo: "cadastro.requisitosSenha.umCaractereEspecial", testar: (s: string) => /[^A-Za-z0-9]/.test(s) },
 ] as const;
 
 export function RequisitosSenha({
@@ -35,6 +36,8 @@ export function RequisitosSenha({
   atendidoTexto?: string;
   pendenteTexto?: string;
 }) {
+  const { t } = useIdioma();
+
   return (
     <ul id={id} aria-live="polite" className="space-y-1.5">
       {REQUISITOS.map((requisito, indice) => {
@@ -53,7 +56,7 @@ export function RequisitosSenha({
               {atendido ? <Check className="size-3.5" /> : <X className="size-3.5" />}
             </span>
             <span className={atendido ? "font-medium text-foreground" : "text-muted-foreground"}>
-              {rotulo}
+              {rotulos?.[indice] ?? t(requisito.rotulo)}
             </span>
             <span className="sr-only">{atendido ? atendidoTexto : pendenteTexto}</span>
           </li>

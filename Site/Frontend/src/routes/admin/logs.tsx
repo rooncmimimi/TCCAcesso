@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Card } from "@/components/ui/card";
 import { LogsTabela } from "@/components/admin/LogsTabela";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/admin/logs")({
   head: () => ({
@@ -14,12 +15,12 @@ export const Route = createFileRoute("/admin/logs")({
 });
 
 function AdminLogs() {
+  const { t } = useIdioma();
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-extrabold">Logs de auditoria</h1>
+      <h1 className="text-3xl font-extrabold">{t("admin.logs.logsDeAuditoria")}</h1>
       <p className="text-sm text-muted-foreground">
-        Registro somente leitura de todas as ações administrativas. Não é possível editar ou excluir
-        nenhum item aqui.
+        {t("admin.logs.registroSomenteLeituraDeTodas")}
       </p>
       <Card className="overflow-hidden p-0 shadow-none">
         <LogsTabela />

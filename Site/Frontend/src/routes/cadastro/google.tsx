@@ -14,6 +14,7 @@ import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { lerProva, limparProva } from "@/lib/googleNavegador";
 import googleService, { mensagemDeErroGoogle, perfilDaProvaGoogle } from "@/services/google.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Criar a conta direto do retorno do Google (etapa 6 da auditoria), quando o servidor está com a
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/cadastro/google")({
 });
 
 function CadastroComGoogle() {
+  const { t } = useIdioma();
   const { depois } = Route.useSearch();
   const navigate = useNavigate();
   const { iniciarSessao } = useSessao();
@@ -92,7 +94,7 @@ function CadastroComGoogle() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t("auth.voltarPaginaInicial")} className="inline-flex">
           <Logo />
         </Link>
       </div>
@@ -102,13 +104,13 @@ function CadastroComGoogle() {
           {!prova || !perfil?.email ? (
             <div role="alert" className="space-y-4">
               <h1 ref={tituloRef} tabIndex={-1} className="text-xl font-extrabold outline-none">
-                A verificação com o Google expirou
+                {t("cadastro.google.aVerificacaoComOGoogleExpirou")}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Por segurança, ela vale por poucos minutos. Entre com o Google novamente para criar a conta.
+                {t("cadastro.google.porSegurancaElaValePorPoucos")}
               </p>
               <Button asChild className="min-h-12 w-full text-base">
-                <Link to="/entrar">Voltar para o login</Link>
+                <Link to="/entrar">{t("cadastro.google.voltarParaOLogin")}</Link>
               </Button>
             </div>
           ) : (
@@ -122,10 +124,10 @@ function CadastroComGoogle() {
             >
               <div>
                 <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-                  Criar conta com o Google
+                  {t("cadastro.google.criarContaComOGoogle")}
                 </h1>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  Falta só um passo. Depois pedimos seus dados pessoais, e você não precisa criar uma senha.
+                  {t("cadastro.google.faltaSoUmPassoDepoisPedimos")}
                 </p>
               </div>
 
@@ -134,7 +136,7 @@ function CadastroComGoogle() {
                   <IconeGoogle />
                 </span>
                 <p className="min-w-0 text-sm">
-                  <span className="font-semibold">Conta Google confirmada.</span>{" "}
+                  <span className="font-semibold">{t("cadastro.google.contaGoogleConfirmada")}</span>{" "}
                   {perfil.nome && <span className="block break-words font-medium">{perfil.nome}</span>}
                   <span className="block break-all text-muted-foreground">{perfil.email}</span>
                 </p>
@@ -150,7 +152,7 @@ function CadastroComGoogle() {
                 erro={erroDoAceite}
                 enviando={criando}
                 obrigatorio
-                dicaObrigatorio="Campo obrigatório"
+                dicaObrigatorio={t("cadastro.google.campoObrigatorio")}
               />
 
               {erro && (
@@ -159,7 +161,7 @@ function CadastroComGoogle() {
                   <p className="text-muted-foreground">
                     Já tem conta no ACESSO?{" "}
                     <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
-                      Entre com ela
+                      {t("cadastro.google.entreComEla")}
                     </Link>
                     .
                   </p>
@@ -183,7 +185,7 @@ function CadastroComGoogle() {
                   search={{ google: true, depois }}
                   className="font-semibold text-primary underline underline-offset-2"
                 >
-                  Cadastro completo
+                  {t("cadastro.google.cadastroCompleto")}
                 </Link>
               </p>
             </form>

@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PostagemCard } from "@/components/feed/PostagemCard";
 import { usePostagemDetalhe } from "@/components/feed/hooks";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/postagem/$postagemId")({
   head: () => ({
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/postagem/$postagemId")({
 });
 
 function DetalhePostagem() {
+  const { t } = useIdioma();
   const { postagemId } = Route.useParams();
   const { data: postagem, isLoading, isError, refetch } = usePostagemDetalhe(postagemId);
 
@@ -42,21 +44,21 @@ function DetalhePostagem() {
         <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para o feed
       </Link>
 
-      <h1 className="sr-only">Publicação</h1>
+      <h1 className="sr-only">{t("postagempostagemId.publicacao")}</h1>
 
       {isLoading && <Skeleton className="mt-4 h-64 w-full rounded-xl" />}
 
       {isError && (
         <div role="alert" className="mt-4 space-y-3 rounded-xl border border-destructive/40 p-6">
-          <p className="text-sm">Não foi possível carregar esta publicação.</p>
+          <p className="text-sm">{t("postagempostagemId.naoFoiPossivelCarregarEsta")}</p>
           <Button variant="outline" onClick={() => refetch()}>
-            Tentar novamente
+            {t("raiz.tentarNovamente")}
           </Button>
         </div>
       )}
 
       {!isLoading && !isError && !postagem && (
-        <p className="mt-4 text-sm text-muted-foreground">Publicação não encontrada ou removida.</p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("postagempostagemId.publicacaoNaoEncontradaOu")}</p>
       )}
 
       {postagem && (

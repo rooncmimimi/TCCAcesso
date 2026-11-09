@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,7 @@ function removerDaResposta(atual: RespostaLista | undefined, id: string): Respos
 
 /** Comentários para moderação, com busca por texto, paginação e remoção. */
 export function ComentariosTabela() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const [pagina, setPagina] = useState(1);
   const [busca, setBusca] = useState("");
@@ -88,13 +90,13 @@ export function ComentariosTabela() {
 
   if (isLoading) {
     return (
-      <ListaCarregando rotulo="Carregando os comentários…" linhas={5} />
+      <ListaCarregando rotulo={t("admin.comentariosTabela.carregandoOsComentarios")} linhas={5} />
     );
   }
 
   if (isError) {
     return (
-      <ListaComErro mensagem="Não foi possível carregar os comentários." aoTentarDeNovo={() => refetch()} />
+      <ListaComErro mensagem={t("comentario.erroCarregar")} aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -102,12 +104,12 @@ export function ComentariosTabela() {
     <div>
       <form className="flex flex-wrap items-end gap-3 p-4" onSubmit={buscar}>
         <div className="min-w-56">
-          <Label htmlFor="filtro-comentarios">Buscar por conteúdo</Label>
+          <Label htmlFor="filtro-comentarios">{t("admin.comentariosTabela.buscarPorConteudo")}</Label>
           <Input
             id="filtro-comentarios"
             value={busca}
             onChange={(evento) => setBusca(evento.target.value)}
-            placeholder="Ex.: palavra no comentário"
+            placeholder={t("admin.comentariosTabela.exPalavraNoComentario")}
             className="mt-1"
           />
         </div>
@@ -117,15 +119,15 @@ export function ComentariosTabela() {
       </form>
 
       {comentarios.length === 0 ? (
-        <ListaVazia icone={MessageSquare} mensagem="Nenhum comentário encontrado." />
+        <ListaVazia icone={MessageSquare} mensagem={t("admin.comentariosTabela.nenhumComentarioEncontrado")} />
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Autor</TableHead>
-                <TableHead>Comentário</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{t("admin.comentariosTabela.autor")}</TableHead>
+                <TableHead>{t("admin.comentariosTabela.comentario")}</TableHead>
+                <TableHead className="text-right">{t("admin.comentariosTabela.acoes")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -148,7 +150,7 @@ export function ComentariosTabela() {
                         variant="outline"
                         className="text-destructive hover:text-destructive"
                         onClick={() => setAlvo(comentario)}
-                        aria-label="Remover comentário"
+                        aria-label={t("admin.comentariosTabela.removerComentario")}
                       >
                         <Trash2 className="size-4" aria-hidden="true" /> Remover
                       </Button>
@@ -177,9 +179,9 @@ export function ComentariosTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo="Remover comentário"
-        descricao="Esta ação não pode ser desfeita. O comentário será removido permanentemente."
-        textoConfirmar="Remover"
+        titulo={t("admin.comentariosTabela.removerComentario")}
+        descricao={t("comentario.excluirTexto")}
+        textoConfirmar={t("admin.comentariosTabela.remover")}
         destrutivo
         carregando={remover.isPending}
         onConfirmar={() => alvo && remover.mutate(alvo.id)}

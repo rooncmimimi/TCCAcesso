@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { toast } from "sonner";
 import { useVoz } from "@/hooks/useVoz";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
@@ -26,6 +27,7 @@ const PERGUNTA =
  * redefinir as preferências.
  */
 export function ConsentimentoVozDialog() {
+  const { t } = useIdioma();
   const { inicializado, preferencias } = useAcessibilidade();
   const { suportado, falar, parar, definirEscolha } = useVoz();
   const { autenticado } = useSessao();
@@ -81,14 +83,14 @@ export function ConsentimentoVozDialog() {
             <Volume2 className="size-7" />
           </span>
           <AlertDialogTitle className="text-center text-2xl">
-            Deseja ativar a leitura por voz?
+            {t("acessibilidade.consentimentoVozDialog.desejaAtivarALeituraPorVoz")}
           </AlertDialogTitle>
           {/* O aviso sobre leitor de tela é o ponto principal desta pergunta, não um detalhe: não há como o site
               saber se um já está em uso (nenhum navegador informa isso), e ativar os dois faz cada botão ser falado
               duas vezes. Quem mais sofreria com isso é justamente parte do público do ACESSO. */}
           <AlertDialogDescription className="text-center text-base">
             O ACESSO pode ler em voz alta os conteúdos enquanto você navega.{" "}
-            <strong className="font-semibold text-foreground">Se você já usa um leitor de tela</strong> (NVDA, JAWS,
+            <strong className="font-semibold text-foreground">{t("acessibilidade.consentimentoVozDialog.seVoceJaUsaUmLeitorDeTela")}</strong> (NVDA, JAWS,
             Narrador, VoiceOver ou TalkBack), escolha “Não, obrigado”: com os dois ligados, cada item seria falado duas
             vezes. Você pode alterar essa escolha depois em Configurações de acessibilidade.
           </AlertDialogDescription>

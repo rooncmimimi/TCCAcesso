@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Badge } from "@/components/ui/badge";
 import { GaleriaAnexos } from "@/components/feed/GaleriaAnexos";
 import { LogsTabela } from "@/components/admin/LogsTabela";
@@ -26,6 +27,7 @@ export function DetalhePostagemSheet({
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
 }) {
+  const { t } = useIdioma();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
@@ -44,7 +46,7 @@ export function DetalhePostagemSheet({
                 <Badge variant={postagem.publica === false ? "outline" : "secondary"}>
                   {postagem.publica === false ? "Não visível a visitantes anônimos" : "Visível a visitantes anônimos"}
                 </Badge>
-                {postagem.ativo === false && <Badge variant="destructive">Removida pela moderação</Badge>}
+                {postagem.ativo === false && <Badge variant="destructive">{t("admin.detalhePostagemSheet.removidaPelaModeracao")}</Badge>}
               </div>
 
               <p className="whitespace-pre-wrap text-sm">{postagem.conteudo}</p>
@@ -67,7 +69,7 @@ export function DetalhePostagemSheet({
               </div>
 
               <div>
-                <h3 className="mb-2 text-sm font-bold">Histórico de moderação desta publicação</h3>
+                <h3 className="mb-2 text-sm font-bold">{t("admin.detalhePostagemSheet.historicoDeModeracaoDesta")}</h3>
                 <div className="rounded-lg border border-border">
                   <LogsTabela entidadeId={postagem.id} entidadeTipo="postagem" />
                 </div>

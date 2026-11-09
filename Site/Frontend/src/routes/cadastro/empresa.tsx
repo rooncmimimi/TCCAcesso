@@ -28,6 +28,7 @@ import {
   NavegacaoEtapa,
   TituloEtapa,
 } from "@/components/cadastro/comuns";
+import { useIdioma } from "@/hooks/useIdioma";
 import { ehCodigoDePais, PAIS_POR_CODIGO } from "@/dados/paises";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
@@ -135,6 +136,7 @@ export const Route = createFileRoute("/cadastro/empresa")({
 });
 
 function CadastroEmpresa() {
+  const { t } = useIdioma();
   const [emailPendente, setEmailPendente] = useState<string | null>(null);
   const { autenticado, usuario, inicializado } = useSessao();
 
@@ -145,18 +147,16 @@ function CadastroEmpresa() {
     return (
       <AutenticacaoLayout className="max-w-lg">
         <div className="mb-6">
-          <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
+          <Link to="/" aria-label={t("auth.voltarPaginaInicial")} className="inline-flex">
             <Logo />
           </Link>
         </div>
 
         <Card className="shadow-card">
           <CardContent className="p-6 sm:p-8">
-            <h1 className="text-xl font-extrabold">Primeiro, a sua conta pessoal</h1>
+            <h1 className="text-xl font-extrabold">{t("cadastro.empresa.primeiroASuaContaPessoal")}</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              No ACESSO a conta da empresa fica vinculada à conta de candidato de quem responde por
-              ela. Crie a sua conta pessoal — leva poucos minutos — e o cadastro da empresa continua
-              logo em seguida.
+              {t("cadastro.empresa.noAcessoAContaDaEmpresaFica")}
             </p>
 
             <Button asChild className="mt-6 min-h-12 w-full text-base">
@@ -180,13 +180,13 @@ function CadastroEmpresa() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between gap-3">
-        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t("auth.voltarPaginaInicial")} className="inline-flex">
           <Logo />
         </Link>
-        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
+        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t("cabecalho.configAcessibilidade")}>
           <Link to="/configuracoes/acessibilidade">
             <Accessibility aria-hidden="true" />
-            <span className="hidden sm:inline">Acessibilidade</span>
+            <span className="hidden sm:inline">{t("rodape.acessibilidade")}</span>
           </Link>
         </Button>
       </div>
@@ -225,6 +225,7 @@ function CadastroEmpresa() {
  * conta continua sujeita à aprovação da equipe antes de publicar vagas — nada aqui contorna isso.
  */
 function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (email: string) => void }) {
+  const { t } = useIdioma();
   const { registrarEmpresa } = useSessao();
   const [passo, setPasso] = useState<number>(EMPRESA.IDENTIFICACAO);
   const [enviando, setEnviando] = useState(false);
@@ -335,8 +336,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.IDENTIFICACAO && (
         <>
           <TituloEtapa
-            titulo="Identificação da empresa"
-            descricao="Os dados que identificam a empresa publicamente e no cadastro."
+            titulo={t("cadastro.empresa.identificacaoDaEmpresa")}
+            descricao={t("cadastro.empresa.osDadosQueIdentificamAEmpresa")}
             focar={navegou.current}
           />
           {/*
@@ -353,7 +354,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             <Campo
               id="cnpj"
               rotulo="CNPJ"
-              ajuda="Usado para confirmar que a empresa existe antes de liberar a publicação de vagas."
+              ajuda={t("cadastro.empresa.usadoParaConfirmarQueAEmpresa")}
               erro={erros.cnpj?.message}
               obrigatorio
             >
@@ -372,7 +373,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="razao-social" rotulo="Razão social" erro={erros.razaoSocial?.message} obrigatorio>
+            <Campo id="razao-social" rotulo={t("cadastro.empresa.razaoSocial")} erro={erros.razaoSocial?.message} obrigatorio>
               <Input
                 id="razao-social"
                 required
@@ -386,8 +387,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="nome-fantasia"
-              rotulo="Nome fantasia (opcional)"
-              ajuda="É esse nome que aparece em destaque nas vagas, quando preenchido."
+              rotulo={t("cadastro.empresa.nomeFantasiaOpcional")}
+              ajuda={t("cadastro.empresa.eEsseNomeQueApareceEmDestaque")}
               erro={erros.nomeFantasia?.message}
             >
               <Input
@@ -399,21 +400,21 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="setor" rotulo="Setor de atuação (opcional)" erro={erros.setor?.message}>
+            <Campo id="setor" rotulo={t("cadastro.empresa.setorDeAtuacaoOpcional")} erro={erros.setor?.message}>
               <Input
                 id="setor"
                 className="min-h-12"
-                placeholder="Ex.: Tecnologia, Saúde, Educação"
+                placeholder={t("cadastro.empresa.exTecnologiaSaudeEducacao")}
                 aria-invalid={Boolean(erros.setor)}
                 aria-describedby={descricao("setor", false, Boolean(erros.setor))}
                 {...register("setor")}
               />
             </Campo>
 
-            <Campo id="porte" rotulo="Porte da empresa (opcional)" erro={erros.porte?.message}>
+            <Campo id="porte" rotulo={t("cadastro.empresa.porteDaEmpresaOpcional")} erro={erros.porte?.message}>
               <Select value={watch("porte") ?? ""} onValueChange={(valor) => setValue("porte", valor)}>
                 <SelectTrigger id="porte" className="min-h-12 w-full">
-                  <SelectValue placeholder="Selecione o porte" />
+                  <SelectValue placeholder={t("cadastro.empresa.selecioneOPorte")} />
                 </SelectTrigger>
                 <SelectContent>
                   {PORTES_EMPRESA.map((p) => (
@@ -431,13 +432,13 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.RESPONSAVEL && (
         <>
           <TituloEtapa
-            titulo="Responsável pela conta"
-            descricao="Quem administra a conta da empresa no ACESSO e recebe as notificações."
+            titulo={t("cadastro.empresa.responsavelPelaConta")}
+            descricao={t("cadastro.empresa.quemAdministraAContaDaEmpresa")}
           />
           <LegendaObrigatorio />
 
           <div className="space-y-5">
-            <Campo id="nome-responsavel" rotulo="Nome completo" erro={erros.nome?.message} obrigatorio>
+            <Campo id="nome-responsavel" rotulo={t("cadastro.empresa.nomeCompleto")} erro={erros.nome?.message} obrigatorio>
               <Input
                 id="nome-responsavel"
                 required
@@ -452,7 +453,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             <Campo
               id="email-empresa"
               rotulo="E-mail profissional"
-              ajuda="É por ele que a empresa entra na plataforma e recebe o link de confirmação."
+              ajuda={t("cadastro.empresa.ePorEleQueAEmpresaEntraNa")}
               erro={erros.email?.message}
               obrigatorio
             >
@@ -470,7 +471,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="telefone-empresa"
-              rotulo="Telefone de contato (opcional)"
+              rotulo={t("cadastro.empresa.telefoneDeContatoOpcional")}
               erro={erros.telefone?.message}
             >
               <Input
@@ -489,7 +490,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="senha-empresa" rotulo="Senha" erro={erros.senha?.message} obrigatorio>
+            <Campo id="senha-empresa" rotulo={t("login.senha")} erro={erros.senha?.message} obrigatorio>
               <PasswordInput
                 id="senha-empresa"
                 required
@@ -509,12 +510,12 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.ENDERECO && (
         <>
           <TituloEtapa
-            titulo="Endereço e contato institucional"
-            descricao="Onde a empresa fica. Ajuda a mostrar as vagas para quem está por perto."
+            titulo={t("cadastro.empresa.enderecoEContatoInstitucional")}
+            descricao={t("cadastro.empresa.ondeAEmpresaFicaAjudaAMostrar")}
           />
 
           <div className="space-y-5">
-            <Campo id="pais-empresa" rotulo="País (opcional)" erro={erros.pais?.message}>
+            <Campo id="pais-empresa" rotulo={t("cadastro.empresa.paisOpcional")} erro={erros.pais?.message}>
               <PaisAutocomplete
                 id="pais-empresa"
                 valor={watch("pais") ?? ""}
@@ -542,20 +543,20 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             </Campo>
 
             <div className="grid gap-5 sm:grid-cols-[1fr_7rem]">
-              <Campo id="cidade-empresa" rotulo="Cidade (opcional)" erro={erros.cidade?.message}>
+              <Campo id="cidade-empresa" rotulo={t("cadastro.empresa.cidadeOpcional")} erro={erros.cidade?.message}>
                 <CidadeAutocomplete
                   id="cidade-empresa"
                   name="cidade"
                   value={watch("cidade") ?? ""}
                   onChange={(valor) => setValue("cidade", valor, { shouldValidate: true })}
                   estado={watch("estado") ?? ""}
-                  aria-label="Cidade"
+                  aria-label={t("filtro.cidade")}
                   aria-invalid={Boolean(erros.cidade)}
                   className="min-h-12"
                 />
               </Campo>
 
-              <Campo id="estado-empresa" rotulo="Estado (UF)" erro={erros.estado?.message}>
+              <Campo id="estado-empresa" rotulo={t("cadastro.empresa.estadoUf")} erro={erros.estado?.message}>
                 <Input
                   id="estado-empresa"
                   maxLength={2}
@@ -570,8 +571,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="endereco"
-              rotulo="Endereço (opcional)"
-              ajuda="Rua, número e complemento, se houver."
+              rotulo={t("cadastro.empresa.enderecoOpcional")}
+              ajuda={t("cadastro.empresa.ruaNumeroEComplementoSeHouver")}
               erro={erros.endereco?.message}
             >
               <Input
@@ -590,15 +591,15 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.APRESENTACAO && (
         <>
           <TituloEtapa
-            titulo="Apresentação da empresa"
-            descricao="O que as pessoas candidatas leem antes de decidir se candidatar."
+            titulo={t("cadastro.empresa.apresentacaoDaEmpresa")}
+            descricao={t("cadastro.empresa.oQueAsPessoasCandidatasLeem")}
           />
 
           <div className="space-y-5">
             <Campo
               id="descricao-empresa"
-              rotulo="Descrição institucional (opcional)"
-              ajuda="Em poucas linhas: o que a empresa faz, onde atua e qual o porte da operação."
+              rotulo={t("cadastro.empresa.descricaoInstitucionalOpcional")}
+              ajuda={t("cadastro.empresa.emPoucasLinhasOQueAEmpresaFaz")}
               erro={erros.descricao?.message}
             >
               <Textarea
@@ -613,8 +614,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
             <Campo
               id="cultura-inclusiva"
-              rotulo="Cultura inclusiva (opcional)"
-              ajuda="Como a empresa pratica inclusão: acessibilidade do espaço, adaptações, programas afirmativos."
+              rotulo={t("cadastro.empresa.culturaInclusivaOpcional")}
+              ajuda={t("cadastro.empresa.comoAEmpresaPraticaInclusao")}
               erro={erros.culturaInclusiva?.message}
             >
               <Textarea
@@ -627,7 +628,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
               />
             </Campo>
 
-            <Campo id="site" rotulo="Site (opcional)" erro={erros.site?.message}>
+            <Campo id="site" rotulo={t("cadastro.empresa.siteOpcional")} erro={erros.site?.message}>
               <Input
                 id="site"
                 type="url"
@@ -646,8 +647,8 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       {passo === EMPRESA.CONCLUSAO && (
         <>
           <TituloEtapa
-            titulo="Revisão e aceite"
-            descricao="Confira os dados antes de criar a conta. Dá para voltar e corrigir qualquer etapa."
+            titulo={t("cadastro.empresa.revisaoEAceite")}
+            descricao={t("cadastro.empresa.confiraOsDadosAntesDeCriarA")}
           />
 
           <Revisao valores={getValues()} aoEditar={irPara} />
@@ -663,8 +664,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
             />
 
             <p className="rounded-lg bg-secondary px-4 py-3 text-sm text-muted-foreground">
-              Depois de criar a conta, confirme o e-mail para entrar. O cadastro passa por análise da
-              equipe do ACESSO antes de a empresa poder publicar vagas.
+              {t("cadastro.empresa.depoisDeCriarAContaConfirmeOE")}
             </p>
           </div>
         </>
@@ -682,10 +682,11 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
 
 /** Revisão da etapa 5: mostra o que foi preenchido e leva de volta à etapa certa para corrigir. */
 function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo: number) => void }) {
+  const { t } = useIdioma();
   const grupos = [
     {
       passo: EMPRESA.IDENTIFICACAO,
-      titulo: "Empresa",
+      titulo: "vaga.empresa",
       itens: [
         ["CNPJ", valores.cnpj],
         ["Razão social", valores.razaoSocial],
@@ -696,7 +697,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
     },
     {
       passo: EMPRESA.RESPONSAVEL,
-      titulo: "Responsável",
+      titulo: "cadastro.empresa.responsavel",
       itens: [
         ["Nome", valores.nome],
         ["E-mail", valores.email],
@@ -705,7 +706,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
     },
     {
       passo: EMPRESA.ENDERECO,
-      titulo: "Endereço",
+      titulo: "cadastro.empresa.endereco",
       itens: [
         ["País", valores.pais ? PAIS_POR_CODIGO.get(valores.pais) : ""],
         ["CEP", valores.cep],
@@ -716,7 +717,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
     },
     {
       passo: EMPRESA.APRESENTACAO,
-      titulo: "Apresentação",
+      titulo: "cadastro.empresa.apresentacao",
       itens: [
         ["Descrição", valores.descricao],
         ["Cultura inclusiva", valores.culturaInclusiva],
@@ -756,7 +757,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
                 ))}
               </dl>
             ) : (
-              <p className="text-sm text-muted-foreground">Nada preenchido nesta etapa.</p>
+              <p className="text-sm text-muted-foreground">{t("cadastro.empresa.nadaPreenchidoNestaEtapa")}</p>
             )}
           </section>
         );

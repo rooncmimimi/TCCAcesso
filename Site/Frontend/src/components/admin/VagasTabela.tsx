@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -42,6 +43,7 @@ const TOM: Record<VagaAdmin["status"], "sucesso" | "atencao" | "neutro"> = {
 
 /** Vagas publicadas, com mudança de status e remoção pela moderação. */
 export function VagasTabela() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
 
   const queryClient = useQueryClient();
@@ -78,13 +80,13 @@ export function VagasTabela() {
 
   if (isLoading) {
     return (
-      <ListaCarregando rotulo="Carregando as vagas…" linhas={5} />
+      <ListaCarregando rotulo={t("admin.vagasTabela.carregandoAsVagas")} linhas={5} />
     );
   }
 
   if (isError) {
     return (
-      <ListaComErro mensagem="Não foi possível carregar as vagas." aoTentarDeNovo={() => refetch()} />
+      <ListaComErro mensagem={t("vagas.erro")} aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -92,7 +94,7 @@ export function VagasTabela() {
 
   if (vagas.length === 0) {
     return (
-      <ListaVazia icone={Briefcase} mensagem="Nenhuma vaga publicada até o momento." />
+      <ListaVazia icone={Briefcase} mensagem={t("admin.vagasTabela.nenhumaVagaPublicadaAteO")} />
     );
   }
 
@@ -101,11 +103,11 @@ export function VagasTabela() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Vaga</TableHead>
-            <TableHead>Local</TableHead>
-            <TableHead>Situação</TableHead>
-            <TableHead>Alterar status</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+            <TableHead>{t("admin.vagasTabela.vaga")}</TableHead>
+            <TableHead>{t("admin.vagasTabela.local")}</TableHead>
+            <TableHead>{t("admin.vagasTabela.situacao")}</TableHead>
+            <TableHead>{t("admin.vagasTabela.alterarStatus")}</TableHead>
+            <TableHead className="text-right">{t("admin.vagasTabela.acoes")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -178,9 +180,9 @@ export function VagasTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo="Remover vaga"
+        titulo={t("admin.vagasTabela.removerVaga")}
         descricao={`A vaga "${alvo?.titulo}" será removida da plataforma. Deseja continuar?`}
-        textoConfirmar="Remover"
+        textoConfirmar={t("admin.vagasTabela.remover")}
         destrutivo
         carregando={remocaoMutacao.isPending}
         onConfirmar={() => alvo && remocaoMutacao.mutate(alvo)}

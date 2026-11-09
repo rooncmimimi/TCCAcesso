@@ -12,6 +12,7 @@ import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { urlArquivo } from "@/utils/arquivos";
 import { iniciaisDoNome } from "@/utils/formatacao";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/configuracoes/bloqueados")({
   head: () => ({
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/configuracoes/bloqueados")({
 const CHAVE = ["usuarios", "bloqueados"] as const;
 
 function UsuariosBloqueados() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -59,9 +61,9 @@ function UsuariosBloqueados() {
         <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para Privacidade e Segurança
       </Link>
 
-      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">Usuários bloqueados</h1>
+      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">{t("configuracoes.bloqueados.usuariosBloqueados")}</h1>
       <p className="text-sm text-muted-foreground sm:text-base">
-        Pessoas e empresas que não podem ver seu perfil, seguir você ou enviar mensagens.
+        {t("configuracoes.bloqueados.pessoasEEmpresasQueNaoPodemVer")}
       </p>
 
       <Card className="mt-6 shadow-none">
@@ -72,15 +74,15 @@ function UsuariosBloqueados() {
             </div>
           ) : isError ? (
             <div role="alert" className="space-y-2 p-5 text-sm text-destructive">
-              <p>Não foi possível carregar sua lista de bloqueados.</p>
+              <p>{t("configuracoes.bloqueados.naoFoiPossivelCarregarSuaLista")}</p>
               <Button variant="outline" size="sm" onClick={() => refetch()}>
-                Tentar novamente
+                {t("raiz.tentarNovamente")}
               </Button>
             </div>
           ) : bloqueados.length === 0 ? (
             <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground" role="status">
               <UserX className="size-8" aria-hidden="true" />
-              <p className="text-sm">Você não bloqueou ninguém.</p>
+              <p className="text-sm">{t("configuracoes.bloqueados.voceNaoBloqueouNinguem")}</p>
             </div>
           ) : (
             <ul className="divide-y">

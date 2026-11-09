@@ -8,6 +8,7 @@ import { MetricaCard } from "@/components/dashboard/MetricaCard";
 import { CandidaturasRecentes } from "@/components/dashboard/CandidaturasRecentes";
 import { VagasFavoritas } from "@/components/dashboard/VagasFavoritas";
 import { dashboardService } from "@/services/dashboard.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/dashboard/candidato")({
   head: () => ({
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/dashboard/candidato")({
 });
 
 function PainelCandidato() {
+  const { t } = useIdioma();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["metricas-candidato"],
     queryFn: () => dashboardService.candidato(),
@@ -41,7 +43,7 @@ function PainelCandidato() {
     <EstruturaApp>
       <h1 className="text-3xl font-extrabold">Meu painel</h1>
       <p className="mt-2 text-muted-foreground">
-        Acompanhe suas candidaturas, vagas favoritas e sua presença na comunidade.
+        {t("dashboard.candidato.acompanheSuasCandidaturasVagas")}
       </p>
 
       {isLoading ? (
@@ -50,18 +52,18 @@ function PainelCandidato() {
         </div>
       ) : isError ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
-          <p>Não foi possível carregar suas métricas.</p>
+          <p>{t("dashboard.candidato.naoFoiPossivelCarregarSuas")}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t("raiz.tentarNovamente")}
           </Button>
         </div>
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricaCard titulo="Candidaturas" valor={data?.candidaturas ?? 0} icon={FileText} />
-            <MetricaCard titulo="Vagas favoritas" valor={data?.vagasFavoritas ?? 0} icon={Bookmark} />
-            <MetricaCard titulo="Publicações" valor={data?.postagens ?? 0} icon={Briefcase} />
-            <MetricaCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
+            <MetricaCard titulo={t("dashboard.candidato.candidaturas")} valor={data?.candidaturas ?? 0} icon={FileText} />
+            <MetricaCard titulo={t("dashboard.candidato.vagasFavoritas")} valor={data?.vagasFavoritas ?? 0} icon={Bookmark} />
+            <MetricaCard titulo={t("dashboard.candidato.publicacoes")} valor={data?.postagens ?? 0} icon={Briefcase} />
+            <MetricaCard titulo={t("dashboard.candidato.seguidores")} valor={data?.seguidores ?? 0} icon={Users} />
           </div>
 
           {resumoTextual ? (

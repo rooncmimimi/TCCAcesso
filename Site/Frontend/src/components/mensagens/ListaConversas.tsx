@@ -9,6 +9,7 @@ import type { Conversa } from "@/lib/tiposApi";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { cn } from "@/lib/utils";
 import { fotoParticipante, formatarDataRelativa, nomeParticipante, participanteOposto } from "./utils";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type ListaConversasProps = {
   conversas: Conversa[];
@@ -29,6 +30,7 @@ export function ListaConversas({
   mensagemErro,
   onSelecionar,
 }: ListaConversasProps) {
+  const { t } = useIdioma();
   const [busca, setBusca] = useState("");
 
   const filtradas = conversas.filter((conversa) => {
@@ -38,10 +40,10 @@ export function ListaConversas({
   });
 
   return (
-    <nav aria-label="Lista de conversas" className="flex h-full flex-col">
+    <nav aria-label={t("mensagens.listaConversas.listaDeConversas")} className="flex h-full flex-col">
       <div className="border-b border-border p-3">
         <label htmlFor="buscar-conversas" className="sr-only">
-          Buscar conversas
+          {t("mensagens.listaConversas.buscarConversas")}
         </label>
         <div className="relative">
           <Search
@@ -52,7 +54,7 @@ export function ListaConversas({
             id="buscar-conversas"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar conversas…"
+            placeholder={t("mensagens.listaConversas.buscarConversas2")}
             className="h-11 pl-9"
           />
         </div>
@@ -60,7 +62,7 @@ export function ListaConversas({
 
       <div className="flex-1 overflow-y-auto">
         {carregando && (
-          <ul className="space-y-1 p-2" aria-label="Carregando conversas">
+          <ul className="space-y-1 p-2" aria-label={t("mensagens.listaConversas.carregandoConversas")}>
             {[1, 2, 3, 4].map((i) => (
               <li key={i} className="flex items-center gap-3 p-2">
                 <Skeleton className="size-11 shrink-0 rounded-full" />
@@ -75,7 +77,7 @@ export function ListaConversas({
 
         {!carregando && erro && (
           <Alert variant="destructive" className="m-3">
-            <AlertTitle>Não foi possível carregar as conversas</AlertTitle>
+            <AlertTitle>{t("mensagens.listaConversas.naoFoiPossivelCarregarAs")}</AlertTitle>
             <AlertDescription>{mensagemErro ?? "Tente novamente em instantes."}</AlertDescription>
           </Alert>
         )}

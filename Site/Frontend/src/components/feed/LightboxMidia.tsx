@@ -8,6 +8,7 @@ import { urlArquivo } from "@/utils/arquivos";
 import postagensService from "@/services/postagens.service";
 import { extrairMensagemErro } from "@/services/api";
 import type { AnexoPostagem } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Imagem ou vídeo ampliado num modal na mesma página, com a URL de exibição que a API já entrega
@@ -31,6 +32,7 @@ export function LightboxMidia({
   indiceInicial: number;
   postagemId?: string;
 }) {
+  const { t } = useIdioma();
   const [indice, setIndice] = useState(indiceInicial);
   const [baixando, setBaixando] = useState(false);
 
@@ -108,7 +110,7 @@ export function LightboxMidia({
                     variant="ghost"
                     size="icon"
                     className="absolute left-2 top-1/2 z-10 min-h-11 min-w-11 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
-                    aria-label="Mídia anterior"
+                    aria-label={t("feed.lightboxMidia.midiaAnterior")}
                     onClick={() => irPara(indice - 1)}
                   >
                     <ChevronLeft aria-hidden="true" />
@@ -118,7 +120,7 @@ export function LightboxMidia({
                     variant="ghost"
                     size="icon"
                     className="absolute right-2 top-1/2 z-10 min-h-11 min-w-11 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background"
-                    aria-label="Próxima mídia"
+                    aria-label={t("feed.lightboxMidia.proximaMidia")}
                     onClick={() => irPara(indice + 1)}
                   >
                     <ChevronRight aria-hidden="true" />
@@ -135,7 +137,7 @@ export function LightboxMidia({
                   className="max-h-[75dvh] w-full"
                   aria-label={item.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
                 >
-                  Seu navegador não suporta a reprodução deste vídeo.
+                  {t("feed.lightboxMidia.seuNavegadorNaoSuportaA")}
                 </video>
               ) : (
                 <img

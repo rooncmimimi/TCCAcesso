@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { CopiaCompartilhadaLista } from "@/components/candidatura/CopiaCompartilhada";
 import { EditarAdaptacoesDialog } from "@/components/candidatura/EditarAdaptacoesDialog";
 import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
@@ -41,6 +42,7 @@ export function AdaptacoesDaMinhaCandidatura({
   /** Falso quando a candidatura já foi encerrada (cancelada ou rejeitada). */
   podeAlterar: boolean;
 }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const queryClient = useQueryClient();
   const [editando, setEditando] = useState(false);
@@ -65,7 +67,7 @@ export function AdaptacoesDaMinhaCandidatura({
   return (
     <section aria-labelledby={`${idBase}-titulo`} className="basis-full space-y-2 rounded-lg border bg-muted/30 p-3">
       <h4 id={`${idBase}-titulo`} className="text-sm font-bold">
-        O que você compartilhou com esta empresa
+        {t("candidatura.adaptacoesDaMinhaCandidatura.oQueVoceCompartilhouComEsta")}
       </h4>
       <p className="text-xs text-muted-foreground">
         Autorizado em {formatarData(adaptacoes.autorizadoEm)} (versão {adaptacoes.versao}), só para o processo seletivo desta vaga.
@@ -74,34 +76,34 @@ export function AdaptacoesDaMinhaCandidatura({
 
       {adaptacoes.resposta ? (
         <p role="status" className="rounded-md border border-primary/40 bg-primary-soft/40 p-2 text-sm">
-          <strong>Resposta da empresa:</strong> {rotuloDaResposta(adaptacoes.resposta)}.{adaptacoes.respostaMensagem ? ` “${adaptacoes.respostaMensagem}”` : ""}
+          <strong>{t("candidatura.adaptacoesDaMinhaCandidatura.respostaDaEmpresa")}</strong> {rotuloDaResposta(adaptacoes.resposta)}.{adaptacoes.respostaMensagem ? ` “${adaptacoes.respostaMensagem}”` : ""}
         </p>
       ) : (
-        <p className="text-xs text-muted-foreground">A empresa ainda não respondeu ao seu pedido.</p>
+        <p className="text-xs text-muted-foreground">{t("candidatura.adaptacoesDaMinhaCandidatura.aEmpresaAindaNaoRespondeuAoSeu")}</p>
       )}
 
       {podeAlterar ? (
         <div className="flex flex-wrap gap-2 pt-1">
           <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setEditando(true)}>
-            Alterar o que compartilho
+            {t("candidatura.adaptacoesDaMinhaCandidatura.alterarOQueCompartilho")}
           </Button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button type="button" size="sm" variant="ghost" className="min-h-11 text-destructive hover:text-destructive" disabled={retirar.isPending}>
-                Retirar autorização
+                {t("candidatura.adaptacoesDaMinhaCandidatura.retirarAutorizacao")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Retirar a autorização?</AlertDialogTitle>
+                <AlertDialogTitle>{t("candidatura.adaptacoesDaMinhaCandidatura.retirarAAutorizacao")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  A empresa não poderá mais consultar essas informações e o conteúdo será apagado do ACESSO. Se ela já tiver lido ou copiado, isso não pode ser desfeito. A sua candidatura continua.
+                  {t("candidatura.adaptacoesDaMinhaCandidatura.aEmpresaNaoPoderaMaisConsultar")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Voltar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => retirar.mutate()}>Retirar autorização</AlertDialogAction>
+                <AlertDialogCancel>{t("auth.voltar")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => retirar.mutate()}>{t("candidatura.adaptacoesDaMinhaCandidatura.retirarAutorizacao")}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

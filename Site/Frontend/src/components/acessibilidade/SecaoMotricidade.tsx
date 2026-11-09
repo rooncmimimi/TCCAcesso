@@ -8,11 +8,13 @@ import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { abrirAjudaDeAtalhos } from "@/hooks/useAtalhosDeTeclado";
 import { LIMITES, nomeDaTecla } from "@/lib/preferenciasMotoras";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
-const OPCOES_DE_ALVO: ReadonlyArray<{ valor: PreferenciasAcessibilidade["targetSize"]; rotulo: string }> = [
-  { valor: "padrao", rotulo: "Padrão (44 px)" },
-  { valor: "grande", rotulo: "Grande (56 px)" },
-  { valor: "maior", rotulo: "Maior (72 px)" },
+const OPCOES_DE_ALVO: ReadonlyArray<{ valor: PreferenciasAcessibilidade["targetSize"]; rotulo: ChaveBase }> = [
+  { valor: "padrao", rotulo: "acessibilidade.secaoMotricidade.padrao44Px" },
+  { valor: "grande", rotulo: "acessibilidade.secaoMotricidade.grande56Px" },
+  { valor: "maior", rotulo: "acessibilidade.secaoMotricidade.maior72Px" },
 ];
 
 /** As teclas que já selecionam ou que não fazem sentido como acionador. */
@@ -20,6 +22,7 @@ const TECLAS_RESERVADAS = new Set([" ", "Enter", "Escape", "Tab", "Shift", "Cont
 
 /** Escolha da tecla extra de seleção: a próxima tecla apertada vira o acionador. */
 function EscolhaDaTeclaExtra() {
+  const { t } = useIdioma();
   const { preferencias, definir } = useAcessibilidade();
   const [ouvindo, setOuvindo] = useState(false);
   const [aviso, setAviso] = useState("");
@@ -52,8 +55,8 @@ function EscolhaDaTeclaExtra() {
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-sm font-bold">Tecla extra para selecionar</p>
-      <p className="text-sm text-muted-foreground">Espaço e Enter já selecionam o item destacado. Se o seu acionador envia outra tecla, escolha-a aqui.</p>
+      <p className="text-sm font-bold">{t("acessibilidade.secaoMotricidade.teclaExtraParaSelecionar")}</p>
+      <p className="text-sm text-muted-foreground">{t("acessibilidade.secaoMotricidade.espacoEEnterJaSelecionamOItem")}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-sm">
           Tecla atual: <strong>{preferencias.scanKey ? nomeDaTecla(preferencias.scanKey) : "nenhuma"}</strong>
@@ -94,19 +97,20 @@ function AtalhoParaRecurso({ to, icone: Icone, titulo, detalhe }: { to: string; 
  * profissões e a navegação por objetivos. Como o resto do painel, reage na hora e só é gravado ao salvar.
  */
 export function SecaoMotricidade() {
+  const { t } = useIdioma();
   const { preferencias, definir } = useAcessibilidade();
 
   return (
     <section aria-labelledby="grupo-motricidade" className="space-y-3">
       <h3 id="grupo-motricidade" className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-        Motricidade e comunicação
+        {t("acessibilidade.secaoMotricidade.motricidadeEComunicacao")}
       </h3>
 
       <ToggleRow
         id="a11y-scanning"
         icon={ScanLine}
-        titulo="Varredura com um botão"
-        descricao="Mostra um painel que percorre os botões, links e campos da tela, um de cada vez. Você escolhe o item apertando Espaço, Enter ou o seu acionador. Complementa (não substitui) a varredura do Windows, do Android e de aparelhos assistivos."
+        titulo={t("acessibilidade.secaoMotricidade.varreduraComUmBotao")}
+        descricao={t("acessibilidade.secaoMotricidade.mostraUmPainelQuePercorreOs")}
         chave="scanning"
       />
       {preferencias.scanning && (
@@ -114,7 +118,7 @@ export function SecaoMotricidade() {
           <SliderRow
             id="a11y-scan-speed"
             icon={Timer}
-            titulo="Tempo em cada item"
+            titulo={t("acessibilidade.secaoMotricidade.tempoEmCadaItem")}
             valorTexto={`${preferencias.scanSpeed.toFixed(1).replace(".", ",")} s`}
             min={LIMITES.scanSpeed.min}
             max={LIMITES.scanSpeed.max}
@@ -125,8 +129,8 @@ export function SecaoMotricidade() {
           <ToggleRow
             id="a11y-scan-groups"
             icon={Layers}
-            titulo="Varrer por grupos"
-            descricao="Primeiro passa pelos blocos da tela (menu, cada seção, cada formulário); ao selecionar um bloco, percorre só os controles dele. Em telas cheias, chega mais rápido ao que você quer."
+            titulo={t("acessibilidade.secaoMotricidade.varrerPorGrupos")}
+            descricao={t("acessibilidade.secaoMotricidade.primeiroPassaPelosBlocosDaTela")}
             chave="scanGroups"
           />
           <EscolhaDaTeclaExtra />
@@ -136,15 +140,15 @@ export function SecaoMotricidade() {
       <ToggleRow
         id="a11y-tremor"
         icon={Hand}
-        titulo="Proteção contra tremores"
-        descricao="Ignora um segundo toque no mesmo botão logo depois do primeiro. Outros botões não são afetados. O envio repetido de formulários já é evitado para todos."
+        titulo={t("acessibilidade.secaoMotricidade.protecaoContraTremores")}
+        descricao={t("acessibilidade.secaoMotricidade.ignoraUmSegundoToqueNoMesmo")}
         chave="tremorGuard"
       />
       {preferencias.tremorGuard && (
         <SliderRow
           id="a11y-tremor-delay"
           icon={ShieldCheck}
-          titulo="Intervalo entre toques no mesmo botão"
+          titulo={t("acessibilidade.secaoMotricidade.intervaloEntreToquesNoMesmo")}
           valorTexto={`${(preferencias.tremorDelay / 1000).toFixed(1).replace(".", ",")} s`}
           min={LIMITES.tremorDelay.min}
           max={LIMITES.tremorDelay.max}
@@ -154,13 +158,13 @@ export function SecaoMotricidade() {
         />
       )}
 
-      <SelectRow id="a11y-target-size" icon={Ruler} titulo="Tamanho dos botões e das áreas de toque" valor={preferencias.targetSize} opcoes={OPCOES_DE_ALVO} onChange={(v) => definir("targetSize", v)} />
+      <SelectRow id="a11y-target-size" icon={Ruler} titulo={t("acessibilidade.secaoMotricidade.tamanhoDosBotoesEDasAreasDe")} valor={preferencias.targetSize} opcoes={OPCOES_DE_ALVO} onChange={(v) => definir("targetSize", v)} />
 
       <ToggleRow
         id="a11y-shortcuts"
         icon={Keyboard}
-        titulo="Atalhos de teclado"
-        descricao="Aperte G e depois V para ir às vagas, G e M para mensagens, / para pesquisar e ? para ver todos. Não funcionam enquanto você digita em um campo."
+        titulo={t("acessibilidade.secaoMotricidade.atalhosDeTeclado")}
+        descricao={t("acessibilidade.secaoMotricidade.aperteGEDepoisVParaIrAsVagasGE")}
         chave="shortcuts"
       />
       <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={abrirAjudaDeAtalhos}>
@@ -168,13 +172,13 @@ export function SecaoMotricidade() {
       </Button>
 
       <div className="grid gap-2 pt-2">
-        <AtalhoParaRecurso to="/comunicacao" icone={MessageSquareText} titulo="Central de comunicação" detalhe="Cartões e frases prontas para mostrar, ouvir ou usar numa conversa." />
-        <AtalhoParaRecurso to="/profissoes" icone={BookUser} titulo="Dicionário de profissões" detalhe="O que cada profissão faz, com atividades, ferramentas e rotina." />
-        <AtalhoParaRecurso to="/objetivos" icone={Compass} titulo="O que você quer fazer?" detalhe="Caminhos guiados, só com os passos de que você precisa." />
+        <AtalhoParaRecurso to="/comunicacao" icone={MessageSquareText} titulo={t("acessibilidade.secaoMotricidade.centralDeComunicacao")} detalhe={t("acessibilidade.secaoMotricidade.cartoesEFrasesProntasPara")} />
+        <AtalhoParaRecurso to="/profissoes" icone={BookUser} titulo={t("acessibilidade.secaoMotricidade.dicionarioDeProfissoes")} detalhe={t("acessibilidade.secaoMotricidade.oQueCadaProfissaoFazCom")} />
+        <AtalhoParaRecurso to="/objetivos" icone={Compass} titulo={t("acessibilidade.secaoMotricidade.oQueVoceQuerFazer")} detalhe={t("acessibilidade.secaoMotricidade.caminhosGuiadosSoComOsPassosDe")} />
         <p className="flex items-start gap-2 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
           <Mic className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
           <span>
-            <strong className="text-foreground">Comandos de voz:</strong> abra “Ajuda de leitura” (botão no canto da tela) e escolha “Falar um comando”. O microfone só liga quando você pede.
+            <strong className="text-foreground">{t("acessibilidade.secaoMotricidade.comandosDeVoz")}</strong> abra “Ajuda de leitura” (botão no canto da tela) e escolha “Falar um comando”. O microfone só liga quando você pede.
           </span>
         </p>
       </div>

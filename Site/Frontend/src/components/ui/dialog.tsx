@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -33,6 +34,8 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, onOpenAutoFocus, onCloseAutoFocus, ...props }, ref) => {
+  const { t } = useIdioma();
+
   // Elemento focado ao abrir, guardado para devolver o foco ao fechar, como em `alert-dialog.tsx`:
   // a devolução automática do Radix não o restaura de forma confiável aqui. É capturado em
   // `onOpenAutoFocus`, antes de o Radix mover o foco. Quem já passa o próprio `onCloseAutoFocus`
@@ -64,7 +67,7 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-          aria-label="Fechar"
+          aria-label={t("ui.dialog.fechar")}
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </DialogPrimitive.Close>

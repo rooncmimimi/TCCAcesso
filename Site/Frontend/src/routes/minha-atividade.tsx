@@ -17,6 +17,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { urlArquivo } from "@/utils/arquivos";
 import { atividadeService } from "@/services/atividade.service";
 import type { InteracaoFeedItem } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/minha-atividade")({
   head: () => ({
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/minha-atividade")({
 });
 
 function MinhaAtividade() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -45,9 +47,9 @@ function MinhaAtividade() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Minha atividade</h1>
+      <h1 className="text-3xl font-extrabold">{t("cabecalho.minhaAtividade")}</h1>
       <p className="mt-2 text-muted-foreground">
-        Um resumo da sua presença no ACESSO. Esta página é privada — só você pode vê-la.
+        {t("minha-atividade.umResumoDaSuaPresencaNoAcesso")}
       </p>
 
       {isLoading ? (
@@ -56,9 +58,9 @@ function MinhaAtividade() {
         </div>
       ) : isError || !data ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
-          <p>Não foi possível carregar sua atividade.</p>
+          <p>{t("minha-atividade.naoFoiPossivelCarregarSua")}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t("raiz.tentarNovamente")}
           </Button>
         </div>
       ) : (
@@ -69,7 +71,7 @@ function MinhaAtividade() {
 
           <Card className="shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-              <CardTitle className="text-lg">Pessoas que você segue</CardTitle>
+              <CardTitle className="text-lg">{t("minha-atividade.pessoasQueVoceSegue")}</CardTitle>
               {usuario && data.seguindo.pessoas.total > 0 ? (
                 <ListaSeguidoresDialog usuarioId={usuario.id} modo="seguindo" total={data.seguindo.pessoas.total}>
                   <Button variant="ghost" size="sm">
@@ -112,14 +114,14 @@ function MinhaAtividade() {
 
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg">Empresas que você segue</CardTitle>
+              <CardTitle className="text-lg">{t("minha-atividade.empresasQueVoceSegue")}</CardTitle>
             </CardHeader>
             <CardContent>
               {data.seguindo.empresas.itens.length === 0 ? (
                 <p className="py-6 text-sm text-muted-foreground">
                   Você ainda não segue nenhuma empresa.{" "}
                   <Link to="/vagas" className="font-medium text-primary underline">
-                    Explorar vagas
+                    {t("minha-atividade.explorarVagas")}
                   </Link>
                 </p>
               ) : (
@@ -152,29 +154,29 @@ function MinhaAtividade() {
 
           <Card className="shadow-none lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Suas interações no feed</CardTitle>
+              <CardTitle className="text-lg">{t("minha-atividade.suasInteracoesNoFeed")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-3">
               <ListaInteracao
-                titulo="Curtidas"
+                titulo={t("minha-atividade.curtidas")}
                 icon={Heart}
                 itens={data.interacoesFeed.curtidas.itens}
                 total={data.interacoesFeed.curtidas.total}
-                vazio="Você ainda não curtiu nenhuma publicação."
+                vazio={t("minha-atividade.voceAindaNaoCurtiuNenhuma")}
               />
               <ListaInteracao
-                titulo="Comentários"
+                titulo={t("minha-atividade.comentarios")}
                 icon={MessageCircle}
                 itens={data.interacoesFeed.comentarios.itens}
                 total={data.interacoesFeed.comentarios.total}
-                vazio="Você ainda não comentou em nenhuma publicação."
+                vazio={t("minha-atividade.voceAindaNaoComentouEmNenhuma")}
               />
               <ListaInteracao
-                titulo="Compartilhamentos"
+                titulo={t("minha-atividade.compartilhamentos")}
                 icon={Share2}
                 itens={data.interacoesFeed.compartilhamentos.itens}
                 total={data.interacoesFeed.compartilhamentos.total}
-                vazio="Você ainda não compartilhou nenhuma publicação."
+                vazio={t("minha-atividade.voceAindaNaoCompartilhou")}
               />
             </CardContent>
           </Card>

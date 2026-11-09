@@ -31,8 +31,8 @@ const MAX_DESCRICAO = 500;
 
 /** Formulário de nova publicação: texto + até 4 anexos (imagens/vídeos). */
 export function FormularioPostagem() {
-  const { usuario } = useSessao();
   const { t } = useIdioma();
+  const { usuario } = useSessao();
   const [conteudo, setConteudo] = useState("");
   const [anexos, setAnexos] = useState<File[]>([]);
   // Uma descrição por anexo, no mesmo índice: nunca gerada automaticamente,
@@ -194,7 +194,7 @@ export function FormularioPostagem() {
                           Esta imagem é decorativa (não traz informação nova)
                         </label>
                         {decorativas[indice] ? (
-                          <p className="text-[11px] text-muted-foreground">Ela será ignorada por leitores de tela. Desmarque se ela mostra algo que a publicação precisa.</p>
+                          <p className="text-[11px] text-muted-foreground">{t("feed.formularioPostagem.elaSeraIgnoradaPorLeitoresDe")}</p>
                         ) : (
                           <CampoDescricaoImagem
                             id={`descricao-anexo-${indice}`}
@@ -233,7 +233,7 @@ export function FormularioPostagem() {
               <p className="font-semibold">
                 {avisoSemDescricao.length === 1 ? "Uma imagem está sem descrição." : `${avisoSemDescricao.length} imagens estão sem descrição.`}
               </p>
-              <p>Quem usa leitor de tela não vai saber o que ela mostra. Descreva, ou marque como decorativa se ela só enfeita.</p>
+              <p>{t("feed.formularioPostagem.quemUsaLeitorDeTelaNaoVaiSaber")}</p>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -243,10 +243,10 @@ export function FormularioPostagem() {
                     setAvisoSemDescricao(null);
                   }}
                 >
-                  Voltar e descrever
+                  {t("feed.formularioPostagem.voltarEDescrever")}
                 </Button>
                 <Button type="button" size="sm" variant="outline" onClick={(e) => aoEnviar(e as unknown as React.FormEvent, true)}>
-                  Publicar sem descrição
+                  {t("feed.formularioPostagem.publicarSemDescricao")}
                 </Button>
               </div>
             </div>

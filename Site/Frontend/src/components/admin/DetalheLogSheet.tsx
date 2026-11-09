@@ -5,6 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Badge } from "@/components/ui/badge";
 import { formatarDataHora } from "@/utils/formatacao";
 import type { LogAdmin } from "@/services/admin.service";
@@ -50,6 +51,7 @@ export function DetalheLogSheet({
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
 }) {
+  const { t } = useIdioma();
   const retrato = (log?.metadados?.retrato ?? null) as Record<string, unknown> | null;
 
   return (
@@ -69,14 +71,14 @@ export function DetalheLogSheet({
               </div>
 
               <div>
-                <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">Descrição</h3>
+                <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">{t("vagaDetalhe.descricao")}</h3>
                 <p>{log.descricao ?? "Sem descrição registrada."}</p>
               </div>
 
               {retrato && (
                 <div>
                   <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">
-                    Registro no momento da ação
+                    {t("admin.detalheLogSheet.registroNoMomentoDaAcao")}
                   </h3>
                   <dl className="space-y-1.5 rounded-lg border border-border p-3">
                     {Object.entries(retrato)
@@ -106,7 +108,7 @@ export function DetalheLogSheet({
               {log.metadados && (
                 <details className="rounded-lg border border-border p-3">
                   <summary className="cursor-pointer text-xs font-bold uppercase text-muted-foreground">
-                    Dados brutos registrados
+                    {t("admin.detalheLogSheet.dadosBrutosRegistrados")}
                   </summary>
                   <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs">
                     {JSON.stringify(log.metadados, null, 2)}

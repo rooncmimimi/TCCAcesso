@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { useSessao } from "@/hooks/useSessao";
 import type { TipoUsuario } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Restringe o acesso a uma rota conforme o tipo de usuário autenticado.
@@ -17,6 +18,7 @@ export function GuardaAcesso({
   tipos: TipoUsuario[];
   children: ReactNode;
 }) {
+  const { t } = useIdioma();
   const { usuario, inicializado, autenticado } = useSessao();
 
   if (!inicializado) {
@@ -28,7 +30,7 @@ export function GuardaAcesso({
           className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-muted-foreground"
         >
           <Loader2 className="size-8 animate-spin" aria-hidden="true" />
-          <p>Carregando sua sessão…</p>
+          <p>{t("guardaAcesso.carregandoSuaSessao")}</p>
         </div>
       </EstruturaApp>
     );

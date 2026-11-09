@@ -1,9 +1,11 @@
 import { BadgeCheck } from "lucide-react";
 import { urlArquivo } from "@/utils/arquivos";
 import type { Empresa } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Card de empresa parceira exibido na página inicial. */
 export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
+  const { t } = useIdioma();
   const nome = empresa.nomeFantasia ?? empresa.razaoSocial;
   const logo = urlArquivo(empresa.logo);
 
@@ -27,9 +29,9 @@ export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
         <span className="flex items-center gap-1 truncate font-bold">
           <span className="truncate">{nome}</span>
           {empresa.empresaVerificada && (
-            <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+            <span className="inline-flex shrink-0 items-center text-primary" title={t("vaga.empresaVerificadaTitulo")}>
               <BadgeCheck className="size-3.5" aria-hidden="true" />
-              <span className="sr-only">Empresa verificada</span>
+              <span className="sr-only">{t("vaga.empresaVerificada")}</span>
             </span>
           )}
         </span>

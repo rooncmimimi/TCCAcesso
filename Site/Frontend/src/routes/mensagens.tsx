@@ -19,6 +19,7 @@ import {
   ouvirEvento,
   sairDaConversa,
 } from "@/services/socket";
+import { useIdioma } from "@/hooks/useIdioma";
 import type { Conversa, Mensagem } from "@/lib/tiposApi";
 
 export const Route = createFileRoute("/mensagens")({
@@ -49,6 +50,7 @@ function PaginaMensagens() {
 }
 
 function Mensagens() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const { conversaId } = Route.useSearch();
   const queryClient = useQueryClient();
@@ -148,9 +150,9 @@ function Mensagens() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Mensagens</h1>
+      <h1 className="text-3xl font-extrabold">{t("cabecalho.mensagens")}</h1>
       <p className="mt-2 text-muted-foreground">
-        Conversas em tempo real com empresas e candidatos.
+        {t("mensagens.conversasEmTempoRealCom")}
       </p>
 
       <Card className="mt-6 grid h-[70vh] grid-cols-1 overflow-hidden p-0 shadow-card md:grid-cols-[320px_minmax(0,1fr)]">
@@ -190,7 +192,7 @@ function Mensagens() {
               className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground"
             >
               <MessagesSquare className="size-10" aria-hidden="true" />
-              <p className="text-sm">Selecione uma conversa para ver as mensagens.</p>
+              <p className="text-sm">{t("mensagens.selecioneUmaConversaParaVerAs")}</p>
             </div>
           )}
         </div>

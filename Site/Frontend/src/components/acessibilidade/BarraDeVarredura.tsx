@@ -7,6 +7,7 @@ import { useVarredura } from "@/hooks/useVarredura";
 import { dentroDeGrupo } from "@/lib/motorDeVarredura";
 import { LIMITES } from "@/lib/preferenciasMotoras";
 import type { Item } from "@/lib/varredura";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Contorno que acompanha o item destacado. Posicionado com `fixed`; nunca altera o elemento percorrido. */
 function Realce({ item, reduzirMovimento }: { item: Item | null; reduzirMovimento: boolean }) {
@@ -73,6 +74,7 @@ export function BarraDeVarredura() {
 }
 
 function BarraAtiva() {
+  const { t } = useIdioma();
   const { preferencias, rascunho, salvar } = useAcessibilidade();
   const v = useVarredura();
   const rodando = v.estado.fase === "rodando";
@@ -96,7 +98,7 @@ function BarraAtiva() {
       </div>
 
       <section
-        aria-label="Varredura com um botão"
+        aria-label={t("acessibilidade.barraDeVarredura.varreduraComUmBotao")}
         data-varredura-ignorar
         onPointerDown={aoPonteiro}
         style={{ pointerEvents: "auto" }}
@@ -107,7 +109,7 @@ function BarraAtiva() {
             <Button type="button" className="min-h-11 gap-2" onClick={v.iniciar}>
               <ScanLine className="size-4" aria-hidden="true" /> Iniciar varredura
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label="Desligar a varredura com um botão" onClick={() => salvar({ ...rascunho, scanning: false })}>
+            <Button type="button" variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={t("acessibilidade.barraDeVarredura.desligarAVarreduraComUmBotao")} onClick={() => salvar({ ...rascunho, scanning: false })}>
               <X className="size-4" aria-hidden="true" />
             </Button>
             {v.aviso ? (
@@ -129,10 +131,10 @@ function BarraAtiva() {
               <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={rodando ? v.pausar : v.retomar}>
                 {rodando ? <Pause className="size-4" aria-hidden="true" /> : <Play className="size-4" aria-hidden="true" />} {rodando ? "Pausar" : "Continuar"}
               </Button>
-              <Button type="button" variant="outline" className="min-h-11 gap-1" onClick={v.anterior} aria-label="Voltar ao item anterior" disabled={v.emCampo}>
+              <Button type="button" variant="outline" className="min-h-11 gap-1" onClick={v.anterior} aria-label={t("acessibilidade.barraDeVarredura.voltarAoItemAnterior")} disabled={v.emCampo}>
                 <ArrowLeft className="size-4" aria-hidden="true" /> Voltar
               </Button>
-              <Button type="button" variant="outline" className="min-h-11 gap-1" onClick={v.proximo} aria-label="Avançar para o próximo item" disabled={v.emCampo}>
+              <Button type="button" variant="outline" className="min-h-11 gap-1" onClick={v.proximo} aria-label={t("acessibilidade.barraDeVarredura.avancarParaOProximoItem")} disabled={v.emCampo}>
                 Avançar <ArrowRight className="size-4" aria-hidden="true" />
               </Button>
               {dentro ? (
@@ -147,10 +149,10 @@ function BarraAtiva() {
 
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span id="varredura-velocidade">Velocidade: {preferencias.scanSpeed.toFixed(1).replace(".", ",")} s por item</span>
-              <Button type="button" variant="outline" size="icon" className="min-h-11 min-w-11" aria-label="Mais devagar" onClick={() => mudarVelocidade(0.3)} disabled={preferencias.scanSpeed >= LIMITES.scanSpeed.max}>
+              <Button type="button" variant="outline" size="icon" className="min-h-11 min-w-11" aria-label={t("acessibilidade.barraDeVarredura.maisDevagar")} onClick={() => mudarVelocidade(0.3)} disabled={preferencias.scanSpeed >= LIMITES.scanSpeed.max}>
                 <Minus className="size-4" aria-hidden="true" />
               </Button>
-              <Button type="button" variant="outline" size="icon" className="min-h-11 min-w-11" aria-label="Mais rápido" onClick={() => mudarVelocidade(-0.3)} disabled={preferencias.scanSpeed <= LIMITES.scanSpeed.min}>
+              <Button type="button" variant="outline" size="icon" className="min-h-11 min-w-11" aria-label={t("acessibilidade.barraDeVarredura.maisRapido")} onClick={() => mudarVelocidade(-0.3)} disabled={preferencias.scanSpeed <= LIMITES.scanSpeed.min}>
                 <Plus className="size-4" aria-hidden="true" />
               </Button>
             </div>

@@ -21,6 +21,7 @@ import {
   UserCheck,
   UserPlus,
 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 import type { LucideIcon } from "lucide-react";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
@@ -139,6 +140,7 @@ function PaginaNotificacoes() {
 }
 
 function Notificacoes() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   // Idem para Aceitar/Recusar solicitação: guarda o resultado por
   // `entidadeId` (id da solicitação) pra nunca reprocessar a mesma.
@@ -227,7 +229,7 @@ function Notificacoes() {
     <EstruturaApp>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold">Notificações</h1>
+          <h1 className="text-3xl font-extrabold">{t("cabecalho.notificacoes")}</h1>
           <p className="mt-1 text-muted-foreground" role="status" aria-live="polite">
             {isLoading
               ? "Carregando…"
@@ -247,7 +249,7 @@ function Notificacoes() {
       </div>
 
       {isLoading && (
-        <ul className="mt-6 space-y-3" aria-label="Carregando notificações">
+        <ul className="mt-6 space-y-3" aria-label={t("notificacoes.carregandoNotificacoes")}>
           {[1, 2, 3].map((i) => (
             <li key={i}>
               <Skeleton className="h-20 w-full rounded-xl" />
@@ -258,9 +260,9 @@ function Notificacoes() {
 
       {isError && (
         <div role="alert" className="mt-6 space-y-3 rounded-xl border border-destructive/40 p-6">
-          <p className="text-sm">Não foi possível carregar suas notificações.</p>
+          <p className="text-sm">{t("notificacoes.naoFoiPossivelCarregarSuas")}</p>
           <Button variant="outline" onClick={() => refetch()}>
-            Tentar novamente
+            {t("raiz.tentarNovamente")}
           </Button>
         </div>
       )}
@@ -268,7 +270,7 @@ function Notificacoes() {
       {!isLoading && !isError && notificacoes.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border p-10 text-center text-muted-foreground">
           <BellOff className="size-8" aria-hidden="true" />
-          <p className="text-sm">Você ainda não tem notificações.</p>
+          <p className="text-sm">{t("notificacoes.voceAindaNaoTemNotificacoes")}</p>
         </div>
       )}
 

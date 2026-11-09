@@ -11,6 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { iniciaisDoNome } from "@/utils/formatacao";
@@ -45,6 +46,7 @@ function salvarBuscaRecente(termo: string) {
  * (`cmdk`), que já entrega o comportamento de combobox acessível (teclado, ARIA, Esc e Enter).
  */
 export function BarraBusca() {
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const [aberto, setAberto] = useState(false);
   const [termo, setTermo] = useState("");
@@ -93,11 +95,11 @@ export function BarraBusca() {
         <button
           type="button"
           data-busca-global
-          aria-label="Pesquisar pessoas, empresas ou vagas no ACESSO"
+          aria-label={t("barraBusca.pesquisarPessoasEmpresasOu")}
           className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-border bg-secondary/60 px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary md:w-28 md:justify-start md:px-4 lg:w-64"
         >
           <Search className="size-4 shrink-0" aria-hidden="true" />
-          <span className="hidden truncate md:inline">Pesquisar pessoas, empresas ou vagas…</span>
+          <span className="hidden truncate md:inline">{t("barraBusca.pesquisarPessoasEmpresasOu2")}</span>
         </button>
       </PopoverTrigger>
 
@@ -110,12 +112,12 @@ export function BarraBusca() {
         <CommandInput
           value={termo}
           onValueChange={setTermo}
-          placeholder="Pesquisar pessoas, empresas ou vagas…"
-          aria-label="Termo de pesquisa"
+          placeholder={t("barraBusca.pesquisarPessoasEmpresasOu2")}
+          aria-label={t("barraBusca.termoDePesquisa")}
         />
         <CommandList aria-live="polite">
           {!habilitada && buscasRecentes.length > 0 && (
-            <CommandGroup heading="Buscas recentes">
+            <CommandGroup heading={t("barraBusca.buscasRecentes")}>
               {buscasRecentes.map((recente) => (
                 <CommandItem key={recente} value={`recente-${recente}`} onSelect={() => setTermo(recente)}>
                   <Clock className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -126,16 +128,16 @@ export function BarraBusca() {
           )}
 
           {!habilitada ? (
-            buscasRecentes.length === 0 && <CommandEmpty>Digite ao menos 2 caracteres para pesquisar.</CommandEmpty>
+            buscasRecentes.length === 0 && <CommandEmpty>{t("barraBusca.digiteAoMenos2CaracteresPara")}</CommandEmpty>
           ) : isError ? (
             <div role="alert" className="flex flex-col items-center gap-2 px-4 py-8 text-center text-sm text-muted-foreground">
-              <p>Não foi possível pesquisar agora.</p>
+              <p>{t("barraBusca.naoFoiPossivelPesquisarAgora")}</p>
               <button
                 type="button"
                 onClick={() => refetch()}
                 className="font-semibold text-primary underline-offset-2 hover:underline"
               >
-                Tentar novamente
+                {t("raiz.tentarNovamente")}
               </button>
             </div>
           ) : semResultados ? (
@@ -146,7 +148,7 @@ export function BarraBusca() {
           ) : null}
 
           {usuarios.length > 0 && (
-            <CommandGroup heading="Pessoas">
+            <CommandGroup heading={t("barraBusca.pessoas")}>
               {usuarios.map((pessoa) => (
                 <CommandItem
                   key={pessoa.id}
@@ -171,7 +173,7 @@ export function BarraBusca() {
           )}
 
           {empresas.length > 0 && (
-            <CommandGroup heading="Empresas">
+            <CommandGroup heading={t("barraBusca.empresas")}>
               {empresas.map((empresa) => (
                 <CommandItem
                   key={empresa.id}
@@ -190,9 +192,9 @@ export function BarraBusca() {
                   </Avatar>
                   <span className="truncate">{empresa.nomeFantasia ?? empresa.razaoSocial}</span>
                   {empresa.empresaVerificada && (
-                    <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+                    <span className="inline-flex shrink-0 items-center text-primary" title={t("vaga.empresaVerificadaTitulo")}>
                       <BadgeCheck className="size-3.5" aria-hidden="true" />
-                      <span className="sr-only">Empresa verificada</span>
+                      <span className="sr-only">{t("vaga.empresaVerificada")}</span>
                     </span>
                   )}
                 </CommandItem>
@@ -201,7 +203,7 @@ export function BarraBusca() {
           )}
 
           {vagas.length > 0 && (
-            <CommandGroup heading="Vagas">
+            <CommandGroup heading={t("cabecalho.vagas")}>
               {vagas.map((vaga) => (
                 <CommandItem
                   key={vaga.id}
@@ -221,7 +223,7 @@ export function BarraBusca() {
           )}
 
           {postagens.length > 0 && (
-            <CommandGroup heading="Publicações">
+            <CommandGroup heading={t("barraBusca.publicacoes")}>
               {postagens.map((postagem) => (
                 <CommandItem
                   key={postagem.id}

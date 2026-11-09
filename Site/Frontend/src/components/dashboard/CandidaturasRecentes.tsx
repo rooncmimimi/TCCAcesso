@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AdaptacoesDaMinhaCandidatura } from "@/components/candidatura/AdaptacoesDaMinhaCandidatura";
 import { RascunhosDeCandidatura } from "@/components/candidatura/RascunhosDeCandidatura";
@@ -25,6 +26,7 @@ import type { AdaptacoesDoCandidato } from "@/types/adaptacoes";
 
 /** Lista as candidaturas recentes do candidato, com opção de cancelamento. */
 export function CandidaturasRecentes() {
+  const { t } = useIdioma();
   const [pagina, setPagina] = useState(1);
   const queryClient = useQueryClient();
 
@@ -49,7 +51,7 @@ export function CandidaturasRecentes() {
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-lg">Minhas candidaturas recentes</CardTitle>
+        <CardTitle className="text-lg">{t("dashboard.candidaturasRecentes.minhasCandidaturasRecentes")}</CardTitle>
       </CardHeader>
       <CardContent>
         <RascunhosDeCandidatura />
@@ -59,16 +61,16 @@ export function CandidaturasRecentes() {
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-            <p>Não foi possível carregar suas candidaturas.</p>
+            <p>{t("dashboard.candidaturasRecentes.naoFoiPossivelCarregarSuas")}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : !data || data.dados.length === 0 ? (
           <p className="py-6 text-sm text-muted-foreground">
             Você ainda não se candidatou a nenhuma vaga.{" "}
             <Link to="/vagas" className="font-medium text-primary underline">
-              Explorar vagas
+              {t("dashboard.candidaturasRecentes.explorarVagas")}
             </Link>
           </p>
         ) : (
@@ -98,16 +100,16 @@ export function CandidaturasRecentes() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Cancelar candidatura?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("dashboard.candidaturasRecentes.cancelarCandidatura")}</AlertDialogTitle>
                             <AlertDialogDescription>
                               Você está prestes a cancelar sua candidatura à vaga "
                               {candidatura.vaga?.titulo}". Essa ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Voltar</AlertDialogCancel>
+                            <AlertDialogCancel>{t("auth.voltar")}</AlertDialogCancel>
                             <AlertDialogAction onClick={() => cancelar.mutate(candidatura.id)}>
-                              Confirmar cancelamento
+                              {t("dashboard.candidaturasRecentes.confirmarCancelamento")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -134,7 +136,7 @@ export function CandidaturasRecentes() {
                   disabled={pagina <= 1}
                   onClick={() => setPagina((p) => Math.max(1, p - 1))}
                 >
-                  Página anterior
+                  {t("vagas.paginaAnterior")}
                 </Button>
                 <span className="self-center text-sm text-muted-foreground">
                   Página {data.pagina} de {data.totalPaginas}
@@ -145,7 +147,7 @@ export function CandidaturasRecentes() {
                   disabled={pagina >= data.totalPaginas}
                   onClick={() => setPagina((p) => p + 1)}
                 >
-                  Próxima página
+                  {t("vagas.proximaPagina")}
                 </Button>
               </div>
             ) : null}

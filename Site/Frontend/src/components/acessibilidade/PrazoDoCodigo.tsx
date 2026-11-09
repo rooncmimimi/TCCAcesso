@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { horaDoVencimento, minutosQueFaltam, situacaoDoPrazo } from "@/lib/prazoDoCodigo";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type Props = {
   /** Instante (ms) em que o código foi enviado. */
@@ -21,6 +22,7 @@ type Props = {
  * uma vez por leitores de tela, junto de "Preciso de mais tempo", que pede um código novo.
  */
 export function PrazoDoCodigo({ enviadoEm, aoPedirMaisTempo, podePedir, ocupado = false }: Props) {
+  const { t } = useIdioma();
   const [agora, setAgora] = useState(() => Date.now());
 
   // Confere a cada 15 s e para quando o código vence. Um código novo (outro `enviadoEm`) recomeça a conta.
@@ -53,7 +55,7 @@ export function PrazoDoCodigo({ enviadoEm, aoPedirMaisTempo, podePedir, ocupado 
             {faltam <= 1 ? "Falta menos de 1 minuto" : `Faltam cerca de ${faltam} minutos`} para o código vencer. Se precisar de mais tempo, peça outro código.
           </p>
         ) : null}
-        {situacao === "venceu" ? <p className="font-medium">O código venceu. Peça outro para continuar, sem pressa.</p> : null}
+        {situacao === "venceu" ? <p className="font-medium">{t("acessibilidade.prazoDoCodigo.oCodigoVenceuPecaOutroPara")}</p> : null}
       </div>
 
       {situacao !== "folga" ? (
@@ -61,7 +63,7 @@ export function PrazoDoCodigo({ enviadoEm, aoPedirMaisTempo, podePedir, ocupado 
           Preciso de mais tempo: enviar outro código
         </Button>
       ) : null}
-      {situacao !== "folga" && !podePedir ? <p className="mt-1 text-xs text-muted-foreground">O botão libera em instantes: o servidor espera um minuto entre um envio e outro.</p> : null}
+      {situacao !== "folga" && !podePedir ? <p className="mt-1 text-xs text-muted-foreground">{t("acessibilidade.prazoDoCodigo.oBotaoLiberaEmInstantesO")}</p> : null}
     </div>
   );
 }

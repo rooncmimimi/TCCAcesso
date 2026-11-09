@@ -12,6 +12,7 @@ import {
   AlignVerticalSpaceAround,
   Target,
 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { useVoz } from "@/hooks/useVoz";
@@ -21,17 +22,17 @@ import { SecaoMotricidade } from "@/components/acessibilidade/SecaoMotricidade";
 
 /** Amostra que reage imediatamente às preferências escolhidas. */
 export function PreviaAcessibilidade() {
+  const { t } = useIdioma();
   const { falar } = useVoz();
   return (
     <Card className="border-dashed shadow-none">
       <CardContent className="space-y-3 p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          Pré-visualização em tempo real
+          {t("acessibilidade.painelAcessibilidade.preVisualizacaoEmTempoReal")}
         </p>
-        <h3 className="text-lg font-extrabold">Assistente Administrativo Jr — Vaga PCD</h3>
+        <h3 className="text-lg font-extrabold">{t("acessibilidade.painelAcessibilidade.assistenteAdministrativoJrVaga")}</h3>
         <p className="text-sm text-muted-foreground">
-          Grupo Aurora · Híbrido · São Paulo, SP. Ambiente acessível, com intérprete de Libras e
-          suporte a leitor de tela.
+          {t("acessibilidade.painelAcessibilidade.grupoAuroraHibridoSaoPauloSp")}
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
           <button
@@ -43,7 +44,7 @@ export function PreviaAcessibilidade() {
               )
             }
           >
-            Testar leitura em voz alta
+            {t("acessibilidade.painelAcessibilidade.testarLeituraEmVozAlta")}
           </button>
           <button
             type="button"
@@ -62,13 +63,14 @@ export function PreviaAcessibilidade() {
  * Acessibilidade e nas boas-vindas. Só altera o rascunho (`definir`); salvar fica a cargo da tela.
  */
 export function PainelAcessibilidade() {
+  const { t } = useIdioma();
   const { preferencias, definir } = useAcessibilidade();
 
   return (
     <div className="space-y-6">
       {/* Os grupos abaixo são títulos de nível 3; este nível 2 (só para leitor de tela) mantém a ordem dos títulos
           em todas as telas onde o painel aparece (configurações, boas-vindas e cadastro). */}
-      <h2 className="sr-only">Preferências de acessibilidade</h2>
+      <h2 className="sr-only">{t("acessibilidade.painelAcessibilidade.preferenciasDeAcessibilidade")}</h2>
       <PreviaAcessibilidade />
 
       <section aria-labelledby="grupo-visual" className="space-y-3">
@@ -78,28 +80,28 @@ export function PainelAcessibilidade() {
         <ToggleRow
           id="a11y-contrast"
           icon={Contrast}
-          titulo="Alto contraste"
-          descricao="Aumenta o contraste entre textos, bordas e fundos."
+          titulo={t("acessibilidade.painelAcessibilidade.altoContraste")}
+          descricao={t("acessibilidade.painelAcessibilidade.aumentaOContrasteEntreTextos")}
           chave="highContrast"
         />
         <ToggleRow
           id="a11y-dark"
           icon={Moon}
-          titulo="Modo escuro"
-          descricao="Reduz o brilho da tela em ambientes com pouca luz."
+          titulo={t("acessibilidade.painelAcessibilidade.modoEscuro")}
+          descricao={t("acessibilidade.painelAcessibilidade.reduzOBrilhoDaTelaEmAmbientes")}
           chave="darkMode"
         />
         <ToggleRow
           id="a11y-dyslexia"
           icon={Type}
-          titulo="Fonte para dislexia"
-          descricao="Tipografia com letras mais distinguíveis entre si."
+          titulo={t("acessibilidade.painelAcessibilidade.fonteParaDislexia")}
+          descricao={t("acessibilidade.painelAcessibilidade.tipografiaComLetrasMais")}
           chave="dyslexiaFont"
         />
         <SliderRow
           id="a11y-font"
           icon={Type}
-          titulo="Tamanho da fonte"
+          titulo={t("acessibilidade.painelAcessibilidade.tamanhoDaFonte")}
           valorTexto={`${Math.round(preferencias.fontScale * 100)}%`}
           min={0.875}
           max={1.6}
@@ -110,7 +112,7 @@ export function PainelAcessibilidade() {
         <SliderRow
           id="a11y-letter"
           icon={Waves}
-          titulo="Espaçamento entre letras"
+          titulo={t("acessibilidade.painelAcessibilidade.espacamentoEntreLetras")}
           valorTexto={`${preferencias.letterSpacing.toFixed(3)} em`}
           min={0}
           max={0.16}
@@ -121,7 +123,7 @@ export function PainelAcessibilidade() {
         <SliderRow
           id="a11y-line"
           icon={AlignVerticalSpaceAround}
-          titulo="Espaçamento entre linhas"
+          titulo={t("acessibilidade.painelAcessibilidade.espacamentoEntreLinhas")}
           valorTexto={preferencias.lineHeight.toFixed(2)}
           min={1.3}
           max={2.4}
@@ -140,27 +142,27 @@ export function PainelAcessibilidade() {
           id="grupo-navegacao"
           className="text-sm font-bold uppercase tracking-wide text-muted-foreground"
         >
-          Navegação e interação
+          {t("acessibilidade.painelAcessibilidade.navegacaoEInteracao")}
         </h3>
         <ToggleRow
           id="a11y-cursor"
           icon={MousePointer2}
-          titulo="Cursor ampliado"
-          descricao="Ponteiro do mouse maior e com contorno reforçado."
+          titulo={t("acessibilidade.painelAcessibilidade.cursorAmpliado")}
+          descricao={t("acessibilidade.painelAcessibilidade.ponteiroDoMouseMaiorECom")}
           chave="bigCursor"
         />
         <ToggleRow
           id="a11y-motion"
           icon={Sparkles}
-          titulo="Reduzir animações"
-          descricao="Remove transições e movimentos que podem causar desconforto."
+          titulo={t("acessibilidade.painelAcessibilidade.reduzirAnimacoes")}
+          descricao={t("acessibilidade.painelAcessibilidade.removeTransicoesEMovimentosQue")}
           chave="reduceMotion"
         />
         <ToggleRow
           id="a11y-focus"
           icon={Target}
-          titulo="Destaque de foco do teclado"
-          descricao="Contorno bem visível no elemento em foco."
+          titulo={t("acessibilidade.painelAcessibilidade.destaqueDeFocoDoTeclado")}
+          descricao={t("acessibilidade.painelAcessibilidade.contornoBemVisivelNoElementoEm")}
           chave="focusHighlight"
         />
       </section>
@@ -174,19 +176,19 @@ export function PainelAcessibilidade() {
           id="grupo-assistivo"
           className="text-sm font-bold uppercase tracking-wide text-muted-foreground"
         >
-          Recursos assistivos
+          {t("acessibilidade.painelAcessibilidade.recursosAssistivos")}
         </h3>
         <ToggleRow
           id="a11y-voice"
           icon={Volume2}
-          titulo="Leitura por voz"
-          descricao="Lê em voz alta os elementos ao navegar pelo site. É para quem não usa um leitor de tela: se você já usa NVDA, JAWS, Narrador, VoiceOver ou TalkBack, deixe desligado, senão cada item é falado duas vezes."
+          titulo={t("inicio.recurso.voz.titulo")}
+          descricao={t("acessibilidade.painelAcessibilidade.leEmVozAltaOsElementosAo")}
           chave="screenReader"
         />
         <ToggleRow
           id="a11y-arrow-reading"
           icon={ArrowDownUp}
-          titulo="Navegar pelo conteúdo com as setas"
+          titulo={t("acessibilidade.painelAcessibilidade.navegarPeloConteudoComAsSetas")}
           descricao={
             preferencias.screenReader
               ? "As setas ↑ e ↓ percorrem títulos, textos e botões, e a voz lê cada um. Esc para de ler. Listas de opções, menus e controles deslizantes continuam usando as setas normalmente. Se você já usa NVDA, JAWS ou VoiceOver, deixe desligado."
@@ -198,7 +200,7 @@ export function PainelAcessibilidade() {
         <SliderRow
           id="a11y-rate"
           icon={Eye}
-          titulo="Velocidade da voz"
+          titulo={t("acessibilidade.painelAcessibilidade.velocidadeDaVoz")}
           valorTexto={`${preferencias.speechRate.toFixed(1)}x`}
           min={0.6}
           max={1.8}
@@ -210,7 +212,7 @@ export function PainelAcessibilidade() {
           id="a11y-vlibras"
           icon={Languages}
           titulo="VLibras (Libras)"
-          descricao="Tradutor oficial do Governo Federal, disponível em todas as páginas."
+          descricao={t("acessibilidade.painelAcessibilidade.tradutorOficialDoGoverno")}
           chave="vlibras"
         />
       </section>

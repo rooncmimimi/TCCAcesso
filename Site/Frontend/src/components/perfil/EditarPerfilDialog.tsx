@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +51,7 @@ export function EditarPerfilDialog({
   candidato?: Candidato | null;
   children: ReactNode;
 }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [cidade, setCidade] = useState(candidato?.cidade ?? "");
   const [estado, setEstado] = useState(candidato?.estado ?? "");
@@ -158,13 +160,13 @@ export function EditarPerfilDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Editar perfil</DialogTitle>
-          <DialogDescription>Essas informações aparecem no seu perfil e nas suas publicações.</DialogDescription>
+          <DialogTitle>{t("perfil.editarPerfilDialog.editarPerfil")}</DialogTitle>
+          <DialogDescription>{t("perfil.editarPerfilDialog.essasInformacoesAparecemNoSeu")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <p className="mb-2 text-sm font-medium">Banner</p>
+            <p className="mb-2 text-sm font-medium">{t("perfil.editarPerfilDialog.banner")}</p>
             <div className="overflow-hidden rounded-lg border">
               <CapaUploader
                 capaUrl={usuario.capaPerfil}
@@ -190,7 +192,7 @@ export function EditarPerfilDialog({
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium">Foto de perfil</p>
+            <p className="mb-2 text-sm font-medium">{t("perfil.editarPerfilDialog.fotoDePerfil")}</p>
             <FotoUploader
               nome={usuario.nome}
               fotoUrl={usuario.fotoPerfil}
@@ -207,12 +209,12 @@ export function EditarPerfilDialog({
         <form ref={rascunho.ref} onSubmit={enviar} className="space-y-4 border-t pt-4">
           <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="space-y-2">
-            <Label htmlFor="nome">Nome</Label>
+            <Label htmlFor="nome">{t("perfil.editarPerfilDialog.nome")}</Label>
             <Input id="nome" name="nome" required minLength={3} maxLength={150} defaultValue={usuario?.nome ?? ""} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="telefone">Telefone</Label>
+            <Label htmlFor="telefone">{t("perfil.editarPerfilDialog.telefone")}</Label>
             <Input id="telefone" name="telefone" maxLength={20} defaultValue={usuario?.telefone ?? ""} />
           </div>
 
@@ -220,8 +222,8 @@ export function EditarPerfilDialog({
             <>
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-x-2">
-                  <Label htmlFor="tituloProfissional">Título profissional</Label>
-                  <DicaDeCampoBotao dica="tituloProfissional" nomeDoCampo="Título profissional" />
+                  <Label htmlFor="tituloProfissional">{t("perfil.editarPerfilDialog.tituloProfissional")}</Label>
+                  <DicaDeCampoBotao dica="tituloProfissional" nomeDoCampo={t("perfil.editarPerfilDialog.tituloProfissional")} />
                 </div>
                 <Input
                   id="tituloProfissional"
@@ -234,8 +236,8 @@ export function EditarPerfilDialog({
 
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-x-2">
-                  <Label htmlFor="biografia">Sobre mim</Label>
-                  <DicaDeCampoBotao dica="biografia" nomeDoCampo="Sobre mim" />
+                  <Label htmlFor="biografia">{t("perfil.editarPerfilDialog.sobreMim")}</Label>
+                  <DicaDeCampoBotao dica="biografia" nomeDoCampo={t("perfil.editarPerfilDialog.sobreMim")} />
                 </div>
                 <Textarea
                   id="biografia"
@@ -249,7 +251,7 @@ export function EditarPerfilDialog({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="dataNascimento">Data de nascimento</Label>
+                  <Label htmlFor="dataNascimento">{t("perfil.editarPerfilDialog.dataDeNascimento")}</Label>
                   <Input
                     id="dataNascimento"
                     name="dataNascimento"
@@ -260,19 +262,19 @@ export function EditarPerfilDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="genero">Gênero</Label>
+                  <Label htmlFor="genero">{t("perfil.editarPerfilDialog.genero")}</Label>
                   <Input
                     id="genero"
                     name="genero"
                     maxLength={40}
-                    placeholder="Como você se identifica"
+                    placeholder={t("perfil.editarPerfilDialog.comoVoceSeIdentifica")}
                     defaultValue={candidato.genero ?? ""}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="pais">País onde mora</Label>
+                <Label htmlFor="pais">{t("perfil.editarPerfilDialog.paisOndeMora")}</Label>
                 <PaisAutocomplete
                   id="pais"
                   valor={pais}
@@ -286,18 +288,18 @@ export function EditarPerfilDialog({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="cidade">Cidade</Label>
+                  <Label htmlFor="cidade">{t("filtro.cidade")}</Label>
                   <CidadeAutocomplete
                     id="cidade"
                     name="cidade"
                     value={cidade}
                     onChange={setCidade}
                     estado={estado}
-                    aria-label="Cidade"
+                    aria-label={t("filtro.cidade")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="estado">Estado (UF)</Label>
+                  <Label htmlFor="estado">{t("perfil.editarPerfilDialog.estadoUf")}</Label>
                   {pais === "BR" ? (
                     <EstadoSelect id="estado" name="estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
                   ) : (
@@ -314,13 +316,13 @@ export function EditarPerfilDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="escolaridade">Escolaridade</Label>
+                <Label htmlFor="escolaridade">{t("perfil.editarPerfilDialog.escolaridade")}</Label>
                 <Input id="escolaridade" name="escolaridade" maxLength={120} defaultValue={candidato.escolaridade ?? ""} />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="linkedin">LinkedIn</Label>
+                  <Label htmlFor="linkedin">{t("perfil.editarPerfilDialog.linkedin")}</Label>
                   <Input id="linkedin" name="linkedin" type="url" defaultValue={candidato.linkedin ?? ""} />
                 </div>
                 <div className="space-y-2">
@@ -331,17 +333,17 @@ export function EditarPerfilDialog({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="disponibilidade">Disponibilidade</Label>
+                  <Label htmlFor="disponibilidade">{t("perfil.editarPerfilDialog.disponibilidade")}</Label>
                   <Input
                     id="disponibilidade"
                     name="disponibilidade"
                     maxLength={100}
-                    placeholder="Imediata, a combinar…"
+                    placeholder={t("perfil.editarPerfilDialog.imediataACombinar")}
                     defaultValue={candidato.disponibilidade ?? ""}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="pretensaoSalarial">Pretensão salarial (R$)</Label>
+                  <Label htmlFor="pretensaoSalarial">{t("perfil.editarPerfilDialog.pretensaoSalarialR")}</Label>
                   <Input
                     id="pretensaoSalarial"
                     name="pretensaoSalarial"
@@ -352,13 +354,13 @@ export function EditarPerfilDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="necessidadesAcessibilidade">Necessidades de acessibilidade (opcional)</Label>
+                <Label htmlFor="necessidadesAcessibilidade">{t("perfil.editarPerfilDialog.necessidadesDeAcessibilidade")}</Label>
                 <Textarea
                   id="necessidadesAcessibilidade"
                   name="necessidadesAcessibilidade"
                   rows={3}
                   maxLength={2000}
-                  placeholder="Recursos ou ajustes que facilitam seu dia a dia de trabalho"
+                  placeholder={t("perfil.editarPerfilDialog.recursosOuAjustesQueFacilitam")}
                   defaultValue={candidato.necessidadesAcessibilidade ?? ""}
                 />
               </div>

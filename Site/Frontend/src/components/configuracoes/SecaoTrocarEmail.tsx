@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ import { AvisoSemSenha } from "./AvisoSemSenha";
 
 /** Troca de e-mail: senha atual + novo e-mail, depois confirma com o código enviado ao novo endereço. */
 export function SecaoTrocarEmail() {
+  const { t } = useIdioma();
   const { usuario, atualizar } = useSessao();
   const [aberto, setAberto] = useState(false);
   const [etapa, setEtapa] = useState<"pedido" | "confirmar">("pedido");
@@ -94,9 +96,9 @@ export function SecaoTrocarEmail() {
               {etapa === "pedido" ? (
                 <>
                   <DialogHeader>
-                    <DialogTitle>Alterar e-mail</DialogTitle>
+                    <DialogTitle>{t("configuracoes.secaoTrocarEmail.alterarEMail")}</DialogTitle>
                     <DialogDescription>
-                      Confirme sua senha e informe o novo e-mail. Vamos enviar um código de confirmação para lá.
+                      {t("configuracoes.secaoTrocarEmail.confirmeSuaSenhaEInformeONovoE")}
                     </DialogDescription>
                   </DialogHeader>
                   <form
@@ -107,7 +109,7 @@ export function SecaoTrocarEmail() {
                     }}
                   >
                     <div className="space-y-2">
-                      <Label htmlFor="senha-trocar-email">Senha atual</Label>
+                      <Label htmlFor="senha-trocar-email">{t("configuracoes.secaoTrocarEmail.senhaAtual")}</Label>
                       <PasswordInput
                         id="senha-trocar-email"
                         autoComplete="current-password"
@@ -117,7 +119,7 @@ export function SecaoTrocarEmail() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="novo-email">Novo e-mail</Label>
+                      <Label htmlFor="novo-email">{t("configuracoes.secaoTrocarEmail.novoEMail")}</Label>
                       <Input
                         id="novo-email"
                         type="email"
@@ -145,7 +147,7 @@ export function SecaoTrocarEmail() {
               ) : (
                 <>
                   <DialogHeader>
-                    <DialogTitle>Confirme o novo e-mail</DialogTitle>
+                    <DialogTitle>{t("configuracoes.secaoTrocarEmail.confirmeONovoEMail")}</DialogTitle>
                     <DialogDescription>Digite o código de 6 dígitos enviado para {novoEmail}.</DialogDescription>
                   </DialogHeader>
                   <form
@@ -155,7 +157,7 @@ export function SecaoTrocarEmail() {
                       confirmar.mutate();
                     }}
                   >
-                    <Label htmlFor="codigo-trocar-email">Código de confirmação</Label>
+                    <Label htmlFor="codigo-trocar-email">{t("configuracoes.secaoTrocarEmail.codigoDeConfirmacao")}</Label>
                     <InputOTP id="codigo-trocar-email" maxLength={6} value={codigo} onChange={setCodigo}>
                       <InputOTPGroup>
                         {[0, 1, 2, 3, 4, 5].map((i) => (

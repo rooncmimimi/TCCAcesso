@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,6 +62,7 @@ export function ImportarCurriculoDialog({
   candidatoId: string;
   children: ReactNode;
 }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [rascunho, setRascunho] = useState<RascunhoCurriculo | null>(null);
   const [experiencias, setExperiencias] = useState<ItemExperiencia[]>([]);
@@ -174,10 +176,9 @@ export function ImportarCurriculoDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Importar dados do currículo</DialogTitle>
+          <DialogTitle>{t("perfil.importarCurriculoDialog.importarDadosDoCurriculo")}</DialogTitle>
           <DialogDescription>
-            Extração automática por palavras-chave, sem inteligência artificial. Nada é salvo até você revisar e
-            confirmar.
+            {t("perfil.importarCurriculoDialog.extracaoAutomaticaPorPalavras")}
           </DialogDescription>
         </DialogHeader>
 
@@ -190,12 +191,12 @@ export function ImportarCurriculoDialog({
               {extrair.isPending ? (
                 <>
                   <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-                  Extraindo texto do arquivo…
+                  {t("perfil.importarCurriculoDialog.extraindoTextoDoArquivo")}
                 </>
               ) : (
                 <>
                   <FileUp className="size-6" aria-hidden="true" />
-                  Clique para escolher um PDF ou DOCX
+                  {t("perfil.importarCurriculoDialog.cliqueParaEscolherUmPdfOuDocx")}
                 </>
               )}
             </label>
@@ -221,7 +222,7 @@ export function ImportarCurriculoDialog({
 
             {(rascunho.email || rascunho.telefone || rascunho.linkedin || rascunho.github) && (
               <div className="text-sm text-muted-foreground">
-                <p className="font-semibold text-foreground">Contato encontrado (não é salvo automaticamente):</p>
+                <p className="font-semibold text-foreground">{t("perfil.importarCurriculoDialog.contatoEncontradoNaoESalvo")}</p>
                 <ul className="mt-1 space-y-0.5">
                   {rascunho.email && <li>E-mail: {rascunho.email}</li>}
                   {rascunho.telefone && <li>Telefone: {rascunho.telefone}</li>}
@@ -233,7 +234,7 @@ export function ImportarCurriculoDialog({
 
             {experiencias.length > 0 && (
               <fieldset className="space-y-3">
-                <legend className="text-sm font-bold">Experiências encontradas</legend>
+                <legend className="text-sm font-bold">{t("perfil.importarCurriculoDialog.experienciasEncontradas")}</legend>
                 {experiencias.map((item, indice) => (
                   <div key={indice} className="space-y-2 rounded-lg border p-3">
                     <label className="flex items-center gap-2 text-sm font-semibold">
@@ -245,12 +246,12 @@ export function ImportarCurriculoDialog({
                           )
                         }
                       />
-                      Incluir esta experiência
+                      {t("perfil.importarCurriculoDialog.incluirEstaExperiencia")}
                     </label>
                     {item.incluir && (
                       <div className="grid gap-2 sm:grid-cols-2">
                         <Input
-                          placeholder="Cargo (obrigatório)"
+                          placeholder={t("perfil.importarCurriculoDialog.cargoObrigatorio")}
                           value={item.cargo}
                           onChange={(e) =>
                             setExperiencias((atuais) =>
@@ -259,7 +260,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <Input
-                          placeholder="Empresa (obrigatório)"
+                          placeholder={t("perfil.importarCurriculoDialog.empresaObrigatorio")}
                           value={item.empresa}
                           onChange={(e) =>
                             setExperiencias((atuais) =>
@@ -268,7 +269,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <div className="space-y-1">
-                          <Label className="text-xs">Data de início (obrigatório)</Label>
+                          <Label className="text-xs">{t("perfil.importarCurriculoDialog.dataDeInicioObrigatorio")}</Label>
                           <Input
                             type="date"
                             value={item.dataInicio}
@@ -280,7 +281,7 @@ export function ImportarCurriculoDialog({
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Data de término</Label>
+                          <Label className="text-xs">{t("perfil.importarCurriculoDialog.dataDeTermino")}</Label>
                           <Input
                             type="date"
                             disabled={item.atual}
@@ -301,7 +302,7 @@ export function ImportarCurriculoDialog({
                               )
                             }
                           />
-                          Emprego atual
+                          {t("perfil.importarCurriculoDialog.empregoAtual")}
                         </label>
                         <Textarea
                           className="sm:col-span-2"
@@ -322,7 +323,7 @@ export function ImportarCurriculoDialog({
 
             {formacoes.length > 0 && (
               <fieldset className="space-y-3">
-                <legend className="text-sm font-bold">Formações encontradas</legend>
+                <legend className="text-sm font-bold">{t("perfil.importarCurriculoDialog.formacoesEncontradas")}</legend>
                 {formacoes.map((item, indice) => (
                   <div key={indice} className="space-y-2 rounded-lg border p-3">
                     <label className="flex items-center gap-2 text-sm font-semibold">
@@ -334,12 +335,12 @@ export function ImportarCurriculoDialog({
                           )
                         }
                       />
-                      Incluir esta formação
+                      {t("perfil.importarCurriculoDialog.incluirEstaFormacao")}
                     </label>
                     {item.incluir && (
                       <div className="grid gap-2 sm:grid-cols-2">
                         <Input
-                          placeholder="Instituição (obrigatório)"
+                          placeholder={t("perfil.importarCurriculoDialog.instituicaoObrigatorio")}
                           value={item.instituicao}
                           onChange={(e) =>
                             setFormacoes((atuais) =>
@@ -348,7 +349,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <Input
-                          placeholder="Curso (obrigatório)"
+                          placeholder={t("perfil.importarCurriculoDialog.cursoObrigatorio")}
                           value={item.curso}
                           onChange={(e) =>
                             setFormacoes((atuais) =>
@@ -357,7 +358,7 @@ export function ImportarCurriculoDialog({
                           }
                         />
                         <div className="space-y-1">
-                          <Label className="text-xs">Conclusão (ou prevista)</Label>
+                          <Label className="text-xs">{t("perfil.importarCurriculoDialog.conclusaoOuPrevista")}</Label>
                           <Input
                             type="date"
                             disabled={item.emAndamento}
@@ -378,7 +379,7 @@ export function ImportarCurriculoDialog({
                               )
                             }
                           />
-                          Em andamento
+                          {t("perfil.importarCurriculoDialog.emAndamento")}
                         </label>
                         <Textarea
                           className="sm:col-span-2"
@@ -399,7 +400,7 @@ export function ImportarCurriculoDialog({
 
             {habilidades.length > 0 && (
               <fieldset className="space-y-2">
-                <legend className="text-sm font-bold">Habilidades encontradas</legend>
+                <legend className="text-sm font-bold">{t("perfil.importarCurriculoDialog.habilidadesEncontradas")}</legend>
                 <ul className="flex flex-wrap gap-2">
                   {habilidades.map((item, indice) => (
                     <li key={indice}>
@@ -428,8 +429,7 @@ export function ImportarCurriculoDialog({
 
             {experiencias.length === 0 && formacoes.length === 0 && habilidades.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Não foi possível identificar seções de experiência, formação ou habilidades neste arquivo — tente
-                um currículo com esses títulos de seção mais explícitos, ou preencha manualmente no perfil.
+                {t("perfil.importarCurriculoDialog.naoFoiPossivelIdentificar")}
               </p>
             )}
           </div>

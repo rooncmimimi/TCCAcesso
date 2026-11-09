@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,7 @@ function removerDaResposta(atual: RespostaLista | undefined, id: string): Respos
 
 /** Publicações para moderação, com busca, paginação e remoção otimista. */
 export function PostagensTabela() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const queryClient = useQueryClient();
 
@@ -99,13 +101,13 @@ export function PostagensTabela() {
 
   if (isLoading) {
     return (
-      <ListaCarregando rotulo="Carregando as publicações…" linhas={5} />
+      <ListaCarregando rotulo={t("admin.postagensTabela.carregandoAsPublicacoes")} linhas={5} />
     );
   }
 
   if (isError) {
     return (
-      <ListaComErro mensagem="Não foi possível carregar as publicações." aoTentarDeNovo={() => refetch()} />
+      <ListaComErro mensagem={t("admin.postagensTabela.naoFoiPossivelCarregarAs")} aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -115,12 +117,12 @@ export function PostagensTabela() {
     <div>
       <form className="flex flex-wrap items-end gap-3 p-4" onSubmit={buscar}>
         <div className="min-w-56">
-          <Label htmlFor="filtro-postagens">Buscar por conteúdo</Label>
+          <Label htmlFor="filtro-postagens">{t("admin.postagensTabela.buscarPorConteudo")}</Label>
           <Input
             id="filtro-postagens"
             value={busca}
             onChange={(evento) => setBusca(evento.target.value)}
-            placeholder="Ex.: palavra na publicação"
+            placeholder={t("admin.postagensTabela.exPalavraNaPublicacao")}
             className="mt-1"
           />
         </div>
@@ -130,16 +132,16 @@ export function PostagensTabela() {
       </form>
 
       {postagens.length === 0 ? (
-        <ListaVazia icone={FileText} mensagem="Nenhuma publicação encontrada." />
+        <ListaVazia icone={FileText} mensagem={t("admin.postagensTabela.nenhumaPublicacaoEncontrada")} />
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Autor</TableHead>
-                <TableHead>Conteúdo</TableHead>
-                <TableHead>Publicada em</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{t("admin.postagensTabela.autor")}</TableHead>
+                <TableHead>{t("admin.postagensTabela.conteudo")}</TableHead>
+                <TableHead>{t("admin.postagensTabela.publicadaEm")}</TableHead>
+                <TableHead className="text-right">{t("admin.postagensTabela.acoes")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -190,9 +192,9 @@ export function PostagensTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo="Remover publicação"
-        descricao="Esta ação remove a publicação do feed. Deseja continuar?"
-        textoConfirmar="Remover"
+        titulo={t("admin.postagensTabela.removerPublicacao")}
+        descricao={t("admin.postagensTabela.estaAcaoRemoveAPublicacaoDo")}
+        textoConfirmar={t("admin.postagensTabela.remover")}
         destrutivo
         carregando={mutacao.isPending}
         onConfirmar={() => alvo && mutacao.mutate(alvo)}

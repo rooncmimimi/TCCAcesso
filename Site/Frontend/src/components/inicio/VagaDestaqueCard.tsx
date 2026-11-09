@@ -4,9 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ROTULO_PUBLICO_ALVO_CURTO } from "@/components/dashboard/constantesVaga";
 import type { Vaga } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Card compacto de vaga em destaque, usado na página inicial. */
 export function VagaDestaqueCard({ vaga }: { vaga: Vaga }) {
+  const { t } = useIdioma();
   const nomeEmpresa = vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa parceira";
   const local = [vaga.cidade, vaga.estado].filter(Boolean).join(" - ");
   // Ver o comentário equivalente em VagaCard.tsx: só afeta o leitor de voz próprio do ACESSO.
@@ -26,9 +28,9 @@ export function VagaDestaqueCard({ vaga }: { vaga: Vaga }) {
         <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm font-medium text-muted-foreground">
           <span>{nomeEmpresa}</span>
           {vaga.empresa?.empresaVerificada && (
-            <span className="inline-flex items-center text-primary" title="Empresa verificada pelo ACESSO">
+            <span className="inline-flex items-center text-primary" title={t("vaga.empresaVerificadaTitulo")}>
               <BadgeCheck className="size-3.5" aria-hidden="true" />
-              <span className="sr-only">Empresa verificada</span>
+              <span className="sr-only">{t("vaga.empresaVerificada")}</span>
             </span>
           )}
           <span>

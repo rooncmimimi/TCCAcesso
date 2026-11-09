@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { LogsTabela } from "@/components/admin/LogsTabela";
 import adminService from "@/services/admin.service";
 import denunciaService, { MOTIVO_ROTULO } from "@/services/denuncia.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/admin/usuarios/$usuarioId")({
   head: () => ({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/admin/usuarios/$usuarioId")({
 });
 
 function AdminUsuarioDetalhe() {
+  const { t } = useIdioma();
   const { usuarioId } = Route.useParams();
 
   const { data: usuario, isLoading, isError, refetch } = useQuery({
@@ -38,9 +40,9 @@ function AdminUsuarioDetalhe() {
   if (isError || !usuario) {
     return (
       <div role="alert" className="space-y-3 p-6 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar este usuário.</p>
+        <p className="text-sm text-muted-foreground">{t("admin.usuariosusuarioId.naoFoiPossivelCarregarEste")}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t("raiz.tentarNovamente")}
         </Button>
       </div>
     );
@@ -78,17 +80,17 @@ function AdminUsuarioDetalhe() {
             <p className="mt-1 text-sm">{usuario.email}</p>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">Tipo</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.usuariosusuarioId.tipo")}</p>
             <p className="mt-1 text-sm capitalize">{usuario.tipoUsuario}</p>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">Cadastrado em</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.usuariosusuarioId.cadastradoEm")}</p>
             <p className="mt-1 text-sm">
               {usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString("pt-BR") : "—"}
             </p>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground">Última atividade</p>
+            <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.usuariosusuarioId.ultimaAtividade")}</p>
             <p className="mt-1 text-sm">
               {usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString("pt-BR") : "Nunca acessou"}
             </p>
@@ -98,9 +100,9 @@ function AdminUsuarioDetalhe() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-lg font-bold">Denúncias recebidas</h2>
+          <h2 className="text-lg font-bold">{t("admin.usuariosusuarioId.denunciasRecebidas")}</h2>
           {!denunciasRecebidas || denunciasRecebidas.denuncias.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">Nenhuma denúncia contra este usuário.</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t("admin.usuariosusuarioId.nenhumaDenunciaContraEste")}</p>
           ) : (
             <ul className="mt-3 space-y-2">
               {denunciasRecebidas.denuncias.map((denuncia) => (
@@ -122,7 +124,7 @@ function AdminUsuarioDetalhe() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-0">
-          <h2 className="p-5 pb-0 text-lg font-bold sm:px-6 sm:pt-6">Histórico administrativo</h2>
+          <h2 className="p-5 pb-0 text-lg font-bold sm:px-6 sm:pt-6">{t("admin.usuariosusuarioId.historicoAdministrativo")}</h2>
           <LogsTabela entidadeId={usuarioId} />
         </CardContent>
       </Card>

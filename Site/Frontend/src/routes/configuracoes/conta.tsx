@@ -13,6 +13,7 @@ import { SecaoContaPerigo } from "@/components/configuracoes/SecaoContaPerigo";
 import { useSessao } from "@/hooks/useSessao";
 import { perfilService } from "@/services/perfil.service";
 import { empresasService } from "@/services/empresas.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/configuracoes/conta")({
   head: () => ({
@@ -44,6 +45,7 @@ const RUBRICA_TIPO: Record<string, string> = {
 };
 
 function Conta() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
 
   const { data: candidato } = useQuery({
@@ -67,30 +69,30 @@ function Conta() {
         <ArrowLeft className="size-4" aria-hidden="true" /> Voltar para configurações
       </Link>
 
-      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">Conta</h1>
-      <p className="text-sm text-muted-foreground sm:text-base">Seus dados de acesso e informações da conta.</p>
+      <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">{t("configuracoes.conta.conta")}</h1>
+      <p className="text-sm text-muted-foreground sm:text-base">{t("configuracoes.conta.seusDadosDeAcessoEInformacoes")}</p>
 
       <div className="mt-6 space-y-4">
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg">Informações da conta</CardTitle>
+            <CardTitle className="text-lg">{t("configuracoes.conta.informacoesDaConta")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <dl className="grid gap-3 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Nome</dt>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{t("configuracoes.conta.nome")}</dt>
                 <dd className="font-medium">{usuario?.nome}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Tipo de conta</dt>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{t("configuracoes.conta.tipoDeConta")}</dt>
                 <dd className="font-medium">{usuario ? RUBRICA_TIPO[usuario.tipo] ?? usuario.tipo : "—"}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Conta criada em</dt>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{t("configuracoes.conta.contaCriadaEm")}</dt>
                 <dd className="font-medium">{formatarDataLonga(usuario?.criadoEm ?? usuario?.criadoEm)}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase text-muted-foreground">Último acesso</dt>
+                <dt className="text-xs font-medium uppercase text-muted-foreground">{t("configuracoes.conta.ultimoAcesso")}</dt>
                 <dd className="font-medium">{formatarDataLonga(usuario?.ultimoLogin)}</dd>
               </div>
             </dl>
@@ -115,11 +117,11 @@ function Conta() {
 
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg">Senha</CardTitle>
+            <CardTitle className="text-lg">{t("login.senha")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline" className="min-h-11">
-              <Link to="/configuracoes/senha">Alterar senha</Link>
+              <Link to="/configuracoes/senha">{t("configuracoes.conta.alterarSenha")}</Link>
             </Button>
           </CardContent>
         </Card>

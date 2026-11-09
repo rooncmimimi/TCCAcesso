@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { dashboardService } from "@/services/dashboard.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Vagas que o candidato marcou como favoritas. */
 export function VagasFavoritas() {
+  const { t } = useIdioma();
   const [pagina, setPagina] = useState(1);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -19,7 +21,7 @@ export function VagasFavoritas() {
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-lg">Vagas favoritas</CardTitle>
+        <CardTitle className="text-lg">{t("dashboard.vagasFavoritas.vagasFavoritas")}</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -28,16 +30,16 @@ export function VagasFavoritas() {
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-            <p>Não foi possível carregar suas vagas favoritas.</p>
+            <p>{t("dashboard.vagasFavoritas.naoFoiPossivelCarregarSuas")}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : !data || data.dados.length === 0 ? (
           <p className="py-6 text-sm text-muted-foreground">
             Você ainda não favoritou nenhuma vaga.{" "}
             <Link to="/vagas" className="font-medium text-primary underline">
-              Explorar vagas
+              {t("dashboard.vagasFavoritas.explorarVagas")}
             </Link>
           </p>
         ) : (
@@ -67,7 +69,7 @@ export function VagasFavoritas() {
                   disabled={pagina <= 1}
                   onClick={() => setPagina((p) => Math.max(1, p - 1))}
                 >
-                  Página anterior
+                  {t("vagas.paginaAnterior")}
                 </Button>
                 <span className="self-center text-sm text-muted-foreground">
                   Página {data.pagina} de {data.totalPaginas}
@@ -78,7 +80,7 @@ export function VagasFavoritas() {
                   disabled={pagina >= data.totalPaginas}
                   onClick={() => setPagina((p) => p + 1)}
                 >
-                  Próxima página
+                  {t("vagas.proximaPagina")}
                 </Button>
               </div>
             ) : null}

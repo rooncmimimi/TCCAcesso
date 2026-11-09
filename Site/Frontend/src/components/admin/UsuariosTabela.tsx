@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +41,7 @@ const TIPOS = ["todos", "candidato", "empresa", "administrador"] as const;
  * é oferecida ao administrador: quem exclui a conta é a própria pessoa (Configurações › Conta).
  */
 export function UsuariosTabela() {
+  const { t } = useIdioma();
   const { usuario: usuarioLogado } = useSessao();
 
   const queryClient = useQueryClient();
@@ -84,17 +86,17 @@ export function UsuariosTabela() {
         }}
       >
         <div className="min-w-56 flex-1">
-          <Label htmlFor="busca-usuarios">Buscar por nome</Label>
+          <Label htmlFor="busca-usuarios">{t("admin.usuariosTabela.buscarPorNome")}</Label>
           <Input
             id="busca-usuarios"
             value={busca}
             onChange={(evento) => setBusca(evento.target.value)}
-            placeholder="Nome do usuário"
+            placeholder={t("admin.usuariosTabela.nomeDoUsuario")}
             className="mt-1"
           />
         </div>
         <div className="w-48">
-          <Label htmlFor="tipo-usuarios">Tipo</Label>
+          <Label htmlFor="tipo-usuarios">{t("admin.usuariosTabela.tipo")}</Label>
           <Select
             value={tipo}
             onValueChange={(valor) => {
@@ -103,7 +105,7 @@ export function UsuariosTabela() {
             }}
           >
             <SelectTrigger id="tipo-usuarios" className="mt-1">
-              <SelectValue placeholder="Todos" />
+              <SelectValue placeholder={t("admin.usuariosTabela.todos")} />
             </SelectTrigger>
             <SelectContent>
               {TIPOS.map((item) => (
@@ -120,21 +122,21 @@ export function UsuariosTabela() {
       </form>
 
       {isLoading ? (
-        <ListaCarregando rotulo="Carregando os usuários…" linhas={5} />
+        <ListaCarregando rotulo={t("admin.usuariosTabela.carregandoOsUsuarios")} linhas={5} />
       ) : isError ? (
-        <ListaComErro mensagem="Não foi possível carregar os usuários." aoTentarDeNovo={() => refetch()} />
+        <ListaComErro mensagem={t("admin.usuariosTabela.naoFoiPossivelCarregarOs")} aoTentarDeNovo={() => refetch()} />
       ) : usuarios.length === 0 ? (
-        <ListaVazia icone={Users} mensagem="Nenhum usuário encontrado com esses filtros." />
+        <ListaVazia icone={Users} mensagem={t("admin.usuariosTabela.nenhumUsuarioEncontradoCom")} />
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
+                <TableHead>{t("admin.usuariosTabela.nome")}</TableHead>
                 <TableHead>E-mail</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Situação</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{t("admin.usuariosTabela.tipo")}</TableHead>
+                <TableHead>{t("admin.usuariosTabela.situacao")}</TableHead>
+                <TableHead className="text-right">{t("admin.usuariosTabela.acoes")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -4,6 +4,7 @@ import { CircleHelp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { DICAS_DE_CAMPO, type ChaveDeDica } from "@/dados/dicasDeCampo";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Assistente de preenchimento: um botão "Como preencher" ao lado do nome do campo, que abre uma
@@ -11,6 +12,7 @@ import { DICAS_DE_CAMPO, type ChaveDeDica } from "@/dados/dicasDeCampo";
  * e o componente não lê nem escreve nada do que a pessoa digitou.
  */
 export function DicaDeCampoBotao({ dica, nomeDoCampo }: { dica: ChaveDeDica; nomeDoCampo: string }) {
+  const { t } = useIdioma();
   const [aberta, setAberta] = useState(false);
   const idDoPainel = useId();
   const { orientacao, passos, exemplo } = DICAS_DE_CAMPO[dica];
@@ -40,7 +42,7 @@ export function DicaDeCampoBotao({ dica, nomeDoCampo }: { dica: ChaveDeDica; nom
               ))}
             </ul>
             <p className="mt-2">
-              <span className="font-semibold">Exemplo (invente o seu, este é só uma ilustração): </span>
+              <span className="font-semibold">{t("acessibilidade.dicaDeCampoBotao.exemploInventeOSeuEsteESoUma")} </span>
               {exemplo}
             </p>
           </TextoOuvivel>

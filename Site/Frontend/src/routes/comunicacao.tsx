@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { CentralDeComunicacao } from "@/components/comunicacao/CentralDeComunicacao";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/comunicacao")({
   head: () => ({
@@ -14,10 +15,11 @@ export const Route = createFileRoute("/comunicacao")({
 });
 
 function ComunicacaoPagina() {
+  const { t } = useIdioma();
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Central de comunicação</h1>
-      <p className="mt-2 text-muted-foreground">Frases prontas para você mostrar na tela, ouvir em voz alta ou copiar. Use em entrevistas, em conversas com recrutadores e no dia a dia.</p>
+      <h1 className="text-3xl font-extrabold">{t("comunicacao.centralDeComunicacao")}</h1>
+      <p className="mt-2 text-muted-foreground">{t("comunicacao.frasesProntasParaVoceMostrarNa")}</p>
       <CentralDeComunicacao />
     </EstruturaApp>
   );

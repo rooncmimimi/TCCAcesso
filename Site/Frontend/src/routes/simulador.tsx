@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { PaginaSimulador } from "@/components/simulador/PaginaSimulador";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/simulador")({
   head: () => ({
@@ -22,10 +23,11 @@ export const Route = createFileRoute("/simulador")({
 });
 
 function SimuladorPagina() {
+  const { t } = useIdioma();
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Simulador de candidatura e entrevista</h1>
-      <p className="mt-2 text-muted-foreground">Uma área de treino, com uma vaga inventada. Pratique no seu ritmo, pause quando quiser e repita quantas vezes precisar.</p>
+      <h1 className="text-3xl font-extrabold">{t("simulador.simuladorDeCandidaturaE")}</h1>
+      <p className="mt-2 text-muted-foreground">{t("simulador.umaAreaDeTreinoComUmaVaga")}</p>
       <PaginaSimulador />
     </EstruturaApp>
   );

@@ -214,7 +214,7 @@ export function PostagemCard({
             </div>
           ) : (
             <>
-              <TextoOuvivel rotulo="Ouvir a publicação" className="mt-4">
+              <TextoOuvivel rotulo={t("feed.postagemCard.ouvirAPublicacao")} className="mt-4">
                 <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{traducao.texto("conteudo")}</p>
               </TextoOuvivel>
               {postagem.conteudo.trim() && <ControleDeTraducao traducao={traducao} conteudo="publicacao" />}

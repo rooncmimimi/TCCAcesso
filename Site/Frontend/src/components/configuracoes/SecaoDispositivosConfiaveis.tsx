@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { dataHoraCurta, tempoRelativo } from "@/lib/dispositivo";
 import { esquecerDispositivoConfiavel } from "@/services/api";
 import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
@@ -29,6 +30,7 @@ const CHAVE_DISPOSITIVOS = ["seguranca", "dispositivos-confiaveis"] as const;
  * sessão que já está aberta (isso é em "Dispositivos e sessões"). Só aparece com o recurso ligado.
  */
 export function SecaoDispositivosConfiaveis() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const { data: estado } = useEstadoDaSeguranca();
 
@@ -86,14 +88,14 @@ export function SecaoDispositivosConfiaveis() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Remover a confiança em todos os dispositivos?</AlertDialogTitle>
+                <AlertDialogTitle>{t("configuracoes.secaoDispositivosConfiaveis.removerAConfiancaEmTodosOs")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Todos os aparelhos voltam a pedir o código enviado por e-mail no próximo login. As sessões abertas continuam.
+                  {t("configuracoes.secaoDispositivosConfiaveis.todosOsAparelhosVoltamAPedirO")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => removerTodos.mutate()}>Remover todos</AlertDialogAction>
+                <AlertDialogCancel>{t("post.cancelar")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => removerTodos.mutate()}>{t("configuracoes.secaoDispositivosConfiaveis.removerTodos")}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -106,9 +108,9 @@ export function SecaoDispositivosConfiaveis() {
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
-            <p>Não foi possível carregar os dispositivos de confiança.</p>
+            <p>{t("configuracoes.secaoDispositivosConfiaveis.naoFoiPossivelCarregarOs")}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : lista.length === 0 ? (
@@ -116,7 +118,7 @@ export function SecaoDispositivosConfiaveis() {
             Nenhum dispositivo de confiança. Ao confirmar o código do e-mail num aparelho seu, marque &quot;Lembrar este dispositivo&quot;.
           </p>
         ) : (
-          <ul aria-label="Dispositivos de confiança" className="space-y-2">
+          <ul aria-label={t("configuracoes.secaoDispositivosConfiaveis.dispositivosDeConfianca")} className="space-y-2">
             {lista.map((dispositivo) => (
               <li key={dispositivo.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3">
                 <div className="min-w-0">
@@ -124,7 +126,7 @@ export function SecaoDispositivosConfiaveis() {
                     {dispositivo.rotulo}
                     {dispositivo.atual && (
                       <Badge variant="secondary" className="font-medium">
-                        Este dispositivo
+                        {t("configuracoes.secaoDispositivosConfiaveis.esteDispositivo")}
                       </Badge>
                     )}
                   </div>

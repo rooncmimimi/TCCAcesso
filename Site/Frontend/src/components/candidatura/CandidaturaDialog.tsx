@@ -15,11 +15,13 @@ import { candidaturaAdaptacoesService, minhaAcessibilidadeService } from "@/serv
 import vagasService from "@/services/vagas.service";
 import { extrairMensagemErro } from "@/services/api";
 import { completarEscolha, escolhaTemConteudo, escolhaVazia, type EscolhaDeCompartilhamento, type EtapaDoRascunho } from "@/types/adaptacoes";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
-const ETAPAS: { chave: EtapaDoRascunho; titulo: string }[] = [
-  { chave: "mensagem", titulo: "Mensagem" },
-  { chave: "adaptacoes", titulo: "Adaptações" },
-  { chave: "revisao", titulo: "Revisar e enviar" },
+const ETAPAS: { chave: EtapaDoRascunho; titulo: ChaveBase }[] = [
+  { chave: "mensagem", titulo: "candidatura.candidaturaDialog.mensagem" },
+  { chave: "adaptacoes", titulo: "candidatura.candidaturaDialog.adaptacoes" },
+  { chave: "revisao", titulo: "candidatura.candidaturaDialog.revisarEEnviar" },
 ];
 
 /** Espera depois da última alteração antes de guardar o rascunho no servidor. */
@@ -40,6 +42,7 @@ type Props = {
  * última etapa; só o envio definitivo cria a candidatura, avisa a empresa e apaga o rascunho.
  */
 export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const [etapa, setEtapa] = useState<EtapaDoRascunho>("mensagem");
   const [mensagem, setMensagem] = useState("");
@@ -159,7 +162,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
         </DialogHeader>
 
         <p aria-live="polite" className="text-sm font-semibold text-primary">
-          Etapa {indice + 1} de {ETAPAS.length} — {ETAPAS[indice].titulo}
+          Etapa {indice + 1} de {ETAPAS.length} — {t(ETAPAS[indice].titulo)}
         </p>
 
         {carregando ? (
@@ -168,26 +171,26 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
           </div>
         ) : catalogo.isError || perfil.isError || !catalogo.data || !perfil.data ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-            <p>Não foi possível carregar as opções de adaptação agora.</p>
+            <p>{t("candidatura.candidaturaDialog.naoFoiPossivelCarregarAsOpcoes")}</p>
             <Button variant="outline" size="sm" onClick={() => { void catalogo.refetch(); void perfil.refetch(); }}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
             <p ref={tituloRef} tabIndex={-1} className="text-base font-bold outline-none">
-              {ETAPAS[indice].titulo}
+              {t(ETAPAS[indice].titulo)}
             </p>
 
             {rascunho.data && etapa !== "revisao" && !sujo ? (
               <p role="status" className="rounded-lg border bg-muted/40 p-3 text-sm">
-                Continuamos de onde você parou. Seu rascunho está salvo.
+                {t("candidatura.candidaturaDialog.continuamosDeOndeVoceParouSeu")}
               </p>
             ) : null}
 
             {etapa === "mensagem" ? (
               <div className="space-y-2">
-                <Label htmlFor="candidatura-mensagem">Mensagem para a empresa (opcional)</Label>
+                <Label htmlFor="candidatura-mensagem">{t("candidatura.candidaturaDialog.mensagemParaAEmpresaOpcional")}</Label>
                 <CampoComDitado
                   id="candidatura-mensagem"
                   valor={mensagem}
@@ -197,7 +200,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
                   }}
                   rows={5}
                   maxLength={2000}
-                  ajuda="Conte por que se interessou pela vaga. Você pode ditar o texto: ele só entra no campo depois que você revisar."
+                  ajuda={t("candidatura.candidaturaDialog.contePorQueSeInteressouPela")}
                 />
               </div>
             ) : null}
@@ -220,16 +223,16 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
 
             {etapa === "revisao" ? (
               <div className="space-y-4">
-                <h3 className="text-sm font-bold">O que a empresa receberá?</h3>
+                <h3 className="text-sm font-bold">{t("candidatura.candidaturaDialog.oQueAEmpresaRecebera")}</h3>
                 {previa.isLoading ? (
                   <div role="status" className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="size-5 animate-spin" aria-hidden="true" /> Montando a prévia…
                   </div>
                 ) : previa.isError || !previa.data ? (
                   <div role="alert" className="space-y-2 text-sm text-destructive">
-                    <p>Não foi possível montar a prévia. Sem ela, a candidatura não pode ser enviada.</p>
+                    <p>{t("candidatura.candidaturaDialog.naoFoiPossivelMontarAPreviaSem")}</p>
                     <Button variant="outline" size="sm" onClick={() => previa.refetch()}>
-                      Tentar novamente
+                      {t("raiz.tentarNovamente")}
                     </Button>
                   </div>
                 ) : (
@@ -238,7 +241,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
 
                 {mensagem ? (
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold">Sua mensagem</h3>
+                    <h3 className="text-sm font-bold">{t("candidatura.candidaturaDialog.suaMensagem")}</h3>
                     <p className="whitespace-pre-line rounded-lg border bg-muted/30 p-3 text-sm">{mensagem}</p>
                   </div>
                 ) : null}
@@ -252,7 +255,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
                     </Label>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Você não marcou nenhuma informação de acessibilidade: nenhuma será compartilhada.</p>
+                  <p className="text-sm text-muted-foreground">{t("candidatura.candidaturaDialog.voceNaoMarcouNenhumaInformacao")}</p>
                 )}
               </div>
             ) : null}
@@ -266,7 +269,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
             </Button>
             {rascunho.data ? (
               <Button type="button" variant="ghost" onClick={() => descartar.mutate()} disabled={descartar.isPending}>
-                Descartar rascunho
+                {t("candidatura.candidaturaDialog.descartarRascunho")}
               </Button>
             ) : null}
           </div>

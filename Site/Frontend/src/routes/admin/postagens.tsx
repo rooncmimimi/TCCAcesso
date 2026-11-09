@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Card } from "@/components/ui/card";
 import { PostagensTabela } from "@/components/admin/PostagensTabela";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/admin/postagens")({
   head: () => ({
@@ -18,9 +19,10 @@ export const Route = createFileRoute("/admin/postagens")({
 });
 
 function AdminPostagens() {
+  const { t } = useIdioma();
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-extrabold">Publicações</h1>
+      <h1 className="text-3xl font-extrabold">{t("admin.postagens.publicacoes")}</h1>
       <Card className="overflow-hidden p-0 shadow-none">
         <PostagensTabela />
       </Card>

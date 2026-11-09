@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
@@ -49,6 +50,7 @@ const CAMPOS_DO_RASCUNHO = ["titulo", "descricao", "requisitos", "requisitosDese
  * empresa (`garantirDono` + `garantirEmpresaAprovada`).
  */
 export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: ReactNode }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<PublicoAlvoVaga>(vaga.publicoAlvo ?? "pcd");
   const [recursosAcessibilidade, setRecursosAcessibilidade] = useState<RecursoAcessibilidadeVaga[]>(
@@ -125,8 +127,8 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Editar vaga</DialogTitle>
-          <DialogDescription>Atualize as informações desta vaga.</DialogDescription>
+          <DialogTitle>{t("dashboard.editarVagaDialog.editarVaga")}</DialogTitle>
+          <DialogDescription>{t("dashboard.editarVagaDialog.atualizeAsInformacoesDestaVaga")}</DialogDescription>
         </DialogHeader>
 
         <form
@@ -139,7 +141,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
         >
           <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="space-y-2">
-            <Label htmlFor={`titulo-${vaga.id}`}>Título da vaga</Label>
+            <Label htmlFor={`titulo-${vaga.id}`}>{t("dashboard.editarVagaDialog.tituloDaVaga")}</Label>
             <Input
               id={`titulo-${vaga.id}`}
               name="titulo"
@@ -152,8 +154,8 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor={`descricao-${vaga.id}`}>Descrição</Label>
-              <DicaDeCampoBotao dica="vagaDescricao" nomeDoCampo="Descrição da vaga" />
+              <Label htmlFor={`descricao-${vaga.id}`}>{t("vagaDetalhe.descricao")}</Label>
+              <DicaDeCampoBotao dica="vagaDescricao" nomeDoCampo={t("dashboard.editarVagaDialog.descricaoDaVaga")} />
             </div>
             <Textarea
               id={`descricao-${vaga.id}`}
@@ -163,21 +165,21 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               rows={5}
               defaultValue={vaga.descricao}
             />
-            <p className="text-xs text-muted-foreground">Mínimo de 20 caracteres.</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.editarVagaDialog.minimoDe20Caracteres")}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor={`requisitos-${vaga.id}`}>Requisitos obrigatórios</Label>
-                <DicaDeCampoBotao dica="vagaRequisitos" nomeDoCampo="Requisitos" />
+                <Label htmlFor={`requisitos-${vaga.id}`}>{t("dashboard.editarVagaDialog.requisitosObrigatorios")}</Label>
+                <DicaDeCampoBotao dica="vagaRequisitos" nomeDoCampo={t("vagaDetalhe.requisitos")} />
               </div>
               <Textarea id={`requisitos-${vaga.id}`} name="requisitos" rows={3} defaultValue={vaga.requisitos ?? ""} />
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor={`beneficios-${vaga.id}`}>Benefícios</Label>
-                <DicaDeCampoBotao dica="vagaBeneficios" nomeDoCampo="Benefícios" />
+                <Label htmlFor={`beneficios-${vaga.id}`}>{t("vagaDetalhe.beneficios")}</Label>
+                <DicaDeCampoBotao dica="vagaBeneficios" nomeDoCampo={t("vagaDetalhe.beneficios")} />
               </div>
               <Textarea id={`beneficios-${vaga.id}`} name="beneficios" rows={3} defaultValue={vaga.beneficios ?? ""} />
             </div>
@@ -185,8 +187,8 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor="atividades">Atividades (uma por linha)</Label>
-              <DicaDeCampoBotao dica="vagaAtividades" nomeDoCampo="Atividades" />
+              <Label htmlFor="atividades">{t("dashboard.editarVagaDialog.atividadesUmaPorLinha")}</Label>
+              <DicaDeCampoBotao dica="vagaAtividades" nomeDoCampo={t("dashboard.editarVagaDialog.atividades")} />
             </div>
             <Textarea id="atividades" name="atividades" rows={3} maxLength={4000} defaultValue={vaga.atividades ?? ""} />
           </div>
@@ -194,15 +196,15 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor="requisitosDesejaveis">Requisitos desejáveis</Label>
-                <DicaDeCampoBotao dica="vagaRequisitosDesejaveis" nomeDoCampo="Requisitos desejáveis" />
+                <Label htmlFor="requisitosDesejaveis">{t("dashboard.editarVagaDialog.requisitosDesejaveis")}</Label>
+                <DicaDeCampoBotao dica="vagaRequisitosDesejaveis" nomeDoCampo={t("dashboard.editarVagaDialog.requisitosDesejaveis")} />
               </div>
               <Textarea id="requisitosDesejaveis" name="requisitosDesejaveis" rows={3} maxLength={4000} defaultValue={vaga.requisitosDesejaveis ?? ""} />
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor="etapasSelecao">Etapas da seleção</Label>
-                <DicaDeCampoBotao dica="vagaEtapas" nomeDoCampo="Etapas da seleção" />
+                <Label htmlFor="etapasSelecao">{t("dashboard.editarVagaDialog.etapasDaSelecao")}</Label>
+                <DicaDeCampoBotao dica="vagaEtapas" nomeDoCampo={t("dashboard.editarVagaDialog.etapasDaSelecao")} />
               </div>
               <Textarea id="etapasSelecao" name="etapasSelecao" rows={3} maxLength={4000} defaultValue={vaga.etapasSelecao ?? ""} />
             </div>
@@ -210,7 +212,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor={`modalidade-${vaga.id}`}>Modalidade</Label>
+              <Label htmlFor={`modalidade-${vaga.id}`}>{t("filtro.modalidade")}</Label>
               <select
                 id={`modalidade-${vaga.id}`}
                 name="modalidade"
@@ -225,7 +227,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`contrato-${vaga.id}`}>Contrato</Label>
+              <Label htmlFor={`contrato-${vaga.id}`}>{t("dashboard.editarVagaDialog.contrato")}</Label>
               <select
                 id={`contrato-${vaga.id}`}
                 name="contrato"
@@ -240,7 +242,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`salario-${vaga.id}`}>Salário (R$)</Label>
+              <Label htmlFor={`salario-${vaga.id}`}>{t("dashboard.editarVagaDialog.salarioR")}</Label>
               <Input
                 id={`salario-${vaga.id}`}
                 name="salario"
@@ -253,18 +255,18 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor={`cidade-${vaga.id}`}>Cidade</Label>
+              <Label htmlFor={`cidade-${vaga.id}`}>{t("filtro.cidade")}</Label>
               <CidadeAutocomplete
                 id={`cidade-${vaga.id}`}
                 name="cidade"
                 value={cidade}
                 onChange={setCidade}
                 estado={estado}
-                aria-label="Cidade"
+                aria-label={t("filtro.cidade")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`estado-${vaga.id}`}>Estado (UF)</Label>
+              <Label htmlFor={`estado-${vaga.id}`}>{t("dashboard.editarVagaDialog.estadoUf")}</Label>
               <Input
                 id={`estado-${vaga.id}`}
                 name="estado"
@@ -275,7 +277,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`cargaHoraria-${vaga.id}`}>Carga horária</Label>
+              <Label htmlFor={`cargaHoraria-${vaga.id}`}>{t("vagaDetalhe.cargaHoraria")}</Label>
               <Input
                 id={`cargaHoraria-${vaga.id}`}
                 name="cargaHoraria"
@@ -286,7 +288,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`publicoAlvo-${vaga.id}`}>Público da vaga</Label>
+            <Label htmlFor={`publicoAlvo-${vaga.id}`}>{t("filtro.publico")}</Label>
             <select
               id={`publicoAlvo-${vaga.id}`}
               value={publicoAlvo}
@@ -302,7 +304,7 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Recursos de acessibilidade desta vaga</legend>
+            <legend className="text-sm font-medium">{t("dashboard.editarVagaDialog.recursosDeAcessibilidadeDesta")}</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               {RECURSOS_ACESSIBILIDADE.filter((r) => r !== "outro").map((recurso) => {
                 const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
@@ -326,20 +328,20 @@ export function EditarVagaDialog({ vaga, children }: { vaga: Vaga; children: Rea
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor={`acessibilidade-${vaga.id}`}>Detalhes adicionais de acessibilidade</Label>
-              <DicaDeCampoBotao dica="vagaAcessibilidade" nomeDoCampo="Detalhes de acessibilidade" />
+              <Label htmlFor={`acessibilidade-${vaga.id}`}>{t("vagaDetalhe.detalhesAcessibilidade")}</Label>
+              <DicaDeCampoBotao dica="vagaAcessibilidade" nomeDoCampo={t("dashboard.editarVagaDialog.detalhesDeAcessibilidade")} />
             </div>
             <Textarea
               id={`acessibilidade-${vaga.id}`}
               name="acessibilidade"
               rows={3}
-              placeholder="Descreva qualquer recurso que não esteja na lista acima"
+              placeholder={t("dashboard.editarVagaDialog.descrevaQualquerRecursoQueNao")}
               defaultValue={vaga.acessibilidade ?? ""}
             />
           </div>
 
           <details className="rounded-lg border border-border p-3">
-            <summary className="min-h-11 cursor-pointer text-sm font-bold text-primary">Ambiente de trabalho e entrevista (opcional)</summary>
+            <summary className="min-h-11 cursor-pointer text-sm font-bold text-primary">{t("dashboard.editarVagaDialog.ambienteDeTrabalhoEEntrevista")}</summary>
             <div className="mt-3">
               <SecaoAmbienteDaVaga valor={ambiente} aoMudar={setAmbiente} origens={origensDoMapa(vaga.acessibilidadeFisica)} />
             </div>

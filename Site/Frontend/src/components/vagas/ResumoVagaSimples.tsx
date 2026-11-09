@@ -8,6 +8,7 @@ import { useVoz } from "@/hooks/useVoz";
 import { montarResumoVaga, type SecaoDoResumo } from "@/lib/resumoVaga";
 import { cn } from "@/lib/utils";
 import type { Vaga } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Botão "Explique esta vaga de forma simples" e o resumo que ele abre. O resumo é montado por regras
@@ -16,6 +17,7 @@ import type { Vaga } from "@/types";
  * destacada.
  */
 export function ResumoVagaSimples({ vaga }: { vaga: Vaga }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const idDoPainel = useId();
   const conteudo = useRef<HTMLDListElement>(null);
@@ -34,21 +36,20 @@ export function ResumoVagaSimples({ vaga }: { vaga: Vaga }) {
         onClick={() => setAberto((v) => !v)}
       >
         <Sparkles className="size-4" aria-hidden="true" />
-        Explique esta vaga de forma simples
+        {t("vagas.resumoVagaSimples.expliqueEstaVagaDeFormaSimples")}
         <ChevronDown className={cn("size-4 transition-transform", aberto && "rotate-180")} aria-hidden="true" />
       </Button>
 
       <section
         id={idDoPainel}
         hidden={!aberto}
-        aria-label="Resumo da vaga em linguagem simples"
+        aria-label={t("vagas.resumoVagaSimples.resumoDaVagaEmLinguagemSimples")}
         className="mt-3 rounded-xl border border-border bg-card p-5"
       >
         {aberto && (
           <>
             <p className="text-xs text-muted-foreground">
-              Resumo montado automaticamente com o que a empresa escreveu, sem inventar nada. Para os detalhes completos, leia a vaga
-              abaixo.
+              {t("vagas.resumoVagaSimples.resumoMontadoAutomaticamente")}
             </p>
 
             <dl ref={conteudo} className="mt-4 space-y-4">

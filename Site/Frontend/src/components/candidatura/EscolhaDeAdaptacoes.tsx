@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CatalogoDeAdaptacoes, EscolhaDeCompartilhamento, MinhaAcessibilidade } from "@/types/adaptacoes";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type Props = {
   catalogo: CatalogoDeAdaptacoes;
@@ -21,6 +22,7 @@ const rotulosDe = (itens: { chave: string; rotulo: string }[], chaves: string[])
  * ("do seu perfil"); marcar é sempre uma decisão dela.
  */
 export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Props) {
+  const { t } = useIdioma();
   const idBase = useId();
   const doPerfil = new Set(perfil.adaptacoes);
   const comunicacao = perfil.comunicacao;
@@ -38,7 +40,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
     <div className="space-y-6">
       <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
         Nada do seu perfil de acessibilidade é enviado sozinho. Marque só o que quiser pedir ou compartilhar com{" "}
-        <strong>esta empresa, nesta candidatura</strong>. Você não precisa informar diagnóstico.
+        <strong>{t("candidatura.escolhaDeAdaptacoes.estaEmpresaNestaCandidatura")}</strong>. Você não precisa informar diagnóstico.
       </p>
 
       {catalogo.grupos.map((grupo) => {
@@ -61,7 +63,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
                     />
                     <Label htmlFor={id} className="text-sm font-normal leading-snug">
                       {item.rotulo}
-                      {doPerfil.has(item.chave) ? <span className="ml-2 rounded bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary">do seu perfil</span> : null}
+                      {doPerfil.has(item.chave) ? <span className="ml-2 rounded bg-primary-soft px-1.5 py-0.5 text-xs font-semibold text-primary">{t("candidatura.escolhaDeAdaptacoes.doSeuPerfil")}</span> : null}
                     </Label>
                   </li>
                 );
@@ -73,7 +75,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
 
       {temComunicacao ? (
         <fieldset className="space-y-2">
-          <legend className="text-sm font-bold">Como prefiro ser contatado(a)</legend>
+          <legend className="text-sm font-bold">{t("candidatura.escolhaDeAdaptacoes.comoPrefiroSerContatadoA")}</legend>
           {comunicacao.canaisPreferidos.length > 0 ? (
             <OpcaoDeCompartilhar
               id={`${idBase}-canais-preferidos`}
@@ -111,8 +113,8 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
 
       {perfil.deficiencias.length > 0 || perfil.observacao ? (
         <fieldset className="space-y-2">
-          <legend className="text-sm font-bold">Informações sensíveis do seu perfil</legend>
-          <p className="text-xs text-muted-foreground">Só compartilhe se achar necessário para esta candidatura. Cada uma é uma escolha separada.</p>
+          <legend className="text-sm font-bold">{t("candidatura.escolhaDeAdaptacoes.informacoesSensiveisDoSeu")}</legend>
+          <p className="text-xs text-muted-foreground">{t("candidatura.escolhaDeAdaptacoes.soCompartilheSeAcharNecessario")}</p>
           {perfil.deficiencias.length > 0 ? (
             <OpcaoDeCompartilhar
               id={`${idBase}-deficiencia`}

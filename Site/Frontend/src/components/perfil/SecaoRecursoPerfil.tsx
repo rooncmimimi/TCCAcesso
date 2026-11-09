@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
 import { FormularioRecursoDialog } from "./FormularioRecursoDialog";
@@ -38,6 +39,7 @@ export function SecaoRecursoPerfil({
   itens?: Registro[];
   somenteLeitura?: boolean;
 }) {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
@@ -82,12 +84,12 @@ export function SecaoRecursoPerfil({
         </div>
       ) : isError ? (
         <p role="alert" className="py-3 text-sm text-destructive">
-          Não foi possível carregar essa seção.
+          {t("perfil.secaoRecursoPerfil.naoFoiPossivelCarregarEssa")}
         </p>
       ) : null}
 
       {!somenteLeitura && !isLoading && !isError && (!lista || lista.length === 0) ? (
-        <p className="py-3 text-sm text-muted-foreground">Nada cadastrado ainda.</p>
+        <p className="py-3 text-sm text-muted-foreground">{t("perfil.secaoRecursoPerfil.nadaCadastradoAinda")}</p>
       ) : null}
 
       {lista && lista.length > 0 ? (
@@ -125,15 +127,15 @@ export function SecaoRecursoPerfil({
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Remover este registro?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("perfil.secaoRecursoPerfil.removerEsteRegistro")}</AlertDialogTitle>
                         <AlertDialogDescription>
                           "{linhaPrincipal(recurso, item)}" será removido do seu perfil. Essa ação não pode ser
                           desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => remover.mutate(item.id)}>Remover</AlertDialogAction>
+                        <AlertDialogCancel>{t("post.cancelar")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => remover.mutate(item.id)}>{t("perfil.secaoRecursoPerfil.remover")}</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

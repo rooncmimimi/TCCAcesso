@@ -5,6 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useIdioma } from "@/hooks/useIdioma";
 import { LogsTabela } from "@/components/admin/LogsTabela";
 import { formatarDataHora } from "@/utils/formatacao";
 import type { ComentarioAdmin } from "@/services/admin.service";
@@ -18,6 +19,7 @@ export function DetalheComentarioSheet({
   open: boolean;
   onOpenChange: (aberto: boolean) => void;
 }) {
+  const { t } = useIdioma();
   const dataCriacao = comentario?.criadoEm ?? comentario?.criadoEm;
 
   return (
@@ -40,7 +42,7 @@ export function DetalheComentarioSheet({
 
               <div>
                 <h3 className="mb-1 text-xs font-bold uppercase text-muted-foreground">
-                  Publicação relacionada
+                  {t("admin.detalheComentarioSheet.publicacaoRelacionada")}
                 </h3>
                 <p className="line-clamp-3 text-muted-foreground">
                   {comentario.postagem?.conteudo ?? "Publicação não disponível."}
@@ -48,7 +50,7 @@ export function DetalheComentarioSheet({
               </div>
 
               <div>
-                <h3 className="mb-2 text-sm font-bold">Histórico de moderação deste comentário</h3>
+                <h3 className="mb-2 text-sm font-bold">{t("admin.detalheComentarioSheet.historicoDeModeracaoDeste")}</h3>
                 <div className="rounded-lg border border-border">
                   <LogsTabela entidadeId={comentario.id} entidadeTipo="comentario" />
                 </div>

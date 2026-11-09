@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Card } from "@/components/ui/card";
 import { EmpresasPendentesTabela } from "@/components/admin/EmpresasPendentesTabela";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/admin/empresas")({
   head: () => ({
@@ -18,9 +19,10 @@ export const Route = createFileRoute("/admin/empresas")({
 });
 
 function AdminEmpresas() {
+  const { t } = useIdioma();
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-extrabold">Empresas</h1>
+      <h1 className="text-3xl font-extrabold">{t("admin.empresas.empresas")}</h1>
       <Card className="overflow-hidden p-0 shadow-none">
         <EmpresasPendentesTabela />
       </Card>

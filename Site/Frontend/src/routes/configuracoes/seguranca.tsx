@@ -8,6 +8,7 @@ import { SecaoContaComprometida } from "@/components/configuracoes/SecaoContaCom
 import { SecaoContasConectadas } from "@/components/configuracoes/SecaoContasConectadas";
 import { SecaoDispositivosConfiaveis } from "@/components/configuracoes/SecaoDispositivosConfiaveis";
 import { SecaoSessoes } from "@/components/configuracoes/SecaoSessoes";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/configuracoes/seguranca")({
   head: () => ({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/configuracoes/seguranca")({
 });
 
 function Seguranca() {
+  const { t } = useIdioma();
   return (
     <EstruturaApp>
       <Link
@@ -38,8 +40,8 @@ function Seguranca() {
           <Lock className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Sessões e contas conectadas</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">Proteja o acesso à sua conta ACESSO.</p>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{t("configuracoes.seguranca.sessoesEContasConectadas")}</h1>
+          <p className="text-sm text-muted-foreground sm:text-base">{t("configuracoes.seguranca.protejaOAcessoASuaContaAcesso")}</p>
         </div>
       </div>
 

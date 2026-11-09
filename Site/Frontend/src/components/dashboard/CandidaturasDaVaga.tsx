@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useIdioma } from "@/hooks/useIdioma";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BotoesCurriculo } from "@/components/perfil/BotoesCurriculo";
 import { AdaptacoesPedidasEmpresa } from "@/components/candidatura/AdaptacoesPedidasEmpresa";
@@ -29,6 +30,7 @@ const ROTULOS: Record<string, string> = {
 
 /** Candidaturas recebidas para uma vaga específica, com atualização de status. */
 export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
+  const { t } = useIdioma();
   const [pagina, setPagina] = useState(1);
   const queryClient = useQueryClient();
 
@@ -60,13 +62,13 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-            <p>Não foi possível carregar as candidaturas desta vaga.</p>
+            <p>{t("dashboard.candidaturasDaVaga.naoFoiPossivelCarregarAs")}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : !data || data.dados.length === 0 ? (
-          <p className="py-6 text-sm text-muted-foreground">Nenhuma candidatura recebida para esta vaga ainda.</p>
+          <p className="py-6 text-sm text-muted-foreground">{t("dashboard.candidaturasDaVaga.nenhumaCandidaturaRecebidaPara")}</p>
         ) : (
           <>
             <ul className="divide-y">
@@ -128,7 +130,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                   disabled={pagina <= 1}
                   onClick={() => setPagina((p) => Math.max(1, p - 1))}
                 >
-                  Página anterior
+                  {t("vagas.paginaAnterior")}
                 </Button>
                 <span className="self-center text-sm text-muted-foreground">
                   Página {data.pagina} de {data.totalPaginas}
@@ -139,7 +141,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                   disabled={pagina >= data.totalPaginas}
                   onClick={() => setPagina((p) => p + 1)}
                 >
-                  Próxima página
+                  {t("vagas.proximaPagina")}
                 </Button>
               </div>
             ) : null}

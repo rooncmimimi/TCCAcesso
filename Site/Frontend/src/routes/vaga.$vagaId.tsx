@@ -311,7 +311,7 @@ function DetalheVaga() {
           <CardContent className="space-y-6 p-6">
             <section>
               <h2 className="text-lg font-bold">{t("vagaDetalhe.descricao")}</h2>
-              <TextoOuvivel rotulo="Ouvir a descrição da vaga" className="mt-2">
+              <TextoOuvivel rotulo={t("vagavagaId.ouvirADescricaoDaVaga")} className="mt-2">
                 <p className="whitespace-pre-line text-sm">{traducao.texto("descricao")}</p>
               </TextoOuvivel>
               <TermosDoTexto texto={vaga.descricao} />
@@ -321,8 +321,8 @@ function DetalheVaga() {
 
             {vaga.atividades && (
               <section>
-                <h2 className="text-lg font-bold">Atividades do dia a dia</h2>
-                <TextoOuvivel rotulo="Ouvir as atividades da vaga" className="mt-2">
+                <h2 className="text-lg font-bold">{t("vagavagaId.atividadesDoDiaADia")}</h2>
+                <TextoOuvivel rotulo={t("vagavagaId.ouvirAsAtividadesDaVaga")} className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("atividades")}</p>
                 </TextoOuvivel>
               </section>
@@ -330,8 +330,8 @@ function DetalheVaga() {
 
             {vaga.requisitos && (
               <section>
-                <h2 className="text-lg font-bold">Requisitos obrigatórios</h2>
-                <TextoOuvivel rotulo="Ouvir os requisitos da vaga" className="mt-2">
+                <h2 className="text-lg font-bold">{t("vagavagaId.requisitosObrigatorios")}</h2>
+                <TextoOuvivel rotulo={t("vagavagaId.ouvirOsRequisitosDaVaga")} className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("requisitos")}</p>
                 </TextoOuvivel>
                 <TermosDoTexto texto={vaga.requisitos} />
@@ -340,9 +340,9 @@ function DetalheVaga() {
 
             {vaga.requisitosDesejaveis && (
               <section>
-                <h2 className="text-lg font-bold">Requisitos desejáveis</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Diferenciais. Quem não tem algum deles pode se candidatar do mesmo jeito.</p>
-                <TextoOuvivel rotulo="Ouvir os requisitos desejáveis da vaga" className="mt-2">
+                <h2 className="text-lg font-bold">{t("vagavagaId.requisitosDesejaveis")}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">{t("vagavagaId.diferenciaisQuemNaoTemAlgum")}</p>
+                <TextoOuvivel rotulo={t("vagavagaId.ouvirOsRequisitosDesejaveisDa")} className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("requisitosDesejaveis")}</p>
                 </TextoOuvivel>
               </section>
@@ -352,8 +352,8 @@ function DetalheVaga() {
 
             {vaga.etapasSelecao && (
               <section>
-                <h2 className="text-lg font-bold">Etapas da seleção</h2>
-                <TextoOuvivel rotulo="Ouvir as etapas da seleção" className="mt-2">
+                <h2 className="text-lg font-bold">{t("vagavagaId.etapasDaSelecao")}</h2>
+                <TextoOuvivel rotulo={t("vagavagaId.ouvirAsEtapasDaSelecao")} className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("etapasSelecao")}</p>
                 </TextoOuvivel>
               </section>
@@ -362,7 +362,7 @@ function DetalheVaga() {
             {vaga.beneficios && (
               <section>
                 <h2 className="text-lg font-bold">{t("vagaDetalhe.beneficios")}</h2>
-                <TextoOuvivel rotulo="Ouvir os benefícios da vaga" className="mt-2">
+                <TextoOuvivel rotulo={t("vagavagaId.ouvirOsBeneficiosDaVaga")} className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("beneficios")}</p>
                 </TextoOuvivel>
                 <TermosDoTexto texto={vaga.beneficios} />
@@ -391,7 +391,7 @@ function DetalheVaga() {
             {vaga.acessibilidade && (
               <section>
                 <h2 className="text-lg font-bold">{t("vagaDetalhe.detalhesAcessibilidade")}</h2>
-                <TextoOuvivel rotulo="Ouvir os detalhes de acessibilidade da vaga" className="mt-2">
+                <TextoOuvivel rotulo={t("vagavagaId.ouvirOsDetalhesDe")} className="mt-2">
                   <p className="whitespace-pre-line text-sm">{traducao.texto("acessibilidade")}</p>
                 </TextoOuvivel>
               </section>

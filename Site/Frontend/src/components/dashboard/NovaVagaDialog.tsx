@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
@@ -47,6 +48,7 @@ const CAMPOS_DO_RASCUNHO = ["titulo", "descricao", "requisitos", "requisitosDese
  * Os campos e limites espelham o validador do backend.
  */
 export function NovaVagaDialog() {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<PublicoAlvoVaga>("pcd");
   const [recursosAcessibilidade, setRecursosAcessibilidade] = useState<RecursoAcessibilidadeVaga[]>([]);
@@ -123,9 +125,9 @@ export function NovaVagaDialog() {
 
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Publicar nova vaga</DialogTitle>
+          <DialogTitle>{t("dashboard.novaVagaDialog.publicarNovaVaga")}</DialogTitle>
           <DialogDescription>
-            Descreva a oportunidade e os recursos de acessibilidade disponíveis.
+            {t("dashboard.novaVagaDialog.descrevaAOportunidadeEOs")}
           </DialogDescription>
         </DialogHeader>
 
@@ -139,31 +141,31 @@ export function NovaVagaDialog() {
         >
           <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="space-y-2">
-            <Label htmlFor="titulo">Título da vaga</Label>
+            <Label htmlFor="titulo">{t("dashboard.novaVagaDialog.tituloDaVaga")}</Label>
             <Input id="titulo" name="titulo" required minLength={5} maxLength={200} />
           </div>
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor="descricao">Descrição</Label>
-              <DicaDeCampoBotao dica="vagaDescricao" nomeDoCampo="Descrição da vaga" />
+              <Label htmlFor="descricao">{t("vagaDetalhe.descricao")}</Label>
+              <DicaDeCampoBotao dica="vagaDescricao" nomeDoCampo={t("dashboard.novaVagaDialog.descricaoDaVaga")} />
             </div>
             <Textarea id="descricao" name="descricao" required minLength={20} rows={5} />
-            <p className="text-xs text-muted-foreground">Mínimo de 20 caracteres.</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.novaVagaDialog.minimoDe20Caracteres")}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor="requisitos">Requisitos obrigatórios</Label>
-                <DicaDeCampoBotao dica="vagaRequisitos" nomeDoCampo="Requisitos" />
+                <Label htmlFor="requisitos">{t("dashboard.novaVagaDialog.requisitosObrigatorios")}</Label>
+                <DicaDeCampoBotao dica="vagaRequisitos" nomeDoCampo={t("vagaDetalhe.requisitos")} />
               </div>
               <Textarea id="requisitos" name="requisitos" rows={3} />
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor="beneficios">Benefícios</Label>
-                <DicaDeCampoBotao dica="vagaBeneficios" nomeDoCampo="Benefícios" />
+                <Label htmlFor="beneficios">{t("vagaDetalhe.beneficios")}</Label>
+                <DicaDeCampoBotao dica="vagaBeneficios" nomeDoCampo={t("vagaDetalhe.beneficios")} />
               </div>
               <Textarea id="beneficios" name="beneficios" rows={3} />
             </div>
@@ -171,8 +173,8 @@ export function NovaVagaDialog() {
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor="atividades">Atividades (uma por linha)</Label>
-              <DicaDeCampoBotao dica="vagaAtividades" nomeDoCampo="Atividades" />
+              <Label htmlFor="atividades">{t("dashboard.novaVagaDialog.atividadesUmaPorLinha")}</Label>
+              <DicaDeCampoBotao dica="vagaAtividades" nomeDoCampo={t("dashboard.novaVagaDialog.atividades")} />
             </div>
             <Textarea id="atividades" name="atividades" rows={3} maxLength={4000} />
           </div>
@@ -180,15 +182,15 @@ export function NovaVagaDialog() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor="requisitosDesejaveis">Requisitos desejáveis</Label>
-                <DicaDeCampoBotao dica="vagaRequisitosDesejaveis" nomeDoCampo="Requisitos desejáveis" />
+                <Label htmlFor="requisitosDesejaveis">{t("dashboard.novaVagaDialog.requisitosDesejaveis")}</Label>
+                <DicaDeCampoBotao dica="vagaRequisitosDesejaveis" nomeDoCampo={t("dashboard.novaVagaDialog.requisitosDesejaveis")} />
               </div>
               <Textarea id="requisitosDesejaveis" name="requisitosDesejaveis" rows={3} maxLength={4000} />
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2">
-                <Label htmlFor="etapasSelecao">Etapas da seleção</Label>
-                <DicaDeCampoBotao dica="vagaEtapas" nomeDoCampo="Etapas da seleção" />
+                <Label htmlFor="etapasSelecao">{t("dashboard.novaVagaDialog.etapasDaSelecao")}</Label>
+                <DicaDeCampoBotao dica="vagaEtapas" nomeDoCampo={t("dashboard.novaVagaDialog.etapasDaSelecao")} />
               </div>
               <Textarea id="etapasSelecao" name="etapasSelecao" rows={3} maxLength={4000} />
             </div>
@@ -196,7 +198,7 @@ export function NovaVagaDialog() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="modalidade">Modalidade</Label>
+              <Label htmlFor="modalidade">{t("filtro.modalidade")}</Label>
               <select
                 id="modalidade"
                 name="modalidade"
@@ -211,7 +213,7 @@ export function NovaVagaDialog() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contrato">Contrato</Label>
+              <Label htmlFor="contrato">{t("dashboard.novaVagaDialog.contrato")}</Label>
               <select
                 id="contrato"
                 name="contrato"
@@ -226,25 +228,25 @@ export function NovaVagaDialog() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salario">Salário (R$)</Label>
+              <Label htmlFor="salario">{t("dashboard.novaVagaDialog.salarioR")}</Label>
               <Input id="salario" name="salario" inputMode="decimal" placeholder="2500.00" />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
+              <Label htmlFor="cidade">{t("filtro.cidade")}</Label>
               <CidadeAutocomplete
                 id="cidade"
                 name="cidade"
                 value={cidade}
                 onChange={setCidade}
                 estado={estado}
-                aria-label="Cidade"
+                aria-label={t("filtro.cidade")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="estado">Estado (UF)</Label>
+              <Label htmlFor="estado">{t("dashboard.novaVagaDialog.estadoUf")}</Label>
               <Input
                 id="estado"
                 name="estado"
@@ -255,13 +257,13 @@ export function NovaVagaDialog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cargaHoraria">Carga horária</Label>
+              <Label htmlFor="cargaHoraria">{t("vagaDetalhe.cargaHoraria")}</Label>
               <Input id="cargaHoraria" name="cargaHoraria" placeholder="40h semanais" />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="publicoAlvo">Público da vaga</Label>
+            <Label htmlFor="publicoAlvo">{t("filtro.publico")}</Label>
             <select
               id="publicoAlvo"
               value={publicoAlvo}
@@ -277,7 +279,7 @@ export function NovaVagaDialog() {
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Recursos de acessibilidade desta vaga</legend>
+            <legend className="text-sm font-medium">{t("dashboard.novaVagaDialog.recursosDeAcessibilidadeDesta")}</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               {RECURSOS_ACESSIBILIDADE.filter((r) => r !== "outro").map((recurso) => {
                 const Icone = ICONE_RECURSO_ACESSIBILIDADE[recurso];
@@ -301,19 +303,19 @@ export function NovaVagaDialog() {
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor="acessibilidade">Detalhes adicionais de acessibilidade</Label>
-              <DicaDeCampoBotao dica="vagaAcessibilidade" nomeDoCampo="Detalhes de acessibilidade" />
+              <Label htmlFor="acessibilidade">{t("vagaDetalhe.detalhesAcessibilidade")}</Label>
+              <DicaDeCampoBotao dica="vagaAcessibilidade" nomeDoCampo={t("dashboard.novaVagaDialog.detalhesDeAcessibilidade")} />
             </div>
             <Textarea
               id="acessibilidade"
               name="acessibilidade"
               rows={3}
-              placeholder="Descreva qualquer recurso que não esteja na lista acima"
+              placeholder={t("dashboard.novaVagaDialog.descrevaQualquerRecursoQueNao")}
             />
           </div>
 
           <details className="rounded-lg border border-border p-3">
-            <summary className="min-h-11 cursor-pointer text-sm font-bold text-primary">Ambiente de trabalho e entrevista (opcional)</summary>
+            <summary className="min-h-11 cursor-pointer text-sm font-bold text-primary">{t("dashboard.novaVagaDialog.ambienteDeTrabalhoEEntrevista")}</summary>
             <div className="mt-3">
               <SecaoAmbienteDaVaga valor={ambiente} aoMudar={setAmbiente} />
             </div>

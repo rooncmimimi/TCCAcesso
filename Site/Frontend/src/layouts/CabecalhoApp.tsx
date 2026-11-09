@@ -53,8 +53,8 @@ const nav = [
  * (Vagas, Ajuda, Entrar e Criar conta).
  */
 export function CabecalhoApp() {
-  const { usuario, autenticado, sair } = useSessao();
   const { t } = useIdioma();
+  const { usuario, autenticado, sair } = useSessao();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });

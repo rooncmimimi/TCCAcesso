@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CandidaturaDialog } from "@/components/candidatura/CandidaturaDialog";
 import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const ROTULO_DA_ETAPA = { mensagem: "mensagem", adaptacoes: "adaptações", revisao: "revisão" } as const;
 
@@ -14,6 +15,7 @@ const ROTULO_DA_ETAPA = { mensagem: "mensagem", adaptacoes: "adaptações", revi
  * para ela; a empresa nunca vê rascunho, e nenhum rascunho conta como candidatura.
  */
 export function RascunhosDeCandidatura() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const [continuando, setContinuando] = useState<{ id: string; titulo: string } | null>(null);
 
@@ -35,9 +37,9 @@ export function RascunhosDeCandidatura() {
   return (
     <section aria-labelledby="rascunhos-titulo" className="mb-4 space-y-2 rounded-lg border-2 border-primary/30 p-3">
       <h3 id="rascunhos-titulo" className="text-sm font-bold">
-        Candidaturas em andamento
+        {t("candidatura.rascunhosDeCandidatura.candidaturasEmAndamento")}
       </h3>
-      <p className="text-xs text-muted-foreground">Ainda não foram enviadas: a empresa não sabe nada sobre elas.</p>
+      <p className="text-xs text-muted-foreground">{t("candidatura.rascunhosDeCandidatura.aindaNaoForamEnviadasAEmpresa")}</p>
       <ul className="divide-y">
         {rascunhos.map((r) => (
           <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">

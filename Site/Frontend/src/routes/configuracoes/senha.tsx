@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { autenticacaoService } from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useSessao } from "@/hooks/useSessao";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const esquema = z
   .object({
@@ -66,6 +67,7 @@ function PaginaSenha() {
  * troca de senha, e a pessoa entra de novo pelo Google ou com a senha nova.
  */
 function DefinirSenha({ email }: { email: string }) {
+  const { t } = useIdioma();
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
 
@@ -95,10 +97,9 @@ function DefinirSenha({ email }: { email: string }) {
           <KeyRound className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Definir senha</h1>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{t("configuracoes.senha.definirSenha")}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Sua conta entra com o Google. Com uma senha, você também entra com e-mail e senha e pode pausar ou
-            excluir a conta e trocar o e-mail.
+            {t("configuracoes.senha.suaContaEntraComOGoogleComUma")}
           </p>
         </div>
       </div>
@@ -122,7 +123,7 @@ function DefinirSenha({ email }: { email: string }) {
                   search={{ email }}
                   className="font-semibold text-primary underline underline-offset-2"
                 >
-                  Usar o código
+                  {t("configuracoes.senha.usarOCodigo")}
                 </Link>
               </p>
             </div>
@@ -150,6 +151,7 @@ function DefinirSenha({ email }: { email: string }) {
 }
 
 function AlterarSenha() {
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const { sair } = useSessao();
   const [enviando, setEnviando] = useState(false);
@@ -199,10 +201,9 @@ function AlterarSenha() {
           <ShieldCheck className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Alterar senha</h1>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{t("configuracoes.senha.alterarSenha")}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Depois de trocar a senha, você continua conectado aqui, mas os outros dispositivos precisam entrar
-            novamente.
+            {t("configuracoes.senha.depoisDeTrocarASenhaVoce")}
           </p>
         </div>
       </div>
@@ -211,7 +212,7 @@ function AlterarSenha() {
         <CardContent className="p-5 sm:p-6">
           <form className="space-y-4" onSubmit={aoEnviar} noValidate>
             <div className="space-y-2">
-              <Label htmlFor="senhaAtual">Senha atual</Label>
+              <Label htmlFor="senhaAtual">{t("configuracoes.senha.senhaAtual")}</Label>
               <PasswordInput
                 id="senhaAtual"
                 autoComplete="current-password"
@@ -228,7 +229,7 @@ function AlterarSenha() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="novaSenha">Nova senha</Label>
+              <Label htmlFor="novaSenha">{t("configuracoes.senha.novaSenha")}</Label>
               <PasswordInput
                 id="novaSenha"
                 autoComplete="new-password"
@@ -243,13 +244,13 @@ function AlterarSenha() {
                 </p>
               ) : (
                 <p id="novaSenha-dica" className="text-xs text-muted-foreground">
-                  Mínimo de 8 caracteres, com maiúscula, minúscula, número e símbolo.
+                  {t("configuracoes.senha.minimoDe8CaracteresCom")}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmarSenha">Confirmar nova senha</Label>
+              <Label htmlFor="confirmarSenha">{t("configuracoes.senha.confirmarNovaSenha")}</Label>
               <PasswordInput
                 id="confirmarSenha"
                 autoComplete="new-password"

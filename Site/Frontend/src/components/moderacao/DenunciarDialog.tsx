@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -72,6 +73,7 @@ export function DenunciarDialog({
    */
   aoFecharDevolverFoco?: () => void;
 }) {
+  const { t } = useIdioma();
   const nomeParaBloqueio = autorNomeExibicao ?? nomeExibicao;
   const [motivo, setMotivo] = useState<MotivoDenuncia | "">("");
   const [descricao, setDescricao] = useState("");
@@ -144,7 +146,7 @@ export function DenunciarDialog({
             </DialogHeader>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={fecharTudo} disabled={bloquear.isPending}>
-                Não, obrigado
+                {t("moderacao.denunciarDialog.naoObrigado")}
               </Button>
               <Button
                 type="button"
@@ -166,17 +168,16 @@ export function DenunciarDialog({
             <DialogHeader>
               <DialogTitle>Denunciar{nomeExibicao ? ` "${nomeExibicao}"` : ""}</DialogTitle>
               <DialogDescription>
-                Conte para a moderação o que está errado. Denúncias falsas ou repetidas podem limitar o seu
-                acesso a esta função.
+                {t("moderacao.denunciarDialog.conteParaAModeracaoOQueEsta")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="denuncia-motivo">Motivo</Label>
+                <Label htmlFor="denuncia-motivo">{t("moderacao.denunciarDialog.motivo")}</Label>
                 <Select value={motivo} onValueChange={(valor) => setMotivo(valor as MotivoDenuncia)}>
                   <SelectTrigger id="denuncia-motivo" className="mt-1">
-                    <SelectValue placeholder="Selecione um motivo" />
+                    <SelectValue placeholder={t("moderacao.denunciarDialog.selecioneUmMotivo")} />
                   </SelectTrigger>
                   <SelectContent>
                     {MOTIVOS.map((item) => (
@@ -189,12 +190,12 @@ export function DenunciarDialog({
               </div>
 
               <div>
-                <Label htmlFor="denuncia-descricao">Descrição (opcional)</Label>
+                <Label htmlFor="denuncia-descricao">{t("moderacao.denunciarDialog.descricaoOpcional")}</Label>
                 <Textarea
                   id="denuncia-descricao"
                   value={descricao}
                   onChange={(evento) => setDescricao(evento.target.value)}
-                  placeholder="Detalhe o que aconteceu, se quiser."
+                  placeholder={t("moderacao.denunciarDialog.detalheOQueAconteceuSeQuiser")}
                   maxLength={1000}
                   className="mt-1 min-h-24 resize-none"
                 />

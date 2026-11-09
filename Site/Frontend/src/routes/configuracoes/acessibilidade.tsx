@@ -12,6 +12,7 @@ import { useVoz } from "@/hooks/useVoz";
 import { useSessao } from "@/hooks/useSessao";
 import acessibilidadeService, { preferenciasDaApi, preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/configuracoes/acessibilidade")({
   head: () => ({
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/configuracoes/acessibilidade")({
 });
 
 function ConfiguracoesAcessibilidade() {
+  const { t } = useIdioma();
   const { rascunho, definir, salvar, descartar, restaurar, alterado } = useAcessibilidade();
   const { limparEscolha } = useVoz();
   const { usuario, autenticado } = useSessao();
@@ -59,9 +61,9 @@ function ConfiguracoesAcessibilidade() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Configurações de acessibilidade</h1>
+      <h1 className="text-3xl font-extrabold">{t("cabecalho.configAcessibilidade")}</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">
-        Todas as mudanças aparecem imediatamente na tela. Teste à vontade e salve quando estiver do
+        {t("configuracoes.acessibilidade.todasAsMudancasAparecem")}
         seu jeito.{" "}
         {usuario
           ? "Ao salvar, as preferências ficam vinculadas à sua conta."

@@ -9,6 +9,7 @@ import {
   Sparkles,
   Users2,
 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,61 +36,62 @@ export const Route = createFileRoute("/sobre-nos")({
 const pilares = [
   {
     icon: HeartHandshake,
-    titulo: "Missão",
+    titulo: "sobre-nos.sobreNosSobrenosmissao",
     texto:
-      "Conectar pessoas com deficiência e profissionais 50+ a oportunidades de trabalho reais, em empresas que praticam inclusão de verdade.",
+      "sobre-nos.sobreNos",
   },
   {
     icon: Accessibility,
-    titulo: "Acessibilidade",
+    titulo: "rodape.acessibilidade",
     texto:
-      "Seguimos as diretrizes WCAG 2.2: navegação por teclado, leitores de tela, VLibras, leitura por voz e ajustes de contraste e tipografia em toda a plataforma.",
+      "sobre-nos.sobreNos2",
   },
   {
     icon: ShieldCheck,
-    titulo: "Empresas verificadas",
+    titulo: "inicio.recurso.empresas.titulo",
     texto:
-      "Cada empresa parceira passa por uma verificação antes de publicar vagas, e cada vaga pode declarar seus recursos de acessibilidade.",
+      "sobre-nos.sobreNos3",
   },
 ];
 
 const passos = [
-  { titulo: "Crie sua conta", texto: "Cadastre-se como candidato ou empresa em poucos minutos." },
+  { titulo: "sobre-nos.sobreNosSobrenoscriesuaconta", texto: "sobre-nos.sobreNosSobrenos" },
   {
-    titulo: "Personalize sua experiência",
-    texto: "Ajuste contraste, fonte, leitura por voz e VLibras nas configurações de acessibilidade.",
+    titulo: "sobre-nos.sobreNosSobrenos2",
+    texto: "sobre-nos.sobreNosSobrenos3",
   },
   {
-    titulo: "Encontre oportunidades",
-    texto: "Busque vagas por cidade, modalidade e exclusividade PCD, e candidate-se com poucos cliques.",
+    titulo: "sobre-nos.sobreNos4",
+    texto: "sobre-nos.sobreNosSobrenos4",
   },
   {
-    titulo: "Converse em tempo real",
-    texto: "Fale diretamente com empresas pelo chat e acompanhe notificações sobre suas candidaturas.",
+    titulo: "sobre-nos.sobreNos5",
+    texto: "sobre-nos.sobreNosSobrenos5",
   },
 ];
 
 function SobreNos() {
+  const { t } = useIdioma();
   return (
     <div className="min-h-dvh bg-background">
       <a
         href="#conteudo"
         className="sr-only-focusable absolute left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
       >
-        Pular para o conteúdo principal
+        {t("auth.pularConteudo")}
       </a>
 
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto grid h-16 max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4">
-          <Link to="/" aria-label="ACESSO — página inicial" className="min-w-0">
+          <Link to="/" aria-label={t("cabecalho.paginaInicial")} className="min-w-0">
             <Logo />
           </Link>
           <div className="flex shrink-0 items-center gap-2">
             <Button asChild variant="outline" className="min-h-11">
-              <Link to="/entrar">Entrar</Link>
+              <Link to="/entrar">{t("cabecalho.entrar")}</Link>
             </Button>
             <Button asChild className="min-h-11">
-              <Link to="/cadastro">Criar conta</Link>
+              <Link to="/cadastro">{t("cabecalho.criarConta")}</Link>
             </Button>
           </div>
         </div>
@@ -98,21 +100,20 @@ function SobreNos() {
       <main id="conteudo" tabIndex={-1}>
         <section className="mx-auto max-w-6xl px-4 py-14">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-sm font-semibold text-primary">
-            <Sparkles className="size-3.5" aria-hidden="true" /> Sobre o ACESSO
+            <Sparkles className="size-3.5" aria-hidden="true" /> {t("sobre-nos.sobreOAcesso")}
           </span>
           <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-            Inclusão profissional que começa na acessibilidade da própria plataforma
+            {t("sobre-nos.inclusaoProfissionalQueComeca")}
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
-            O ACESSO é uma rede profissional criada para reduzir as barreiras entre pessoas com
-            deficiência, profissionais 50+ e empresas comprometidas com a diversidade.
+            {t("sobre-nos.oAcessoEUmaRedeProfissional")}
           </p>
         </section>
 
         <section aria-labelledby="pilares" className="border-y border-border bg-card">
           <div className="mx-auto max-w-6xl px-4 py-14">
             <h2 id="pilares" className="text-3xl font-extrabold">
-              Nossos pilares
+              {t("sobre-nos.nossosPilares")}
             </h2>
             <ul className="mt-8 grid gap-4 md:grid-cols-3">
               {pilares.map((p) => (
@@ -137,7 +138,7 @@ function SobreNos() {
 
         <section aria-labelledby="como-funciona" className="mx-auto max-w-6xl px-4 py-14">
           <h2 id="como-funciona" className="text-3xl font-extrabold">
-            Como funciona
+            {t("sobre-nos.comoFunciona")}
           </h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-2">
             {passos.map((p, i) => (
@@ -167,7 +168,7 @@ function SobreNos() {
               <CardContent className="grid gap-6 p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                 <div className="min-w-0">
                   <h2 id="contato" className="text-2xl font-extrabold">
-                    Fale com a gente
+                    {t("sobre-nos.faleComAGente")}
                   </h2>
                   <p className="mt-2 flex items-center gap-2 text-primary-foreground">
                     <Mail className="size-4 shrink-0" aria-hidden="true" />
@@ -177,12 +178,12 @@ function SobreNos() {
                   </p>
                   <p className="mt-1 flex items-center gap-2 text-primary-foreground">
                     <MessageCircleHeart className="size-4 shrink-0" aria-hidden="true" />
-                    Dúvidas, sugestões e denúncias são bem-vindas a qualquer momento.
+                    {t("sobre-nos.duvidasSugestoesEDenunciasSao")}
                   </p>
                 </div>
                 <Button asChild size="lg" variant="secondary" className="min-h-12 shrink-0 text-base">
                   <Link to="/cadastro">
-                    <Users2 aria-hidden="true" /> Criar minha conta
+                    <Users2 aria-hidden="true" /> {t("inicio.criarMinhaConta")}
                   </Link>
                 </Button>
               </CardContent>
@@ -195,15 +196,15 @@ function SobreNos() {
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <Logo />
           <div className="grid gap-2 sm:justify-items-end">
-            <nav aria-label="Documentos legais" className="flex flex-wrap items-center gap-4 text-sm font-medium">
+            <nav aria-label={t("rodape.documentosLegais")} className="flex flex-wrap items-center gap-4 text-sm font-medium">
               <Link to="/termos" className="hover:underline">
-                Termos de Uso
+                {t("rodape.termos")}
               </Link>
               <Link to="/privacidade" className="hover:underline">
-                Aviso de Privacidade
+                {t("rodape.privacidade")}
               </Link>
               <Link to="/fale-conosco" className="hover:underline">
-                Fale conosco
+                {t("rodape.faleConosco")}
               </Link>
             </nav>
             <p className="flex items-center gap-1 text-sm text-muted-foreground">

@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type PaginacaoTabelaProps = {
   pagina: number;
@@ -9,6 +10,7 @@ type PaginacaoTabelaProps = {
 };
 
 export function PaginacaoTabela({ pagina, totalPaginas, total, onPaginaChange }: PaginacaoTabelaProps) {
+  const { t } = useIdioma();
   if (total === 0) return null;
 
   return (
@@ -22,7 +24,7 @@ export function PaginacaoTabela({ pagina, totalPaginas, total, onPaginaChange }:
           size="sm"
           disabled={pagina <= 1}
           onClick={() => onPaginaChange(pagina - 1)}
-          aria-label="Página anterior"
+          aria-label={t("vagas.paginaAnterior")}
         >
           <ChevronLeft className="size-4" aria-hidden="true" /> Anterior
         </Button>
@@ -31,7 +33,7 @@ export function PaginacaoTabela({ pagina, totalPaginas, total, onPaginaChange }:
           size="sm"
           disabled={pagina >= totalPaginas}
           onClick={() => onPaginaChange(pagina + 1)}
-          aria-label="Próxima página"
+          aria-label={t("vagas.proximaPagina")}
         >
           Próxima <ChevronRight className="size-4" aria-hidden="true" />
         </Button>

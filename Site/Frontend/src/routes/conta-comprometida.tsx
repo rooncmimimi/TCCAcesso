@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { esquecerDispositivoConfiavel } from "@/services/api";
 import segurancaService, { codigoDoErroSeguranca, mensagemDeErroSeguranca } from "@/services/seguranca.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * "Acho que invadiram minha conta", para quem NÃO está logado (ou já perdeu o acesso).
@@ -36,15 +37,16 @@ export const Route = createFileRoute("/conta-comprometida")({
 });
 
 function Cabecalho() {
+  const { t } = useIdioma();
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
-      <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
+      <Link to="/" aria-label={t("auth.voltarPaginaInicial")} className="inline-flex">
         <Logo />
       </Link>
-      <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
+      <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t("cabecalho.configAcessibilidade")}>
         <Link to="/configuracoes/acessibilidade">
           <Accessibility aria-hidden="true" />
-          <span className="hidden sm:inline">Acessibilidade</span>
+          <span className="hidden sm:inline">{t("rodape.acessibilidade")}</span>
         </Link>
       </Button>
     </div>
@@ -70,6 +72,7 @@ function ContaComprometida() {
 }
 
 function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | null> }) {
+  const { t } = useIdioma();
   const [email, setEmail] = useState("");
   const [erro, setErro] = useState<string | undefined>();
   const [enviando, setEnviando] = useState(false);
@@ -107,12 +110,12 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
             <MailCheck className="size-5" />
           </span>
           <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-            Verifique o seu e-mail
+            {t("conta-comprometida.verifiqueOSeuEMail")}
           </h1>
         </div>
         <p className="text-sm text-muted-foreground">{mensagem}</p>
         <Button asChild className="min-h-12 w-full text-base">
-          <Link to="/entrar">Voltar para o login</Link>
+          <Link to="/entrar">{t("conta-comprometida.voltarParaOLogin")}</Link>
         </Button>
       </div>
     );
@@ -126,7 +129,7 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
         </span>
         <div>
           <h1 id="titulo-conta-comprometida" ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-            Acho que invadiram minha conta
+            {t("login.contaComprometida")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Informe o e-mail da conta. Enviaremos um link para protegê-la: ele encerra todas as sessões abertas e deixa você criar uma nova senha.
@@ -134,7 +137,7 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
         </div>
       </div>
 
-      <Campo id="email-protecao" rotulo="E-mail da conta" erro={erro}>
+      <Campo id="email-protecao" rotulo={t("conta-comprometida.eMailDaConta")} erro={erro}>
         <Input
           id="email-protecao"
           type="email"
@@ -171,6 +174,7 @@ function Pedir({ tituloRef }: { tituloRef: React.RefObject<HTMLHeadingElement | 
 }
 
 function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefObject<HTMLHeadingElement | null> }) {
+  const { t } = useIdioma();
   const [enviando, setEnviando] = useState(false);
   const [protegida, setProtegida] = useState<string | null>(null);
   const [erro, setErro] = useState<string | undefined>();
@@ -207,13 +211,13 @@ function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefOb
             <ShieldCheck className="size-5" />
           </span>
           <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-            Conta protegida
+            {t("conta-comprometida.contaProtegida")}
           </h1>
         </div>
         <p className="text-sm text-muted-foreground">{protegida}</p>
-        <p className="text-sm text-muted-foreground">Abra o e-mail que acabamos de enviar para criar a nova senha.</p>
+        <p className="text-sm text-muted-foreground">{t("conta-comprometida.abraOEMailQueAcabamosDeEnviar")}</p>
         <Button asChild className="min-h-12 w-full text-base">
-          <Link to="/entrar">Ir para o login</Link>
+          <Link to="/entrar">{t("conta-comprometida.irParaOLogin")}</Link>
         </Button>
       </div>
     );
@@ -223,12 +227,12 @@ function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefOb
     return (
       <div className="space-y-4" role="alert">
         <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-          Este link não vale mais
+          {t("conta-comprometida.esteLinkNaoValeMais")}
         </h1>
-        <p className="text-sm text-muted-foreground">O link expirou ou já foi usado. Peça um novo: ele chega ao e-mail da conta.</p>
+        <p className="text-sm text-muted-foreground">{t("conta-comprometida.oLinkExpirouOuJaFoiUsadoPecaUm")}</p>
         <Button asChild className="min-h-12 w-full text-base">
           <Link to="/conta-comprometida" search={{ token: undefined }}>
-            Pedir um novo link
+            {t("conta-comprometida.pedirUmNovoLink")}
           </Link>
         </Button>
       </div>
@@ -243,10 +247,10 @@ function Confirmar({ token, tituloRef }: { token: string; tituloRef: React.RefOb
         </span>
         <div>
           <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-            Proteger a sua conta
+            {t("conta-comprometida.protegerASuaConta")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ao confirmar, todas as sessões abertas são encerradas na hora e a confiança nos dispositivos é removida. Depois, você cria uma nova senha.
+            {t("conta-comprometida.aoConfirmarTodasAsSessoes")}
           </p>
         </div>
       </div>

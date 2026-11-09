@@ -3,6 +3,7 @@ import { Maximize2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { MidiaDaVaga } from "@/types/ambiente";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Player do vídeo da vaga em Libras, acessível:
@@ -15,6 +16,7 @@ import type { MidiaDaVaga } from "@/types/ambiente";
  * O ACESSO não traduz nada para Libras: o vídeo é o que a empresa gravou.
  */
 export function PlayerDeVideoAcessivel({ midia, tituloDaVaga }: { midia: MidiaDaVaga; tituloDaVaga: string }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [erro, setErro] = useState(false);
@@ -44,7 +46,7 @@ export function PlayerDeVideoAcessivel({ midia, tituloDaVaga }: { midia: MidiaDa
   return (
     <section aria-labelledby={`${idBase}-titulo`} className="space-y-3">
       <h2 id={`${idBase}-titulo`} className="text-lg font-bold">
-        Vídeo da vaga em Libras
+        {t("vagas.playerDeVideoAcessivel.videoDaVagaEmLibras")}
       </h2>
       {midia.descricao ? <p className="text-sm">{midia.descricao}</p> : null}
 
@@ -60,7 +62,7 @@ export function PlayerDeVideoAcessivel({ midia, tituloDaVaga }: { midia: MidiaDa
             onError={() => setErro(true)}
           >
             <source src={midia.video.url} type={midia.video.tipoMime} />
-            {urlDaLegenda ? <track kind="captions" src={urlDaLegenda} srcLang="pt-BR" label="Português" default /> : null}
+            {urlDaLegenda ? <track kind="captions" src={urlDaLegenda} srcLang="pt-BR" label={t("vagas.playerDeVideoAcessivel.portugues")} default /> : null}
             Seu navegador não reproduz este vídeo. Leia a transcrição abaixo.
           </video>
 
@@ -68,17 +70,17 @@ export function PlayerDeVideoAcessivel({ midia, tituloDaVaga }: { midia: MidiaDa
             <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" onClick={() => void ampliar()}>
               <Maximize2 className="size-4" aria-hidden="true" /> Ampliar o vídeo
             </Button>
-            {!urlDaLegenda ? <p className="text-xs text-muted-foreground">Este vídeo não tem legenda. A transcrição está logo abaixo.</p> : null}
+            {!urlDaLegenda ? <p className="text-xs text-muted-foreground">{t("vagas.playerDeVideoAcessivel.esteVideoNaoTemLegendaA")}</p> : null}
           </div>
         </>
       ) : (
         <p role="alert" className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
-          Não foi possível carregar o vídeo agora. A transcrição abaixo tem o mesmo conteúdo.
+          {t("vagas.playerDeVideoAcessivel.naoFoiPossivelCarregarOVideo")}
         </p>
       )}
 
       <details open className="rounded-lg border border-border p-3" id={`${idBase}-transcricao`}>
-        <summary className="min-h-11 cursor-pointer font-semibold text-primary">Transcrição do vídeo</summary>
+        <summary className="min-h-11 cursor-pointer font-semibold text-primary">{t("vagas.playerDeVideoAcessivel.transcricaoDoVideo")}</summary>
         <p className="mt-2 whitespace-pre-line text-sm">{midia.transcricao}</p>
       </details>
     </section>

@@ -4,12 +4,14 @@ import postagensService from "@/services/postagens.service";
 import { PostagemCard } from "@/components/feed/PostagemCard";
 import { extrairMensagemErro } from "@/services/api";
 import { formatarData } from "@/utils/formatacao";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Linha do tempo de um perfil, próprio ou de outra pessoa: publicações e compartilhamentos numa
  * lista só, intercalados por data.
  */
 export function LinhaDoTempoUsuario({ usuarioId }: { usuarioId: string }) {
+  const { t } = useIdioma();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["linha-do-tempo-usuario", usuarioId],
     queryFn: () => postagensService.listarLinhaDoTempo(usuarioId, { limit: 10 }),
@@ -34,7 +36,7 @@ export function LinhaDoTempoUsuario({ usuarioId }: { usuarioId: string }) {
   }
 
   if (!data || data.dados.length === 0) {
-    return <p className="py-6 text-sm text-muted-foreground">Nenhuma publicação por aqui ainda.</p>;
+    return <p className="py-6 text-sm text-muted-foreground">{t("perfil.linhaDoTempoUsuario.nenhumaPublicacaoPorAquiAinda")}</p>;
   }
 
   return (

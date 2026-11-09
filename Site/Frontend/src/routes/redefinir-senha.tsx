@@ -14,6 +14,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useIdioma } from "@/hooks/useIdioma";
 
 // Mesmas regras de `configuracoes/senha.tsx`: as duas telas seguem a regra do backend
 // (`regrasSenha` em `autenticacaoValidator.js`).
@@ -85,9 +86,10 @@ function RedefinirSenha() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const { t } = useIdioma();
   return (
     <AutenticacaoLayout>
-      <Link to="/" aria-label="Voltar para a página inicial" className="mb-6 inline-flex">
+      <Link to="/" aria-label={t("redefinir-senha.voltarParaAPaginaInicial")} className="mb-6 inline-flex">
         <Logo />
       </Link>
       <Card className="shadow-card">
@@ -98,6 +100,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function FormularioComToken({ token }: { token: string }) {
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [linkInvalido, setLinkInvalido] = useState(false);
@@ -133,12 +136,12 @@ function FormularioComToken({ token }: { token: string }) {
       <Layout>
         <div role="alert" className="space-y-4 text-center">
           <AlertTriangle className="mx-auto size-10 text-destructive" aria-hidden="true" />
-          <h1 className="text-2xl font-extrabold">Link inválido ou expirado</h1>
+          <h1 className="text-2xl font-extrabold">{t("redefinir-senha.linkInvalidoOuExpirado")}</h1>
           <p className="text-sm text-muted-foreground">
-            Este link de redefinição já foi usado, expirou ou é inválido. Solicite um novo link para continuar.
+            {t("redefinir-senha.esteLinkDeRedefinicaoJaFoi")}
           </p>
           <Button asChild className="min-h-12 w-full text-base">
-            <Link to="/recuperar-senha">Solicitar novo link</Link>
+            <Link to="/recuperar-senha">{t("redefinir-senha.solicitarNovoLink")}</Link>
           </Button>
         </div>
       </Layout>
@@ -147,11 +150,11 @@ function FormularioComToken({ token }: { token: string }) {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-extrabold">Redefinir senha</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Escolha uma nova senha para sua conta.</p>
+      <h1 className="text-2xl font-extrabold">{t("redefinir-senha.redefinirSenha")}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{t("redefinir-senha.escolhaUmaNovaSenhaParaSua")}</p>
       <form className="mt-6 space-y-4" onSubmit={aoEnviar} noValidate>
         <div className="space-y-2">
-          <Label htmlFor="nova-senha">Nova senha</Label>
+          <Label htmlFor="nova-senha">{t("redefinir-senha.novaSenha")}</Label>
           <PasswordInput
             id="nova-senha"
             autoComplete="new-password"
@@ -166,12 +169,12 @@ function FormularioComToken({ token }: { token: string }) {
             </p>
           ) : (
             <p id="nova-senha-dica" className="text-sm text-muted-foreground">
-              Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+              {t("redefinir-senha.useAoMenos8CaracteresCom")}
             </p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+          <Label htmlFor="confirmar-senha">{t("redefinir-senha.confirmarNovaSenha")}</Label>
           <PasswordInput
             id="confirmar-senha"
             autoComplete="new-password"
@@ -209,6 +212,7 @@ function FormularioComToken({ token }: { token: string }) {
 }
 
 function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: string; codigoInicial?: string }) {
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const {
@@ -254,7 +258,7 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
 
   return (
     <Layout>
-      <h1 className="text-2xl font-extrabold">Redefinir senha</h1>
+      <h1 className="text-2xl font-extrabold">{t("redefinir-senha.redefinirSenha")}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Prefere usar o link enviado por e-mail? Ele é mais rápido — basta clicar em "Redefinir minha senha" na
         mensagem que enviamos. Se estiver no aplicativo ACESSO, informe o código de 6 dígitos abaixo.
@@ -278,7 +282,7 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="codigo">Código de verificação</Label>
+          <Label htmlFor="codigo">{t("redefinir-senha.codigoDeVerificacao")}</Label>
           <Input
             id="codigo"
             inputMode="numeric"
@@ -295,7 +299,7 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="nova-senha">Nova senha</Label>
+          <Label htmlFor="nova-senha">{t("redefinir-senha.novaSenha")}</Label>
           <PasswordInput
             id="nova-senha"
             autoComplete="new-password"
@@ -310,12 +314,12 @@ function FormularioComCodigo({ emailInicial, codigoInicial }: { emailInicial?: s
             </p>
           ) : (
             <p id="nova-senha-dica" className="text-sm text-muted-foreground">
-              Use ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+              {t("redefinir-senha.useAoMenos8CaracteresCom")}
             </p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+          <Label htmlFor="confirmar-senha">{t("redefinir-senha.confirmarNovaSenha")}</Label>
           <PasswordInput
             id="confirmar-senha"
             autoComplete="new-password"

@@ -1,5 +1,6 @@
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { competenciasNoTexto } from "@/dados/competencias";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * "Entenda estas expressões": explica as competências que o texto de requisitos usa ("boa
@@ -8,6 +9,7 @@ import { competenciasNoTexto } from "@/dados/competencias";
  * (`<details>`), com leitura em voz alta. Não avalia ninguém e não altera o texto da vaga.
  */
 export function ExplicacaoDeRequisitos({ texto }: { texto: string | null | undefined }) {
+  const { t } = useIdioma();
   const achadas = competenciasNoTexto(texto);
   if (achadas.length === 0) return null;
 
@@ -22,19 +24,19 @@ export function ExplicacaoDeRequisitos({ texto }: { texto: string | null | undef
                 <span className="font-semibold">{c.termo}:</span> {c.significa}
               </p>
               <p className="mt-1">
-                <span className="font-semibold">Costuma ser necessária quando:</span> {c.necessariaQuando}
+                <span className="font-semibold">{t("acessibilidade.explicacaoDeRequisitos.costumaSerNecessariaQuando")}</span> {c.necessariaQuando}
               </p>
               <p className="mt-1">
-                <span className="font-semibold">Pode ser só uma preferência quando:</span> {c.preferenciaQuando}
+                <span className="font-semibold">{t("acessibilidade.explicacaoDeRequisitos.podeSerSoUmaPreferenciaQuando")}</span> {c.preferenciaQuando}
               </p>
-              <p className="mt-1 font-semibold">Formas de demonstrar:</p>
+              <p className="mt-1 font-semibold">{t("acessibilidade.explicacaoDeRequisitos.formasDeDemonstrar")}</p>
               <ul className="list-disc pl-5">
                 {c.outrasFormas.map((forma) => (
                   <li key={forma}>{forma}</li>
                 ))}
               </ul>
               <p className="mt-1">
-                <span className="font-semibold">Pergunte à empresa:</span> {c.perguntar}
+                <span className="font-semibold">{t("acessibilidade.explicacaoDeRequisitos.pergunteAEmpresa")}</span> {c.perguntar}
               </p>
             </TextoOuvivel>
           </li>

@@ -163,22 +163,23 @@ export function BotaoGoogle({
  * A confirmação é dita por texto, não por cor nem só pelo ícone — o ícone é decorativo.
  */
 export function ContaGoogleConfirmada({ email }: { email?: string | null }) {
+  const { t } = useIdioma();
   return (
     <div className="mb-6 flex items-start gap-3 rounded-xl border border-border bg-secondary px-4 py-3">
       <span className="mt-0.5 shrink-0">
         <IconeGoogle />
       </span>
       <p className="text-sm">
-        <span className="font-semibold">Conta Google confirmada.</span>{" "}
+        <span className="font-semibold">{t("cadastro.botaoGoogle.contaGoogleConfirmada")}</span>{" "}
         {email ? (
           <>
             Ela será vinculada a este cadastro: <strong className="font-semibold">{email}</strong>.
           </>
         ) : (
-          <>Ela será vinculada a este cadastro quando você terminar.</>
+          <>{t("cadastro.botaoGoogle.elaSeraVinculadaAEsteCadastro")}</>
         )}{" "}
         <span className="text-muted-foreground">
-          Defina também uma senha — com ela você entra mesmo sem o Google.
+          {t("cadastro.botaoGoogle.definaTambemUmaSenhaComElaVoce")}
         </span>
       </p>
     </div>

@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { ambienteService } from "@/services/ambiente.service";
 import { extrairMensagemErro } from "@/services/api";
 
@@ -30,6 +31,7 @@ const TIPOS_DE_VIDEO = ["video/mp4", "video/webm"];
  * traduz para Libras: hospeda o vídeo que a empresa gravou.
  */
 export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar?: (video: { legenda: boolean } | null) => void }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const queryClient = useQueryClient();
   const chave = ["vagas", vagaId, "midia"];
@@ -121,7 +123,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
   if (isLoading) {
     return (
       <p role="status" className="text-sm text-muted-foreground">
-        Carregando o vídeo…
+        {t("vagas.videoDaVagaGestao.carregandoOVideo")}
       </p>
     );
   }
@@ -129,10 +131,10 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
   return (
     <section aria-labelledby={`${idBase}-titulo`} className="space-y-4 rounded-lg border border-border p-3">
       <h3 id={`${idBase}-titulo`} className="text-sm font-bold">
-        Vídeo da vaga em Libras
+        {t("vagas.videoDaVagaGestao.videoDaVagaEmLibras")}
       </h3>
       <p className="text-xs text-muted-foreground">
-        Envie um vídeo em Libras (MP4 ou WEBM, até 50 MB) com a <strong>transcrição</strong>, obrigatória: quem não vê ou não ouve o vídeo lê o texto. O ACESSO não traduz para Libras; o vídeo é o que você gravou.
+        Envie um vídeo em Libras (MP4 ou WEBM, até 50 MB) com a <strong>{t("vagas.videoDaVagaGestao.transcricao")}</strong>, obrigatória: quem não vê ou não ouve o vídeo lê o texto. O ACESSO não traduz para Libras; o vídeo é o que você gravou.
       </p>
 
       {!midia || arquivo !== null ? (
@@ -179,7 +181,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
           </Button>
         ) : (
           <Button type="button" variant="outline" className="min-h-11" disabled={!transcricaoValida || salvarTextos.isPending} onClick={() => salvarTextos.mutate()}>
-            Salvar os textos
+            {t("vagas.videoDaVagaGestao.salvarOsTextos")}
           </Button>
         )}
       </div>
@@ -200,30 +202,30 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
                 e.target.value = "";
               }}
             />
-            <p className="text-xs text-muted-foreground">A legenda deixa o vídeo acompanhável por quem não ouve. O arquivo precisa começar com WEBVTT.</p>
+            <p className="text-xs text-muted-foreground">{t("vagas.videoDaVagaGestao.aLegendaDeixaOVideo")}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {midia.legendaVtt ? (
               <Button type="button" variant="outline" size="sm" className="min-h-11" disabled={removerLegenda.isPending} onClick={() => removerLegenda.mutate()}>
-                Remover a legenda
+                {t("vagas.videoDaVagaGestao.removerALegenda")}
               </Button>
             ) : null}
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button type="button" variant="ghost" size="sm" className="min-h-11 text-destructive hover:text-destructive" disabled={removerVideo.isPending}>
-                  Remover o vídeo
+                  {t("vagas.videoDaVagaGestao.removerOVideo")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Remover o vídeo da vaga?</AlertDialogTitle>
-                  <AlertDialogDescription>O vídeo, a transcrição e a legenda serão apagados. Você pode enviar outro depois.</AlertDialogDescription>
+                  <AlertDialogTitle>{t("vagas.videoDaVagaGestao.removerOVideoDaVaga")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("vagas.videoDaVagaGestao.oVideoATranscricaoEALegenda")}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Voltar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => removerVideo.mutate()}>Remover</AlertDialogAction>
+                  <AlertDialogCancel>{t("auth.voltar")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => removerVideo.mutate()}>{t("vagas.videoDaVagaGestao.remover")}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

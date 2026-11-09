@@ -9,6 +9,7 @@ import { perfilService } from "@/services/perfil.service";
 import { empresasService } from "@/services/empresas.service";
 import { PerfilPessoal } from "@/components/perfil/PerfilPessoal";
 import { PerfilEmpresa } from "@/components/perfil/PerfilEmpresa";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/perfil/$usuarioId")({
   head: () => ({
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/perfil/$usuarioId")({
  * próprio perfil), então reaproveitamos ele em vez de criar um componente novo.
  */
 function PerfilDeTerceiro() {
+  const { t } = useIdioma();
   const { usuarioId } = Route.useParams();
   const { usuario } = useSessao();
 
@@ -85,7 +87,7 @@ function PerfilDeTerceiro() {
     return (
       <EstruturaApp>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
-          Este perfil não está disponível.
+          {t("perfilusuarioId.estePerfilNaoEstaDisponivel")}
         </div>
       </EstruturaApp>
     );

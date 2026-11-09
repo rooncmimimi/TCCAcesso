@@ -27,7 +27,7 @@ export function ComparadorDeVagasTela() {
   if (ids.length === 0) {
     return (
       <div className="mt-6 space-y-3 rounded-xl border border-border p-6">
-        <p>Você ainda não escolheu vagas para comparar.</p>
+        <p>{t("vagas.comparadorDeVagasTela.voceAindaNaoEscolheuVagasPara")}</p>
         <p className="text-sm text-muted-foreground">Abra uma vaga e use o botão “Comparar esta vaga”. Você pode comparar até {LIMITE_DE_VAGAS} vagas.</p>
         <Button asChild className="min-h-11">
           <Link to="/vagas">Ver as vagas</Link>
@@ -43,7 +43,7 @@ export function ComparadorDeVagasTela() {
   if (carregando) {
     return (
       <p role="status" className="mt-6 text-sm text-muted-foreground">
-        Carregando as vagas…
+        {t("vagas.comparadorDeVagasTela.carregandoAsVagas")}
       </p>
     );
   }
@@ -64,11 +64,11 @@ export function ComparadorDeVagasTela() {
       <p role="status" className="text-sm">
         {vagas.length < 2 ? "Escolha pelo menos mais uma vaga para ver as diferenças." : diferencas === 0 ? "Nenhuma diferença nos itens comparados." : `${diferencas} ${diferencas === 1 ? "item diferente" : "itens diferentes"} entre as vagas.`}
       </p>
-      <p className="text-xs text-muted-foreground">Isto é só uma comparação do que cada empresa informou. O ACESSO não diz qual vaga é a melhor para você. “Não informado” significa que a empresa não preencheu, não que o item não exista.</p>
+      <p className="text-xs text-muted-foreground">{t("vagas.comparadorDeVagasTela.istoESoUmaComparacaoDoQueCada")}</p>
 
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
-          <caption className="sr-only">Comparação das vagas escolhidas, uma coluna por vaga</caption>
+          <caption className="sr-only">{t("vagas.comparadorDeVagasTela.comparacaoDasVagasEscolhidas")}</caption>
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th scope="col" className="p-3 font-semibold">
@@ -101,7 +101,7 @@ export function ComparadorDeVagasTela() {
                     <tr key={l.id} className={l.diferem ? "border-t border-border bg-accent/40" : "border-t border-border"}>
                       <th scope="row" className="p-3 align-top font-medium">
                         {l.rotulo}
-                        {l.diferem ? <span className="mt-1 block text-xs font-bold text-primary">Diferente</span> : null}
+                        {l.diferem ? <span className="mt-1 block text-xs font-bold text-primary">{t("vagas.comparadorDeVagasTela.diferente")}</span> : null}
                       </th>
                       {l.valores.map((valor, i) => (
                         <td key={vagas[i].id} className="p-3 align-top">
@@ -117,7 +117,7 @@ export function ComparadorDeVagasTela() {
       </div>
 
       <Button type="button" variant="outline" className="min-h-11" onClick={limparComparacao}>
-        Limpar a comparação
+        {t("vagas.comparadorDeVagasTela.limparAComparacao")}
       </Button>
     </div>
   );

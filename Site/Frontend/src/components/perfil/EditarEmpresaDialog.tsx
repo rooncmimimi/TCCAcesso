@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
@@ -40,6 +41,7 @@ const CAMPOS_DO_RASCUNHO = ["descricao", "culturaInclusiva"] as const;
 
 /** Edição do perfil empresarial. O backend recusa a chamada se a empresa não estiver aprovada. */
 export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; children: ReactNode }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [porte, setPorte] = useState<string>(empresa.porte ?? "");
   const [cidade, setCidade] = useState(empresa.cidade ?? "");
@@ -105,13 +107,13 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Editar perfil da empresa</DialogTitle>
-          <DialogDescription>Essas informações aparecem no perfil público da sua empresa.</DialogDescription>
+          <DialogTitle>{t("perfil.editarEmpresaDialog.editarPerfilDaEmpresa")}</DialogTitle>
+          <DialogDescription>{t("perfil.editarEmpresaDialog.essasInformacoesAparecemNo")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <p className="mb-2 text-sm font-medium">Banner</p>
+            <p className="mb-2 text-sm font-medium">{t("perfil.editarEmpresaDialog.banner")}</p>
             <div className="overflow-hidden rounded-lg border">
               <CapaUploader
                 capaUrl={empresa.capa}
@@ -137,12 +139,12 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium">Logo</p>
+            <p className="mb-2 text-sm font-medium">{t("perfil.editarEmpresaDialog.logo")}</p>
             <FotoUploader
               nome={empresa.nomeFantasia || empresa.razaoSocial}
               fotoUrl={empresa.logo}
               fallback={<Building2 className="size-8" aria-hidden="true" />}
-              rotulo="Alterar logo"
+              rotulo={t("perfil.editarEmpresaDialog.alterarLogo")}
               onEnviar={async (arquivo) => {
                 await empresasService.atualizarLogo(empresa.id, arquivo);
                 await invalidarEmpresa();
@@ -156,7 +158,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="razaoSocial">Razão social</Label>
+              <Label htmlFor="razaoSocial">{t("perfil.editarEmpresaDialog.razaoSocial")}</Label>
               <Input
                 id="razaoSocial"
                 name="razaoSocial"
@@ -167,44 +169,44 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nomeFantasia">Nome fantasia</Label>
+              <Label htmlFor="nomeFantasia">{t("perfil.editarEmpresaDialog.nomeFantasia")}</Label>
               <Input id="nomeFantasia" name="nomeFantasia" maxLength={200} defaultValue={empresa.nomeFantasia ?? ""} />
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor="descricao">Descrição</Label>
-              <DicaDeCampoBotao dica="empresaDescricao" nomeDoCampo="Descrição da empresa" />
+              <Label htmlFor="descricao">{t("vagaDetalhe.descricao")}</Label>
+              <DicaDeCampoBotao dica="empresaDescricao" nomeDoCampo={t("perfil.editarEmpresaDialog.descricaoDaEmpresa")} />
             </div>
             <Textarea id="descricao" name="descricao" rows={4} maxLength={4000} defaultValue={empresa.descricao ?? ""} />
           </div>
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-              <Label htmlFor="culturaInclusiva">Cultura de inclusão</Label>
-              <DicaDeCampoBotao dica="empresaCulturaInclusiva" nomeDoCampo="Cultura de inclusão" />
+              <Label htmlFor="culturaInclusiva">{t("perfil.editarEmpresaDialog.culturaDeInclusao")}</Label>
+              <DicaDeCampoBotao dica="empresaCulturaInclusiva" nomeDoCampo={t("perfil.editarEmpresaDialog.culturaDeInclusao")} />
             </div>
             <Textarea
               id="culturaInclusiva"
               name="culturaInclusiva"
               rows={3}
               maxLength={4000}
-              placeholder="Como a empresa apoia profissionais PCD e pessoas 50+"
+              placeholder={t("perfil.editarEmpresaDialog.comoAEmpresaApoiaProfissionais")}
               defaultValue={empresa.culturaInclusiva ?? ""}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="setor">Setor</Label>
+              <Label htmlFor="setor">{t("perfil.editarEmpresaDialog.setor")}</Label>
               <Input id="setor" name="setor" maxLength={120} defaultValue={empresa.setor ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="porte">Porte</Label>
+              <Label htmlFor="porte">{t("perfil.editarEmpresaDialog.porte")}</Label>
               <Select value={porte} onValueChange={setPorte}>
                 <SelectTrigger id="porte">
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={t("perfil.editarEmpresaDialog.selecione")} />
                 </SelectTrigger>
                 <SelectContent>
                   {PORTES_EMPRESA.map((p) => (
@@ -218,24 +220,24 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="site">Site</Label>
+            <Label htmlFor="site">{t("perfil.editarEmpresaDialog.site")}</Label>
             <Input id="site" name="site" type="url" defaultValue={empresa.site ?? ""} />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
+              <Label htmlFor="cidade">{t("filtro.cidade")}</Label>
               <CidadeAutocomplete
                 id="cidade"
                 name="cidade"
                 value={cidade}
                 onChange={setCidade}
                 estado={estado}
-                aria-label="Cidade"
+                aria-label={t("filtro.cidade")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="estado">Estado (UF)</Label>
+              <Label htmlFor="estado">{t("perfil.editarEmpresaDialog.estadoUf")}</Label>
               <Input
                 id="estado"
                 name="estado"
@@ -249,7 +251,7 @@ export function EditarEmpresaDialog({ empresa, children }: { empresa: Empresa; c
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço</Label>
+              <Label htmlFor="endereco">{t("perfil.editarEmpresaDialog.endereco")}</Label>
               <Input id="endereco" name="endereco" defaultValue={empresa.endereco ?? ""} />
             </div>
             <div className="space-y-2">

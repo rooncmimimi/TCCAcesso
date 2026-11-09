@@ -5,12 +5,14 @@ import { MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CARTOES_PADRAO } from "@/dados/cartoesDeComunicacao";
 import { lerCartoesPessoais } from "@/lib/cartoesPessoais";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Frases prontas dentro da conversa. Escolher uma frase só a COLOCA no campo de mensagem: quem envia
  * é a pessoa, com o botão de sempre, depois de ler. Mostra os cartões da própria pessoa primeiro.
  */
 export function FrasesProntas({ aoEscolher }: { aoEscolher: (texto: string) => void }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const pessoais = aberto ? lerCartoesPessoais() : [];
   const frases = [...pessoais.map((c) => c.texto), ...CARTOES_PADRAO.map((c) => c.texto)];
@@ -23,7 +25,7 @@ export function FrasesProntas({ aoEscolher }: { aoEscolher: (texto: string) => v
 
       {aberto ? (
         <div className="space-y-2 pb-2">
-          <p className="text-xs text-muted-foreground">Ao escolher, a frase vai para o campo de mensagem. Você revisa e envia.</p>
+          <p className="text-xs text-muted-foreground">{t("mensagens.frasesProntas.aoEscolherAFraseVaiParaOCampo")}</p>
           <ul className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
             {frases.map((f) => (
               <li key={f}>
@@ -34,7 +36,7 @@ export function FrasesProntas({ aoEscolher }: { aoEscolher: (texto: string) => v
             ))}
           </ul>
           <Link to="/comunicacao" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline">
-            Criar meus cartões
+            {t("mensagens.frasesProntas.criarMeusCartoes")}
           </Link>
         </div>
       ) : null}

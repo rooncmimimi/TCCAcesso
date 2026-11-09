@@ -20,6 +20,8 @@ import {
   limparVinculo,
   tirarCodigoDaUrl,
 } from "@/lib/googleNavegador";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { useIdioma } from "@/hooks/useIdioma";
 import googleService, { mensagemDeErroGoogle } from "@/services/google.service";
 
 /**
@@ -64,9 +66,8 @@ export const Route = createFileRoute("/retorno-google")({
   component: RetornoGoogle,
 });
 
-const FALHA_GENERICA = "Não foi possível concluir a entrada com o Google. Tente novamente.";
-const OUTRO_NAVEGADOR =
-  "Esta entrada com o Google não começou neste navegador. Volte ao login e use o botão do Google de novo.";
+const FALHA_GENERICA: ChaveBase = "retorno-google.naoFoiPossivelConcluirAEntrada";
+const OUTRO_NAVEGADOR: ChaveBase = "retorno-google.estaEntradaComOGoogleNaoComecou";
 
 type Estado =
   | { tipo: "carregando" }
@@ -75,7 +76,7 @@ type Estado =
   | { tipo: "pausada" }
   | { tipo: "emailNaoVerificado"; email: string };
 
-const mensagemDaFalha = (erro: unknown) => mensagemDeErroGoogle(erro, FALHA_GENERICA);
+const mensagemDaFalha = (erro: unknown, t: (chave: ChaveBase) => string) => mensagemDeErroGoogle(erro, t(FALHA_GENERICA));
 
 /**
  * O código de entrega, no fragmento (`#codigo=`), que é onde o backend o coloca. A query
@@ -87,29 +88,31 @@ const lerCodigoDaUrl = (codigoDaBusca: string | undefined) => lerCodigoDoFragmen
 function estadoInicial(
   codigo: string | undefined,
   erro: "cancelado" | "falha" | undefined,
-  comecouNesteNavegador: boolean
+  comecouNesteNavegador: boolean,
+  t: (chave: ChaveBase) => string,
 ): Estado {
-  if (erro === "cancelado") return { tipo: "falha", texto: "Você cancelou a entrada com o Google." };
-  if (erro === "falha") return { tipo: "falha", texto: FALHA_GENERICA };
+  if (erro === "cancelado") return { tipo: "falha", texto: t("retorno-google.voceCancelouAEntradaComOGoogle") };
+  if (erro === "falha") return { tipo: "falha", texto: t(FALHA_GENERICA) };
   if (!codigo) {
     return {
       tipo: "falha",
-      texto: "Não encontramos o código de entrada do Google nesta página. Volte para o login e tente novamente.",
+      texto: t("retorno-google.naoEncontramosOCodigoDeEntrada"),
     };
   }
   // Sem o segredo da aba o servidor recusaria o código; poupa a ida e a mensagem fica a mesma.
-  if (!comecouNesteNavegador) return { tipo: "falha", texto: OUTRO_NAVEGADOR };
+  if (!comecouNesteNavegador) return { tipo: "falha", texto: t(OUTRO_NAVEGADOR) };
   return { tipo: "carregando" };
 }
 
 function RetornoGoogle() {
+  const { t } = useIdioma();
   const { codigo: codigoDaBusca, erro } = Route.useSearch();
   const navigate = useNavigate();
   const { iniciarSessao } = useSessao();
   // Lido uma vez, antes de o código sair da barra de endereço.
   const [inicial] = useState(() => {
     const codigo = lerCodigoDaUrl(codigoDaBusca);
-    return { codigo, estado: estadoInicial(codigo, erro, lerVinculo() !== null) };
+    return { codigo, estado: estadoInicial(codigo, erro, lerVinculo() !== null, t) };
   });
   const [estado, setEstado] = useState<Estado>(inicial.estado);
   const [reativando, setReativando] = useState(false);
@@ -137,7 +140,7 @@ function RetornoGoogle() {
       if (retorno.desfecho === "cadastrar") {
         limparVinculo();
         if (!guardarProva(retorno.prova)) {
-          setEstado({ tipo: "falha", texto: FALHA_GENERICA });
+          setEstado({ tipo: "falha", texto: t(FALHA_GENERICA) });
           return;
         }
         const depois = retorno.tipoConta === "empresa" ? "empresa" : undefined;
@@ -200,7 +203,7 @@ function RetornoGoogle() {
     } catch (falha) {
       // Não há botão de "tentar de novo" aqui: a pessoa volta ao login e começa outro fluxo, com outro segredo.
       limparVinculo();
-      setEstado({ tipo: "falha", texto: mensagemDaFalha(falha) });
+      setEstado({ tipo: "falha", texto: mensagemDaFalha(falha, t) });
     }
   }
 
@@ -229,7 +232,7 @@ function RetornoGoogle() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t("retorno-google.voltarParaAPaginaInicial")} className="inline-flex">
           <Logo />
         </Link>
       </div>
@@ -237,24 +240,24 @@ function RetornoGoogle() {
       <Card className="shadow-card">
         <CardContent className="p-6 sm:p-8">
           {estado.tipo === "falha" ? (
-            <Aviso titulo="Não deu certo" texto={estado.texto}>
+            <Aviso titulo={t("retorno-google.naoDeuCerto")} texto={estado.texto}>
               <VoltarParaOLogin />
             </Aviso>
           ) : estado.tipo === "conflito" ? (
             <Aviso
-              titulo="Esta conta já existe no ACESSO"
+              titulo={t("retorno-google.estaContaJaExisteNoAcesso")}
               texto={`Já há uma conta com o e-mail ${estado.email}, criada com e-mail e senha. Entre com ela. Se for uma conta de candidato, depois de entrar você pode vincular o Google em Configurações, Segurança, Contas conectadas. Por segurança, o ACESSO não junta duas contas só porque o e-mail é igual.`}
             >
               <Button asChild className="min-h-12 w-full text-base">
-                <Link to="/entrar">Entrar com e-mail e senha</Link>
+                <Link to="/entrar">{t("retorno-google.entrarComEMailESenha")}</Link>
               </Button>
             </Aviso>
           ) : estado.tipo === "pausada" ? (
             <Aviso
-              titulo="Sua conta está pausada"
-              texto="Você pausou esta conta anteriormente. Deseja reativá-la e continuar?"
+              titulo={t("login.contaPausada")}
+              texto={t("login.contaPausadaTexto")}
               icone={<PauseCircle className="size-5" />}
-              falar="Sua conta está pausada. Deseja reativá-la agora?"
+              falar={t("login.contaPausadaVoz")}
             >
               <Button type="button" className="min-h-12 w-full text-base" disabled={reativando} onClick={reativar}>
                 {reativando ? (
@@ -269,17 +272,17 @@ function RetornoGoogle() {
             </Aviso>
           ) : estado.tipo === "emailNaoVerificado" ? (
             <Aviso
-              titulo="Confirme seu e-mail"
+              titulo={t("login.confirmeEmail")}
               texto={`Enviamos um e-mail de confirmação para ${estado.email}. Verifique sua caixa de entrada e também a pasta de spam, e clique no link antes de entrar.`}
               icone={<Mail className="size-5" />}
-              falar="Confirme seu e-mail antes de entrar."
+              falar={t("login.confirmeEmailVoz")}
             >
               <VoltarParaOLogin />
             </Aviso>
           ) : (
             <div className="flex items-center gap-3 py-6" role="status">
               <Loader2 className="size-5 animate-spin text-primary" aria-hidden="true" />
-              <p className="text-sm text-muted-foreground">Confirmando sua conta Google…</p>
+              <p className="text-sm text-muted-foreground">{t("retorno-google.confirmandoSuaContaGoogle")}</p>
             </div>
           )}
         </CardContent>
@@ -289,9 +292,10 @@ function RetornoGoogle() {
 }
 
 function VoltarParaOLogin({ variante }: { variante?: "ghost" }) {
+  const { t } = useIdioma();
   return (
     <Button asChild variant={variante} className={variante ? "mt-2 min-h-11 w-full" : "min-h-12 w-full text-base"}>
-      <Link to="/entrar">Voltar para o login</Link>
+      <Link to="/entrar">{t("retorno-google.voltarParaOLogin")}</Link>
     </Button>
   );
 }

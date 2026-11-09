@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
 import { useVoz } from "@/hooks/useVoz";
 import { cn } from "@/lib/utils";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Um bloco de texto com o botão "Ouvir" ao lado: lê o conteúdo em voz alta com a palavra atual
@@ -22,6 +23,7 @@ export function TextoOuvivel({
   children: ReactNode;
   className?: string;
 }) {
+  const { t } = useIdioma();
   const conteudo = useRef<HTMLDivElement>(null);
   const { suportado } = useVoz();
   const { ler } = useLeituraDestacada();
@@ -40,7 +42,7 @@ export function TextoOuvivel({
             if (conteudo.current) ler(conteudo.current);
           }}
         >
-          <Volume2 className="size-4" aria-hidden="true" /> Ouvir
+          <Volume2 className="size-4" aria-hidden="true" /> {t("acessibilidade.textoOuvivel.ouvir")}
         </Button>
       )}
     </div>

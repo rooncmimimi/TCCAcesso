@@ -15,6 +15,7 @@ import { urlArquivo } from "@/utils/arquivos";
 import { seguidoresService } from "@/services/empresas.service";
 import { extrairMensagemErro } from "@/services/api";
 import type { SugestaoEmpresa, SugestaoPerfil } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Mesma chave de query do perfil (`PerfilPessoal.tsx`) para o resumo de seguidores, de propósito: o
@@ -45,6 +46,7 @@ export const Route = createFileRoute("/descobrir")({
 });
 
 function Descobrir() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const ehCandidato = usuario?.tipo === "candidato";
 
@@ -63,11 +65,10 @@ function Descobrir() {
     <EstruturaApp>
       <div className="flex items-center gap-2">
         <Compass className="size-7 text-primary" aria-hidden="true" />
-        <h1 className="text-3xl font-extrabold">Descobrir</h1>
+        <h1 className="text-3xl font-extrabold">{t("cabecalho.descobrir")}</h1>
       </div>
       <p className="mt-2 text-muted-foreground">
-        Sugestões de pessoas e empresas para seguir. Cada sugestão explica por que ela apareceu — nunca usamos
-        deficiência, diagnóstico ou outro dado sensível como critério.
+        {t("descobrir.sugestoesDePessoasEEmpresas")}
       </p>
 
       <section className="mt-8" aria-labelledby="titulo-pessoas">
@@ -76,11 +77,11 @@ function Descobrir() {
         </h2>
         <div className="mt-4">
           {pessoas.isLoading ? (
-            <EstadoCarregando texto="Procurando pessoas para você conhecer…" />
+            <EstadoCarregando texto={t("descobrir.procurandoPessoasParaVoce")} />
           ) : pessoas.isError ? (
             <EstadoErro onTentar={() => pessoas.refetch()} />
           ) : !pessoas.data || pessoas.data.length === 0 ? (
-            <EstadoVazio texto="Sem sugestões de pessoas no momento. Interaja mais no feed para receber sugestões melhores." />
+            <EstadoVazio texto={t("descobrir.semSugestoesDePessoasNoMomento")} />
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pessoas.data.map((pessoa) => (
@@ -100,11 +101,11 @@ function Descobrir() {
           </h2>
           <div className="mt-4">
             {empresas.isLoading ? (
-              <EstadoCarregando texto="Procurando empresas para você conhecer…" />
+              <EstadoCarregando texto={t("descobrir.procurandoEmpresasParaVoce")} />
             ) : empresas.isError ? (
               <EstadoErro onTentar={() => empresas.refetch()} />
             ) : !empresas.data || empresas.data.length === 0 ? (
-              <EstadoVazio texto="Sem sugestões de empresas no momento. Favorite vagas para receber sugestões melhores." />
+              <EstadoVazio texto={t("descobrir.semSugestoesDeEmpresasNo")} />
             ) : (
               <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {empresas.data.map((empresa) => (
@@ -130,11 +131,12 @@ function EstadoCarregando({ texto }: { texto: string }) {
 }
 
 function EstadoErro({ onTentar }: { onTentar: () => void }) {
+  const { t } = useIdioma();
   return (
     <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-      <p>Não foi possível carregar as sugestões.</p>
+      <p>{t("descobrir.naoFoiPossivelCarregarAs")}</p>
       <Button variant="outline" size="sm" onClick={onTentar}>
-        Tentar novamente
+        {t("raiz.tentarNovamente")}
       </Button>
     </div>
   );
@@ -190,6 +192,7 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
 }
 
 function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const nome = empresa.nomeFantasia ?? empresa.razaoSocial ?? "Empresa";
 
@@ -225,9 +228,9 @@ function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
               {nome}
             </Link>
             {empresa.empresaVerificada && (
-              <span className="inline-flex shrink-0 items-center text-primary" title="Empresa verificada pelo ACESSO">
+              <span className="inline-flex shrink-0 items-center text-primary" title={t("vaga.empresaVerificadaTitulo")}>
                 <BadgeCheck className="size-4" aria-hidden="true" />
-                <span className="sr-only">Empresa verificada</span>
+                <span className="sr-only">{t("vaga.empresaVerificada")}</span>
               </span>
             )}
           </span>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AvisoAprovacaoEmpresa } from "@/components/perfil/AvisoAprovacaoEmpresa";
 import { useSessao } from "@/hooks/useSessao";
 import type { Empresa } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Tela exibida pelo `EstruturaApp` no lugar do app enquanto a empresa não está aprovada (pendente,
@@ -15,6 +16,7 @@ import type { Empresa } from "@/types";
  * e-mail resolve.
  */
 export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
+  const { t } = useIdioma();
   const { sair } = useSessao();
   const navigate = useNavigate();
   const [verificando, setVerificando] = useState(false);
@@ -48,12 +50,12 @@ export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
               {pendente ? (
                 <Button variant="outline" onClick={verificarStatus} disabled={verificando}>
                   <RefreshCcw className={verificando ? "size-4 animate-spin" : "size-4"} aria-hidden="true" />
-                  Verificar novamente
+                  {t("layouts.telaStatusEmpresa.verificarNovamente")}
                 </Button>
               ) : null}
               <Button variant="destructive" onClick={() => void sairDaConta()}>
                 <LogOut className="size-4" aria-hidden="true" />
-                Sair da conta
+                {t("layouts.telaStatusEmpresa.sairDaConta")}
               </Button>
             </>
           }
@@ -64,7 +66,7 @@ export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
         href="mailto:projetoacessoinclusivo@gmail.com"
         className="text-sm font-semibold text-muted-foreground underline-offset-2 hover:underline"
       >
-        Fale conosco
+        {t("rodape.faleConosco")}
       </a>
     </div>
   );

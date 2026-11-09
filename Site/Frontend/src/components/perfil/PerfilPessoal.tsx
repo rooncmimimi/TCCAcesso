@@ -10,6 +10,8 @@ import {
   Sparkles,
   Upload,
 } from "lucide-react";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { useIdioma } from "@/hooks/useIdioma";
 import { toast } from "sonner";
 import { atributoAccept, verificarArquivo } from "@/lib/arquivos";
 
@@ -44,6 +46,7 @@ import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
  * Com `usuarioId` de outra pessoa: modo leitura, com botão de seguir no lugar de editar.
  */
 export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const { preferencias } = useAcessibilidade();
 
@@ -112,7 +115,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
     return (
       <EstruturaApp>
         <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
-          Este perfil não está disponível.
+          {t("perfil.perfilPessoal.estePerfilNaoEstaDisponivel")}
         </div>
       </EstruturaApp>
     );
@@ -148,10 +151,10 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
   // `PainelAcessibilidade.tsx`).
   const chipsAcessibilidade = proprioPerfil
     ? [
-        { ativo: preferencias.screenReader, icon: Ear, label: "Leitura por voz" },
-        { ativo: preferencias.vlibras, icon: Accessibility, label: "Libras (VLibras)" },
-        { ativo: preferencias.highContrast, icon: Contrast, label: "Alto contraste" },
-        { ativo: preferencias.dyslexiaFont, icon: Sparkles, label: "Fonte para dislexia" },
+        { ativo: preferencias.screenReader, icon: Ear, label: "inicio.recurso.voz.titulo" },
+        { ativo: preferencias.vlibras, icon: Accessibility, label: "perfil.perfilPessoal.librasVlibras" },
+        { ativo: preferencias.highContrast, icon: Contrast, label: "perfil.perfilPessoal.altoContraste" },
+        { ativo: preferencias.dyslexiaFont, icon: Sparkles, label: "perfil.perfilPessoal.fonteParaDislexia" },
       ].filter((c) => c.ativo)
     : [];
 
@@ -205,15 +208,15 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                 type="button"
                 className="text-sm font-semibold text-primary underline-offset-2 hover:underline"
               >
-                Adicionar título profissional
+                {t("perfil.perfilPessoal.adicionarTituloProfissional")}
               </button>
             </EditarPerfilDialog>
           ) : ehCandidato ? (
             // Perfil de terceiro sem título: texto neutro, nunca uma
             // chamada de ação que não pertence a quem está visitando.
-            <p className="text-muted-foreground">Perfil profissional</p>
+            <p className="text-muted-foreground">{t("perfil.perfilPessoal.perfilProfissional")}</p>
           ) : (
-            <p className="text-muted-foreground">Administrador do ACESSO</p>
+            <p className="text-muted-foreground">{t("perfil.perfilPessoal.administradorDoAcesso")}</p>
           )}
           {ehCandidato && candidato?.cidade ? (
             <p className="text-sm text-muted-foreground">
@@ -239,7 +242,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
       {ehCandidato && candidato?.biografia ? (
         <Card className="mt-4 shadow-card">
           <CardContent className="p-5 sm:p-6">
-            <h2 className="text-lg font-bold">Sobre mim</h2>
+            <h2 className="text-lg font-bold">{t("perfil.perfilPessoal.sobreMim")}</h2>
             <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{candidato.biografia}</p>
           </CardContent>
         </Card>
@@ -248,15 +251,15 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
       {proprioPerfil ? (
         <Card className="mt-4 shadow-card">
           <CardContent className="p-5 sm:p-6">
-            <h2 className="text-lg font-bold">Preferências de acessibilidade</h2>
+            <h2 className="text-lg font-bold">{t("perfil.perfilPessoal.preferenciasDeAcessibilidade")}</h2>
             {chipsAcessibilidade.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">Nenhuma preferência de acessibilidade ativada.</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("perfil.perfilPessoal.nenhumaPreferenciaDe")}</p>
             ) : (
               <ul className="mt-3 flex flex-wrap gap-2">
                 {chipsAcessibilidade.map((c) => (
                   <li key={c.label}>
                     <Badge variant="secondary" className="min-h-9 gap-2 px-3 text-sm font-semibold">
-                      <c.icon className="size-4" aria-hidden="true" /> {c.label}
+                      <c.icon className="size-4" aria-hidden="true" /> {t(c.label as ChaveBase)}
                     </Badge>
                   </li>
                 ))}
@@ -293,7 +296,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                         : ""}
                     </p>
                   ) : (
-                    <p className="mt-1 text-sm text-muted-foreground">Nenhum currículo enviado ainda.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{t("perfil.perfilPessoal.nenhumCurriculoEnviadoAinda")}</p>
                   )}
                   {candidato.curriculoNome ? (
                     <div className="mt-3">
@@ -352,25 +355,25 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
               <SecaoDeficiencias candidato={candidato} somenteLeitura={!proprioPerfil} />
               <SecaoRecursoPerfil
                 recurso="experiencias"
-                titulo="Experiência profissional"
+                titulo={t("perfil.perfilPessoal.experienciaProfissional")}
                 itens={candidato.experiencias}
                 somenteLeitura={!proprioPerfil}
               />
               <SecaoRecursoPerfil
                 recurso="formacoes"
-                titulo="Formação acadêmica"
+                titulo={t("perfil.perfilPessoal.formacaoAcademica")}
                 itens={candidato.formacoes}
                 somenteLeitura={!proprioPerfil}
               />
               <SecaoRecursoPerfil
                 recurso="habilidades"
-                titulo="Habilidades"
+                titulo={t("perfil.perfilPessoal.habilidades")}
                 itens={candidato.habilidades}
                 somenteLeitura={!proprioPerfil}
               />
               <SecaoRecursoPerfil
                 recurso="certificados"
-                titulo="Certificados"
+                titulo={t("perfil.perfilPessoal.certificados")}
                 itens={candidato.certificados}
                 somenteLeitura={!proprioPerfil}
               />
@@ -386,7 +389,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
           <CardContent className="p-5 sm:p-6">
             {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
                 data. */}
-            <h2 className="mb-4 text-lg font-bold">Publicações</h2>
+            <h2 className="mb-4 text-lg font-bold">{t("perfil.perfilPessoal.publicacoes")}</h2>
             <LinhaDoTempoUsuario usuarioId={alvoId} />
           </CardContent>
         </Card>

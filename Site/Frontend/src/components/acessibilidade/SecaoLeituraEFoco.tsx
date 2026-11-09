@@ -11,6 +11,8 @@ import {
   ScanEye,
   TextCursorInput,
 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { avaliarContraste, ehCorHex, formatarRazao } from "@/lib/contraste";
@@ -20,19 +22,19 @@ import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContex
 
 type ChaveDeCor = "colorText" | "colorBg" | "colorLink" | "colorFocus";
 
-const CORES: ReadonlyArray<{ chave: ChaveDeCor; id: string; rotulo: string }> = [
-  { chave: "colorText", id: "a11y-cor-texto", rotulo: "Texto" },
-  { chave: "colorBg", id: "a11y-cor-fundo", rotulo: "Fundo" },
-  { chave: "colorLink", id: "a11y-cor-link", rotulo: "Links" },
-  { chave: "colorFocus", id: "a11y-cor-foco", rotulo: "Contorno de foco" },
+const CORES: ReadonlyArray<{ chave: ChaveDeCor; id: string; rotulo: ChaveBase }> = [
+  { chave: "colorText", id: "a11y-cor-texto", rotulo: "acessibilidade.secaoLeituraEFoco.texto" },
+  { chave: "colorBg", id: "a11y-cor-fundo", rotulo: "acessibilidade.secaoLeituraEFoco.fundo" },
+  { chave: "colorLink", id: "a11y-cor-link", rotulo: "acessibilidade.secaoLeituraEFoco.links" },
+  { chave: "colorFocus", id: "a11y-cor-foco", rotulo: "acessibilidade.secaoLeituraEFoco.contornoDeFoco" },
 ];
 
 /** Cada par de cores que importa, com o mínimo de contraste do WCAG para o que ele mostra. */
-function pares(p: PreferenciasAcessibilidade) {
+function pares(p: PreferenciasAcessibilidade): ReadonlyArray<{ id: string; rotulo: ChaveBase; frente: string; fundo: string; minimo: number }> {
   return [
-    { id: "texto", rotulo: "Texto sobre o fundo", frente: p.colorText, fundo: p.colorBg, minimo: 4.5 },
-    { id: "links", rotulo: "Links sobre o fundo", frente: p.colorLink, fundo: p.colorBg, minimo: 4.5 },
-    { id: "foco", rotulo: "Contorno de foco sobre o fundo", frente: p.colorFocus, fundo: p.colorBg, minimo: 3 },
+    { id: "texto", rotulo: "acessibilidade.secaoLeituraEFoco.textoSobreOFundo", frente: p.colorText, fundo: p.colorBg, minimo: 4.5 },
+    { id: "links", rotulo: "acessibilidade.secaoLeituraEFoco.linksSobreOFundo", frente: p.colorLink, fundo: p.colorBg, minimo: 4.5 },
+    { id: "foco", rotulo: "acessibilidade.secaoLeituraEFoco.contornoDeFocoSobreOFundo", frente: p.colorFocus, fundo: p.colorBg, minimo: 3 },
   ];
 }
 
@@ -41,40 +43,41 @@ function pares(p: PreferenciasAcessibilidade) {
  * e modo para daltonismo. Tudo reage na hora, como o resto do painel, e só é gravado ao salvar.
  */
 export function SecaoLeituraEFoco() {
+  const { t } = useIdioma();
   const { preferencias, definir } = useAcessibilidade();
   const minutosDoAviso = Math.round(DURACAO_MAXIMA_DO_AVISO / 60_000);
 
   return (
     <section aria-labelledby="grupo-leitura" className="space-y-3">
       <h3 id="grupo-leitura" className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-        Leitura, foco e cores
+        {t("acessibilidade.secaoLeituraEFoco.leituraFocoECores")}
       </h3>
 
       <ToggleRow
         id="a11y-word-highlight"
         icon={Highlighter}
-        titulo="Destacar a palavra que está sendo lida"
-        descricao="Com o botão Ouvir ou o cursor de leitura, a palavra dita fica marcada. Se a voz do seu navegador não informar as palavras, o destaque passa a ser por frase (e, se a estimativa abaixo estiver ligada, com a palavra aproximada)."
+        titulo={t("acessibilidade.secaoLeituraEFoco.destacarAPalavraQueEstaSendo")}
+        descricao={t("acessibilidade.secaoLeituraEFoco.comOBotaoOuvirOuOCursorDe")}
         chave="wordHighlight"
       />
       {preferencias.wordHighlight && (
         <ToggleRow
           id="a11y-estimated-highlight"
           icon={Highlighter}
-          titulo="Estimar a palavra em vozes que não informam as palavras"
-          descricao="Algumas vozes (como as de rede e várias de celular) dizem só quando a frase começa e termina. Ligado, o site estima a palavra pelo tempo: é aproximado e pode adiantar ou atrasar uma ou duas palavras. Desligado, só a frase fica destacada."
+          titulo={t("acessibilidade.secaoLeituraEFoco.estimarAPalavraEmVozesQueNao")}
+          descricao={t("acessibilidade.secaoLeituraEFoco.algumasVozesComoAsDeRedeE")}
           chave="estimatedHighlight"
         />
       )}
       <Link to="/diagnostico-de-voz" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline underline-offset-2">
-        <Stethoscope className="size-4" aria-hidden="true" /> Testar a leitura em voz alta neste aparelho
+        <Stethoscope className="size-4" aria-hidden="true" /> {t("acessibilidade.secaoLeituraEFoco.testarALeituraEmVozAltaNeste")}
       </Link>
 
       <ToggleRow
         id="a11y-ruler"
         icon={Ruler}
-        titulo="Régua de leitura"
-        descricao="Uma faixa clara acompanha o mouse ou o foco do teclado e escurece o resto da tela. Alt + ↑ ou ↓ sobe e desce a faixa."
+        titulo={t("acessibilidade.secaoLeituraEFoco.reguaDeLeitura")}
+        descricao={t("acessibilidade.secaoLeituraEFoco.umaFaixaClaraAcompanhaOMouseOu")}
         chave="readingRuler"
       />
       {preferencias.readingRuler && (
@@ -82,7 +85,7 @@ export function SecaoLeituraEFoco() {
           <SliderRow
             id="a11y-ruler-height"
             icon={ScanEye}
-            titulo="Altura da régua"
+            titulo={t("acessibilidade.secaoLeituraEFoco.alturaDaRegua")}
             valorTexto={`${preferencias.rulerHeight} px`}
             min={24}
             max={160}
@@ -93,7 +96,7 @@ export function SecaoLeituraEFoco() {
           <SliderRow
             id="a11y-ruler-dim"
             icon={SunDim}
-            titulo="Escurecimento do resto da tela"
+            titulo={t("acessibilidade.secaoLeituraEFoco.escurecimentoDoRestoDaTela")}
             valorTexto={`${Math.round(preferencias.rulerDim * 100)}%`}
             min={0.2}
             max={0.85}
@@ -107,7 +110,7 @@ export function SecaoLeituraEFoco() {
       <ToggleRow
         id="a11y-persistent-toasts"
         icon={BellRing}
-        titulo="Manter avisos na tela até eu fechar"
+        titulo={t("acessibilidade.secaoLeituraEFoco.manterAvisosNaTelaAteEuFechar")}
         descricao={`Confirmações e erros ganham um botão de fechar e não somem sozinhos. Por segurança, saem depois de ${minutosDoAviso} minutos.`}
         chave="persistentToasts"
       />
@@ -115,16 +118,16 @@ export function SecaoLeituraEFoco() {
       <ToggleRow
         id="a11y-focus-mode"
         icon={Focus}
-        titulo="Modo foco"
-        descricao="Esconde colunas laterais e o rodapé, e deixa só o que importa para a tarefa."
+        titulo={t("acessibilidade.secaoLeituraEFoco.modoFoco")}
+        descricao={t("acessibilidade.secaoLeituraEFoco.escondeColunasLateraisEORodape")}
         chave="focusMode"
       />
 
       <ToggleRow
         id="a11y-reading-mode"
         icon={BookOpen}
-        titulo="Modo leitura"
-        descricao="Coluna estreita, texto alinhado à esquerda e mais espaço entre linhas e parágrafos."
+        titulo={t("acessibilidade.secaoLeituraEFoco.modoLeitura")}
+        descricao={t("acessibilidade.secaoLeituraEFoco.colunaEstreitaTextoAlinhadoA")}
         chave="readingMode"
       />
       {preferencias.readingMode && (
@@ -132,25 +135,25 @@ export function SecaoLeituraEFoco() {
           <SelectRow
             id="a11y-reading-bg"
             icon={Palette}
-            titulo="Fundo do modo leitura"
+            titulo={t("acessibilidade.secaoLeituraEFoco.fundoDoModoLeitura")}
             valor={preferencias.readingBg}
             opcoes={[
-              { valor: "padrao", rotulo: "Padrão do site" },
-              { valor: "creme", rotulo: "Creme (menos brilho)" },
-              { valor: "escuro", rotulo: "Escuro" },
+              { valor: "padrao", rotulo: "acessibilidade.secaoLeituraEFoco.padraoDoSite" },
+              { valor: "creme", rotulo: "acessibilidade.secaoLeituraEFoco.cremeMenosBrilho" },
+              { valor: "escuro", rotulo: "acessibilidade.secaoLeituraEFoco.escuro" },
             ]}
             onChange={(v) => definir("readingBg", v)}
           />
           <SelectRow
             id="a11y-reading-font"
             icon={TextCursorInput}
-            titulo="Fonte do modo leitura"
+            titulo={t("acessibilidade.secaoLeituraEFoco.fonteDoModoLeitura")}
             valor={preferencias.readingFont}
             opcoes={[
-              { valor: "padrao", rotulo: "Padrão do site" },
-              { valor: "hiperlegivel", rotulo: "Atkinson Hyperlegible (letras bem distintas)" },
-              { valor: "sem-serifa", rotulo: "Sem serifa (Verdana)" },
-              { valor: "serifada", rotulo: "Com serifa (Georgia)" },
+              { valor: "padrao", rotulo: "acessibilidade.secaoLeituraEFoco.padraoDoSite" },
+              { valor: "hiperlegivel", rotulo: "acessibilidade.secaoLeituraEFoco.atkinsonHyperlegibleLetrasBem" },
+              { valor: "sem-serifa", rotulo: "acessibilidade.secaoLeituraEFoco.semSerifaVerdana" },
+              { valor: "serifada", rotulo: "acessibilidade.secaoLeituraEFoco.comSerifaGeorgia" },
             ]}
             onChange={(v) => definir("readingFont", v)}
           />
@@ -160,16 +163,16 @@ export function SecaoLeituraEFoco() {
       <ToggleRow
         id="a11y-colorblind"
         icon={Palette}
-        titulo="Modo para daltonismo"
-        descricao="Troca vermelho e verde por laranja e azul, põe um símbolo em erros e avisos e sublinha os links do conteúdo."
+        titulo={t("acessibilidade.secaoLeituraEFoco.modoParaDaltonismo")}
+        descricao={t("acessibilidade.secaoLeituraEFoco.trocaVermelhoEVerdePorLaranjaE")}
         chave="colorBlind"
       />
 
       <ToggleRow
         id="a11y-custom-colors"
         icon={Palette}
-        titulo="Cores personalizadas"
-        descricao="Escolha as cores de texto, fundo, links e do contorno de foco. Mostramos o contraste de cada par."
+        titulo={t("acessibilidade.secaoLeituraEFoco.coresPersonalizadas")}
+        descricao={t("acessibilidade.secaoLeituraEFoco.escolhaAsCoresDeTextoFundo")}
         chave="customColors"
       />
       {preferencias.customColors && <CoresPersonalizadas />}
@@ -178,6 +181,7 @@ export function SecaoLeituraEFoco() {
 }
 
 function CoresPersonalizadas() {
+  const { t } = useIdioma();
   const { preferencias, definir } = useAcessibilidade();
   const todasValidas = CORES.every(({ chave }) => ehCorHex(preferencias[chave]));
 
@@ -194,7 +198,7 @@ function CoresPersonalizadas() {
               className="size-11 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1"
             />
             <label htmlFor={id} className="min-w-0 text-sm font-semibold">
-              {rotulo}
+              {t(rotulo)}
               <span className="block text-xs font-normal uppercase text-muted-foreground">{preferencias[chave]}</span>
             </label>
           </div>
@@ -202,14 +206,14 @@ function CoresPersonalizadas() {
       </div>
 
       {todasValidas ? (
-        <ul aria-label="Contraste das cores escolhidas" className="space-y-1.5 text-sm">
+        <ul aria-label={t("acessibilidade.secaoLeituraEFoco.contrasteDasCoresEscolhidas")} className="space-y-1.5 text-sm">
           {pares(preferencias).map(({ id, rotulo, frente, fundo, minimo }) => {
             const { razao, nivel } = avaliarContraste(frente, fundo, minimo);
             const ok = nivel !== "insuficiente";
             return (
               <li key={id} className="flex flex-wrap items-center gap-x-2">
                 <span aria-hidden="true">{ok ? "✓" : "✕"}</span>
-                <span className="font-medium">{rotulo}:</span>
+                <span className="font-medium">{t(rotulo)}:</span>
                 <span className="tabular-nums">{formatarRazao(razao)}</span>
                 <span className={ok ? "text-muted-foreground" : "font-semibold text-destructive"}>
                   {ok
@@ -222,7 +226,7 @@ function CoresPersonalizadas() {
         </ul>
       ) : (
         <p role="alert" className="text-sm font-semibold text-destructive">
-          Alguma cor está inválida. As cores personalizadas ficam desligadas até todas serem válidas.
+          {t("acessibilidade.secaoLeituraEFoco.algumaCorEstaInvalidaAsCores")}
         </p>
       )}
     </div>

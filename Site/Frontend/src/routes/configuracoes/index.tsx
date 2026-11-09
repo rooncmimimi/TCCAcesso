@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   UserCog,
 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Card, CardContent } from "@/components/ui/card";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
@@ -30,32 +31,33 @@ export const Route = createFileRoute("/configuracoes/")({
 const secoes = [
   {
     icon: UserCog,
-    titulo: "Conta",
-    itens: [{ label: "Meus dados e perfil", to: "/configuracoes/conta" }],
+    titulo: "configuracoes.index.conta",
+    itens: [{ label: "configuracoes.index.meusDadosEPerfil", to: "/configuracoes/conta" }],
   },
   {
     icon: Bell,
-    titulo: "Notificações",
-    itens: [{ label: "Preferências de notificação", to: "/configuracoes/notificacoes" }],
+    titulo: "cabecalho.notificacoes",
+    itens: [{ label: "configuracoes.index.preferenciasDeNotificacao", to: "/configuracoes/notificacoes" }],
   },
   {
     icon: ShieldCheck,
-    titulo: "Privacidade e Segurança",
+    titulo: "rodape.privacidadeSeguranca",
     itens: [
-      { label: "Visibilidade do perfil e mensagens", to: "/configuracoes/privacidade" },
-      { label: "Usuários bloqueados", to: "/configuracoes/bloqueados" },
-      { label: "Alterar senha", to: "/configuracoes/senha" },
-      { label: "Sessões e contas conectadas", to: "/configuracoes/seguranca" },
+      { label: "configuracoes.index.visibilidadeDoPerfilEMensagens", to: "/configuracoes/privacidade" },
+      { label: "configuracoes.index.usuariosBloqueados", to: "/configuracoes/bloqueados" },
+      { label: "configuracoes.index.alterarSenha", to: "/configuracoes/senha" },
+      { label: "configuracoes.index.sessoesEContasConectadas", to: "/configuracoes/seguranca" },
     ],
   },
 ] as const;
 
 function Configuracoes() {
+  const { t } = useIdioma();
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Configurações</h1>
+      <h1 className="text-3xl font-extrabold">{t("cabecalho.configuracoes")}</h1>
       <p className="mt-2 text-muted-foreground">
-        Tudo o que você precisa para deixar o ACESSO do seu jeito.
+        {t("configuracoes.index.tudoOQueVocePrecisaParaDeixarO")}
       </p>
 
       <Card className="mt-6 border-primary/30 bg-primary-soft shadow-none">
@@ -67,10 +69,9 @@ function Configuracoes() {
             <Accessibility className="size-5" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-lg font-bold text-primary">Acessibilidade e aparência</h2>
+            <h2 className="text-lg font-bold text-primary">{t("configuracoes.index.acessibilidadeEAparencia")}</h2>
             <p className="text-sm text-primary/80">
-              Contraste, tema claro/escuro, fonte, espaçamentos, voz, Libras e navegação por teclado — com
-              pré-visualização em tempo real.
+              {t("configuracoes.index.contrasteTemaClaroEscuroFonte")}
             </p>
           </div>
           <Link
@@ -87,7 +88,7 @@ function Configuracoes() {
           <Card key={s.titulo} className="shadow-none">
             <CardContent className="p-5">
               <h2 className="flex items-center gap-2 text-base font-bold">
-                <s.icon className="size-5 shrink-0 text-primary" aria-hidden="true" /> {s.titulo}
+                <s.icon className="size-5 shrink-0 text-primary" aria-hidden="true" /> {t(s.titulo)}
               </h2>
               <ul className="mt-3 space-y-1">
                 {s.itens.map((i) => (
@@ -96,7 +97,7 @@ function Configuracoes() {
                       to={i.to}
                       className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-2.5 text-left text-sm font-medium hover:bg-secondary"
                     >
-                      <span className="min-w-0 truncate">{i.label}</span>
+                      <span className="min-w-0 truncate">{t(i.label)}</span>
                       <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                     </Link>
                   </li>
@@ -109,10 +110,10 @@ function Configuracoes() {
         <Card className="shadow-none">
           <CardContent className="p-5">
             <h2 className="flex items-center gap-2 text-base font-bold">
-              <HelpCircle className="size-5 shrink-0 text-primary" aria-hidden="true" /> Ajuda
+              <HelpCircle className="size-5 shrink-0 text-primary" aria-hidden="true" /> {t("configuracoes.index.ajuda")}
             </h2>
             <Link to="/fale-conosco" className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline">
-              Falar com a equipe do ACESSO
+              {t("configuracoes.index.falarComAEquipeDoAcesso")}
             </Link>
           </CardContent>
         </Card>

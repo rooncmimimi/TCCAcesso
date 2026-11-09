@@ -10,6 +10,7 @@ import { useHistoricoInstrucoes } from "@/hooks/useHistoricoInstrucoes";
 import { explicacaoDaPagina } from "@/dados/explicacoesPaginas";
 import { GLOSSARIO, type TermoDoGlossario } from "@/dados/glossario";
 import { frasesDeOndeEstou, type OndeEstou } from "@/lib/ondeEstou";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** O que foi lido da página ANTES de abrir o diálogo (o Radix esconde o resto da página do DOM acessível). */
 export type FotoDaPagina = {
@@ -20,15 +21,16 @@ export type FotoDaPagina = {
 };
 
 export function PainelOndeEstou({ foto }: { foto: FotoDaPagina }) {
+  const { t } = useIdioma();
   const frases = frasesDeOndeEstou(foto.onde);
 
   if (frases.length === 0) {
-    return <p className="text-sm text-muted-foreground">Não consegui identificar a página. Use Explique esta página para uma descrição geral.</p>;
+    return <p className="text-sm text-muted-foreground">{t("acessibilidade.paineisDeAjuda.naoConseguiIdentificarAPagina")}</p>;
   }
 
   return (
     <div className="space-y-3">
-      <TextoOuvivel rotulo="Ouvir onde você está">
+      <TextoOuvivel rotulo={t("acessibilidade.paineisDeAjuda.ouvirOndeVoceEsta")}>
         <ul className="space-y-1.5 text-sm">
           {frases.map((frase) => (
             <li key={frase}>{frase}</li>
@@ -41,6 +43,7 @@ export function PainelOndeEstou({ foto }: { foto: FotoDaPagina }) {
 }
 
 export function PainelExplicaPagina({ foto }: { foto: FotoDaPagina }) {
+  const { t } = useIdioma();
   const explicacao = explicacaoDaPagina(foto.caminho);
   const nome = explicacao?.nome ?? foto.onde.pagina ?? "esta página";
   // Sem uma explicação escrita para a rota, só diz o nome: não supõe o que a página faz.
@@ -50,11 +53,11 @@ export function PainelExplicaPagina({ foto }: { foto: FotoDaPagina }) {
 
   return (
     <div className="space-y-3">
-      <TextoOuvivel rotulo="Ouvir a explicação da página">
+      <TextoOuvivel rotulo={t("acessibilidade.paineisDeAjuda.ouvirAExplicacaoDaPagina")}>
         <p className="text-sm">{texto}</p>
         {passos && (
           <p className="mt-2 text-sm">
-            <span className="font-semibold">O que fazer aqui: </span>
+            <span className="font-semibold">{t("acessibilidade.paineisDeAjuda.oQueFazerAqui")} </span>
             {passos}
           </p>
         )}
@@ -82,6 +85,7 @@ function Termo({ termo }: { termo: TermoDoGlossario }) {
 }
 
 export function PainelGlossario({ foto }: { foto: FotoDaPagina }) {
+  const { t } = useIdioma();
   const [busca, setBusca] = useState("");
 
   const { daPagina, filtrados } = useMemo(() => {
@@ -100,15 +104,15 @@ export function PainelGlossario({ foto }: { foto: FotoDaPagina }) {
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="glossario-busca" className="text-sm font-semibold">
-          Buscar um termo
+          {t("acessibilidade.paineisDeAjuda.buscarUmTermo")}
         </Label>
-        <Input id="glossario-busca" type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Por exemplo: CLT" />
+        <Input id="glossario-busca" type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={t("acessibilidade.paineisDeAjuda.porExemploClt")} />
       </div>
 
       {daPagina.length > 0 && (
         <section aria-labelledby="glossario-da-pagina" className="space-y-2">
           <h3 id="glossario-da-pagina" className="text-sm font-bold">
-            Termos que aparecem nesta página
+            {t("acessibilidade.paineisDeAjuda.termosQueAparecemNestaPagina")}
           </h3>
           <ul className="space-y-2">
             {daPagina.map((t) => (
@@ -139,6 +143,7 @@ export function PainelGlossario({ foto }: { foto: FotoDaPagina }) {
 }
 
 export function PainelHistorico() {
+  const { t } = useIdioma();
   const { itens, remover, limpar } = useHistoricoInstrucoes();
   const [confirmando, setConfirmando] = useState(false);
 
@@ -152,7 +157,7 @@ export function PainelHistorico() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">Fica só neste navegador. Você pode apagar um item ou tudo quando quiser.</p>
+      <p className="text-xs text-muted-foreground">{t("acessibilidade.paineisDeAjuda.ficaSoNesteNavegadorVocePode")}</p>
       <ul className="space-y-2">
         {itens.map((item) => (
           <li key={item.id} className="rounded-lg border border-border p-3">
@@ -175,8 +180,8 @@ export function PainelHistorico() {
       </ul>
 
       {confirmando ? (
-        <div role="group" aria-label="Confirmar apagar o histórico" className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold">Apagar tudo?</span>
+        <div role="group" aria-label={t("acessibilidade.paineisDeAjuda.confirmarApagarOHistorico")} className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold">{t("acessibilidade.paineisDeAjuda.apagarTudo")}</span>
           <Button
             type="button"
             size="sm"
@@ -195,7 +200,7 @@ export function PainelHistorico() {
         </div>
       ) : (
         <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setConfirmando(true)}>
-          Apagar todo o histórico
+          {t("acessibilidade.paineisDeAjuda.apagarTodoOHistorico")}
         </Button>
       )}
     </div>

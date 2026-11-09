@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAtualizarDescricaoAnexo } from "@/components/feed/hooks";
 import { imagensSemDescricao, type ImagemParaRevisar } from "@/lib/imagensSemDescricao";
 import { postagensService } from "@/services/postagens.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Revisão de texto alternativo: lista as imagens que a própria pessoa publicou SEM descrição, para
@@ -14,6 +15,7 @@ import { postagensService } from "@/services/postagens.service";
  * escrito por ela e nenhuma IA é chamada aqui: a descrição é sempre a que a pessoa digita.
  */
 export function RevisaoDeTextoAlternativo({ usuarioId }: { usuarioId: string }) {
+  const { t } = useIdioma();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["postagens", "revisao-alt", usuarioId],
     queryFn: () => postagensService.listar({ usuarioId, limit: 100 }),
@@ -24,24 +26,24 @@ export function RevisaoDeTextoAlternativo({ usuarioId }: { usuarioId: string }) 
   return (
     <section aria-labelledby="revisao-alt-titulo" className="mt-8 space-y-3 rounded-xl border border-border p-4">
       <h2 id="revisao-alt-titulo" className="text-xl font-bold">
-        Descrever minhas imagens
+        {t("acessibilidade.revisaoDeTextoAlternativo.descreverMinhasImagens")}
       </h2>
-      <p className="text-sm text-muted-foreground">Uma imagem sem descrição não pode ser entendida por quem usa leitor de tela. Aqui estão as imagens das suas publicações que ainda não têm descrição.</p>
+      <p className="text-sm text-muted-foreground">{t("acessibilidade.revisaoDeTextoAlternativo.umaImagemSemDescricaoNaoPode")}</p>
 
       {isLoading ? (
         <p role="status" className="text-sm text-muted-foreground">
-          Procurando imagens sem descrição…
+          {t("acessibilidade.revisaoDeTextoAlternativo.procurandoImagensSemDescricao")}
         </p>
       ) : isError ? (
         <div role="alert" className="space-y-2 text-sm text-destructive">
-          <p>Não foi possível carregar suas publicações.</p>
+          <p>{t("acessibilidade.revisaoDeTextoAlternativo.naoFoiPossivelCarregarSuas")}</p>
           <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => refetch()}>
-            Tentar novamente
+            {t("raiz.tentarNovamente")}
           </Button>
         </div>
       ) : pendentes.length === 0 ? (
         <p role="status" className="text-sm">
-          Todas as imagens das suas publicações já têm descrição.
+          {t("acessibilidade.revisaoDeTextoAlternativo.todasAsImagensDasSuas")}
         </p>
       ) : (
         <>
@@ -62,6 +64,7 @@ export function RevisaoDeTextoAlternativo({ usuarioId }: { usuarioId: string }) 
 }
 
 function ItemParaDescrever({ item }: { item: ImagemParaRevisar }) {
+  const { t } = useIdioma();
   const id = useId();
   const [texto, setTexto] = useState("");
   const salvar = useAtualizarDescricaoAnexo();
@@ -73,9 +76,9 @@ function ItemParaDescrever({ item }: { item: ImagemParaRevisar }) {
       <div className="min-w-0 flex-1 space-y-2">
         <p className="text-xs text-muted-foreground">Publicação: {item.trechoDaPublicacao || "(sem texto)"}</p>
         <Label htmlFor={id} className="text-sm">
-          Descreva esta imagem
+          {t("acessibilidade.revisaoDeTextoAlternativo.descrevaEstaImagem")}
         </Label>
-        <Input id={id} value={texto} maxLength={500} onChange={(e) => setTexto(e.target.value)} placeholder="Ex.: Rampa de acesso na entrada do prédio" />
+        <Input id={id} value={texto} maxLength={500} onChange={(e) => setTexto(e.target.value)} placeholder={t("acessibilidade.revisaoDeTextoAlternativo.exRampaDeAcessoNaEntradaDo")} />
         <Button type="button" className="min-h-11" disabled={!pode} onClick={() => salvar.mutate({ postagemId: item.postagemId, anexoId: item.anexo.id, descricao: texto })}>
           {salvar.isPending ? "Salvando…" : "Salvar descrição"}
         </Button>

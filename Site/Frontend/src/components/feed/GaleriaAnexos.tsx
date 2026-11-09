@@ -8,6 +8,7 @@ import { CampoDescricaoImagem } from "./CampoDescricaoImagem";
 import { LightboxMidia } from "./LightboxMidia";
 import { useAtualizarDescricaoAnexo } from "./hooks";
 import type { AnexoPostagem } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const MAX_DESCRICAO = 500;
 
@@ -25,6 +26,7 @@ function DescricaoAnexo({
   postagemId: string;
   editavel: boolean;
 }) {
+  const { t } = useIdioma();
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState(anexo.descricao ?? "");
   const atualizar = useAtualizarDescricaoAnexo();
@@ -38,14 +40,14 @@ function DescricaoAnexo({
             value={rascunho}
             onChange={setRascunho}
             obterImagem={() => fetch(urlArquivo(anexo.url) ?? "").then((resposta) => resposta.blob())}
-            rotulo="Descrição do anexo"
+            rotulo={t("feed.galeriaAnexos.descricaoDoAnexo")}
           />
         ) : (
           <Input
             value={rascunho}
             maxLength={MAX_DESCRICAO}
             autoFocus
-            placeholder="Descreva o que aparece para pessoas que utilizam leitores de tela"
+            placeholder={t("feed.galeriaAnexos.descrevaOQueApareceParaPessoas")}
             onChange={(e) => setRascunho(e.target.value)}
             className="h-8 text-xs"
             aria-label={`Descrição acessível do anexo ${anexo.nomeOriginal ?? ""}`}
@@ -71,7 +73,7 @@ function DescricaoAnexo({
             variant="ghost"
             size="sm"
             className="h-8 shrink-0 gap-1 px-2 text-xs"
-            aria-label="Cancelar edição da descrição"
+            aria-label={t("feed.galeriaAnexos.cancelarEdicaoDaDescricao")}
             onClick={() => {
               setRascunho(anexo.descricao ?? "");
               setEditando(false);
@@ -120,6 +122,7 @@ export function GaleriaAnexos({
   postagemId?: string;
   editavel?: boolean;
 }) {
+  const { t } = useIdioma();
   const [lightbox, setLightbox] = useState<{ itens: AnexoPostagem[]; indice: number } | null>(null);
   // Elemento que abriu o lightbox, para onde o foco volta ao fechar. O retorno é feito
   // explicitamente (`onCloseAutoFocus`), porque a devolução automática de foco do Radix não
@@ -144,7 +147,7 @@ export function GaleriaAnexos({
       {imagens.length > 0 && (
         <ul
           className={`grid gap-2 ${imagens.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
-          aria-label="Imagens anexadas à publicação"
+          aria-label={t("feed.galeriaAnexos.imagensAnexadasAPublicacao")}
         >
           {imagens.map((imagem) => (
             <li key={imagem.id}>
@@ -170,7 +173,7 @@ export function GaleriaAnexos({
       )}
 
       {videos.length > 0 && (
-        <ul className="space-y-2" aria-label="Vídeos anexados à publicação">
+        <ul className="space-y-2" aria-label={t("feed.galeriaAnexos.videosAnexadosAPublicacao")}>
           {videos.map((video) => (
             <li key={video.id}>
               <div className="relative overflow-hidden rounded-xl border border-border bg-black">
@@ -181,7 +184,7 @@ export function GaleriaAnexos({
                   aria-label={video.descricao || "Vídeo anexado à publicação, sem descrição fornecida pelo autor"}
                   className="max-h-96 w-full"
                 >
-                  Seu navegador não suporta a reprodução deste vídeo.
+                  {t("feed.galeriaAnexos.seuNavegadorNaoSuportaA")}
                 </video>
                 <Button
                   type="button"
@@ -203,7 +206,7 @@ export function GaleriaAnexos({
       )}
 
       {documentos.length > 0 && (
-        <ul className="space-y-2" aria-label="Documentos anexados à publicação">
+        <ul className="space-y-2" aria-label={t("feed.galeriaAnexos.documentosAnexadosAPublicacao")}>
           {documentos.map((documento) => (
             <li key={documento.id}>
               <a

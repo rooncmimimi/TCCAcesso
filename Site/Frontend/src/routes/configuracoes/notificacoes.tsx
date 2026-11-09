@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
 import notificacoesService from "@/services/notificacoes.service";
 import type { PreferenciasNotificacao } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/configuracoes/notificacoes")({
   head: () => ({
@@ -31,22 +32,23 @@ const CHAVE = ["notificacoes", "preferencias"] as const;
 const ITENS: { chave: keyof PreferenciasNotificacao; titulo: string; descricao: string }[] = [
   {
     chave: "vagasCandidaturas",
-    titulo: "Vagas e candidaturas",
-    descricao: "Novas candidaturas recebidas e atualizações de status das suas candidaturas.",
+    titulo: "configuracoes.notificacoes.vagasECandidaturas",
+    descricao: "configuracoes.notificacoes.novasCandidaturasRecebidasE",
   },
   {
     chave: "mensagens",
-    titulo: "Mensagens",
-    descricao: "Avisos de novas mensagens no chat.",
+    titulo: "cabecalho.mensagens",
+    descricao: "configuracoes.notificacoes.avisosDeNovasMensagensNoChat",
   },
   {
     chave: "publicacoesComentarios",
-    titulo: "Publicações e comentários",
-    descricao: "Curtidas, comentários e compartilhamentos nas suas publicações.",
+    titulo: "configuracoes.notificacoes.publicacoesEComentarios",
+    descricao: "configuracoes.notificacoes.curtidasComentariosE",
   },
 ];
 
 function PreferenciasNotificacaoPagina() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
 
   const { data: preferencias, isLoading, isError, refetch } = useQuery({
@@ -84,10 +86,9 @@ function PreferenciasNotificacaoPagina() {
           <Bell className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Notificações</h1>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{t("cabecalho.notificacoes")}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Escolha quais notificações você quer receber. Avisos importantes da sua conta continuam sendo
-            enviados mesmo com tudo desligado.
+            {t("configuracoes.notificacoes.escolhaQuaisNotificacoesVoce")}
           </p>
         </div>
       </div>
@@ -100,9 +101,9 @@ function PreferenciasNotificacaoPagina() {
             </div>
           ) : isError ? (
             <div role="alert" className="space-y-2 p-5 text-sm text-destructive">
-              <p>Não foi possível carregar suas preferências.</p>
+              <p>{t("configuracoes.notificacoes.naoFoiPossivelCarregarSuas")}</p>
               <button type="button" className="font-semibold underline" onClick={() => refetch()}>
-                Tentar novamente
+                {t("raiz.tentarNovamente")}
               </button>
             </div>
           ) : (

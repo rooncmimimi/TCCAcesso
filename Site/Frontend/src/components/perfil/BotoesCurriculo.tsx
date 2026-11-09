@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { perfilService } from "@/services/perfil.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Botões "Visualizar currículo" e "Baixar currículo", usados no próprio perfil, no perfil de outra
@@ -16,6 +17,7 @@ import { extrairMensagemErro } from "@/services/api";
  * backend reautoriza cada chamada.
  */
 export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
+  const { t } = useIdioma();
   const [visualizando, setVisualizando] = useState(false);
   const [baixando, setBaixando] = useState(false);
 
@@ -76,7 +78,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
         className="min-h-9 gap-1.5"
         disabled={visualizando}
         onClick={visualizar}
-        aria-label="Visualizar currículo"
+        aria-label={t("perfil.botoesCurriculo.visualizarCurriculo")}
       >
         {visualizando ? (
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -92,7 +94,7 @@ export function BotoesCurriculo({ candidatoId }: { candidatoId: string }) {
         className="min-h-9 gap-1.5"
         disabled={baixando}
         onClick={baixar}
-        aria-label="Baixar currículo"
+        aria-label={t("perfil.botoesCurriculo.baixarCurriculo")}
       >
         {baixando ? (
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />

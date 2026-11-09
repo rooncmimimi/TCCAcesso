@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -77,13 +78,14 @@ const TIPO_ROTULO: Record<EntidadeDenunciaTipo, string> = {
   postagem: "Postagem",
   comentario: "Comentário",
   usuario: "Usuário",
-  mensagem: "Mensagem",
+  mensagem: "admin.denunciasTabela.mensagem",
   vaga: "Vaga",
   empresa: "Empresa",
 };
 
 /** Fila de denúncias, com filtros por status e tipo e link para o detalhe de cada uma. */
 export function DenunciasTabela() {
+  const { t } = useIdioma();
   const [pagina, setPagina] = useState(1);
   const [status, setStatus] = useState<(typeof STATUS_OPCOES)[number]>("todos");
   const [tipo, setTipo] = useState<(typeof TIPO_OPCOES)[number]>("todos");
@@ -116,8 +118,8 @@ export function DenunciasTabela() {
               setPagina(1);
             }}
           >
-            <SelectTrigger aria-label="Filtrar por status">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger aria-label={t("admin.denunciasTabela.filtrarPorStatus")}>
+              <SelectValue placeholder={t("admin.denunciasTabela.status")} />
             </SelectTrigger>
             <SelectContent>
               {STATUS_OPCOES.map((item) => (
@@ -136,8 +138,8 @@ export function DenunciasTabela() {
               setPagina(1);
             }}
           >
-            <SelectTrigger aria-label="Filtrar por tipo de entidade">
-              <SelectValue placeholder="Tipo" />
+            <SelectTrigger aria-label={t("admin.denunciasTabela.filtrarPorTipoDeEntidade")}>
+              <SelectValue placeholder={t("admin.denunciasTabela.tipo")} />
             </SelectTrigger>
             <SelectContent>
               {TIPO_OPCOES.map((item) => (
@@ -156,11 +158,11 @@ export function DenunciasTabela() {
               setPagina(1);
             }}
           >
-            <SelectTrigger aria-label="Filtrar por motivo">
-              <SelectValue placeholder="Motivo" />
+            <SelectTrigger aria-label={t("admin.denunciasTabela.filtrarPorMotivo")}>
+              <SelectValue placeholder={t("admin.denunciasTabela.motivo")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos os motivos</SelectItem>
+              <SelectItem value="todos">{t("admin.denunciasTabela.todosOsMotivos")}</SelectItem>
               {MOTIVO_OPCOES.map((item) => (
                 <SelectItem key={item} value={item}>
                   {MOTIVO_ROTULO[item]}
@@ -177,8 +179,8 @@ export function DenunciasTabela() {
               setPagina(1);
             }}
           >
-            <SelectTrigger aria-label="Filtrar por responsável">
-              <SelectValue placeholder="Responsável" />
+            <SelectTrigger aria-label={t("admin.denunciasTabela.filtrarPorResponsavel")}>
+              <SelectValue placeholder={t("admin.denunciasTabela.responsavel")} />
             </SelectTrigger>
             <SelectContent>
               {ATRIBUICAO_OPCOES.map((item) => (
@@ -192,23 +194,23 @@ export function DenunciasTabela() {
       </div>
 
       {isLoading ? (
-        <ListaCarregando rotulo="Carregando as denúncias…" linhas={5} />
+        <ListaCarregando rotulo={t("admin.denunciasTabela.carregandoAsDenuncias")} linhas={5} />
       ) : isError ? (
-        <ListaComErro mensagem="Não foi possível carregar as denúncias." aoTentarDeNovo={() => refetch()} />
+        <ListaComErro mensagem={t("admin.denunciasTabela.naoFoiPossivelCarregarAs")} aoTentarDeNovo={() => refetch()} />
       ) : denuncias.length === 0 ? (
-        <ListaVazia icone={Flag} mensagem="Nenhuma denúncia encontrada com esses filtros." />
+        <ListaVazia icone={Flag} mensagem={t("admin.denunciasTabela.nenhumaDenunciaEncontradaCom")} />
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Motivo</TableHead>
-                <TableHead>Denunciante</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{t("admin.denunciasTabela.tipo")}</TableHead>
+                <TableHead>{t("admin.denunciasTabela.motivo")}</TableHead>
+                <TableHead>{t("admin.denunciasTabela.denunciante")}</TableHead>
+                <TableHead>{t("admin.denunciasTabela.responsavel")}</TableHead>
+                <TableHead>{t("admin.denunciasTabela.status")}</TableHead>
+                <TableHead>{t("admin.denunciasTabela.data")}</TableHead>
+                <TableHead className="text-right">{t("admin.denunciasTabela.acoes")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -218,7 +220,7 @@ export function DenunciasTabela() {
                   <TableCell>{MOTIVO_ROTULO[denuncia.motivo] ?? denuncia.motivo}</TableCell>
                   <TableCell className="max-w-40 truncate">{denuncia.denunciante?.nome ?? "Usuário removido"}</TableCell>
                   <TableCell className="max-w-40 truncate text-sm">
-                    {denuncia.administradorResponsavel?.nome ?? <span className="text-muted-foreground">Sem responsável</span>}
+                    {denuncia.administradorResponsavel?.nome ?? <span className="text-muted-foreground">{t("admin.denunciasTabela.semResponsavel")}</span>}
                   </TableCell>
                   <TableCell>
                     <StatusBadge tom={STATUS_TOM[denuncia.status]}>

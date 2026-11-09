@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { ComparadorDeVagasTela } from "@/components/vagas/ComparadorDeVagasTela";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/comparar")({
   head: () => ({
@@ -14,10 +15,11 @@ export const Route = createFileRoute("/comparar")({
 });
 
 function CompararPagina() {
+  const { t } = useIdioma();
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Comparar vagas</h1>
-      <p className="mt-2 text-muted-foreground">Veja até três vagas lado a lado e decida com as suas necessidades.</p>
+      <h1 className="text-3xl font-extrabold">{t("comparar.compararVagas")}</h1>
+      <p className="mt-2 text-muted-foreground">{t("comparar.vejaAteTresVagasLadoALadoE")}</p>
       <ComparadorDeVagasTela />
     </EstruturaApp>
   );

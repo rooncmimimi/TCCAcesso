@@ -12,6 +12,7 @@ import { BolhaMensagem } from "./BolhaMensagem";
 import { FrasesProntas } from "./FrasesProntas";
 import { DitadoParaCampo } from "@/components/acessibilidade/DitadoParaCampo";
 import { fotoParticipante, nomeParticipante, participanteOposto } from "./utils";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type JanelaConversaProps = {
   conversa: Conversa;
@@ -38,6 +39,7 @@ export function JanelaConversa({
   onEnviar,
   onDigitando,
 }: JanelaConversaProps) {
+  const { t } = useIdioma();
   const [texto, setTexto] = useState("");
   const fimRef = useRef<HTMLDivElement | null>(null);
   const contato = participanteOposto(conversa, usuarioId);
@@ -104,7 +106,7 @@ export function JanelaConversa({
 
         {!carregando && erro && (
           <Alert variant="destructive">
-            <AlertTitle>Não foi possível carregar as mensagens</AlertTitle>
+            <AlertTitle>{t("mensagens.janelaConversa.naoFoiPossivelCarregarAs")}</AlertTitle>
             <AlertDescription>{mensagemErro ?? "Tente novamente em instantes."}</AlertDescription>
           </Alert>
         )}
@@ -134,7 +136,7 @@ export function JanelaConversa({
         <FrasesProntas aoEscolher={(frase) => setTexto((atual) => (atual.trim() ? `${atual.trimEnd()} ${frase}` : frase))} />
         <form onSubmit={enviarMensagem} className="flex items-end gap-2 border-t border-border p-3">
           <label htmlFor="mensagem-texto" className="sr-only">
-            Escreva uma mensagem
+            {t("mensagens.janelaConversa.escrevaUmaMensagem")}
           </label>
           <Textarea
             id="mensagem-texto"
@@ -149,10 +151,10 @@ export function JanelaConversa({
                 enviarMensagem(e);
               }
             }}
-            placeholder="Escreva uma mensagem…"
+            placeholder={t("mensagens.janelaConversa.escrevaUmaMensagem2")}
             className="min-h-12 flex-1 resize-none"
           />
-          <Button type="submit" className="h-12 shrink-0" disabled={!texto.trim() || enviando} aria-label="Enviar mensagem">
+          <Button type="submit" className="h-12 shrink-0" disabled={!texto.trim() || enviando} aria-label={t("mensagens.janelaConversa.enviarMensagem")}>
             <Send aria-hidden="true" />
           </Button>
         </form>

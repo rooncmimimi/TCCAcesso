@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { dataHoraCurta, descreverDispositivo, tempoRelativo, type TipoDeDispositivo } from "@/lib/dispositivo";
 import { extrairMensagemErro } from "@/services/api";
 import { autenticacaoService } from "@/services/autenticacao.service";
@@ -48,6 +49,7 @@ function ordenar(sessoes: SessaoAtiva[]): SessaoAtiva[] {
  * elas, cai no `criadoEm`. Encerrar vale na hora: o dispositivo perde o acesso, e não só quando o login expira.
  */
 export function SecaoSessoes() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
 
   const { data: sessoes, isLoading, isError, refetch } = useQuery({
@@ -81,7 +83,7 @@ export function SecaoSessoes() {
   return (
     <Card className="shadow-none">
       <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
-        <CardTitle className="text-lg">Dispositivos e sessões</CardTitle>
+        <CardTitle className="text-lg">{t("configuracoes.secaoSessoes.dispositivosESessoes")}</CardTitle>
         {outrasSessoes.length > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -91,7 +93,7 @@ export function SecaoSessoes() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Encerrar as outras sessões?</AlertDialogTitle>
+                <AlertDialogTitle>{t("configuracoes.secaoSessoes.encerrarAsOutrasSessoes")}</AlertDialogTitle>
                 <AlertDialogDescription>
                   {outrasSessoes.length === 1
                     ? "O outro dispositivo conectado à sua conta perde o acesso agora e precisará entrar novamente."
@@ -100,8 +102,8 @@ export function SecaoSessoes() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => encerrarOutras.mutate()}>Encerrar as outras</AlertDialogAction>
+                <AlertDialogCancel>{t("post.cancelar")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => encerrarOutras.mutate()}>{t("configuracoes.secaoSessoes.encerrarAsOutras")}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -114,15 +116,15 @@ export function SecaoSessoes() {
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
-            <p>Não foi possível carregar suas sessões.</p>
+            <p>{t("configuracoes.secaoSessoes.naoFoiPossivelCarregarSuas")}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : ordenadas.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma sessão ativa encontrada.</p>
+          <p className="text-sm text-muted-foreground">{t("configuracoes.secaoSessoes.nenhumaSessaoAtivaEncontrada")}</p>
         ) : (
-          <ul aria-label="Dispositivos conectados à sua conta" className="space-y-2">
+          <ul aria-label={t("configuracoes.secaoSessoes.dispositivosConectadosASua")} className="space-y-2">
             {ordenadas.map((sessao) => {
               const dispositivo = descreverDispositivo(sessao.userAgent);
               const Icone = ICONES[dispositivo.tipo];
@@ -143,7 +145,7 @@ export function SecaoSessoes() {
                       {dispositivo.rotulo}
                       {sessao.atual && (
                         <Badge variant="secondary" className="font-medium">
-                          Esta sessão
+                          {t("configuracoes.secaoSessoes.estaSessao")}
                         </Badge>
                       )}
                     </div>

@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { extrairMensagemErro } from "@/services/api";
@@ -25,6 +26,7 @@ import { AvisoSemSenha } from "./AvisoSemSenha";
 
 /** Pausar/excluir conta: ambas destrutivas, ambas exigem senha atual e confirmação explícita. */
 export function SecaoContaPerigo() {
+  const { t } = useIdioma();
   const { sair, usuario } = useSessao();
   const navigate = useNavigate();
   const [abertoPausar, setAbertoPausar] = useState(false);
@@ -57,10 +59,10 @@ export function SecaoContaPerigo() {
     return (
       <Card className="border-destructive/30 shadow-none">
         <CardHeader>
-          <CardTitle className="text-lg text-destructive">Zona de risco</CardTitle>
+          <CardTitle className="text-lg text-destructive">{t("configuracoes.secaoContaPerigo.zonaDeRisco")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <AvisoSemSenha recurso="pausar ou excluir a conta" />
+          <AvisoSemSenha recurso={t("configuracoes.secaoContaPerigo.pausarOuExcluirAConta")} />
         </CardContent>
       </Card>
     );
@@ -69,14 +71,14 @@ export function SecaoContaPerigo() {
   return (
     <Card className="border-destructive/30 shadow-none">
       <CardHeader>
-        <CardTitle className="text-lg text-destructive">Zona de risco</CardTitle>
+        <CardTitle className="text-lg text-destructive">{t("configuracoes.secaoContaPerigo.zonaDeRisco")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
           <div>
-            <p className="font-semibold">Pausar conta</p>
+            <p className="font-semibold">{t("configuracoes.secaoContaPerigo.pausarConta")}</p>
             <p className="text-sm text-muted-foreground">
-              Seu perfil fica indisponível até você entrar novamente e reativar.
+              {t("configuracoes.secaoContaPerigo.seuPerfilFicaIndisponivelAte")}
             </p>
           </div>
           <AlertDialog
@@ -93,10 +95,9 @@ export function SecaoContaPerigo() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Pausar sua conta?</AlertDialogTitle>
+                <AlertDialogTitle>{t("configuracoes.secaoContaPerigo.pausarSuaConta")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Você será desconectado de todos os dispositivos. Para voltar, basta entrar novamente com seu
-                  e-mail e senha e confirmar a reativação. Digite sua senha atual para confirmar.
+                  {t("configuracoes.secaoContaPerigo.voceSeraDesconectadoDeTodosOs")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <form
@@ -107,18 +108,18 @@ export function SecaoContaPerigo() {
                 }}
               >
                 <Label htmlFor="senha-pausar" className="sr-only">
-                  Senha atual
+                  {t("configuracoes.secaoContaPerigo.senhaAtual")}
                 </Label>
                 <PasswordInput
                   id="senha-pausar"
                   autoComplete="current-password"
-                  placeholder="Senha atual"
+                  placeholder={t("configuracoes.secaoContaPerigo.senhaAtual")}
                   required
                   value={senhaPausar}
                   onChange={(evento) => setSenhaPausar(evento.target.value)}
                 />
                 <AlertDialogFooter className="pt-2">
-                  <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel type="button">{t("post.cancelar")}</AlertDialogCancel>
                   <Button type="submit" disabled={pausar.isPending || !senhaPausar} className="min-h-11 gap-2">
                     {pausar.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                     Pausar conta
@@ -131,10 +132,9 @@ export function SecaoContaPerigo() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 p-4">
           <div>
-            <p className="font-semibold text-destructive">Excluir conta</p>
+            <p className="font-semibold text-destructive">{t("configuracoes.secaoContaPerigo.excluirConta")}</p>
             <p className="text-sm text-muted-foreground">
-              Remove permanentemente seus dados, publicações, candidaturas, conversas e conexões. Não pode ser
-              desfeito.
+              {t("configuracoes.secaoContaPerigo.removePermanentementeSeusDados")}
             </p>
           </div>
           <AlertDialog
@@ -151,10 +151,9 @@ export function SecaoContaPerigo() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Excluir sua conta permanentemente?</AlertDialogTitle>
+                <AlertDialogTitle>{t("configuracoes.secaoContaPerigo.excluirSuaContaPermanentemente")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta ação é definitiva. Todos os seus dados — perfil, publicações, candidaturas, conversas e
-                  conexões — serão apagados e não poderão ser recuperados. Digite sua senha atual para confirmar.
+                  {t("configuracoes.secaoContaPerigo.estaAcaoEDefinitivaTodosOsSeus")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <form
@@ -165,18 +164,18 @@ export function SecaoContaPerigo() {
                 }}
               >
                 <Label htmlFor="senha-excluir" className="sr-only">
-                  Senha atual
+                  {t("configuracoes.secaoContaPerigo.senhaAtual")}
                 </Label>
                 <PasswordInput
                   id="senha-excluir"
                   autoComplete="current-password"
-                  placeholder="Senha atual"
+                  placeholder={t("configuracoes.secaoContaPerigo.senhaAtual")}
                   required
                   value={senhaExcluir}
                   onChange={(evento) => setSenhaExcluir(evento.target.value)}
                 />
                 <AlertDialogFooter className="pt-2">
-                  <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel type="button">{t("post.cancelar")}</AlertDialogCancel>
                   <Button
                     type="submit"
                     variant="destructive"

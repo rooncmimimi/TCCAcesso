@@ -15,6 +15,7 @@ import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
 import { PrazoDoCodigo } from "@/components/acessibilidade/PrazoDoCodigo";
 import { lerVerificacao, limparVerificacao, renovarVerificacao, segundosParaReenviar } from "@/lib/verificacaoDispositivo";
 import segurancaService, { codigoDoErroSeguranca, desafioDeDispositivoVenceu, mensagemDeErroSeguranca, segundosDeEspera } from "@/services/seguranca.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Passo 2 do login num aparelho que o servidor ainda não reconhece: o código de 6 números que chegou por e-mail.
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/verificacao-de-dispositivo")({
 });
 
 function VerificacaoDeDispositivo() {
+  const { t } = useIdioma();
   const { iniciarSessao } = useSessao();
   const navigate = useNavigate();
   const [verificacao, setVerificacao] = useState(() => lerVerificacao());
@@ -177,13 +179,13 @@ function VerificacaoDeDispositivo() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
-        <Link to="/" aria-label="Voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t("verificacao-de-dispositivo.voltarParaAPaginaInicial")} className="inline-flex">
           <Logo />
         </Link>
-        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label="Configurações de acessibilidade">
+        <Button asChild variant="ghost" className="min-h-11 gap-1.5" aria-label={t("cabecalho.configAcessibilidade")}>
           <Link to="/configuracoes/acessibilidade">
             <Accessibility aria-hidden="true" />
-            <span className="hidden sm:inline">Acessibilidade</span>
+            <span className="hidden sm:inline">{t("rodape.acessibilidade")}</span>
           </Link>
         </Button>
       </div>
@@ -193,13 +195,13 @@ function VerificacaoDeDispositivo() {
           {contaPausada ? (
             <div className="space-y-4" role="status">
               <h1 ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-                Sua conta está pausada
+                {t("login.contaPausada")}
               </h1>
               <p className="text-sm text-muted-foreground">
-                O código estava certo, mas para reativar a conta é preciso entrar de novo e confirmar a reativação.
+                {t("verificacao-de-dispositivo.oCodigoEstavaCertoMasPara")}
               </p>
               <Button asChild className="min-h-12 w-full text-base">
-                <Link to="/entrar">Voltar para o login</Link>
+                <Link to="/entrar">{t("verificacao-de-dispositivo.voltarParaOLogin")}</Link>
               </Button>
             </div>
           ) : (
@@ -210,7 +212,7 @@ function VerificacaoDeDispositivo() {
                 </span>
                 <div>
                   <h1 id="titulo-dispositivo" ref={tituloRef} tabIndex={-1} className="text-2xl font-extrabold outline-none">
-                    Confirme este dispositivo
+                    {t("verificacao-de-dispositivo.confirmeEsteDispositivo")}
                   </h1>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Não reconhecemos este dispositivo. Enviamos um código de 6 números para <strong>{verificacao.emailMascarado}</strong>. Ele vale por 15 minutos.
@@ -222,14 +224,14 @@ function VerificacaoDeDispositivo() {
 
               <CampoCodigo
                 id="codigo-dispositivo"
-                rotulo="Código recebido por e-mail"
+                rotulo={t("verificacao-de-dispositivo.codigoRecebidoPorEMail")}
                 valor={codigo}
                 aoMudar={(valor) => {
                   setCodigo(valor);
                   setErro(undefined);
                 }}
                 erro={erro}
-                ajuda="Não chegou? Olhe também a caixa de spam."
+                ajuda={t("verificacao-de-dispositivo.naoChegouOlheTambemACaixaDe")}
                 desabilitado={enviando}
                 refInput={campoRef}
               />
@@ -238,10 +240,10 @@ function VerificacaoDeDispositivo() {
                 <Checkbox id="lembrar-dispositivo" checked={lembrar} onCheckedChange={(valor) => setLembrar(valor === true)} disabled={enviando} className="mt-1" aria-describedby="ajuda-lembrar" />
                 <div>
                   <Label htmlFor="lembrar-dispositivo" className="text-sm font-medium">
-                    Lembrar este dispositivo
+                    {t("verificacao-de-dispositivo.lembrarEsteDispositivo")}
                   </Label>
                   <p id="ajuda-lembrar" className="text-xs text-muted-foreground">
-                    Aqui não pediremos o código por e-mail de novo por um tempo. Marque só em um aparelho seu, nunca em um computador compartilhado.
+                    {t("verificacao-de-dispositivo.aquiNaoPediremosOCodigoPorE")}
                   </p>
                 </div>
               </div>

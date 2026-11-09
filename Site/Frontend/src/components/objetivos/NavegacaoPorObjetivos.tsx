@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { objetivosPara, type Objetivo } from "@/dados/objetivos";
 import { useSessao } from "@/hooks/useSessao";
 import { alternarPasso, contarFeitos, lerProgresso, proximoPasso, recomecar, type Progresso } from "@/lib/progressoDeObjetivos";
+import { useIdioma } from "@/hooks/useIdioma";
 
 function Passos({ objetivo, progresso, aoMudar }: { objetivo: Objetivo; progresso: Progresso; aoMudar: (p: Progresso) => void }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const feitos = progresso[objetivo.id] ?? [];
   const proximo = proximoPasso(objetivo, progresso);
@@ -42,7 +44,7 @@ function Passos({ objetivo, progresso, aoMudar }: { objetivo: Objetivo; progress
                     <span className="sr-only">Passo {i + 1}: </span>
                     {passo.titulo}
                     {passo.opcional ? <span className="ml-2 text-xs font-normal text-muted-foreground">(opcional)</span> : null}
-                    {ehProximo ? <span className="ml-2 text-xs font-bold text-primary">Próximo passo</span> : null}
+                    {ehProximo ? <span className="ml-2 text-xs font-bold text-primary">{t("objetivos.navegacaoPorObjetivos.proximoPasso")}</span> : null}
                     {feito ? <span className="sr-only"> (feito)</span> : null}
                   </Label>
                   <p className="text-sm text-muted-foreground">{passo.descricao}</p>
@@ -59,7 +61,7 @@ function Passos({ objetivo, progresso, aoMudar }: { objetivo: Objetivo; progress
       </ol>
 
       <Button type="button" variant="ghost" className="min-h-11" onClick={() => aoMudar(recomecar(progresso, objetivo.id))} disabled={feitos.length === 0}>
-        Recomeçar este objetivo
+        {t("objetivos.navegacaoPorObjetivos.recomecarEsteObjetivo")}
       </Button>
     </section>
   );
@@ -71,6 +73,7 @@ function Passos({ objetivo, progresso, aoMudar }: { objetivo: Objetivo; progress
  * mudam conforme quem está usando (candidato, empresa ou visitante).
  */
 export function NavegacaoPorObjetivos() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const objetivos = objetivosPara(usuario?.tipo ?? null);
   const [escolhido, setEscolhido] = useState<string | null>(null);
@@ -79,7 +82,7 @@ export function NavegacaoPorObjetivos() {
   if (objetivos.length === 0) {
     return (
       <p role="status" className="mt-6 text-sm text-muted-foreground">
-        Os caminhos guiados são para pessoas candidatas e empresas. Use o menu para navegar pelo painel de administração.
+        {t("objetivos.navegacaoPorObjetivos.osCaminhosGuiadosSaoPara")}
       </p>
     );
   }
@@ -108,7 +111,7 @@ export function NavegacaoPorObjetivos() {
         })}
       </ul>
 
-      {atual ? <Passos objetivo={atual} progresso={progresso} aoMudar={setProgresso} /> : <p className="mt-6 text-sm text-muted-foreground">Escolha um objetivo para ver os passos.</p>}
+      {atual ? <Passos objetivo={atual} progresso={progresso} aoMudar={setProgresso} /> : <p className="mt-6 text-sm text-muted-foreground">{t("objetivos.navegacaoPorObjetivos.escolhaUmObjetivoParaVerOs")}</p>}
     </div>
   );
 }

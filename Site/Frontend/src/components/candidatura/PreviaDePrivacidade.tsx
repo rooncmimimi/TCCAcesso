@@ -1,5 +1,6 @@
 import { CopiaCompartilhadaLista } from "@/components/candidatura/CopiaCompartilhada";
 import type { PreviaDaCandidatura } from "@/types/adaptacoes";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * "O que a empresa receberá?": a prévia, montada pelo servidor com a MESMA função que grava a cópia,
@@ -7,6 +8,7 @@ import type { PreviaDaCandidatura } from "@/types/adaptacoes";
  * e as adaptações autorizadas, e diz o que nunca vai.
  */
 export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura }) {
+  const { t } = useIdioma();
   const d = previa.dadosProfissionais;
   const local = [d.cidade, d.estado].filter(Boolean).join(" / ");
 
@@ -14,7 +16,7 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
     <div className="space-y-5">
       <section aria-labelledby="previa-profissionais" className="space-y-2">
         <h3 id="previa-profissionais" className="text-sm font-bold">
-          Dados profissionais
+          {t("candidatura.previaDePrivacidade.dadosProfissionais")}
         </h3>
         <ul className="list-disc space-y-1 pl-5 text-sm">
           <li>Nome: {d.nome ?? "não informado"}</li>
@@ -27,7 +29,7 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
 
       <section aria-labelledby="previa-curriculo" className="space-y-2">
         <h3 id="previa-curriculo" className="text-sm font-bold">
-          Currículo e perfil
+          {t("candidatura.previaDePrivacidade.curriculoEPerfil")}
         </h3>
         <ul className="list-disc space-y-1 pl-5 text-sm">
           <li>Currículo: {d.curriculo ?? "você ainda não enviou um currículo"}</li>
@@ -47,7 +49,7 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
 
       <section aria-labelledby="previa-nao" className="space-y-2">
         <h3 id="previa-nao" className="text-sm font-bold">
-          O que NÃO será compartilhado
+          {t("candidatura.previaDePrivacidade.oQueNaoSeraCompartilhado")}
         </h3>
         <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
           {previa.naoCompartilhado.map((item) => (

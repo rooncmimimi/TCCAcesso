@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ambienteService } from "@/services/ambiente.service";
 import type { FormularioDoAmbiente } from "@/lib/ambienteDaVagaForm";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type Props = {
   valor: FormularioDoAmbiente;
@@ -24,13 +25,14 @@ const NATIVO = "flex h-10 w-full rounded-md border border-input bg-transparent p
  * empresa não informou". A empresa só DECLARA o mapa físico: o selo "verificado" é da moderação.
  */
 export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
+  const { t } = useIdioma();
   const idBase = useId();
   const { data: catalogo, isError } = useQuery({ queryKey: ["vagas", "catalogo-acessibilidade"], queryFn: () => ambienteService.catalogo(), staleTime: 60 * 60 * 1000 });
 
   if (isError) {
     return (
       <p role="alert" className="text-sm text-destructive">
-        Não foi possível carregar as opções do ambiente de trabalho. Você pode publicar a vaga sem elas e preencher depois.
+        {t("vagas.secaoAmbienteDaVaga.naoFoiPossivelCarregarAsOpcoes")}
       </p>
     );
   }
@@ -38,17 +40,17 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
   if (!catalogo) {
     return (
       <p role="status" className="text-sm text-muted-foreground">
-        Carregando as opções do ambiente de trabalho…
+        {t("vagas.secaoAmbienteDaVaga.carregandoAsOpcoesDoAmbienteDe")}
       </p>
     );
   }
 
   return (
     <div className="space-y-6">
-      <p className="text-xs text-muted-foreground">Tudo aqui é opcional. O que você deixar em “Não informar” aparece para quem se candidata como “a empresa não informou”. Preencha só o que você sabe.</p>
+      <p className="text-xs text-muted-foreground">{t("vagas.secaoAmbienteDaVaga.tudoAquiEOpcionalOQueVoce")}</p>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-bold">O que a entrevista oferece</legend>
+        <legend className="text-sm font-bold">{t("vagas.secaoAmbienteDaVaga.oQueAEntrevistaOferece")}</legend>
         <ul className="grid gap-1 sm:grid-cols-2">
           {catalogo.entrevista.map((o) => (
             <li key={o.chave} className="flex items-center gap-3">
@@ -72,7 +74,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-bold">Como é o ambiente de trabalho (prévia sensorial)</legend>
+        <legend className="text-sm font-bold">{t("vagas.secaoAmbienteDaVaga.comoEOAmbienteDeTrabalhoPrevia")}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {catalogo.ambienteSensorial.map((c) => (
             <div key={c.chave} className="space-y-1">
@@ -85,7 +87,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
                 value={valor.sensorial[c.chave] ?? ""}
                 onChange={(e) => aoMudar({ ...valor, sensorial: { ...valor.sensorial, [c.chave]: e.target.value } })}
               >
-                <option value="">Não informar</option>
+                <option value="">{t("vagas.secaoAmbienteDaVaga.naoInformar")}</option>
                 {c.opcoes.map((o) => (
                   <option key={o.valor} value={o.valor}>
                     {o.rotulo}
@@ -99,13 +101,13 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
           <Label htmlFor={`${idBase}-rotina`} className="text-sm">
             Como é a rotina (opcional)
           </Label>
-          <Textarea id={`${idBase}-rotina`} rows={2} maxLength={500} value={valor.rotina} onChange={(e) => aoMudar({ ...valor, rotina: e.target.value })} placeholder="Ex.: das 9h às 15h, com pausa livre às 11h" />
+          <Textarea id={`${idBase}-rotina`} rows={2} maxLength={500} value={valor.rotina} onChange={(e) => aoMudar({ ...valor, rotina: e.target.value })} placeholder={t("vagas.secaoAmbienteDaVaga.exDas9hAs15hComPausaLivreAs11h")} />
         </div>
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-bold">Acessibilidade física do local</legend>
-        <p className="text-xs text-muted-foreground">Você declara; o selo “verificado” só a equipe do ACESSO dá. Se você mudar um item que já foi verificado, o selo é retirado e a equipe precisa conferir de novo.</p>
+        <legend className="text-sm font-bold">{t("vagas.secaoAmbienteDaVaga.acessibilidadeFisicaDoLocal")}</legend>
+        <p className="text-xs text-muted-foreground">{t("vagas.secaoAmbienteDaVaga.voceDeclaraOSeloVerificadoSoA")}</p>
         <ul className="space-y-3">
           {catalogo.itensFisicos.map((i) => {
             const item = valor.fisico[i.chave] ?? { situacao: "", detalhe: "" };
@@ -127,7 +129,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
                   value={item.situacao}
                   onChange={(e) => aoMudar({ ...valor, fisico: { ...valor.fisico, [i.chave]: { ...item, situacao: e.target.value } } })}
                 >
-                  <option value="">Não informar</option>
+                  <option value="">{t("vagas.secaoAmbienteDaVaga.naoInformar")}</option>
                   {catalogo.situacoesFisicas.map((s) => (
                     <option key={s.valor} value={s.valor}>
                       {s.rotulo}
@@ -138,7 +140,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
                   aria-label={`Detalhe sobre ${i.rotulo} (opcional)`}
                   maxLength={200}
                   disabled={!item.situacao}
-                  placeholder="Detalhe (opcional)"
+                  placeholder={t("vagas.secaoAmbienteDaVaga.detalheOpcional")}
                   value={item.detalhe}
                   onChange={(e) => aoMudar({ ...valor, fisico: { ...valor.fisico, [i.chave]: { ...item, detalhe: e.target.value } } })}
                 />

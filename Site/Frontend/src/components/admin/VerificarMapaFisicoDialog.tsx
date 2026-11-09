@@ -11,6 +11,7 @@ import { linhasDoMapa } from "@/lib/mapaFisicoAdmin";
 import { extrairMensagemErro } from "@/services/api";
 import { verificarAcessibilidadeFisica, type VagaAdmin } from "@/services/admin.service";
 import { ambienteService } from "@/services/ambiente.service";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const SITUACAO = { sim: "Sim", parcial: "Parcial", nao: "Não" } as const;
 
@@ -26,6 +27,7 @@ type Props = {
  * registro de auditoria e vale só para os itens escolhidos.
  */
 export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
+  const { t } = useIdioma();
   const idBase = useId();
   const queryClient = useQueryClient();
   const [escolhidos, setEscolhidos] = useState<string[]>([]);
@@ -62,7 +64,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
     <Dialog open={Boolean(vaga)} onOpenChange={(aberto) => (!aberto ? aoFechar() : undefined)}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Mapa de acessibilidade física</DialogTitle>
+          <DialogTitle>{t("admin.verificarMapaFisicoDialog.mapaDeAcessibilidadeFisica")}</DialogTitle>
           <DialogDescription>
             Vaga: {vaga?.titulo}. A empresa declarou os itens abaixo. Marque como “verificado” só o que a equipe do ACESSO conferiu de fato.
           </DialogDescription>
@@ -70,7 +72,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
 
         {isError ? (
           <p role="alert" className="text-sm text-destructive">
-            Não foi possível carregar a lista de itens. Feche e tente de novo.
+            {t("admin.verificarMapaFisicoDialog.naoFoiPossivelCarregarAListaDe")}
           </p>
         ) : !catalogo ? (
           <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -78,11 +80,11 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
           </p>
         ) : linhas.length === 0 ? (
           <p role="status" className="text-sm">
-            A empresa não informou nenhum item do mapa de acessibilidade física. Não há o que verificar.
+            {t("admin.verificarMapaFisicoDialog.aEmpresaNaoInformouNenhumItem")}
           </p>
         ) : (
           <fieldset className="space-y-2">
-            <legend className="text-sm font-bold">Itens informados pela empresa</legend>
+            <legend className="text-sm font-bold">{t("admin.verificarMapaFisicoDialog.itensInformadosPelaEmpresa")}</legend>
             <ul className="space-y-1">
               {linhas.map((l) => (
                 <li key={l.chave} className="flex items-start gap-3 rounded-lg border border-border p-2">
@@ -96,7 +98,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
                         {l.verificadoEm ? ` em ${new Date(l.verificadoEm).toLocaleDateString("pt-BR")}` : ""}
                       </span>
                     ) : (
-                      <span className="mt-1 block text-xs text-muted-foreground">Declarado pela empresa (não verificado)</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">{t("admin.verificarMapaFisicoDialog.declaradoPelaEmpresaNao")}</span>
                     )}
                   </Label>
                 </li>
@@ -106,7 +108,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
             <div className="flex items-start gap-3 rounded-lg border-2 border-primary p-3">
               <Checkbox id={`${idBase}-conferi`} className="mt-1" checked={conferi} onCheckedChange={(v) => setConferi(v === true)} />
               <Label htmlFor={`${idBase}-conferi`} className="text-sm font-semibold leading-snug">
-                Conferi estes itens pessoalmente ou por fotos ou documento enviados pela empresa. Esta ação fica registrada no histórico da moderação.
+                {t("admin.verificarMapaFisicoDialog.conferiEstesItensPessoalmente")}
               </Label>
             </div>
           </fieldset>
@@ -119,7 +121,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
           {linhas.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" className="min-h-11" disabled={!podeDesfazer} onClick={() => mudar.mutate({ verificado: false })}>
-                Voltar a “declarado”
+                {t("admin.verificarMapaFisicoDialog.voltarADeclarado")}
               </Button>
               <Button type="button" className="min-h-11" disabled={!podeVerificar} onClick={() => mudar.mutate({ verificado: true })}>
                 {mudar.isPending ? "Salvando…" : "Marcar como verificado"}

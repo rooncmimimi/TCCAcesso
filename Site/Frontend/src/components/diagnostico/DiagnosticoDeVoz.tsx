@@ -11,6 +11,7 @@ import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
 import { suporteDestaque } from "@/lib/leituraDestacada";
 import { montarRelatorio, resumirVozes, testarEventosDePalavra, testarPausaNativa, type CriarEnunciado, type DadosDoRelatorio, type EnunciadoDeFala, type ResultadoDePalavras, type ResultadoDePausa, type SintetizadorDeFala, type VozDoAparelho } from "@/lib/diagnosticoDeVoz";
 import { RESUMO_POR_NIVEL, ROTULO_DO_NIVEL, explicarMarcacaoDasPalavras, explicarPausaEContinuar, piorNivel, type Explicacao, type Nivel } from "@/lib/explicacaoDoDiagnostico";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Como o ACESSO está marcando o texto agora, em palavras de todo dia. */
 const MODO_EM_PALAVRAS: Record<string, string> = {
@@ -71,6 +72,7 @@ function Pergunta({ legenda, nome, opcoes, valor, aoMudar }: { legenda: string; 
 }
 
 function CartaoDeResultado({ titulo, explicacao }: { titulo: string; explicacao: Explicacao }) {
+  const { t } = useIdioma();
   const Icone = ICONE_DO_NIVEL[explicacao.nivel];
 
   return (
@@ -84,7 +86,7 @@ function CartaoDeResultado({ titulo, explicacao }: { titulo: string; explicacao:
       </p>
       <p className="text-sm">{explicacao.significado}</p>
       <details className="text-xs text-muted-foreground">
-        <summary className="min-h-11 cursor-pointer py-2.5 font-semibold">Detalhes técnicos</summary>
+        <summary className="min-h-11 cursor-pointer py-2.5 font-semibold">{t("diagnostico.diagnosticoDeVoz.detalhesTecnicos")}</summary>
         <p>{explicacao.tecnico}</p>
       </details>
     </div>
@@ -97,6 +99,7 @@ function CartaoDeResultado({ titulo, explicacao }: { titulo: string; explicacao:
  * resultado em texto para copiar e enviar a quem acompanha o projeto. Nada é enviado por esta tela.
  */
 export function DiagnosticoDeVoz() {
+  const { t } = useIdioma();
   const idBase = useId();
   const { modo, lendo } = useLeituraDestacada();
   const [vozes, setVozes] = useState<VozDoAparelho[]>([]);
@@ -187,13 +190,13 @@ export function DiagnosticoDeVoz() {
   return (
     <div className="mt-6 space-y-8">
       <div className="rounded-xl border border-border p-4 text-sm">
-        <p className="font-semibold">Como funciona</p>
-        <p className="mt-1">Você ouve um trecho, vê se as palavras ficam marcadas e se Pausar e Continuar funcionam. Leva cerca de 1 minuto. Aumente o volume e fique em um lugar silencioso.</p>
+        <p className="font-semibold">{t("diagnostico.diagnosticoDeVoz.comoFunciona")}</p>
+        <p className="mt-1">{t("diagnostico.diagnosticoDeVoz.voceOuveUmTrechoVeSeAsPalavras")}</p>
       </div>
 
       {!sintetizador ? (
         <p role="alert" className="rounded-lg border-2 border-destructive/40 p-4 text-sm font-medium">
-          Este navegador não tem leitura em voz alta. Não há o que testar aqui. Experimente o Chrome, o Edge ou o Safari.
+          {t("diagnostico.diagnosticoDeVoz.esteNavegadorNaoTemLeituraEm")}
         </p>
       ) : null}
 
@@ -201,9 +204,9 @@ export function DiagnosticoDeVoz() {
         <h2 id={`${idBase}-e1`} className="text-xl font-bold">
           Etapa 1 de 3: ouça um trecho
         </h2>
-        <p className="text-sm text-muted-foreground">Aperte “Ouvir”. Enquanto a voz lê, a palavra que ela está dizendo deve ficar marcada.</p>
+        <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.aperteOuvirEnquantoAVozLeA")}</p>
 
-        <TextoOuvivel rotulo="Ouvir o texto de teste">
+        <TextoOuvivel rotulo={t("diagnostico.diagnosticoDeVoz.ouvirOTextoDeTeste")}>
           <p className="rounded-lg border border-border p-4 text-base">{TEXTO_DE_LEITURA}</p>
         </TextoOuvivel>
 
@@ -211,20 +214,20 @@ export function DiagnosticoDeVoz() {
           {lendo && modo ? `Agora, no ACESSO: ${MODO_EM_PALAVRAS[modo]}.` : ""}
         </p>
 
-        <Pergunta legenda="O que você viu enquanto a voz lia?" nome={`${idBase}-destaque`} opcoes={OPCOES_DESTAQUE} valor={destaque} aoMudar={setDestaque} />
+        <Pergunta legenda={t("diagnostico.diagnosticoDeVoz.oQueVoceViuEnquantoAVozLia")} nome={`${idBase}-destaque`} opcoes={OPCOES_DESTAQUE} valor={destaque} aoMudar={setDestaque} />
       </section>
 
       <section aria-labelledby={`${idBase}-e2`} className="space-y-4">
         <h2 id={`${idBase}-e2`} className="text-xl font-bold">
           Etapa 2 de 3: pause e continue
         </h2>
-        <p className="text-sm text-muted-foreground">Aperte “Ouvir” de novo. Quando aparecer embaixo da tela a barra com os botões, aperte “Pausar”, espere uns 5 segundos e aperte “Continuar”.</p>
+        <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.aperteOuvirDeNovoQuando")}</p>
 
-        <Pergunta legenda="O que aconteceu ao apertar Pausar?" nome={`${idBase}-pausa`} opcoes={OPCOES_PAUSA} valor={pausaObs} aoMudar={setPausaObs} />
-        <Pergunta legenda="O que aconteceu ao apertar Continuar?" nome={`${idBase}-continuar`} opcoes={OPCOES_CONTINUAR} valor={continuar} aoMudar={setContinuar} />
+        <Pergunta legenda={t("diagnostico.diagnosticoDeVoz.oQueAconteceuAoApertarPausar")} nome={`${idBase}-pausa`} opcoes={OPCOES_PAUSA} valor={pausaObs} aoMudar={setPausaObs} />
+        <Pergunta legenda={t("diagnostico.diagnosticoDeVoz.oQueAconteceuAoApertar")} nome={`${idBase}-continuar`} opcoes={OPCOES_CONTINUAR} valor={continuar} aoMudar={setContinuar} />
 
         <div className="space-y-1">
-          <Label htmlFor={`${idBase}-comentario`}>Quer contar mais alguma coisa? (opcional)</Label>
+          <Label htmlFor={`${idBase}-comentario`}>{t("diagnostico.diagnosticoDeVoz.querContarMaisAlgumaCoisa")}</Label>
           <Textarea id={`${idBase}-comentario`} rows={3} maxLength={500} value={comentario} onChange={(e) => setComentario(e.target.value)} />
         </div>
       </section>
@@ -233,7 +236,7 @@ export function DiagnosticoDeVoz() {
         <h2 id={`${idBase}-e3`} className="text-xl font-bold">
           Etapa 3 de 3 (opcional): teste automático
         </h2>
-        <p className="text-sm text-muted-foreground">Aqui o ACESSO testa sozinho a voz do seu aparelho. A voz fala duas frases curtas e depois o resultado aparece explicado. Leva uns 20 segundos.</p>
+        <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.aquiOAcessoTestaSozinhoAVozDo")}</p>
 
         <Button type="button" className="min-h-11 gap-2" disabled={!sintetizador || rodando !== null} onClick={() => void testarSozinho()}>
           <Play className="size-4" aria-hidden="true" /> {rodando ? "Testando…" : "Fazer o teste automático"}
@@ -248,24 +251,24 @@ export function DiagnosticoDeVoz() {
             <p role="status" className="text-lg font-bold">
               {RESUMO_POR_NIVEL[resumo]}
             </p>
-            {explicacaoDasPalavras ? <CartaoDeResultado titulo="Marcação das palavras" explicacao={explicacaoDasPalavras} /> : null}
-            {explicacaoDaPausa ? <CartaoDeResultado titulo="Pausar e continuar" explicacao={explicacaoDaPausa} /> : null}
+            {explicacaoDasPalavras ? <CartaoDeResultado titulo={t("diagnostico.diagnosticoDeVoz.marcacaoDasPalavras")} explicacao={explicacaoDasPalavras} /> : null}
+            {explicacaoDaPausa ? <CartaoDeResultado titulo={t("diagnostico.diagnosticoDeVoz.pausarEContinuar")} explicacao={explicacaoDaPausa} /> : null}
           </div>
         ) : null}
       </section>
 
       <section aria-labelledby={`${idBase}-enviar`} className="space-y-3">
         <h2 id={`${idBase}-enviar`} className="text-xl font-bold">
-          Enviar o resultado
+          {t("diagnostico.diagnosticoDeVoz.enviarOResultado")}
         </h2>
-        <p className="text-sm text-muted-foreground">Se você está ajudando a testar o projeto, copie o resultado e envie para quem acompanha. Nada é enviado por esta tela.</p>
+        <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.seVoceEstaAjudandoATestarO")}</p>
         <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={() => void copiar()}>
           <ClipboardCopy className="size-4" aria-hidden="true" /> Copiar resultado
         </Button>
         <details className="rounded-lg border border-border">
-          <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold">Ver o texto que será copiado</summary>
+          <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold">{t("diagnostico.diagnosticoDeVoz.verOTextoQueSeraCopiado")}</summary>
           <div className="border-t border-border p-3">
-            <Textarea readOnly rows={14} value={relatorio} aria-label="Resultado do teste de voz" className="font-mono text-xs" />
+            <Textarea readOnly rows={14} value={relatorio} aria-label={t("diagnostico.diagnosticoDeVoz.resultadoDoTesteDeVoz")} className="font-mono text-xs" />
           </div>
         </details>
       </section>
@@ -277,16 +280,16 @@ export function DiagnosticoDeVoz() {
             {resumoDasVozes.total === 0 ? "Nenhuma voz encontrada ainda. Se acabou de abrir a página, espere um instante." : `${resumoDasVozes.portugues} em português (${resumoDasVozes.locaisEmPortugues} instaladas no aparelho, ${resumoDasVozes.deRedeEmPortugues} que usam a internet).`}
           </p>
           <div className="space-y-1">
-            <Label htmlFor={`${idBase}-voz`}>Voz usada no teste automático</Label>
+            <Label htmlFor={`${idBase}-voz`}>{t("diagnostico.diagnosticoDeVoz.vozUsadaNoTesteAutomatico")}</Label>
             <select id={`${idBase}-voz`} className={NATIVO} value={escolhida} onChange={(e) => setEscolhida(e.target.value)}>
-              <option value="">A voz padrão do aparelho</option>
+              <option value="">{t("diagnostico.diagnosticoDeVoz.aVozPadraoDoAparelho")}</option>
               {vozes.map((v) => (
                 <option key={`${v.name}-${v.lang}`} value={v.name}>
                   {v.name} ({v.lang}, {v.localService ? "instalada" : "usa a internet"})
                 </option>
               ))}
             </select>
-            <p className="text-xs text-muted-foreground">Você não precisa mexer nisto. Troque só para comparar vozes. As que usam a internet (como as “Google” do Chrome) costumam não avisar em que palavra estão.</p>
+            <p className="text-xs text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.voceNaoPrecisaMexerNistoTroque")}</p>
           </div>
         </div>
       </details>

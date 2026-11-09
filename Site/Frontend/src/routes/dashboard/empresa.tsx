@@ -12,6 +12,7 @@ import { AvisoAprovacaoEmpresa } from "@/components/perfil/AvisoAprovacaoEmpresa
 import { dashboardService } from "@/services/dashboard.service";
 import { empresasService } from "@/services/empresas.service";
 import type { Vaga } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/dashboard/empresa")({
   head: () => ({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/dashboard/empresa")({
 });
 
 function PainelEmpresa() {
+  const { t } = useIdioma();
   const [vagaSelecionada, setVagaSelecionada] = useState<Vaga | null>(null);
 
   const {
@@ -67,7 +69,7 @@ function PainelEmpresa() {
     return (
       <EstruturaApp>
         <div role="alert" className="py-10 text-sm text-destructive">
-          Não foi possível carregar os dados da sua empresa. Tente novamente mais tarde.
+          {t("dashboard.empresa.naoFoiPossivelCarregarOsDados")}
         </div>
       </EstruturaApp>
     );
@@ -83,9 +85,9 @@ function PainelEmpresa() {
 
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Painel da empresa</h1>
+      <h1 className="text-3xl font-extrabold">{t("dashboard.empresa.painelDaEmpresa")}</h1>
       <p className="mt-2 text-muted-foreground">
-        Gerencie suas vagas publicadas e acompanhe as candidaturas recebidas.
+        {t("dashboard.empresa.gerencieSuasVagasPublicadasE")}
       </p>
 
       {isLoading ? (
@@ -94,18 +96,18 @@ function PainelEmpresa() {
         </div>
       ) : isError ? (
         <div role="alert" className="mt-8 space-y-2 text-sm text-destructive">
-          <p>Não foi possível carregar suas métricas.</p>
+          <p>{t("dashboard.empresa.naoFoiPossivelCarregarSuas")}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Tentar novamente
+            {t("raiz.tentarNovamente")}
           </Button>
         </div>
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricaCard titulo="Vagas publicadas" valor={data?.vagas ?? 0} icon={Briefcase} />
-            <MetricaCard titulo="Vagas abertas" valor={data?.vagasAbertas ?? 0} icon={ClipboardList} />
-            <MetricaCard titulo="Candidaturas recebidas" valor={data?.candidaturas ?? 0} icon={ClipboardList} />
-            <MetricaCard titulo="Seguidores" valor={data?.seguidores ?? 0} icon={Users} />
+            <MetricaCard titulo={t("dashboard.empresa.vagasPublicadas")} valor={data?.vagas ?? 0} icon={Briefcase} />
+            <MetricaCard titulo={t("dashboard.empresa.vagasAbertas")} valor={data?.vagasAbertas ?? 0} icon={ClipboardList} />
+            <MetricaCard titulo={t("dashboard.empresa.candidaturasRecebidas")} valor={data?.candidaturas ?? 0} icon={ClipboardList} />
+            <MetricaCard titulo={t("dashboard.empresa.seguidores")} valor={data?.seguidores ?? 0} icon={Users} />
           </div>
 
           {resumoTextual ? (
@@ -125,7 +127,7 @@ function PainelEmpresa() {
           <CandidaturasDaVaga vaga={vagaSelecionada} />
         ) : (
           <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            Selecione uma vaga para ver as candidaturas recebidas.
+            {t("dashboard.empresa.selecioneUmaVagaParaVerAs")}
           </div>
         )}
       </div>

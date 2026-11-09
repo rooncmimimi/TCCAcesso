@@ -3,6 +3,7 @@ import { CheckCircle2, ListChecks, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { avaliarVaga, contarMelhorias, type DadosParaAvaliar, type ResultadoDaAvaliacao } from "@/lib/avaliadorDeVaga";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * "Avaliar a vaga antes de publicar": roda as regras do avaliador sobre o que está escrito agora e
@@ -10,6 +11,7 @@ import { avaliarVaga, contarMelhorias, type DadosParaAvaliar, type ResultadoDaAv
  * (não só com cor ou ícone). Não bloqueia nada, não é certificação legal, e a pessoa pode ignorar.
  */
 export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosParaAvaliar }) {
+  const { t } = useIdioma();
   const [resultado, setResultado] = useState<ResultadoDaAvaliacao | null>(null);
 
   const melhorias = resultado ? contarMelhorias(resultado) : 0;
@@ -17,9 +19,9 @@ export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosP
   return (
     <section aria-labelledby="avaliador-titulo" className="space-y-3 rounded-lg border border-border p-3">
       <h3 id="avaliador-titulo" className="text-sm font-bold">
-        Avaliar a acessibilidade e a clareza da vaga
+        {t("vagas.avaliadorDeVagaPainel.avaliarAAcessibilidadeEA")}
       </h3>
-      <p className="text-xs text-muted-foreground">Uma conferência rápida do que está escrito. É só orientação: não impede a publicação e não é certificação legal.</p>
+      <p className="text-xs text-muted-foreground">{t("vagas.avaliadorDeVagaPainel.umaConferenciaRapidaDoQueEsta")}</p>
 
       <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" onClick={() => setResultado(avaliarVaga(obterDados()))}>
         <ListChecks className="size-4" aria-hidden="true" /> {resultado ? "Avaliar de novo" : "Avaliar agora"}
@@ -47,7 +49,7 @@ export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosP
 
           {resultado.expressoes.length > 0 ? (
             <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
-              <h4 className="text-sm font-bold">Expressões que costumam excluir sem necessidade</h4>
+              <h4 className="text-sm font-bold">{t("vagas.avaliadorDeVagaPainel.expressoesQueCostumamExcluir")}</h4>
               <ul className="space-y-2 text-sm">
                 {resultado.expressoes.map((e) => (
                   <li key={e.id}>
@@ -58,7 +60,7 @@ export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosP
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-muted-foreground">Esta lista é um apoio e pode não cobrir tudo. Se houver uma exigência real da função, explique o motivo no texto.</p>
+              <p className="text-xs text-muted-foreground">{t("vagas.avaliadorDeVagaPainel.estaListaEUmApoioEPodeNao")}</p>
             </div>
           ) : null}
 

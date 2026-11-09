@@ -14,6 +14,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { esquecerDispositivoConfiavel, obterRefreshToken } from "@/services/api";
 import segurancaService, { mensagemDeErroSeguranca } from "@/services/seguranca.service";
 import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * "Acho que invadiram minha conta", para quem ainda está logado: encerra as OUTRAS sessões, remove a confiança nos
@@ -21,6 +22,7 @@ import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
  * recurso ligado.
  */
 export function SecaoContaComprometida() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const { data: estado } = useEstadoDaSeguranca();
   const navigate = useNavigate();
@@ -76,28 +78,27 @@ export function SecaoContaComprometida() {
           <ShieldAlert className="size-5 text-destructive" aria-hidden="true" /> Acho que invadiram minha conta
         </CardTitle>
         <CardDescription>
-          Encerra as outras sessões, remove a confiança nos dispositivos e leva você a criar uma nova senha.
+          {t("configuracoes.secaoContaComprometida.encerraAsOutrasSessoesRemoveA")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button type="button" variant="destructive" className="min-h-11" onClick={abrir}>
-          Proteger minha conta agora
+          {t("configuracoes.secaoContaComprometida.protegerMinhaContaAgora")}
         </Button>
       </CardContent>
 
       <Dialog open={aberto} onOpenChange={(valor) => !valor && !enviando && setAberto(false)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Proteger a conta agora?</DialogTitle>
+            <DialogTitle>{t("configuracoes.secaoContaComprometida.protegerAContaAgora")}</DialogTitle>
             <DialogDescription>
-              Todos os outros dispositivos perdem o acesso na hora e precisarão do código enviado por e-mail para entrar. Esta sessão continua, e a
-              próxima etapa é trocar a senha.
+              {t("configuracoes.secaoContaComprometida.todosOsOutrosDispositivos")}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={confirmar} className="space-y-4" noValidate>
             {pedeSenha && (
-              <Campo id="proteger-senha" rotulo="Senha atual" erro={erro}>
+              <Campo id="proteger-senha" rotulo={t("configuracoes.secaoContaComprometida.senhaAtual")} erro={erro}>
                 <PasswordInput
                   id="proteger-senha"
                   autoComplete="current-password"

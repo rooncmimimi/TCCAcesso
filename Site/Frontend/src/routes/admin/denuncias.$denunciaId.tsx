@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { extrairMensagemErro } from "@/services/api";
 import { ConfirmarAcaoDialog } from "@/components/admin/ConfirmarAcaoDialog";
 import { ConteudoDenunciado } from "@/components/admin/ConteudoDenunciado";
@@ -62,6 +63,7 @@ const ACAO_ROTULO: Record<string, string> = {
 };
 
 function AdminDenunciaDetalhe() {
+  const { t } = useIdioma();
   const { denunciaId } = Route.useParams();
   const queryClient = useQueryClient();
   const [dialogoTransicao, setDialogoTransicao] = useState<"resolver" | "rejeitar" | "arquivar" | null>(
@@ -148,9 +150,9 @@ function AdminDenunciaDetalhe() {
   if (isError || !denuncia) {
     return (
       <div role="alert" className="space-y-3 p-6 text-center">
-        <p className="text-sm text-muted-foreground">Não foi possível carregar esta denúncia.</p>
+        <p className="text-sm text-muted-foreground">{t("admin.denunciasdenunciaId.naoFoiPossivelCarregarEsta")}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t("raiz.tentarNovamente")}
         </Button>
       </div>
     );
@@ -178,11 +180,11 @@ function AdminDenunciaDetalhe() {
         <CardContent className="space-y-4 p-5 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Motivo</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.motivo")}</p>
               <p className="mt-1 text-sm">{MOTIVO_ROTULO[denuncia.motivo]}</p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Denunciante</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.denunciante")}</p>
               <p className="mt-1 text-sm">
                 {denuncia.denunciante
                   ? `${denuncia.denunciante.nome} (${denuncia.denunciante.email})`
@@ -190,11 +192,11 @@ function AdminDenunciaDetalhe() {
               </p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Registrada em</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.registradaEm")}</p>
               <p className="mt-1 text-sm">{new Date(denuncia.criadoEm).toLocaleString("pt-BR")}</p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Responsável</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.responsavel")}</p>
               <p className="mt-1 text-sm">{denuncia.administradorResponsavel
                   ? `${denuncia.administradorResponsavel.nome}${souResponsavel ? " (você)" : ""}`
                   : "Ninguém atribuído"}</p>
@@ -204,7 +206,7 @@ function AdminDenunciaDetalhe() {
           {denuncia.descricao && (
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">
-                Descrição do denunciante
+                {t("admin.denunciasdenunciaId.descricaoDoDenunciante")}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{denuncia.descricao}</p>
             </div>
@@ -212,7 +214,7 @@ function AdminDenunciaDetalhe() {
 
           {denuncia.observacaoAdministrador && (
             <div>
-              <p className="text-xs font-bold uppercase text-muted-foreground">Observação da moderação</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.observacaoDaModeracao")}</p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{denuncia.observacaoAdministrador}</p>
             </div>
           )}
@@ -221,11 +223,11 @@ function AdminDenunciaDetalhe() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <p className="text-xs font-bold uppercase text-muted-foreground">Conteúdo denunciado</p>
+          <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.conteudoDenunciado")}</p>
           {denuncia.entidadeTipo === "mensagem" ? (
             <div className="mt-2">
               <p className="text-sm text-muted-foreground">
-                O conteúdo de mensagens só pode ser consultado através do contexto da conversa.
+                {t("admin.denunciasdenunciaId.oConteudoDeMensagensSoPodeSer")}
               </p>
               <Button
                 variant="outline"
@@ -244,7 +246,7 @@ function AdminDenunciaDetalhe() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <p className="text-xs font-bold uppercase text-muted-foreground">Histórico de tratamento</p>
+          <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.historicoDeTratamento")}</p>
           <HistoricoDaDenuncia
             registradaEm={denuncia.criadoEm}
             denunciante={denuncia.denunciante?.nome ?? null}
@@ -257,7 +259,7 @@ function AdminDenunciaDetalhe() {
         <Card className="mt-4 shadow-none">
           <CardContent className="flex flex-wrap gap-2 p-5 sm:p-6">
             {souResponsavel ? (
-              <p className="self-center text-sm text-muted-foreground">Você é o responsável por esta denúncia.</p>
+              <p className="self-center text-sm text-muted-foreground">{t("admin.denunciasdenunciaId.voceEOResponsavelPorEsta")}</p>
             ) : (
               <Button
                 variant="outline"
@@ -268,7 +270,7 @@ function AdminDenunciaDetalhe() {
                 {comOutroAdministrador ? "Assumir denúncia" : "Atribuir a mim"}
               </Button>
             )}
-            <Button onClick={() => setDialogoTransicao("resolver")}>Resolver</Button>
+            <Button onClick={() => setDialogoTransicao("resolver")}>{t("admin.denunciasdenunciaId.resolver")}</Button>
             <Button variant="outline" onClick={() => setDialogoTransicao("rejeitar")}>
               Rejeitar
             </Button>
@@ -282,9 +284,9 @@ function AdminDenunciaDetalhe() {
       <ConfirmarAcaoDialog
         open={confirmarAssumir}
         onOpenChange={setConfirmarAssumir}
-        titulo="Assumir esta denúncia"
+        titulo={t("admin.denunciasdenunciaId.assumirEstaDenuncia")}
         descricao={`Esta denúncia está com ${denuncia.administradorResponsavel?.nome ?? "outro administrador"}. Deseja assumi-la? O histórico guarda quem a tinha antes.`}
-        textoConfirmar="Assumir"
+        textoConfirmar={t("admin.denunciasdenunciaId.assumir")}
         carregando={atribuir.isPending}
         onConfirmar={() => atribuir.mutate(true)}
       />
@@ -311,7 +313,7 @@ function AdminDenunciaDetalhe() {
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="observacao-denuncia">Observação (opcional)</Label>
+              <Label htmlFor="observacao-denuncia">{t("admin.denunciasdenunciaId.observacaoOpcional")}</Label>
               <Textarea
                 id="observacao-denuncia"
                 value={observacao}
@@ -358,13 +360,13 @@ function AdminDenunciaDetalhe() {
       <Dialog open={contextoAberto} onOpenChange={setContextoAberto}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Contexto da mensagem denunciada</DialogTitle>
+            <DialogTitle>{t("admin.denunciasdenunciaId.contextoDaMensagemDenunciada")}</DialogTitle>
           </DialogHeader>
 
           {contexto.isLoading ? (
             <Skeleton className="h-40 w-full" />
           ) : contexto.isError ? (
-            <p className="text-sm text-destructive">Não foi possível carregar o contexto.</p>
+            <p className="text-sm text-destructive">{t("admin.denunciasdenunciaId.naoFoiPossivelCarregarO")}</p>
           ) : contexto.data ? (
             <ul className="space-y-2">
               {contexto.data.antes.map((m) => (

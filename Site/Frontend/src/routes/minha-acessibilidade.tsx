@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
 import { PaginaMinhaAcessibilidade } from "@/components/minha-acessibilidade/PaginaMinhaAcessibilidade";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/minha-acessibilidade")({
   head: () => ({
@@ -22,11 +23,12 @@ export const Route = createFileRoute("/minha-acessibilidade")({
 });
 
 function MinhaAcessibilidadePagina() {
+  const { t } = useIdioma();
   return (
     <EstruturaApp>
-      <h1 className="text-3xl font-extrabold">Minha Acessibilidade</h1>
+      <h1 className="text-3xl font-extrabold">{t("minha-acessibilidade.minhaAcessibilidade")}</h1>
       <p className="mt-2 text-muted-foreground">
-        Um lugar privado para dizer o que ajuda você a participar de processos seletivos. Você decide o que compartilhar, a cada candidatura.
+        {t("minha-acessibilidade.umLugarPrivadoParaDizerOQue")}
       </p>
       <PaginaMinhaAcessibilidade />
     </EstruturaApp>

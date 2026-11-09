@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { dataHoraCurta } from "@/lib/dispositivo";
 import segurancaService from "@/services/seguranca.service";
 import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Seção "Atividade de segurança": o histórico recente da própria conta (dispositivo novo confirmado, senha alterada,
  * conta protegida). Nunca mostra código nem token. Só aparece com o recurso ligado.
  */
 export function SecaoAtividadeDeSeguranca() {
+  const { t } = useIdioma();
   const { data: estado } = useEstadoDaSeguranca();
 
   const { data: eventos, isLoading, isError, refetch } = useQuery({
@@ -28,7 +30,7 @@ export function SecaoAtividadeDeSeguranca() {
         <CardTitle className="flex items-center gap-2 text-lg">
           <History className="size-5" aria-hidden="true" /> Atividade de segurança
         </CardTitle>
-        <CardDescription>Os últimos acontecimentos de segurança desta conta. Se algum não foi você, proteja a conta abaixo.</CardDescription>
+        <CardDescription>{t("configuracoes.secaoAtividadeDeSeguranca.osUltimosAcontecimentosDe")}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -37,15 +39,15 @@ export function SecaoAtividadeDeSeguranca() {
           </div>
         ) : isError ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
-            <p>Não foi possível carregar a atividade de segurança.</p>
+            <p>{t("configuracoes.secaoAtividadeDeSeguranca.naoFoiPossivelCarregarA")}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : !eventos || eventos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nada registrado ainda.</p>
+          <p className="text-sm text-muted-foreground">{t("configuracoes.secaoAtividadeDeSeguranca.nadaRegistradoAinda")}</p>
         ) : (
-          <ol aria-label="Atividade de segurança, da mais recente para a mais antiga" className="space-y-2">
+          <ol aria-label={t("configuracoes.secaoAtividadeDeSeguranca.atividadeDeSegurancaDaMais")} className="space-y-2">
             {eventos.map((evento) => (
               <li key={evento.id} className="rounded-lg border p-3">
                 <p className="text-sm font-medium">{evento.descricao}</p>

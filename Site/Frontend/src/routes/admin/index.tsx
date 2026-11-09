@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GraficosRelatorios } from "@/components/admin/GraficosRelatorios";
 import { obterRelatorios } from "@/services/admin.service";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -24,16 +26,16 @@ export const Route = createFileRoute("/admin/")({
   component: RelatoriosAdmin,
 });
 
-const CARTOES: { chave: keyof RelatoriosTotais; rotulo: string }[] = [
-  { chave: "usuarios", rotulo: "Usuários" },
-  { chave: "candidatos", rotulo: "Candidatos" },
-  { chave: "empresas", rotulo: "Empresas" },
-  { chave: "empresasPendentes", rotulo: "Empresas pendentes" },
-  { chave: "vagas", rotulo: "Vagas" },
-  { chave: "vagasAbertas", rotulo: "Vagas abertas" },
-  { chave: "candidaturas", rotulo: "Candidaturas" },
-  { chave: "postagens", rotulo: "Publicações" },
-  { chave: "usuariosBloqueados", rotulo: "Usuários bloqueados" },
+const CARTOES: { chave: keyof RelatoriosTotais; rotulo: ChaveBase }[] = [
+  { chave: "usuarios", rotulo: "admin.index.usuarios" },
+  { chave: "candidatos", rotulo: "admin.index.candidatos" },
+  { chave: "empresas", rotulo: "admin.index.empresas" },
+  { chave: "empresasPendentes", rotulo: "admin.index.empresasPendentes" },
+  { chave: "vagas", rotulo: "cabecalho.vagas" },
+  { chave: "vagasAbertas", rotulo: "admin.index.vagasAbertas" },
+  { chave: "candidaturas", rotulo: "admin.index.candidaturas" },
+  { chave: "postagens", rotulo: "admin.index.publicacoes" },
+  { chave: "usuariosBloqueados", rotulo: "admin.index.usuariosBloqueados" },
   // Não há indicador de "Contratações": o número viria das candidaturas aprovadas, mas o ACESSO só
   // aproxima empresa e candidato e não confirma contratação, então o indicador prometeria um dado
   // que a plataforma não tem. O backend ainda envia o campo; ele só não é exibido.
@@ -52,6 +54,7 @@ type RelatoriosTotais = {
 };
 
 function RelatoriosAdmin() {
+  const { t } = useIdioma();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "relatorios"],
     queryFn: () => obterRelatorios(),
@@ -73,9 +76,9 @@ function RelatoriosAdmin() {
   if (isError || !data) {
     return (
       <div role="alert" className="space-y-3 rounded-xl border border-destructive/40 p-6">
-        <p className="text-sm">Não foi possível carregar os relatórios.</p>
+        <p className="text-sm">{t("admin.index.naoFoiPossivelCarregarOs")}</p>
         <Button variant="outline" onClick={() => refetch()}>
-          Tentar novamente
+          {t("raiz.tentarNovamente")}
         </Button>
       </div>
     );
@@ -93,7 +96,7 @@ function RelatoriosAdmin() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-extrabold">Relatórios</h1>
+        <h1 className="text-3xl font-extrabold">{t("admin.index.relatorios")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Atualizado em {new Date(data.atualizadoEm).toLocaleString("pt-BR")}
         </p>
@@ -104,7 +107,7 @@ function RelatoriosAdmin() {
           <li key={chave}>
             <Card className="shadow-none">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{rotulo}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t(rotulo)}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-extrabold">{totais[chave] ?? 0}</p>
@@ -119,7 +122,7 @@ function RelatoriosAdmin() {
       {data.deficienciasMaisComuns.length > 0 && (
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-base">Deficiências mais declaradas</CardTitle>
+            <CardTitle className="text-base">{t("admin.index.deficienciasMaisDeclaradas")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">

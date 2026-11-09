@@ -16,6 +16,7 @@ import autenticacaoService from "@/services/autenticacao.service";
 import { extrairMensagemErro } from "@/services/api";
 import { limparEtapa } from "@/lib/etapaCadastro";
 import { cn } from "@/lib/utils";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Peças usadas pelos dois cadastros, que a partir da separação em `/cadastro/candidato` e
@@ -235,6 +236,7 @@ export function BotaoFinalizar({
  * que é exatamente o que deve acontecer se a pessoa fechar a aba nesta tela.
  */
 export function EtapaAcessibilidade({ passos, indice }: { passos: readonly string[]; indice: number }) {
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const { atualizar } = useSessao();
   const [enviando, setEnviando] = useState(false);
@@ -265,8 +267,8 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
     <div>
       <PassosCadastro passos={passos} atual={indice} />
       <TituloEtapa
-        titulo="Deixe o ACESSO do seu jeito"
-        descricao="Ajuste o que precisar e veja o resultado na hora. Você pode mudar tudo depois, em Configurações."
+        titulo={t("cadastro.comuns.deixeOAcessoDoSeuJeito")}
+        descricao={t("cadastro.comuns.ajusteOQuePrecisarEVejaO")}
       />
 
       <PainelAcessibilidade />
@@ -299,6 +301,7 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
  * o cadastro **não** terminou. Fingir que tudo foi concluído aqui seria mentira.
  */
 export function ConfirmeSeuEmail({ email }: { email: string }) {
+  const { t } = useIdioma();
   const [enviando, setEnviando] = useState(false);
   const [reenviado, setReenviado] = useState(false);
   const tituloRef = useRef<HTMLHeadingElement>(null);
@@ -330,22 +333,22 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
           <Mail className="size-5" />
         </span>
         <h1 ref={tituloRef} tabIndex={-1} className="text-xl font-extrabold outline-none">
-          Falta confirmar seu e-mail
+          {t("cadastro.comuns.faltaConfirmarSeuEMail")}
         </h1>
       </div>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        Sua conta foi criada, mas o cadastro ainda não terminou. Enviamos um e-mail de confirmação
+        {t("cadastro.comuns.suaContaFoiCriadaMasOCadastro")}
         para <strong className="text-foreground">{email}</strong> — verifique a caixa de entrada e também a
         pasta de spam.
       </p>
 
-      <ol className="mt-5 space-y-3" aria-label="O que falta para terminar o cadastro">
+      <ol className="mt-5 space-y-3" aria-label={t("cadastro.comuns.oQueFaltaParaTerminarOCadastro")}>
         {[
-          { feito: true, texto: "Dados da empresa" },
-          { feito: false, texto: "Confirmar o e-mail", agora: true },
-          { feito: false, texto: "Entrar na sua conta" },
-          { feito: false, texto: "Análise do cadastro pela equipe do ACESSO" },
+          { feito: true, texto: "cadastro.comuns.dadosDaEmpresa" },
+          { feito: false, texto: "cadastro.comuns.confirmarOEMail", agora: true },
+          { feito: false, texto: "cadastro.comuns.entrarNaSuaConta" },
+          { feito: false, texto: "cadastro.comuns.analiseDoCadastroPelaEquipeDo" },
         ].map((item, indice) => (
           <li key={item.texto} className="flex items-center gap-3 text-sm">
             <span
@@ -373,13 +376,12 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
       <p className="mt-5 text-sm text-muted-foreground">
         Prefere digitar o código de 6 dígitos que veio no e-mail? Você também pode{" "}
         <Link to="/confirmar-email" search={{ email }} className="font-semibold text-primary underline">
-          confirmar por código
+          {t("cadastro.comuns.confirmarPorCodigo")}
         </Link>
         .
       </p>
       <p className="mt-4 rounded-lg bg-primary-soft px-3 py-2 text-sm">
-        Depois de entrar, retomamos seu cadastro de onde você parou — nada do que você preencheu se
-        perde.
+        {t("cadastro.comuns.depoisDeEntrarRetomamosSeu")}
       </p>
 
       <Button

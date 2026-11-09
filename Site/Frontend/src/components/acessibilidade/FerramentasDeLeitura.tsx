@@ -14,6 +14,8 @@ import {
   PainelOndeEstou,
   type FotoDaPagina,
 } from "@/components/acessibilidade/PaineisDeAjuda";
+import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { abrirAjudaDeAtalhos } from "@/hooks/useAtalhosDeTeclado";
 import { pedirComandoDeVoz } from "@/hooks/useComandoDeVoz";
@@ -24,19 +26,19 @@ import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContex
 
 type Visao = "menu" | "onde" | "pagina" | "glossario" | "historico";
 
-const TITULOS: Record<Visao, { titulo: string; descricao: string }> = {
-  menu: { titulo: "Ferramentas de leitura e ajuda", descricao: "Entenda a página, ache termos difíceis e ajuste a leitura." },
-  onde: { titulo: "Onde estou?", descricao: "A página, a seção e a ação principal desta tela." },
-  pagina: { titulo: "Explique esta página", descricao: "O que esta página faz, em linguagem simples." },
-  glossario: { titulo: "Glossário", descricao: "Termos de vagas e de trabalho, explicados de forma simples." },
-  historico: { titulo: "Meu histórico de instruções", descricao: "As explicações que você salvou para consultar depois." },
+const TITULOS: Record<Visao, { titulo: ChaveBase; descricao: ChaveBase }> = {
+  menu: { titulo: "acessibilidade.ferramentasDeLeitura.ferramentasDeLeituraEAjuda", descricao: "acessibilidade.ferramentasDeLeitura.entendaAPaginaAcheTermos" },
+  onde: { titulo: "acessibilidade.ferramentasDeLeitura.ondeEstou", descricao: "acessibilidade.ferramentasDeLeitura.aPaginaASecaoEAAcaoPrincipal" },
+  pagina: { titulo: "acessibilidade.ferramentasDeLeitura.expliqueEstaPagina", descricao: "acessibilidade.ferramentasDeLeitura.oQueEstaPaginaFazEmLinguagem" },
+  glossario: { titulo: "acessibilidade.ferramentasDeLeitura.glossario", descricao: "acessibilidade.ferramentasDeLeitura.termosDeVagasEDeTrabalho" },
+  historico: { titulo: "acessibilidade.ferramentasDeLeitura.meuHistoricoDeInstrucoes", descricao: "acessibilidade.ferramentasDeLeitura.asExplicacoesQueVoceSalvouPara" },
 };
 
-const AJUSTES_RAPIDOS: ReadonlyArray<{ chave: keyof PreferenciasAcessibilidade; id: string; rotulo: string }> = [
-  { chave: "readingRuler", id: "rapido-regua", rotulo: "Régua de leitura" },
-  { chave: "focusMode", id: "rapido-foco", rotulo: "Modo foco" },
-  { chave: "readingMode", id: "rapido-leitura", rotulo: "Modo leitura" },
-  { chave: "persistentToasts", id: "rapido-avisos", rotulo: "Manter avisos até eu fechar" },
+const AJUSTES_RAPIDOS: ReadonlyArray<{ chave: keyof PreferenciasAcessibilidade; id: string; rotulo: ChaveBase }> = [
+  { chave: "readingRuler", id: "rapido-regua", rotulo: "acessibilidade.ferramentasDeLeitura.reguaDeLeitura" },
+  { chave: "focusMode", id: "rapido-foco", rotulo: "acessibilidade.ferramentasDeLeitura.modoFoco" },
+  { chave: "readingMode", id: "rapido-leitura", rotulo: "acessibilidade.ferramentasDeLeitura.modoLeitura" },
+  { chave: "persistentToasts", id: "rapido-avisos", rotulo: "acessibilidade.ferramentasDeLeitura.manterAvisosAteEuFechar" },
 ];
 
 /** Lê da página atual o que os painéis precisam, antes de o diálogo esconder o resto do DOM. */
@@ -67,6 +69,7 @@ function BotaoDoMenu({ icone: Icone, titulo, detalhe, onClick }: { icone: Lucide
  * da página do DOM acessível, e "Onde estou?" não acharia mais título nenhum.
  */
 export function FerramentasDeLeitura() {
+  const { t } = useIdioma();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const { rascunho, salvar } = useAcessibilidade();
   const [aberto, setAberto] = useState(false);
@@ -94,43 +97,43 @@ export function FerramentasDeLeitura() {
         variant="outline"
         className="fixed bottom-4 left-4 z-50 min-h-12 min-w-12 gap-2 rounded-full bg-card px-3 shadow-lg"
         aria-haspopup="dialog"
-        aria-label="Ferramentas de leitura e ajuda"
+        aria-label={t("acessibilidade.ferramentasDeLeitura.ferramentasDeLeituraEAjuda")}
         onClick={abrir}
       >
         <HelpCircle className="size-5" aria-hidden="true" />
-        <span className="hidden text-sm font-semibold sm:inline">Ajuda de leitura</span>
+        <span className="hidden text-sm font-semibold sm:inline">{t("acessibilidade.ferramentasDeLeitura.ajudaDeLeitura")}</span>
       </Button>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{titulo}</DialogTitle>
-            <DialogDescription>{descricao}</DialogDescription>
+            <DialogTitle>{t(titulo)}</DialogTitle>
+            <DialogDescription>{t(descricao)}</DialogDescription>
           </DialogHeader>
 
           {visao !== "menu" && (
             <Button type="button" variant="ghost" size="sm" className="min-h-11 w-fit gap-1.5" onClick={() => setVisao("menu")}>
-              <ArrowLeft className="size-4" aria-hidden="true" /> Voltar ao menu
+              <ArrowLeft className="size-4" aria-hidden="true" /> {t("acessibilidade.ferramentasDeLeitura.voltarAoMenu")}
             </Button>
           )}
 
           {visao === "menu" && (
             <div className="space-y-5">
               <div className="grid gap-2">
-                <BotaoDoMenu icone={Compass} titulo="Onde estou?" detalhe="Página, seção e ação principal." onClick={() => setVisao("onde")} />
-                <BotaoDoMenu icone={BookOpenText} titulo="Explique esta página" detalhe="Para que serve esta tela." onClick={() => setVisao("pagina")} />
-                <BotaoDoMenu icone={BookMarked} titulo="Glossário" detalhe="CLT, PJ, híbrido, cotas e outros termos." onClick={() => setVisao("glossario")} />
-                <BotaoDoMenu icone={History} titulo="Meu histórico de instruções" detalhe="O que você salvou para ver depois." onClick={() => setVisao("historico")} />
+                <BotaoDoMenu icone={Compass} titulo={t("acessibilidade.ferramentasDeLeitura.ondeEstou")} detalhe={t("acessibilidade.ferramentasDeLeitura.paginaSecaoEAcaoPrincipal")} onClick={() => setVisao("onde")} />
+                <BotaoDoMenu icone={BookOpenText} titulo={t("acessibilidade.ferramentasDeLeitura.expliqueEstaPagina")} detalhe={t("acessibilidade.ferramentasDeLeitura.paraQueServeEstaTela")} onClick={() => setVisao("pagina")} />
+                <BotaoDoMenu icone={BookMarked} titulo={t("acessibilidade.ferramentasDeLeitura.glossario")} detalhe={t("acessibilidade.ferramentasDeLeitura.cltPjHibridoCotasEOutrosTermos")} onClick={() => setVisao("glossario")} />
+                <BotaoDoMenu icone={History} titulo={t("acessibilidade.ferramentasDeLeitura.meuHistoricoDeInstrucoes")} detalhe={t("acessibilidade.ferramentasDeLeitura.oQueVoceSalvouParaVerDepois")} onClick={() => setVisao("historico")} />
               </div>
 
               <section aria-labelledby="mais-recursos" className="space-y-2">
                 <h3 id="mais-recursos" className="text-sm font-bold">
-                  Navegar de outras formas
+                  {t("acessibilidade.ferramentasDeLeitura.navegarDeOutrasFormas")}
                 </h3>
                 <div className="grid gap-2">
                   <BotaoDoMenu
                     icone={Mic}
-                    titulo="Falar um comando"
+                    titulo={t("acessibilidade.ferramentasDeLeitura.falarUmComando")}
                     detalhe={reconhecimentoDeFalaSuportado() ? "Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede." : "Este navegador não oferece reconhecimento de voz no site."}
                     onClick={() => {
                       setAberto(false);
@@ -140,35 +143,35 @@ export function FerramentasDeLeitura() {
                   />
                   <BotaoDoMenu
                     icone={Keyboard}
-                    titulo="Atalhos de teclado"
-                    detalhe="G e V para vagas, ? para a lista completa."
+                    titulo={t("acessibilidade.ferramentasDeLeitura.atalhosDeTeclado")}
+                    detalhe={t("acessibilidade.ferramentasDeLeitura.gEVParaVagasParaAListaCompleta")}
                     onClick={() => {
                       setAberto(false);
                       setTimeout(abrirAjudaDeAtalhos, 200);
                     }}
                   />
-                  <BotaoDoMenu icone={Target} titulo="O que você quer fazer?" detalhe="Caminhos guiados, só com os passos necessários." onClick={() => irPara("/objetivos")} />
-                  <BotaoDoMenu icone={MessageSquareText} titulo="Central de comunicação" detalhe="Cartões e frases prontas." onClick={() => irPara("/comunicacao")} />
-                  <BotaoDoMenu icone={BookUser} titulo="Dicionário de profissões" detalhe="O que cada profissão faz." onClick={() => irPara("/profissoes")} />
+                  <BotaoDoMenu icone={Target} titulo={t("acessibilidade.ferramentasDeLeitura.oQueVoceQuerFazer")} detalhe={t("acessibilidade.ferramentasDeLeitura.caminhosGuiadosSoComOsPassos")} onClick={() => irPara("/objetivos")} />
+                  <BotaoDoMenu icone={MessageSquareText} titulo={t("acessibilidade.ferramentasDeLeitura.centralDeComunicacao")} detalhe={t("acessibilidade.ferramentasDeLeitura.cartoesEFrasesProntas")} onClick={() => irPara("/comunicacao")} />
+                  <BotaoDoMenu icone={BookUser} titulo={t("acessibilidade.ferramentasDeLeitura.dicionarioDeProfissoes")} detalhe={t("acessibilidade.ferramentasDeLeitura.oQueCadaProfissaoFaz")} onClick={() => irPara("/profissoes")} />
                 </div>
               </section>
 
               <section aria-labelledby="ajustes-rapidos" className="space-y-2">
                 <h3 id="ajustes-rapidos" className="text-sm font-bold">
-                  Ajustes rápidos
+                  {t("acessibilidade.ferramentasDeLeitura.ajustesRapidos")}
                 </h3>
-                <p className="text-xs text-muted-foreground">Cada ajuste vale na hora e fica salvo neste navegador.</p>
+                <p className="text-xs text-muted-foreground">{t("acessibilidade.ferramentasDeLeitura.cadaAjusteValeNaHoraEFicaSalvo")}</p>
                 {AJUSTES_RAPIDOS.map(({ chave, id, rotulo }) => (
                   <div key={id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
                     <Label htmlFor={id} className="min-h-11 flex-1 content-center text-sm font-semibold">
-                      {rotulo}
+                      {t(rotulo)}
                     </Label>
                     <Switch id={id} checked={Boolean(rascunho[chave])} onCheckedChange={(v) => salvar({ ...rascunho, [chave]: v })} />
                   </div>
                 ))}
                 <Button asChild variant="link" className="min-h-11 gap-1.5 px-0">
                   <Link to="/configuracoes/acessibilidade" onClick={() => setAberto(false)}>
-                    <Settings2 className="size-4" aria-hidden="true" /> Todas as configurações de acessibilidade
+                    <Settings2 className="size-4" aria-hidden="true" /> {t("acessibilidade.ferramentasDeLeitura.todasAsConfiguracoesDe")}
                   </Link>
                 </Button>
               </section>

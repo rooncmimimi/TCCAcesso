@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useIdioma } from "@/hooks/useIdioma";
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { useSessao } from "@/hooks/useSessao";
@@ -23,12 +24,12 @@ import { formatarData } from "@/utils/formatacao";
 import type { PreferenciaMensagens } from "@/types";
 
 const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: string }[] = [
-  { value: "todos", label: "Todos" },
-  { value: "seguidores", label: "Apenas seguidores" },
-  { value: "seguindo", label: "Apenas pessoas que você segue" },
-  { value: "mutuo", label: "Apenas seguidores que você também segue" },
-  { value: "empresas", label: "Apenas empresas" },
-  { value: "ninguem", label: "Ninguém" },
+  { value: "todos", label: "configuracoes.privacidade.todos" },
+  { value: "seguidores", label: "configuracoes.privacidade.apenasSeguidores" },
+  { value: "seguindo", label: "configuracoes.privacidade.apenasPessoasQueVoceSegue" },
+  { value: "mutuo", label: "configuracoes.privacidade.apenasSeguidoresQueVoceTambem" },
+  { value: "empresas", label: "configuracoes.privacidade.apenasEmpresas" },
+  { value: "ninguem", label: "configuracoes.privacidade.ninguem" },
 ];
 
 export const Route = createFileRoute("/configuracoes/privacidade")({
@@ -75,6 +76,7 @@ function LinhaDeNavegacao({
 }
 
 function Privacidade() {
+  const { t } = useIdioma();
   const { usuario, atualizar } = useSessao();
   const perfilPublico = usuario?.perfilPublico ?? true;
   const preferenciaMensagens = usuario?.preferenciaMensagens ?? "todos";
@@ -115,23 +117,23 @@ function Privacidade() {
           <ShieldCheck className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Privacidade e Segurança</h1>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{t("rodape.privacidadeSeguranca")}</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
-            Controle quem pode ver seu perfil e falar com você, e proteja o acesso à sua conta.
+            {t("configuracoes.privacidade.controleQuemPodeVerSeuPerfilE")}
           </p>
         </div>
       </div>
 
       <Card className="mt-6 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Perfil</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{t("configuracoes.privacidade.perfil")}</h2>
           <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <div className="min-w-0">
               <Label htmlFor="perfil-publico" className="font-semibold">
-                Perfil público
+                {t("configuracoes.privacidade.perfilPublico")}
               </Label>
               <p className="text-sm text-muted-foreground">
-                Seu nome, foto e informações do perfil continuam visíveis para outras pessoas mesmo
+                {t("configuracoes.privacidade.seuNomeFotoEInformacoesDo")}
                 desativado. O que muda são suas publicações: com o perfil privado, elas só ficam
                 visíveis para quem você aprovar como seguidor — outras pessoas veem um botão para
                 solicitar seguir você.
@@ -150,14 +152,13 @@ function Privacidade() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Mensagens</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{t("cabecalho.mensagens")}</h2>
           <div className="mt-3 space-y-2">
             <Label htmlFor="preferencia-mensagens" className="font-semibold">
-              Quem pode enviar novas mensagens para você?
+              {t("configuracoes.privacidade.quemPodeEnviarNovasMensagens")}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Essa configuração controla quem pode iniciar novas conversas com você. Usuários
-              bloqueados nunca poderão iniciar uma conversa, independentemente desta opção.
+              {t("configuracoes.privacidade.essaConfiguracaoControlaQuem")}
             </p>
             <Select
               value={preferenciaMensagens}
@@ -166,7 +167,7 @@ function Privacidade() {
             >
               <SelectTrigger id="preferencia-mensagens" className="mt-1 sm:max-w-sm">
                 <MessageSquare className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <SelectValue placeholder="Selecione" />
+                <SelectValue placeholder={t("configuracoes.privacidade.selecione")} />
               </SelectTrigger>
               <SelectContent>
                 {OPCOES_PREFERENCIA_MENSAGENS.map((opcao) => (
@@ -182,13 +183,13 @@ function Privacidade() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Bloqueios</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{t("configuracoes.privacidade.bloqueios")}</h2>
           <div className="mt-3">
             <LinhaDeNavegacao
               to="/configuracoes/bloqueados"
               icone={UserX}
-              titulo="Usuários bloqueados"
-              descricao="Gerencie os usuários que você bloqueou."
+              titulo={t("configuracoes.privacidade.usuariosBloqueados")}
+              descricao={t("configuracoes.privacidade.gerencieOsUsuariosQueVoce")}
             />
           </div>
         </CardContent>
@@ -196,36 +197,36 @@ function Privacidade() {
 
       <Card className="mt-4 shadow-none">
         <CardContent className="space-y-4 p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Segurança da conta</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{t("configuracoes.privacidade.segurancaDaConta")}</h2>
           <LinhaDeNavegacao
             to="/configuracoes/senha"
             icone={KeyRound}
-            titulo="Alterar senha"
-            descricao="Troque a senha da sua conta."
+            titulo={t("configuracoes.privacidade.alterarSenha")}
+            descricao={t("configuracoes.privacidade.troqueASenhaDaSuaConta")}
           />
           <LinhaDeNavegacao
             to="/configuracoes/seguranca"
             icone={Lock}
-            titulo="Sessões e contas conectadas"
-            descricao="Veja onde sua conta está aberta e gerencie o login com o Google."
+            titulo={t("configuracoes.privacidade.sessoesEContasConectadas")}
+            descricao={t("configuracoes.privacidade.vejaOndeSuaContaEstaAbertaE")}
           />
         </CardContent>
       </Card>
 
       <Card className="mt-4 shadow-none">
         <CardContent className="space-y-4 p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground">Documentos</h2>
+          <h2 className="text-sm font-bold uppercase text-muted-foreground">{t("configuracoes.privacidade.documentos")}</h2>
           <LinhaDeNavegacao
             to="/termos"
             icone={FileText}
-            titulo="Termos de Uso"
-            descricao="As regras de uso da plataforma."
+            titulo={t("rodape.termos")}
+            descricao={t("configuracoes.privacidade.asRegrasDeUsoDaPlataforma")}
           />
           <LinhaDeNavegacao
             to="/privacidade"
             icone={FileText}
-            titulo="Aviso de Privacidade"
-            descricao="Quais dados coletamos, para quê, e como exercer seus direitos."
+            titulo={t("rodape.privacidade")}
+            descricao={t("configuracoes.privacidade.quaisDadosColetamosParaQueE")}
           />
           <p className="text-sm text-muted-foreground" data-testid="registro-de-aceite">
             {usuario?.termosAceitosEm

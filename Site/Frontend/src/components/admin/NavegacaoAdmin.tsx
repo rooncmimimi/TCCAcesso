@@ -1,20 +1,22 @@
 import { Link } from "@tanstack/react-router";
 import { BarChart3, Briefcase, Building2, FileText, Flag, MessageSquare, ScrollText, Users } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const ITENS = [
-  { to: "/admin", label: "Relatórios", icon: BarChart3, exact: true },
-  { to: "/admin/denuncias", label: "Denúncias", icon: Flag, exact: false },
-  { to: "/admin/empresas", label: "Empresas", icon: Building2, exact: false },
-  { to: "/admin/usuarios", label: "Usuários", icon: Users, exact: false },
-  { to: "/admin/postagens", label: "Postagens", icon: FileText, exact: false },
-  { to: "/admin/comentarios", label: "Comentários", icon: MessageSquare, exact: false },
-  { to: "/admin/vagas", label: "Vagas", icon: Briefcase, exact: false },
-  { to: "/admin/logs", label: "Logs", icon: ScrollText, exact: false },
+  { to: "/admin", label: "admin.navegacaoAdmin.relatorios", icon: BarChart3, exact: true },
+  { to: "/admin/denuncias", label: "admin.navegacaoAdmin.denuncias", icon: Flag, exact: false },
+  { to: "/admin/empresas", label: "admin.navegacaoAdmin.empresas", icon: Building2, exact: false },
+  { to: "/admin/usuarios", label: "admin.navegacaoAdmin.usuarios", icon: Users, exact: false },
+  { to: "/admin/postagens", label: "admin.navegacaoAdmin.postagens", icon: FileText, exact: false },
+  { to: "/admin/comentarios", label: "admin.navegacaoAdmin.comentarios", icon: MessageSquare, exact: false },
+  { to: "/admin/vagas", label: "cabecalho.vagas", icon: Briefcase, exact: false },
+  { to: "/admin/logs", label: "admin.navegacaoAdmin.logs", icon: ScrollText, exact: false },
 ] as const;
 
 export function NavegacaoAdmin() {
+  const { t } = useIdioma();
   return (
-    <nav aria-label="Navegação administrativa" className="border-b bg-card">
+    <nav aria-label={t("admin.navegacaoAdmin.navegacaoAdministrativa")} className="border-b bg-card">
       <ul className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4">
         {ITENS.map(({ to, label, icon: Icon, exact }) => (
           <li key={to}>
@@ -26,7 +28,7 @@ export function NavegacaoAdmin() {
               activeProps={{ className: "active" }}
             >
               <Icon className="size-4" aria-hidden="true" />
-              {label}
+              {t(label)}
             </Link>
           </li>
         ))}

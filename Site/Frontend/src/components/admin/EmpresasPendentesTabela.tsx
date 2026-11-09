@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,6 +47,7 @@ const ROTULO: Record<EmpresaAdmin["statusAprovacao"], string> = {
 
 /** Empresas cadastradas, com aprovar, reprovar, suspender, reativar e o selo de empresa verificada. */
 export function EmpresasPendentesTabela() {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const [pagina, setPagina] = useState(1);
   const [alvo, setAlvo] = useState<{ empresa: EmpresaAdmin; acao: Acao } | null>(null);
@@ -92,13 +94,13 @@ export function EmpresasPendentesTabela() {
 
   if (isLoading) {
     return (
-      <ListaCarregando rotulo="Carregando as empresas…" linhas={4} />
+      <ListaCarregando rotulo={t("admin.empresasPendentesTabela.carregandoAsEmpresas")} linhas={4} />
     );
   }
 
   if (isError) {
     return (
-      <ListaComErro mensagem="Não foi possível carregar as empresas." aoTentarDeNovo={() => refetch()} />
+      <ListaComErro mensagem={t("admin.empresasPendentesTabela.naoFoiPossivelCarregarAs")} aoTentarDeNovo={() => refetch()} />
     );
   }
 
@@ -106,22 +108,22 @@ export function EmpresasPendentesTabela() {
 
   if (empresas.length === 0) {
     return (
-      <ListaVazia icone={Building2} mensagem="Nenhuma empresa cadastrada até o momento." />
+      <ListaVazia icone={Building2} mensagem={t("admin.empresasPendentesTabela.nenhumaEmpresaCadastradaAteO")} />
     );
   }
 
   return (
     <div>
       <Table>
-        <caption className="sr-only">Empresas cadastradas e situação da aprovação</caption>
+        <caption className="sr-only">{t("admin.empresasPendentesTabela.empresasCadastradasESituacaoDa")}</caption>
         <TableHeader>
           <TableRow>
-            <TableHead>Empresa</TableHead>
+            <TableHead>{t("vaga.empresa")}</TableHead>
             <TableHead>CNPJ</TableHead>
-            <TableHead>Cidade/UF</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Verificada</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+            <TableHead>{t("admin.empresasPendentesTabela.cidadeUf")}</TableHead>
+            <TableHead>{t("admin.empresasPendentesTabela.status")}</TableHead>
+            <TableHead>{t("vaga.verificada")}</TableHead>
+            <TableHead className="text-right">{t("admin.empresasPendentesTabela.acoes")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -145,7 +147,7 @@ export function EmpresasPendentesTabela() {
                     <BadgeCheck className="size-3.5" aria-hidden="true" /> Verificada
                   </StatusBadge>
                 ) : (
-                  <span className="text-sm text-muted-foreground">Não verificada</span>
+                  <span className="text-sm text-muted-foreground">{t("admin.empresasPendentesTabela.naoVerificada")}</span>
                 )}
               </TableCell>
               <TableCell className="text-right">
@@ -267,7 +269,7 @@ export function EmpresasPendentesTabela() {
             )}
             {(alvo?.acao === "reprovar" || alvo?.acao === "suspender") && (
               <div>
-                <Label htmlFor="motivo-empresa">Motivo (opcional)</Label>
+                <Label htmlFor="motivo-empresa">{t("admin.empresasPendentesTabela.motivoOpcional")}</Label>
                 <Textarea
                   id="motivo-empresa"
                   value={motivo}

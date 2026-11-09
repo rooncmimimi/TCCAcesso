@@ -9,6 +9,7 @@ import { NovaVagaDialog } from "@/components/dashboard/NovaVagaDialog";
 import { VagaEmpresaCard } from "@/components/dashboard/VagaEmpresaCard";
 import { ROTULO_STATUS_VAGA } from "@/components/dashboard/constantesVaga";
 import type { StatusVaga, Vaga } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /** Lista paginada de vagas de um status, com card de gestão para cada uma. */
 function ListaVagasPorStatus({
@@ -20,6 +21,7 @@ function ListaVagasPorStatus({
   vagaSelecionada: string | null;
   onSelecionar: (vaga: Vaga) => void;
 }) {
+  const { t } = useIdioma();
   const [pagina, setPagina] = useState(1);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -38,9 +40,9 @@ function ListaVagasPorStatus({
   if (isError) {
     return (
       <div role="alert" className="space-y-2 py-4 text-sm text-destructive">
-        <p>Não foi possível carregar suas vagas.</p>
+        <p>{t("dashboard.minhasVagas.naoFoiPossivelCarregarSuas")}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Tentar novamente
+          {t("raiz.tentarNovamente")}
         </Button>
       </div>
     );
@@ -67,7 +69,7 @@ function ListaVagasPorStatus({
       {data.totalPaginas > 1 ? (
         <div className="mt-4 flex justify-between gap-2">
           <Button variant="outline" size="sm" disabled={pagina <= 1} onClick={() => setPagina((p) => Math.max(1, p - 1))}>
-            Página anterior
+            {t("vagas.paginaAnterior")}
           </Button>
           <span className="self-center text-sm text-muted-foreground">
             Página {data.pagina} de {data.totalPaginas}
@@ -78,7 +80,7 @@ function ListaVagasPorStatus({
             disabled={pagina >= data.totalPaginas}
             onClick={() => setPagina((p) => p + 1)}
           >
-            Próxima página
+            {t("vagas.proximaPagina")}
           </Button>
         </div>
       ) : null}
@@ -94,10 +96,11 @@ export function MinhasVagas({
   vagaSelecionada: string | null;
   onSelecionar: (vaga: Vaga) => void;
 }) {
+  const { t } = useIdioma();
   return (
     <Card className="shadow-none">
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-        <CardTitle className="text-lg">Minhas vagas</CardTitle>
+        <CardTitle className="text-lg">{t("dashboard.minhasVagas.minhasVagas")}</CardTitle>
         <NovaVagaDialog />
       </CardHeader>
       <Tabs defaultValue="aberta" className="px-6 pb-6">

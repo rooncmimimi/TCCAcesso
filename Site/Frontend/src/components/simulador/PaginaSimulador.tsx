@@ -18,6 +18,7 @@ import {
   VAGA_FICTICIA,
   type Importancia,
 } from "@/dados/simulador";
+import { useIdioma } from "@/hooks/useIdioma";
 import { explicarClassificacao, retornoDaResposta } from "@/lib/feedbackDeResposta";
 import { temProgresso, useProgressoDoSimulador } from "@/hooks/useProgressoDoSimulador";
 
@@ -62,13 +63,14 @@ type Props = {
 };
 
 function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progresso"]; aoEscolher: (m: "candidatura" | "entrevista") => void; aoRecomecar: () => void }) {
+  const { t } = useIdioma();
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-xl">Simular uma candidatura</CardTitle>
-            <CardDescription>Ler uma vaga fictícia, entender os requisitos, montar a apresentação e revisar, em 7 etapas, no seu ritmo.</CardDescription>
+            <CardTitle className="text-xl">{t("simulador.paginaSimulador.simularUmaCandidatura")}</CardTitle>
+            <CardDescription>{t("simulador.paginaSimulador.lerUmaVagaFicticiaEntenderOs")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="min-h-11" onClick={() => aoEscolher("candidatura")}>
@@ -79,8 +81,8 @@ function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progre
 
         <Card className="shadow-none">
           <CardHeader>
-            <CardTitle className="text-xl">Simular uma entrevista</CardTitle>
-            <CardDescription>Seis perguntas comuns de seleção. Você pode ouvir, ler as orientações, responder por texto ou ditado e ver sugestões.</CardDescription>
+            <CardTitle className="text-xl">{t("simulador.paginaSimulador.simularUmaEntrevista")}</CardTitle>
+            <CardDescription>{t("simulador.paginaSimulador.seisPerguntasComunsDeSelecao")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="min-h-11" onClick={() => aoEscolher("entrevista")}>
@@ -91,8 +93,8 @@ function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progre
       </div>
 
       <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-        <li>Pode repetir quantas vezes quiser. Não há nota, aprovação nem reprovação: é treino.</li>
-        <li>O que você escreve aqui fica só neste navegador. Nada do seu perfil é usado.</li>
+        <li>{t("simulador.paginaSimulador.podeRepetirQuantasVezesQuiser")}</li>
+        <li>{t("simulador.paginaSimulador.oQueVoceEscreveAquiFicaSoNeste")}</li>
         <li>
           Para se candidatar de verdade, abra uma{" "}
           <Link to="/vagas" className="font-semibold text-primary underline">
@@ -100,7 +102,7 @@ function Menu({ progresso, aoEscolher, aoRecomecar }: { progresso: Props["progre
           </Link>
           . Para registrar suas adaptações, vá em{" "}
           <Link to="/minha-acessibilidade" className="font-semibold text-primary underline">
-            Minha Acessibilidade
+            {t("simulador.paginaSimulador.minhaAcessibilidade")}
           </Link>
           .
         </li>
@@ -141,6 +143,7 @@ function Cabecalho({ rotulo, passo, total, titulo, aoPausar }: { rotulo: string;
 }
 
 function Navegacao({ passo, total, aoVoltar, aoAvancar, aoTerminar }: { passo: number; total: number; aoVoltar: () => void; aoAvancar: () => void; aoTerminar: () => void }) {
+  const { t } = useIdioma();
   return (
     <div className="flex flex-wrap gap-2 pt-2">
       {passo > 0 ? (
@@ -154,7 +157,7 @@ function Navegacao({ passo, total, aoVoltar, aoAvancar, aoTerminar }: { passo: n
         </Button>
       ) : (
         <Button type="button" className="min-h-11" onClick={aoTerminar}>
-          Terminar o treino
+          {t("simulador.paginaSimulador.terminarOTreino")}
         </Button>
       )}
     </div>
@@ -162,6 +165,7 @@ function Navegacao({ passo, total, aoVoltar, aoAvancar, aoTerminar }: { passo: n
 }
 
 function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
+  const { t } = useIdioma();
   const passo = Math.min(progresso.passoCandidatura, ETAPAS_DA_CANDIDATURA.length - 1);
   const total = ETAPAS_DA_CANDIDATURA.length;
   const irPara = (p: number) => atualizar({ passoCandidatura: p });
@@ -178,7 +182,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
             <h3 className="text-lg font-bold">
               {VAGA_FICTICIA.titulo} — {VAGA_FICTICIA.empresa}
             </h3>
-            <TextoOuvivel rotulo="Ouvir a vaga fictícia">
+            <TextoOuvivel rotulo={t("simulador.paginaSimulador.ouvirAVagaFicticia")}>
               <p className="text-sm">{VAGA_FICTICIA.descricao}</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
                 <li>Local e horário: {VAGA_FICTICIA.local}.</li>
@@ -187,14 +191,14 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
                 <li>Acessibilidade: {VAGA_FICTICIA.acessibilidade}</li>
               </ul>
             </TextoOuvivel>
-            <p className="text-sm text-muted-foreground">Leia com calma. Na próxima etapa você separa o que a vaga exige do que é só um diferencial.</p>
+            <p className="text-sm text-muted-foreground">{t("simulador.paginaSimulador.leiaComCalmaNaProximaEtapaVoce")}</p>
           </div>
         ) : null}
 
         {passo === 1 ? (
           <div className="space-y-3">
             <p className="text-sm">
-              A vaga diz que são <strong>indispensáveis</strong> o ensino médio, escrever e-mails claros e gostar de atender pessoas. Planilhas e inglês básico são <strong>diferenciais</strong>, e ter
+              A vaga diz que são <strong>{t("simulador.paginaSimulador.indispensaveis")}</strong> {t("simulador.paginaSimulador.oEnsinoMedioEscreverEMails")} <strong>diferenciais</strong>, e ter
               trabalhado com atendimento é “ótimo, mas não obrigatório”. Marque cada requisito como obrigatório ou desejável.
             </p>
             <ul className="space-y-4">
@@ -233,15 +237,15 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
 
         {passo === 2 ? (
           <div className="space-y-2">
-            <p className="text-sm">Escreva, em poucas frases, quem você é profissionalmente. É só um treino: pode ser uma pessoa inventada.</p>
-            <Label htmlFor="sim-apresentacao">Apresentação</Label>
-            <CampoComDitado id="sim-apresentacao" valor={texto("apresentacao")} aoMudar={(v) => definirTexto("apresentacao", v)} rows={5} maxLength={1000} ajuda="Exemplo: “Trabalhei dois anos em atendimento e gosto de organizar tarefas. Busco uma vaga administrativa.”" />
+            <p className="text-sm">{t("simulador.paginaSimulador.escrevaEmPoucasFrasesQuemVoceE")}</p>
+            <Label htmlFor="sim-apresentacao">{t("simulador.paginaSimulador.apresentacao")}</Label>
+            <CampoComDitado id="sim-apresentacao" valor={texto("apresentacao")} aoMudar={(v) => definirTexto("apresentacao", v)} rows={5} maxLength={1000} ajuda={t("simulador.paginaSimulador.exemploTrabalheiDoisAnosEm")} />
           </div>
         ) : null}
 
         {passo === 3 ? (
           <fieldset className="space-y-2">
-            <legend className="text-sm">Escolha as experiências fictícias que combinam com a vaga. Não precisa marcar todas.</legend>
+            <legend className="text-sm">{t("simulador.paginaSimulador.escolhaAsExperienciasFicticias")}</legend>
             <ul className="space-y-2">
               {EXPERIENCIAS_FICTICIAS.map((e) => (
                 <li key={e.id} className="flex items-start gap-3">
@@ -263,7 +267,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
         {passo === 4 ? (
           <div className="space-y-3">
             <fieldset className="space-y-2">
-              <legend className="text-sm">Escolha de três a cinco habilidades que a vaga procura.</legend>
+              <legend className="text-sm">{t("simulador.paginaSimulador.escolhaDeTresACincoHabilidades")}</legend>
               <ul className="space-y-1">
                 {HABILIDADES_FICTICIAS.map((h) => (
                   <li key={h} className="flex items-start gap-3">
@@ -280,7 +284,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
                 ))}
               </ul>
             </fieldset>
-            <Label htmlFor="sim-habilidade-exemplo">Conte como você usou uma delas (opcional)</Label>
+            <Label htmlFor="sim-habilidade-exemplo">{t("simulador.paginaSimulador.conteComoVoceUsouUmaDelas")}</Label>
             <CampoComDitado id="sim-habilidade-exemplo" valor={texto("habilidade")} aoMudar={(v) => definirTexto("habilidade", v)} rows={3} maxLength={600} />
           </div>
         ) : null}
@@ -291,40 +295,40 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
               Pedir uma adaptação é um direito e é normal. Diga o que você precisa para participar, sem precisar explicar a sua condição. Veja um modelo e escreva o seu:
             </p>
             <blockquote className="rounded-lg border-l-4 border-primary bg-muted/40 p-3 text-sm italic">{MODELO_DE_PEDIDO_DE_ADAPTACAO}</blockquote>
-            <Label htmlFor="sim-adaptacao">Seu pedido de adaptação</Label>
+            <Label htmlFor="sim-adaptacao">{t("simulador.paginaSimulador.seuPedidoDeAdaptacao")}</Label>
             <CampoComDitado id="sim-adaptacao" valor={texto("adaptacao")} aoMudar={(v) => definirTexto("adaptacao", v)} rows={4} maxLength={600} />
           </div>
         ) : null}
 
         {passo === 6 ? (
           <div className="space-y-3">
-            <h3 className="text-lg font-bold">Sua candidatura de treino</h3>
-            <p className="text-sm text-muted-foreground">É assim que ficaria. Nada disto foi enviado e nenhuma candidatura de verdade foi criada.</p>
+            <h3 className="text-lg font-bold">{t("simulador.paginaSimulador.suaCandidaturaDeTreino")}</h3>
+            <p className="text-sm text-muted-foreground">{t("simulador.paginaSimulador.eAssimQueFicariaNadaDistoFoi")}</p>
             <dl className="space-y-3 text-sm">
               <div>
-                <dt className="font-semibold">Vaga</dt>
+                <dt className="font-semibold">{t("simulador.paginaSimulador.vaga")}</dt>
                 <dd>
                   {VAGA_FICTICIA.titulo}, {VAGA_FICTICIA.empresa}
                 </dd>
               </div>
               <div>
-                <dt className="font-semibold">Requisitos que você separou</dt>
+                <dt className="font-semibold">{t("simulador.paginaSimulador.requisitosQueVoceSeparou")}</dt>
                 <dd>{Object.keys(progresso.classificacao).length} de {REQUISITOS_DA_VAGA.length} classificados</dd>
               </div>
               <div>
-                <dt className="font-semibold">Apresentação</dt>
+                <dt className="font-semibold">{t("simulador.paginaSimulador.apresentacao")}</dt>
                 <dd className="whitespace-pre-line">{texto("apresentacao") || "Você não escreveu ainda."}</dd>
               </div>
               <div>
-                <dt className="font-semibold">Experiências escolhidas</dt>
+                <dt className="font-semibold">{t("simulador.paginaSimulador.experienciasEscolhidas")}</dt>
                 <dd>{progresso.experiencias.length ? EXPERIENCIAS_FICTICIAS.filter((e) => progresso.experiencias.includes(e.id)).map((e) => e.titulo).join("; ") : "Nenhuma."}</dd>
               </div>
               <div>
-                <dt className="font-semibold">Habilidades</dt>
+                <dt className="font-semibold">{t("simulador.paginaSimulador.habilidades")}</dt>
                 <dd>{progresso.habilidades.length ? progresso.habilidades.join(", ") : "Nenhuma."}</dd>
               </div>
               <div>
-                <dt className="font-semibold">Pedido de adaptação</dt>
+                <dt className="font-semibold">{t("simulador.paginaSimulador.pedidoDeAdaptacao")}</dt>
                 <dd className="whitespace-pre-line">{texto("adaptacao") || "Você não escreveu ainda."}</dd>
               </div>
             </dl>
@@ -338,6 +342,7 @@ function SimuladorDeCandidatura({ progresso, atualizar }: Props) {
 }
 
 function SimuladorDeEntrevista({ progresso, atualizar }: Props) {
+  const { t } = useIdioma();
   const total = PERGUNTAS_DE_ENTREVISTA.length;
   const passo = Math.min(progresso.passoEntrevista, total - 1);
   const pergunta = PERGUNTAS_DE_ENTREVISTA[passo];
@@ -349,36 +354,36 @@ function SimuladorDeEntrevista({ progresso, atualizar }: Props) {
       <CardContent className="space-y-4 p-6">
         <Cabecalho rotulo={`Pergunta ${passo + 1}`} passo={passo} total={total} titulo={pergunta.pergunta} aoPausar={() => atualizar({ modo: "menu" })} />
 
-        <TextoOuvivel rotulo="Ouvir a pergunta">
+        <TextoOuvivel rotulo={t("simulador.paginaSimulador.ouvirAPergunta")}>
           <p className="text-lg font-semibold">{pergunta.pergunta}</p>
         </TextoOuvivel>
 
         <details className="rounded-lg border p-3 text-sm">
-          <summary className="min-h-11 cursor-pointer font-semibold text-primary">Orientações e um exemplo</summary>
+          <summary className="min-h-11 cursor-pointer font-semibold text-primary">{t("simulador.paginaSimulador.orientacoesEUmExemplo")}</summary>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             {pergunta.orientacao.map((o) => (
               <li key={o}>{o}</li>
             ))}
           </ul>
           <p className="mt-2">
-            <span className="font-semibold">Exemplo (invente a sua resposta, este é só uma ilustração): </span>
+            <span className="font-semibold">{t("simulador.paginaSimulador.exemploInventeASuaRespostaEste")} </span>
             {pergunta.exemplo}
           </p>
         </details>
 
         <div className="space-y-2">
-          <Label htmlFor="sim-resposta">Sua resposta</Label>
-          <CampoComDitado id="sim-resposta" valor={resposta} aoMudar={(v) => atualizar({ respostas: { ...progresso.respostas, [pergunta.id]: v } })} rows={5} maxLength={1500} ajuda="Respostas curtas e diretas também valem." />
+          <Label htmlFor="sim-resposta">{t("simulador.paginaSimulador.suaResposta")}</Label>
+          <CampoComDitado id="sim-resposta" valor={resposta} aoMudar={(v) => atualizar({ respostas: { ...progresso.respostas, [pergunta.id]: v } })} rows={5} maxLength={1500} ajuda={t("simulador.paginaSimulador.respostasCurtasEDiretasTambem")} />
         </div>
 
         {retorno ? (
           <section aria-labelledby="sim-retorno" className="space-y-2 rounded-lg border bg-muted/30 p-3 text-sm">
             <h3 id="sim-retorno" className="font-bold">
-              Sugestões para a sua resposta
+              {t("simulador.paginaSimulador.sugestoesParaASuaResposta")}
             </h3>
             {retorno.pontosFortes.length > 0 ? (
               <div>
-                <p className="font-semibold">O que já está bom</p>
+                <p className="font-semibold">{t("simulador.paginaSimulador.oQueJaEstaBom")}</p>
                 <ul className="list-disc pl-5">
                   {retorno.pontosFortes.map((p) => (
                     <li key={p}>{p}</li>
@@ -388,7 +393,7 @@ function SimuladorDeEntrevista({ progresso, atualizar }: Props) {
             ) : null}
             {retorno.sugestoes.length > 0 ? (
               <div>
-                <p className="font-semibold">Ideias para melhorar</p>
+                <p className="font-semibold">{t("simulador.paginaSimulador.ideiasParaMelhorar")}</p>
                 <ul className="list-disc pl-5">
                   {retorno.sugestoes.map((s) => (
                     <li key={s}>{s}</li>
@@ -396,7 +401,7 @@ function SimuladorDeEntrevista({ progresso, atualizar }: Props) {
                 </ul>
               </div>
             ) : null}
-            <p className="text-xs text-muted-foreground">Isto é um treino, sem nota. Não avalia você nem a sua capacidade: cada pessoa tem o seu jeito de se comunicar.</p>
+            <p className="text-xs text-muted-foreground">{t("simulador.paginaSimulador.istoEUmTreinoSemNotaNaoAvalia")}</p>
           </section>
         ) : null}
 

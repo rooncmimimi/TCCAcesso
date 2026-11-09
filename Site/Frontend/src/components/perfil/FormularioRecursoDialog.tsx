@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,6 +67,7 @@ export function FormularioRecursoDialog({
   registro?: Registro;
   children: ReactNode;
 }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [atual, setAtual] = useState(Boolean(registro?.atual));
   const [emAndamento, setEmAndamento] = useState(Boolean(registro?.emAndamento));
@@ -163,27 +165,27 @@ export function FormularioRecursoDialog({
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="cargo">Cargo <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="cargo">{t("perfil.formularioRecursoDialog.cargo")} <span aria-hidden="true">*</span></Label>
                   <Input id="cargo" name="cargo" required minLength={2} maxLength={150} defaultValue={registro?.cargo ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="empresa">Empresa <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="empresa">{t("vaga.empresa")} <span aria-hidden="true">*</span></Label>
                   <Input id="empresa" name="empresa" required minLength={2} maxLength={150} defaultValue={registro?.empresa ?? ""} />
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="local">Local</Label>
+                  <Label htmlFor="local">{t("perfil.formularioRecursoDialog.local")}</Label>
                   <Input id="local" name="local" maxLength={150} defaultValue={registro?.local ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="modalidade">Modalidade</Label>
-                  <Input id="modalidade" name="modalidade" maxLength={50} placeholder="Presencial, remoto…" defaultValue={registro?.modalidade ?? ""} />
+                  <Label htmlFor="modalidade">{t("filtro.modalidade")}</Label>
+                  <Input id="modalidade" name="modalidade" maxLength={50} placeholder={t("perfil.formularioRecursoDialog.presencialRemoto")} defaultValue={registro?.modalidade ?? ""} />
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="dataInicio">Início <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="dataInicio">{t("cabecalho.inicio")} <span aria-hidden="true">*</span></Label>
                   <Input id="dataInicio" name="dataInicio" type="date" required defaultValue={registro?.dataInicio?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
@@ -192,13 +194,13 @@ export function FormularioRecursoDialog({
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
-                <Label htmlFor="atual" className="cursor-pointer">Trabalho atualmente aqui</Label>
+                <Label htmlFor="atual" className="cursor-pointer">{t("perfil.formularioRecursoDialog.trabalhoAtualmenteAqui")}</Label>
                 <Switch id="atual" checked={atual} onCheckedChange={setAtual} />
               </div>
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-x-2">
-                  <Label htmlFor="descricao">Descrição</Label>
-                  <DicaDeCampoBotao dica="experienciaDescricao" nomeDoCampo="Descrição" />
+                  <Label htmlFor="descricao">{t("vagaDetalhe.descricao")}</Label>
+                  <DicaDeCampoBotao dica="experienciaDescricao" nomeDoCampo={t("vagaDetalhe.descricao")} />
                 </div>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
                 <DitadoParaCampo campoId="descricao" />
@@ -210,36 +212,36 @@ export function FormularioRecursoDialog({
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="instituicao">Instituição <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="instituicao">{t("perfil.formularioRecursoDialog.instituicao")} <span aria-hidden="true">*</span></Label>
                   <Input id="instituicao" name="instituicao" required minLength={2} maxLength={180} defaultValue={registro?.instituicao ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="curso">Curso <span aria-hidden="true">*</span></Label>
+                  <Label htmlFor="curso">{t("perfil.formularioRecursoDialog.curso")} <span aria-hidden="true">*</span></Label>
                   <Input id="curso" name="curso" required minLength={2} maxLength={180} defaultValue={registro?.curso ?? ""} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nivel">Nível</Label>
-                <Input id="nivel" name="nivel" maxLength={80} placeholder="Técnico, graduação, pós…" defaultValue={registro?.nivel ?? ""} />
+                <Label htmlFor="nivel">{t("perfil.formularioRecursoDialog.nivel")}</Label>
+                <Input id="nivel" name="nivel" maxLength={80} placeholder={t("perfil.formularioRecursoDialog.tecnicoGraduacaoPos")} defaultValue={registro?.nivel ?? ""} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="dataInicio">Início</Label>
+                  <Label htmlFor="dataInicio">{t("cabecalho.inicio")}</Label>
                   <Input id="dataInicio" name="dataInicio" type="date" defaultValue={registro?.dataInicio?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dataFim">Conclusão</Label>
+                  <Label htmlFor="dataFim">{t("perfil.formularioRecursoDialog.conclusao")}</Label>
                   <Input id="dataFim" name="dataFim" type="date" disabled={emAndamento} defaultValue={registro?.dataFim?.slice(0, 10) ?? ""} />
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
-                <Label htmlFor="emAndamento" className="cursor-pointer">Em andamento</Label>
+                <Label htmlFor="emAndamento" className="cursor-pointer">{t("perfil.formularioRecursoDialog.emAndamento")}</Label>
                 <Switch id="emAndamento" checked={emAndamento} onCheckedChange={setEmAndamento} />
               </div>
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-x-2">
-                  <Label htmlFor="descricao">Descrição</Label>
-                  <DicaDeCampoBotao dica="formacaoDescricao" nomeDoCampo="Descrição" />
+                  <Label htmlFor="descricao">{t("vagaDetalhe.descricao")}</Label>
+                  <DicaDeCampoBotao dica="formacaoDescricao" nomeDoCampo={t("vagaDetalhe.descricao")} />
                 </div>
                 <Textarea id="descricao" name="descricao" rows={3} maxLength={2000} defaultValue={registro?.descricao ?? ""} />
                 <DitadoParaCampo campoId="descricao" />
@@ -250,25 +252,25 @@ export function FormularioRecursoDialog({
           {recurso === "certificados" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="titulo">Título <span aria-hidden="true">*</span></Label>
+                <Label htmlFor="titulo">{t("perfil.formularioRecursoDialog.titulo")} <span aria-hidden="true">*</span></Label>
                 <Input id="titulo" name="titulo" required minLength={2} maxLength={180} defaultValue={registro?.titulo ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="instituicao">Instituição emissora</Label>
+                <Label htmlFor="instituicao">{t("perfil.formularioRecursoDialog.instituicaoEmissora")}</Label>
                 <Input id="instituicao" name="instituicao" maxLength={180} defaultValue={registro?.instituicao ?? ""} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="emitidoEm">Emitido em</Label>
+                  <Label htmlFor="emitidoEm">{t("perfil.formularioRecursoDialog.emitidoEm")}</Label>
                   <Input id="emitidoEm" name="emitidoEm" type="date" defaultValue={registro?.emitidoEm?.slice(0, 10) ?? ""} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="expiraEm">Expira em</Label>
+                  <Label htmlFor="expiraEm">{t("perfil.formularioRecursoDialog.expiraEm")}</Label>
                   <Input id="expiraEm" name="expiraEm" type="date" defaultValue={registro?.expiraEm?.slice(0, 10) ?? ""} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="credencialUrl">Link da credencial</Label>
+                <Label htmlFor="credencialUrl">{t("perfil.formularioRecursoDialog.linkDaCredencial")}</Label>
                 <Input id="credencialUrl" name="credencialUrl" type="url" maxLength={500} defaultValue={registro?.credencialUrl ?? ""} />
               </div>
             </>
@@ -277,12 +279,12 @@ export function FormularioRecursoDialog({
           {recurso === "habilidades" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="nome">Habilidade <span aria-hidden="true">*</span></Label>
+                <Label htmlFor="nome">{t("perfil.formularioRecursoDialog.habilidade")} <span aria-hidden="true">*</span></Label>
                 <Input id="nome" name="nome" required minLength={2} maxLength={80} defaultValue={registro?.nome ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nivel">Nível</Label>
-                <Input id="nivel" name="nivel" maxLength={80} placeholder="Básico, intermediário, avançado…" defaultValue={registro?.nivel ?? ""} />
+                <Label htmlFor="nivel">{t("perfil.formularioRecursoDialog.nivel")}</Label>
+                <Input id="nivel" name="nivel" maxLength={80} placeholder={t("perfil.formularioRecursoDialog.basicoIntermediarioAvancado")} defaultValue={registro?.nivel ?? ""} />
               </div>
             </>
           )}

@@ -8,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { useIdioma } from "@/hooks/useIdioma";
 import type { CandidaturaPorStatus } from "@/services/admin.service";
 
 // As variáveis `--chart-*` guardam valores `oklch(...)` (ver `styles/globals.css`), então são
@@ -22,11 +23,11 @@ const CORES = [
 ];
 
 const configVisaoGeral = {
-  total: { label: "Total", color: "var(--chart-1)" },
+  total: { label: "admin.graficosRelatorios.total", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 const configCandidaturas = {
-  total: { label: "Candidaturas", color: "var(--chart-2)" },
+  total: { label: "admin.graficosRelatorios.candidaturas", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 type RelatoriosChartsProps = {
@@ -35,6 +36,7 @@ type RelatoriosChartsProps = {
 };
 
 export function GraficosRelatorios({ visaoGeral, candidaturasPorStatus }: RelatoriosChartsProps) {
+  const { t } = useIdioma();
   const dadosCandidaturas = candidaturasPorStatus.map((item) => ({
     status: item.status,
     total: Number(item.total),
@@ -44,7 +46,7 @@ export function GraficosRelatorios({ visaoGeral, candidaturasPorStatus }: Relato
     <div className="grid gap-4 lg:grid-cols-2">
       <Card className="shadow-none">
         <CardHeader>
-          <CardTitle className="text-base">Visão geral da plataforma</CardTitle>
+          <CardTitle className="text-base">{t("admin.graficosRelatorios.visaoGeralDaPlataforma")}</CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={configVisaoGeral} className="max-h-72 w-full">
@@ -69,12 +71,12 @@ export function GraficosRelatorios({ visaoGeral, candidaturasPorStatus }: Relato
 
       <Card className="shadow-none">
         <CardHeader>
-          <CardTitle className="text-base">Candidaturas por status</CardTitle>
+          <CardTitle className="text-base">{t("admin.graficosRelatorios.candidaturasPorStatus")}</CardTitle>
         </CardHeader>
         <CardContent>
           {dadosCandidaturas.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">
-              Ainda não há candidaturas registradas.
+              {t("admin.graficosRelatorios.aindaNaoHaCandidaturas")}
             </p>
           ) : (
             <ChartContainer config={configCandidaturas} className="max-h-72 w-full">

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PAIS_POR_CODIGO, PAISES } from "@/dados/paises";
 import { normalizarParaBusca } from "@/utils/texto";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const MAX_SUGESTOES = 8;
 
@@ -44,6 +45,7 @@ export function PaisAutocomplete({
   /** Texto de exemplo, no idioma escolhido. */
   placeholder?: string;
 }) {
+  const { t } = useIdioma();
   const listboxId = useId();
   const [texto, setTexto] = useState(() => PAIS_POR_CODIGO.get(valor) ?? "");
   const [aberto, setAberto] = useState(false);
@@ -169,7 +171,7 @@ export function PaisAutocomplete({
           ref={listaRef}
           id={listboxId}
           role="listbox"
-          aria-label="Países"
+          aria-label={t("cadastro.paisAutocomplete.paises")}
           className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
         >
           {sugestoes.map((pais, indice) => {

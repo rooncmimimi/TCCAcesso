@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Os três estados que toda lista tem antes de mostrar dados: carregando, falhou e vazia.
@@ -28,11 +29,12 @@ export function ListaCarregando({ rotulo, linhas = 5 }: { rotulo: string; linhas
 }
 
 export function ListaComErro({ mensagem, aoTentarDeNovo }: { mensagem: string; aoTentarDeNovo: () => void }) {
+  const { t } = useIdioma();
   return (
     <div role="alert" className="flex flex-col items-center gap-3 p-8 text-center">
       <p className="text-sm text-muted-foreground">{mensagem}</p>
       <Button variant="outline" size="sm" className="min-h-11" onClick={aoTentarDeNovo}>
-        Tentar novamente
+        {t("raiz.tentarNovamente")}
       </Button>
     </div>
   );

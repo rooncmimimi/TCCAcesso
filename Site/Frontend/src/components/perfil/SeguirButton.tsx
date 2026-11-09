@@ -6,11 +6,13 @@ import { extrairMensagemErro } from "@/services/api";
 import { cn } from "@/lib/utils";
 import type { ResumoSeguidores } from "@/types";
 import { toast } from "sonner";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type Acao = "seguir" | "deixar-de-seguir" | "solicitar" | "cancelar-solicitacao";
 
 interface Estado {
-  rotulo: string;
+  rotulo: ChaveBase;
   acao: Acao;
   variant: "default" | "outline";
   icon: typeof UserPlus;
@@ -25,27 +27,27 @@ function resolverEstado(resumo: ResumoSeguidores | undefined, tipo: "usuario" | 
 
   if (tipo === "empresa") {
     return seguindo
-      ? { rotulo: "Seguindo", acao: "deixar-de-seguir", variant: "outline", icon: UserCheck }
-      : { rotulo: "Seguir", acao: "seguir", variant: "default", icon: UserPlus };
+      ? { rotulo: "perfil.seguirButton.seguindo", acao: "deixar-de-seguir", variant: "outline", icon: UserCheck }
+      : { rotulo: "perfil.seguirButton.seguir", acao: "seguir", variant: "default", icon: UserPlus };
   }
 
   if (seguindo) {
-    return { rotulo: "Deixar de seguir", acao: "deixar-de-seguir", variant: "outline", icon: UserCheck };
+    return { rotulo: "perfil.seguirButton.deixarDeSeguir", acao: "deixar-de-seguir", variant: "outline", icon: UserCheck };
   }
 
   const perfilPrivado = resumo?.perfilPublico === false;
 
   if (!perfilPrivado) {
     return resumo?.elesSeguemVoce
-      ? { rotulo: "Seguir de volta", acao: "seguir", variant: "default", icon: UserPlus }
-      : { rotulo: "Seguir", acao: "seguir", variant: "default", icon: UserPlus };
+      ? { rotulo: "perfil.seguirButton.seguirDeVolta", acao: "seguir", variant: "default", icon: UserPlus }
+      : { rotulo: "perfil.seguirButton.seguir", acao: "seguir", variant: "default", icon: UserPlus };
   }
 
   if (resumo?.solicitacaoPendente) {
-    return { rotulo: "Solicitação enviada", acao: "cancelar-solicitacao", variant: "outline", icon: Clock };
+    return { rotulo: "perfil.seguirButton.solicitacaoEnviada", acao: "cancelar-solicitacao", variant: "outline", icon: Clock };
   }
 
-  return { rotulo: "Solicitar para seguir", acao: "solicitar", variant: "default", icon: UserPlus };
+  return { rotulo: "perfil.seguirButton.solicitarParaSeguir", acao: "solicitar", variant: "default", icon: UserPlus };
 }
 
 /** Botão de seguir/deixar de seguir/solicitar, com atualização otimista, para usuários ou empresas. */
@@ -61,6 +63,7 @@ export function SeguirButton({
   /** Classes extras de layout (ex.: `w-full` em cartões); nunca substitui as classes de estado do botão. */
   className?: string;
 }) {
+  const { t } = useIdioma();
   const queryClient = useQueryClient();
   const resumo = queryClient.getQueryData<ResumoSeguidores>(chaveResumo);
   const { rotulo, acao, variant, icon: Icone } = resolverEstado(resumo, tipo);
@@ -163,7 +166,7 @@ export function SeguirButton({
       ) : (
         <Icone className="size-4" aria-hidden="true" />
       )}
-      {rotulo}
+      {t(rotulo)}
     </Button>
   );
 }

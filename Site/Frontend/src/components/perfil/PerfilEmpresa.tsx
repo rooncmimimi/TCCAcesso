@@ -17,6 +17,7 @@ import { EnviarMensagemButton } from "./EnviarMensagemButton";
 import { BloquearUsuarioMenu } from "./BloquearUsuarioMenu";
 import { AvisoAprovacaoEmpresa } from "./AvisoAprovacaoEmpresa";
 import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * Perfil empresarial: dados, vagas abertas, publicações e seguidores da empresa.
@@ -25,6 +26,7 @@ import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
  * Com `usuarioId` de outra empresa: modo leitura pública, com botão de seguir.
  */
 export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
 
   const proprioPerfil = !usuarioId || usuarioId === usuario?.id;
@@ -91,7 +93,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
       return (
         <EstruturaApp>
           <div role="alert" className="py-10 text-center text-sm text-muted-foreground">
-            Este perfil não está disponível.
+            {t("perfil.perfilEmpresa.estePerfilNaoEstaDisponivel")}
           </div>
         </EstruturaApp>
       );
@@ -151,14 +153,14 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-extrabold">{nome}</h1>
-            <StatusBadge tom="sucesso">Aprovada</StatusBadge>
+            <StatusBadge tom="sucesso">{t("perfil.perfilEmpresa.aprovada")}</StatusBadge>
             {empresa.empresaVerificada && (
               <span
                 className="inline-flex items-center gap-1 text-primary"
-                title="Empresa verificada pelo ACESSO"
+                title={t("vaga.empresaVerificadaTitulo")}
               >
                 <BadgeCheck className="size-5" aria-hidden="true" />
-                <span className="sr-only">Empresa verificada</span>
+                <span className="sr-only">{t("vaga.empresaVerificada")}</span>
               </span>
             )}
           </div>
@@ -193,13 +195,13 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
           <CardContent className="space-y-4 p-5 sm:p-6">
             {empresa.descricao ? (
               <div>
-                <h2 className="text-lg font-bold">Sobre a empresa</h2>
+                <h2 className="text-lg font-bold">{t("perfil.perfilEmpresa.sobreAEmpresa")}</h2>
                 <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{empresa.descricao}</p>
               </div>
             ) : null}
             {empresa.culturaInclusiva ? (
               <div>
-                <h2 className="text-lg font-bold">Cultura de inclusão</h2>
+                <h2 className="text-lg font-bold">{t("perfil.perfilEmpresa.culturaDeInclusao")}</h2>
                 <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{empresa.culturaInclusiva}</p>
               </div>
             ) : null}
@@ -209,13 +211,13 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
 
       <Card className="mt-4 shadow-card">
         <CardContent className="p-5 sm:p-6">
-          <h2 className="text-lg font-bold">Vagas publicadas</h2>
+          <h2 className="text-lg font-bold">{t("perfil.perfilEmpresa.vagasPublicadas")}</h2>
           {carregandoVagas ? (
             <div role="status" aria-live="polite" className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Carregando vagas…
             </div>
           ) : !vagas || vagas.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">Nenhuma vaga publicada ainda.</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t("perfil.perfilEmpresa.nenhumaVagaPublicadaAinda")}</p>
           ) : (
             <ul className="mt-3 divide-y">
               {vagas.map((vaga) => (
@@ -249,7 +251,7 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
           <CardContent className="p-5 sm:p-6">
             {/* Uma única linha do tempo, com publicações e compartilhamentos intercalados por
                 data. */}
-            <h2 className="mb-4 text-lg font-bold">Publicações</h2>
+            <h2 className="mb-4 text-lg font-bold">{t("perfil.perfilEmpresa.publicacoes")}</h2>
             <LinhaDoTempoUsuario usuarioId={empresa.usuarioId ?? ""} />
           </CardContent>
         </Card>

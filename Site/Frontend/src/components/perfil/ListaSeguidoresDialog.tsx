@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { useSessao } from "@/hooks/useSessao";
@@ -28,6 +29,7 @@ export function ListaSeguidoresDialog({
   total: number;
   children: React.ReactNode;
 }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const { usuario } = useSessao();
 
@@ -54,7 +56,7 @@ export function ListaSeguidoresDialog({
           </div>
         ) : isError ? (
           <p role="alert" className="py-4 text-sm text-destructive">
-            Não foi possível carregar a lista.
+            {t("perfil.listaSeguidoresDialog.naoFoiPossivelCarregarALista")}
           </p>
         ) : !data || data.dados.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">

@@ -8,6 +8,7 @@ import { useDitado } from "@/hooks/useDitado";
 import { useEstadoDoMicrofone } from "@/hooks/useEstadoDoMicrofone";
 import { comoLiberarOMicrofone } from "@/lib/microfone";
 import { aplicarSugestao, sugerirCorrecoes } from "@/lib/vocabularioContextual";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * O ditado em si: botão de ditar, indicador de microfone, área de revisão com as correções sugeridas
@@ -15,6 +16,7 @@ import { aplicarSugestao, sugerirCorrecoes } from "@/lib/vocabularioContextual";
  * só quando a pessoa o revisa e confirma. Quem usa decide onde o texto entra (`aoInserir`).
  */
 export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => void }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const ditado = useDitado();
   const microfone = useEstadoDoMicrofone();
@@ -59,7 +61,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
               {ditado.ouvindo ? (
                 <>
                   <span aria-hidden="true" className="mr-2 inline-block size-2.5 animate-pulse rounded-full bg-destructive align-middle" />
-                  Microfone ligado
+                  {t("acessibilidade.painelDeDitado.microfoneLigado")}
                 </>
               ) : null}
             </p>
@@ -73,7 +75,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
           */}
           {ditado.ouvindo && (ditado.final || ditado.parcial) ? (
             <p className="text-sm">
-              <span className="font-semibold">Já ouvimos:</span> {ditado.final}
+              <span className="font-semibold">{t("acessibilidade.painelDeDitado.jaOuvimos")}</span> {ditado.final}
               {ditado.parcial ? <span className="italic text-muted-foreground"> {ditado.parcial}</span> : null}
             </p>
           ) : null}
@@ -96,35 +98,35 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
           </p>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">Este navegador não oferece ditado dentro do site. Você pode usar o ditado do sistema: no Windows, tecle Windows + H; no celular, use o microfone do teclado.</p>
+        <p className="text-xs text-muted-foreground">{t("acessibilidade.painelDeDitado.esteNavegadorNaoOfereceDitado")}</p>
       )}
 
       {revisao !== null ? (
         <section aria-labelledby={`${idBase}-revisao`} className="space-y-3 rounded-lg border-2 border-primary/50 p-3">
           <h3 id={`${idBase}-revisao`} className="text-sm font-bold">
-            Revise o que foi ouvido
+            {t("acessibilidade.painelDeDitado.reviseOQueFoiOuvido")}
           </h3>
           <div className="space-y-1">
             <Label htmlFor={`${idBase}-texto`} className="text-xs font-normal text-muted-foreground">
-              Você pode corrigir o texto antes de usar. Nada foi colocado no campo ainda.
+              {t("acessibilidade.painelDeDitado.vocePodeCorrigirOTextoAntesDe")}
             </Label>
             <Textarea id={`${idBase}-texto`} rows={3} value={revisao} onChange={(e) => setRevisao(e.target.value)} />
           </div>
 
           {sugestoes.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-sm font-semibold">Sugestões do ACESSO (você decide):</p>
+              <p className="text-sm font-semibold">{t("acessibilidade.painelDeDitado.sugestoesDoAcessoVoceDecide")}</p>
               <ul className="space-y-2">
                 {sugestoes.map((s) => (
                   <li key={`${s.inicio}:${s.sugestao}`} className="flex flex-wrap items-center gap-2 text-sm">
                     <span>
-                      Trocar “<strong>{s.trecho}</strong>” por “<strong>{s.sugestao}</strong>”? <span className="text-muted-foreground">{s.motivo}</span>
+                      Trocar “<strong>{s.trecho}</strong>{t("acessibilidade.painelDeDitado.por")}<strong>{s.sugestao}</strong>”? <span className="text-muted-foreground">{s.motivo}</span>
                     </span>
                     <Button type="button" size="sm" variant="secondary" onClick={() => setRevisao((atual) => (atual === null ? atual : aplicarSugestao(atual, s)))}>
                       Aceitar
                     </Button>
                     <Button type="button" size="sm" variant="ghost" onClick={() => setIgnoradas((atuais) => [...atuais, `${s.inicio}:${s.sugestao}`])}>
-                      Manter como está
+                      {t("acessibilidade.painelDeDitado.manterComoEsta")}
                     </Button>
                   </li>
                 ))}
@@ -134,7 +136,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
 
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={inserir} disabled={!revisao.trim()}>
-              Inserir no campo
+              {t("acessibilidade.painelDeDitado.inserirNoCampo")}
             </Button>
             <Button type="button" variant="ghost" onClick={() => setRevisao(null)}>
               Descartar

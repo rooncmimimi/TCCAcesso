@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ export function ConfirmarAcaoDialog({
   carregando = false,
   onConfirmar,
 }: ConfirmarAcaoDialogProps) {
+  const { t } = useIdioma();
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -45,7 +47,7 @@ export function ConfirmarAcaoDialog({
           <AlertDialogDescription>{descricao}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={carregando}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={carregando}>{t("post.cancelar")}</AlertDialogCancel>
           <AlertDialogAction
             disabled={carregando}
             onClick={(event) => {

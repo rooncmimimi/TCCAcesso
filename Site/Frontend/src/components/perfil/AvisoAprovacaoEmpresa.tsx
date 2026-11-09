@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Ban, Hourglass, ShieldAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useIdioma } from "@/hooks/useIdioma";
 
 type EmpresaStatus = {
   statusAprovacao?: string;
@@ -24,6 +25,7 @@ export function AvisoAprovacaoEmpresa({
   empresa: EmpresaStatus;
   acoes?: ReactNode;
 }) {
+  const { t } = useIdioma();
   const tituloRef = useRef<HTMLHeadingElement>(null);
 
   const status = empresa.statusAprovacao;
@@ -87,7 +89,7 @@ export function AvisoAprovacaoEmpresa({
 
         {!pendente && motivo ? (
           <p className="max-w-md rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            <strong>Motivo:</strong> {motivo}
+            <strong>{t("perfil.avisoAprovacaoEmpresa.motivo")}</strong> {motivo}
           </p>
         ) : null}
 

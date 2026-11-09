@@ -9,6 +9,7 @@ import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { useSessao } from "@/hooks/useSessao";
 import acessibilidadeService, { preferenciasParaApi } from "@/services/acessibilidade.service";
 import { extrairMensagemErro } from "@/services/api";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export const Route = createFileRoute("/boas-vindas")({
   head: () => ({
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/boas-vindas")({
 });
 
 function BoasVindas() {
+  const { t } = useIdioma();
   const { rascunho, salvar } = useAcessibilidade();
   const { usuario, atualizar, autenticado } = useSessao();
   const navigate = useNavigate();
@@ -39,13 +41,12 @@ function BoasVindas() {
         </div>
       </header>
       <main id="conteudo" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10">
-        <p className="text-sm font-bold uppercase tracking-wide text-primary">Passo 1 de 1</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-primary">{t("boas-vindas.passo1De1")}</p>
         <h1 className="mt-2 text-3xl font-extrabold">
           {usuario?.nome ? `Bem-vindo(a), ${usuario.nome.split(" ")[0]}!` : "Bem-vindo(a) ao ACESSO!"}
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Ajuste como você quer ver, ouvir e navegar. Tudo muda na hora — teste à vontade e salve
-          somente quando estiver do seu jeito. Você pode alterar depois no menu do seu perfil.
+          {t("boas-vindas.ajusteComoVoceQuerVerOuvirE")}
         </p>
 
         <Card className="mt-8 shadow-card">

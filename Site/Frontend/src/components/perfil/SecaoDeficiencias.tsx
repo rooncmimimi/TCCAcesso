@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -38,6 +39,7 @@ export function SecaoDeficiencias({
   candidato: Candidato;
   somenteLeitura?: boolean;
 }) {
+  const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [deficienciaId, setDeficienciaId] = useState<string>("");
   const queryClient = useQueryClient();
@@ -90,7 +92,7 @@ export function SecaoDeficiencias({
     <section aria-labelledby="secao-deficiencias" className="border-t pt-6">
       <div className="flex items-center justify-between gap-3">
         <h2 id="secao-deficiencias" className="text-lg font-bold">
-          Informações de acessibilidade
+          {t("perfil.secaoDeficiencias.informacoesDeAcessibilidade")}
         </h2>
         {somenteLeitura ? null : (
           <Dialog open={aberto} onOpenChange={setAberto}>
@@ -101,19 +103,19 @@ export function SecaoDeficiencias({
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Adicionar deficiência ao perfil</DialogTitle>
+                <DialogTitle>{t("perfil.secaoDeficiencias.adicionarDeficienciaAoPerfil")}</DialogTitle>
               </DialogHeader>
               <form onSubmit={enviar} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="deficienciaId">Deficiência</Label>
+                  <Label htmlFor="deficienciaId">{t("perfil.secaoDeficiencias.deficiencia")}</Label>
                   <Select value={deficienciaId} onValueChange={setDeficienciaId}>
                     <SelectTrigger id="deficienciaId">
-                      <SelectValue placeholder="Selecione uma opção" />
+                      <SelectValue placeholder={t("perfil.secaoDeficiencias.selecioneUmaOpcao")} />
                     </SelectTrigger>
                     <SelectContent>
                       {disponiveis.length === 0 ? (
                         <SelectItem value="_vazio" disabled>
-                          Nenhuma opção disponível
+                          {t("perfil.secaoDeficiencias.nenhumaOpcaoDisponivel")}
                         </SelectItem>
                       ) : (
                         disponiveis.map((d) => (
@@ -126,7 +128,7 @@ export function SecaoDeficiencias({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações (opcional)</Label>
+                  <Label htmlFor="observacoes">{t("perfil.secaoDeficiencias.observacoesOpcional")}</Label>
                   <Textarea id="observacoes" name="observacoes" rows={3} maxLength={1000} />
                 </div>
                 <DialogFooter>
@@ -146,8 +148,7 @@ export function SecaoDeficiencias({
 
       {vinculadas.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          Nenhuma informação de acessibilidade cadastrada. Adicionar é opcional e ajuda empresas a oferecer os
-          recursos certos.
+          {t("perfil.secaoDeficiencias.nenhumaInformacaoDe")}
         </p>
       ) : (
         <ul className="mt-3 flex flex-wrap gap-2">

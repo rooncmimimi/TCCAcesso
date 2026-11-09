@@ -10,9 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIdioma } from "@/hooks/useIdioma";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 
 export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propria: boolean }) {
+  const { t } = useIdioma();
   const [denunciando, setDenunciando] = useState(false);
   // Foco volta pra este botão ao fechar o DenunciarDialog (ver comentário
   // em DenunciarDialog.tsx sobre a disputa de foco entre o menu que fecha e
@@ -29,7 +31,7 @@ export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propr
               variant="ghost"
               size="icon"
               className="min-h-11 min-w-11 shrink-0"
-              aria-label="Mais opções da mensagem"
+              aria-label={t("mensagens.bolhaMensagem.maisOpcoesDaMensagem")}
             >
               <MoreVertical className="size-4" aria-hidden="true" />
             </Button>
@@ -39,7 +41,7 @@ export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propr
               className="text-destructive focus:text-destructive"
               onSelect={() => setDenunciando(true)}
             >
-              Denunciar mensagem
+              {t("mensagens.bolhaMensagem.denunciarMensagem")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -62,9 +64,9 @@ export function BolhaMensagem({ mensagem, propria }: { mensagem: Mensagem; propr
           <span>{formatarHora(mensagem.criadoEm)}</span>
           {propria &&
             (mensagem.lida ? (
-              <CheckCheck aria-label="Mensagem lida" className="size-3.5" />
+              <CheckCheck aria-label={t("mensagens.bolhaMensagem.mensagemLida")} className="size-3.5" />
             ) : (
-              <Check aria-label="Mensagem enviada" className="size-3.5" />
+              <Check aria-label={t("mensagens.bolhaMensagem.mensagemEnviada")} className="size-3.5" />
             ))}
         </div>
       </div>

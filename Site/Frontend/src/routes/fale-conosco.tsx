@@ -22,6 +22,7 @@ import {
   LIMITES_DE_CONTATO,
   type AssuntoDeContato,
 } from "@/dados/assuntosDeContato";
+import { useIdioma } from "@/hooks/useIdioma";
 import { useSessao } from "@/hooks/useSessao";
 import { cn } from "@/lib/utils";
 import { extrairMensagemErro } from "@/services/api";
@@ -68,6 +69,7 @@ function statusDoErro(erro: unknown): number | undefined {
 }
 
 function FaleConosco() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const [protocolo, setProtocolo] = useState<string | null>(null);
   const [enviadoPara, setEnviadoPara] = useState("");
@@ -115,7 +117,7 @@ function FaleConosco() {
   return (
     <AutenticacaoLayout className="max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/" aria-label="ACESSO, voltar para a página inicial" className="inline-flex">
+        <Link to="/" aria-label={t("auth.voltarPaginaInicial")} className="inline-flex">
           <Logo />
         </Link>
       </div>
@@ -128,7 +130,7 @@ function FaleConosco() {
                 <CheckCircle2 className="size-10 text-primary" aria-hidden="true" />
               </div>
               <h1 ref={tituloRef} tabIndex={-1} className="mt-4 text-xl font-extrabold outline-none">
-                Mensagem enviada
+                {t("fale-conosco.mensagemEnviada")}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Recebemos a sua mensagem e vamos responder para <strong className="text-foreground">{enviadoPara}</strong>.
@@ -136,7 +138,7 @@ function FaleConosco() {
               <p className="mt-4 text-sm">
                 Protocolo: <strong className="font-mono">{protocolo}</strong>
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">Guarde este número para citar a mensagem em um contato futuro.</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("fale-conosco.guardeEsteNumeroParaCitarA")}</p>
               <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
                 <Button
                   type="button"
@@ -147,25 +149,25 @@ function FaleConosco() {
                     reset({ nome: usuario?.nome ?? "", email: usuario?.email ?? "", assunto: undefined, mensagem: "", website: "" });
                   }}
                 >
-                  Enviar outra mensagem
+                  {t("fale-conosco.enviarOutraMensagem")}
                 </Button>
                 <Button asChild className="min-h-12">
-                  <Link to="/">Voltar ao início</Link>
+                  <Link to="/">{t("raiz.voltarInicio")}</Link>
                 </Button>
               </div>
             </div>
           ) : (
             <form onSubmit={aoEnviar} noValidate className="space-y-5">
               <div>
-                <h1 className="text-2xl font-extrabold">Fale conosco</h1>
+                <h1 className="text-2xl font-extrabold">{t("rodape.faleConosco")}</h1>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   Dúvidas, problemas, sugestões ou pedidos sobre os seus dados: escreva para a equipe do ACESSO.
                 </p>
               </div>
 
-              <LegendaObrigatorio texto="Campo obrigatório" />
+              <LegendaObrigatorio texto={t("fale-conosco.campoObrigatorio")} />
 
-              <Campo id="nome" rotulo="Seu nome" erro={errors.nome?.message} obrigatorio dicaObrigatorio="Campo obrigatório">
+              <Campo id="nome" rotulo={t("fale-conosco.seuNome")} erro={errors.nome?.message} obrigatorio dicaObrigatorio={t("fale-conosco.campoObrigatorio")}>
                 <Input
                   id="nome"
                   required
@@ -179,11 +181,11 @@ function FaleConosco() {
 
               <Campo
                 id="email"
-                rotulo="E-mail para resposta"
-                ajuda="Só usamos o seu e-mail para responder a esta mensagem."
+                rotulo={t("fale-conosco.eMailParaResposta")}
+                ajuda={t("fale-conosco.soUsamosOSeuEMailParaResponder")}
                 erro={errors.email?.message}
                 obrigatorio
-                dicaObrigatorio="Campo obrigatório"
+                dicaObrigatorio={t("fale-conosco.campoObrigatorio")}
               >
                 <Input
                   id="email"
@@ -197,7 +199,7 @@ function FaleConosco() {
                 />
               </Campo>
 
-              <Campo id="assunto" rotulo="Assunto" erro={errors.assunto?.message} obrigatorio dicaObrigatorio="Campo obrigatório">
+              <Campo id="assunto" rotulo={t("fale-conosco.assunto")} erro={errors.assunto?.message} obrigatorio dicaObrigatorio={t("fale-conosco.campoObrigatorio")}>
                 <select
                   id="assunto"
                   required
@@ -210,7 +212,7 @@ function FaleConosco() {
                   {...register("assunto")}
                 >
                   <option value="" disabled>
-                    Escolha um assunto
+                    {t("fale-conosco.escolhaUmAssunto")}
                   </option>
                   {CHAVES_DE_ASSUNTO.map((chave) => (
                     <option key={chave} value={chave}>
@@ -222,11 +224,11 @@ function FaleConosco() {
 
               <Campo
                 id="mensagem"
-                rotulo="Mensagem"
+                rotulo={t("fale-conosco.mensagem")}
                 ajuda={`${tamanho} de ${LIMITES_DE_CONTATO.mensagemMaximo} caracteres. Não escreva senhas nem números de documentos.`}
                 erro={errors.mensagem?.message}
                 obrigatorio
-                dicaObrigatorio="Campo obrigatório"
+                dicaObrigatorio={t("fale-conosco.campoObrigatorio")}
               >
                 <Textarea
                   id="mensagem"
@@ -245,13 +247,13 @@ function FaleConosco() {
                 tela. Pessoa nenhuma o encontra; um robô que preenche tudo o preenche, e a mensagem é descartada.
               */}
               <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
-                <label htmlFor="website">Não preencha este campo</label>
+                <label htmlFor="website">{t("fale-conosco.naoPreenchaEsteCampo")}</label>
                 <input id="website" type="text" tabIndex={-1} autoComplete="off" {...register("website")} />
               </div>
 
               {indisponivel && (
                 <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
-                  <p className="font-semibold">O envio por aqui não está disponível agora.</p>
+                  <p className="font-semibold">{t("fale-conosco.oEnvioPorAquiNaoEstaDisponivel")}</p>
                   <p className="mt-1 text-muted-foreground">
                     Você pode escrever direto para{" "}
                     <a href={`mailto:${EMAIL_DE_CONTATO}`} className="font-semibold text-primary underline underline-offset-2">
@@ -265,7 +267,7 @@ function FaleConosco() {
               <p className="text-xs text-muted-foreground">
                 Ao enviar, você concorda que a equipe leia a mensagem para responder. Veja como tratamos os dados no{" "}
                 <Link to="/privacidade" className="font-semibold text-primary underline underline-offset-2">
-                  Aviso de Privacidade
+                  {t("rodape.privacidade")}
                 </Link>
                 .
               </p>

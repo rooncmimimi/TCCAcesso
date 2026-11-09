@@ -2,6 +2,7 @@ import { Pause, Play, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const EXPLICACAO_DO_MODO = {
   palavra: "Destacando palavra por palavra",
@@ -17,13 +18,14 @@ const EXPLICACAO_DO_MODO = {
  * anúncio repetido, e os botões têm nome próprio.
  */
 export function ControleDeLeitura() {
+  const { t } = useIdioma();
   const { lendo, pausado, modo, pausar, retomar, parar } = useLeituraDestacada();
 
   if (!lendo) return null;
 
   return (
     <section
-      aria-label="Controle de leitura"
+      aria-label={t("acessibilidade.controleDeLeitura.controleDeLeitura")}
       className="fixed bottom-4 left-1/2 z-[60] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-lg"
     >
       <div className="flex gap-2">

@@ -9,6 +9,7 @@ import { CopiaCompartilhadaLista } from "@/components/candidatura/CopiaCompartil
 import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
 import { extrairMensagemErro } from "@/services/api";
 import { RESPOSTAS_DA_EMPRESA, rotuloDaResposta, type AdaptacoesDaEmpresa, type RespostaDaEmpresa } from "@/types/adaptacoes";
+import { useIdioma } from "@/hooks/useIdioma";
 
 /**
  * O que a pessoa candidata autorizou compartilhar com ESTA empresa, nesta candidatura, e o campo para
@@ -16,6 +17,7 @@ import { RESPOSTAS_DA_EMPRESA, rotuloDaResposta, type AdaptacoesDaEmpresa, type 
  * a autorização em pé; se a pessoa retirar, o componente simplesmente deixa de receber a cópia.
  */
 export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoResponder }: { candidaturaId: string; nome: string; adaptacoes: AdaptacoesDaEmpresa; aoResponder?: () => void }) {
+  const { t } = useIdioma();
   const idBase = useId();
   const queryClient = useQueryClient();
   const [resposta, setResposta] = useState<RespostaDaEmpresa | "">(adaptacoes.resposta ?? "");
@@ -37,7 +39,7 @@ export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoRe
         Pedido de adaptação de {nome}
       </h4>
       <p className="text-xs text-muted-foreground">
-        A pessoa autorizou compartilhar estas informações só nesta candidatura e só para o processo seletivo. Use-as apenas para isso e não as repasse.
+        {t("candidatura.adaptacoesPedidasEmpresa.aPessoaAutorizouCompartilhar")}
       </p>
       <CopiaCompartilhadaLista itens={adaptacoes.itens} />
 
@@ -49,7 +51,7 @@ export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoRe
         }}
       >
         <fieldset className="space-y-1">
-          <legend className="text-sm font-semibold">Sua resposta</legend>
+          <legend className="text-sm font-semibold">{t("candidatura.adaptacoesPedidasEmpresa.suaResposta")}</legend>
           {RESPOSTAS_DA_EMPRESA.map((r) => (
             <label key={r.valor} className="flex min-h-11 items-center gap-2 text-sm">
               <input type="radio" name={`${idBase}-resposta`} value={r.valor} checked={resposta === r.valor} onChange={() => setResposta(r.valor)} />

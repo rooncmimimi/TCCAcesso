@@ -16,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useSessao } from "@/hooks/useSessao";
@@ -88,20 +90,20 @@ function useRetornoDaVinculacao(aoMudar: () => void) {
 
 type Acao = "vincular" | "desvincular";
 
-const TEXTOS: Record<Acao, { titulo: string; descricao: string; confirmar: string; enviando: string }> = {
+const TEXTOS: Record<Acao, { titulo: ChaveBase; descricao: ChaveBase; confirmar: ChaveBase; enviando: ChaveBase }> = {
   vincular: {
-    titulo: "Vincular conta Google",
+    titulo: "configuracoes.secaoContasConectadas.vincularContaGoogle",
     descricao:
-      "Por segurança, confirme sua senha do ACESSO. Depois você escolhe a conta Google na página do próprio Google, e a sua senha do Google nunca passa por aqui.",
-    confirmar: "Continuar para o Google",
-    enviando: "Abrindo o Google…",
+      "configuracoes.secaoContasConectadas.porSegurancaConfirmeSuaSenhaDo",
+    confirmar: "configuracoes.secaoContasConectadas.continuarParaOGoogle",
+    enviando: "configuracoes.secaoContasConectadas.abrindoOGoogle",
   },
   desvincular: {
-    titulo: "Desvincular conta Google",
+    titulo: "configuracoes.secaoContasConectadas.desvincularContaGoogle",
     descricao:
-      "Depois de desvincular, você entra no ACESSO apenas com e-mail e senha. Confirme sua senha para continuar.",
-    confirmar: "Desvincular",
-    enviando: "Desvinculando…",
+      "configuracoes.secaoContasConectadas.depoisDeDesvincularVoceEntraNo",
+    confirmar: "configuracoes.secaoContasConectadas.desvincular",
+    enviando: "configuracoes.secaoContasConectadas.desvinculando",
   },
 };
 
@@ -119,6 +121,7 @@ function DialogoSenha({
   aoConfirmar: (senha: string) => void;
   aoFechar: () => void;
 }) {
+  const { t } = useIdioma();
   const [senha, setSenha] = useState("");
   const campoRef = useRef<HTMLInputElement>(null);
   const textos = TEXTOS[acao];
@@ -141,12 +144,12 @@ function DialogoSenha({
           className="space-y-4"
         >
           <DialogHeader>
-            <DialogTitle>{textos.titulo}</DialogTitle>
-            <DialogDescription>{textos.descricao}</DialogDescription>
+            <DialogTitle>{t(textos.titulo)}</DialogTitle>
+            <DialogDescription>{t(textos.descricao)}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2">
-            <Label htmlFor="senha-conta-google">Senha atual</Label>
+            <Label htmlFor="senha-conta-google">{t("configuracoes.secaoContasConectadas.senhaAtual")}</Label>
             <PasswordInput
               id="senha-conta-google"
               ref={campoRef}
@@ -172,10 +175,10 @@ function DialogoSenha({
             <Button type="submit" disabled={enviando || !senha} variant={acao === "desvincular" ? "destructive" : "default"}>
               {enviando ? (
                 <>
-                  <Loader2 className="animate-spin" aria-hidden="true" /> {textos.enviando}
+                  <Loader2 className="animate-spin" aria-hidden="true" /> {t(textos.enviando)}
                 </>
               ) : (
-                textos.confirmar
+                t(textos.confirmar)
               )}
             </Button>
           </DialogFooter>
@@ -198,6 +201,7 @@ function DialogoSenha({
  * de empresa é outra conta, com e-mail e senha próprios.
  */
 export function SecaoContasConectadas() {
+  const { t } = useIdioma();
   const { usuario } = useSessao();
   const queryClient = useQueryClient();
   const ehCandidato = usuario?.tipo === "candidato";
@@ -249,9 +253,9 @@ export function SecaoContasConectadas() {
   return (
     <Card className="shadow-none">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-lg">Contas conectadas</CardTitle>
+        <CardTitle className="text-lg">{t("configuracoes.secaoContasConectadas.contasConectadas")}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Outras contas com as quais você pode entrar no ACESSO, além de e-mail e senha.
+          {t("configuracoes.secaoContasConectadas.outrasContasComAsQuaisVocePode")}
         </p>
       </CardHeader>
       <CardContent>
@@ -261,9 +265,9 @@ export function SecaoContasConectadas() {
           </div>
         ) : isError || !conta ? (
           <div role="alert" className="space-y-2 text-sm text-destructive">
-            <p>Não foi possível carregar suas contas conectadas.</p>
+            <p>{t("configuracoes.secaoContasConectadas.naoFoiPossivelCarregarSuas")}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Tentar novamente
+              {t("raiz.tentarNovamente")}
             </Button>
           </div>
         ) : (
@@ -291,7 +295,7 @@ export function SecaoContasConectadas() {
                   size="sm"
                   className="w-full text-destructive hover:text-destructive sm:w-auto"
                   onClick={() => setAcao("desvincular")}
-                  aria-label="Desvincular conta Google"
+                  aria-label={t("configuracoes.secaoContasConectadas.desvincularContaGoogle")}
                 >
                   Desvincular
                 </Button>
@@ -301,7 +305,7 @@ export function SecaoContasConectadas() {
                   size="sm"
                   className="w-full sm:w-auto"
                   onClick={() => setAcao("vincular")}
-                  aria-label="Vincular conta Google"
+                  aria-label={t("configuracoes.secaoContasConectadas.vincularContaGoogle")}
                 >
                   Vincular
                 </Button>

@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ export function LogsTabela({
   entidadeId,
   entidadeTipo,
 }: { entidadeId?: string; entidadeTipo?: string } = {}) {
+  const { t } = useIdioma();
   const [pagina, setPagina] = useState(1);
   const [acao, setAcao] = useState("");
   const [detalhe, setDetalhe] = useState<LogAdmin | null>(null);
@@ -57,7 +59,7 @@ export function LogsTabela({
           }}
         >
           <div className="min-w-56">
-            <Label htmlFor="filtro-acao">Ação</Label>
+            <Label htmlFor="filtro-acao">{t("admin.logsTabela.acao")}</Label>
             <Input
               id="filtro-acao"
               value={acao}
@@ -73,22 +75,22 @@ export function LogsTabela({
       )}
 
       {isLoading ? (
-        <ListaCarregando rotulo="Carregando os registros de auditoria…" linhas={5} />
+        <ListaCarregando rotulo={t("admin.logsTabela.carregandoOsRegistrosDe")} linhas={5} />
       ) : isError ? (
-        <ListaComErro mensagem="Não foi possível carregar os logs." aoTentarDeNovo={() => refetch()} />
+        <ListaComErro mensagem={t("admin.logsTabela.naoFoiPossivelCarregarOsLogs")} aoTentarDeNovo={() => refetch()} />
       ) : logs.length === 0 ? (
-        <ListaVazia icone={ScrollText} mensagem="Nenhum registro de auditoria encontrado." />
+        <ListaVazia icone={ScrollText} mensagem={t("admin.logsTabela.nenhumRegistroDeAuditoria")} />
       ) : (
         <>
           <Table>
-            <caption className="sr-only">Registros de auditoria administrativa (somente leitura)</caption>
+            <caption className="sr-only">{t("admin.logsTabela.registrosDeAuditoria")}</caption>
             <TableHeader>
               <TableRow>
-                <TableHead>Ação</TableHead>
-                <TableHead>Entidade</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead>{t("admin.logsTabela.acao")}</TableHead>
+                <TableHead>{t("admin.logsTabela.entidade")}</TableHead>
+                <TableHead>{t("admin.logsTabela.admin")}</TableHead>
+                <TableHead>{t("vagaDetalhe.descricao")}</TableHead>
+                <TableHead>{t("admin.logsTabela.data")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

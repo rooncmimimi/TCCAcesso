@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIdioma } from "@/hooks/useIdioma";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +46,7 @@ export function BloquearUsuarioMenu({
   denunciaEntidadeTipo?: EntidadeDenunciaTipo;
   denunciaEntidadeId?: string;
 }) {
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const [confirmando, setConfirmando] = useState(false);
   const [denunciando, setDenunciando] = useState(false);
@@ -76,7 +78,7 @@ export function BloquearUsuarioMenu({
             variant="outline"
             size="icon"
             className="size-11 shrink-0"
-            aria-label="Mais opções"
+            aria-label={t("perfil.bloquearUsuarioMenu.maisOpcoes")}
           >
             <MoreVertical aria-hidden="true" />
           </Button>
@@ -123,7 +125,7 @@ export function BloquearUsuarioMenu({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={bloquear.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={bloquear.isPending}>{t("post.cancelar")}</AlertDialogCancel>
             <AlertDialogAction
               className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={bloquear.isPending}

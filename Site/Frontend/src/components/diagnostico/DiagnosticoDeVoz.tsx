@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
-import { ditadoSuportado } from "@/hooks/useDitado";
+import { reconhecimentoDeFalaSuportado } from "@/lib/microfone";
 import { useLeituraDestacada } from "@/hooks/useLeituraDestacada";
 import { suporteDestaque } from "@/lib/leituraDestacada";
 import { montarRelatorio, resumirVozes, testarEventosDePalavra, testarPausaNativa, type CriarEnunciado, type DadosDoRelatorio, type EnunciadoDeFala, type ResultadoDePalavras, type ResultadoDePausa, type SintetizadorDeFala, type VozDoAparelho } from "@/lib/diagnosticoDeVoz";
@@ -161,7 +161,7 @@ export function DiagnosticoDeVoz() {
       plataforma: typeof navigator === "undefined" ? "desconhecido" : ((navigator as unknown as { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform ?? "desconhecido"),
       idioma: typeof document === "undefined" ? "?" : document.documentElement.lang || "?",
       online: typeof navigator === "undefined" ? true : navigator.onLine,
-      suporte: { sintese: sintetizador !== null, destaquePorPalavra: suporteDestaque(), reconhecimentoDeFala: ditadoSuportado() },
+      suporte: { sintese: sintetizador !== null, destaquePorPalavra: suporteDestaque(), reconhecimentoDeFala: reconhecimentoDeFalaSuportado() },
       vozes: resumirVozes(vozes),
       vozEscolhida,
       palavras,

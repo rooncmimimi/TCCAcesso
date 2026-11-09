@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { abrirAjudaDeAtalhos } from "@/hooks/useAtalhosDeTeclado";
 import { EVENTO_PEDIR_COMANDO_DE_VOZ, useComandoDeVoz } from "@/hooks/useComandoDeVoz";
+import { useEstadoDoMicrofone } from "@/hooks/useEstadoDoMicrofone";
 import { useSessao } from "@/hooks/useSessao";
 import { useVoz } from "@/hooks/useVoz";
 import { EXEMPLOS_DE_COMANDOS, interpretarComando, type Comando } from "@/lib/comandosDeVoz";
+import { comoLiberarOMicrofone } from "@/lib/microfone";
 
 /** Acha, na página, o botão ou link cujo nome começa com algum dos termos (e está ativo). */
 function acharControle(termos: RegExp): HTMLElement | null {
@@ -104,23 +106,33 @@ export function ComandosDeVoz() {
   );
 
   const voz = useComandoDeVoz(aoOuvir);
+  const microfone = useEstadoDoMicrofone();
+  const { suportado, iniciar } = voz;
 
   useEffect(() => {
     const pedir = () => {
-      if (!voz.suportado) {
+      if (!suportado) {
         setResposta({ ouvido: null, texto: "Este navegador não oferece reconhecimento de voz dentro do site. Use o Chrome ou o Edge, ou os atalhos de teclado.", erro: true });
 
         return;
       }
 
+      // Com o microfone bloqueado, abrir a escuta só faria o navegador recusar calado: é melhor dizer
+      // de uma vez o que está acontecendo e onde se libera.
+      if (microfone === "negado") {
+        setResposta({ ouvido: null, texto: `O microfone está bloqueado para este site no seu navegador. ${comoLiberarOMicrofone()}`, erro: true });
+
+        return;
+      }
+
       setResposta(null);
-      voz.iniciar();
+      iniciar();
     };
 
     window.addEventListener(EVENTO_PEDIR_COMANDO_DE_VOZ, pedir);
 
     return () => window.removeEventListener(EVENTO_PEDIR_COMANDO_DE_VOZ, pedir);
-  }, [voz]);
+  }, [iniciar, microfone, suportado]);
 
   // O aviso de resposta some sozinho depois de um tempo, exceto erros (que a pessoa precisa ler).
   useEffect(() => {

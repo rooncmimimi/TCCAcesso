@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useDitado } from "@/hooks/useDitado";
+import { useEstadoDoMicrofone } from "@/hooks/useEstadoDoMicrofone";
+import { comoLiberarOMicrofone } from "@/lib/microfone";
 import { aplicarSugestao, sugerirCorrecoes } from "@/lib/vocabularioContextual";
 
 /**
@@ -15,17 +17,21 @@ import { aplicarSugestao, sugerirCorrecoes } from "@/lib/vocabularioContextual";
 export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => void }) {
   const idBase = useId();
   const ditado = useDitado();
+  const microfone = useEstadoDoMicrofone();
   const [revisao, setRevisao] = useState<string | null>(null);
   const [ignoradas, setIgnoradas] = useState<string[]>([]);
+  const { ouvindo, final, limpar } = ditado;
 
   // Quando a escuta termina e há texto reconhecido, abre a revisão (nunca insere direto).
   useEffect(() => {
-    if (!ditado.ouvindo && ditado.final.trim()) {
-      setRevisao(ditado.final.trim());
-      setIgnoradas([]);
-      ditado.limpar();
-    }
-  }, [ditado, ditado.ouvindo, ditado.final]);
+    const texto = final.trim();
+
+    if (ouvindo || !texto) return;
+
+    setRevisao(texto);
+    setIgnoradas([]);
+    limpar();
+  }, [ouvindo, final, limpar]);
 
   const sugestoes = useMemo(
     () => (revisao ? sugerirCorrecoes(revisao).filter((s) => !ignoradas.includes(`${s.inicio}:${s.sugestao}`)) : []),
@@ -59,16 +65,34 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
             </p>
           </div>
 
-          {ditado.ouvindo && ditado.parcial ? <p className="text-sm italic text-muted-foreground">Ouvindo: {ditado.parcial}</p> : null}
+          {/*
+            O que já foi ouvido, enquanto a pessoa fala. A escuta atravessa as pausas, então sem isto ela
+            falaria frases seguidas sem ver nada acontecer e pensaria que o microfone morreu. Não é uma
+            região "ao vivo" de propósito: um leitor de tela repetindo o texto inteiro a cada frase
+            atrapalharia mais do que ajuda — o texto é lido na revisão, ao parar.
+          */}
+          {ditado.ouvindo && (ditado.final || ditado.parcial) ? (
+            <p className="text-sm">
+              <span className="font-semibold">Já ouvimos:</span> {ditado.final}
+              {ditado.parcial ? <span className="italic text-muted-foreground"> {ditado.parcial}</span> : null}
+            </p>
+          ) : null}
+
           {ditado.erro ? (
             <p role="alert" className="text-sm font-medium text-destructive">
               {ditado.erro}
             </p>
           ) : null}
 
+          {microfone === "negado" && !ditado.ouvindo ? (
+            <p role="status" className="rounded-md border-2 border-destructive/60 p-2 text-sm font-medium">
+              O microfone está bloqueado para este site no seu navegador — por isso o ditado não funciona, mesmo com internet. {comoLiberarOMicrofone()}
+            </p>
+          ) : null}
+
           <p className="text-xs text-muted-foreground">
-            O ACESSO não grava áudio. Em navegadores como Chrome e Edge, quem reconhece a fala é um serviço online do próprio navegador, então o áudio pode sair do seu aparelho e é
-            preciso internet.
+            O microfone continua ligado nas pausas: fale no seu tempo e aperte “Parar ditado” quando terminar. O ACESSO não grava áudio. Em navegadores como Chrome e Edge, quem
+            reconhece a fala é um serviço online do próprio navegador, então o áudio pode sair do seu aparelho e é preciso internet.
           </p>
         </div>
       ) : (

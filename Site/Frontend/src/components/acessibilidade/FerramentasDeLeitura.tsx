@@ -17,7 +17,7 @@ import {
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { abrirAjudaDeAtalhos } from "@/hooks/useAtalhosDeTeclado";
 import { pedirComandoDeVoz } from "@/hooks/useComandoDeVoz";
-import { ditadoSuportado } from "@/hooks/useDitado";
+import { reconhecimentoDeFalaSuportado } from "@/lib/microfone";
 import { termosNoTexto } from "@/dados/glossario";
 import { coletarOndeEstou } from "@/lib/ondeEstou";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
@@ -131,7 +131,7 @@ export function FerramentasDeLeitura() {
                   <BotaoDoMenu
                     icone={Mic}
                     titulo="Falar um comando"
-                    detalhe={ditadoSuportado() ? "Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede." : "Este navegador não oferece reconhecimento de voz no site."}
+                    detalhe={reconhecimentoDeFalaSuportado() ? "Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede." : "Este navegador não oferece reconhecimento de voz no site."}
                     onClick={() => {
                       setAberto(false);
                       // Espera o diálogo fechar para o comando agir sobre a página, e não sobre o diálogo.

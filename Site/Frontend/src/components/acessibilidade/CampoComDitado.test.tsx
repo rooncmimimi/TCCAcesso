@@ -178,3 +178,64 @@ describe("com suporte", () => {
     expect(ReconhecimentoFalso.ultimo?.abort).toHaveBeenCalled();
   });
 });
+
+/**
+ * O relato era "o ditado não funciona mesmo tendo internet e navegador que suporta". Duas causas, as duas
+ * invisíveis na tela: o navegador encerra a escuta sozinho no primeiro silêncio, e o microfone pode estar
+ * bloqueado para o site sem que nada diga isso.
+ */
+describe("o que a pessoa vê quando o navegador atrapalha", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    Object.defineProperty(window, "SpeechRecognition", { value: ReconhecimentoFalso, configurable: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("o navegador encerra a escuta no silêncio e o ditado continua, sem abrir a revisão no meio da frase", () => {
+    renderizar();
+
+    fireEvent.click(screen.getByRole("button", { name: /ditar texto/i }));
+    act(() => ReconhecimentoFalso.ultimo!.falar("trabalho com atendimento"));
+
+    // Chrome: fim de turno enquanto a pessoa pensa na frase seguinte.
+    act(() => void ReconhecimentoFalso.ultimo!.onend?.());
+    act(() => void vi.advanceTimersByTime(600));
+
+    expect(screen.queryByRole("heading", { name: /revise/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/microfone ligado/i)).toBeInTheDocument();
+
+    // E o que for dito depois do recomeço entra no mesmo texto.
+    act(() => ReconhecimentoFalso.ultimo!.falar("e com público"));
+    fireEvent.click(screen.getByRole("button", { name: /parar ditado/i }));
+
+    expect(screen.getByLabelText(/você pode corrigir o texto/i)).toHaveValue("trabalho com atendimento e com público");
+  });
+
+  it("mostra o que já foi ouvido enquanto a pessoa fala: sem isso, parecia que o microfone tinha morrido", () => {
+    renderizar();
+
+    fireEvent.click(screen.getByRole("button", { name: /ditar texto/i }));
+    act(() => ReconhecimentoFalso.ultimo!.falar("sou auxiliar administrativo"));
+
+    expect(screen.getByText(/já ouvimos/i).closest("p")).toHaveTextContent("sou auxiliar administrativo");
+  });
+
+  it("diz que o microfone continua ligado nas pausas", () => {
+    renderizar();
+
+    expect(screen.getByText(/continua ligado nas pausas/i)).toBeInTheDocument();
+  });
+
+  it("microfone bloqueado no navegador: avisa antes de a pessoa tentar, e diz onde liberar", async () => {
+    vi.useRealTimers();
+    Object.defineProperty(navigator, "permissions", { value: { query: vi.fn().mockResolvedValue({ state: "denied" }) }, configurable: true });
+    renderizar();
+
+    expect(await screen.findByText(/microfone está bloqueado/i)).toHaveTextContent(/cadeado|permiss|ajustes/i);
+
+    Reflect.deleteProperty(navigator, "permissions");
+  });
+});

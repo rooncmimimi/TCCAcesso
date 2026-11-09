@@ -4,7 +4,12 @@ import ComentarioController from "../controllers/ComentarioController.js";
 import CurtidaController from "../controllers/CurtidaController.js";
 import autenticacaoMiddleware from "../middlewares/autenticacaoMiddleware.js";
 import validacaoMiddleware from "../middlewares/validacaoMiddleware.js";
-import { uploadAnexos, uploadImagem, criarProcessadorArmazenamento } from "../middlewares/uploadMiddleware.js";
+import {
+    uploadAnexos,
+    uploadImagemParaLer,
+    conferirConteudoDoArquivo,
+    criarProcessadorArmazenamento
+} from "../middlewares/uploadMiddleware.js";
 import { limiteSugestaoDescricao } from "../middlewares/limiteRequisicoesMiddleware.js";
 
 // Anexos de postagem vão para `postagens/<usuarioId>/<uuid>.ext`. O `postagemId` ainda não existe
@@ -61,10 +66,19 @@ router.post(
 // Imagem enviada só para gerar o texto sugerido; a foto em si nunca é
 // salva aqui (a publicação/edição de anexo continua sendo os fluxos já
 // existentes, que exigem confirmação explícita do usuário).
+// Sem chave da OpenRouter configurada o Site nem oferece o botão: perguntar aqui é mais honesto
+// do que mostrar um botão que sempre dá erro.
+router.get(
+    "/anexos/sugerir-descricao/disponibilidade",
+    PostagemController.disponibilidadeSugestaoDescricao
+);
+
 router.post(
     "/anexos/sugerir-descricao",
     limiteSugestaoDescricao,
-    uploadImagem.single("imagem"),
+    // `uploadImagemParaLer`: em memória sempre, porque esta rota só LÊ a imagem.
+    uploadImagemParaLer.single("imagem"),
+    conferirConteudoDoArquivo(),
     PostagemController.sugerirDescricaoAnexo
 );
 

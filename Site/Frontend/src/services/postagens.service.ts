@@ -1,5 +1,7 @@
 import clienteApi from "./api";
 import { buscarPaginado, type Paginado } from "./http";
+import { prepararImagemParaDescricao } from "@/lib/imagemParaDescricao";
+import type { CodigoIdioma } from "@/i18n/idiomas";
 import type { ComentarioCompleto, ItemLinhaDoTempo, PostagemCompleta } from "@/types";
 
 export interface FiltroFeed {
@@ -101,14 +103,34 @@ export const postagensService = {
    * só devolve um texto para o usuário revisar. A imagem só é enviada
    * quando esta função é chamada (nunca automaticamente).
    */
-  async sugerirDescricao(imagem: File | Blob): Promise<string> {
+  async sugerirDescricao(imagem: File | Blob, idioma: CodigoIdioma): Promise<string> {
+    // Reduz a imagem e acerta o tipo declarado antes de enviar (ver imagemParaDescricao).
+    const { arquivo, nome } = await prepararImagemParaDescricao(imagem);
+
     const form = new FormData();
-    form.append("imagem", imagem, imagem instanceof File ? imagem.name : "imagem.png");
+    form.append("imagem", arquivo, nome);
+    // A descrição alternativa sai no idioma em que a pessoa está usando o Site.
+    form.append("idioma", idioma);
 
     const { data } = await clienteApi.post<{ descricao: string }>("/postagens/anexos/sugerir-descricao", form, {
       headers: { "Content-Type": "multipart/form-data" },
+      // O servidor tenta um modelo gratuito por vez, com orçamento de 40 s. O limite padrão da
+      // instância (20 s) desistiria antes de ele responder, e a pessoa veria "erro de rede"
+      // mesmo quando a descrição estava a caminho.
+      timeout: 50_000,
     });
     return data.descricao;
+  },
+
+  /**
+   * Se a sugestão por IA está configurada no servidor. Sem a chave da OpenRouter o Site não
+   * oferece o botão, em vez de levar a pessoa a um erro.
+   */
+  async sugestaoDeDescricaoDisponivel(): Promise<boolean> {
+    const { data } = await clienteApi.get<{ disponivel: boolean }>(
+      "/postagens/anexos/sugerir-descricao/disponibilidade",
+    );
+    return Boolean(data.disponivel);
   },
 
   /* Curtidas */

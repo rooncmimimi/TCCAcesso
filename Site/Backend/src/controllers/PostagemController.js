@@ -95,15 +95,28 @@ class PostagemController {
                 throw ErroApi.requisicaoInvalida("Envie uma imagem para gerar a sugestão.");
             }
 
+            // O idioma do Site: uma descrição alternativa em português não serve para quem
+            // está lendo a página em espanhol. Valor inválido cai no português no serviço.
             const descricao = await SugestaoDescricaoService.sugerir(
                 req.file.buffer,
-                req.file.mimetype
+                req.file.mimetype,
+                req.body?.idioma
             );
 
             return res.status(200).json({ sucesso: true, descricao });
         } catch (erro) {
             return next(erro);
         }
+    }
+
+    /**
+     * O Site pergunta isto antes de oferecer "Descrever com IA": sem chave configurada o botão não
+     * aparece, em vez de levar a pessoa a um erro. Nunca devolve a chave, só se existe.
+     */
+    async disponibilidadeSugestaoDescricao(req, res) {
+        return res
+            .status(200)
+            .json({ sucesso: true, disponivel: SugestaoDescricaoService.disponivel() });
     }
 
     /** URL de exibição inline de um anexo (lightbox ou vídeo). */

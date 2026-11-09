@@ -142,18 +142,36 @@ const env = {
     // disto). Nunca falha o boot do servidor por causa dessa variável.
     openRouter: {
         apiKey: process.env.OPENROUTER_API_KEY || null,
-        // Modelos gratuitos com visão, em ordem de prioridade, no parâmetro `models` da OpenRouter
-        // (e não `model`): se um estiver fora do ar, limitado ou recusar por moderação, a
-        // OpenRouter tenta o próximo. O roteador genérico "openrouter/free" não é usado porque pode
-        // cair num modelo sem relação com descrever imagem (já devolveu a saída de um classificador
-        // de moderação). Configurável por `OPENROUTER_MODEL`, uma lista separada por vírgula, caso
-        // a oferta de modelos gratuitos mude.
+        // Modelos GRATUITOS com visão, em ordem de prioridade. O serviço tenta UM POR VEZ e passa
+        // ao próximo quando a resposta não serve (ver OpenRouterService) — por isso a ordem
+        // importa de verdade aqui.
+        //
+        // Lista conferida em GET https://openrouter.ai/api/v1/models em 09/11/2026: todos têm
+        // "image" entre as modalidades de entrada, todos são ":free" e nenhum exige raciocínio
+        // ("reasoning.mandatory: false"). Os dois primeiros são os mais previsíveis para legenda
+        // curta, porque já vêm com raciocínio desligado por padrão; os outros são de provedores
+        // diferentes, e isso importa porque a cota gratuita da OpenRouter é contada por modelo.
+        //
+        // O roteador genérico "openrouter/free" NÃO é usado: ele pode cair num modelo sem relação
+        // com descrever imagem (já devolveu a saída de um classificador de moderação).
+        //
+        // Configurável por `OPENROUTER_MODEL`, uma lista separada por vírgula, caso a oferta de
+        // modelos gratuitos mude. Confira o id em /api/v1/models antes: um id que não existe mais
+        // (era o caso de "minimax/minimax-m3:free") só gasta uma tentativa.
         models: paraLista(process.env.OPENROUTER_MODEL, [
-            "minimax/minimax-m3:free",
             "google/gemma-4-31b-it:free",
+            "nvidia/nemotron-3.5-super-vl:free",
+            "google/gemma-4-26b-a4b-it:free",
+            "dots-studio/dots-3-note-preview:free",
             "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
         ]),
-        timeoutMs: Number(process.env.OPENROUTER_TIMEOUT_MS) || 20000
+        // Teto de UMA tentativa (um modelo). Modelo gratuito costuma responder em alguns segundos,
+        // mas pode ficar na fila.
+        timeoutMs: Number(process.env.OPENROUTER_TIMEOUT_MS) || 15000,
+        // Teto da requisição inteira, somando as tentativas: o serviço para de tentar modelos
+        // quando o orçamento acaba, para quem está esperando na tela receber uma resposta (mesmo
+        // que seja "não deu") em vez de o navegador desistir primeiro.
+        orcamentoMs: Number(process.env.OPENROUTER_BUDGET_MS) || 40000
     },
 
     // E-mail transacional (confirmação de cadastro e recuperação de senha) pela Brevo. Sem

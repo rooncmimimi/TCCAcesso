@@ -191,7 +191,7 @@ export function FormularioPostagem() {
                               setAvisoSemDescricao(null);
                             }}
                           />
-                          Esta imagem é decorativa (não traz informação nova)
+                          {t("feed.formularioPostagem.estaImagemEDecorativa")}
                         </label>
                         {decorativas[indice] ? (
                           <p className="text-[11px] text-muted-foreground">{t("feed.formularioPostagem.elaSeraIgnoradaPorLeitoresDe")}</p>

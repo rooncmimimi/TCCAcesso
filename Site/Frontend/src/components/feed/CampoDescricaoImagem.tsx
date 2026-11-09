@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Pencil, RefreshCw, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ export function CampoDescricaoImagem({
   obterImagem: () => Promise<File | Blob>;
   rotulo?: string;
 }) {
-  const { t } = useIdioma();
+  const { t, idioma } = useIdioma();
   const [modo, setModo] = useState<Modo>(value ? "manual" : "escolha");
   const idAnuncio = useId();
   const { falar } = useVoz();
@@ -47,10 +47,26 @@ export function CampoDescricaoImagem({
   // só registra a resposta do primeiro acesso.
   const { preferencias } = useAcessibilidade();
 
+  // Sem chave da OpenRouter no servidor, o botão "Descrever com IA" não aparece: um botão que
+  // sempre dá erro é pior do que botão nenhum. A resposta vale para a sessão inteira.
+  const disponibilidade = useQuery({
+    queryKey: ["sugestao-descricao", "disponibilidade"],
+    queryFn: () => postagensService.sugestaoDeDescricaoDisponivel(),
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  // Só esconde quando o servidor disse que NÃO. Enquanto a resposta não chega (ou se a pergunta
+  // falhar), o botão continua lá — era o que já acontecia antes.
+  const iaDisponivel = disponibilidade.data !== false;
+
+  // "Como você deseja descrever?" com uma opção só não é escolha: vai direto para o campo.
+  const modoEfetivo: Modo = !iaDisponivel && modo !== "manual" ? "manual" : modo;
+
   const sugerir = useMutation({
     mutationFn: async () => {
       const imagem = await obterImagem();
-      return postagensService.sugerirDescricao(imagem);
+      return postagensService.sugerirDescricao(imagem, idioma);
     },
     onSuccess: (descricao) => {
       onChange(descricao);
@@ -64,7 +80,7 @@ export function CampoDescricaoImagem({
     },
   });
 
-  if (modo === "escolha") {
+  if (modoEfetivo === "escolha") {
     return (
       <div className="space-y-2">
         <p id={`${id}-legenda`} className="text-xs font-semibold">
@@ -94,15 +110,16 @@ export function CampoDescricaoImagem({
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          “Descrever com IA” envia a imagem a um serviço externo gratuito (OpenRouter) para criar um rascunho de descrição. O rascunho pode errar: você sempre revisa antes de publicar. Se
-          preferir que a imagem não saia do ACESSO, escreva a sua.
+          {t("feed.campoDescricaoImagem.avisoServicoExterno", {
+            botao: t("feed.campoDescricaoImagem.descreverComIa"),
+          })}
         </p>
         <OrientacaoDeDescricao />
       </div>
     );
   }
 
-  if (modo === "ia") {
+  if (modoEfetivo === "ia") {
     return (
       <div className="space-y-2">
         <div id={idAnuncio} role="status" aria-live="polite" className="sr-only">
@@ -181,7 +198,7 @@ export function CampoDescricaoImagem({
     );
   }
 
-  // modo === "manual": sempre disponível, sem nenhuma chamada de IA.
+  // modoEfetivo === "manual": sempre disponível, sem nenhuma chamada de IA.
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-semibold">
@@ -195,15 +212,17 @@ export function CampoDescricaoImagem({
         onChange={(e) => onChange(e.target.value)}
         className="h-9 text-xs"
       />
-      <Button
-        type="button"
-        size="sm"
-        variant="link"
-        className="h-auto p-0 text-xs font-semibold"
-        onClick={() => setModo("escolha")}
-      >
-        <Sparkles className="size-3.5" aria-hidden="true" /> {t("feed.campoDescricaoImagem.descreverComIaEmVezDisso")}
-      </Button>
+      {iaDisponivel && (
+        <Button
+          type="button"
+          size="sm"
+          variant="link"
+          className="h-auto p-0 text-xs font-semibold"
+          onClick={() => setModo("escolha")}
+        >
+          <Sparkles className="size-3.5" aria-hidden="true" /> {t("feed.campoDescricaoImagem.descreverComIaEmVezDisso")}
+        </Button>
+      )}
       <OrientacaoDeDescricao />
     </div>
   );

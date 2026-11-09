@@ -11,6 +11,7 @@
     "criar-admin": "node scripts/criarAdministrador.js",
     "implantacao:verificar": "node scripts/verificarImplantacao.js",
     "google:verificar": "node scripts/verificarGoogle.js",
+    "descricao:verificar": "node scripts/verificarDescricaoDeImagem.js",
     "test": "vitest run"
   },
   "license": "MIT",

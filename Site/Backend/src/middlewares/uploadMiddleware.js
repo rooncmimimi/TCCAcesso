@@ -308,6 +308,19 @@ export const uploadImagem = criarUpload(MIME_IMAGENS, {
     mensagem: "Formato inválido. Envie uma imagem PNG, JPEG ou WEBP."
 });
 
+/**
+ * Imagem que só é LIDA e nunca guardada (hoje: a sugestão de descrição por IA). Sempre em
+ * memória, mesmo sem o Storage configurado — `uploadImagem` cai em `diskStorage` nesse caso, o
+ * que gravava a imagem em `uploads/` (quebrando a promessa de que a rota não salva a foto) e
+ * deixava `req.file.buffer` `undefined`, virando um 500 sem explicação. Use com
+ * `conferirConteudoDoArquivo()`, como a importação de currículo.
+ */
+export const uploadImagemParaLer = criarUpload(MIME_IMAGENS, {
+    files: 1,
+    emMemoria: true,
+    mensagem: "Formato inválido. Envie uma imagem PNG, JPEG ou WEBP."
+});
+
 /** Currículos e certificados (PDF/DOC/DOCX). */
 export const uploadDocumento = criarUpload(MIME_DOCUMENTOS, {
     files: 1,

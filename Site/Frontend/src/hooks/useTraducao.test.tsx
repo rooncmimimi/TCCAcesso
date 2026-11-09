@@ -242,3 +242,73 @@ describe("a tradução nunca fica presa ao texto antigo", () => {
     expect(screen.getByTestId("texto")).not.toHaveTextContent("tradução velha");
   });
 });
+
+/**
+ * Traduzir por um serviço fora do aparelho faz o texto sair dele. Isso não acontece sem a pessoa saber:
+ * ela é perguntada uma vez, na própria tela, e a resposta fica guardada neste navegador.
+ */
+describe("quando a tradução precisa sair do aparelho", () => {
+  const motorQueSai = () => motorFalso({ saiDoAparelho: async () => true });
+  const autorizar = () => screen.getByRole("button", { name: /mesmo assim|anyway|todos os modos/i });
+  const recusar = () => screen.getByRole("button", { name: /^agora não$|^not now$|^ahora no$/i });
+
+  it("o primeiro clique pergunta em vez de traduzir, e diz que o texto sai do aparelho", async () => {
+    const motor = motorQueSai();
+
+    renderizar(<Tela motor={motor} />);
+    fireEvent.click(screen.getByRole("button", { name: /traduzir a publicação/i }));
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/sai do seu aparelho/i));
+    expect(motor.traduzir).not.toHaveBeenCalled();
+    expect(screen.getByTestId("texto")).toHaveTextContent("Hello world, this is a post");
+  });
+
+  it("autorizando: traduz, avisa que veio de um serviço online e não pergunta de novo", async () => {
+    const motor = motorQueSai();
+
+    renderizar(<Tela motor={motor} />);
+    fireEvent.click(screen.getByRole("button", { name: /traduzir a publicação/i }));
+    await waitFor(() => expect(autorizar()).toBeInTheDocument());
+    fireEvent.click(autorizar());
+
+    await waitFor(() => expect(screen.getByTestId("texto")).toHaveTextContent("[traduzido] Hello world, this is a post"));
+    expect(screen.getByRole("status")).toHaveTextContent(/serviço online/i);
+
+    // Outra publicação, na mesma pessoa e no mesmo navegador: já está autorizado.
+    cleanup();
+    const outro = motorQueSai();
+
+    renderizar(<Tela motor={outro} texto="Another post entirely written in English" />);
+    fireEvent.click(screen.getByRole("button", { name: /traduzir a publicação/i }));
+
+    await waitFor(() => expect(outro.traduzir).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: /mesmo assim|anyway|todos os modos/i })).not.toBeInTheDocument();
+  });
+
+  it("recusando: volta ao normal, nada é traduzido e nada fica guardado", async () => {
+    const motor = motorQueSai();
+
+    renderizar(<Tela motor={motor} />);
+    fireEvent.click(screen.getByRole("button", { name: /traduzir a publicação/i }));
+    await waitFor(() => expect(recusar()).toBeInTheDocument());
+    fireEvent.click(recusar());
+
+    expect(motor.traduzir).not.toHaveBeenCalled();
+    expect(screen.getByTestId("texto")).toHaveTextContent("Hello world, this is a post");
+    expect(screen.queryByRole("button", { name: /mesmo assim|anyway|todos os modos/i })).not.toBeInTheDocument();
+
+    // E dá para pedir de novo: recusar uma vez não tranca o recurso.
+    fireEvent.click(screen.getByRole("button", { name: /traduzir a publicação/i }));
+    await waitFor(() => expect(autorizar()).toBeInTheDocument());
+  });
+
+  it("motor que traduz no próprio aparelho não pergunta nada", async () => {
+    const motor = motorFalso();
+
+    renderizar(<Tela motor={motor} />);
+    fireEvent.click(screen.getByRole("button", { name: /traduzir a publicação/i }));
+
+    await waitFor(() => expect(screen.getByTestId("texto")).toHaveTextContent("[traduzido]"));
+    expect(screen.getByRole("status")).not.toHaveTextContent(/serviço online/i);
+  });
+});

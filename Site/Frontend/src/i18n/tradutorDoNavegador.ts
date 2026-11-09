@@ -11,11 +11,16 @@ export type MotorDeTraducao = {
   detectar: (texto: string) => Promise<CodigoIdioma | null>;
   /** Traduz os textos, na mesma ordem. `aoPreparar` é chamado se for preciso baixar o modelo do idioma antes. */
   traduzir: (textos: string[], origem: CodigoIdioma, destino: CodigoIdioma, aoPreparar?: () => void) => Promise<string[]>;
+  /**
+   * O texto sai do aparelho para este par de idiomas? Quem manda para fora precisa da autorizacao da
+   * pessoa antes da primeira vez. Motor que nao responde isso traduz no proprio aparelho.
+   */
+  saiDoAparelho?: (origem: CodigoIdioma, destino: CodigoIdioma) => Promise<boolean>;
 };
 
 export class ErroDeTraducao extends Error {
   constructor(
-    public readonly codigo: "nao_suportado" | "par_indisponivel" | "falhou",
+    public readonly codigo: "nao_suportado" | "par_indisponivel" | "falhou" | "sem_rede" | "limite_diario" | "texto_longo",
     mensagem?: string,
   ) {
     super(mensagem ?? codigo);

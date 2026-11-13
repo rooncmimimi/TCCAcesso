@@ -1,5 +1,6 @@
 import { Check, Contrast, Droplets, Palette, RotateCcw, SunMedium } from "lucide-react";
 
+import { AmostraDaPersonalizacao } from "@/components/acessibilidade/AmostraDaPersonalizacao";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SelectRow, SliderRow } from "@/components/acessibilidade/LinhasDeControle";
@@ -88,6 +89,11 @@ export function SecaoPersonalizacaoVisual() {
       <p className="text-sm text-muted-foreground">
         {t("acessibilidade.personalizacaoVisual.descricao")}
       </p>
+
+      {/* A amostra vem ANTES dos controles de proposito: a pessoa ve o que vai mudar, e so depois
+          mexe. Ela nao recebe nada por propriedade — le as mesmas variaveis de cor do documento que
+          o resto do site le, entao o que aparece aqui e o que vai aparecer na tela de verdade. */}
+      <AmostraDaPersonalizacao />
 
       {/* ---------------------------------------------------------------- os padrões */}
       <div role="radiogroup" aria-labelledby="padroes-visuais-titulo" className="space-y-2">

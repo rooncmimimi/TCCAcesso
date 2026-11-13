@@ -2,14 +2,20 @@ import { Link } from "@tanstack/react-router";
 
 import type { EntidadeDenunciaTipo } from "@/services/denuncia.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 
 type Previa = Record<string, unknown> | null | undefined;
 type Pessoa = { id?: string; nome?: string; tipoUsuario?: string } | null | undefined;
 
-const TIPO_DE_CONTA: Record<string, string> = {
-  candidato: "Candidato",
-  empresa: "Empresa",
-  administrador: "Administrador",
+/**
+ * A CHAVE do dicionário, não o texto: a constante de módulo roda antes de existir idioma, e quem
+ * renderiza é que traduz. Guardar o texto aqui deixava estes três rótulos em português em qualquer
+ * idioma.
+ */
+const TIPO_DE_CONTA: Record<string, ChaveBase> = {
+  candidato: "admin.conteudoDenunciado.contaCandidato",
+  empresa: "admin.conteudoDenunciado.contaEmpresa",
+  administrador: "admin.conteudoDenunciado.contaAdministrador",
 };
 
 const texto = (valor: unknown): string => (typeof valor === "string" ? valor : "");
@@ -41,7 +47,9 @@ function Autor({ autor }: { autor: Pessoa }) {
   return (
     <>
       <LinkDaConta id={autor.id} nome={autor.nome} />
-      {autor.tipoUsuario ? ` (${TIPO_DE_CONTA[autor.tipoUsuario] ?? autor.tipoUsuario})` : ""}
+      {autor.tipoUsuario
+        ? ` (${TIPO_DE_CONTA[autor.tipoUsuario] ? t(TIPO_DE_CONTA[autor.tipoUsuario]) : autor.tipoUsuario})`
+        : ""}
     </>
   );
 }
@@ -63,7 +71,7 @@ export function ConteudoDenunciado({ tipo, previa }: { tipo: EntidadeDenunciaTip
         <Campo rotulo={t("admin.conteudoDenunciado.contaDenunciada")}>
           <LinkDaConta id={texto(previa.id)} nome={texto(previa.nome)} />
         </Campo>
-        <Campo rotulo={t("admin.conteudoDenunciado.tipoDeConta")}>{TIPO_DE_CONTA[texto(previa.tipoUsuario)] ?? texto(previa.tipoUsuario)}</Campo>
+        <Campo rotulo={t("admin.conteudoDenunciado.tipoDeConta")}>{TIPO_DE_CONTA[texto(previa.tipoUsuario)] ? t(TIPO_DE_CONTA[texto(previa.tipoUsuario)]) : texto(previa.tipoUsuario)}</Campo>
         <Campo rotulo={t("login.email")}>{texto(previa.email)}</Campo>
         <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{previa.bloqueado ? "Bloqueada" : "Ativa"}</Campo>
       </dl>

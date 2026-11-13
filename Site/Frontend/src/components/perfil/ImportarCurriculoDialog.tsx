@@ -204,8 +204,7 @@ export function ImportarCurriculoDialog({
             />
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Arquivos .doc (formato antigo do Word) e PDFs escaneados (imagem) não são suportados — use PDF com
-              texto selecionável ou DOCX.
+              {t("perfil.importarCurriculoDialog.formatosNaoSuportados")}
             </p>
           </div>
         ) : (

@@ -69,7 +69,7 @@ function PainelCandidato() {
 
           {resumoTextual ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Resumo das suas candidaturas por status: {resumoTextual}.
+              {t("dashboard.candidato.resumoPorStatus", { resumo: resumoTextual })}
             </p>
           ) : null}
         </>

@@ -135,9 +135,6 @@ function Privacidade() {
               </Label>
               <p className="text-sm text-muted-foreground">
                 {t("configuracoes.privacidade.seuNomeFotoEInformacoesDo")}
-                desativado. O que muda são suas publicações: com o perfil privado, elas só ficam
-                visíveis para quem você aprovar como seguidor — outras pessoas veem um botão para
-                solicitar seguir você.
               </p>
             </div>
             <Switch

@@ -113,7 +113,7 @@ function PainelEmpresa() {
 
           {resumoTextual ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Resumo das candidaturas recebidas por status: {resumoTextual}.
+              {t("dashboard.empresa.resumoPorStatus", { resumo: resumoTextual })}
             </p>
           ) : null}
         </>

@@ -257,11 +257,15 @@ export function EmpresasPendentesTabela() {
           <div className="space-y-3">
             {alvo?.acao === "verificar" || alvo?.acao === "desverificar" ? (
               <p>
+                {/* A frase inteira numa chave só, com o nome da empresa no meio: picada em pedaços, a
+                    ordem das palavras quebrava em outro idioma. */}
                 {alvo.acao === "verificar"
-                  ? t("admin.empresasPendentesTabela.confirmaConcederOSeloDe")
-                  : t("admin.empresasPendentesTabela.confirmaRemoverOSeloDe")}{" "}
-                &quot;{alvo?.empresa.nomeFantasia || alvo?.empresa.razaoSocial}&quot;? Isso é
-                independente do status de aprovação cadastral, que não muda.
+                  ? t("admin.empresasPendentesTabela.confirmaConcederOSeloDe", {
+                      empresa: alvo?.empresa.nomeFantasia || alvo?.empresa.razaoSocial || "",
+                    })
+                  : t("admin.empresasPendentesTabela.confirmaRemoverOSeloDe", {
+                      empresa: alvo?.empresa.nomeFantasia || alvo?.empresa.razaoSocial || "",
+                    })}
               </p>
             ) : (
               <p>

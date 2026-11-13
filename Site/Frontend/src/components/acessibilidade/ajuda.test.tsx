@@ -156,7 +156,7 @@ describe("FerramentasDeLeitura", () => {
     expect(within(dialogo).queryByRole("heading", { name: "CLT" })).toBeNull();
 
     fireEvent.change(within(dialogo).getByLabelText("Buscar um termo"), { target: { value: "zzzz" } });
-    expect(within(dialogo).getByRole("status").textContent).toContain('Nenhum termo encontrado para "zzzz"');
+    expect(within(dialogo).getByRole("status").textContent).toContain("Nenhum termo encontrado para “zzzz”");
   });
 
   it("a busca do glossário ignora acento", () => {

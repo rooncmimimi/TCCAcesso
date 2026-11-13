@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useIdioma } from "@/hooks/useIdioma";
+import { Frase } from "@/i18n/Frase";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -173,7 +174,11 @@ export function ContaGoogleConfirmada({ email }: { email?: string | null }) {
         <span className="font-semibold">{t("cadastro.botaoGoogle.contaGoogleConfirmada")}</span>{" "}
         {email ? (
           <>
-            Ela será vinculada a este cadastro: <strong className="font-semibold">{email}</strong>.
+            <Frase
+              chave="cadastro.botaoGoogle.vinculadaAEsteCadastro"
+              vars={{ email }}
+              partes={[(texto) => <strong className="font-semibold">{texto}</strong>]}
+            />
           </>
         ) : (
           <>{t("cadastro.botaoGoogle.elaSeraVinculadaAEsteCadastro")}</>

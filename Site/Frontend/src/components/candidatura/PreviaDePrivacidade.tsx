@@ -19,11 +19,26 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
           {t("candidatura.previaDePrivacidade.dadosProfissionais")}
         </h3>
         <ul className="list-disc space-y-1 pl-5 text-sm">
-          <li>Nome: {d.nome ?? t("candidatura.previaDePrivacidade.naoInformado")}</li>
-          <li>E-mail de contato: {d.emailDeContato ?? t("candidatura.previaDePrivacidade.naoInformado")}</li>
-          <li>Título profissional: {d.tituloProfissional ?? t("candidatura.previaDePrivacidade.naoInformado")}</li>
-          <li>Cidade e estado: {local || t("candidatura.previaDePrivacidade.naoInformado")}</li>
-          <li>Escolaridade: {d.escolaridade ?? t("candidatura.previaDePrivacidade.naoInformada")}</li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloNome")}{" "}
+            {d.nome ?? t("candidatura.previaDePrivacidade.naoInformado")}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloEmailDeContato")}{" "}
+            {d.emailDeContato ?? t("candidatura.previaDePrivacidade.naoInformado")}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloTituloProfissional")}{" "}
+            {d.tituloProfissional ?? t("candidatura.previaDePrivacidade.naoInformado")}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloCidadeEEstado")}{" "}
+            {local || t("candidatura.previaDePrivacidade.naoInformado")}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloEscolaridade")}{" "}
+            {d.escolaridade ?? t("candidatura.previaDePrivacidade.naoInformada")}
+          </li>
         </ul>
       </section>
 
@@ -32,11 +47,25 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
           {t("candidatura.previaDePrivacidade.curriculoEPerfil")}
         </h3>
         <ul className="list-disc space-y-1 pl-5 text-sm">
-          <li>Currículo: {d.curriculo ?? t("candidatura.previaDePrivacidade.voceAindaNaoEnviouUmCurriculo")}</li>
-          <li>Experiências: {d.experiencias}</li>
-          <li>Formação: {d.formacoes}</li>
-          <li>Habilidades: {d.habilidades}</li>
-          <li>Sobre mim: {d.biografia ? "será mostrado" : t("candidatura.previaDePrivacidade.naoPreenchido")}</li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloCurriculo")}{" "}
+            {d.curriculo ?? t("candidatura.previaDePrivacidade.voceAindaNaoEnviouUmCurriculo")}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloExperiencias")} {d.experiencias}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloFormacao")} {d.formacoes}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloHabilidades")} {d.habilidades}
+          </li>
+          <li>
+            {t("candidatura.previaDePrivacidade.rotuloSobreMim")}{" "}
+            {d.biografia
+              ? t("candidatura.previaDePrivacidade.seraMostrado")
+              : t("candidatura.previaDePrivacidade.naoPreenchido")}
+          </li>
         </ul>
       </section>
 

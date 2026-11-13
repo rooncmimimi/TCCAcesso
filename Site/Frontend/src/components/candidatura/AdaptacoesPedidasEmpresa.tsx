@@ -36,7 +36,7 @@ export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoRe
   return (
     <section aria-labelledby={`${idBase}-titulo`} className="basis-full space-y-3 rounded-lg border-2 border-primary/40 bg-primary-soft/30 p-3">
       <h4 id={`${idBase}-titulo`} className="text-sm font-bold">
-        Pedido de adaptação de {nome}
+        {t("candidatura.adaptacoesPedidasEmpresa.pedidoDeAdaptacaoDe", { nome })}
       </h4>
       <p className="text-xs text-muted-foreground">
         {t("candidatura.adaptacoesPedidasEmpresa.aPessoaAutorizouCompartilhar")}
@@ -72,7 +72,9 @@ export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoRe
         </Button>
         {adaptacoes.resposta ? (
           <p role="status" className="text-xs text-muted-foreground">
-            Última resposta enviada: {rotuloDaResposta(adaptacoes.resposta)}.
+            {t("candidatura.adaptacoesPedidasEmpresa.ultimaRespostaEnviada", {
+              resposta: rotuloDaResposta(adaptacoes.resposta) ?? "",
+            })}
           </p>
         ) : null}
       </form>

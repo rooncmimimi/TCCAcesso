@@ -148,7 +148,11 @@ function BarraAtiva() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span id="varredura-velocidade">Velocidade: {preferencias.scanSpeed.toFixed(1).replace(".", ",")} s por item</span>
+              <span id="varredura-velocidade">
+                {t("acessibilidade.barraDeVarredura.velocidadePorItem", {
+                  velocidade: preferencias.scanSpeed.toFixed(1).replace(".", ","),
+                })}
+              </span>
               <Button type="button" variant="outline" size="icon" className="min-h-11 min-w-11" aria-label={t("acessibilidade.barraDeVarredura.maisDevagar")} onClick={() => mudarVelocidade(0.3)} disabled={preferencias.scanSpeed >= LIMITES.scanSpeed.max}>
                 <Minus className="size-4" aria-hidden="true" />
               </Button>

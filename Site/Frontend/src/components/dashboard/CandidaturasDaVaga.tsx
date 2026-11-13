@@ -95,7 +95,11 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                   <div className="flex shrink-0 items-center gap-2">
                     <StatusBadge status={candidatura.status} />
                     <label className="sr-only" htmlFor={`status-${candidatura.id}`}>
-                      Atualizar status da candidatura de {candidatura.candidato?.usuario?.nome ?? "candidato"}
+                      {t("dashboard.candidaturasDaVaga.atualizarStatusDaCandidaturaDe", {
+                        nome:
+                          candidatura.candidato?.usuario?.nome ??
+                          t("dashboard.candidaturasDaVaga.candidatoSemNome"),
+                      })}
                     </label>
                     <Select
                       value={candidatura.status}

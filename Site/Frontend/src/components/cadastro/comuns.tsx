@@ -377,7 +377,7 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
       </ol>
 
       <p className="mt-5 text-sm text-muted-foreground">
-        Prefere digitar o código de 6 dígitos que veio no e-mail? Você também pode{" "}
+        {t("cadastro.comuns.prefereDigitarOCodigo")}{" "}
         <Link to="/confirmar-email" search={{ email }} className="font-semibold text-primary underline">
           {t("cadastro.comuns.confirmarPorCodigo")}
         </Link>

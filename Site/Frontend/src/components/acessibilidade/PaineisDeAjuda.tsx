@@ -126,11 +126,15 @@ export function PainelGlossario({ foto }: { foto: FotoDaPagina }) {
 
       <section aria-labelledby="glossario-todos" className="space-y-2">
         <h3 id="glossario-todos" className="text-sm font-bold">
-          {busca.trim() ? "Resultado da busca" : daPagina.length > 0 ? "Outros termos" : t("acessibilidade.paineisDeAjuda.todosOsTermos")}
+          {busca.trim()
+            ? t("acessibilidade.paineisDeAjuda.resultadoDaBusca")
+            : daPagina.length > 0
+              ? t("acessibilidade.paineisDeAjuda.outrosTermos")
+              : t("acessibilidade.paineisDeAjuda.todosOsTermos")}
         </h3>
         {filtrados.length === 0 ? (
           <p role="status" className="text-sm text-muted-foreground">
-            Nenhum termo encontrado para "{busca.trim()}".
+            {t("acessibilidade.paineisDeAjuda.nenhumTermoEncontrado", { termo: busca.trim() })}
           </p>
         ) : (
           <ul className="space-y-2">

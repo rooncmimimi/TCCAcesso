@@ -142,8 +142,7 @@ export function BarraBusca() {
             </div>
           ) : semResultados ? (
             <CommandEmpty>
-              Não encontramos resultados para "{termoBuscado}". Tente pesquisar por outro nome, empresa, vaga ou
-              palavra-chave.
+              {t("barraBusca.nenhumResultadoPara", { termo: termoBuscado })}
             </CommandEmpty>
           ) : null}
 

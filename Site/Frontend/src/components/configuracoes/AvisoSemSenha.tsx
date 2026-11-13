@@ -20,7 +20,9 @@ export function AvisoSemSenha({ recurso }: { recurso: string }) {
         <KeyRound className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
         <p className="text-sm">
           <span className="font-semibold">{t("configuracoes.avisoSemSenha.suaContaEntraComOGoogleEAinda")}</span>{" "}
-          <span className="text-muted-foreground">Para {recurso}, defina uma senha antes.</span>
+          <span className="text-muted-foreground">
+            {t("configuracoes.avisoSemSenha.paraDefinaUmaSenhaAntes", { recurso })}
+          </span>
         </p>
       </div>
       <Button asChild variant="outline" className="min-h-11">

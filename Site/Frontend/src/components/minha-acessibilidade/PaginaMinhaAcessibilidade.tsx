@@ -286,8 +286,7 @@ function SecaoPrivacidade({ minha }: { minha: MinhaAcessibilidade }) {
               {t("minha-acessibilidade.paginaMinhaAcessibilidade.mostrarACategoriaDeDeficiencia")}
             </Label>
             <p id={`${idBase}-exibir-ajuda`} className="mt-1 text-xs text-muted-foreground">
-              Desligado, ninguém além de você vê. Ligar isto não compartilha nenhuma outra informação nem autoriza nada em candidaturas: cada candidatura continua sendo uma escolha
-              separada. Você pode mudar quando quiser.
+              {t("minha-acessibilidade.paginaMinhaAcessibilidade.desligadoNinguemVe")}
             </p>
           </div>
         </div>

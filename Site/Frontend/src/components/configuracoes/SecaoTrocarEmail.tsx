@@ -148,7 +148,9 @@ export function SecaoTrocarEmail() {
                 <>
                   <DialogHeader>
                     <DialogTitle>{t("configuracoes.secaoTrocarEmail.confirmeONovoEMail")}</DialogTitle>
-                    <DialogDescription>Digite o código de 6 dígitos enviado para {novoEmail}.</DialogDescription>
+                    <DialogDescription>
+                      {t("configuracoes.secaoTrocarEmail.digiteOCodigoEnviadoPara", { email: novoEmail })}
+                    </DialogDescription>
                   </DialogHeader>
                   <form
                     className="space-y-4"

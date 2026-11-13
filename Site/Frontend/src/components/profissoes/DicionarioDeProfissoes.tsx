@@ -69,7 +69,9 @@ function FichaDaProfissao({ profissao: p }: { profissao: Profissao }) {
           <p className="text-xs text-muted-foreground">{t("profissoes.dicionarioDeProfissoes.istoEUmExemploGeralARotinaDe")}</p>
           <Button asChild variant="outline" className="min-h-11">
             <Link to="/vagas" search={{ q: p.nome.split(" ou ")[0] }}>
-              Procurar vagas de {p.nome.split(" ou ")[0].toLowerCase()}
+              {t("profissoes.dicionarioDeProfissoes.procurarVagasDe", {
+                profissao: p.nome.split(" ou ")[0].toLowerCase(),
+              })}
             </Link>
           </Button>
         </div>

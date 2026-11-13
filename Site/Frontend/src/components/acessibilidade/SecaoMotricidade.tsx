@@ -60,10 +60,15 @@ function EscolhaDaTeclaExtra() {
       <p className="text-sm text-muted-foreground">{t("acessibilidade.secaoMotricidade.espacoEEnterJaSelecionamOItem")}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-sm">
-          Tecla atual: <strong>{preferencias.scanKey ? nomeDaTecla(preferencias.scanKey) : "nenhuma"}</strong>
+          {t("acessibilidade.secaoMotricidade.teclaAtual")}{" "}
+          <strong>
+            {preferencias.scanKey
+              ? nomeDaTecla(preferencias.scanKey)
+              : t("acessibilidade.secaoMotricidade.nenhuma")}
+          </strong>
         </span>
         <Button type="button" variant="outline" className="min-h-11" onClick={() => { setAviso(""); setOuvindo(true); }} aria-pressed={ouvindo}>
-          {ouvindo ? "Aperte a tecla…" : t("acessibilidade.secaoMotricidade.escolherTecla")}
+          {ouvindo ? t("acessibilidade.secaoMotricidade.aperteATecla") : t("acessibilidade.secaoMotricidade.escolherTecla")}
         </Button>
         {preferencias.scanKey ? (
           <Button type="button" variant="ghost" className="min-h-11" onClick={() => { definir("scanKey", ""); setAviso("Tecla extra removida."); }}>

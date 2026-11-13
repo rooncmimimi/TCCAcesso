@@ -102,8 +102,9 @@ export function CandidaturasRecentes() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>{t("dashboard.candidaturasRecentes.cancelarCandidatura")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Você está prestes a cancelar sua candidatura à vaga "
-                              {candidatura.vaga?.titulo}". Essa ação não pode ser desfeita.
+                              {t("dashboard.candidaturasRecentes.prestesACancelar", {
+                                vaga: candidatura.vaga?.titulo ?? "",
+                              })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

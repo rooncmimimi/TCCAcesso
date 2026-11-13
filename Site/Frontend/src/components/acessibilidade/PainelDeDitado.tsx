@@ -88,13 +88,12 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
 
           {microfone === "negado" && !ditado.ouvindo ? (
             <p role="status" className="rounded-md border-2 border-destructive/60 p-2 text-sm font-medium">
-              O microfone está bloqueado para este site no seu navegador — por isso o ditado não funciona, mesmo com internet. {comoLiberarOMicrofone()}
+              {t("acessibilidade.painelDeDitado.microfoneBloqueado")} {comoLiberarOMicrofone()}
             </p>
           ) : null}
 
           <p className="text-xs text-muted-foreground">
-            O microfone continua ligado nas pausas: fale no seu tempo e aperte “Parar ditado” quando terminar. O ACESSO não grava áudio. Em navegadores como Chrome e Edge, quem
-            reconhece a fala é um serviço online do próprio navegador, então o áudio pode sair do seu aparelho e é preciso internet.
+            {t("acessibilidade.painelDeDitado.microfoneContinuaLigado")}
           </p>
         </div>
       ) : (

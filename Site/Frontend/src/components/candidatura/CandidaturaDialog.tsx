@@ -250,8 +250,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
                   <div className="flex items-start gap-3 rounded-lg border-2 border-primary p-3">
                     <Checkbox id="candidatura-autorizo" className="mt-1" checked={aceita} onCheckedChange={(v) => setAceita(v === true)} />
                     <Label htmlFor="candidatura-autorizo" className="text-sm font-semibold leading-snug">
-                      Autorizo compartilhar com esta empresa, apenas nesta candidatura e para o processo seletivo, as adaptações listadas acima. Posso retirar a autorização depois; a
-                      empresa não poderá mais consultá-las, mas o que já tiver lido não pode ser desfeito.
+                      {t("candidatura.candidaturaDialog.autorizoCompartilhar")}
                     </Label>
                   </div>
                 ) : (

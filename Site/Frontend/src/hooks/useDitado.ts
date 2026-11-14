@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useIdioma } from "@/hooks/useIdioma";
 import {
   calarVozDoSite,
   construtor,
+  ERRO_DESCONHECIDO_DITADO,
   FIM_DEFINITIVO,
   idiomaDeEscuta,
   MENSAGENS_DE_ERRO,
@@ -34,6 +36,7 @@ export const ESPERA_PARA_RECOMECAR_MS = 400;
  * ditado desiste e **explica**.
  */
 export function useDitado() {
+  const { t } = useIdioma();
   const [suportado] = useState(reconhecimentoDeFalaSuportado);
   const [ouvindo, setOuvindo] = useState(false);
   const [parcial, setParcial] = useState("");
@@ -123,12 +126,12 @@ export function useDitado() {
         cancelarRecomeco();
         setOuvindo(false);
         setParcial("");
-        setErro(MENSAGENS_DE_ERRO[evento.error]);
+        setErro(t(MENSAGENS_DE_ERRO[evento.error] ?? ERRO_DESCONHECIDO_DITADO));
 
         return;
       }
 
-      setErro(MENSAGENS_DE_ERRO[evento.error] ?? "O ditado parou por um erro do navegador.");
+      setErro(t(MENSAGENS_DE_ERRO[evento.error] ?? ERRO_DESCONHECIDO_DITADO));
     };
 
     reconhecimento.onend = () => {
@@ -136,7 +139,7 @@ export function useDitado() {
       setParcial("");
 
       if (!querOuvirRef.current) {
-        encerrar(NADA_FOI_OUVIDO);
+        encerrar(t(NADA_FOI_OUVIDO));
 
         return;
       }
@@ -144,7 +147,7 @@ export function useDitado() {
       if (!ouviuNoTurnoRef.current) silencioRef.current += 1;
 
       if (silencioRef.current >= VOLTAS_EM_SILENCIO) {
-        encerrar(MENSAGENS_DE_ERRO["no-speech"]);
+        encerrar(t(MENSAGENS_DE_ERRO["no-speech"]));
 
         return;
       }
@@ -168,9 +171,9 @@ export function useDitado() {
       querOuvirRef.current = false;
       cancelarRecomeco();
       setOuvindo(false);
-      setErro(NAO_LIGOU);
+      setErro(t(NAO_LIGOU));
     }
-  }, [encerrar]);
+  }, [encerrar, t]);
 
   // O recomeço automático acontece dentro do `onend` da sessão anterior, que não pode fechar sobre
   // `abrirSessao` sem criar um laço de dependência: daí a referência.
@@ -196,7 +199,7 @@ export function useDitado() {
     const atual = reconhecimentoRef.current;
 
     if (!atual) {
-      encerrar(NADA_FOI_OUVIDO);
+      encerrar(t(NADA_FOI_OUVIDO));
 
       return;
     }
@@ -206,9 +209,9 @@ export function useDitado() {
     } catch {
       // Sem conseguir parar pelo caminho normal, solta à força para não ficar preso em "ouvindo".
       soltarSessao();
-      encerrar(NADA_FOI_OUVIDO);
+      encerrar(t(NADA_FOI_OUVIDO));
     }
-  }, [encerrar]);
+  }, [encerrar, t]);
 
   const limpar = useCallback(() => {
     setFinal("");

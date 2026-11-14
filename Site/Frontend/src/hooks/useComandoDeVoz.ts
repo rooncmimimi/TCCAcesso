@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useIdioma } from "@/hooks/useIdioma";
 import {
   calarVozDoSite,
   construtor,
+  ERRO_DESCONHECIDO_COMANDO,
   FIM_DEFINITIVO,
   idiomaDeEscuta,
   MENSAGENS_DE_ERRO,
@@ -34,6 +36,7 @@ export const LIMITE_DE_ESCUTA_MS = 10_000;
  * (`aborted`) não vira mensagem de falha, e o silêncio é dito em vez de passar em branco.
  */
 export function useComandoDeVoz(aoOuvir: (fala: string) => void) {
+  const { t } = useIdioma();
   const [suportado] = useState(reconhecimentoDeFalaSuportado);
   const [ouvindo, setOuvindo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -110,7 +113,7 @@ export function useComandoDeVoz(aoOuvir: (fala: string) => void) {
       // `aborted` é o fim normal (a pessoa apertou Parar, ou saiu da tela).
       if (e.error === "aborted") return;
 
-      setErro(MENSAGENS_DE_ERRO[e.error] ?? "O reconhecimento de voz parou por um erro do navegador.");
+      setErro(t(MENSAGENS_DE_ERRO[e.error] ?? ERRO_DESCONHECIDO_COMANDO));
 
       // Sem `onend` depois do erro (acontece em alguns navegadores), o microfone ficaria "ligado" para sempre.
       if (FIM_DEFINITIVO.has(e.error)) {
@@ -127,7 +130,7 @@ export function useComandoDeVoz(aoOuvir: (fala: string) => void) {
       setOuvindo(false);
 
       // Nunca por cima de um erro já explicado (microfone negado, sem internet): esse é mais específico.
-      if (!ouviuRef.current) setErro((atual) => atual ?? NADA_FOI_OUVIDO);
+      if (!ouviuRef.current) setErro((atual) => atual ?? t(NADA_FOI_OUVIDO));
     };
 
     calarVozDoSite();
@@ -141,9 +144,9 @@ export function useComandoDeVoz(aoOuvir: (fala: string) => void) {
     } catch {
       reconhecimento.current = null;
       setOuvindo(false);
-      setErro(NAO_LIGOU);
+      setErro(t(NAO_LIGOU));
     }
-  }, [parar]);
+  }, [parar, t]);
 
   useEffect(
     () => () => {

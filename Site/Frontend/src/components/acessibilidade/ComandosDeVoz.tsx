@@ -122,7 +122,7 @@ export function ComandosDeVoz() {
       // Com o microfone bloqueado, abrir a escuta só faria o navegador recusar calado: é melhor dizer
       // de uma vez o que está acontecendo e onde se libera.
       if (microfone === "negado") {
-        setResposta({ ouvido: null, texto: t("acessibilidade.comandosDeVoz.oMicrofoneEstaBloqueadoPara", { var1: comoLiberarOMicrofone() }), erro: true });
+        setResposta({ ouvido: null, texto: t("acessibilidade.comandosDeVoz.oMicrofoneEstaBloqueadoPara", { var1: t(comoLiberarOMicrofone()) }), erro: true });
 
         return;
       }

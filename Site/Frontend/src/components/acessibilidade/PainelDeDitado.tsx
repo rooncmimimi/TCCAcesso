@@ -88,7 +88,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
 
           {microfone === "negado" && !ditado.ouvindo ? (
             <p role="status" className="rounded-md border-2 border-destructive/60 p-2 text-sm font-medium">
-              {t("acessibilidade.painelDeDitado.microfoneBloqueado")} {comoLiberarOMicrofone()}
+              {t("acessibilidade.painelDeDitado.microfoneBloqueado")} {t(comoLiberarOMicrofone())}
             </p>
           ) : null}
 

@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it, expect } from "vitest";
 
+import { ORIGEM_DO_SERVICO } from "@/i18n/tradutorOnline";
+
 /**
  * Os cabeçalhos de segurança do Site (`vercel.json`, achado 13 da auditoria). A política foi montada
  * olhando o que o Site e o VLibras realmente carregam (ver `Site/docs/cabecalhos-de-seguranca.md`);
@@ -125,5 +127,19 @@ describe("política de conteúdo: o que o Site precisa", () => {
     for (const diretiva of ["script-src", "img-src", "font-src"]) {
       expect(politica[diretiva], diretiva).toContain(JSDELIVR_DO_VLIBRAS);
     }
+  });
+});
+
+describe("o que o Site precisa alcançar continua liberado", () => {
+  /**
+   * O botão "Traduzir" chama um serviço de fora, do navegador de quem lê. Sem a origem no
+   * `connect-src`, o navegador barra o pedido ANTES de ele sair — e em desenvolvimento não há
+   * CSP, então o recurso parece bom e falha só em produção. Aconteceu: ficou publicado assim.
+   *
+   * Este teste lê a origem do próprio código do tradutor, então trocar de serviço sem mexer na
+   * política quebra aqui, e não na tela de alguém.
+   */
+  it("o serviço de tradução está no connect-src", () => {
+    expect(politica["connect-src"]).toContain(ORIGEM_DO_SERVICO);
   });
 });

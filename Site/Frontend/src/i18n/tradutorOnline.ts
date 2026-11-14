@@ -16,7 +16,16 @@ import type { CodigoIdioma } from "./idiomas";
  * pediu além do endereço de internet que qualquer site já vê.
  */
 
-const ENDERECO = "https://api.mymemory.translated.net/get";
+/**
+ * A origem do serviço, exportada porque o `connect-src` do CSP (`vercel.json`) precisa liberá-la
+ * — sem isso o navegador barra o pedido antes de ele sair, e o botão "Traduzir" falha SEMPRE em
+ * produção enquanto funciona em desenvolvimento, onde não há CSP. Foi o que aconteceu.
+ * `politicaDeSeguranca.test.ts` amarra as duas pontas: trocar o serviço sem mexer no CSP quebra
+ * o teste.
+ */
+export const ORIGEM_DO_SERVICO = "https://api.mymemory.translated.net";
+
+const ENDERECO = `${ORIGEM_DO_SERVICO}/get`;
 
 /** O serviço recusa pedidos acima de 500 bytes. Com folga, para a conta nunca estourar por acento. */
 export const LIMITE_DE_BYTES = 450;

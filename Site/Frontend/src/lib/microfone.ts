@@ -12,6 +12,7 @@
  * internet aparece como o erro `network`.
  */
 
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { localeDe } from "@/i18n/idiomas";
 import { idiomaDoSite } from "@/lib/idiomaDaFala";
 
@@ -62,20 +63,32 @@ export function idiomaDeEscuta(): string {
   return localeDe(idiomaDoSite());
 }
 
-export const MENSAGENS_DE_ERRO: Record<string, string> = {
-  "not-allowed": "O navegador não deixou usar o microfone. Clique no cadeado ao lado do endereço do site, libere o microfone e tente de novo.",
-  "service-not-allowed": "O navegador não deixou usar o reconhecimento de voz neste site.",
-  "audio-capture": "Não encontramos um microfone. Confira se ele está conectado e se outro programa não está usando.",
-  "no-speech": "Não ouvimos nada. Confira se o microfone certo está escolhido no navegador e tente falar mais perto dele.",
-  network: "O reconhecimento de voz do navegador precisa de internet e não conseguiu se conectar. Tente de novo em instantes.",
-  "language-not-supported": "O navegador não reconhece este idioma por voz.",
+/**
+ * A CHAVE do dicionário de cada erro do navegador — e não o texto.
+ *
+ * Isto aqui é constante de módulo: é avaliada quando o arquivo carrega, antes de existir idioma
+ * escolhido. Com o texto dentro, a mensagem saía sempre em português, inclusive para quem estava
+ * lendo o site em inglês ou em espanhol — e justamente numa tela em que a pessoa já está com um
+ * problema no microfone. Quem traduz é o hook, que é React e sabe o idioma.
+ */
+export const MENSAGENS_DE_ERRO: Record<string, ChaveBase> = {
+  "not-allowed": "acessibilidade.microfone.naoPermitido",
+  "service-not-allowed": "acessibilidade.microfone.servicoNaoPermitido",
+  "audio-capture": "acessibilidade.microfone.semMicrofone",
+  "no-speech": "acessibilidade.microfone.naoOuvimosNadaPerto",
+  network: "acessibilidade.microfone.semRede",
+  "language-not-supported": "acessibilidade.microfone.idiomaNaoSuportado",
 };
 
-/** Mensagem de quando a escuta termina sem nada: o caso que antes não dizia coisa alguma. */
-export const NADA_FOI_OUVIDO = "Não ouvimos nada. Confira se o microfone certo está escolhido no navegador e tente de novo.";
+/** Quando a escuta termina sem nada: o caso que antes não dizia coisa alguma. */
+export const NADA_FOI_OUVIDO: ChaveBase = "acessibilidade.microfone.naoOuvimosNada";
 
-/** Mensagem de quando `start()` estoura: quase sempre uma escuta anterior que o navegador não fechou. */
-export const NAO_LIGOU = "Não foi possível ligar o microfone agora. Feche outros programas que possam estar usando o microfone e tente de novo.";
+/** Quando `start()` estoura: quase sempre uma escuta anterior que o navegador não fechou. */
+export const NAO_LIGOU: ChaveBase = "acessibilidade.microfone.naoLigou";
+
+/** Erro que o navegador deu sem nome que a gente conheça. Um para cada recurso, porque o aviso muda. */
+export const ERRO_DESCONHECIDO_DITADO: ChaveBase = "acessibilidade.microfone.ditadoParouPorErro";
+export const ERRO_DESCONHECIDO_COMANDO: ChaveBase = "acessibilidade.microfone.vozParouPorErro";
 
 /**
  * Erros em que insistir não adianta: ou falta permissão, ou falta aparelho, ou o serviço recusou. Em todos
@@ -182,12 +195,17 @@ export function observarMicrofone(aoMudar: (estado: EstadoDoMicrofone) => void):
   };
 }
 
-/** Onde liberar o microfone, no navegador de quem está lendo. Texto curto, para caber num aviso. */
-export function comoLiberarOMicrofone(): string {
+/**
+ * A CHAVE do aviso de onde liberar o microfone, conforme o aparelho de quem está lendo.
+ *
+ * Devolve chave, e não texto, pelo mesmo motivo das mensagens acima: este aviso é encaixado dentro de
+ * uma frase já traduzida, e o pedaço em português estragava a frase toda nos outros dois idiomas.
+ */
+export function comoLiberarOMicrofone(): ChaveBase {
   const agente = typeof navigator === "undefined" ? "" : navigator.userAgent;
 
-  if (/android/i.test(agente)) return "Toque no cadeado (ou no ícone ao lado do endereço do site), escolha Permissões e libere o microfone.";
-  if (/iphone|ipad|ipod/i.test(agente)) return "Abra os Ajustes do aparelho, procure o navegador que você está usando e libere o microfone para ele.";
+  if (/android/i.test(agente)) return "acessibilidade.microfone.liberarNoAndroid";
+  if (/iphone|ipad|ipod/i.test(agente)) return "acessibilidade.microfone.liberarNoIos";
 
-  return "Clique no cadeado ao lado do endereço do site, libere o microfone e recarregue a página.";
+  return "acessibilidade.microfone.liberarNoComputador";
 }

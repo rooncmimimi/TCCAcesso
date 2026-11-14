@@ -2466,6 +2466,19 @@ export const pt = {
   "cadastro.comuns.umNovoEMailDeConfirmacao": "Um novo e-mail de confirmação foi enviado.",
   "cadastro.comuns.naoFoiPossivelReenviarOEMail": "Não foi possível reenviar o e-mail agora.",
   "cadastro.comuns.reenviando2": "Reenviando…",
+  "acessibilidade.microfone.naoPermitido": "O navegador não deixou usar o microfone. Clique no cadeado ao lado do endereço do site, libere o microfone e tente de novo.",
+  "acessibilidade.microfone.servicoNaoPermitido": "O navegador não deixou usar o reconhecimento de voz neste site.",
+  "acessibilidade.microfone.semMicrofone": "Não encontramos um microfone. Confira se ele está conectado e se outro programa não está usando.",
+  "acessibilidade.microfone.naoOuvimosNadaPerto": "Não ouvimos nada. Confira se o microfone certo está escolhido no navegador e tente falar mais perto dele.",
+  "acessibilidade.microfone.semRede": "O reconhecimento de voz não respondeu. No Chrome e no Edge é o próprio navegador que manda a fala a um serviço online, e foi esse serviço que falhou — não o ACESSO. Tente de novo em instantes; se continuar, use o ditado do sistema (no Windows, Windows + H) ou o microfone do teclado do celular.",
+  "acessibilidade.microfone.idiomaNaoSuportado": "O navegador não reconhece este idioma por voz.",
+  "acessibilidade.microfone.naoOuvimosNada": "Não ouvimos nada. Confira se o microfone certo está escolhido no navegador e tente de novo.",
+  "acessibilidade.microfone.naoLigou": "Não foi possível ligar o microfone agora. Feche outros programas que possam estar usando o microfone e tente de novo.",
+  "acessibilidade.microfone.ditadoParouPorErro": "O ditado parou por um erro do navegador.",
+  "acessibilidade.microfone.vozParouPorErro": "O reconhecimento de voz parou por um erro do navegador.",
+  "acessibilidade.microfone.liberarNoAndroid": "Toque no cadeado (ou no ícone ao lado do endereço do site), escolha Permissões e libere o microfone.",
+  "acessibilidade.microfone.liberarNoIos": "Abra os Ajustes do aparelho, procure o navegador que você está usando e libere o microfone para ele.",
+  "acessibilidade.microfone.liberarNoComputador": "Clique no cadeado ao lado do endereço do site, libere o microfone e recarregue a página.",
 } as const;
 
 export type ChaveDeTexto = keyof typeof pt;

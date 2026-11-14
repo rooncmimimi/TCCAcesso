@@ -1,6 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { calarVozDoSite, comoLiberarOMicrofone, estadoDoMicrofone, idiomaDeEscuta, reconhecimentoDeFalaSuportado, soltarReconhecimento, type Reconhecimento } from "@/lib/microfone";
+import { criarT } from "@/contexts/IdiomaContext";
+import { DICIONARIOS } from "@/i18n/dicionarios";
+import { IDIOMAS } from "@/i18n/idiomas";
+import {
+  calarVozDoSite,
+  comoLiberarOMicrofone,
+  ERRO_DESCONHECIDO_COMANDO,
+  ERRO_DESCONHECIDO_DITADO,
+  estadoDoMicrofone,
+  idiomaDeEscuta,
+  MENSAGENS_DE_ERRO,
+  NADA_FOI_OUVIDO,
+  NAO_LIGOU,
+  reconhecimentoDeFalaSuportado,
+  soltarReconhecimento,
+  type Reconhecimento,
+} from "@/lib/microfone";
 
 function reconhecimentoFalso(aoAbortar?: () => void): Reconhecimento {
   return {
@@ -116,14 +132,64 @@ describe("estado da permissão do microfone", () => {
 });
 
 describe("onde liberar o microfone", () => {
-  it("fala de cadeado no computador, de permissões no Android e dos ajustes no iPhone", () => {
+  /**
+   * Devolve a chave do aviso, e não o texto: o aviso entra dentro de uma frase traduzida, e antes o
+   * pedaço em português aparecia no meio da frase em inglês ou em espanhol. Aqui se cobra a chave de
+   * cada aparelho; que a chave exista nos três dicionários é o `traduzir.test` que garante.
+   */
+  it("escolhe o aviso conforme o aparelho: computador, Android e iPhone", () => {
     fingirAgente("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140");
-    expect(comoLiberarOMicrofone()).toMatch(/cadeado/i);
+    expect(comoLiberarOMicrofone()).toBe("acessibilidade.microfone.liberarNoComputador");
 
     fingirAgente("Mozilla/5.0 (Linux; Android 14) Chrome/140 Mobile");
-    expect(comoLiberarOMicrofone()).toMatch(/permiss/i);
+    expect(comoLiberarOMicrofone()).toBe("acessibilidade.microfone.liberarNoAndroid");
 
     fingirAgente("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari");
-    expect(comoLiberarOMicrofone()).toMatch(/ajustes/i);
+    expect(comoLiberarOMicrofone()).toBe("acessibilidade.microfone.liberarNoIos");
+  });
+
+  it("cada aviso diz onde mexer, no idioma de quem lê", () => {
+    const t = criarT("pt");
+
+    fingirAgente("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140");
+    expect(t(comoLiberarOMicrofone())).toMatch(/cadeado/i);
+
+    fingirAgente("Mozilla/5.0 (Linux; Android 14) Chrome/140 Mobile");
+    expect(t(comoLiberarOMicrofone())).toMatch(/permiss/i);
+
+    fingirAgente("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari");
+    expect(t(comoLiberarOMicrofone())).toMatch(/ajustes/i);
+
+    const emIngles = criarT("en");
+
+    fingirAgente("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140");
+    expect(emIngles(comoLiberarOMicrofone())).toMatch(/padlock/i);
+  });
+});
+
+describe("as mensagens do microfone são chaves, e não texto", () => {
+  /**
+   * Estas constantes são de módulo: avaliadas quando o arquivo carrega, antes de existir idioma
+   * escolhido. Com o texto dentro, o aviso saía em português para quem lia o site em inglês ou em
+   * espanhol — e aconteceu: a pessoa via a tela toda em inglês e o erro do ditado em português.
+   * Guardando a chave, quem traduz é o hook, que é React. Este teste é o que impede a volta disso.
+   */
+  const chaves = [...Object.values(MENSAGENS_DE_ERRO), NADA_FOI_OUVIDO, NAO_LIGOU, ERRO_DESCONHECIDO_DITADO, ERRO_DESCONHECIDO_COMANDO];
+
+  it("nenhuma delas é uma frase pronta", () => {
+    for (const chave of chaves) expect(chave).toMatch(/^acessibilidade.microfone.[a-zA-Z]+$/);
+  });
+
+  it("todas existem nos três idiomas, com texto diferente em cada um", () => {
+    const avisos = ["acessibilidade.microfone.liberarNoAndroid", "acessibilidade.microfone.liberarNoIos", "acessibilidade.microfone.liberarNoComputador"] as const;
+
+    for (const chave of [...chaves, ...avisos]) {
+      const textos = IDIOMAS.map(({ codigo }) => DICIONARIOS[codigo][chave]);
+
+      for (const texto of textos) expect(texto, chave).toBeTruthy();
+
+      // Três idiomas, três textos: um valor repetido é tradução que ficou faltando.
+      expect(new Set(textos).size, chave).toBe(IDIOMAS.length);
+    }
   });
 });

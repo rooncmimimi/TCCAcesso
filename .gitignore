@@ -4,6 +4,8 @@ node_modules/
 # Build
 dist/
 build/
+# Cache do tsc (`--incremental`): sai do `npm run build` e nao e codigo.
+*.tsbuildinfo
 
 # Variáveis de ambiente
 .env

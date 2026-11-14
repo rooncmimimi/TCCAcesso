@@ -17,21 +17,21 @@ export function SuporteRodape() {
       <nav aria-label={t("rodape.suporte")} className="mt-3 flex flex-wrap gap-x-6 gap-y-3 text-sm">
         <Link
           to="/fale-conosco"
-          className="flex items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
+          className="flex min-h-6 items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
         >
           <Mail className="size-4 shrink-0" aria-hidden="true" />
           {t("rodape.faleConosco")}
         </Link>
         <Link
           to="/configuracoes/acessibilidade"
-          className="flex items-center gap-1.5 font-semibold text-muted-foreground underline-offset-2 hover:underline"
+          className="flex min-h-6 items-center gap-1.5 font-semibold text-muted-foreground underline-offset-2 hover:underline"
         >
           <Accessibility className="size-4 shrink-0" aria-hidden="true" />
           {t("rodape.acessibilidade")}
         </Link>
         <Link
           to="/configuracoes/privacidade"
-          className="flex items-center gap-1.5 font-semibold text-muted-foreground underline-offset-2 hover:underline"
+          className="flex min-h-6 items-center gap-1.5 font-semibold text-muted-foreground underline-offset-2 hover:underline"
         >
           <Lock className="size-4 shrink-0" aria-hidden="true" />
           {t("rodape.privacidadeSeguranca")}
@@ -39,10 +39,11 @@ export function SuporteRodape() {
       </nav>
       {/* Os documentos ficam ao alcance depois do cadastro, e não só no aceite. */}
       <nav aria-label={t("rodape.documentosLegais")} className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        <Link to="/termos" className="font-medium text-muted-foreground underline-offset-2 hover:underline">
+        {/* Mesmos 24 px do critério 2.5.8; ver o rodapé da página inicial. */}
+        <Link to="/termos" className="inline-flex min-h-6 items-center font-medium text-muted-foreground underline-offset-2 hover:underline">
           {t("rodape.termos")}
         </Link>
-        <Link to="/privacidade" className="font-medium text-muted-foreground underline-offset-2 hover:underline">
+        <Link to="/privacidade" className="inline-flex min-h-6 items-center font-medium text-muted-foreground underline-offset-2 hover:underline">
           {t("rodape.privacidade")}
         </Link>
       </nav>

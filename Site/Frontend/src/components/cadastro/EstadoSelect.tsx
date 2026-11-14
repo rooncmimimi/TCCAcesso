@@ -10,8 +10,14 @@ import { cn } from "@/lib/utils";
  * Só serve para quem mora no Brasil; para os demais países o formulário continua com o campo de 2 letras.
  * O estilo acompanha o `Input`, para os dois campos parecerem da mesma família.
  */
-export const EstadoSelect = forwardRef<HTMLSelectElement, ComponentProps<"select"> & { placeholder?: string }>(
-  ({ className, placeholder = "Selecione", ...props }, ref) => (
+/**
+ * `placeholder` e OBRIGATORIO de proposito: ele vira a primeira opcao da lista, que a pessoa le.
+ * Com um padrao fixo em portugues, um uso novo que esquecesse de passa-lo deixaria "Selecione" na
+ * tela em qualquer idioma — foi o que aconteceu no dialogo de editar perfil. Assim o compilador
+ * cobra a traducao de quem usa.
+ */
+export const EstadoSelect = forwardRef<HTMLSelectElement, ComponentProps<"select"> & { placeholder: string }>(
+  ({ className, placeholder, ...props }, ref) => (
     <select
       ref={ref}
       className={cn(

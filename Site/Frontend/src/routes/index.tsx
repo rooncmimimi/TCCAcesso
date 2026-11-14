@@ -305,17 +305,20 @@ function Inicio() {
       <footer className="border-t border-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <Logo />
+          {/* `min-h-6` são os 24 px que o WCAG 2.2 pede no critério 2.5.8 (tamanho do alvo). O texto
+              tinha 20 px de altura, e o que se clica é a altura do link, não a do texto — por isso
+              `inline-flex items-center`, que estica a área sem mexer em onde a palavra aparece. */}
           <nav aria-label={t("inicio.rodape")} className="flex flex-wrap items-center gap-4 text-sm font-medium">
-            <Link to="/sobre-nos" className="hover:underline">
+            <Link to="/sobre-nos" className="inline-flex min-h-6 items-center hover:underline">
               {t("inicio.sobreNos")}
             </Link>
-            <Link to="/termos" className="hover:underline">
+            <Link to="/termos" className="inline-flex min-h-6 items-center hover:underline">
               {t("inicio.termos")}
             </Link>
-            <Link to="/privacidade" className="hover:underline">
+            <Link to="/privacidade" className="inline-flex min-h-6 items-center hover:underline">
               {t("inicio.privacidade")}
             </Link>
-            <Link to="/fale-conosco" className="hover:underline">
+            <Link to="/fale-conosco" className="inline-flex min-h-6 items-center hover:underline">
               {t("inicio.faleConosco")}
             </Link>
           </nav>

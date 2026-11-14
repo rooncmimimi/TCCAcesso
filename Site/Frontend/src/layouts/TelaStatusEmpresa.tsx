@@ -42,7 +42,12 @@ export function TelaStatusEmpresa({ empresa }: { empresa: Empresa }) {
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-background px-4 py-10">
       <Logo />
 
-      <main className="w-full max-w-lg">
+      {/* `id="conteudo"` e `tabIndex={-1}` pelo mesmo motivo dos outros layouts: o `<main>` é um marco
+          de verdade e pode receber o foco. O link "pular para o conteúdo" NÃO entra aqui: ele existe
+          para contornar bloco repetido (WCAG 2.4.1), e nesta tela não há nenhum — antes do conteúdo
+          só vem a marca, que nem foco recebe. Um link que avança para o elemento seguinte seria uma
+          parada de tabulação a troco de nada. */}
+      <main id="conteudo" tabIndex={-1} className="w-full max-w-lg outline-none">
         <AvisoAprovacaoEmpresa
           empresa={empresa}
           acoes={

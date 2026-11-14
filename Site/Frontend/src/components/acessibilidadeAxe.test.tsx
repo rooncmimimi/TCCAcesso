@@ -9,6 +9,14 @@ import type { VagaAdmin } from "@/services/admin.service";
 import { violacoesDeAcessibilidade } from "@/lib/verificarAcessibilidade";
 
 /**
+ * O axe varre a árvore inteira e, nas telas grandes, uma varredura passa dos 5 s que o Vitest dá por
+ * padrão — com a suíte toda rodando em paralelo, dava falha por tempo numa máquina ocupada e passava
+ * sozinha logo depois. O limite aqui é por arquivo, e não global: nos outros testes um teste de 5 s
+ * continua sendo sinal de que algo travou.
+ */
+vi.setConfig({ testTimeout: 30_000 });
+
+/**
  * Verificação automática (axe) dos recursos novos dos Blocos 3 e 4, no jsdom. Pega o que o axe sabe
  * pegar: nomes de botões e campos, rótulos, papéis e atributos ARIA, ids duplicados, listas, títulos,
  * imagens. NÃO pega contraste, tamanho de alvo nem ordem de leitura (sem layout), e não substitui o

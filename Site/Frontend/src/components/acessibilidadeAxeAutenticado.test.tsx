@@ -6,6 +6,14 @@ import { PREFERENCIAS_PADRAO } from "@/contexts/AcessibilidadeContext";
 import { violacoesDeAcessibilidade } from "@/lib/verificarAcessibilidade";
 
 /**
+ * O axe varre a árvore inteira e, nas telas grandes, uma varredura passa dos 5 s que o Vitest dá por
+ * padrão — com a suíte toda rodando em paralelo, dava falha por tempo numa máquina ocupada e passava
+ * sozinha logo depois. O limite aqui é por arquivo, e não global: nos outros testes um teste de 5 s
+ * continua sendo sinal de que algo travou.
+ */
+vi.setConfig({ testTimeout: 30_000 });
+
+/**
  * Verificação automática (axe) das telas que **exigem login** — a parte que faltava, porque o ambiente de
  * desenvolvimento não tem conta de teste. Aqui elas são montadas com os serviços simulados, então dá para
  * varrê-las sem servidor: painel do candidato e da empresa, perfil, minhas vagas, candidaturas, notificações e

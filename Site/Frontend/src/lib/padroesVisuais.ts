@@ -38,6 +38,12 @@ export type PadraoVisual = {
   explicacao: ChaveBase;
   claro: PaletaDoTema;
   escuro: PaletaDoTema;
+  /**
+   * As cinco cores do grafico, na ordem das series. Nao carregam texto, entao a conta aqui nao e a
+   * do contraste com o texto, e sim a de serem distinguiveis entre si — e, no monocromatico, de
+   * terem claridade bem separada, porque la a cor nao distingue nada e quem separa e a hachura.
+   */
+  graficos: { claro: readonly string[]; escuro: readonly string[] };
 };
 
 export const IDS_DOS_PADROES = [
@@ -84,6 +90,10 @@ export const PADROES_VISUAIS: Record<Exclude<IdDoPadrao, "nenhum">, PadraoVisual
     explicacao: "acessibilidade.padroesVisuais.acessivelExplicacao",
     claro: ACESSIVEL,
     escuro: ACESSIVEL_ESCURO,
+    graficos: {
+      claro: ["#0072b2", "#c14300", "#7b3f8f", "#a65f00", "#00705a"],
+      escuro: ["#56b4e9", "#f08a3c", "#c79bd6", "#f0e442", "#5fd0b4"],
+    },
   },
 
   /**
@@ -108,6 +118,10 @@ export const PADROES_VISUAIS: Record<Exclude<IdDoPadrao, "nenhum">, PadraoVisual
       alerta: { fundo: "#f0e442", texto: ESCURO },
       info: { fundo: "#c9a0e8", texto: ESCURO },
     },
+    graficos: {
+      claro: ["#0072b2", "#a4036f", "#6b3fa0", "#a65f00", "#00705a"],
+      escuro: ["#56b4e9", "#e879c0", "#c9a0e8", "#f0e442", "#5fd0b4"],
+    },
   },
 
   /**
@@ -130,6 +144,10 @@ export const PADROES_VISUAIS: Record<Exclude<IdDoPadrao, "nenhum">, PadraoVisual
       erro: { fundo: "#f0a050", texto: ESCURO },
       alerta: { fundo: "#f2c14e", texto: ESCURO },
       info: { fundo: "#c9a0e8", texto: ESCURO },
+    },
+    graficos: {
+      claro: ["#0072b2", "#c14300", "#6b3fa0", "#8f6000", "#00705a"],
+      escuro: ["#56b4e9", "#f0a050", "#c9a0e8", "#f2c14e", "#5fd0b4"],
     },
   },
 
@@ -154,6 +172,10 @@ export const PADROES_VISUAIS: Record<Exclude<IdDoPadrao, "nenhum">, PadraoVisual
       erro: { fundo: "#ff8a80", texto: ESCURO },
       alerta: { fundo: "#ff80ab", texto: ESCURO },
       info: { fundo: "#b0bec5", texto: ESCURO },
+    },
+    graficos: {
+      claro: ["#16772f", "#c62828", "#d81b60", "#37474f", "#6d4c41"],
+      escuro: ["#5fd08a", "#ff8a80", "#ff80ab", "#b0bec5", "#d7a98c"],
     },
   },
 
@@ -182,6 +204,10 @@ export const PADROES_VISUAIS: Record<Exclude<IdDoPadrao, "nenhum">, PadraoVisual
       info: { fundo: "#cbd5e1", texto: ESCURO },
       destaque: { fundo: "#cbd5e1", texto: ESCURO },
     },
+    graficos: {
+      claro: ["#111827", "#374151", "#596575", "#7b8694", "#a3abb6"],
+      escuro: ["#f3f4f6", "#cbd5e1", "#a3abb6", "#7b8694", "#596575"],
+    },
   },
 };
 
@@ -196,10 +222,12 @@ const VARIAVEIS: Record<PapelDeCor, { fundo: readonly string[]; texto: readonly 
 };
 
 /** Toda variável que um padrão PODE escrever — usada para limpar tudo ao voltar para "nenhum". */
-export const VARIAVEIS_DOS_PADROES: readonly string[] = Object.values(VARIAVEIS).flatMap((v) => [
-  ...v.fundo,
-  ...v.texto,
-]);
+export const VARIAVEIS_DE_GRAFICO: readonly string[] = [1, 2, 3, 4, 5].map((n) => `--chart-${n}`);
+
+export const VARIAVEIS_DOS_PADROES: readonly string[] = [
+  ...Object.values(VARIAVEIS).flatMap((v) => [...v.fundo, ...v.texto]),
+  ...VARIAVEIS_DE_GRAFICO,
+];
 
 export const PAPEIS: readonly PapelDeCor[] = ["destaque", "sucesso", "erro", "alerta", "info"];
 
@@ -346,7 +374,22 @@ export function variaveisDoPadrao(
     for (const nome of VARIAVEIS[papel].texto) variaveis[nome] = par.texto;
   }
 
+  // As cores de grafico seguem o padrao, sem os ajustes: elas nao levam texto em cima, e mexer na
+  // claridade delas estragaria a separacao entre as series, que e o que faz o grafico ser lido.
+  coresDeGrafico(id, temaEscuro).forEach((cor, indice) => {
+    variaveis[`--chart-${indice + 1}`] = cor;
+  });
+
   return variaveis;
+}
+
+/**
+ * As cinco cores de grafico do padrao escolhido. "nenhum" devolve lista vazia: o grafico fica com
+ * a paleta da marca, que ja esta no `globals.css`.
+ */
+export function coresDeGrafico(id: IdDoPadrao, temaEscuro: boolean): readonly string[] {
+  if (id === "nenhum") return [];
+  return PADROES_VISUAIS[id].graficos[temaEscuro ? "escuro" : "claro"];
 }
 
 /** A paleta de um padrão num tema, para as amostras da tela de configurações. */

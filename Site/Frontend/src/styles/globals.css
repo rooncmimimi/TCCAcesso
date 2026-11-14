@@ -182,6 +182,10 @@
      sobre o fundo tingido da página — abaixo dos 4,5:1 do WCAG 1.4.3 —, então um selo "Aprovada"
      preenchido com ele seria ilegível. #157a33 mede 5,44:1 com branco e 4,83:1 sobre o fundo.
      Mesma conta de `--primary`, acima. */
+  /* Cor da textura das series de grafico (ver lib/hachuras.ts): clara sobre preenchimento
+     escuro, escura sobre preenchimento claro, para a hachura aparecer nos dois temas. */
+  --hachura: oklch(1 0 0 / 0.62);
+
   --success: oklch(from #157a33 l c h);
   --success-foreground: oklch(0.99 0.005 250);
 
@@ -260,6 +264,8 @@
   /* Sucesso e informação precisam ser redefinidos aqui pelo mesmo motivo de `--destructive`,
      abaixo: sem isso o modo escuro herdaria os valores do tema claro, que foram escolhidos para
      fundo claro. Mesma técnica de `--primary` neste bloco: fundo mais claro e texto escuro. */
+  --hachura: oklch(0 0 0 / 0.55);
+
   --success: oklch(from #21a848 0.72 c h);
   --success-foreground: oklch(from #21a848 0.17 c h);
 

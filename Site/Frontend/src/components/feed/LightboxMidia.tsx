@@ -4,6 +4,8 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { FiltrosDeCor, SeletorDeAjusteDeCor } from "@/components/acessibilidade/AjusteDeCorDaImagem";
+import { useAjusteDeCor } from "@/lib/ajusteDeCorDaImagem";
 import { urlArquivo } from "@/utils/arquivos";
 import postagensService from "@/services/postagens.service";
 import { extrairMensagemErro } from "@/services/api";
@@ -35,6 +37,8 @@ export function LightboxMidia({
   const { t } = useIdioma();
   const [indice, setIndice] = useState(indiceInicial);
   const [baixando, setBaixando] = useState(false);
+  // Ajuste de cor desta imagem, ligado por quem está olhando. Nunca automático, nunca salvo.
+  const cor = useAjusteDeCor();
 
   useEffect(() => {
     if (aberto) setIndice(indiceInicial);
@@ -97,9 +101,11 @@ export function LightboxMidia({
         {item && (
           <>
             <DialogTitle className="sr-only">
-              {item.tipo === "video" ? "Vídeo ampliado" : "Imagem ampliada"}
+              {item.tipo === "video"
+                ? t("feed.lightboxMidia.videoAmpliado")
+                : t("feed.lightboxMidia.imagemAmpliada")}
               {item.descricao ? `: ${item.descricao}` : ""}
-              {temVarios ? ` (${indice + 1} de ${itens.length})` : ""}
+              {temVarios ? ` ${t("feed.lightboxMidia.deTotal", { atual: indice + 1, total: itens.length })}` : ""}
             </DialogTitle>
 
             <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-black">
@@ -145,13 +151,29 @@ export function LightboxMidia({
                   src={urlArquivo(item.url)}
                   alt={item.descricao || item.nomeOriginal || t("feed.lightboxMidia.imagemSemDescricaoFornecida")}
                   className="max-h-[75dvh] w-full object-contain"
+                  style={cor.estilo}
                 />
               )}
             </div>
 
+            {item.tipo === "imagem" && (
+              <>
+                <FiltrosDeCor prefixo={cor.prefixo} />
+                <SeletorDeAjusteDeCor valor={cor.ajuste} aoMudar={cor.setAjuste} />
+                {cor.temFiltro && (
+                  <p role="status" className="text-xs text-muted-foreground">
+                    {t("acessibilidade.ajusteDeCorDaImagem.aviso")}
+                  </p>
+                )}
+              </>
+            )}
+
             <div className="flex items-center justify-between gap-2">
               <p className="min-w-0 truncate text-sm text-muted-foreground" aria-hidden="true">
-                {item.descricao || (temVarios ? `${indice + 1} de ${itens.length}` : "")}
+                {item.descricao ||
+                  (temVarios
+                    ? t("feed.lightboxMidia.deTotal", { atual: indice + 1, total: itens.length })
+                    : "")}
               </p>
               {postagemId && (
                 <Button
@@ -161,7 +183,11 @@ export function LightboxMidia({
                   className="shrink-0 gap-1.5"
                   disabled={baixando}
                   onClick={baixar}
-                  aria-label={`Baixar ${item.tipo === "video" ? "vídeo" : "imagem"}${item.nomeOriginal ? `: ${item.nomeOriginal}` : ""}`}
+                  aria-label={`${
+                    item.tipo === "video"
+                      ? t("feed.lightboxMidia.baixarVideo")
+                      : t("feed.lightboxMidia.baixarImagem")
+                  }${item.nomeOriginal ? `: ${item.nomeOriginal}` : ""}`}
                 >
                   {baixando ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />

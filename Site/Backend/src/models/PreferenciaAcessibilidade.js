@@ -102,6 +102,19 @@ const PreferenciaAcessibilidade = sequelize.define(
                       validate: { isIn: [["pt", "en", "es"]] }
                   }
               }
+            : {}),
+
+        // Migration 0014 (`VISUAL_NA_CONTA_HABILITADO`): a personalização visual para daltonismo.
+        // Nulo significa "nunca personalizou", que é diferente de ter escolhido o padrão "nenhum" —
+        // por isso não tem `defaultValue`. O conteúdo é limpo em `utils/visualDaConta.js` antes de
+        // chegar aqui; o banco nunca vê o JSON como o cliente mandou.
+        ...(env.visual.naContaHabilitado
+            ? {
+                  visual: {
+                      type: DataTypes.JSONB,
+                      allowNull: true
+                  }
+              }
             : {})
     },
     {

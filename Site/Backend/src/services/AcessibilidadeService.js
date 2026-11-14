@@ -1,5 +1,6 @@
 import env from "../config/env.js";
 import { PreferenciaAcessibilidade } from "../models/index.js";
+import { limparVisual } from "../utils/visualDaConta.js";
 
 /**
  * Preferências de acessibilidade persistidas por usuário.
@@ -36,8 +37,8 @@ class AcessibilidadeService {
     async atualizar(usuarioId, data) {
         const preferencias = await this.obter(usuarioId);
 
-        // `idioma` só existe com o recurso ligado (migration 0011); desligado, o campo enviado é ignorado como qualquer outro desconhecido.
-        const campos = env.idioma.naContaHabilitado ? [...CAMPOS, "idioma"] : CAMPOS;
+        // `idioma` e `visual` só existem com o recurso ligado (migrations 0011 e 0014); desligados, o campo enviado é ignorado como qualquer outro desconhecido.
+        const campos = [...CAMPOS, ...(env.idioma.naContaHabilitado ? ["idioma"] : [])];
 
         const alteracoes = campos.reduce((acumulado, campo) => {
             if (data[campo] !== undefined) {
@@ -46,6 +47,13 @@ class AcessibilidadeService {
 
             return acumulado;
         }, {});
+
+        // O `visual` nunca entra como veio: `limparVisual` deixa passar só chave conhecida, padrão
+        // da lista, número na faixa e cor em `#rrggbb`. `null` é "nunca personalizou" e também é
+        // o que a pessoa grava ao restaurar.
+        if (env.visual.naContaHabilitado && data.visual !== undefined) {
+            alteracoes.visual = limparVisual(data.visual);
+        }
 
         await preferencias.update(alteracoes);
 
@@ -70,7 +78,9 @@ class AcessibilidadeService {
             velocidadeVoz: 1.0,
             linguagemSimplificada: false,
             libras: true,
-            destaqueFoco: true
+            destaqueFoco: true,
+            // Redefinir apaga a personalização visual junto, voltando ao estado "nunca personalizou".
+            ...(env.visual.naContaHabilitado ? { visual: null } : {})
         });
 
         return preferencias;

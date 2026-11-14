@@ -588,6 +588,16 @@ export interface MetricasAdmin {
 
 /* Preferências de acessibilidade (salvas na conta) */
 /** Espelha exatamente a tabela `preferencias_acessibilidade` do Backend. */
+/** O que a conta guarda da personalização visual. O servidor limpa isto antes de gravar. */
+export interface VisualDaContaApi {
+  padrao?: string;
+  intensidade?: number;
+  saturacao?: number;
+  brilho?: number;
+  contraste?: number;
+  cores?: Record<string, string>;
+}
+
 export interface PreferenciasAcessibilidadeApi {
   tema?: "claro" | "escuro" | "sistema" | null;
   altoContraste?: boolean;
@@ -605,6 +615,11 @@ export interface PreferenciasAcessibilidadeApi {
   destaqueFoco?: boolean;
   /** Idioma do site (`pt`, `en`, `es`). `null`: a conta ainda não escolheu. Ausente: o servidor não tem o recurso ligado. */
   idioma?: "pt" | "en" | "es" | null;
+  /**
+   * Personalização visual para daltonismo. `null`: a conta nunca personalizou. Ausente: o servidor
+   * não tem o recurso ligado (migration 0014 + `VISUAL_NA_CONTA_HABILITADO`).
+   */
+  visual?: VisualDaContaApi | null;
   [chave: string]: unknown;
 }
 

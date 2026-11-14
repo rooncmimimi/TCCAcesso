@@ -232,6 +232,13 @@ const env = {
         naContaHabilitado: process.env.IDIOMA_NA_CONTA_HABILITADO === "true"
     },
 
+    // Personalização visual para daltonismo guardada na conta (migration 0014). Mesmo cuidado do
+    // idioma: o Sequelize seleciona todas as colunas declaradas no model, então declarar a coluna
+    // antes de rodar a migration derrubaria as preferências de acessibilidade inteiras.
+    visual: {
+        naContaHabilitado: process.env.VISUAL_NA_CONTA_HABILITADO === "true"
+    },
+
     // Sessões e dispositivos (Bloco 2).
     sessoes: {
         // Liga: encerrar uma sessão corta o acesso na hora (o access token leva `sid`, e o servidor confere que a

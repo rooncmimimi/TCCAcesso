@@ -1,6 +1,8 @@
 import clienteApi from "./api";
 import type { PreferenciasAcessibilidadeApi } from "@/types";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
+import { ehIdDePadrao } from "@/lib/padroesVisuais";
+import { limparCores } from "@/lib/preferenciasVisuais";
 
 /** Converte as preferências locais para o formato aceito pelo Backend. */
 export function preferenciasParaApi(prefs: PreferenciasAcessibilidade): PreferenciasAcessibilidadeApi {
@@ -19,6 +21,16 @@ export function preferenciasParaApi(prefs: PreferenciasAcessibilidade): Preferen
     velocidadeVoz: Number(prefs.speechRate.toFixed(1)),
     libras: prefs.vlibras,
     destaqueFoco: prefs.focusHighlight,
+    // A personalização visual inteira num campo só. O servidor limpa de novo do lado dele: o que
+    // sai daqui é o que a pessoa escolheu, mas quem grava não confia em ninguém.
+    visual: {
+      padrao: prefs.visualPattern,
+      intensidade: prefs.visualIntensity,
+      saturacao: prefs.visualSaturation,
+      brilho: prefs.visualBrightness,
+      contraste: prefs.visualContrast,
+      cores: prefs.visualColors,
+    },
   };
 }
 
@@ -43,6 +55,28 @@ export function preferenciasDaApi(dto: PreferenciasAcessibilidadeApi): Partial<P
   }
   if (typeof dto.libras === "boolean") parcial.vlibras = dto.libras;
   if (typeof dto.destaqueFoco === "boolean") parcial.focusHighlight = dto.destaqueFoco;
+
+  // `visual` ausente quer dizer que o servidor não tem o recurso ligado — a personalização segue
+  // valendo só neste aparelho, e não se apaga o que já estava escolhido aqui. `null` é diferente:
+  // a conta existe e nunca personalizou, ou acabou de restaurar.
+  if (dto.visual === null) {
+    parcial.visualPattern = "nenhum";
+    parcial.visualIntensity = 100;
+    parcial.visualSaturation = 100;
+    parcial.visualBrightness = 100;
+    parcial.visualContrast = 4.5;
+    parcial.visualColors = {};
+  } else if (dto.visual && typeof dto.visual === "object") {
+    const visual = dto.visual;
+
+    if (ehIdDePadrao(visual.padrao)) parcial.visualPattern = visual.padrao;
+    if (typeof visual.intensidade === "number") parcial.visualIntensity = visual.intensidade;
+    if (typeof visual.saturacao === "number") parcial.visualSaturation = visual.saturacao;
+    if (typeof visual.brilho === "number") parcial.visualBrightness = visual.brilho;
+    if (typeof visual.contraste === "number") parcial.visualContrast = visual.contraste;
+    if (visual.cores) parcial.visualColors = limparCores(visual.cores);
+  }
+
   return parcial;
 }
 

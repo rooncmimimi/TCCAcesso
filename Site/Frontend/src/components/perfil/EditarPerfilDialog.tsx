@@ -301,7 +301,13 @@ export function EditarPerfilDialog({
                 <div className="space-y-2">
                   <Label htmlFor="estado">{t("perfil.editarPerfilDialog.estadoUf")}</Label>
                   {pais === "BR" ? (
-                    <EstadoSelect id="estado" name="estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
+                    <EstadoSelect
+                      id="estado"
+                      name="estado"
+                      value={estado}
+                      onChange={(e) => setEstado(e.target.value)}
+                      placeholder={t("perfil.editarPerfilDialog.selecioneOEstado")}
+                    />
                   ) : (
                     <Input
                       id="estado"

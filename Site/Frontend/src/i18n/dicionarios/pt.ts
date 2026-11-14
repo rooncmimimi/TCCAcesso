@@ -1027,6 +1027,7 @@ export const pt = {
   "perfil.editarPerfilDialog.essasInformacoesAparecemNoSeu": "Essas informações aparecem no seu perfil e nas suas publicações.",
   "perfil.editarPerfilDialog.removerBanner": "Remover banner",
   "perfil.editarPerfilDialog.fotoDePerfil": "Foto de perfil",
+  "perfil.editarPerfilDialog.selecioneOEstado": "Selecione o estado",
   "perfil.editarPerfilDialog.tituloProfissional": "Título profissional",
   "perfil.editarPerfilDialog.sobreMim": "Sobre mim",
   "perfil.editarPerfilDialog.dataDeNascimento": "Data de nascimento",

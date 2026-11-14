@@ -204,8 +204,18 @@
   --destructive: oklch(from #d5131c l c h);
   --destructive-foreground: oklch(0.99 0.005 250);
 
+  /* `--border` desenha a ESTRUTURA: contorno de cartão, separador, divisória de lista. Nenhum
+     desses é o que identifica um controle, então o 1.4.11 não pede 3:1 aqui — e escurecer os 67
+     arquivos que usam esta variável trocaria a cara do site inteiro por uma medição que o critério
+     não cobra. Fica como está, clara. */
   --border: oklch(0.91 0.01 255);
-  --input: oklch(0.91 0.01 255);
+
+  /* `--input` é outra coisa: é a borda que diz ONDE COMEÇA O CAMPO, e em campo de texto, select,
+     área de texto e botão de contorno ela é a única pista visual. O WCAG 1.4.11 pede 3:1 para ela.
+     Estava em `oklch(0.91 ...)`, que mede 1,31:1 contra o branco — praticamente invisível para
+     quem tem baixa visão. `0.63` mede 3,3:1 contra o fundo da página e 3,5:1 contra o branco do cartão, com folga pequena de propósito: escurecer mais
+     transformaria cada campo num retângulo pesado. O tema escuro não muda (lá já são 18,45:1). */
+  --input: oklch(0.63 0.01 255);
   /* Mesmo verde de `--primary`: o contorno de foco mede 5,65:1 contra o branco. */
   --ring: oklch(from #16772f l c h);
 

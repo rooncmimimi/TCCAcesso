@@ -20,6 +20,8 @@ SQL numerados, aplicados em ordem e uma única vez por banco.
 
 | `0012_adaptacoes_rascunhos_e_privacidade_da_candidatura.sql` | Bloco 2 da acessibilidade avançada: `candidatos.exibir_deficiencia_no_perfil` (falso: a categoria de deficiência deixa de ser pública por padrão) e as tabelas `perfis_adaptacao`, `preferencias_comunicacao`, `candidatura_adaptacoes` (cópia autorizada por candidatura, apagada na retirada) e `candidatura_rascunhos`, todas com RLS e sem acesso para anon/authenticated. Só acrescenta. **Aplique antes de publicar o código que a usa** (o model passa a ler a coluna nova). Traz no cabeçalho como voltar atrás. |
 | `0013_ambiente_entrevista_e_midia_da_vaga.sql` | Bloco 3 da acessibilidade avançada: `vagas` ganha `entrevista_adaptacoes`, `entrevista_observacao`, `ambiente_sensorial` (prévia sensorial), `acessibilidade_fisica` (mapa físico, com origem declarado ou verificado), `atividades`, `requisitos_desejaveis` e `etapas_selecao`, todas opcionais; e a tabela `vaga_midias` (vídeo da vaga em Libras com transcrição obrigatória e legenda WebVTT em texto), com RLS e sem acesso para anon/authenticated. Só acrescenta. **Aplique antes de publicar o código que a usa.** Traz no cabeçalho como voltar atrás. |
+| `0014_personalizacao_visual.sql` | Personalização visual para daltonismo na conta: acrescenta `preferencias_acessibilidade.visual` (jsonb, nula — nulo significa "nunca personalizou"). Só acrescenta. Só tem efeito depois de ligar `VISUAL_NA_CONTA_HABILITADO`, e a migration precisa rodar ANTES da chave (o model passa a declarar a coluna). Traz no cabeçalho como voltar atrás. |
+| `0015_cache_de_traducao.sql` | Cache da tradução de conteúdo público: cria `traducoes` (hash sha256 de origem/destino/texto, a tradução, o motor e o tamanho do original), com RLS e sem acesso para anon/authenticated. O texto ORIGINAL não é guardado. Faz o mesmo texto ser traduzido uma vez por idioma em vez de uma vez por leitor, que é o que faz caber na camada gratuita do tradutor. Só cria. Sem `DEEPL_API_KEY` a tabela fica vazia e o Site usa a reserva gratuita de antes. Traz no cabeçalho como voltar atrás. |
 
 As descrições representam o efeito de cada migration. Para detalhes de regras, constraints e decisões,
 consulte os comentários no próprio arquivo SQL e o [guia do schema](../ESQUEMA_DO_BANCO.md).
@@ -65,8 +67,8 @@ depende dela.
 
 ## Regra para novas mudanças
 
-A última migration versionada neste repositório é a `0013`. Portanto, a próxima deve ser
-`0014_<descricao_curta>.sql`, e assim por diante.
+A última migration versionada neste repositório é a `0015`. Portanto, a próxima deve ser
+`0016_<descricao_curta>.sql`, e assim por diante.
 
 A numeração tem uma **lacuna de propósito**: a `0008` (verificação em duas etapas por aplicativo autenticador) foi escrita, nunca aplicada em
 nenhum banco e removida. O código dela está preservado na branch `totp-bloco1-preservado`. O executor de migrations trabalha pelo nome

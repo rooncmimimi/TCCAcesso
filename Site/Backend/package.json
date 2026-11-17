@@ -12,6 +12,7 @@
     "implantacao:verificar": "node scripts/verificarImplantacao.js",
     "google:verificar": "node scripts/verificarGoogle.js",
     "descricao:verificar": "node scripts/verificarDescricaoDeImagem.js",
+    "traducao:verificar": "node scripts/verificarTraducao.js",
     "test": "vitest run"
   },
   "license": "MIT",

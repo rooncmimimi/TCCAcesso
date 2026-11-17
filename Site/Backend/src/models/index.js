@@ -41,6 +41,7 @@ import PreferenciaComunicacao from "./PreferenciaComunicacao.js";
 import CandidaturaAdaptacao from "./CandidaturaAdaptacao.js";
 import CandidaturaRascunho from "./CandidaturaRascunho.js";
 import VagaMidia from "./VagaMidia.js";
+import Traducao from "./Traducao.js";
 
 /**
  * Registro central dos models e das associações.
@@ -324,5 +325,8 @@ export {
     PreferenciaComunicacao,
     CandidaturaAdaptacao,
     CandidaturaRascunho,
-    VagaMidia
+    VagaMidia,
+    // Sem associacao nenhuma de proposito: o cache de traducao nao aponta para conteudo, so para o
+    // hash do texto (ver `models/Traducao.js`).
+    Traducao
 };

@@ -23,6 +23,7 @@ import contatoRoutes from "./contatoRoutes.js";
 import denunciaRoutes from "./denunciaRoutes.js";
 import atividadeRoutes from "./atividadeRoutes.js";
 import minhaAcessibilidadeRoutes from "./minhaAcessibilidadeRoutes.js";
+import traducaoRoutes from "./traducaoRoutes.js";
 
 const router = Router();
 
@@ -53,5 +54,6 @@ router.use("/publico", publicoRoutes);
 router.use("/contato", contatoRoutes);
 router.use("/denuncias", denunciaRoutes);
 router.use("/atividade", atividadeRoutes);
+router.use("/traducoes", traducaoRoutes);
 
 export default router;

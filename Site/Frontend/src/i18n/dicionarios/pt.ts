@@ -25,7 +25,7 @@ export const pt = {
   "traducao.conteudo.publicacao": "a publicação",
   "traducao.conteudo.comentario": "o comentário",
   "traducao.conteudo.vaga": "a vaga",
-  "traducao.pedeAutorizacao": "Para traduzir, este texto precisa ser enviado a um serviço de tradução na internet: ele sai do seu aparelho. Nada mais é enviado, e você só é perguntado uma vez.",
+  "traducao.pedeAutorizacao": "Para traduzir, este texto é enviado ao servidor do ACESSO e de lá a um serviço de tradução: ele sai do seu aparelho. O ACESSO guarda a tradução para não precisar traduzir o mesmo texto de novo. Nada mais é enviado, e você só é perguntado uma vez.",
   "traducao.autorizar": "Traduzir mesmo assim",
   "traducao.recusar": "Agora não",
   "traducao.viaServicoOnline": "Traduzido por um serviço online.",

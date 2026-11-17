@@ -21,7 +21,7 @@ export const es: Record<ChaveDeTexto, string> = {
   "traducao.conteudo.publicacao": "la publicación",
   "traducao.conteudo.comentario": "el comentario",
   "traducao.conteudo.vaga": "la vacante",
-  "traducao.pedeAutorizacao": "Para traducir, este texto debe enviarse a un servicio de traducción en internet: sale de tu dispositivo. No se envía nada más y solo te preguntamos una vez.",
+  "traducao.pedeAutorizacao": "Para traducir, este texto se envía al servidor de ACESSO y desde allí a un servicio de traducción: sale de tu dispositivo. ACESSO guarda la traducción para no tener que traducir el mismo texto de nuevo. No se envía nada más, y solo se te pregunta una vez.",
   "traducao.autorizar": "Traducir de todos modos",
   "traducao.recusar": "Ahora no",
   "traducao.viaServicoOnline": "Traducido por un servicio en línea.",

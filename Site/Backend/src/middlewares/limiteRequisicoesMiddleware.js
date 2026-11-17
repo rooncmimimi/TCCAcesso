@@ -161,3 +161,23 @@ export const limiteSugestaoDescricao = rateLimit({
         mensagem: "Você atingiu o limite de sugestões de descrição por hora. Tente novamente mais tarde ou escreva a descrição manualmente."
     }
 });
+
+/**
+ * Tradução de conteúdo: 30 pedidos por IP a cada hora.
+ *
+ * A rota é pública (o feed e a vaga são abertos), e cada falta de cache gasta cota de um serviço
+ * externo. Lendo normalmente ninguém chega perto de 30: cada clique em "Traduzir" é um pedido, e o
+ * mesmo texto só custa na primeira vez. Quem bate neste limite não fica sem tradução — o Site cai
+ * para a reserva gratuita.
+ */
+export const limiteTraducao = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.user?.id || req.ip,
+    message: {
+        sucesso: false,
+        mensagem: "Você traduziu muitos textos nesta hora. Tente novamente mais tarde."
+    }
+});

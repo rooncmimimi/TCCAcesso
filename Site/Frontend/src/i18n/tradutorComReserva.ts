@@ -1,12 +1,20 @@
 import { detectarIdiomaDoTexto } from "@/lib/idiomaDaFala";
 
 import type { CodigoIdioma } from "./idiomas";
+import { tradutorDoAcesso } from "./tradutorDoAcesso";
 import { ErroDeTraducao, tradutorDoNavegador, type MotorDeTraducao } from "./tradutorDoNavegador";
 import { tradutorOnline } from "./tradutorOnline";
 
 /**
- * O motor que o Site usa: o tradutor embutido do navegador quando ele realmente funciona, e um serviço
- * gratuito na internet como reserva.
+ * O motor que o Site usa, em três degraus, do melhor para o que nunca falta:
+ *
+ *   1. **O tradutor embutido do navegador**, quando está mesmo pronto. Roda no aparelho, o texto não
+ *      sai dali e não tem limite nenhum. É o melhor dos três — e o mais raro.
+ *   2. **O servidor do ACESSO** (DeepL, com o resultado guardado). Melhor qualidade que a reserva, e o
+ *      mesmo texto só é traduzido uma vez: o próximo leitor da mesma publicação recebe do banco.
+ *   3. **O serviço gratuito sem chave** (MyMemory, direto do navegador). Pior qualidade e cota
+ *      pequena, mas não depende de o servidor ter chave nem de sobrar cota do mês. É a rede de
+ *      segurança: enquanto ela existir, o botão "Traduzir" nunca fica sem resposta.
  *
  * **Por que a reserva existe.** O tradutor embutido é o melhor dos dois (roda no aparelho, o texto não
  * sai dele, não tem limite), mas quase nunca está pronto: medido no Chrome 152, `Translator` e
@@ -94,6 +102,17 @@ export const tradutorComReserva: MotorDeTraducao = {
       } catch {
         // O embutido prometeu e falhou: a reserva ainda pode salvar a tradução.
         sondagens.delete(`${origem}>${destino}`);
+      }
+    }
+
+    // O servidor do ACESSO traduz melhor E guarda o resultado, então é a escolha certa sempre que
+    // estiver ligado. Falhar aqui não é o fim: a cota do mês pode ter acabado, o servidor pode estar
+    // sem chave de tradução ou fora do ar, e em todos esses casos a reserva gratuita ainda traduz.
+    if (tradutorDoAcesso.disponivel()) {
+      try {
+        return await tradutorDoAcesso.traduzir(textos, origem, destino, aoPreparar);
+      } catch {
+        // Segue para a reserva.
       }
     }
 

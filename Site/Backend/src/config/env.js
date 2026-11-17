@@ -174,6 +174,28 @@ const env = {
         orcamentoMs: Number(process.env.OPENROUTER_BUDGET_MS) || 40000
     },
 
+    // Tradução de conteúdo (publicação, comentário, vaga) pela DeepL: sempre opcional.
+    // Sem `apiKey`, a rota /traducoes responde 503 e o Site volta ao tradutor gratuito de antes
+    // (MyMemory, direto do navegador). Nunca derruba o servidor por causa desta variável.
+    //
+    // A camada gratuita da DeepL dá 500 mil caracteres por mês e tem TETO RÍGIDO: ao acabar ela
+    // responde 456 em vez de cobrar. A chave gratuita termina em ":fx", e é por esse sufixo que o
+    // `DeepLService` escolhe entre api-free.deepl.com e api.deepl.com — usar o endereço errado
+    // devolve 403 com uma chave válida.
+    deepl: {
+        apiKey: process.env.DEEPL_API_KEY || null,
+        // Só para apontar a um servidor de teste; vazio em produção.
+        endpoint: process.env.DEEPL_ENDPOINT || null,
+        timeoutMs: Number(process.env.DEEPL_TIMEOUT_MS) || 10000,
+        // Tetos do pedido, para a rota pública não virar um ralo de cota: quantos textos de uma vez
+        // e quantos caracteres somados. Uma publicação do feed tem um texto; a vaga tem dois.
+        maximoDeTextos: Number(process.env.DEEPL_MAX_TEXTOS) || 10,
+        maximoDeCaracteres: Number(process.env.DEEPL_MAX_CARACTERES) || 6000,
+        // Teto de caracteres novos por mês, contado no próprio cache (ver `TraducaoService`).
+        // Um pouco abaixo dos 500 mil da camada gratuita, para sobrar margem. 0 desliga a conta.
+        orcamentoMensal: Number(process.env.DEEPL_ORCAMENTO_MENSAL ?? 450000)
+    },
+
     // E-mail transacional (confirmação de cadastro e recuperação de senha) pela Brevo. Sem
     // `apiKey`, o recurso fica indisponível: em desenvolvimento o código vai para o log do
     // servidor; em produção o servidor sobe, mas registra um aviso, porque ninguém receberia os

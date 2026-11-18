@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { webcrypto } from "node:crypto";
 import type { ReactNode } from "react";
+
+import { violacoesDeAcessibilidade } from "@/lib/verificarAcessibilidade";
 
 /**
  * A tela `/retorno-google`: o que a pessoa vê e para onde vai depois que o Google devolve o
@@ -387,12 +389,55 @@ describe("desfecho conflito", () => {
   });
 
   // Achado 7: a tela que o texto promete agora existe (Configurações, Segurança, Contas conectadas).
-  it("aponta para a tela onde o Google pode ser vinculado depois de entrar com a senha", async () => {
+  // E não é mais um parágrafo corrido: quem acabou de levar um "não" recebe os passos numerados.
+  it("ensina o caminho em passos numerados, e não num parágrafo só", async () => {
     concluir.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
     abrir({ codigo: "c" });
 
     await screen.findByRole("heading", { name: "Esta conta já existe no ACESSO" });
-    expect(screen.getByText(/vincular o Google em Configurações, Segurança, Contas conectadas/)).toBeInTheDocument();
+
+    const tutorial = screen.getByRole("region", { name: /Como passar a entrar com o Google/i });
+    const passos = within(tutorial).getAllByRole("listitem");
+
+    expect(passos).toHaveLength(4);
+    expect(passos[1]).toHaveTextContent(/Configurações, Segurança/);
+    expect(passos[1]).toHaveTextContent(/Vincular/);
+  });
+
+  // Os prints mostram ONDE a coisa fica; o que fazer está escrito ao lado. Por isso cada imagem
+  // descreve a tela em vez de repetir a instrução — e nenhum passo depende de enxergá-la.
+  it("cada print tem descrição própria, e o último passo não precisa de print", async () => {
+    concluir.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
+    abrir({ codigo: "c" });
+
+    await screen.findByRole("heading", { name: "Esta conta já existe no ACESSO" });
+
+    const tutorial = screen.getByRole("region", { name: /Como passar a entrar com o Google/i });
+    const prints = within(tutorial).getAllByRole("img");
+
+    expect(prints).toHaveLength(3);
+
+    for (const print of prints) {
+      expect(print.getAttribute("alt")?.length ?? 0).toBeGreaterThan(20);
+    }
+
+    // O quarto passo acontece na página do Google: não é tela do ACESSO e não tem print.
+    const passos = within(tutorial).getAllByRole("listitem");
+
+    expect(within(passos[3]).queryByRole("img")).not.toBeInTheDocument();
+    expect(passos[3]).toHaveTextContent(/senha do Google nunca passa pelo ACESSO/i);
+  });
+
+  // Esta tela só acontece depois de um login real no Google, então não dá para olhá-la no
+  // navegador à vontade: a varredura automática é o que sobra para não publicar uma lista de
+  // prints sem descrição ou com a ordem perdida.
+  it("a tela do conflito, com o tutorial, passa na varredura do axe", async () => {
+    concluir.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
+    const { container } = abrir({ codigo: "c" });
+
+    await screen.findByRole("heading", { name: "Esta conta já existe no ACESSO" });
+
+    expect(await violacoesDeAcessibilidade(container)).toEqual([]);
   });
 });
 

@@ -4,6 +4,7 @@ import { AlertTriangle, Loader2, Mail, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { TutorialVincularGoogle } from "@/components/autenticacao/TutorialVincularGoogle";
 import { Logo } from "@/components/Logo";
 import { AutenticacaoLayout } from "@/layouts/AutenticacaoLayout";
 import { Button } from "@/components/ui/button";
@@ -252,6 +253,11 @@ function RetornoGoogle() {
               <Button asChild className="min-h-12 w-full text-base">
                 <Link to="/entrar">{t("retorno-google.entrarComEMailESenha")}</Link>
               </Button>
+              {/*
+                O passo a passo fica DEPOIS do botão: quem só queria entrar resolve no primeiro
+                toque, e quem quer parar de ver esta tela toda vez tem o caminho logo abaixo.
+              */}
+              <TutorialVincularGoogle />
             </Aviso>
           ) : estado.tipo === "pausada" ? (
             <Aviso

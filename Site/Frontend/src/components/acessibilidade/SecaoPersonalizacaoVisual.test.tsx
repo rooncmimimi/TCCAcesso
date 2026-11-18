@@ -128,10 +128,49 @@ describe("cores por significado", () => {
 
   it("escolher uma cor guarda só aquele significado", () => {
     const { container } = render(<SecaoPersonalizacaoVisual />);
+    const campo = container.querySelector("#visual-cor-sucesso")!;
 
-    fireEvent.change(container.querySelector("#visual-cor-sucesso")!, { target: { value: "#123456" } });
+    fireEvent.change(campo, { target: { value: "#123456" } });
+    // Sair do seletor aplica na hora, sem esperar o tempo de descanso.
+    fireEvent.blur(campo, { target: { value: "#123456" } });
 
     expect(estado.definir).toHaveBeenCalledWith("visualColors", { sucesso: "#123456" });
+  });
+
+  // O seletor nativo de cor dispara um evento por movimento do ponteiro. Cada um desses eventos
+  // chegando ao provider repinta o tema inteiro, o que custa cerca de meio segundo nesta tela: era
+  // isso que travava a máquina de quem arrastava a roda de cores. A cor só sai daqui quando a
+  // pessoa para de mexer.
+  it("arrastar a roda de cores não despeja uma aplicação por movimento", () => {
+    vi.useFakeTimers();
+
+    try {
+      const { container } = render(<SecaoPersonalizacaoVisual />);
+      const campo = container.querySelector("#visual-cor-destaque")!;
+
+      for (let i = 0; i < 40; i++) {
+        fireEvent.change(campo, { target: { value: `#1234${String(i).padStart(2, "0")}` } });
+      }
+
+      expect(estado.definir).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(400);
+
+      expect(estado.definir).toHaveBeenCalledTimes(1);
+      expect(estado.definir).toHaveBeenCalledWith("visualColors", { destaque: "#123439" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("o quadradinho de cor acompanha o movimento mesmo antes de aplicar", () => {
+    const { container } = render(<SecaoPersonalizacaoVisual />);
+    const campo = container.querySelector("#visual-cor-destaque")! as HTMLInputElement;
+
+    fireEvent.change(campo, { target: { value: "#abcdef" } });
+
+    expect(campo.value).toBe("#abcdef");
+    expect(screen.getByText("#abcdef")).toBeInTheDocument();
   });
 
   it("'Voltar ao padrão' só aparece no significado que foi mexido", () => {

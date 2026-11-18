@@ -62,7 +62,13 @@ export function ControleDeTraducao({
           {ocupado ? (estado === "preparando" ? t("traducao.preparando") : t("traducao.traduzindo")) : traduzido ? t("traducao.verOriginal") : t("traducao.traduzir")}
         </Button>
 
-        <p id={idDoAviso} role="status" className="text-xs text-muted-foreground">
+        {/*
+          O resultado não fica escrito na tela: o botão ao lado já passa a dizer "Ver original", e a frase repetia
+          isso ocupando uma linha dentro da publicação. Ela continua existindo para quem usa leitor de tela, que não
+          enxerga o botão trocar de nome — por isso sr-only, e não remover. Erro e aviso seguem visíveis: sem eles,
+          um clique que falha não mostraria nada a ninguém.
+        */}
+        <p id={idDoAviso} role="status" className={cn("text-xs text-muted-foreground", traducaoFeita && "sr-only")}>
           {traducaoFeita ? `${traducaoFeita}${viaServicoOnline ? ` ${t("traducao.viaServicoOnline")}` : ""}` : mensagem ? t(mensagem) : ""}
         </p>
       </div>

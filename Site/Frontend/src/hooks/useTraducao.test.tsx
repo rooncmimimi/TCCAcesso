@@ -150,6 +150,27 @@ describe("quando não dá", () => {
     expect(await screen.findByText("Traduzido para o português")).toBeInTheDocument();
   });
 
+  // O aviso de sucesso não ocupa linha na publicação: quem enxerga lê isso no próprio botão, que passa a dizer
+  // "Ver original". Para leitor de tela ele continua existindo, porque trocar o nome do botão não é anúncio.
+  it("traduzido: o aviso some da tela mas continua para o leitor de tela", async () => {
+    renderizar(<Tela motor={motorFalso()} />);
+
+    fireEvent.click(botao());
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Traduzido do inglês para o português"));
+    expect(screen.getByRole("status")).toHaveClass("sr-only");
+  });
+
+  it("erro: a mensagem continua visível, senão o clique que falha não mostra nada", async () => {
+    const motor = motorFalso({ traduzir: vi.fn(async () => Promise.reject(new ErroDeTraducao("falhou"))) } as never);
+    renderizar(<Tela motor={motor} />);
+
+    fireEvent.click(botao());
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/não foi possível traduzir/i));
+    expect(screen.getByRole("status")).not.toHaveClass("sr-only");
+  });
+
   it("falha do motor: mensagem de erro e o original continua na tela", async () => {
     const motor = motorFalso({ traduzir: vi.fn(async () => Promise.reject(new ErroDeTraducao("falhou"))) } as never);
     renderizar(<Tela motor={motor} />);

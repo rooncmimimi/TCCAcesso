@@ -4,23 +4,26 @@ Este documento descreve o schema `public` do PostgreSQL/Supabase e a responsabil
 de tabelas. É um guia de leitura e manutenção; a fonte executável da estrutura continua sendo os
 arquivos SQL em `migrations/`.
 
-> **Inventário auditado:** 32 tabelas funcionais da aplicação e 1 tabela técnica de controle de
-> migrations (`migracoes_aplicadas`), totalizando 33 tabelas em `public` no momento desta revisão.
-> Atualize este inventário quando uma nova migration criar ou remover tabelas.
+> **Inventário auditado em 18/11/2026, conferido contra o banco de produção:** 42 tabelas
+> funcionais da aplicação e 1 tabela técnica de controle de migrations (`migracoes_aplicadas`),
+> totalizando 43 tabelas em `public`. Atualize este inventário quando uma nova migration criar ou
+> remover tabelas.
 
 ## Visão geral por domínio
 
 | Domínio | Tabelas | Responsabilidade |
 | --- | --- | --- |
 | Contas e autenticação | `usuarios`, `sessoes`, `tokens_push`, `codigos_recuperacao_senha`, `codigos_verificacao_email` | Conta principal, sessões, dispositivos e fluxos separados de recuperação de senha e confirmação de e-mail. |
-| Preferências | `preferencias_acessibilidade`, `preferencias_notificacao` | Preferências individuais de acessibilidade e categorias de notificações. |
+| Segurança da conta | `dispositivos_confiaveis`, `desafios_de_dispositivo`, `links_de_seguranca`, `eventos_de_seguranca` | Entrar de um aparelho novo, confirmar por e-mail, recuperar conta comprometida e o histórico mostrado na tela "Atividade de segurança" (migration `0010`). |
+| Preferências | `preferencias_acessibilidade`, `preferencias_notificacao` | Preferências individuais de acessibilidade e categorias de notificações. Guardam também o idioma do site (`idioma`, migration `0011`) e a personalização visual (`visual`, migration `0014`). |
 | Perfis e dados profissionais | `candidatos`, `empresas`, `deficiencias`, `candidato_deficiencias`, `candidato_experiencias`, `candidato_formacoes`, `candidato_certificados`, `candidato_habilidades` | Perfis de candidato/empresa e histórico profissional detalhado. |
-| Vagas e recrutamento | `vagas`, `candidaturas`, `favoritos_vaga`, `empresas_seguidas` | Publicação de vagas, candidaturas, favoritos e relação de candidatos com empresas. |
+| Vagas e recrutamento | `vagas`, `vaga_midias`, `candidaturas`, `favoritos_vaga`, `empresas_seguidas` | Publicação de vagas, candidaturas, favoritos e relação de candidatos com empresas. `vaga_midias` guarda o vídeo da vaga em Libras (migration `0013`). |
 | Inclusão nas candidaturas | `perfis_adaptacao`, `preferencias_comunicacao`, `candidatura_adaptacoes`, `candidatura_rascunhos` | Adaptações e preferências de comunicação da pessoa (privadas), a cópia do que ela autorizou compartilhar em cada candidatura e o rascunho da candidatura (migration `0012`). |
 | Rede de usuários | `usuarios_seguidos`, `solicitacoes_seguimento`, `usuarios_bloqueados` | Seguir pessoas, controlar pedidos para perfis privados e bloquear contas. |
 | Feed | `postagens`, `postagem_anexos`, `comentarios`, `curtidas`, `compartilhamentos` | Publicações, mídias, comentários/respostas e interações. |
 | Comunicação | `conversas`, `mensagens`, `notificacoes` | Conversas privadas, mensagens e avisos enviados aos usuários. |
 | Administração e moderação | `denuncias`, `registros_auditoria` | Denúncias, decisões de moderação e trilha de ações administrativas. |
+| Tradução de conteúdo | `traducoes` | Tradução já feita de um texto público (publicação, comentário, vaga), guardada para o mesmo texto não ser traduzido duas vezes (migration `0015`). |
 | Controle técnico | `migracoes_aplicadas` | Registra quais arquivos SQL já foram executados em cada banco. Não é uma funcionalidade de usuário. |
 
 ## Diagrama de relacionamentos
@@ -39,6 +42,10 @@ erDiagram
     usuarios ||--o{ codigos_verificacao_email : ""
     usuarios ||--o| preferencias_acessibilidade : ""
     usuarios ||--o| preferencias_notificacao : ""
+    usuarios ||--o{ dispositivos_confiaveis : ""
+    usuarios ||--o{ desafios_de_dispositivo : ""
+    usuarios ||--o{ links_de_seguranca : ""
+    usuarios ||--o{ eventos_de_seguranca : ""
 
     candidatos ||--o{ candidato_experiencias : ""
     candidatos ||--o{ candidato_formacoes : ""
@@ -48,6 +55,7 @@ erDiagram
     deficiencias ||--o{ candidato_deficiencias : ""
 
     empresas ||--o{ vagas : "publica"
+    vagas ||--o| vaga_midias : "vídeo em Libras"
     vagas ||--o{ candidaturas : ""
     candidatos ||--o{ candidaturas : ""
     vagas ||--o{ favoritos_vaga : ""
@@ -80,6 +88,10 @@ erDiagram
 `notificacoes`, `denuncias` e `registros_auditoria` também apontam para recursos diversos por `entidade_tipo` +
 `entidade_id`: essas referências são polimórficas e não têm chave estrangeira, por isso não aparecem acima.
 
+`traducoes` não aparece no diagrama porque **não tem nenhuma chave estrangeira, de propósito**: ela é encontrada pelo
+hash do próprio texto, não pelo id da publicação, do comentário ou da vaga de onde o texto veio. Ver
+"Tradução de conteúdo", abaixo.
+
 ## Relações importantes
 
 ### Contas e perfis
@@ -89,6 +101,15 @@ erDiagram
 - `empresas.usuario_id` identifica a conta institucional que acessa o painel da empresa.
 - `empresas.usuario_candidato_id` identifica a conta pessoal de candidato da pessoa responsável pelo cadastro. São vínculos diferentes e não devem ser fundidos.
 - `sessoes` guarda sessões por conta; `tokens_push` guarda tokens por dispositivo, permitindo que uma conta tenha mais de um aparelho.
+
+### Segurança da conta (migration `0010`)
+
+- As quatro tabelas existem para o mesmo fluxo: entrar de um aparelho desconhecido exige um código enviado por e-mail.
+- `desafios_de_dispositivo` guarda cada código de 6 dígitos — **só o HMAC dele**, com prazo, tentativas e reenvios. Um envio novo invalida o anterior.
+- `dispositivos_confiaveis` guarda o aparelho que a pessoa marcou como de confiança depois de acertar o código. O Site fica com um token aleatório; aqui mora **só o hash**. Expira e pode ser revogado.
+- `links_de_seguranca` são os links de uso único dos e-mails "Acho que invadiram minha conta" e "Não fui eu". De novo, só o hash do token.
+- `eventos_de_seguranca` é o histórico que alimenta a tela "Atividade de segurança". **Nunca guarda segredo nem código** — só o que aconteceu e quando.
+- As quatro apagam junto com a conta.
 
 ### Perfil profissional do candidato
 
@@ -112,6 +133,18 @@ erDiagram
 - `conversas` representa o relacionamento entre participantes; `mensagens` guarda cada mensagem da conversa. Uma conversa pode conter muitas mensagens.
 - `conversas.ultima_mensagem_em` e `ultima_mensagem_previa` são uma **cópia derivada** da última linha de `mensagens`, mantida por `ConversaService` a cada envio para listar e ordenar conversas sem agregação. É a única desnormalização deliberada do schema. O par de participantes é guardado em ordem canônica (`usuario_a_id < usuario_b_id`, `ck_conversas_ordem_canonica`) e é único, então só existe uma conversa por par.
 - `notificacoes` é uma caixa de entrada de eventos. Seus campos `entidade_tipo` e `entidade_id` funcionam como referência polimórfica para diferentes recursos, por isso não equivalem a uma única FK tradicional.
+
+### Vaga: ambiente e vídeo (migration `0013`)
+
+- `vagas` ganhou colunas sobre o ambiente de trabalho e a entrevista: `entrevista_adaptacoes`, `entrevista_observacao`, `ambiente_sensorial` e `acessibilidade_fisica` (as duas últimas em `jsonb`), mais `atividades`, `requisitos_desejaveis` e `etapas_selecao`. Todas são opcionais, e o que a empresa não preenche aparece como "a empresa não informou" — nunca como valor inventado.
+- `vaga_midias` é o vídeo da vaga em Libras: um por vaga, com transcrição obrigatória e legenda WebVTT opcional guardada como texto na própria linha. **Nada é traduzido automaticamente para Libras.** Apaga junto com a vaga.
+
+### Tradução de conteúdo (migration `0015`)
+
+- `traducoes` guarda a tradução já feita de um texto público, para o mesmo texto não custar duas traduções: dez pessoas lendo a mesma vaga custam uma.
+- **A chave é o `hash`**, o sha256 de `idioma_origem|idioma_destino|texto` — não o id da publicação. Por isso a tabela não tem chave estrangeira e serve a publicação, comentário e vaga sem saber de qual deles o texto veio. Editar o conteúdo muda o hash, e a linha velha simplesmente deixa de ser encontrada: **não existe invalidação para alguém esquecer de fazer.**
+- **O texto original não é guardado**, só o hash dele. `caracteres` registra o tamanho do original para acompanhar a cota mensal do tradutor, e `usado_em` marca a última vez que a linha foi servida.
+- **Só conteúdo público entra aqui** — publicação, comentário e vaga. Mensagem de conversa é privada e não passa por aqui: cache compartilhado e conteúdo privado não combinam, e é exatamente esta a parte que não poderia ser reaproveitada.
 
 ## Decisões de normalização
 
@@ -142,7 +175,7 @@ com a referência esvaziada.** Excluir uma conta é um `DELETE` em `usuarios` e 
 
 | Regra | Onde se aplica |
 | --- | --- |
-| `CASCADE` (apaga junto) | `sessoes`, `tokens_push`, `codigos_*`, `preferencias_*`, `candidatos`, `empresas` (conta institucional), todas as `candidato_*`, `usuarios_seguidos`, `solicitacoes_seguimento`, `usuarios_bloqueados`, `postagens` (e, por ela, anexos, comentários, curtidas e compartilhamentos), `comentarios`, `curtidas`, `compartilhamentos`, `notificacoes` do destinatário. Apagar uma `empresas` apaga suas `vagas`, e estas as `candidaturas` e `favoritos_vaga`. |
+| `CASCADE` (apaga junto) | `sessoes`, `tokens_push`, `codigos_*`, `preferencias_*`, `candidatos`, `empresas` (conta institucional), todas as `candidato_*`, `usuarios_seguidos`, `solicitacoes_seguimento`, `usuarios_bloqueados`, `postagens` (e, por ela, anexos, comentários, curtidas e compartilhamentos), `comentarios`, `curtidas`, `compartilhamentos`, `notificacoes` do destinatário, `dispositivos_confiaveis`, `desafios_de_dispositivo`, `links_de_seguranca`, `eventos_de_seguranca`. Apagar uma `empresas` apaga suas `vagas`, e estas as `candidaturas`, `favoritos_vaga` e `vaga_midias`. |
 | `SET NULL` (mantém, sem o autor) | `conversas.usuario_a_id` e `usuario_b_id`, `mensagens.remetente_id`, `notificacoes.ator_id`, `denuncias.denunciante_id` e `administrador_responsavel_id`, `registros_auditoria.administrador_id`, `empresas.avaliado_por_id`, `suspenso_por_id` e `usuario_candidato_id`, `sessoes.substituida_por_id`. |
 
 Consequências a ter em mente:
@@ -151,8 +184,12 @@ Consequências a ter em mente:
   contas são excluídas, a conversa fica com os dois participantes nulos e não há rotina que a limpe.
 - Excluir a conta de candidato que cadastrou uma empresa **não** apaga a empresa: só se perde o registro de quem a
   cadastrou (`empresas.usuario_candidato_id`).
-- Arquivos no Supabase Storage (currículo, mídia de postagem) **não** são apagados por `DELETE` no banco; a
-  limpeza do bucket é responsabilidade do código que exclui a conta.
+- Arquivos no Supabase Storage (currículo, mídia de postagem, vídeo da vaga) **não** são apagados por `DELETE` no
+  banco; a limpeza do bucket é responsabilidade do código que exclui a conta.
+- `traducoes` não é tocada por nenhuma exclusão: ela não aponta para ninguém. Apagar a publicação não apaga a
+  tradução dela, porque a linha não sabe de qual publicação veio — e também não contém o texto original. O que
+  sobra é uma tradução órfã que ninguém mais procura; `usado_em` existe para uma limpeza futura do que não é lido
+  há muito tempo.
 
 ## Dados sensíveis e visibilidade
 
@@ -167,6 +204,11 @@ Consequências a ter em mente:
 | `candidatura_adaptacoes.itens` | Cópia (JSONB) do que a pessoa autorizou, por candidatura. Apagada (nula) ao retirar a autorização ou cancelar a candidatura; sobram datas, versão e quantidade. | A pessoa dona e, enquanto ativa, a empresa dona da vaga. Nem o administrador lê o conteúdo. |
 | `candidatura_rascunhos` | Mensagem e escolhas (nunca cópia do perfil). Expira em 30 dias sem alteração. | Só o dono. A empresa nunca. |
 | Nome, foto, cidade, estado, país, título, resumo, escolaridade, experiências, formações, habilidades | Texto puro. | Qualquer usuário autenticado (perfil público). |
+| `desafios_de_dispositivo`, `dispositivos_confiaveis`, `links_de_seguranca` | **Só hash/HMAC**, nunca o código ou o token em si, sempre com prazo. Quem rouba o banco não consegue entrar com eles. | Ninguém: só o backend compara. |
+| `eventos_de_seguranca` | Histórico de ações da conta. **Nunca** guarda segredo nem código. | Dono e administrador. |
+| `preferencias_acessibilidade.visual` | `jsonb` com o padrão escolhido e os ajustes. O backend só aceita as chaves que conhece, cor em `#rrggbb` e número dentro da faixa — é isso que impede uma preferência de virar CSS arbitrário na tela de alguém. | Só o dono. |
+| `traducoes` | Tradução de conteúdo **público**, com o original fora do banco (só o hash). | É servida a quem pede a tradução daquele mesmo texto. Nunca entra conteúdo privado. |
+| `vaga_midias` | Caminho do vídeo no bucket e a transcrição. Informação da vaga, escrita pela empresa: não tem dado pessoal de candidato. | Quem enxerga a vaga. |
 
 A separação mora em `src/utils/candidatoPrivacidade.js` e é uma **allowlist**: um campo novo do model nasce
 privado até alguém decidir torná-lo público. As duas rotas que expõem um candidato a terceiros

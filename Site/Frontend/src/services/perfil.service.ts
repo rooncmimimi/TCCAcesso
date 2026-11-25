@@ -121,6 +121,29 @@ export const perfilService = {
     return data.rascunho;
   },
 
+  /** O botão de completar só aparece quando o servidor confirma que a IA está configurada. */
+  async iaDeCurriculoDisponivel(): Promise<boolean> {
+    const { data } = await clienteApi.get<{ disponivel: boolean }>("/candidatos/curriculo/completar/disponibilidade");
+    return Boolean(data.disponivel);
+  },
+
+  /**
+   * Mesma importação, pedindo à IA o que as regras não conseguiram ler. Rota à parte porque é uma
+   * escolha da pessoa, tomada depois de ver o que ficou em branco: nunca acontece sozinha.
+   */
+  async completarCurriculoComIa(candidatoId: string, arquivo: File, idioma: string): Promise<RascunhoCurriculo> {
+    const form = new FormData();
+    form.append("curriculo", arquivo);
+    form.append("idioma", idioma);
+
+    const { data } = await clienteApi.post<{ rascunho: RascunhoCurriculo }>(
+      `/candidatos/${candidatoId}/curriculo/completar`,
+      form,
+      { headers: { "Content-Type": "multipart/form-data" }, timeout: TEMPO_LIMITE_DE_ENVIO_MS },
+    );
+    return data.rascunho;
+  },
+
   async adicionarDeficiencia(candidatoId: string, payload: Record<string, unknown>) {
     const { data } = await clienteApi.post(`/candidatos/${candidatoId}/deficiencias`, payload);
     return data;

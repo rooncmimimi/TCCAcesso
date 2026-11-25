@@ -10,6 +10,7 @@ import {
     criarProcessadorArmazenamento
 } from "../middlewares/uploadMiddleware.js";
 import { garantirDonoDeCandidato } from "../middlewares/garantirDonoMiddleware.js";
+import { limiteCompletarCurriculo } from "../middlewares/limiteRequisicoesMiddleware.js";
 import { validarUuidParam } from "../validators/usuarioValidator.js";
 import {
     validarAtualizacaoCandidato,
@@ -69,6 +70,27 @@ router.post(
     validacaoMiddleware,
     uploadCurriculoParaImportar.single("curriculo"),
     conferirConteudoDoArquivo(),
+    CandidatoController.importarCurriculo
+);
+
+// Sem chave de IA configurada, o Site não mostra o botão: perguntar é mais honesto do que oferecer
+// um botão que sempre dá erro.
+router.get("/curriculo/completar/disponibilidade", CandidatoController.disponibilidadeCompletarCurriculo);
+
+// A mesma importação, mas pedindo ao modelo o que as regras não conseguiram ler. Rota separada de
+// propósito: é a pessoa que escolhe gastar isso, depois de ver o que ficou em branco, e o limite
+// por hora é próprio. O arquivo continua sem ser guardado.
+router.post(
+    "/:id/curriculo/completar",
+    validarUuidParam("id"),
+    validacaoMiddleware,
+    limiteCompletarCurriculo,
+    uploadCurriculoParaImportar.single("curriculo"),
+    conferirConteudoDoArquivo(),
+    (req, res, next) => {
+        req.completarComIa = true;
+        return next();
+    },
     CandidatoController.importarCurriculo
 );
 

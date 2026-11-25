@@ -10,13 +10,18 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
  * protegido, .doc antigo): a mensagem dele continua vindo na frente.
  */
 
-const { importarCurriculo, avisoErro } = vi.hoisted(() => ({
+const { importarCurriculo, completarCurriculoComIa, iaDeCurriculoDisponivel, avisoErro, avisoOk } = vi.hoisted(() => ({
   importarCurriculo: vi.fn(),
+  completarCurriculoComIa: vi.fn(),
+  iaDeCurriculoDisponivel: vi.fn(),
   avisoErro: vi.fn(),
+  avisoOk: vi.fn(),
 }));
 
-vi.mock("sonner", () => ({ toast: { error: avisoErro, success: vi.fn() } }));
-vi.mock("@/services/perfil.service", () => ({ perfilService: { importarCurriculo } }));
+vi.mock("sonner", () => ({ toast: { error: avisoErro, success: avisoOk } }));
+vi.mock("@/services/perfil.service", () => ({
+  perfilService: { importarCurriculo, completarCurriculoComIa, iaDeCurriculoDisponivel },
+}));
 vi.mock("@/components/acessibilidade/DitadoParaCampo", () => ({ DitadoParaCampo: () => null }));
 
 const { EtapaCurriculoPerfil } = await import("./EtapaCurriculoPerfil");
@@ -45,8 +50,27 @@ function escolherArquivo(arquivo: File) {
 
 const montar = () => render(<EtapaCurriculoPerfil candidatoId="c1" t={t} aoConcluir={() => {}} />);
 
+/** Rascunho como o das regras: empresa e data lidas, cargo em branco — a lacuna que a IA completa. */
+const rascunhoComLacuna = () => ({
+  resumo: null,
+  habilidades: [],
+  experiencias: [
+    {
+      cargo: "",
+      empresa: "Alpina",
+      dataInicio: "2024-12-01",
+      dataFim: "",
+      atual: false,
+      descricaoSugerida: "Contagem de itens.",
+    },
+  ],
+  formacoes: [],
+});
+
 beforeEach(() => {
   vi.resetAllMocks();
+  // Sem chave de IA, por padrão: o botão de completar não existe na maioria dos testes.
+  iaDeCurriculoDisponivel.mockResolvedValue(false);
 });
 
 afterEach(cleanup);
@@ -146,6 +170,71 @@ describe("importação do currículo: por que falhou", () => {
 
     await waitFor(() => expect((document.getElementById("exp-inicio-0") as HTMLInputElement).value).toBe("2023-05-01"));
     expect((document.getElementById("exp-fim-0") as HTMLInputElement).value).toBe("");
+  });
+
+  it("sem chave de IA no servidor, o botão de completar não aparece", async () => {
+    importarCurriculo.mockResolvedValue(rascunhoComLacuna());
+    montar();
+
+    escolherArquivo(pdfDeTeste());
+
+    await waitFor(() => expect(screen.getByText(t.curriculoLido)).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: t.curriculoCompletarComIa })).not.toBeInTheDocument();
+  });
+
+  it("com lacuna e IA disponível: o botão aparece, e diz o que sai daqui antes do clique", async () => {
+    iaDeCurriculoDisponivel.mockResolvedValue(true);
+    importarCurriculo.mockResolvedValue(rascunhoComLacuna());
+    montar();
+
+    escolherArquivo(pdfDeTeste());
+
+    await waitFor(() => expect(screen.getByRole("button", { name: t.curriculoCompletarComIa })).toBeInTheDocument());
+    expect(screen.getByText(t.curriculoCompletarComIaAjuda)).toBeInTheDocument();
+  });
+
+  it("o que a IA deduziu entra no campo e fica marcado para conferência", async () => {
+    iaDeCurriculoDisponivel.mockResolvedValue(true);
+    importarCurriculo.mockResolvedValue(rascunhoComLacuna());
+    completarCurriculoComIa.mockResolvedValue({
+      ...rascunhoComLacuna(),
+      tituloProfissional: "Auxiliar de Estoque",
+      experiencias: [
+        {
+          cargo: "Auxiliar de Estoque",
+          empresa: "Alpina",
+          dataInicio: "2024-12-01",
+          dataFim: "",
+          atual: false,
+          descricaoSugerida: "Contagem de itens.",
+        },
+      ],
+      deduzidos: { tituloProfissional: true, escolaridade: false, experiencias: { 0: ["cargo"] }, formacoes: {} },
+      usouIa: true,
+    });
+    montar();
+    escolherArquivo(pdfDeTeste());
+
+    await waitFor(() => expect(screen.getByRole("button", { name: t.curriculoCompletarComIa })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: t.curriculoCompletarComIa }));
+
+    await waitFor(() => expect((document.getElementById("exp-cargo-0") as HTMLInputElement).value).toBe("Auxiliar de Estoque"));
+    expect(screen.getAllByText(t.curriculoDeduzido).length).toBeGreaterThanOrEqual(2);
+    expect((document.getElementById("titulo-profissional") as HTMLInputElement).value).toBe("Auxiliar de Estoque");
+  });
+
+  it("IA fora do ar: os campos lidos continuam, e o aviso não culpa o currículo", async () => {
+    iaDeCurriculoDisponivel.mockResolvedValue(true);
+    importarCurriculo.mockResolvedValue(rascunhoComLacuna());
+    completarCurriculoComIa.mockRejectedValue({ isAxiosError: true, response: { data: {} } });
+    montar();
+    escolherArquivo(pdfDeTeste());
+
+    await waitFor(() => expect(screen.getByRole("button", { name: t.curriculoCompletarComIa })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: t.curriculoCompletarComIa }));
+
+    await waitFor(() => expect(avisoErro).toHaveBeenCalledWith(t.curriculoErroIa));
+    expect((document.getElementById("exp-empresa-0") as HTMLInputElement).value).toBe("Alpina");
   });
 
   it("deu certo: o rascunho preenche a tela e nenhum aviso de erro aparece", async () => {

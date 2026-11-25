@@ -126,6 +126,19 @@ export interface RascunhoFormacao {
   descricaoSugerida: string;
 }
 
+/**
+ * Quais campos vieram de **dedução** da IA, e não de leitura do texto. A tela marca cada um deles
+ * para a pessoa conferir: o que foi copiado do currículo não precisa dessa desconfiança, o que foi
+ * deduzido precisa.
+ */
+export interface DeduzidosPelaIa {
+  tituloProfissional: boolean;
+  escolaridade: boolean;
+  /** Índice da experiência → campos deduzidos nela (hoje só `cargo`). */
+  experiencias: Record<number, string[]>;
+  formacoes: Record<number, string[]>;
+}
+
 export interface RascunhoCurriculo {
   email: string | null;
   telefone: string | null;
@@ -136,6 +149,11 @@ export interface RascunhoCurriculo {
   formacoes: RascunhoFormacao[];
   habilidades: string[];
   aviso: string;
+  /** Só vêm da rota que pede ajuda à IA; na importação por regras ficam ausentes. */
+  tituloProfissional?: string;
+  escolaridade?: string;
+  deduzidos?: DeduzidosPelaIa | null;
+  usouIa?: boolean;
 }
 
 export interface Experiencia {

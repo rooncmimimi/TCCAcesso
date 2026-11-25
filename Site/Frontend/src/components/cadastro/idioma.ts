@@ -152,6 +152,14 @@ const pt = {
   erroPerfilGenerico: "Não foi possível salvar seu perfil agora.",
   erroCurriculo: "Não foi possível ler este arquivo. Tente outro, ou preencha manualmente.",
   curriculoFormatoInvalido: "Este arquivo não serve: envie um PDF ou um DOCX de até 5 MB.",
+  curriculoCompletarComIa: "Preencher o que ficou em branco com IA",
+  curriculoCompletarComIaAjuda:
+    "Só a parte profissional do currículo é enviada ao serviço de IA — sem nome, documento, endereço, telefone nem e-mail. O que ela deduzir vem marcado para você conferir.",
+  curriculoCompletando: "Pedindo sugestões…",
+  curriculoCompletado: "Preenchemos o que estava em branco. Confira os campos marcados antes de continuar.",
+  curriculoNadaACompletar: "A IA não encontrou nada novo para preencher com segurança.",
+  curriculoErroIa: "Não foi possível pedir as sugestões agora. Os campos continuam aí para você preencher.",
+  curriculoDeduzido: "Sugerido pela IA — confira",
   curriculoNaoAbriu:
     "Não conseguimos abrir este arquivo no seu aparelho. Se ele está no Google Drive ou em outra nuvem, baixe-o para o celular e tente de novo.",
   curriculoSemConexao:
@@ -307,6 +315,14 @@ const en: Textos = {
   erroPerfilGenerico: "We could not save your profile right now.",
   erroCurriculo: "We could not read this file. Try another one, or fill in the fields manually.",
   curriculoFormatoInvalido: "This file will not do: send a PDF or a DOCX of up to 5 MB.",
+  curriculoCompletarComIa: "Fill in what was left blank with AI",
+  curriculoCompletarComIaAjuda:
+    "Only the professional part of the CV is sent to the AI service — no name, document number, address, phone or e-mail. Whatever it infers comes marked for you to check.",
+  curriculoCompletando: "Asking for suggestions…",
+  curriculoCompletado: "We filled in what was blank. Check the marked fields before continuing.",
+  curriculoNadaACompletar: "The AI found nothing new it could fill in safely.",
+  curriculoErroIa: "We could not ask for suggestions right now. The fields are still here for you to fill in.",
+  curriculoDeduzido: "Suggested by AI — check it",
   curriculoNaoAbriu:
     "We could not open this file on your device. If it is in Google Drive or another cloud, download it to your phone and try again.",
   curriculoSemConexao:
@@ -459,6 +475,14 @@ const es: Textos = {
   erroPerfilGenerico: "No fue posible guardar tu perfil ahora.",
   erroCurriculo: "No fue posible leer este archivo. Prueba con otro o completa los campos manualmente.",
   curriculoFormatoInvalido: "Este archivo no sirve: envía un PDF o un DOCX de hasta 5 MB.",
+  curriculoCompletarComIa: "Completar con IA lo que quedó vacío",
+  curriculoCompletarComIaAjuda:
+    "Solo la parte profesional del currículum se envía al servicio de IA: sin nombre, documento, dirección, teléfono ni correo. Lo que deduzca viene marcado para que lo revises.",
+  curriculoCompletando: "Pidiendo sugerencias…",
+  curriculoCompletado: "Completamos lo que estaba vacío. Revisa los campos marcados antes de continuar.",
+  curriculoNadaACompletar: "La IA no encontró nada nuevo que pudiera completar con seguridad.",
+  curriculoErroIa: "No fue posible pedir las sugerencias ahora. Los campos siguen ahí para que los completes.",
+  curriculoDeduzido: "Sugerido por la IA: revísalo",
   curriculoNaoAbriu:
     "No pudimos abrir este archivo en tu dispositivo. Si está en Google Drive u otra nube, descárgalo al teléfono e inténtalo de nuevo.",
   curriculoSemConexao:

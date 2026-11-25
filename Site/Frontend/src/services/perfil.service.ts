@@ -13,6 +13,15 @@ import type {
 
 export type RecursoPerfil = "experiencias" | "formacoes" | "certificados" | "habilidades";
 
+/**
+ * Tempo limite do envio de arquivo, em lugar dos 20 s do cliente.
+ *
+ * Aqueles 20 s foram pensados para chamada de JSON. Subir um currículo de alguns MB por rede móvel
+ * passa disso com facilidade: a conexão era cortada no meio, o servidor nem registrava o pedido, e a
+ * tela dizia que o arquivo estava ilegível. O limite maior vale só para quem sobe arquivo.
+ */
+const TEMPO_LIMITE_DE_ENVIO_MS = 90_000;
+
 /** Dados públicos mínimos de qualquer usuário, nunca inclui e-mail/telefone/documentos. */
 export interface UsuarioPublico {
   id: string;
@@ -90,7 +99,7 @@ export const perfilService = {
     const { data } = await clienteApi.patch<{ candidato: Candidato }>(
       `/candidatos/${candidatoId}/curriculo`,
       form,
-      { headers: { "Content-Type": "multipart/form-data" } },
+      { headers: { "Content-Type": "multipart/form-data" }, timeout: TEMPO_LIMITE_DE_ENVIO_MS },
     );
     return data.candidato;
   },
@@ -107,7 +116,7 @@ export const perfilService = {
     const { data } = await clienteApi.post<{ rascunho: RascunhoCurriculo }>(
       `/candidatos/${candidatoId}/curriculo/importar`,
       form,
-      { headers: { "Content-Type": "multipart/form-data" } },
+      { headers: { "Content-Type": "multipart/form-data" }, timeout: TEMPO_LIMITE_DE_ENVIO_MS },
     );
     return data.rascunho;
   },

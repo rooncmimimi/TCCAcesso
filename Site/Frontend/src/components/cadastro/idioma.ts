@@ -151,6 +151,13 @@ const pt = {
   erroContaGenerico: "Não foi possível criar sua conta agora.",
   erroPerfilGenerico: "Não foi possível salvar seu perfil agora.",
   erroCurriculo: "Não foi possível ler este arquivo. Tente outro, ou preencha manualmente.",
+  curriculoFormatoInvalido: "Este arquivo não serve: envie um PDF ou um DOCX de até 5 MB.",
+  curriculoNaoAbriu:
+    "Não conseguimos abrir este arquivo no seu aparelho. Se ele está no Google Drive ou em outra nuvem, baixe-o para o celular e tente de novo.",
+  curriculoSemConexao:
+    "O arquivo não chegou ao servidor. Confira sua conexão e tente de novo — ou preencha os campos manualmente.",
+  curriculoDemorou:
+    "O envio demorou demais e parou no meio. Tente de novo numa conexão melhor, ou preencha os campos manualmente.",
   voltarAoInicio: "ACESSO, voltar para a página inicial",
   completeSeusDados: "Complete seus dados",
   contaGoogleJaCriada: "Sua conta com o Google já está criada. Falta só o que a plataforma precisa para te apresentar às empresas.",
@@ -299,6 +306,13 @@ const en: Textos = {
   erroContaGenerico: "We could not create your account right now.",
   erroPerfilGenerico: "We could not save your profile right now.",
   erroCurriculo: "We could not read this file. Try another one, or fill in the fields manually.",
+  curriculoFormatoInvalido: "This file will not do: send a PDF or a DOCX of up to 5 MB.",
+  curriculoNaoAbriu:
+    "We could not open this file on your device. If it is in Google Drive or another cloud, download it to your phone and try again.",
+  curriculoSemConexao:
+    "The file did not reach the server. Check your connection and try again — or fill in the fields manually.",
+  curriculoDemorou:
+    "The upload took too long and stopped halfway. Try again on a better connection, or fill in the fields manually.",
   voltarAoInicio: "ACESSO, back to the home page",
   completeSeusDados: "Complete your details",
   contaGoogleJaCriada: "Your Google account is already created. All that is left is what the platform needs in order to introduce you to companies.",
@@ -444,6 +458,13 @@ const es: Textos = {
   erroContaGenerico: "No fue posible crear tu cuenta ahora.",
   erroPerfilGenerico: "No fue posible guardar tu perfil ahora.",
   erroCurriculo: "No fue posible leer este archivo. Prueba con otro o completa los campos manualmente.",
+  curriculoFormatoInvalido: "Este archivo no sirve: envía un PDF o un DOCX de hasta 5 MB.",
+  curriculoNaoAbriu:
+    "No pudimos abrir este archivo en tu dispositivo. Si está en Google Drive u otra nube, descárgalo al teléfono e inténtalo de nuevo.",
+  curriculoSemConexao:
+    "El archivo no llegó al servidor. Revisa tu conexión e inténtalo de nuevo, o completa los campos manualmente.",
+  curriculoDemorou:
+    "El envío tardó demasiado y se interrumpió. Inténtalo de nuevo con una mejor conexión, o completa los campos manualmente.",
   voltarAoInicio: "ACESSO, volver a la página de inicio",
   completeSeusDados: "Completa tus datos",
   contaGoogleJaCriada: "Tu cuenta con Google ya está creada. Solo falta lo que la plataforma necesita para presentarte a las empresas.",

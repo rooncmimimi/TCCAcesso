@@ -2,6 +2,7 @@ import CandidatoService from "../services/CandidatoService.js";
 import { urlPublica } from "../middlewares/uploadMiddleware.js";
 import { Candidato } from "../models/index.js";
 import ArmazenamentoService from "../services/ArmazenamentoService.js";
+import SugestaoCurriculoService from "../services/SugestaoCurriculoService.js";
 import { contextoRequisicao } from "../utils/contextoRequisicao.js";
 
 /**
@@ -158,16 +159,27 @@ class CandidatoController {
                 return res.status(400).json({ sucesso: false, mensagem: "Envie um arquivo PDF ou DOCX." });
             }
 
+            // `completarComIa` só vem da rota própria, nunca do corpo: assim o pedido que gasta cota
+            // de um serviço externo é sempre uma escolha explícita de quem está na tela.
             const rascunho = await CandidatoService.importarCurriculo(
                 req.params.id,
                 { buffer: req.file.buffer, mimetype: req.file.mimetype },
-                req.user
+                req.user,
+                { completarComIa: req.completarComIa === true, idioma: req.body?.idioma }
             );
 
             return res.status(200).json({ sucesso: true, rascunho });
         } catch (erro) {
             return next(erro);
         }
+    }
+
+    /**
+     * O Site pergunta antes de oferecer "completar com IA": sem chave configurada o botão não
+     * aparece, em vez de levar a pessoa a um erro. Nunca devolve a chave, só se ela existe.
+     */
+    async disponibilidadeCompletarCurriculo(req, res) {
+        return res.status(200).json({ sucesso: true, disponivel: SugestaoCurriculoService.disponivel() });
     }
 }
 

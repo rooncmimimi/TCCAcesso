@@ -150,6 +150,26 @@ export const limiteReenvioConfirmacao = rateLimit({
  * Sugestões de descrição de imagem por IA: 30 por usuário autenticado por hora. Cada chamada vai a
  * um provedor externo, então o limite contém custo e abuso.
  */
+/**
+ * Completar o currículo com IA: 10 por hora, por conta.
+ *
+ * Mais baixo que o da descrição de imagem porque cada pedido manda um currículo inteiro ao modelo,
+ * e porque ninguém precisa disso dez vezes: a pessoa importa, confere e segue. Quem bate no limite
+ * não fica sem nada — a leitura por regras continua funcionando, e os campos são editáveis.
+ */
+export const limiteCompletarCurriculo = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.user?.id || req.ip,
+    message: {
+        sucesso: false,
+        mensagem:
+            "Você atingiu o limite de preenchimentos por IA desta hora. Os campos lidos do currículo continuam aí, e você pode completar o que falta à mão."
+    }
+});
+
 export const limiteSugestaoDescricao = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 30,

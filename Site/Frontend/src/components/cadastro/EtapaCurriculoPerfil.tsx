@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { FileUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { FileUp, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { EXTENSOES_IMPORTAVEIS, TIPOS_IMPORTAVEIS, atributoAccept, verificarArquivo } from "@/lib/arquivos";
 
@@ -16,7 +16,8 @@ import { descricao } from "@/components/cadastro/descricao";
 import type { TextosCadastro } from "@/components/cadastro/idioma";
 import { perfilService } from "@/services/perfil.service";
 import { extrairMensagemErro } from "@/services/api";
-import type { RascunhoCurriculo } from "@/types";
+import type { DeduzidosPelaIa, RascunhoCurriculo } from "@/types";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const ESCOLARIDADES = [
   "Ensino fundamental",
@@ -89,11 +90,30 @@ export function EtapaCurriculoPerfil({
   t: TextosCadastro;
   aoConcluir: () => void;
 }) {
+  const { idioma } = useIdioma();
   const campoArquivoRef = useRef<HTMLInputElement>(null);
+  const copiaDoArquivo = useRef<File | null>(null);
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [importando, setImportando] = useState(false);
   const [rascunho, setRascunho] = useState<RascunhoCurriculo | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [completando, setCompletando] = useState(false);
+  const [deduzidos, setDeduzidos] = useState<DeduzidosPelaIa | null>(null);
+  const [iaDisponivel, setIaDisponivel] = useState(false);
+
+  // Sem chave de IA no servidor, o botão não aparece — em vez de aparecer e sempre dar erro.
+  useEffect(() => {
+    let vivo = true;
+
+    perfilService
+      .iaDeCurriculoDisponivel()
+      .then((disponivel) => vivo && setIaDisponivel(disponivel))
+      .catch(() => undefined);
+
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const [tituloProfissional, setTituloProfissional] = useState("");
   const [escolaridade, setEscolaridade] = useState("");
@@ -131,37 +151,14 @@ export function EtapaCurriculoPerfil({
         return;
       }
 
-      // Envia a cópia já lida: o arquivo não pode mudar nem sumir no meio do envio.
+      // Envia a cópia já lida: o arquivo não pode mudar nem sumir no meio do envio. Ela fica
+      // guardada para o caso de a pessoa pedir ajuda da IA depois, sem ter que escolher o arquivo
+      // de novo (e sem o seletor do Android entregar outra vez um arquivo que não abre).
       const copia = new File([conteudo], arquivoEscolhido.name, { type: arquivoEscolhido.type });
-      const extraido = await perfilService.importarCurriculo(candidatoId, copia);
-      setRascunho(extraido);
+      copiaDoArquivo.current = copia;
 
-      // Só preenche o que está vazio: o que a pessoa já escreveu nunca é sobrescrito em silêncio.
-      if (extraido.resumo && !biografia.trim()) setBiografia(extraido.resumo);
-      if (extraido.habilidades.length && !habilidades.trim()) {
-        setHabilidades(extraido.habilidades.join(", "));
-      }
-
-      // Substitui as listas em vez de somar: importar duas vezes não duplica nada.
-      // As datas que o servidor conseguiu ler entram nos campos. Antes eram jogadas fora aqui, e a
-      // pessoa redigitava o que já estava escrito no currículo. Emprego atual não tem data de fim.
-      setExperiencias(
-        extraido.experiencias.map((e) => ({
-          cargo: e.cargo ?? "",
-          empresa: e.empresa ?? "",
-          dataInicio: e.dataInicio ?? "",
-          dataFim: e.atual ? "" : (e.dataFim ?? ""),
-          descricao: e.descricaoSugerida ?? "",
-        })),
-      );
-      setFormacoes(
-        extraido.formacoes.map((f) => ({
-          instituicao: f.instituicao ?? "",
-          curso: f.curso ?? "",
-          dataFim: f.emAndamento ? "" : (f.dataFim ?? ""),
-          descricao: f.descricaoSugerida ?? "",
-        })),
-      );
+      aplicarRascunho(await perfilService.importarCurriculo(candidatoId, copia));
+      setDeduzidos(null);
     } catch (erro) {
       setArquivo(null);
       toast.error(motivoDaFalha(erro, t));
@@ -169,6 +166,67 @@ export function EtapaCurriculoPerfil({
       setImportando(false);
     }
   }
+
+  /** O rascunho virando formulário. Mesmo caminho para a leitura por regras e para a ajuda da IA. */
+  function aplicarRascunho(extraido: RascunhoCurriculo) {
+    setRascunho(extraido);
+
+    // Só preenche o que está vazio: o que a pessoa já escreveu nunca é sobrescrito em silêncio.
+    if (extraido.resumo && !biografia.trim()) setBiografia(extraido.resumo);
+    if (extraido.habilidades.length && !habilidades.trim()) {
+      setHabilidades(extraido.habilidades.join(", "));
+    }
+    if (extraido.tituloProfissional && !tituloProfissional.trim()) setTituloProfissional(extraido.tituloProfissional);
+    if (extraido.escolaridade && !escolaridade) setEscolaridade(extraido.escolaridade);
+
+    // Substitui as listas em vez de somar: importar duas vezes não duplica nada.
+    // As datas que o servidor conseguiu ler entram nos campos. Antes eram jogadas fora aqui, e a
+    // pessoa redigitava o que já estava escrito no currículo. Emprego atual não tem data de fim.
+    setExperiencias(
+      extraido.experiencias.map((e) => ({
+        cargo: e.cargo ?? "",
+        empresa: e.empresa ?? "",
+        dataInicio: e.dataInicio ?? "",
+        dataFim: e.atual ? "" : (e.dataFim ?? ""),
+        descricao: e.descricaoSugerida ?? "",
+      })),
+    );
+    setFormacoes(
+      extraido.formacoes.map((f) => ({
+        instituicao: f.instituicao ?? "",
+        curso: f.curso ?? "",
+        dataFim: f.emAndamento ? "" : (f.dataFim ?? ""),
+        descricao: f.descricaoSugerida ?? "",
+      })),
+    );
+  }
+
+  /**
+   * Pede à IA só o que ficou em branco. É sempre a pessoa que decide: o botão aparece depois da
+   * importação, quando sobrou buraco, e diz antes o que sai daqui.
+   */
+  async function completarComIa() {
+    const arquivoGuardado = copiaDoArquivo.current;
+    if (!candidatoId || !arquivoGuardado || completando) return;
+
+    setCompletando(true);
+    try {
+      const extraido = await perfilService.completarCurriculoComIa(candidatoId, arquivoGuardado, idioma);
+      aplicarRascunho(extraido);
+      setDeduzidos(extraido.deduzidos ?? null);
+      toast.success(extraido.usouIa ? t.curriculoCompletado : t.curriculoNadaACompletar);
+    } catch (erro) {
+      toast.error(extrairMensagemErro(erro, t.curriculoErroIa));
+    } finally {
+      setCompletando(false);
+    }
+  }
+
+  /** Há buraco que a IA poderia preencher? Sem isso, o botão não tem o que fazer. */
+  const temLacuna =
+    !tituloProfissional.trim() ||
+    experiencias.some((e) => !e.cargo.trim() || !e.empresa.trim() || !e.dataInicio) ||
+    formacoes.some((f) => !f.curso.trim() || !f.instituicao.trim());
 
 
   /** Só grava item completo; item pela metade é ignorado em vez de virar erro de API. */
@@ -278,6 +336,36 @@ export function EtapaCurriculoPerfil({
               : t.curriculoNadaExtraido}
           </p>
         )}
+
+        {/*
+          A ajuda da IA só é oferecida DEPOIS da leitura por regras, e só quando sobrou campo
+          vazio: assim a pessoa já viu o que o currículo deu sozinho e decide se quer mais. O que
+          sai daqui está escrito antes do clique, não depois.
+        */}
+        {rascunho && iaDisponivel && temLacuna && (
+          <div className="mt-3 rounded-lg border border-border p-3">
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-h-11 gap-2"
+              disabled={completando}
+              onClick={completarComIa}
+            >
+              {completando ? (
+                <>
+                  <Loader2 className="animate-spin" aria-hidden="true" /> {t.curriculoCompletando}
+                </>
+              ) : (
+                <>
+                  <Sparkles aria-hidden="true" /> {t.curriculoCompletarComIa}
+                </>
+              )}
+            </Button>
+            <p id="ia-curriculo-ajuda" className="mt-2 text-xs text-muted-foreground">
+              {t.curriculoCompletarComIaAjuda}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-5">
@@ -294,6 +382,9 @@ export function EtapaCurriculoPerfil({
             onChange={(e) => setTituloProfissional(e.target.value)}
             aria-describedby={descricao("titulo-profissional", true, false)}
           />
+          {deduzidos?.tituloProfissional && (
+            <p className="mt-1 text-xs font-medium text-warning-foreground">{t.curriculoDeduzido}</p>
+          )}
         </Campo>
 
         <Campo id="escolaridade" rotulo={t.escolaridade}>
@@ -374,6 +465,9 @@ export function EtapaCurriculoPerfil({
                     rotulo={t.cargo}
                     valor={item.cargo}
                     aoMudar={(v) => atualizarLista(setExperiencias, experiencias, indice, { cargo: v })}
+                    // O cargo quase nunca está escrito no currículo: quando ele veio da IA, foi
+                    // deduzido do que a pessoa descreveu ter feito — e isso precisa estar dito.
+                    aviso={deduzidos?.experiencias?.[indice]?.includes("cargo") ? t.curriculoDeduzido : undefined}
                   />
                   <CampoSimples
                     id={`exp-empresa-${indice}`}
@@ -534,19 +628,36 @@ function CampoSimples({
   valor,
   aoMudar,
   tipo = "text",
+  aviso,
 }: {
   id: string;
   rotulo: string;
   valor: string;
   aoMudar: (valor: string) => void;
   tipo?: string;
+  /** Texto curto abaixo do campo — hoje, dizer que aquele valor foi deduzido pela IA. */
+  aviso?: string;
 }) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-semibold text-muted-foreground">
         {rotulo}
       </Label>
-      <Input id={id} type={tipo} value={valor} onChange={(e) => aoMudar(e.target.value)} className="min-h-11" />
+      <Input
+        id={id}
+        type={tipo}
+        value={valor}
+        onChange={(e) => aoMudar(e.target.value)}
+        className="min-h-11"
+        // O aviso é lido junto com o campo: quem usa leitor de tela precisa saber que aquele
+        // valor é palpite tanto quanto quem vê a marca na tela.
+        aria-describedby={aviso ? `${id}-aviso` : undefined}
+      />
+      {aviso && (
+        <p id={`${id}-aviso`} className="text-xs font-medium text-warning-foreground">
+          {aviso}
+        </p>
+      )}
     </div>
   );
 }

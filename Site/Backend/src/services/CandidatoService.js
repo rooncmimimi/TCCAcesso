@@ -18,6 +18,7 @@ import { gerarUrlAssinada } from "../utils/supabaseStorage.js";
 import { hashToken } from "../utils/tokens.js";
 import { extrairTextoDocumento } from "../utils/extrairTextoDocumento.js";
 import { parsearCurriculo } from "../utils/parsearCurriculo.js";
+import SugestaoCurriculoService from "./SugestaoCurriculoService.js";
 import AdminAuditoriaService from "./AdminAuditoriaService.js";
 
 /**
@@ -245,7 +246,7 @@ class CandidatoService {
      * separada (`PATCH /candidatos/:id/curriculo`), para o currículo nunca ser trocado sem
      * confirmação.
      */
-    async importarCurriculo(id, { buffer, mimetype }, solicitante) {
+    async importarCurriculo(id, { buffer, mimetype }, solicitante, { completarComIa = false, idioma = "pt" } = {}) {
         const candidato = await Candidato.findByPk(id);
 
         if (!candidato) {
@@ -255,7 +256,19 @@ class CandidatoService {
         garantirDono(solicitante, candidato.usuarioId);
 
         const texto = await extrairTextoDocumento(buffer, mimetype);
-        return parsearCurriculo(texto);
+        const rascunho = parsearCurriculo(texto);
+
+        // A leitura por regras é sempre a primeira, e vale sozinha. A IA só entra quando a pessoa
+        // pede, e só para o que ficou em branco (ver SugestaoCurriculoService).
+        if (!completarComIa) return rascunho;
+
+        const { rascunho: completo, deduzidos, usouIa } = await SugestaoCurriculoService.completar({
+            texto,
+            rascunho,
+            idioma
+        });
+
+        return { ...completo, deduzidos, usouIa };
     }
 
     /* Buscar pelo usuário autenticado */

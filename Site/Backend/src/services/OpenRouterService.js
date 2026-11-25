@@ -73,7 +73,7 @@ class OpenRouterService {
      * Um pedido a um modelo. Nunca lança: devolve `{ texto }` quando deu certo ou
      * `{ motivo, detalhe, fatal }` quando não. Tentar o próximo modelo é decisão de quem chama.
      */
-    async pedirAoModelo({ modelo, imagemUrl, prompt, limiteMs }) {
+    async pedirAoModelo({ modelo, imagemUrl = null, prompt, limiteMs, maxTokens = MAX_TOKENS_RESPOSTA }) {
         const controlador = new AbortController();
         const idTimeout = setTimeout(() => controlador.abort(), limiteMs);
 
@@ -94,13 +94,17 @@ class OpenRouterService {
                     messages: [
                         {
                             role: "user",
-                            content: [
-                                { type: "text", text: prompt },
-                                { type: "image_url", image_url: { url: imagemUrl } }
-                            ]
+                            // Sem imagem (pedido só de texto), o conteúdo vai como texto puro: é o
+                            // formato que todo modelo aceita, inclusive os que não têm visão.
+                            content: imagemUrl
+                                ? [
+                                      { type: "text", text: prompt },
+                                      { type: "image_url", image_url: { url: imagemUrl } }
+                                  ]
+                                : prompt
                         }
                     ],
-                    max_tokens: MAX_TOKENS_RESPOSTA,
+                    max_tokens: maxTokens,
                     temperature: 0.2,
                     // Ver MAX_TOKENS_RESPOSTA: com raciocínio ligado, o modelo pode gastar o
                     // orçamento todo pensando e devolver texto vazio. Nenhum dos modelos
@@ -187,6 +191,32 @@ class OpenRouterService {
         }
 
         const imagemUrl = `data:${mimetype};base64,${imagemBuffer.toString("base64")}`;
+
+        return this.tentarModelos({ prompt, imagemUrl, aceitar });
+    }
+
+    /**
+     * O mesmo caminho, sem imagem: um prompt de texto e a resposta do primeiro modelo que `aceitar`
+     * aprovar. Serve para pedir ao modelo que leia um texto já extraído aqui — o currículo, por
+     * exemplo — em vez de olhar uma imagem.
+     *
+     * @param {string} prompt
+     * @param {{ aceitar?: (texto: string) => boolean, maxTokens?: number }} [opcoes]
+     */
+    async gerarTextoSobreTexto(prompt, { aceitar = () => true, maxTokens } = {}) {
+        if (!this.disponivel()) {
+            throw ErroApi.servicoIndisponivel("Sugestão por IA não está configurada neste momento.");
+        }
+
+        if (typeof prompt !== "string" || !prompt.trim()) {
+            throw ErroApi.requisicaoInvalida("Não há texto para a sugestão.");
+        }
+
+        return this.tentarModelos({ prompt, imagemUrl: null, aceitar, maxTokens });
+    }
+
+    /** O laço de tentativas, um modelo por vez, compartilhado pelos dois pedidos. */
+    async tentarModelos({ prompt, imagemUrl, aceitar, maxTokens }) {
         const prazoFinal = Date.now() + env.openRouter.orcamentoMs;
         const tentativas = [];
 
@@ -202,6 +232,7 @@ class OpenRouterService {
                 modelo,
                 imagemUrl,
                 prompt,
+                maxTokens,
                 limiteMs: Math.min(env.openRouter.timeoutMs, restante)
             });
 

@@ -100,6 +100,54 @@ describe("importação do currículo: por que falhou", () => {
     expect(importarCurriculo).not.toHaveBeenCalled();
   });
 
+  it("o que o servidor leu vai para os campos, datas inclusive", async () => {
+    importarCurriculo.mockResolvedValue({
+      resumo: null,
+      habilidades: [],
+      experiencias: [
+        {
+          cargo: "Auxiliar de Estoque",
+          empresa: "Alpina Equipamentos (ITEMM)",
+          dataInicio: "2024-12-01",
+          dataFim: "2026-04-01",
+          atual: false,
+          descricaoSugerida: "Conferência de itens em estoque.",
+        },
+      ],
+      formacoes: [{ instituicao: "ETEC", curso: "Técnico em Desenvolvimento de Sistemas", dataFim: "", emAndamento: true }],
+    });
+    montar();
+
+    escolherArquivo(pdfDeTeste());
+
+    // As datas eram descartadas na tela, e a pessoa redigitava o que já estava no currículo.
+    await waitFor(() => expect((document.getElementById("exp-inicio-0") as HTMLInputElement).value).toBe("2024-12-01"));
+    expect((document.getElementById("exp-fim-0") as HTMLInputElement).value).toBe("2026-04-01");
+    expect((document.getElementById("exp-cargo-0") as HTMLInputElement).value).toBe("Auxiliar de Estoque");
+    expect((document.getElementById("exp-empresa-0") as HTMLInputElement).value).toBe("Alpina Equipamentos (ITEMM)");
+    expect((document.getElementById("form-inst-0") as HTMLInputElement).value).toBe("ETEC");
+    expect((document.getElementById("form-curso-0") as HTMLInputElement).value).toBe(
+      "Técnico em Desenvolvimento de Sistemas",
+    );
+  });
+
+  it("emprego atual: a data de saída fica em branco, e não com a data de hoje", async () => {
+    importarCurriculo.mockResolvedValue({
+      resumo: null,
+      habilidades: [],
+      experiencias: [
+        { cargo: "Analista", empresa: "Delta", dataInicio: "2023-05-01", dataFim: "", atual: true, descricaoSugerida: "" },
+      ],
+      formacoes: [],
+    });
+    montar();
+
+    escolherArquivo(pdfDeTeste());
+
+    await waitFor(() => expect((document.getElementById("exp-inicio-0") as HTMLInputElement).value).toBe("2023-05-01"));
+    expect((document.getElementById("exp-fim-0") as HTMLInputElement).value).toBe("");
+  });
+
   it("deu certo: o rascunho preenche a tela e nenhum aviso de erro aparece", async () => {
     importarCurriculo.mockResolvedValue({
       resumo: "Analista de Marketing com 5 anos de experiência.",

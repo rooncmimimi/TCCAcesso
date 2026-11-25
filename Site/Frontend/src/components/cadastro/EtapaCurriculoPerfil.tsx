@@ -143,12 +143,14 @@ export function EtapaCurriculoPerfil({
       }
 
       // Substitui as listas em vez de somar: importar duas vezes não duplica nada.
+      // As datas que o servidor conseguiu ler entram nos campos. Antes eram jogadas fora aqui, e a
+      // pessoa redigitava o que já estava escrito no currículo. Emprego atual não tem data de fim.
       setExperiencias(
         extraido.experiencias.map((e) => ({
           cargo: e.cargo ?? "",
           empresa: e.empresa ?? "",
-          dataInicio: "",
-          dataFim: "",
+          dataInicio: e.dataInicio ?? "",
+          dataFim: e.atual ? "" : (e.dataFim ?? ""),
           descricao: e.descricaoSugerida ?? "",
         })),
       );
@@ -156,7 +158,7 @@ export function EtapaCurriculoPerfil({
         extraido.formacoes.map((f) => ({
           instituicao: f.instituicao ?? "",
           curso: f.curso ?? "",
-          dataFim: "",
+          dataFim: f.emAndamento ? "" : (f.dataFim ?? ""),
           descricao: f.descricaoSugerida ?? "",
         })),
       );

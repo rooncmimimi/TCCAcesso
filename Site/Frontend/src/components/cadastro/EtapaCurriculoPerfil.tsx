@@ -29,6 +29,25 @@ const ESCOLARIDADES = [
   "Doutorado",
 ] as const;
 
+/**
+ * Por que a importação falhou, dito de um jeito que leva a pessoa a uma próxima ação.
+ *
+ * A mensagem antiga culpava o arquivo em qualquer falha — inclusive quando o pedido nem chegou ao
+ * servidor. Quem estava sem sinal no celular lia "não foi possível ler este arquivo", trocava de
+ * currículo e falhava de novo, pelo mesmo motivo de antes.
+ *
+ * O servidor, quando responde, explica melhor do que qualquer texto daqui (PDF escaneado, arquivo
+ * protegido, .doc antigo): a mensagem dele vem primeiro.
+ */
+function motivoDaFalha(erro: unknown, t: TextosCadastro): string {
+  const comResposta = erro as { code?: string; response?: unknown };
+
+  if (comResposta?.response) return extrairMensagemErro(erro, t.erroCurriculo);
+  if (comResposta?.code === "ECONNABORTED") return t.curriculoDemorou;
+
+  return t.curriculoSemConexao;
+}
+
 
 type ItemExperiencia = { cargo: string; empresa: string; dataInicio: string; dataFim: string; descricao: string };
 type ItemFormacao = { instituicao: string; curso: string; dataFim: string; descricao: string };
@@ -87,16 +106,34 @@ export function EtapaCurriculoPerfil({
   async function importar(arquivoEscolhido: File) {
     if (!candidatoId) return;
 
-    // Tipo (PDF ou DOCX) e tamanho vêm das regras centrais; o texto vem do idioma escolhido.
+    // Tipo (PDF ou DOCX) e tamanho vêm das regras centrais; o texto vem do idioma escolhido. A
+    // mensagem é de erro, e não a dica que está escrita embaixo do botão: repetir a dica como aviso
+    // não diz o que houve com o arquivo que a pessoa acabou de escolher.
     if (!verificarArquivo(arquivoEscolhido, ["documento"], { tipos: TIPOS_IMPORTAVEIS }).ok) {
-      toast.error(t.curriculoFormatos);
+      toast.error(t.curriculoFormatoInvalido);
       return;
     }
 
     setArquivo(arquivoEscolhido);
     setImportando(true);
     try {
-      const extraido = await perfilService.importarCurriculo(candidatoId, arquivoEscolhido);
+      // Lê os bytes ANTES de enviar. Arquivo escolhido na nuvem (Drive, OneDrive) pelo seletor do
+      // Android chega aqui como File, com nome e tamanho, mas o navegador só vai buscar o conteúdo
+      // na hora do envio — e, quando isso falha, o pedido morre sem chegar ao servidor. Lendo antes,
+      // esse caso vira uma mensagem que diz o que fazer, em vez de "não foi possível ler o arquivo".
+      let conteudo: ArrayBuffer;
+
+      try {
+        conteudo = await arquivoEscolhido.arrayBuffer();
+      } catch {
+        setArquivo(null);
+        toast.error(t.curriculoNaoAbriu);
+        return;
+      }
+
+      // Envia a cópia já lida: o arquivo não pode mudar nem sumir no meio do envio.
+      const copia = new File([conteudo], arquivoEscolhido.name, { type: arquivoEscolhido.type });
+      const extraido = await perfilService.importarCurriculo(candidatoId, copia);
       setRascunho(extraido);
 
       // Só preenche o que está vazio: o que a pessoa já escreveu nunca é sobrescrito em silêncio.
@@ -125,7 +162,7 @@ export function EtapaCurriculoPerfil({
       );
     } catch (erro) {
       setArquivo(null);
-      toast.error(extrairMensagemErro(erro, t.erroCurriculo));
+      toast.error(motivoDaFalha(erro, t));
     } finally {
       setImportando(false);
     }

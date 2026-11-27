@@ -428,7 +428,19 @@ describe("concluir", () => {
         const { res } = await concluir(corpo());
 
         expect(AutenticacaoService.entrarComUsuario).toHaveBeenCalledWith(usuario, { ip: "10.0.0.1", userAgent: "navegador-de-teste" }, false);
-        expect(res.json).toHaveBeenCalledWith({ sucesso: true, desfecho: "entrar", usuario: { id: "u1" }, token: "t", refreshToken: "r" });
+        expect(res.json).toHaveBeenCalledWith({ sucesso: true, desfecho: "entrar", tipoConta: null, usuario: { id: "u1" }, token: "t", refreshToken: "r" });
+    });
+
+    // "Sou empresa" -> Entrar com Google: a intenção viajou no state assinado e precisa chegar ao Site junto
+    // com a sessão, senão quem já tinha conta cairia no feed em vez de seguir para a empresa.
+    it("entrar: devolve o tipoConta que veio no código, para o Site seguir para o cadastro da empresa", async () => {
+        const usuario = { id: "u1" };
+        GoogleAuthService.resolver.mockResolvedValue({ desfecho: "entrar", usuario });
+        AutenticacaoService.entrarComUsuario.mockResolvedValue({ usuario: { id: "u1" }, token: "t", refreshToken: "r" });
+
+        const { res } = await concluir(corpo({ codigo: codigoDeEntrega({ tipoConta: "empresa" }) }));
+
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ desfecho: "entrar", tipoConta: "empresa" }));
     });
 
     it("entrar: reativa a conta pausada quando o Site reenvia o código com confirmarReativacao", async () => {
@@ -456,7 +468,7 @@ describe("concluir", () => {
 
         const { res } = await concluir(corpo());
 
-        expect(res.json).toHaveBeenCalledWith({ sucesso: true, desfecho: "entrar", contaPausada: true });
+        expect(res.json).toHaveBeenCalledWith({ sucesso: true, desfecho: "entrar", tipoConta: null, contaPausada: true });
     });
 
     it("entrar: entrega ao middleware o 403 de conta bloqueada", async () => {
@@ -611,7 +623,7 @@ describe("concluir — vínculo com o navegador (achado 3)", () => {
         const codigo = codigoDeEntrega();
 
         const pausada = await concluir({ codigo, vinculo: SEGREDO_DO_NAVEGADOR });
-        expect(pausada.res.json).toHaveBeenCalledWith({ sucesso: true, desfecho: "entrar", contaPausada: true });
+        expect(pausada.res.json).toHaveBeenCalledWith({ sucesso: true, desfecho: "entrar", tipoConta: null, contaPausada: true });
 
         const reativada = await concluir({ codigo, vinculo: SEGREDO_DO_NAVEGADOR, confirmarReativacao: true });
         expect(reativada.next).not.toHaveBeenCalled();

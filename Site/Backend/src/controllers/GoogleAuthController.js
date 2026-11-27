@@ -178,7 +178,10 @@ class GoogleAuthController {
                     codigosDeEntregaUsados.liberar(reservado);
                 }
 
-                return res.status(200).json({ sucesso: true, desfecho: "entrar", ...sessao });
+                // `tipoConta` é a intenção que o Site guardou no state assinado ao ir ao Google (hoje só
+                // "empresa", de quem clicou em "Sou empresa"). Volta aqui para o Site continuar o que a pessoa
+                // queria, em vez de largá-la no feed. Não dá poder nenhum: só diz para onde navegar.
+                return res.status(200).json({ sucesso: true, desfecho: "entrar", tipoConta: tipoConta ?? null, ...sessao });
             }
 
             if (resultado.desfecho === "conflito") {

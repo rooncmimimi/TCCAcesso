@@ -1,25 +1,19 @@
-import { useEffect, useRef, useState } from "react";
 import { Check, Contrast, Droplets, Palette, RotateCcw, SunMedium } from "lucide-react";
 
 import { AmostraDaPersonalizacao } from "@/components/acessibilidade/AmostraDaPersonalizacao";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { SelectRow, SliderRow } from "@/components/acessibilidade/LinhasDeControle";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { useIdioma } from "@/hooks/useIdioma";
-import { avaliarContraste, formatarRazao } from "@/lib/contraste";
 import {
   IDS_DOS_PADROES,
   LIMITES_VISUAIS,
-  NOME_DO_PAPEL,
   PADROES_VISUAIS,
   PAPEIS,
-  corDoPapel,
   paletaDoPadrao,
   type IdDoPadrao,
-  type PapelDeCor,
 } from "@/lib/padroesVisuais";
-import { ajustesVisuais, visualPadrao } from "@/lib/preferenciasVisuais";
+import { visualPadrao } from "@/lib/preferenciasVisuais";
 import type { ChaveBase } from "@/i18n/dicionarios";
 
 /**
@@ -55,134 +49,10 @@ const OPCOES_DE_CONTRASTE: ReadonlyArray<{ valor: string; rotulo: ChaveBase }> =
   { valor: "10", rotulo: "acessibilidade.personalizacaoVisual.contraste10" },
 ];
 
-/**
- * Quanto tempo parado antes de aplicar a cor na página inteira.
- *
- * O seletor nativo de cor dispara um evento por movimento do ponteiro — dezenas por segundo. Cada um
- * desses eventos mudava uma variável do `:root`, e mudar o tema custa caro no navegador (medido em
- * produção: ~0,5 s por aplicação nesta tela). Sessenta eventos viravam meio minuto de página travada.
- *
- * Com a espera, a amostra só é repintada quando a pessoa **para** de mexer. O quadradinho de cor
- * acompanha o dedo na hora, porque ele é estado local e não passa pelo provider.
- */
-const ESPERA_ANTES_DE_APLICAR_MS = 300;
-
-/**
- * Uma linha da lista "Cores por significado": o seletor, o nome do papel, o contraste e o "voltar ao padrão".
- *
- * Guarda a cor em estado local enquanto a pessoa escolhe e só avisa a página quando ela para. O
- * contraste e a amostra acompanham a cor aplicada, não a que está sendo arrastada — o número ficaria
- * ilegível piscando a cada milímetro.
- */
-function LinhaDeCor({
-  papel,
-  corAplicada,
-  escolhida,
-  razao,
-  nivel,
-  aoEscolher,
-  aoVoltarAoPadrao,
-}: {
-  papel: PapelDeCor;
-  corAplicada: string;
-  escolhida: boolean;
-  razao: number;
-  nivel: string;
-  aoEscolher: (papel: PapelDeCor, cor: string) => void;
-  aoVoltarAoPadrao: (papel: PapelDeCor) => void;
-}) {
-  const { t } = useIdioma();
-  const id = `visual-cor-${papel}`;
-  const [emEdicao, setEmEdicao] = useState<string | null>(null);
-  const enviada = useRef<string | null>(null);
-  const relogio = useRef<number | null>(null);
-
-  const cancelar = () => {
-    if (relogio.current !== null) window.clearTimeout(relogio.current);
-    relogio.current = null;
-  };
-
-  // A cor mudou por fora (trocou de padrão, restaurou a seção): o campo larga o que estava editando.
-  // A comparação com `enviada` evita que a nossa própria aplicação puxe o campo de volta no meio do arrasto.
-  useEffect(() => {
-    if (corAplicada !== enviada.current) {
-      setEmEdicao(null);
-      enviada.current = null;
-    }
-  }, [corAplicada]);
-
-  useEffect(() => cancelar, []);
-
-  const aplicar = (cor: string) => {
-    cancelar();
-    enviada.current = cor;
-    aoEscolher(papel, cor);
-  };
-
-  const mexendo = (cor: string) => {
-    setEmEdicao(cor);
-    cancelar();
-    relogio.current = window.setTimeout(() => aplicar(cor), ESPERA_ANTES_DE_APLICAR_MS);
-  };
-
-  const mostrada = emEdicao ?? corAplicada;
-
-  return (
-    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3">
-      <input
-        id={id}
-        type="color"
-        value={mostrada}
-        onChange={(e) => mexendo(e.target.value)}
-        // O seletor fechou (ou o foco saiu): aplica agora, sem esperar.
-        onBlur={(e) => aplicar(e.target.value)}
-        className="size-11 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1"
-      />
-
-      <Label htmlFor={id} className="min-w-0 flex-1 text-sm font-semibold">
-        {t(NOME_DO_PAPEL[papel])}
-        <span className="block text-xs font-normal uppercase text-muted-foreground">{mostrada}</span>
-      </Label>
-
-      <span className={`text-xs ${nivel === "insuficiente" ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
-        <span aria-hidden="true">{nivel === "insuficiente" ? "✕" : "✓"}</span>{" "}
-        {t("acessibilidade.personalizacaoVisual.contrasteDoTexto", { razao: formatarRazao(razao) })}
-      </span>
-
-      {escolhida && (
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-9 text-xs"
-          onClick={() => {
-            cancelar();
-            setEmEdicao(null);
-            enviada.current = null;
-            aoVoltarAoPadrao(papel);
-          }}
-        >
-          {t("acessibilidade.personalizacaoVisual.voltarAoPadrao")}
-        </Button>
-      )}
-    </li>
-  );
-}
-
 export function SecaoPersonalizacaoVisual() {
   const { t } = useIdioma();
   const { preferencias, definir } = useAcessibilidade();
-  const ajustes = ajustesVisuais(preferencias);
   const escuro = preferencias.darkMode;
-
-  const trocarCor = (papel: PapelDeCor, cor: string | null) => {
-    const cores = { ...preferencias.visualColors };
-
-    if (cor) cores[papel] = cor;
-    else delete cores[papel];
-
-    definir("visualColors", cores);
-  };
 
   const restaurarSecao = () => {
     const padrao = visualPadrao();
@@ -325,32 +195,6 @@ export function SecaoPersonalizacaoVisual() {
         onChange={(v) => definir("visualContrast", Number(v))}
       />
 
-      {/* ---------------------------------------------------------------- cor por significado */}
-      <p className="pt-2 text-sm font-bold">{t("acessibilidade.personalizacaoVisual.coresTitulo")}</p>
-      <p className="text-xs text-muted-foreground">
-        {t("acessibilidade.personalizacaoVisual.coresDescricao")}
-      </p>
-
-      <ul className="space-y-2">
-        {PAPEIS.map((papel) => {
-          const par = corDoPapel(papel, preferencias.visualPattern, escuro, ajustes);
-          const { razao, nivel } = avaliarContraste(par.fundo, par.texto, preferencias.visualContrast);
-          const escolhida = Boolean(preferencias.visualColors[papel]);
-
-          return (
-            <LinhaDeCor
-              key={papel}
-              papel={papel}
-              corAplicada={par.fundo}
-              escolhida={escolhida}
-              razao={razao}
-              nivel={nivel}
-              aoEscolher={(qual, cor) => trocarCor(qual, cor)}
-              aoVoltarAoPadrao={(qual) => trocarCor(qual, null)}
-            />
-          );
-        })}
-      </ul>
 
       <div className="flex flex-wrap gap-2 pt-1">
         <Button type="button" variant="outline" className="min-h-11" onClick={restaurarSecao}>

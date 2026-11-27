@@ -9,6 +9,7 @@ import { objetivosPara, type Objetivo } from "@/dados/objetivos";
 import { useSessao } from "@/hooks/useSessao";
 import { alternarPasso, contarFeitos, lerProgresso, proximoPasso, recomecar, type Progresso } from "@/lib/progressoDeObjetivos";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 function Passos({ objetivo, progresso, aoMudar }: { objetivo: Objetivo; progresso: Progresso; aoMudar: (p: Progresso) => void }) {
   const { t } = useIdioma();
@@ -26,7 +27,7 @@ function Passos({ objetivo, progresso, aoMudar }: { objetivo: Objetivo; progress
         </h2>
         <p className="text-sm text-muted-foreground">{objetivo.resumo}</p>
         <p role="status" className="mt-2 text-sm font-semibold text-primary">
-          {quantos === total ? "Você concluiu todos os passos." : `${quantos} de ${total} passos feitos.`}
+          {quantos === total ? tx("Você concluiu todos os passos.") : tx`${quantos} de ${total} passos feitos.`}
         </p>
       </div>
 
@@ -41,11 +42,11 @@ function Passos({ objetivo, progresso, aoMudar }: { objetivo: Objetivo; progress
                 <Checkbox id={`${idBase}-${passo.id}`} className="mt-1" checked={feito} onCheckedChange={() => aoMudar(alternarPasso(progresso, objetivo.id, passo.id))} />
                 <div className="min-w-0 flex-1 space-y-1">
                   <Label htmlFor={`${idBase}-${passo.id}`} className="min-h-11 cursor-pointer text-sm font-bold leading-snug">
-                    <span className="sr-only">Passo {i + 1}: </span>
+                    <span className="sr-only">{tx("Passo")}{" "}{i + 1}: </span>
                     {passo.titulo}
-                    {passo.opcional ? <span className="ml-2 text-xs font-normal text-muted-foreground">(opcional)</span> : null}
+                    {passo.opcional ? <span className="ml-2 text-xs font-normal text-muted-foreground">{tx("(opcional)")}</span> : null}
                     {ehProximo ? <span className="ml-2 text-xs font-bold text-primary">{t("objetivos.navegacaoPorObjetivos.proximoPasso")}</span> : null}
-                    {feito ? <span className="sr-only"> (feito)</span> : null}
+                    {feito ? <span className="sr-only">{" "}{tx("(feito)")}</span> : null}
                   </Label>
                   <p className="text-sm text-muted-foreground">{passo.descricao}</p>
                   <Button asChild variant={ehProximo ? "default" : "outline"} className="min-h-11 gap-2">
@@ -103,7 +104,7 @@ export function NavegacaoPorObjetivos() {
                 <span className="min-w-0">
                   <span className="block text-sm font-bold">{o.titulo}</span>
                   <span className="block whitespace-normal text-xs font-normal opacity-90">{o.resumo}</span>
-                  {quantos > 0 ? <span className="mt-1 block text-xs font-semibold">{quantos === o.passos.length ? "Concluído" : `${quantos} de ${o.passos.length} passos feitos`}</span> : null}
+                  {quantos > 0 ? <span className="mt-1 block text-xs font-semibold">{quantos === o.passos.length ? tx("Concluído") : tx`${quantos} de ${o.passos.length} passos feitos`}</span> : null}
                 </span>
               </Button>
             </li>

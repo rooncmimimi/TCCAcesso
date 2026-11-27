@@ -38,6 +38,7 @@ import {
   verificarEmpresa,
   type EmpresaAdmin,
 } from "@/services/admin.service";
+import { tx } from "@/i18n/frases";
 
 type Acao = "aprovar" | "reprovar" | "suspender" | "reativar" | "verificar" | "desverificar";
 
@@ -49,10 +50,10 @@ const TOM: Record<EmpresaAdmin["statusAprovacao"], "sucesso" | "atencao" | "peri
 };
 
 const ROTULO: Record<EmpresaAdmin["statusAprovacao"], string> = {
-  aprovada: "Aprovada",
-  pendente: "Pendente",
-  reprovada: "Reprovada",
-  suspensa: "Suspensa",
+  get aprovada() { return tx("Aprovada"); },
+  get pendente() { return tx("Pendente"); },
+  get reprovada() { return tx("Reprovada"); },
+  get suspensa() { return tx("Suspensa"); },
 };
 
 /** Empresas cadastradas, com aprovar, reprovar, suspender, reativar e o selo de empresa verificada. */
@@ -176,7 +177,7 @@ export function EmpresasPendentesTabela() {
                       size="sm"
                       variant="outline"
                       onClick={() => setAlvo({ empresa, acao: "verificar" })}
-                      aria-label={`Verificar ${empresa.razaoSocial}`}
+                      aria-label={tx`Verificar ${empresa.razaoSocial}`}
                     >
                       <BadgeCheck className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.verificar")}
                     </Button>
@@ -185,7 +186,7 @@ export function EmpresasPendentesTabela() {
                     <Button
                       size="sm"
                       onClick={() => setAlvo({ empresa, acao: "reativar" })}
-                      aria-label={`Reativar ${empresa.razaoSocial}`}
+                      aria-label={tx`Reativar ${empresa.razaoSocial}`}
                     >
                       <RotateCcw className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.reativar")}
                     </Button>
@@ -195,7 +196,7 @@ export function EmpresasPendentesTabela() {
                         size="sm"
                         disabled={empresa.statusAprovacao === "aprovada"}
                         onClick={() => setAlvo({ empresa, acao: "aprovar" })}
-                        aria-label={`Aprovar ${empresa.razaoSocial}`}
+                        aria-label={tx`Aprovar ${empresa.razaoSocial}`}
                       >
                         <Check className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.aprovar")}
                       </Button>
@@ -204,7 +205,7 @@ export function EmpresasPendentesTabela() {
                         variant="outline"
                         disabled={empresa.statusAprovacao === "reprovada"}
                         onClick={() => setAlvo({ empresa, acao: "reprovar" })}
-                        aria-label={`Reprovar ${empresa.razaoSocial}`}
+                        aria-label={tx`Reprovar ${empresa.razaoSocial}`}
                       >
                         <X className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.reprovar")}
                       </Button>
@@ -214,7 +215,7 @@ export function EmpresasPendentesTabela() {
                           variant="outline"
                           className="text-destructive hover:text-destructive"
                           onClick={() => setAlvo({ empresa, acao: "suspender" })}
-                          aria-label={`Suspender ${empresa.razaoSocial}`}
+                          aria-label={tx`Suspender ${empresa.razaoSocial}`}
                         >
                           <Ban className="size-4" aria-hidden="true" /> {t("admin.empresasPendentesTabela.suspender")}
                         </Button>
@@ -290,11 +291,11 @@ export function EmpresasPendentesTabela() {
         }
         textoConfirmar={
           {
-            aprovar: "Aprovar",
-            reprovar: "Reprovar",
-            suspender: "Suspender",
-            reativar: "Reativar",
-            verificar: "Verificar",
+            aprovar: tx("Aprovar"),
+            reprovar: tx("Reprovar"),
+            suspender: tx("Suspender"),
+            reativar: tx("Reativar"),
+            verificar: tx("Verificar"),
             desverificar: t("admin.empresasPendentesTabela.removerSelo"),
           }[alvo?.acao ?? "aprovar"]
         }

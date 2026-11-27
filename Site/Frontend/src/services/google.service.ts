@@ -38,7 +38,11 @@ export type ResultadoGoogle =
    * Conta já vinculada. Pelos mesmos portões do login por senha, a resposta é a sessão criada, ou
    * `{ contaPausada: true }`, ou `{ emailNaoVerificado: true, email }` (nesses dois, sem sessão).
    */
-  | ({ desfecho: "entrar" } & (RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado))
+  | ({
+      desfecho: "entrar";
+      /** A intenção que a pessoa tinha ao clicar em Google (`"empresa"` vem de "Sou empresa"). */
+      tipoConta?: "candidato" | "empresa" | null;
+    } & (RespostaLogin | RespostaLoginContaPausada | RespostaLoginEmailNaoVerificado))
   /** Já existe conta ACESSO com este e-mail, sem Google vinculado. Não vincula sozinho. */
   | { desfecho: "conflito"; email: string }
   /** Não há conta: o Site leva ao cadastro de candidato, onde toda conta começa. */

@@ -23,6 +23,7 @@ import { dataHoraCurta, descreverDispositivo, tempoRelativo, type TipoDeDisposit
 import { extrairMensagemErro } from "@/services/api";
 import { autenticacaoService } from "@/services/autenticacao.service";
 import type { SessaoAtiva } from "@/types";
+import { tx } from "@/i18n/frases";
 
 const CHAVE_SESSOES = ["seguranca", "sessoes"] as const;
 
@@ -98,7 +99,7 @@ export function SecaoSessoes() {
                   {outrasSessoes.length === 1
                     ? t("configuracoes.secaoSessoes.oOutroDispositivoConectadoASua")
                     : t("configuracoes.secaoSessoes.osOutrosDispositivosConectados", { var1: outrasSessoes.length })}{" "}
-                  Esta sessão (a que você está usando) continua ativa.
+                  {tx("Esta sessão (a que você está usando) continua ativa.")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -150,7 +151,7 @@ export function SecaoSessoes() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Entrou em {dataHoraCurta(entrou)}
+                      {tx("Entrou em")}{" "}{dataHoraCurta(entrou)}
                       {sessao.atual ? (
                         <>{" · "}{t("configuracoes.secaoSessoes.emUsoAgora")}</>
                       ) : (

@@ -1,36 +1,23 @@
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
-import { ehCorHex } from "@/lib/contraste";
 import {
   AJUSTES_PADRAO,
   CONTRASTES,
   LIMITES_VISUAIS,
-  PAPEIS,
   ehIdDePadrao,
-  ehPapelDeCor,
   type AjustesVisuais,
-  type PapelDeCor,
 } from "@/lib/padroesVisuais";
 
 /**
  * A ponte entre as preferências salvas e o motor de padrões: monta os ajustes e confere o que veio
  * do localStorage, que pode ter sido escrito por uma versão antiga ou editado à mão.
+ *
+ * Havia também a escolha de uma cor para cada papel (sucesso, erro, alerta, informação, destaque),
+ * as "cores por significado". Foi retirada: quem a tinha guardada simplesmente deixa de carregá-la, e
+ * o padrão e os ajustes seguem valendo como estavam.
  */
 
 const numeroEntre = (v: unknown, min: number, max: number, padrao: number) =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : padrao;
-
-/** Só sobrevive a cor de um papel conhecido, em `#rrggbb`. O resto é descartado em silêncio. */
-export function limparCores(valor: unknown): Partial<Record<PapelDeCor, string>> {
-  if (!valor || typeof valor !== "object") return {};
-
-  const limpas: Partial<Record<PapelDeCor, string>> = {};
-
-  for (const [papel, cor] of Object.entries(valor as Record<string, unknown>)) {
-    if (ehPapelDeCor(papel) && ehCorHex(cor)) limpas[papel] = cor;
-  }
-
-  return limpas;
-}
 
 export function ajustesVisuais(p: PreferenciasAcessibilidade): AjustesVisuais {
   return {
@@ -38,7 +25,6 @@ export function ajustesVisuais(p: PreferenciasAcessibilidade): AjustesVisuais {
     saturacao: p.visualSaturation,
     brilho: p.visualBrightness,
     contraste: p.visualContrast,
-    cores: p.visualColors,
   };
 }
 
@@ -54,7 +40,7 @@ export function normalizarVisual(
   padrao: PreferenciasAcessibilidade,
 ): Pick<
   PreferenciasAcessibilidade,
-  "visualPattern" | "visualIntensity" | "visualSaturation" | "visualBrightness" | "visualContrast" | "visualColors" | "colorBlind"
+  "visualPattern" | "visualIntensity" | "visualSaturation" | "visualBrightness" | "visualContrast" | "colorBlind"
 > {
   const escolhido = ehIdDePadrao(base.visualPattern) ? base.visualPattern : padrao.visualPattern;
   const herdado = escolhido === "nenhum" && base.colorBlind === true;
@@ -85,14 +71,13 @@ export function normalizarVisual(
     visualContrast: (CONTRASTES as readonly number[]).includes(base.visualContrast)
       ? base.visualContrast
       : padrao.visualContrast,
-    visualColors: limparCores(base.visualColors),
   };
 }
 
 /** Volta só a personalização visual ao estado inicial, sem tocar nas outras preferências. */
 export function visualPadrao(): Pick<
   PreferenciasAcessibilidade,
-  "visualPattern" | "visualIntensity" | "visualSaturation" | "visualBrightness" | "visualContrast" | "visualColors"
+  "visualPattern" | "visualIntensity" | "visualSaturation" | "visualBrightness" | "visualContrast"
 > {
   return {
     visualPattern: "nenhum",
@@ -100,9 +85,5 @@ export function visualPadrao(): Pick<
     visualSaturation: AJUSTES_PADRAO.saturacao,
     visualBrightness: AJUSTES_PADRAO.brilho,
     visualContrast: AJUSTES_PADRAO.contraste,
-    visualColors: {},
   };
 }
-
-/** Os papéis na ordem em que aparecem na tela. */
-export const PAPEIS_NA_TELA = PAPEIS;

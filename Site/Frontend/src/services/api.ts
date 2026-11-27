@@ -3,6 +3,8 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { tx } from "@/i18n/frases";
+import { doServidor, respostaDoServidor } from "@/i18n/frases/servidor";
 
 /** Chaves usadas para persistir os tokens JWT no navegador. */
 export const CHAVE_ACCESS_TOKEN = "acesso:accessToken";
@@ -115,15 +117,11 @@ clienteApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
  * `mensagem`, porque nesse caso a `mensagem` geral é sempre "Erro de validação.". O backend usa o
  * mesmo formato em toda resposta de erro: `{ mensagem, erros: [{ campo, mensagem }] }`.
  */
-export function extrairMensagemErro(erro: unknown, padrao = "Não foi possível concluir a ação."): string {
+export function extrairMensagemErro(erro: unknown, padrao = tx("Não foi possível concluir a ação.")): string {
   const axiosErro = erro as AxiosError<{ mensagem?: string; message?: string; erros?: { campo?: string; mensagem?: string }[] }>;
   const dados = axiosErro?.response?.data;
-  return (
-    dados?.erros?.[0]?.mensagem ??
-    dados?.mensagem ??
-    dados?.message ??
-    padrao
-  );
+  const doErro = dados?.erros?.[0]?.mensagem ?? dados?.mensagem ?? dados?.message;
+  return doErro === undefined ? padrao : doServidor(doErro);
 }
 
 let refrescando: Promise<string | null> | null = null;
@@ -200,7 +198,11 @@ async function tentarRenovarToken(): Promise<string | null> {
 }
 
 clienteApi.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Rótulos de catálogos, notificações e motivos de sugestão chegam em português.
+    response.data = respostaDoServidor(response.config.url ?? "", response.data);
+    return response;
+  },
   async (erro: AxiosError) => {
     const original = erro.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
     const ehRotaAutenticacao = original?.url?.includes("/auth/login") || original?.url?.includes("/auth/refresh");

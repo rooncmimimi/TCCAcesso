@@ -19,6 +19,7 @@ import { AdaptacoesPedidasEmpresa } from "@/components/candidatura/AdaptacoesPed
 import { candidaturasService } from "@/services/dashboard.service";
 import type { AdaptacoesDaEmpresa } from "@/types/adaptacoes";
 import type { StatusCandidatura, Vaga } from "@/types";
+import { tx } from "@/i18n/frases";
 
 const OPCOES_STATUS: StatusCandidatura[] = ["pendente", "em_analise", "aprovada", "rejeitada"];
 
@@ -54,7 +55,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
   return (
     <Card className="shadow-none">
       <CardHeader>
-        <CardTitle className="text-lg">Candidaturas para "{vaga.titulo}"</CardTitle>
+        <CardTitle className="text-lg">{tx("Candidaturas para \"")}{vaga.titulo}"</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -77,7 +78,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                 <li key={candidatura.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">
-                      {candidatura.candidato?.usuario?.nome ?? "Candidato"}
+                      {candidatura.candidato?.usuario?.nome ?? tx("Candidato")}
                     </p>
                     <p className="truncate text-sm text-muted-foreground">
                       {candidatura.candidato?.tituloProfissional ?? t("dashboard.candidaturasDaVaga.semTituloInformado")}
@@ -138,7 +139,7 @@ export function CandidaturasDaVaga({ vaga }: { vaga: Vaga }) {
                   {t("vagas.paginaAnterior")}
                 </Button>
                 <span className="self-center text-sm text-muted-foreground">
-                  Página {data.pagina} de {data.totalPaginas}
+                  {tx`Página ${data.pagina} de ${data.totalPaginas}`}
                 </span>
                 <Button
                   variant="outline"

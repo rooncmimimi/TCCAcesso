@@ -11,6 +11,7 @@ import acessibilidadeService, { preferenciasParaApi } from "@/services/acessibil
 import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
+import { tx } from "@/i18n/frases";
 
 export const Route = createFileRoute("/boas-vindas")({
   head: () => ({
@@ -44,7 +45,7 @@ function BoasVindas() {
       <main id="conteudo" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10">
         <p className="text-sm font-bold uppercase tracking-wide text-primary">{t("boas-vindas.passo1De1")}</p>
         <h1 className="mt-2 text-3xl font-extrabold">
-          {usuario?.nome ? `Bem-vindo(a), ${usuario.nome.split(" ")[0]}!` : "Bem-vindo(a) ao ACESSO!"}
+          {usuario?.nome ? tx`Bem-vindo(a), ${usuario.nome.split(" ")[0]}!` : tx("Bem-vindo(a) ao ACESSO!")}
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
           {t("boas-vindas.ajusteComoVoceQuerVerOuvirE")}

@@ -1,4 +1,5 @@
 import type { AcessibilidadeFisica, ItemFisico } from "@/types/ambiente";
+import { tx } from "@/i18n/frases";
 
 export type LinhaDoMapa = {
   chave: string;
@@ -32,10 +33,10 @@ export function resumoDoMapa(mapa: AcessibilidadeFisica | null | undefined): { i
 }
 
 export function textoDoResumo({ informados, verificados }: { informados: number; verificados: number }): string {
-  if (informados === 0) return "Mapa físico: não informado";
+  if (informados === 0) return tx("Mapa físico: não informado");
 
-  const itens = informados === 1 ? "1 item" : `${informados} itens`;
-  const ver = verificados === 0 ? "nenhum verificado" : verificados === 1 ? "1 verificado" : `${verificados} verificados`;
+  const itens = informados === 1 ? tx("1 item") : tx`${informados} itens`;
+  const ver = verificados === 0 ? tx("nenhum verificado") : verificados === 1 ? tx("1 verificado") : tx`${verificados} verificados`;
 
-  return `Mapa físico: ${itens}, ${ver}`;
+  return tx`Mapa físico: ${itens}, ${ver}`;
 }

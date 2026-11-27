@@ -1,4 +1,5 @@
 import { formatarTamanhoArquivo } from "@/utils/formatacao";
+import { tx } from "@/i18n/frases";
 
 /**
  * Regras de arquivo do Site, num lugar só: quais tipos cada tela aceita e qual o tamanho máximo de cada
@@ -39,9 +40,9 @@ export const EXTENSOES: Record<CategoriaArquivo, readonly string[]> = {
 };
 
 const FORMATOS: Record<CategoriaArquivo, string> = {
-  imagem: "PNG, JPEG ou WEBP",
-  video: "MP4 ou WEBM",
-  documento: "PDF, DOC ou DOCX",
+  get imagem() { return tx("PNG, JPEG ou WEBP"); },
+  get video() { return tx("MP4 ou WEBM"); },
+  get documento() { return tx("PDF, DOC ou DOCX"); },
 };
 
 /** Currículo que a importação sabe ler: PDF e DOCX (o `.doc` antigo não tem extração de texto). */
@@ -72,12 +73,12 @@ export type ResultadoArquivo =
 function descricaoDosFormatos(categorias: readonly CategoriaArquivo[]): string {
   if (categorias.length === 1) {
     const [unica] = categorias;
-    return `${unica === "imagem" ? "uma imagem" : unica === "video" ? "um vídeo" : "um arquivo"} ${FORMATOS[unica]}`;
+    return `${unica === "imagem" ? tx("uma imagem") : unica === "video" ? tx("um vídeo") : tx("um arquivo")} ${FORMATOS[unica]}`;
   }
 
   return categorias
-    .map((c) => `${c === "imagem" ? "imagens" : c === "video" ? "vídeos" : "documentos"} (${FORMATOS[c]})`)
-    .join(" ou ");
+    .map((c) => `${c === "imagem" ? tx("imagens") : c === "video" ? tx("vídeos") : tx("documentos")} (${FORMATOS[c]})`)
+    .join(tx(" ou "));
 }
 
 /**
@@ -99,20 +100,20 @@ export function verificarArquivo(
   if (!tipoAceito) {
     const formatos = opcoes.formatos ?? descricaoDosFormatos(categorias);
 
-    return { ok: false, motivo: "tipo", mensagem: `Formato inválido. Envie ${formatos}.` };
+    return { ok: false, motivo: "tipo", mensagem: tx`Formato inválido. Envie ${formatos}.` };
   }
 
   if (arquivo.size <= 0) {
-    return { ok: false, motivo: "vazio", mensagem: "O arquivo está vazio. Escolha outro." };
+    return { ok: false, motivo: "vazio", mensagem: tx("O arquivo está vazio. Escolha outro.") };
   }
 
   if (arquivo.size > LIMITE_BYTES[categoria]) {
-    const nome = categoria === "imagem" ? "Imagem" : categoria === "video" ? "Vídeo" : "Arquivo";
+    const nome = categoria === "imagem" ? tx("Imagem") : categoria === "video" ? tx("Vídeo") : tx("Arquivo");
 
     return {
       ok: false,
       motivo: "tamanho",
-      mensagem: `${nome} muito grande (${formatarTamanhoArquivo(arquivo.size)}). O limite é ${limiteEmMb(categoria)} MB.`,
+      mensagem: tx`${nome} muito grande (${formatarTamanhoArquivo(arquivo.size)}). O limite é ${limiteEmMb(categoria)} MB.`,
     };
   }
 

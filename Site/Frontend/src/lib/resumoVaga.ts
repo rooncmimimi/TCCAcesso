@@ -16,39 +16,40 @@
  */
 
 import type { ContratoVaga, ModalidadeVaga, PublicoAlvoVaga, RecursoAcessibilidadeVaga, Vaga } from "@/types";
+import { tx, localeAtual } from "@/i18n/frases";
 
 export const NAO_INFORMADO = "A empresa não informou.";
 
 const MODALIDADE: Record<ModalidadeVaga, string> = {
-  presencial: "Presencial: você trabalha no local da empresa.",
-  hibrido: "Híbrido: parte dos dias no local da empresa e parte em casa.",
-  remoto: "Remoto: você trabalha de casa ou de outro lugar, sem ir à empresa.",
+  get presencial() { return tx("Presencial: você trabalha no local da empresa."); },
+  get hibrido() { return tx("Híbrido: parte dos dias no local da empresa e parte em casa."); },
+  get remoto() { return tx("Remoto: você trabalha de casa ou de outro lugar, sem ir à empresa."); },
 };
 
 const CONTRATO: Record<ContratoVaga, string> = {
-  clt: "CLT (carteira assinada, com direitos como férias, 13º salário e FGTS).",
-  pj: "PJ (você presta o serviço como empresa, com CNPJ, e cuida dos próprios impostos).",
-  estagio: "Estágio (para quem está estudando, com período definido).",
-  jovem_aprendiz: "Jovem aprendiz (programa de aprendizagem para jovens, com estudo e trabalho).",
-  temporario: "Temporário (por um período determinado).",
+  get clt() { return tx("CLT (carteira assinada, com direitos como férias, 13º salário e FGTS)."); },
+  get pj() { return tx("PJ (você presta o serviço como empresa, com CNPJ, e cuida dos próprios impostos)."); },
+  get estagio() { return tx("Estágio (para quem está estudando, com período definido)."); },
+  get jovem_aprendiz() { return tx("Jovem aprendiz (programa de aprendizagem para jovens, com estudo e trabalho)."); },
+  get temporario() { return tx("Temporário (por um período determinado)."); },
 };
 
 const PUBLICO: Record<PublicoAlvoVaga, string | null> = {
   geral: null,
-  pcd: "Esta vaga é para pessoas com deficiência (PCD).",
-  cinquenta_mais: "Esta vaga é para profissionais com 50 anos ou mais.",
-  pcd_cinquenta_mais: "Esta vaga é para pessoas com deficiência (PCD) e para profissionais com 50 anos ou mais.",
+  get pcd() { return tx("Esta vaga é para pessoas com deficiência (PCD)."); },
+  get cinquenta_mais() { return tx("Esta vaga é para profissionais com 50 anos ou mais."); },
+  get pcd_cinquenta_mais() { return tx("Esta vaga é para pessoas com deficiência (PCD) e para profissionais com 50 anos ou mais."); },
 };
 
 const RECURSO: Record<RecursoAcessibilidadeVaga, string> = {
-  interprete_libras: "Intérprete de Libras",
-  tecnologia_assistiva: "Tecnologia assistiva",
-  ambiente_fisico_acessivel: "Ambiente físico acessível",
-  banheiro_adaptado: "Banheiro adaptado",
-  elevador_rampa: "Elevador ou rampa",
-  jornada_adaptavel: "Jornada adaptável",
-  ferramentas_digitais_acessiveis: "Ferramentas digitais acessíveis",
-  outro: "Outro recurso (veja os detalhes da vaga)",
+  get interprete_libras() { return tx("Intérprete de Libras"); },
+  get tecnologia_assistiva() { return tx("Tecnologia assistiva"); },
+  get ambiente_fisico_acessivel() { return tx("Ambiente físico acessível"); },
+  get banheiro_adaptado() { return tx("Banheiro adaptado"); },
+  get elevador_rampa() { return tx("Elevador ou rampa"); },
+  get jornada_adaptavel() { return tx("Jornada adaptável"); },
+  get ferramentas_digitais_acessiveis() { return tx("Ferramentas digitais acessíveis"); },
+  get outro() { return tx("Outro recurso (veja os detalhes da vaga)"); },
 };
 
 /** Uma parte do resumo: um título e um texto, ou uma lista. `informado` é falso quando a empresa não disse. */
@@ -151,7 +152,7 @@ export function itensDoTexto(texto: string | null | undefined): string[] {
   return emLinhas.map((item) => item.replace(/[;,]+$/, "").trim()).filter(Boolean);
 }
 
-function formatarSalario(salario: Vaga["salario"], locale = "pt-BR"): string | null {
+function formatarSalario(salario: Vaga["salario"], locale = localeAtual()): string | null {
   if (salario === null || salario === undefined || salario === "") return null;
   const numero = typeof salario === "number" ? salario : Number(String(salario).replace(",", "."));
   if (Number.isFinite(numero)) {
@@ -164,13 +165,13 @@ function formatarSalario(salario: Vaga["salario"], locale = "pt-BR"): string | n
 }
 
 function textoSecao(id: string, titulo: string, texto: string | null): SecaoDoResumo {
-  return texto ? { id, titulo, informado: true, tipo: "texto", texto } : { id, titulo, informado: false, tipo: "texto", texto: NAO_INFORMADO };
+  return texto ? { id, titulo, informado: true, tipo: "texto", texto } : { id, titulo, informado: false, tipo: "texto", texto: tx(NAO_INFORMADO) };
 }
 
 function listaSecao(id: string, titulo: string, itens: string[], observacao?: string): SecaoDoResumo {
   return itens.length > 0
     ? { id, titulo, informado: true, tipo: "lista", itens, observacao }
-    : { id, titulo, informado: false, tipo: "texto", texto: NAO_INFORMADO };
+    : { id, titulo, informado: false, tipo: "texto", texto: tx(NAO_INFORMADO) };
 }
 
 /** Monta o resumo a partir dos campos da vaga. Só usa o que a empresa preencheu. */
@@ -192,39 +193,39 @@ export function montarResumoVaga(vaga: Vaga): ResumoDaVaga {
   const secoes: SecaoDoResumo[] = [
     textoSecao(
       "cargo",
-      "Cargo",
-      limpar(vaga.titulo) ? `${limpar(vaga.titulo)}${nomeEmpresa ? `, na empresa ${nomeEmpresa}` : ""}.` : null,
+      tx("Cargo"),
+      limpar(vaga.titulo) ? `${limpar(vaga.titulo)}${nomeEmpresa ? tx`, na empresa ${nomeEmpresa}` : ""}.` : null,
     ),
     // Com as atividades preenchidas pela empresa, o resumo as usa. Sem elas, cai no começo da descrição.
-    atividades.length > 0 ? listaSecao("atividades", "O que você vai fazer", atividades) : textoSecao("atividades", "O que você vai fazer", resumirDescricao(vaga.descricao)),
+    atividades.length > 0 ? listaSecao("atividades", tx("O que você vai fazer"), atividades) : textoSecao("atividades", tx("O que você vai fazer"), resumirDescricao(vaga.descricao)),
     textoSecao(
       "local",
-      "Onde você vai trabalhar",
+      tx("Onde você vai trabalhar"),
       vaga.modalidade || local
-        ? [vaga.modalidade ? MODALIDADE[vaga.modalidade] : null, local ? `Cidade: ${local}.` : null].filter(Boolean).join(" ")
+        ? [vaga.modalidade ? MODALIDADE[vaga.modalidade] : null, local ? tx`Cidade: ${local}.` : null].filter(Boolean).join(" ")
         : null,
     ),
     // A vaga não diz se o valor é por mês, por hora ou por projeto: o resumo repete só o valor.
-    textoSecao("salario", "Salário", salario ? `${salario}, valor informado pela empresa.` : null),
-    textoSecao("jornada", "Jornada", jornada ? comPontoFinal(jornada) : null),
-    textoSecao("contrato", "Tipo de contrato", vaga.contrato ? CONTRATO[vaga.contrato] : null),
+    textoSecao("salario", tx("Salário"), salario ? tx`${salario}, valor informado pela empresa.` : null),
+    textoSecao("jornada", tx("Jornada"), jornada ? comPontoFinal(jornada) : null),
+    textoSecao("contrato", tx("Tipo de contrato"), vaga.contrato ? CONTRATO[vaga.contrato] : null),
     // Com os desejáveis preenchidos, a empresa separou os dois tipos: os de sempre são os obrigatórios.
     listaSecao(
       "requisitos",
-      desejaveis.length > 0 ? "Requisitos obrigatórios" : "O que a empresa pede",
+      desejaveis.length > 0 ? tx("Requisitos obrigatórios") : tx("O que a empresa pede"),
       requisitos,
-      requisitos.length > 0 && desejaveis.length === 0 ? "A empresa não separou o que é obrigatório do que é desejável." : undefined,
+      requisitos.length > 0 && desejaveis.length === 0 ? tx("A empresa não separou o que é obrigatório do que é desejável.") : undefined,
     ),
-    ...(desejaveis.length > 0 ? [listaSecao("desejaveis", "Requisitos desejáveis", desejaveis)] : []),
-    listaSecao("beneficios", "Benefícios", beneficios),
+    ...(desejaveis.length > 0 ? [listaSecao("desejaveis", tx("Requisitos desejáveis"), desejaveis)] : []),
+    listaSecao("beneficios", tx("Benefícios"), beneficios),
     listaSecao(
       "acessibilidade",
-      "Recursos de acessibilidade",
+      tx("Recursos de acessibilidade"),
       recursos,
-      detalhesDeAcessibilidade ? `Detalhes da empresa: ${comPontoFinal(detalhesDeAcessibilidade)}` : undefined,
+      detalhesDeAcessibilidade ? tx`Detalhes da empresa: ${comPontoFinal(detalhesDeAcessibilidade)}` : undefined,
     ),
     // Sem etapas preenchidas pela empresa, o resumo diz que não foram informadas, sem supor.
-    etapas.length > 0 ? listaSecao("etapas", "Etapas da seleção", etapas) : textoSecao("etapas", "Etapas da seleção", null),
+    etapas.length > 0 ? listaSecao("etapas", tx("Etapas da seleção"), etapas) : textoSecao("etapas", tx("Etapas da seleção"), null),
   ];
 
   // Só texto de acessibilidade, sem a lista de recursos: vira texto, não "não informado".
@@ -232,7 +233,7 @@ export function montarResumoVaga(vaga: Vaga): ResumoDaVaga {
   if (acessibilidade && !acessibilidade.informado && detalhesDeAcessibilidade) {
     secoes[secoes.indexOf(acessibilidade)] = {
       id: "acessibilidade",
-      titulo: "Recursos de acessibilidade",
+      titulo: tx("Recursos de acessibilidade"),
       informado: true,
       tipo: "texto",
       texto: comPontoFinal(detalhesDeAcessibilidade),
@@ -240,7 +241,7 @@ export function montarResumoVaga(vaga: Vaga): ResumoDaVaga {
   }
 
   if (publico) {
-    secoes.splice(1, 0, { id: "publico", titulo: "Para quem é a vaga", informado: true, tipo: "texto", texto: publico });
+    secoes.splice(1, 0, { id: "publico", titulo: tx("Para quem é a vaga"), informado: true, tipo: "texto", texto: publico });
   }
 
   return { secoes, textoFalado: falarResumo(secoes) };

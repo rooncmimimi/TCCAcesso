@@ -9,6 +9,7 @@ import { obterRelatorios } from "@/services/admin.service";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
+import { tx, localeAtual } from "@/i18n/frases";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -87,10 +88,10 @@ function RelatoriosAdmin() {
 
   const totais = data.totais;
   const visaoGeral = [
-    { categoria: "Candidatos", total: totais.candidatos },
-    { categoria: "Empresas", total: totais.empresas },
-    { categoria: "Vagas", total: totais.vagas },
-    { categoria: "Candidaturas", total: totais.candidaturas },
+    { categoria: tx("Candidatos"), total: totais.candidatos },
+    { categoria: tx("Empresas"), total: totais.empresas },
+    { categoria: tx("Vagas"), total: totais.vagas },
+    { categoria: tx("Candidaturas"), total: totais.candidaturas },
     { categoria: t("barraBusca.publicacoes"), total: totais.postagens },
   ];
 
@@ -99,7 +100,7 @@ function RelatoriosAdmin() {
       <div>
         <h1 className="text-3xl font-extrabold">{t("admin.index.relatorios")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Atualizado em {new Date(data.atualizadoEm).toLocaleString("pt-BR")}
+          {tx("Atualizado em")}{" "}{new Date(data.atualizadoEm).toLocaleString(localeAtual())}
         </p>
       </div>
 

@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { CatalogoDeAdaptacoes, EscolhaDeCompartilhamento, MinhaAcessibilidade } from "@/types/adaptacoes";
 import { useIdioma } from "@/hooks/useIdioma";
 import { Frase } from "@/i18n/Frase";
+import { tx } from "@/i18n/frases";
 
 type Props = {
   catalogo: CatalogoDeAdaptacoes;
@@ -84,7 +85,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
               id={`${idBase}-canais-preferidos`}
               marcada={escolha.comunicacao.canaisPreferidos}
               aoMudar={(v) => aoMudar({ ...escolha, comunicacao: { ...escolha.comunicacao, canaisPreferidos: v } })}
-              rotulo={`Meus canais preferidos: ${rotulosDe(catalogo.canaisPreferidos, comunicacao.canaisPreferidos)}`}
+              rotulo={tx`Meus canais preferidos: ${rotulosDe(catalogo.canaisPreferidos, comunicacao.canaisPreferidos)}`}
             />
           ) : null}
           {comunicacao.canaisAEvitar.length > 0 ? (
@@ -92,7 +93,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
               id={`${idBase}-canais-evitar`}
               marcada={escolha.comunicacao.canaisAEvitar}
               aoMudar={(v) => aoMudar({ ...escolha, comunicacao: { ...escolha.comunicacao, canaisAEvitar: v } })}
-              rotulo={`Prefiro evitar: ${rotulosDe(catalogo.canaisAEvitar, comunicacao.canaisAEvitar)}`}
+              rotulo={tx`Prefiro evitar: ${rotulosDe(catalogo.canaisAEvitar, comunicacao.canaisAEvitar)}`}
             />
           ) : null}
           {comunicacao.melhorHorario ? (
@@ -123,7 +124,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
               id={`${idBase}-deficiencia`}
               marcada={escolha.deficiencia}
               aoMudar={(v) => aoMudar({ ...escolha, deficiencia: v })}
-              rotulo={`A categoria de deficiência que declarei: ${perfil.deficiencias.map((d) => d.nome).join(", ")}`}
+              rotulo={tx`A categoria de deficiência que declarei: ${perfil.deficiencias.map((d) => d.nome).join(", ")}`}
             />
           ) : null}
           {perfil.observacao ? (
@@ -139,7 +140,7 @@ export function EscolhaDeAdaptacoes({ catalogo, perfil, escolha, aoMudar }: Prop
 
       <div className="space-y-2">
         <Label htmlFor={`${idBase}-outra`} className="text-sm font-bold">
-          Outra necessidade, só para esta candidatura (opcional)
+          {tx("Outra necessidade, só para esta candidatura (opcional)")}
         </Label>
         <Textarea
           id={`${idBase}-outra`}

@@ -231,15 +231,6 @@ export const VARIAVEIS_DOS_PADROES: readonly string[] = [
 
 export const PAPEIS: readonly PapelDeCor[] = ["destaque", "sucesso", "erro", "alerta", "info"];
 
-/** O nome de cada papel na tela, para os controles e as amostras. */
-export const NOME_DO_PAPEL: Record<PapelDeCor, ChaveBase> = {
-  destaque: "acessibilidade.padroesVisuais.papelDestaque",
-  sucesso: "acessibilidade.padroesVisuais.papelSucesso",
-  erro: "acessibilidade.padroesVisuais.papelErro",
-  alerta: "acessibilidade.padroesVisuais.papelAlerta",
-  info: "acessibilidade.padroesVisuais.papelInfo",
-};
-
 /**
  * As cores que o site já usa, por tema — o ponto de partida de tudo. Espelham o `globals.css`: os
  * valores do tema claro são os hex de lá, e os do escuro são os mesmos hex com a claridade que o
@@ -273,7 +264,6 @@ const CORES_DA_MARCA: Record<"claro" | "escuro", Record<PapelDeCor, string>> = {
  * - `saturacao` e `brilho`: multiplicadores em porcentagem (100 = como está).
  * - `contraste`: o contraste MÍNIMO entre o preenchimento e o texto em cima dele. Não é um efeito
  *   visual: é um piso, e a cor é empurrada até alcançá-lo.
- * - `cores`: a escolha da pessoa para um papel, que vence o padrão.
  *
  * Nenhuma combinação pode produzir texto ilegível — quem garante isso é `parLegivel`, em `cor.ts`.
  */
@@ -282,7 +272,6 @@ export type AjustesVisuais = {
   saturacao: number;
   brilho: number;
   contraste: number;
-  cores: Partial<Record<PapelDeCor, string>>;
 };
 
 export const AJUSTES_PADRAO: AjustesVisuais = {
@@ -290,7 +279,6 @@ export const AJUSTES_PADRAO: AjustesVisuais = {
   saturacao: 100,
   brilho: 100,
   contraste: 4.5,
-  cores: {},
 };
 
 export const LIMITES_VISUAIS = {
@@ -307,8 +295,7 @@ export function ajusteEhNeutro(ajustes: AjustesVisuais): boolean {
   return (
     ajustes.saturacao === 100 &&
     ajustes.brilho === 100 &&
-    ajustes.contraste === AJUSTES_PADRAO.contraste &&
-    Object.keys(ajustes.cores).length === 0
+    ajustes.contraste === AJUSTES_PADRAO.contraste
   );
 }
 
@@ -316,11 +303,7 @@ export function ehIdDePadrao(valor: unknown): valor is IdDoPadrao {
   return typeof valor === "string" && (IDS_DOS_PADROES as readonly string[]).includes(valor);
 }
 
-export function ehPapelDeCor(valor: unknown): valor is PapelDeCor {
-  return typeof valor === "string" && (PAPEIS as readonly string[]).includes(valor);
-}
-
-/** O par de cores final de um papel: padrão, escolha da pessoa, ajustes e a trava de legibilidade. */
+/** O par de cores final de um papel: padrão, ajustes e a trava de legibilidade. */
 export function corDoPapel(
   papel: PapelDeCor,
   id: IdDoPadrao,
@@ -329,12 +312,8 @@ export function corDoPapel(
 ): ParDeCor {
   const tema = temaEscuro ? "escuro" : "claro";
   const base = CORES_DA_MARCA[tema][papel];
-  const escolhida = ajustes.cores[papel];
   const doPadrao = id === "nenhum" ? undefined : PADROES_VISUAIS[id][tema][papel]?.fundo;
-
-  // A escolha da pessoa vale inteira, sem diluir na intensidade: ela escolheu aquela cor.
-  const alvo = escolhida ?? doPadrao ?? base;
-  const fundo = escolhida ? alvo : misturar(base, alvo, ajustes.intensidade / 100);
+  const fundo = misturar(base, doPadrao ?? base, ajustes.intensidade / 100);
 
   return parLegivel(fundo, {
     saturacao: ajustes.saturacao / 100,
@@ -363,10 +342,9 @@ export function variaveisDoPadrao(
 
   for (const papel of PAPEIS) {
     const doPadrao = id === "nenhum" ? undefined : PADROES_VISUAIS[id][tema][papel];
-    const escolhida = ajustes.cores[papel];
 
-    // Papel que o padrão não mexe e a pessoa não escolheu só muda se houver ajuste geral.
-    if (!doPadrao && !escolhida && neutro) continue;
+    // Papel que o padrão não mexe só muda se houver ajuste geral.
+    if (!doPadrao && neutro) continue;
 
     const par = corDoPapel(papel, id, temaEscuro, ajustes);
 

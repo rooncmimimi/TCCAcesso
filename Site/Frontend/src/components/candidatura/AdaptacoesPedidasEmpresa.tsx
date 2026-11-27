@@ -10,6 +10,7 @@ import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
 import { extrairMensagemErro } from "@/services/api";
 import { RESPOSTAS_DA_EMPRESA, rotuloDaResposta, type AdaptacoesDaEmpresa, type RespostaDaEmpresa } from "@/types/adaptacoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * O que a pessoa candidata autorizou compartilhar com ESTA empresa, nesta candidatura, e o campo para
@@ -62,13 +63,13 @@ export function AdaptacoesPedidasEmpresa({ candidaturaId, nome, adaptacoes, aoRe
 
         <div className="space-y-1">
           <Label htmlFor={`${idBase}-mensagem`} className="text-sm">
-            Mensagem (opcional)
+            {tx("Mensagem (opcional)")}
           </Label>
           <Textarea id={`${idBase}-mensagem`} rows={2} maxLength={500} value={mensagem} onChange={(e) => setMensagem(e.target.value)} />
         </div>
 
         <Button type="submit" size="sm" className="min-h-11" disabled={!resposta || responder.isPending}>
-          {responder.isPending ? "Enviando…" : adaptacoes.resposta ? "Atualizar resposta" : t("candidatura.adaptacoesPedidasEmpresa.enviarResposta")}
+          {responder.isPending ? tx("Enviando…") : adaptacoes.resposta ? tx("Atualizar resposta") : t("candidatura.adaptacoesPedidasEmpresa.enviarResposta")}
         </Button>
         {adaptacoes.resposta ? (
           <p role="status" className="text-xs text-muted-foreground">

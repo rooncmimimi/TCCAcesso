@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { Ban, Hourglass, ShieldAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 type EmpresaStatus = {
   statusAprovacao?: string;
@@ -55,8 +56,8 @@ export function AvisoAprovacaoEmpresa({
   const descricaoFalada = pendente
     ? t("perfil.avisoAprovacaoEmpresa.suaEmpresaEstaEmAnaliseSeu")
     : suspensa
-      ? `Conta empresarial suspensa. Sua empresa foi suspensa pela moderação do ACESSO.${motivo ? ` Motivo: ${motivo}` : ""}`
-      : `Seu cadastro empresarial não foi aprovado.${motivo ? ` Motivo: ${motivo}` : ""}`;
+      ? tx`Conta empresarial suspensa. Sua empresa foi suspensa pela moderação do ACESSO.${motivo ? tx` Motivo: ${motivo}` : ""}`
+      : tx`Seu cadastro empresarial não foi aprovado.${motivo ? tx` Motivo: ${motivo}` : ""}`;
 
   const descricaoVisivel = pendente
     ? t("perfil.avisoAprovacaoEmpresa.seuCadastroFoiRecebidoEEsta")

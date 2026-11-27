@@ -23,6 +23,7 @@ import { RascunhosDeCandidatura } from "@/components/candidatura/RascunhosDeCand
 import { candidaturasService } from "@/services/dashboard.service";
 import type { Candidatura } from "@/types";
 import type { AdaptacoesDoCandidato } from "@/types/adaptacoes";
+import { tx } from "@/i18n/frases";
 
 /** Lista as candidaturas recentes do candidato, com opção de cancelamento. */
 export function CandidaturasRecentes() {
@@ -79,9 +80,9 @@ export function CandidaturasRecentes() {
               {data.dados.map((candidatura: Candidatura) => (
                 <li key={candidatura.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{candidatura.vaga?.titulo ?? "vaga"}</p>
+                    <p className="truncate font-semibold">{candidatura.vaga?.titulo ?? tx("vaga")}</p>
                     <p className="truncate text-sm text-muted-foreground">
-                      {candidatura.vaga?.empresa?.nomeFantasia ?? candidatura.vaga?.empresa?.razaoSocial ?? "Empresa"}
+                      {candidatura.vaga?.empresa?.nomeFantasia ?? candidatura.vaga?.empresa?.razaoSocial ?? tx("Empresa")}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -140,7 +141,7 @@ export function CandidaturasRecentes() {
                   {t("vagas.paginaAnterior")}
                 </Button>
                 <span className="self-center text-sm text-muted-foreground">
-                  Página {data.pagina} de {data.totalPaginas}
+                  {tx`Página ${data.pagina} de ${data.totalPaginas}`}
                 </span>
                 <Button
                   variant="outline"

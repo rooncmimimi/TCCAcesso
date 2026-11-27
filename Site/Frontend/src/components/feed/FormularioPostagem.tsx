@@ -26,6 +26,7 @@ import {
   ehImagem,
   ehVideo,
 } from "./tiposAnexo";
+import { tx } from "@/i18n/frases";
 
 const MAX_DESCRICAO = 500;
 
@@ -231,7 +232,7 @@ export function FormularioPostagem() {
           {avisoSemDescricao ? (
             <div role="alert" className="mt-3 space-y-2 rounded-lg border-2 border-primary/50 bg-primary-soft/40 p-3 text-sm">
               <p className="font-semibold">
-                {avisoSemDescricao.length === 1 ? "Uma imagem está sem descrição." : t("feed.formularioPostagem.imagensEstaoSemDescricao", { var1: avisoSemDescricao.length })}
+                {avisoSemDescricao.length === 1 ? tx("Uma imagem está sem descrição.") : t("feed.formularioPostagem.imagensEstaoSemDescricao", { var1: avisoSemDescricao.length })}
               </p>
               <p>{t("feed.formularioPostagem.quemUsaLeitorDeTelaNaoVaiSaber")}</p>
               <div className="flex flex-wrap gap-2">

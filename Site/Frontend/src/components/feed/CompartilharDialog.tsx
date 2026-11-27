@@ -15,6 +15,7 @@ import {
 import { useIdioma } from "@/hooks/useIdioma";
 import { Textarea } from "@/components/ui/textarea";
 import { useCompartilharPostagem } from "./hooks";
+import { tx } from "@/i18n/frases";
 
 function urlDaPostagem(postagemId: string): string {
   return `${window.location.origin}/postagem/${postagemId}`;
@@ -74,7 +75,7 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
             ) : (
               <Copy className="size-4" aria-hidden="true" />
             )}
-            {linkCopiado ? "Link copiado!" : t("feed.compartilharDialog.copiarLink")}
+            {linkCopiado ? tx("Link copiado!") : t("feed.compartilharDialog.copiarLink")}
           </Button>
 
           {podeCompartilharNativo ? (
@@ -118,7 +119,7 @@ export function CompartilharDialog({ postagemId, trigger }: { postagemId: string
               )
             }
           >
-            {compartilhar.isPending ? "Compartilhando…" : t("feed.compartilharDialog.compartilharNoAcesso")}
+            {compartilhar.isPending ? tx("Compartilhando…") : t("feed.compartilharDialog.compartilharNoAcesso")}
           </Button>
         </DialogFooter>
       </DialogContent>

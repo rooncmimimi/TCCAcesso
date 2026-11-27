@@ -5,6 +5,7 @@ import { PostagemCard } from "@/components/feed/PostagemCard";
 import { extrairMensagemErro } from "@/services/api";
 import { formatarData } from "@/utils/formatacao";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * Linha do tempo de um perfil, próprio ou de outra pessoa: publicações e compartilhamentos numa
@@ -45,7 +46,7 @@ export function LinhaDoTempoUsuario({ usuarioId }: { usuarioId: string }) {
         <li key={`${item.tipo}-${item.id}`}>
           {item.tipo === "compartilhamento" && (
             <p className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-              <Repeat2 className="size-4" aria-hidden="true" /> Compartilhou · {formatarData(item.criadoEm)}
+              <Repeat2 className="size-4" aria-hidden="true" />{" "}{tx("Compartilhou ·")}{" "}{formatarData(item.criadoEm)}
             </p>
           )}
           {item.tipo === "compartilhamento" && item.comentario ? (

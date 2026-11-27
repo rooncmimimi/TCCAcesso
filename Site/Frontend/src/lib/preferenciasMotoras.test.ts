@@ -36,6 +36,15 @@ describe("normalizarPreferencias", () => {
     expect(r.shortcuts).toBe(true);
   });
 
+  it("quem tinha 'cores por significado' guardadas não as carrega mais, e o resto fica como estava", () => {
+    const guardado = { visualPattern: "tritanopia", visualColors: { erro: "#123456" } } as never;
+
+    const r = normalizarPreferencias(guardado);
+
+    expect(r).not.toHaveProperty("visualColors");
+    expect(r.visualPattern).toBe("tritanopia");
+  });
+
   it("NaN e Infinity voltam ao padrão", () => {
     expect(normalizarPreferencias({ scanSpeed: Number.NaN }).scanSpeed).toBe(PREFERENCIAS_PADRAO.scanSpeed);
     expect(normalizarPreferencias({ tremorDelay: Number.POSITIVE_INFINITY }).tremorDelay).toBe(PREFERENCIAS_PADRAO.tremorDelay);

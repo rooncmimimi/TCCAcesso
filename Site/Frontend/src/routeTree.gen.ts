@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as BoasVindasRouteImport } from './routes/boas-vindas'
 import { Route as CompararRouteImport } from './routes/comparar'
 import { Route as ComunicacaoRouteImport } from './routes/comunicacao'
@@ -33,7 +34,6 @@ import { Route as ProfissoesRouteImport } from './routes/profissoes'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as RetornoGoogleRouteImport } from './routes/retorno-google'
-import { Route as SimuladorRouteImport } from './routes/simulador'
 import { Route as SobreNosRouteImport } from './routes/sobre-nos'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VagasRouteImport } from './routes/vagas'
@@ -79,6 +79,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AjudaRoute = AjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BoasVindasRoute = BoasVindasRouteImport.update({
@@ -189,11 +194,6 @@ const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
 const RetornoGoogleRoute = RetornoGoogleRouteImport.update({
   id: '/retorno-google',
   path: '/retorno-google',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SimuladorRoute = SimuladorRouteImport.update({
-  id: '/simulador',
-  path: '/simulador',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SobreNosRoute = SobreNosRouteImport.update({
@@ -385,6 +385,7 @@ const AdminUsuariosUsuarioIdRoute = AdminUsuariosUsuarioIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ajuda': typeof AjudaRoute
   '/boas-vindas': typeof BoasVindasRoute
   '/comparar': typeof CompararRoute
   '/comunicacao': typeof ComunicacaoRoute
@@ -407,7 +408,6 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
-  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -447,6 +447,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ajuda': typeof AjudaRoute
   '/boas-vindas': typeof BoasVindasRoute
   '/comparar': typeof CompararRoute
   '/comunicacao': typeof ComunicacaoRoute
@@ -467,7 +468,6 @@ export interface FileRoutesByTo {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
-  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -507,6 +507,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ajuda': typeof AjudaRoute
   '/boas-vindas': typeof BoasVindasRoute
   '/comparar': typeof CompararRoute
   '/comunicacao': typeof ComunicacaoRoute
@@ -529,7 +530,6 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/retorno-google': typeof RetornoGoogleRoute
-  '/simulador': typeof SimuladorRoute
   '/sobre-nos': typeof SobreNosRoute
   '/termos': typeof TermosRoute
   '/vagas': typeof VagasRoute
@@ -572,6 +572,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/boas-vindas'
     | '/comparar'
     | '/comunicacao'
@@ -594,7 +595,6 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
-    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -634,6 +634,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ajuda'
     | '/boas-vindas'
     | '/comparar'
     | '/comunicacao'
@@ -654,7 +655,6 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
-    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -693,6 +693,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/boas-vindas'
     | '/comparar'
     | '/comunicacao'
@@ -715,7 +716,6 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/retorno-google'
-    | '/simulador'
     | '/sobre-nos'
     | '/termos'
     | '/vagas'
@@ -757,6 +757,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AjudaRoute: typeof AjudaRoute
   BoasVindasRoute: typeof BoasVindasRoute
   CompararRoute: typeof CompararRoute
   ComunicacaoRoute: typeof ComunicacaoRoute
@@ -779,7 +780,6 @@ export interface RootRouteChildren {
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   RetornoGoogleRoute: typeof RetornoGoogleRoute
-  SimuladorRoute: typeof SimuladorRoute
   SobreNosRoute: typeof SobreNosRoute
   TermosRoute: typeof TermosRoute
   VagasRoute: typeof VagasRoute
@@ -815,6 +815,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ajuda': {
+      id: '/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AjudaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/boas-vindas': {
@@ -969,13 +976,6 @@ declare module '@tanstack/react-router' {
       path: '/retorno-google'
       fullPath: '/retorno-google'
       preLoaderRoute: typeof RetornoGoogleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/simulador': {
-      id: '/simulador'
-      path: '/simulador'
-      fullPath: '/simulador'
-      preLoaderRoute: typeof SimuladorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sobre-nos': {
@@ -1317,6 +1317,7 @@ const PerfilRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AjudaRoute: AjudaRoute,
   BoasVindasRoute: BoasVindasRoute,
   CompararRoute: CompararRoute,
   ComunicacaoRoute: ComunicacaoRoute,
@@ -1339,7 +1340,6 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   RetornoGoogleRoute: RetornoGoogleRoute,
-  SimuladorRoute: SimuladorRoute,
   SobreNosRoute: SobreNosRoute,
   TermosRoute: TermosRoute,
   VagasRoute: VagasRoute,

@@ -4,6 +4,7 @@ import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { estaDigitando } from "@/lib/atalhos";
 import { ESTADO_PARADO, atualizarItens, avancar, continuar, dentroDeGrupo, iniciar as iniciarMotor, itemAtual, parar as pararMotor, pausar as pausarMotor, sairDoGrupo, selecionar as selecionarMotor, voltar, type EstadoDaVarredura } from "@/lib/motorDeVarredura";
 import { ehCampoDeTexto, montarItens, raizDaVarredura } from "@/lib/varredura";
+import { tx } from "@/i18n/frases";
 
 const ESPERA_DA_PAGINA_MS = 200;
 
@@ -48,18 +49,18 @@ export function useVarredura() {
     const itens = reconstruir();
 
     if (itens.length === 0) {
-      setAviso("Não há controles para percorrer nesta tela.");
+      setAviso(tx("Não há controles para percorrer nesta tela."));
 
       return;
     }
 
     definirCampo(false);
     definir(iniciarMotor(itens));
-    setAviso(`Varredura iniciada. ${itens.length === 1 ? "1 item" : `${itens.length} itens`}. Aperte Espaço ou Enter para selecionar, Esc para sair.`);
+    setAviso(tx`Varredura iniciada. ${itens.length === 1 ? tx("1 item") : tx`${itens.length} itens`}. Aperte Espaço ou Enter para selecionar, Esc para sair.`);
   }, [definir, definirCampo, reconstruir]);
 
   const pararTudo = useCallback(
-    (mensagem = "Varredura parada.") => {
+    (mensagem = tx("Varredura parada.")) => {
       definirCampo(false);
       definir(pararMotor());
       setAviso(mensagem);
@@ -69,13 +70,13 @@ export function useVarredura() {
 
   const pausar = useCallback(() => {
     definir(pausarMotor(estadoRef.current));
-    setAviso(`Varredura pausada em: ${itemAtual(estadoRef.current)?.rotulo ?? "nenhum item"}.`);
+    setAviso(tx`Varredura pausada em: ${itemAtual(estadoRef.current)?.rotulo ?? tx("nenhum item")}.`);
   }, [definir]);
 
   const retomar = useCallback(() => {
     definirCampo(false);
     definir(continuar(estadoRef.current));
-    setAviso("Varredura continuando.");
+    setAviso(tx("Varredura continuando."));
   }, [definir, definirCampo]);
 
   const anunciarSePausada = useCallback(() => {
@@ -95,7 +96,7 @@ export function useVarredura() {
 
   const sair = useCallback(() => {
     definir(sairDoGrupo(estadoRef.current));
-    setAviso("Saiu do grupo.");
+    setAviso(tx("Saiu do grupo."));
   }, [definir]);
 
   const selecionar = useCallback(() => {
@@ -104,7 +105,7 @@ export function useVarredura() {
     definir(novo);
 
     if (efeito.tipo === "entrou-no-grupo") {
-      setAviso(`Dentro de ${efeito.grupo.rotulo.replace(/^Grupo: /, "")}. Esc sai do grupo.`);
+      setAviso(tx`Dentro de ${efeito.grupo.rotulo.replace(/^[^:]+: /, "")}. Esc sai do grupo.`);
 
       return;
     }
@@ -117,7 +118,7 @@ export function useVarredura() {
       alvo.focus();
       definirCampo(true);
       definir(pausarMotor(novo));
-      setAviso("Campo ativo. Digite ou dite o texto. Esc volta à varredura.");
+      setAviso(tx("Campo ativo. Digite ou dite o texto. Esc volta à varredura."));
 
       return;
     }
@@ -168,7 +169,7 @@ export function useVarredura() {
         if (novo !== estadoRef.current) {
           if (novo.fase === "parada") {
             definirCampo(false);
-            setAviso("Não há mais controles para percorrer. A varredura parou.");
+            setAviso(tx("Não há mais controles para percorrer. A varredura parou."));
           }
 
           definir(novo);

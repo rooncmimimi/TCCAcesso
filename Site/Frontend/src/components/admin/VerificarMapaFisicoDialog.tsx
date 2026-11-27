@@ -13,6 +13,7 @@ import { verificarAcessibilidadeFisica, type VagaAdmin } from "@/services/admin.
 import { ambienteService } from "@/services/ambiente.service";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx, localeAtual } from "@/i18n/frases";
 
 const SITUACAO = { sim: "comum.sim", parcial: "comum.parcial", nao: "comum.nao" } as const satisfies Record<string, ChaveBase>;
 
@@ -45,7 +46,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
   const mudar = useMutation({
     mutationFn: ({ verificado }: { verificado: boolean }) => verificarAcessibilidadeFisica(vaga!.id, escolhidos, verificado),
     onSuccess: ({ alteradas }, { verificado }) => {
-      toast.success(alteradas.length === 0 ? "Nada mudou: os itens já estavam nessa situação." : verificado ? `${alteradas.length} item(ns) marcado(s) como verificado(s).` : `${alteradas.length} item(ns) voltaram a “declarado”.`);
+      toast.success(alteradas.length === 0 ? tx("Nada mudou: os itens já estavam nessa situação.") : verificado ? tx`${alteradas.length} item(ns) marcado(s) como verificado(s).` : tx`${alteradas.length} item(ns) voltaram a “declarado”.`);
       setEscolhidos([]);
       setConferi(false);
       void queryClient.invalidateQueries({ queryKey: ["admin", "vagas"] });
@@ -96,7 +97,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
                     {l.origem === "verificado" ? (
                       <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary">
                         <BadgeCheck className="size-3.5" aria-hidden="true" /> {t("admin.verificarMapaFisicoDialog.verificado")}
-                        {l.verificadoEm ? ` em ${new Date(l.verificadoEm).toLocaleDateString("pt-BR")}` : ""}
+                        {l.verificadoEm ? tx` em ${new Date(l.verificadoEm).toLocaleDateString(localeAtual())}` : ""}
                       </span>
                     ) : (
                       <span className="mt-1 block text-xs text-muted-foreground">{t("admin.verificarMapaFisicoDialog.declaradoPelaEmpresaNao")}</span>
@@ -125,7 +126,7 @@ export function VerificarMapaFisicoDialog({ vaga, aoFechar }: Props) {
                 {t("admin.verificarMapaFisicoDialog.voltarADeclarado")}
               </Button>
               <Button type="button" className="min-h-11" disabled={!podeVerificar} onClick={() => mudar.mutate({ verificado: true })}>
-                {mudar.isPending ? "Salvando…" : t("admin.verificarMapaFisicoDialog.marcarComoVerificado")}
+                {mudar.isPending ? tx("Salvando…") : t("admin.verificarMapaFisicoDialog.marcarComoVerificado")}
               </Button>
             </div>
           ) : null}

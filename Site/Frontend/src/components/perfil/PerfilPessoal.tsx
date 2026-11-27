@@ -38,6 +38,7 @@ import { BotoesCurriculo } from "./BotoesCurriculo";
 import { ImportarCurriculoDialog } from "./ImportarCurriculoDialog";
 import { ListaSeguidoresDialog } from "./ListaSeguidoresDialog";
 import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
+import { tx } from "@/i18n/frases";
 
 /**
  * Perfil pessoal: candidato (completo) ou administrador (versão sem seções profissionais).
@@ -294,7 +295,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                       <FileText className="size-4 shrink-0" aria-hidden="true" />
                       {candidato.curriculoNome}
                       {candidato.curriculoAtualizadoEm
-                        ? ` · enviado em ${formatarData(candidato.curriculoAtualizadoEm)}`
+                        ? tx` · enviado em ${formatarData(candidato.curriculoAtualizadoEm)}`
                         : ""}
                     </p>
                   ) : (
@@ -315,7 +316,7 @@ export function PerfilPessoal({ usuarioId }: { usuarioId?: string } = {}) {
                       ) : (
                         <Upload className="size-4" aria-hidden="true" />
                       )}
-                      {candidato.curriculoNome ? "Atualizar currículo" : t("perfil.perfilPessoal.enviarCurriculo")}
+                      {candidato.curriculoNome ? tx("Atualizar currículo") : t("perfil.perfilPessoal.enviarCurriculo")}
                     </label>
                     <input
                       id="input-enviar-curriculo"

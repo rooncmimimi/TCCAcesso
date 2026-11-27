@@ -9,6 +9,7 @@ import { montarResumoVaga, type SecaoDoResumo } from "@/lib/resumoVaga";
 import { cn } from "@/lib/utils";
 import type { Vaga } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * Botão "Explique esta vaga de forma simples" e o resumo que ele abre. O resumo é montado por regras
@@ -71,7 +72,7 @@ export function ResumoVagaSimples({ vaga }: { vaga: Vaga }) {
                   <Volume2 className="size-4" aria-hidden="true" /> {t("vagas.resumoVagaSimples.ouvirResumo")}
                 </Button>
               )}
-              <SalvarInstrucao titulo={`Vaga: ${vaga.titulo}`} texto={resumo.textoFalado} />
+              <SalvarInstrucao titulo={tx`Vaga: ${vaga.titulo}`} texto={resumo.textoFalado} />
             </div>
           </>
         )}

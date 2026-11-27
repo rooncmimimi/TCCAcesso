@@ -1,9 +1,6 @@
+import { imagemDoPrint } from "@/dados/tutoriaisAjuda";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
-
-import passo1 from "@/assets/tutorial-google/1-entrar-com-email-e-senha.png";
-import passo2 from "@/assets/tutorial-google/2-contas-conectadas.png";
-import passo3 from "@/assets/tutorial-google/3-confirmar-a-senha.png";
 
 /**
  * O passo a passo que aparece quando a pessoa tenta entrar com o Google e já existe uma conta
@@ -18,40 +15,38 @@ import passo3 from "@/assets/tutorial-google/3-confirmar-a-senha.png";
  * informação necessária. É por isso que o `alt` descreve o que está na tela em vez de repetir a
  * instrução, que já está escrita ao lado.
  *
- * Os prints são capturas reais das telas do ACESSO. Quando essas telas mudarem, estas imagens
- * precisam ser recapturadas — elas moram em `src/assets/tutorial-google/`.
+ * Os prints são capturas das telas do ACESSO, os mesmos da Central de Ajuda, no idioma de quem lê.
+ * Quando essas telas mudarem, `npm run ajuda:prints` tira tudo de novo.
  */
 
-type Passo = { texto: ChaveBase; imagem?: string; alt?: ChaveBase; largura?: number; altura?: number };
+type Passo = { texto: ChaveBase; print?: string; alt?: ChaveBase };
 
 const PASSOS: ReadonlyArray<Passo> = [
-  {
-    texto: "retorno-google.tutorialPasso1",
-    imagem: passo1,
-    alt: "retorno-google.tutorialPasso1Alt",
-    largura: 364,
-    altura: 222,
-  },
-  {
-    texto: "retorno-google.tutorialPasso2",
-    imagem: passo2,
-    alt: "retorno-google.tutorialPasso2Alt",
-    largura: 732,
-    altura: 64,
-  },
-  {
-    texto: "retorno-google.tutorialPasso3",
-    imagem: passo3,
-    alt: "retorno-google.tutorialPasso3Alt",
-    largura: 364,
-    altura: 230,
-  },
+  { texto: "retorno-google.tutorialPasso1", print: "google-1-entrar", alt: "retorno-google.tutorialPasso1Alt" },
+  { texto: "retorno-google.tutorialPasso2", print: "google-2-contas", alt: "retorno-google.tutorialPasso2Alt" },
+  { texto: "retorno-google.tutorialPasso3", print: "google-3-senha", alt: "retorno-google.tutorialPasso3Alt" },
   // O último passo acontece na página do próprio Google: não é tela do ACESSO e não tem print.
   { texto: "retorno-google.tutorialPasso4" },
 ];
 
+function Print({ nome, alt, idioma }: { nome: string; alt: string; idioma: Parameters<typeof imagemDoPrint>[1] }) {
+  const imagem = imagemDoPrint(nome, idioma);
+
+  return (
+    <img
+      src={imagem.src}
+      alt={alt}
+      width={imagem.largura}
+      height={imagem.altura}
+      loading="lazy"
+      decoding="async"
+      className="h-auto w-full max-w-md rounded-lg border border-border bg-background shadow-sm"
+    />
+  );
+}
+
 export function TutorialVincularGoogle() {
-  const { t } = useIdioma();
+  const { t, idioma } = useIdioma();
 
   return (
     <section aria-labelledby="tutorial-google-titulo" className="mt-6 rounded-xl border border-border bg-muted/40 p-4 text-left">
@@ -77,17 +72,7 @@ export function TutorialVincularGoogle() {
             <div className="min-w-0 flex-1 space-y-2">
               <p className="text-sm">{t(passo.texto)}</p>
 
-              {passo.imagem && passo.alt ? (
-                <img
-                  src={passo.imagem}
-                  alt={t(passo.alt)}
-                  width={passo.largura}
-                  height={passo.altura}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-auto w-full max-w-md rounded-lg border border-border bg-background shadow-sm"
-                />
-              ) : null}
+              {passo.print && passo.alt ? <Print nome={passo.print} alt={t(passo.alt)} idioma={idioma} /> : null}
             </div>
           </li>
         ))}

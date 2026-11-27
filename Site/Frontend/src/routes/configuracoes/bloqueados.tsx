@@ -14,6 +14,7 @@ import { urlArquivo } from "@/utils/arquivos";
 import { iniciaisDoNome } from "@/utils/formatacao";
 import { useIdioma } from "@/hooks/useIdioma";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
+import { tx } from "@/i18n/frases";
 
 export const Route = createFileRoute("/configuracoes/bloqueados")({
   head: () => ({
@@ -45,7 +46,7 @@ function UsuariosBloqueados() {
     onSuccess: (_dados, usuarioId) => {
       const pessoa = data?.dados.find((u) => u.id === usuarioId);
       // O toast já é lido pelo `useLeituraAutomatica`; falar aqui também duplicaria a leitura.
-      toast.success(pessoa ? `${pessoa.nome} foi desbloqueado(a).` : t("configuracoes.bloqueados.usuarioDesbloqueado"));
+      toast.success(pessoa ? tx`${pessoa.nome} foi desbloqueado(a).` : t("configuracoes.bloqueados.usuarioDesbloqueado"));
       void queryClient.invalidateQueries({ queryKey: CHAVE });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.bloqueados.naoFoiPossivelDesbloquearEste"))),
@@ -102,12 +103,12 @@ function UsuariosBloqueados() {
                     className="min-h-11"
                     disabled={desbloquear.isPending}
                     onClick={() => desbloquear.mutate(pessoa.id)}
-                    aria-label={`Desbloquear ${pessoa.nome}`}
+                    aria-label={tx`Desbloquear ${pessoa.nome}`}
                   >
                     {desbloquear.isPending ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                     ) : (
-                      "Desbloquear"
+                      tx("Desbloquear")
                     )}
                   </Button>
                 </li>

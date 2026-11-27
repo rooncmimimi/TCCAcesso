@@ -1,12 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Accessibility, Lock, Mail } from "lucide-react";
+import { Accessibility, HelpCircle, Lock, Mail } from "lucide-react";
 
 import { useIdioma } from "@/hooks/useIdioma";
 
 /**
- * Área de suporte no final das páginas principais, sempre visível. Enquanto a nova Central de
- * Ajuda não existe, o "Fale conosco" é o caminho direto com a equipe — por isso ele vem primeiro e
- * em destaque.
+ * Área de suporte no final das páginas principais, sempre visível: a Central de Ajuda (tutoriais) vem
+ * primeiro, e o "Fale conosco" é o caminho direto com a equipe para o que os tutoriais não resolvem.
  */
 export function SuporteRodape() {
   const { t } = useIdioma();
@@ -15,6 +14,13 @@ export function SuporteRodape() {
     <footer className="mx-auto mt-12 max-w-6xl border-t border-border px-4 py-8">
       <h2 className="text-sm font-bold text-muted-foreground">{t("rodape.precisaAjuda")}</h2>
       <nav aria-label={t("rodape.suporte")} className="mt-3 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+        <Link
+          to="/ajuda"
+          className="flex min-h-6 items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
+        >
+          <HelpCircle className="size-4 shrink-0" aria-hidden="true" />
+          {t("ajuda.link")}
+        </Link>
         <Link
           to="/fale-conosco"
           className="flex min-h-6 items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"

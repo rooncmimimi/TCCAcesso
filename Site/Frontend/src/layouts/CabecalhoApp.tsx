@@ -8,8 +8,8 @@ import {
   Briefcase,
   ChevronDown,
   Compass,
-  GraduationCap,
   Home,
+  HelpCircle,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -225,18 +225,11 @@ export function CabecalhoApp() {
               </Link>
             </DropdownMenuItem>
             {usuario?.tipo === "candidato" && (
-              <>
-                <DropdownMenuItem asChild>
-                  <Link to="/minha-acessibilidade">
-                    <Accessibility aria-hidden="true" /> {t("simulador.paginaSimulador.minhaAcessibilidade")}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/simulador">
-                    <GraduationCap aria-hidden="true" /> {t("layouts.cabecalhoApp.simuladorDeCandidatura")}
-                  </Link>
-                </DropdownMenuItem>
-              </>
+              <DropdownMenuItem asChild>
+                <Link to="/minha-acessibilidade">
+                  <Accessibility aria-hidden="true" /> {t("layouts.cabecalhoApp.minhaAcessibilidade")}
+                </Link>
+              </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
               <Link to="/descobrir">
@@ -265,6 +258,11 @@ export function CabecalhoApp() {
             <DropdownMenuItem asChild>
               <Link to="/configuracoes">
                 <Settings aria-hidden="true" /> {t("cabecalho.configuracoes")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/ajuda">
+                <HelpCircle aria-hidden="true" /> {t("ajuda.link")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

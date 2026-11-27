@@ -1,5 +1,6 @@
 import type { EventoDaDenuncia } from "@/services/denuncia.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx, localeAtual } from "@/i18n/frases";
 
 /**
  * Histórico de tratamento da denúncia, do mais antigo ao mais novo: o registro dela e tudo o que a
@@ -16,12 +17,12 @@ export function HistoricoDaDenuncia({
   eventos: EventoDaDenuncia[];
 }) {
   const { t } = useIdioma();
-  const quando = (data: string) => new Date(data).toLocaleString("pt-BR");
+  const quando = (data: string) => new Date(data).toLocaleString(localeAtual());
 
   return (
     <ol className="mt-3 space-y-3" aria-label={t("admin.historicoDaDenuncia.historicoDeTratamento")}>
       <li className="border-l-2 border-border pl-3 text-sm">
-        <p className="font-semibold">Denúncia registrada{denunciante ? ` por ${denunciante}` : ""}</p>
+        <p className="font-semibold">{tx("Denúncia registrada")}{denunciante ? tx` por ${denunciante}` : ""}</p>
         <p className="text-xs text-muted-foreground">
           <time dateTime={registradaEm}>{quando(registradaEm)}</time>
         </p>

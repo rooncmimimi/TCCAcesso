@@ -30,6 +30,7 @@ import {
 } from "@/lib/googleNavegador";
 import { extrairMensagemErro } from "@/services/api";
 import googleService, { mensagemDeErroGoogle } from "@/services/google.service";
+import { tx } from "@/i18n/frases";
 
 const CHAVE_GOOGLE = ["seguranca", "google"] as const;
 
@@ -279,7 +280,7 @@ export function SecaoContasConectadas() {
               <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                 Google
                 <Badge variant={conta.vinculado ? "secondary" : "outline"} className="font-medium">
-                  {conta.vinculado ? "Vinculada" : t("configuracoes.secaoContasConectadas.naoVinculada")}
+                  {conta.vinculado ? tx("Vinculada") : t("configuracoes.secaoContasConectadas.naoVinculada")}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">

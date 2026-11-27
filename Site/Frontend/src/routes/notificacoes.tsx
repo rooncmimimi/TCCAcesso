@@ -41,6 +41,7 @@ import { ouvirEvento } from "@/services/socket";
 import { formatarTempoRelativo } from "@/utils/formatacao";
 import { cn } from "@/lib/utils";
 import type { Notificacao } from "@/types";
+import { tx } from "@/i18n/frases";
 
 export const Route = createFileRoute("/notificacoes")({
   head: () => ({
@@ -233,7 +234,7 @@ function Notificacoes() {
           <h1 className="text-3xl font-extrabold">{t("cabecalho.notificacoes")}</h1>
           <p className="mt-1 text-muted-foreground" role="status" aria-live="polite">
             {isLoading
-              ? "Carregando…"
+              ? tx("Carregando…")
               : naoLidas > 0
                 ? t("notificacoes.naoLidas", { n: naoLidas })
                 : t("notificacoes.nenhumaNotificacaoNaoLida")}
@@ -354,7 +355,7 @@ function Notificacoes() {
                           size="sm"
                           variant="ghost"
                           className="min-h-11 text-destructive"
-                          aria-label={`Remover "${n.titulo}"`}
+                          aria-label={tx`Remover "${n.titulo}"`}
                           disabled={remover.isPending}
                           onClick={() => remover.mutate(n.id)}
                         >
@@ -369,7 +370,7 @@ function Notificacoes() {
                       {n.subtipo === "solicitacao_seguimento" && n.entidadeId && (
                         resultadoSolicitacao ? (
                           <span className="text-xs font-medium text-muted-foreground">
-                            {resultadoSolicitacao === "aceita" ? "Solicitação aceita" : "Solicitação recusada"}
+                            {resultadoSolicitacao === "aceita" ? tx("Solicitação aceita") : tx("Solicitação recusada")}
                           </span>
                         ) : (
                           <div className="flex gap-1">

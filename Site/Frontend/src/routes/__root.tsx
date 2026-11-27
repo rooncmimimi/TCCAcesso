@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -145,6 +145,24 @@ function AppFrame() {
   );
 }
 
+/**
+ * Trocar de idioma busca os dados de novo: o que o servidor escreve (notificações, rótulos) é traduzido
+ * na chegada, e o que já estava em memória ficaria no idioma anterior.
+ */
+function AtualizarNoIdioma() {
+  const { idioma } = useIdioma();
+  const queryClient = useQueryClient();
+  const anterior = useRef(idioma);
+
+  useEffect(() => {
+    if (anterior.current === idioma) return;
+    anterior.current = idioma;
+    void queryClient.invalidateQueries();
+  }, [idioma, queryClient]);
+
+  return null;
+}
+
 function ComponenteRaiz() {
   const { queryClient } = Route.useRouteContext();
 
@@ -155,6 +173,7 @@ function ComponenteRaiz() {
           <LeituraDestacadaProvider>
             <SessaoProvider>
               <IdiomaProvider>
+                <AtualizarNoIdioma />
                 <AppFrame />
               </IdiomaProvider>
             </SessaoProvider>

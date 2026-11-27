@@ -22,6 +22,8 @@
  * do navegador), o fluxo **não começa**: sem o segredo, não há como amarrar o retorno.
  */
 
+import { tx } from "@/i18n/frases";
+
 const CHAVE_VINCULO = "acesso:google:vinculo";
 const CHAVE_PROVA = "acesso:google:prova";
 
@@ -31,7 +33,7 @@ const SEM_SUPORTE =
 /** Erro do próprio navegador, com mensagem pronta para a pessoa (e não uma resposta do servidor). */
 export class ErroGoogleNavegador extends Error {
   constructor(mensagem: string = SEM_SUPORTE) {
-    super(mensagem);
+    super(tx(mensagem));
     this.name = "ErroGoogleNavegador";
   }
 }

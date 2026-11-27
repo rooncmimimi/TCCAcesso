@@ -1,3 +1,5 @@
+import { tx } from "@/i18n/frases";
+
 /**
  * Diagnóstico da voz do aparelho: mede, de verdade, o que o navegador faz com a síntese de fala. Serve
  * para a pessoa rodar em um celular ou computador real e copiar um relatório (o que eu não consigo
@@ -72,7 +74,7 @@ const RELOGIO_REAL: Relogio = { agora: () => Date.now(), esperar: (ms) => new Pr
  * Fala `texto` e conta os eventos `boundary`. Termina quando a fala acaba, dá erro ou passa de
  * `limiteMs`. Eventos repetidos para a mesma posição contam uma vez.
  */
-export async function testarEventosDePalavra(sintetizador: SintetizadorDeFala | null, criar: CriarEnunciado, voz: VozDoAparelho | null, texto = TEXTO_DO_TESTE_DE_PALAVRAS, limiteMs = 15_000, relogio: Relogio = RELOGIO_REAL): Promise<ResultadoDePalavras> {
+export async function testarEventosDePalavra(sintetizador: SintetizadorDeFala | null, criar: CriarEnunciado, voz: VozDoAparelho | null, texto = tx(TEXTO_DO_TESTE_DE_PALAVRAS), limiteMs = 15_000, relogio: Relogio = RELOGIO_REAL): Promise<ResultadoDePalavras> {
   const total = contarPalavras(texto);
 
   if (!sintetizador) return { situacao: "sem-voz", totalDePalavras: total, palavrasInformadas: 0, eventosDeFrase: 0, primeiroEventoMs: null, terminou: false };
@@ -104,7 +106,7 @@ export async function testarEventosDePalavra(sintetizador: SintetizadorDeFala | 
       }
     };
     u.onend = () => fechar({ terminou: true });
-    u.onerror = (e) => fechar({ situacao: "erro", erro: e.error ?? "erro desconhecido" });
+    u.onerror = (e) => fechar({ situacao: "erro", erro: e.error ?? tx("erro desconhecido") });
 
     sintetizador.cancel();
     sintetizador.speak(u);
@@ -139,7 +141,7 @@ export type ResultadoDePausa = {
  * Fala, pausa com o `pause()` nativo, espera, retoma e vê se a fala chega ao fim. É o comportamento do
  * aparelho SEM a pausa por reinício do ACESSO: serve para saber se ela é necessária neste aparelho.
  */
-export async function testarPausaNativa(sintetizador: SintetizadorDeFala | null, criar: CriarEnunciado, voz: VozDoAparelho | null, texto = TEXTO_DO_TESTE_DE_PAUSA, relogio: Relogio = RELOGIO_REAL): Promise<ResultadoDePausa> {
+export async function testarPausaNativa(sintetizador: SintetizadorDeFala | null, criar: CriarEnunciado, voz: VozDoAparelho | null, texto = tx(TEXTO_DO_TESTE_DE_PAUSA), relogio: Relogio = RELOGIO_REAL): Promise<ResultadoDePausa> {
   const vazio: ResultadoDePausa = { situacao: "executado", marcouPausado: false, pausaCancelouAFala: false, retomouAteOFim: false };
 
   if (!sintetizador) return { ...vazio, situacao: "sem-voz" };
@@ -164,7 +166,7 @@ export async function testarPausaNativa(sintetizador: SintetizadorDeFala | null,
 
   await relogio.esperar(1500); // deixa a voz começar a falar
 
-  if (terminou) return { ...vazio, situacao: "erro", erro: erro ?? "A fala acabou antes de o teste pausar." };
+  if (terminou) return { ...vazio, situacao: "erro", erro: erro ?? tx("A fala acabou antes de o teste pausar.") };
 
   sintetizador.pause();
   await relogio.esperar(600);
@@ -205,23 +207,23 @@ export type DadosDoRelatorio = {
   quando: string;
 };
 
-const sim = (v: boolean) => (v ? "sim" : "não");
+const sim = (v: boolean) => (v ? "sim" : tx("não"));
 
 /** O texto do relatório, para copiar e colar. Só tem o que o aparelho informa e o que a pessoa marcou. */
 export function montarRelatorio(d: DadosDoRelatorio): string {
   const linhas = [
-    "Relatório de voz do ACESSO",
-    `Data: ${d.quando}`,
-    `Navegador: ${d.navegador}`,
-    `Sistema: ${d.plataforma} | idioma ${d.idioma} | ${d.online ? "com internet" : "sem internet"}`,
+    tx("Relatório de voz do ACESSO"),
+    tx`Data: ${d.quando}`,
+    tx`Navegador: ${d.navegador}`,
+    tx`Sistema: ${d.plataforma} | idioma ${d.idioma} | ${d.online ? tx("com internet") : tx("sem internet")}`,
     "",
-    "Suporte:",
-    `- Síntese de fala: ${sim(d.suporte.sintese)}`,
-    `- Destaque por palavra (CSS Custom Highlight API): ${sim(d.suporte.destaquePorPalavra)}`,
-    `- Reconhecimento de fala (ditado e comandos): ${sim(d.suporte.reconhecimentoDeFala)}`,
+    tx("Suporte:"),
+    tx`- Síntese de fala: ${sim(d.suporte.sintese)}`,
+    tx`- Destaque por palavra (CSS Custom Highlight API): ${sim(d.suporte.destaquePorPalavra)}`,
+    tx`- Reconhecimento de fala (ditado e comandos): ${sim(d.suporte.reconhecimentoDeFala)}`,
     "",
-    `Vozes: ${d.vozes.total} no total; ${d.vozes.portugues} em português (${d.vozes.locaisEmPortugues} locais, ${d.vozes.deRedeEmPortugues} de rede). Padrão do aparelho: ${d.vozes.padrao ?? "não informada"}.`,
-    `Voz testada: ${d.vozEscolhida ? `${d.vozEscolhida.name} (${d.vozEscolhida.lang}, ${d.vozEscolhida.localService ? "local" : "de rede"})` : "a padrão do navegador"}.`,
+    tx`Vozes: ${d.vozes.total} no total; ${d.vozes.portugues} em português (${d.vozes.locaisEmPortugues} locais, ${d.vozes.deRedeEmPortugues} de rede). Padrão do aparelho: ${d.vozes.padrao ?? tx("não informada")}.`,
+    tx`Voz testada: ${d.vozEscolhida ? `${d.vozEscolhida.name} (${d.vozEscolhida.lang}, ${d.vozEscolhida.localService ? "local" : tx("de rede")})` : tx("a padrão do navegador")}.`,
     "",
   ];
 
@@ -229,11 +231,11 @@ export function montarRelatorio(d: DadosDoRelatorio): string {
     const p = d.palavras;
 
     linhas.push(
-      "Teste de palavra por palavra:",
+      tx("Teste de palavra por palavra:"),
       p.situacao === "sem-voz"
-        ? "- Não executado: o navegador não tem síntese de fala."
-        : `- ${p.palavrasInformadas} de ${p.totalDePalavras} palavras informadas${p.primeiroEventoMs !== null ? `; primeiro evento em ${p.primeiroEventoMs} ms` : "; nenhum evento de palavra chegou"}; a fala ${p.terminou ? "terminou" : "não terminou no tempo do teste"}${p.erro ? `; erro: ${p.erro}` : ""}.`,
-      `- Veredito: ${p.situacao !== "executado" ? "inconclusivo" : p.palavrasInformadas >= Math.ceil(p.totalDePalavras * 0.8) ? "esta voz informa as palavras (destaque exato)" : p.palavrasInformadas > 0 ? "esta voz informa só parte das palavras" : "esta voz NÃO informa as palavras (o ACESSO usa o destaque aproximado)"}.`,
+        ? tx("- Não executado: o navegador não tem síntese de fala.")
+        : tx`- ${p.palavrasInformadas} de ${p.totalDePalavras} palavras informadas${p.primeiroEventoMs !== null ? tx`; primeiro evento em ${p.primeiroEventoMs} ms` : tx("; nenhum evento de palavra chegou")}; a fala ${p.terminou ? tx("terminou") : tx("não terminou no tempo do teste")}${p.erro ? tx`; erro: ${p.erro}` : ""}.`,
+      tx`- Veredito: ${p.situacao !== "executado" ? tx("inconclusivo") : p.palavrasInformadas >= Math.ceil(p.totalDePalavras * 0.8) ? tx("esta voz informa as palavras (destaque exato)") : p.palavrasInformadas > 0 ? tx("esta voz informa só parte das palavras") : tx("esta voz NÃO informa as palavras (o ACESSO usa o destaque aproximado)")}.`,
       "",
     );
   }
@@ -242,21 +244,21 @@ export function montarRelatorio(d: DadosDoRelatorio): string {
     const p = d.pausa;
 
     linhas.push(
-      "Teste de pausa nativa (pause/resume do navegador, sem a pausa por reinício do ACESSO):",
+      tx("Teste de pausa nativa (pause/resume do navegador, sem a pausa por reinício do ACESSO):"),
       p.situacao === "sem-voz"
-        ? "- Não executado: o navegador não tem síntese de fala."
-        : `- Marcou como pausado: ${sim(p.marcouPausado)}; pause() cancelou a fala: ${sim(p.pausaCancelouAFala)}; retomou até o fim: ${sim(p.retomouAteOFim)}${p.estadoAoDesistir ? `; ao desistir, o navegador dizia falando=${sim(p.estadoAoDesistir.falando)} e pausado=${sim(p.estadoAoDesistir.pausado)}` : ""}${p.erro ? `; erro: ${p.erro}` : ""}.`,
-      `- Veredito: ${p.situacao !== "executado" ? "inconclusivo" : p.pausaCancelouAFala ? "pause() CANCELA a fala neste aparelho (a pausa por reinício do ACESSO é necessária)" : p.retomouAteOFim ? "pause() e resume() funcionam" : "pause() funcionou, mas a fala NÃO voltou ao retomar (trava ao continuar)"}.`,
+        ? tx("- Não executado: o navegador não tem síntese de fala.")
+        : tx`- Marcou como pausado: ${sim(p.marcouPausado)}; pause() cancelou a fala: ${sim(p.pausaCancelouAFala)}; retomou até o fim: ${sim(p.retomouAteOFim)}${p.estadoAoDesistir ? tx`; ao desistir, o navegador dizia falando=${sim(p.estadoAoDesistir.falando)} e pausado=${sim(p.estadoAoDesistir.pausado)}` : ""}${p.erro ? tx`; erro: ${p.erro}` : ""}.`,
+      tx`- Veredito: ${p.situacao !== "executado" ? tx("inconclusivo") : p.pausaCancelouAFala ? tx("pause() CANCELA a fala neste aparelho (a pausa por reinício do ACESSO é necessária)") : p.retomouAteOFim ? tx("pause() e resume() funcionam") : tx("pause() funcionou, mas a fala NÃO voltou ao retomar (trava ao continuar)")}.`,
       "",
     );
   }
 
   linhas.push(
-    "Na leitura de verdade do ACESSO (marcado por quem testou):",
-    `- Destaque: ${d.observacoes.destaque || "não informado"}`,
-    `- Pausar: ${d.observacoes.pausa || "não informado"}`,
-    `- Continuar: ${d.observacoes.continuar || "não informado"}`,
-    `- Comentário: ${d.observacoes.comentario.trim() || "(nenhum)"}`,
+    tx("Na leitura de verdade do ACESSO (marcado por quem testou):"),
+    tx`- Destaque: ${d.observacoes.destaque ? tx(d.observacoes.destaque) : tx("não informado")}`,
+    tx`- Pausar: ${d.observacoes.pausa ? tx(d.observacoes.pausa) : tx("não informado")}`,
+    tx`- Continuar: ${d.observacoes.continuar ? tx(d.observacoes.continuar) : tx("não informado")}`,
+    tx`- Comentário: ${d.observacoes.comentario.trim() || tx("(nenhum)")}`,
   );
 
   return linhas.join("\n");

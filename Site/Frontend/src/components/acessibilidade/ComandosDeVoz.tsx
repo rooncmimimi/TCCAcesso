@@ -9,9 +9,10 @@ import { EVENTO_PEDIR_COMANDO_DE_VOZ, useComandoDeVoz } from "@/hooks/useComando
 import { useEstadoDoMicrofone } from "@/hooks/useEstadoDoMicrofone";
 import { useSessao } from "@/hooks/useSessao";
 import { useVoz } from "@/hooks/useVoz";
-import { EXEMPLOS_DE_COMANDOS, interpretarComando, type Comando } from "@/lib/comandosDeVoz";
+import { exemplosDeComandos, interpretarComando, type Comando } from "@/lib/comandosDeVoz";
 import { comoLiberarOMicrofone } from "@/lib/microfone";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /** Acha, na página, o botão ou link cujo nome começa com algum dos termos (e está ativo). */
 function acharControle(termos: RegExp): HTMLElement | null {
@@ -47,7 +48,7 @@ export function ComandosDeVoz() {
         case "voltar":
           window.history.back();
 
-          return "Voltando.";
+          return tx("Voltando.");
         case "proxima-pagina": {
           const botao = acharControle(/pr[oó]xima/i);
 
@@ -91,7 +92,7 @@ export function ComandosDeVoz() {
         case "recusado":
           return comando.motivo;
         default:
-          return t("acessibilidade.comandosDeVoz.naoEntendiTentePorExemplo", { var1: ouvido, var2: EXEMPLOS_DE_COMANDOS.slice(0, 3).join(", ") });
+          return t("acessibilidade.comandosDeVoz.naoEntendiTentePorExemplo", { var1: ouvido, var2: exemplosDeComandos().slice(0, 3).join(", ") });
       }
     },
     [navigate, pararLeitura, rascunho, salvar, t],
@@ -162,7 +163,7 @@ export function ComandosDeVoz() {
           {voz.erro ? <p className="text-sm font-medium text-destructive">{voz.erro}</p> : null}
           {resposta ? (
             <>
-              {resposta.ouvido ? <p className="text-xs text-muted-foreground">Ouvi: “{resposta.ouvido}”</p> : null}
+              {resposta.ouvido ? <p className="text-xs text-muted-foreground">{tx("Ouvi: “")}{resposta.ouvido}”</p> : null}
               <p className={`text-sm font-semibold ${resposta.erro ? "text-destructive" : ""}`}>{resposta.texto}</p>
             </>
           ) : null}

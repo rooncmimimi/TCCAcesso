@@ -1,3 +1,5 @@
+import { idiomaDasFrases, localeAtual } from "@/i18n/frases";
+
 /**
  * Países em ISO 3166-1 alpha-2, com o nome em português.
  *
@@ -261,8 +263,33 @@ export const PAISES: Pais[] = [
   { codigo: "ZW", nome: "Zimbábue" },
 ];
 
-/** Mapa código → nome, para mostrar o país de quem já tem um salvo sem varrer a lista. */
+/** Mapa código → nome em português. Para mostrar na tela, use `nomeDoPais`. */
 export const PAIS_POR_CODIGO = new Map(PAISES.map((p) => [p.codigo, p.nome]));
+
+const NOMEADORES = new Map<string, Intl.DisplayNames>();
+
+/** O nome do país no idioma do site. Em português vale a lista daqui; nos outros, o do navegador. */
+export function nomeDoPais(codigo: string): string | undefined {
+  const emPortugues = PAIS_POR_CODIGO.get(codigo);
+  if (!emPortugues || idiomaDasFrases() === "pt") return emPortugues;
+
+  const locale = localeAtual();
+  let nomes = NOMEADORES.get(locale);
+  if (!nomes) {
+    nomes = new Intl.DisplayNames([locale], { type: "region" });
+    NOMEADORES.set(locale, nomes);
+  }
+  return nomes.of(codigo) ?? emPortugues;
+}
+
+/** A lista com os nomes no idioma do site, na ordem alfabética desse idioma. */
+export function paisesNoIdioma(): Pais[] {
+  if (idiomaDasFrases() === "pt") return PAISES;
+  const locale = localeAtual();
+  return PAISES.map(({ codigo, nome }) => ({ codigo, nome: nomeDoPais(codigo) ?? nome })).sort((a, b) =>
+    a.nome.localeCompare(b.nome, locale),
+  );
+}
 
 /** O código existe na lista? Usado para só aceitar país escolhido, nunca texto solto. */
 export function ehCodigoDePais(codigo: string): boolean {

@@ -1,6 +1,7 @@
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { competenciasNoTexto } from "@/dados/competencias";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * "Entenda estas expressões": explica as competências que o texto de requisitos usa ("boa
@@ -15,7 +16,7 @@ export function ExplicacaoDeRequisitos({ texto }: { texto: string | null | undef
 
   return (
     <details className="mt-2 rounded-lg border border-border bg-muted/30 text-sm">
-      <summary className="min-h-11 cursor-pointer px-3 py-2.5 font-semibold text-primary">Entenda estas expressões ({achadas.map((c) => c.termo).join(", ")})</summary>
+      <summary className="min-h-11 cursor-pointer px-3 py-2.5 font-semibold text-primary">{tx("Entenda estas expressões (")}{achadas.map((c) => c.termo).join(", ")})</summary>
       <ul className="space-y-4 border-t border-border px-3 py-3">
         {achadas.map((c) => (
           <li key={c.id}>

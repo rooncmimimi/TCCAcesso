@@ -17,7 +17,7 @@ import type { Variaveis } from "@/i18n/traduzir";
  *
  *     // pt: "Abra uma <1>vaga</1> para se candidatar."
  *     // en: "To apply, open a <1>job</1>."
- *     <Frase chave="simulador.abraUmaVaga" partes={[(texto) => <Link to="/vagas">{texto}</Link>]} />
+ *     <Frase chave="exemplo.abraUmaVaga" partes={[(texto) => <Link to="/vagas">{texto}</Link>]} />
  */
 export function Frase({
   chave,

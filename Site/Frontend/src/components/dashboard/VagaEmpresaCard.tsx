@@ -36,6 +36,7 @@ import { formatarData, formatarSalario } from "@/utils/formatacao";
 import { ROTULO_CONTRATO } from "./constantesVaga";
 import { EditarVagaDialog } from "./EditarVagaDialog";
 import type { ContratoVaga, StatusVaga, Vaga } from "@/types";
+import { tx } from "@/i18n/frases";
 
 const MENSAGEM_STATUS: Record<StatusVaga, ChaveBase> = {
   aberta: "dashboard.vagaEmpresaCard.vagaReaberta",
@@ -97,13 +98,13 @@ export function VagaEmpresaCard({
                   <MapPin className="size-3.5 shrink-0" aria-hidden="true" /> {local}
                 </span>
               ) : null}
-              <span>{vaga.modalidade}</span>
+              <span>{t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase)}</span>
               {vaga.contrato ? <span>{ROTULO_CONTRATO[vaga.contrato as ContratoVaga]}</span> : null}
               <span>{formatarSalario(typeof vaga.salario === "string" ? Number(vaga.salario) : vaga.salario)}</span>
             </p>
             {publicadaEm ? (
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="size-3.5 shrink-0" aria-hidden="true" /> Publicada em {formatarData(publicadaEm)}
+                <Calendar className="size-3.5 shrink-0" aria-hidden="true" />{" "}{tx("Publicada em")}{" "}{formatarData(publicadaEm)}
               </p>
             ) : null}
           </div>
@@ -111,7 +112,7 @@ export function VagaEmpresaCard({
             <StatusBadge status={vaga.status} />
             <Badge variant="outline" className="gap-1 font-medium">
               <Users className="size-3.5" aria-hidden="true" /> {vaga.totalCandidaturas ?? 0}{" "}
-              {vaga.totalCandidaturas === 1 ? "candidatura" : "candidaturas"}
+              {vaga.totalCandidaturas === 1 ? tx("candidatura") : tx("candidaturas")}
             </Badge>
           </div>
         </div>
@@ -189,7 +190,7 @@ export function VagaEmpresaCard({
                 size="sm"
                 variant="outline"
                 className="min-h-9 gap-1 text-destructive hover:text-destructive"
-                aria-label={`Excluir vaga ${vaga.titulo}`}
+                aria-label={tx`Excluir vaga ${vaga.titulo}`}
               >
                 <Trash2 className="size-4" aria-hidden="true" /> {t("post.excluir")}
               </Button>

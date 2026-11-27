@@ -11,6 +11,7 @@ import adminService from "@/services/admin.service";
 import denunciaService, { MOTIVO_ROTULO } from "@/services/denuncia.service";
 import { useIdioma } from "@/hooks/useIdioma";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
+import { tx, localeAtual } from "@/i18n/frases";
 
 export const Route = createFileRoute("/admin/usuarios/$usuarioId")({
   head: () => ({
@@ -62,7 +63,7 @@ function AdminUsuarioDetalhe() {
         <h1 className="text-2xl font-extrabold sm:text-3xl">{usuario.nome}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge tom={usuario.ativo ? "sucesso" : "perigo"}>
-            {usuario.ativo ? "Ativo" : "Bloqueado"}
+            {usuario.ativo ? tx("Ativo") : tx("Bloqueado")}
           </StatusBadge>
           <Link
             to="/perfil/$usuarioId"
@@ -82,18 +83,18 @@ function AdminUsuarioDetalhe() {
           </div>
           <div>
             <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.usuariosusuarioId.tipo")}</p>
-            <p className="mt-1 text-sm capitalize">{usuario.tipoUsuario}</p>
+            <p className="mt-1 text-sm capitalize">{tx(usuario.tipoUsuario)}</p>
           </div>
           <div>
             <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.usuariosusuarioId.cadastradoEm")}</p>
             <p className="mt-1 text-sm">
-              {usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString("pt-BR") : "—"}
+              {usuario.criadoEm ? new Date(usuario.criadoEm).toLocaleDateString(localeAtual()) : "—"}
             </p>
           </div>
           <div>
             <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.usuariosusuarioId.ultimaAtividade")}</p>
             <p className="mt-1 text-sm">
-              {usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString("pt-BR") : t("admin.usuariosusuarioId.nuncaAcessou")}
+              {usuario.ultimoLogin ? new Date(usuario.ultimoLogin).toLocaleString(localeAtual()) : t("admin.usuariosusuarioId.nuncaAcessou")}
             </p>
           </div>
         </CardContent>
@@ -115,7 +116,7 @@ function AdminUsuarioDetalhe() {
                   >
                     {MOTIVO_ROTULO[denuncia.motivo]}
                   </Link>{" "}
-                  <span className="text-muted-foreground">— {denuncia.status}</span>
+                  <span className="text-muted-foreground">— {tx(denuncia.status)}</span>
                 </li>
               ))}
             </ul>

@@ -18,6 +18,8 @@ import { limparEtapa } from "@/lib/etapaCadastro";
 import { cn } from "@/lib/utils";
 import { useIdioma } from "@/hooks/useIdioma";
 import { Frase } from "@/i18n/Frase";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx } from "@/i18n/frases";
 
 /**
  * Peças usadas pelos dois cadastros, que a partir da separação em `/cadastro/candidato` e
@@ -65,8 +67,8 @@ export function NavegacaoEtapa({
   rotuloAvancar,
   aoVoltar,
   acaoSecundaria,
-  rotuloVoltar = "Voltar",
-  rotuloEnviando = "Enviando…",
+  rotuloVoltar = tx("Voltar"),
+  rotuloEnviando = tx("Enviando…"),
 }: {
   primeiraEtapa: boolean;
   enviando: boolean;
@@ -141,11 +143,11 @@ export function AceiteTermos({
   dicaObrigatorio?: string;
 }) {
   const t = textos ?? {
-    antes: "Li e aceito os",
-    linkUso: "Termos de Uso",
+    antes: tx("Li e aceito os"),
+    linkUso: tx("Termos de Uso"),
     entre: "e a",
-    linkPrivacidade: "Política de Privacidade",
-    depois: "do ACESSO.",
+    linkPrivacidade: tx("Política de Privacidade"),
+    depois: tx("do ACESSO."),
   };
 
   return (
@@ -220,7 +222,7 @@ export function BotaoFinalizar({
         </>
       ) : (
         <>
-          {seguirParaEmpresa ? "Continuar para o cadastro da empresa" : t.finalizar}{" "}
+          {seguirParaEmpresa ? tx("Continuar para o cadastro da empresa") : t.finalizar}{" "}
           <ArrowRight aria-hidden="true" />
         </>
       )}
@@ -281,7 +283,7 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
           </>
         ) : (
           <>
-            Finalizar cadastro <ArrowRight aria-hidden="true" />
+            {tx("Finalizar cadastro")}{" "}<ArrowRight aria-hidden="true" />
           </>
         )}
       </Button>
@@ -289,6 +291,18 @@ export function EtapaAcessibilidade({ passos, indice }: { passos: readonly strin
   );
 }
 
+
+/**
+ * O que falta depois de criar a conta da empresa. O texto guarda a CHAVE, e quem desenha a lista a
+ * traduz no momento de mostrar — antes ela era escrita direto na tela, e a pessoa lia
+ * "cadastro.comuns.dadosDaEmpresa" em vez de "Dados da empresa".
+ */
+const ETAPAS_DEPOIS_DO_CADASTRO_DA_EMPRESA: ReadonlyArray<{ feito: boolean; texto: ChaveBase; agora?: boolean }> = [
+  { feito: true, texto: "cadastro.comuns.dadosDaEmpresa" },
+  { feito: false, texto: "cadastro.comuns.confirmarOEMail", agora: true },
+  { feito: false, texto: "cadastro.comuns.entrarNaSuaConta" },
+  { feito: false, texto: "cadastro.comuns.analiseDoCadastroPelaEquipeDo" },
+];
 
 /**
  * Mostrada no lugar do formulário quando o cadastro **de empresa** é criado com confirmação de
@@ -347,12 +361,7 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
       </p>
 
       <ol className="mt-5 space-y-3" aria-label={t("cadastro.comuns.oQueFaltaParaTerminarOCadastro")}>
-        {[
-          { feito: true, texto: "cadastro.comuns.dadosDaEmpresa" },
-          { feito: false, texto: "cadastro.comuns.confirmarOEMail", agora: true },
-          { feito: false, texto: "cadastro.comuns.entrarNaSuaConta" },
-          { feito: false, texto: "cadastro.comuns.analiseDoCadastroPelaEquipeDo" },
-        ].map((item, indice) => (
+        {ETAPAS_DEPOIS_DO_CADASTRO_DA_EMPRESA.map((item, indice) => (
           <li key={item.texto} className="flex items-center gap-3 text-sm">
             <span
               aria-hidden="true"
@@ -366,11 +375,11 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
               {item.feito ? <Check className="size-3.5" /> : indice + 1}
             </span>
             <span className={item.agora ? "font-semibold text-foreground" : "text-muted-foreground"}>
-              {item.texto}
+              {t(item.texto)}
             </span>
             {/* Estado em texto, nunca só pela cor nem pelo ✓. */}
             <span className="sr-only">
-              {item.feito ? "concluído" : item.agora ? "é o que falta agora" : "ainda não feito"}
+              {item.feito ? tx("concluído") : item.agora ? tx("é o que falta agora") : tx("ainda não feito")}
             </span>
           </li>
         ))}
@@ -399,9 +408,9 @@ export function ConfirmeSeuEmail({ email }: { email: string }) {
             <Loader2 className="animate-spin" aria-hidden="true" /> {t("cadastro.comuns.reenviando2")}
           </>
         ) : reenviado ? (
-          "E-mail reenviado"
+          tx("E-mail reenviado")
         ) : (
-          "Reenviar e-mail"
+          tx("Reenviar e-mail")
         )}
       </Button>
     </div>

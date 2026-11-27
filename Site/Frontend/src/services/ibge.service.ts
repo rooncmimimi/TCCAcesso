@@ -1,3 +1,5 @@
+import { tx } from "@/i18n/frases";
+
 /**
  * Cidades brasileiras pela API pública do IBGE, só para sugerir e autocompletar: o campo de cidade
  * continua sendo texto livre em todo o Site (ver `CidadeAutocomplete`). O cache fica em memória no
@@ -23,7 +25,7 @@ export async function buscarCidadesPorUf(uf: string): Promise<string[]> {
   if (emCache) return emCache;
 
   const resposta = await fetch(`${BASE_URL}/estados/${sigla}/municipios`);
-  if (!resposta.ok) throw new Error("Não foi possível carregar as cidades do IBGE.");
+  if (!resposta.ok) throw new Error(tx("Não foi possível carregar as cidades do IBGE."));
 
   const dados: MunicipioIbge[] = await resposta.json();
   const nomes = dados.map((m) => m.nome).sort((a, b) => a.localeCompare(b, "pt-BR"));
@@ -42,7 +44,7 @@ export async function buscarTodasAsCidades(): Promise<string[]> {
 
   promessaGlobal = fetch(`${BASE_URL}/municipios`)
     .then((resposta) => {
-      if (!resposta.ok) throw new Error("Não foi possível carregar as cidades do IBGE.");
+      if (!resposta.ok) throw new Error(tx("Não foi possível carregar as cidades do IBGE."));
       return resposta.json();
     })
     .then((dados: MunicipioIbge[]) => {

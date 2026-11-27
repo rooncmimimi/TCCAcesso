@@ -15,42 +15,48 @@ import type {
   RecursoAcessibilidadeVaga,
   StatusVaga,
 } from "@/types";
+import { tx } from "@/i18n/frases";
 
 /** Espelham exatamente os ENUMs validados pelo backend (`Site/Backend/src/validators/vagaValidator.js`). */
 export const MODALIDADES: ModalidadeVaga[] = ["presencial", "hibrido", "remoto"];
 export const CONTRATOS: ContratoVaga[] = ["clt", "pj", "estagio", "jovem_aprendiz", "temporario"];
 export const STATUS_VAGA: StatusVaga[] = ["aberta", "pausada", "encerrada"];
 
+/** O contrato como se lê na tela; valor fora da lista aparece como veio. */
+export function rotuloDoContrato(contrato: string): string {
+  return ROTULO_CONTRATO[contrato as ContratoVaga] ?? tx(contrato);
+}
+
 export const ROTULO_CONTRATO: Record<ContratoVaga, string> = {
   clt: "CLT",
   pj: "PJ",
-  estagio: "Estágio",
-  jovem_aprendiz: "Jovem aprendiz",
-  temporario: "Temporário",
+  get estagio() { return tx("Estágio"); },
+  get jovem_aprendiz() { return tx("Jovem aprendiz"); },
+  get temporario() { return tx("Temporário"); },
 };
 
 export const ROTULO_STATUS_VAGA: Record<StatusVaga, string> = {
-  aberta: "Aberta",
-  pausada: "Arquivada",
-  encerrada: "Encerrada",
+  get aberta() { return tx("Aberta"); },
+  get pausada() { return tx("Arquivada"); },
+  get encerrada() { return tx("Encerrada"); },
 };
 
 /** Público-alvo da vaga: é o único campo que define se ela é exclusiva para PCD. */
 export const PUBLICO_ALVO: PublicoAlvoVaga[] = ["geral", "pcd", "cinquenta_mais", "pcd_cinquenta_mais"];
 
 export const ROTULO_PUBLICO_ALVO: Record<PublicoAlvoVaga, string> = {
-  geral: "Aberta a todos os públicos",
-  pcd: "Exclusiva para pessoas com deficiência",
-  cinquenta_mais: "Exclusiva para pessoas 50+",
-  pcd_cinquenta_mais: "Para pessoas com deficiência e 50+",
+  get geral() { return tx("Aberta a todos os públicos"); },
+  get pcd() { return tx("Exclusiva para pessoas com deficiência"); },
+  get cinquenta_mais() { return tx("Exclusiva para pessoas 50+"); },
+  get pcd_cinquenta_mais() { return tx("Para pessoas com deficiência e 50+"); },
 };
 
 /** Rótulo curto, usado em badge de card (espaço reduzido). */
 export const ROTULO_PUBLICO_ALVO_CURTO: Record<PublicoAlvoVaga, string> = {
-  geral: "Todos os públicos",
-  pcd: "Exclusiva PCD",
-  cinquenta_mais: "Exclusiva 50+",
-  pcd_cinquenta_mais: "PCD e 50+",
+  get geral() { return tx("Todos os públicos"); },
+  get pcd() { return tx("Exclusiva PCD"); },
+  get cinquenta_mais() { return tx("Exclusiva 50+"); },
+  get pcd_cinquenta_mais() { return tx("PCD e 50+"); },
 };
 
 /**
@@ -69,14 +75,14 @@ export const RECURSOS_ACESSIBILIDADE: RecursoAcessibilidadeVaga[] = [
 ];
 
 export const ROTULO_RECURSO_ACESSIBILIDADE: Record<RecursoAcessibilidadeVaga, string> = {
-  interprete_libras: "Intérprete de Libras",
-  tecnologia_assistiva: "Tecnologia assistiva",
-  ambiente_fisico_acessivel: "Ambiente físico acessível",
-  banheiro_adaptado: "Banheiro adaptado",
-  elevador_rampa: "Elevador ou rampa de acesso",
-  jornada_adaptavel: "Jornada adaptável",
-  ferramentas_digitais_acessiveis: "Ferramentas digitais acessíveis",
-  outro: "Outro recurso (ver descrição)",
+  get interprete_libras() { return tx("Intérprete de Libras"); },
+  get tecnologia_assistiva() { return tx("Tecnologia assistiva"); },
+  get ambiente_fisico_acessivel() { return tx("Ambiente físico acessível"); },
+  get banheiro_adaptado() { return tx("Banheiro adaptado"); },
+  get elevador_rampa() { return tx("Elevador ou rampa de acesso"); },
+  get jornada_adaptavel() { return tx("Jornada adaptável"); },
+  get ferramentas_digitais_acessiveis() { return tx("Ferramentas digitais acessíveis"); },
+  get outro() { return tx("Outro recurso (ver descrição)"); },
 };
 
 export const ICONE_RECURSO_ACESSIBILIDADE: Record<RecursoAcessibilidadeVaga, LucideIcon> = {

@@ -9,6 +9,7 @@ import { useIdioma } from "@/hooks/useIdioma";
 import { LogsTabela } from "@/components/admin/LogsTabela";
 import { formatarDataHora } from "@/utils/formatacao";
 import type { ComentarioAdmin } from "@/services/admin.service";
+import { tx } from "@/i18n/frases";
 
 export function DetalheComentarioSheet({
   comentario,
@@ -28,7 +29,7 @@ export function DetalheComentarioSheet({
         {comentario && (
           <>
             <SheetHeader>
-              <SheetTitle>Comentário de {comentario.usuario?.nome ?? t("admin.detalheComentarioSheet.usuario")}</SheetTitle>
+              <SheetTitle>{tx("Comentário de")}{" "}{comentario.usuario?.nome ?? t("admin.detalheComentarioSheet.usuario")}</SheetTitle>
               <SheetDescription>
                 {dataCriacao ? t("admin.detalheComentarioSheet.comentadoEm", { var1: formatarDataHora(dataCriacao) }) : t("admin.detalheComentarioSheet.dataNaoRegistrada")}
                 {comentario.usuario?.email ? ` · ${comentario.usuario.email}` : ""}

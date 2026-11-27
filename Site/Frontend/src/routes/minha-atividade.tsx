@@ -19,6 +19,7 @@ import { atividadeService } from "@/services/atividade.service";
 import type { InteracaoFeedItem } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
+import { tx } from "@/i18n/frases";
 
 export const Route = createFileRoute("/minha-atividade")({
   head: () => ({
@@ -129,7 +130,7 @@ function MinhaAtividade() {
                 <ul className="divide-y">
                   {data.seguindo.empresas.itens.map((vinculo) => {
                     const empresa = vinculo.empresa;
-                    const nome = empresa?.nomeFantasia ?? empresa?.razaoSocial ?? "Empresa";
+                    const nome = empresa?.nomeFantasia ?? empresa?.razaoSocial ?? tx("Empresa");
                     return (
                       <li key={vinculo.id}>
                         <Link

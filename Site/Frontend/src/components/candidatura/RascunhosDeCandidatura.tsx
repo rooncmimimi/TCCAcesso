@@ -8,6 +8,7 @@ import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
 import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx } from "@/i18n/frases";
 
 const ROTULO_DA_ETAPA = {
   mensagem: "candidatura.etapa.mensagem",
@@ -57,7 +58,7 @@ export function RascunhosDeCandidatura() {
             </div>
             <div className="flex gap-2">
               <Button size="sm" className="min-h-11" onClick={() => setContinuando({ id: r.vaga!.id, titulo: r.vaga!.titulo })} disabled={r.vaga!.status !== "aberta"}>
-                {r.vaga!.status === "aberta" ? "Continuar" : "Vaga encerrada"}
+                {r.vaga!.status === "aberta" ? tx("Continuar") : tx("Vaga encerrada")}
               </Button>
               <Button size="sm" variant="ghost" className="min-h-11" onClick={() => descartar.mutate(r.vaga!.id)} disabled={descartar.isPending}>
                 {t("candidatura.rascunhosDeCandidatura.descartar")}

@@ -22,6 +22,7 @@ import { DetalheComentarioSheet } from "@/components/admin/DetalheComentarioShee
 import { extrairMensagemErro } from "@/services/api";
 import { listarComentarios, removerComentario, type ComentarioAdmin } from "@/services/admin.service";
 import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
+import { tx } from "@/i18n/frases";
 
 type RespostaLista = Awaited<ReturnType<typeof listarComentarios>>;
 
@@ -61,7 +62,7 @@ export function ComentariosTabela() {
       const status = (erro as AxiosError)?.response?.status;
 
       if (status === 409 || status === 404) {
-        toast.info(status === 409 ? "Este comentário já havia sido removido." : t("admin.comentariosTabela.esteComentarioNaoExisteMais"));
+        toast.info(status === 409 ? tx("Este comentário já havia sido removido.") : t("admin.comentariosTabela.esteComentarioNaoExisteMais"));
         return;
       }
 

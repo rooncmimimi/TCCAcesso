@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Vaga } from "@/types";
 import { cn } from "@/lib/utils";
-import {
-  ICONE_RECURSO_ACESSIBILIDADE,
-} from "@/components/dashboard/constantesVaga";
+import { ICONE_RECURSO_ACESSIBILIDADE, rotuloDoContrato } from "@/components/dashboard/constantesVaga";
+import { tx } from "@/i18n/frases";
 
 export function VagaCard({
   vaga,
@@ -63,7 +62,7 @@ export function VagaCard({
                   <span className="sr-only">{t("vaga.empresaVerificada")}</span>
                 </span>
               )}
-              {vaga.contrato ? <span>· {vaga.contrato}</span> : null}
+              {vaga.contrato ? <span>· {rotuloDoContrato(vaga.contrato)}</span> : null}
             </p>
             <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="size-4 shrink-0" aria-hidden="true" /> {t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase)}
@@ -93,7 +92,7 @@ export function VagaCard({
                 })}
               <li>
                 <Badge variant="secondary" className="font-medium">
-                  {vaga.status}
+                  {tx(vaga.status)}
                 </Badge>
               </li>
             </ul>

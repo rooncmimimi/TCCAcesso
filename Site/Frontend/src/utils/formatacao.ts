@@ -2,35 +2,19 @@
  * Funções utilitárias de formatação usadas na interface.
  */
 
+import { localeAtual, tx } from "@/i18n/frases";
 import type { PorteEmpresa } from "@/types";
 
-const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-
-const formatadorData = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "long",
-  year: "numeric",
-});
-
-const formatadorDataCurta = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
-const formatadorHoraCurta = new Intl.DateTimeFormat("pt-BR", {
-  hour: "2-digit",
-  minute: "2-digit",
-});
+// Criados a cada uso: o idioma pode mudar com a página aberta.
+const formatadorMoeda = () => new Intl.NumberFormat(localeAtual(), { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const formatadorData = () => new Intl.DateTimeFormat(localeAtual(), { day: "2-digit", month: "long", year: "numeric" });
+const formatadorDataCurta = () => new Intl.DateTimeFormat(localeAtual(), { day: "2-digit", month: "2-digit", year: "numeric" });
+const formatadorHoraCurta = () => new Intl.DateTimeFormat(localeAtual(), { hour: "2-digit", minute: "2-digit" });
 
 /** Formata um salário em reais; retorna "A combinar" quando não informado. */
 export function formatarSalario(valor?: number | null): string {
-  if (valor === null || valor === undefined) return "A combinar";
-  return formatadorMoeda.format(valor);
+  if (valor === null || valor === undefined) return tx("A combinar");
+  return formatadorMoeda().format(valor);
 }
 
 /**
@@ -55,7 +39,7 @@ export function formatarData(data?: string | Date | null): string {
   }
 
   if (Number.isNaN(referencia.getTime())) return "";
-  return formatadorData.format(referencia);
+  return formatadorData().format(referencia);
 }
 
 /**
@@ -66,13 +50,13 @@ export function formatarDataHora(data?: string | Date | null): string {
   if (!data) return "";
   const referencia = typeof data === "string" ? new Date(data) : data;
   if (Number.isNaN(referencia.getTime())) return "";
-  return `${formatadorDataCurta.format(referencia)} às ${formatadorHoraCurta.format(referencia)}`;
+  return tx`${formatadorDataCurta().format(referencia)} às ${formatadorHoraCurta().format(referencia)}`;
 }
 
 /** Retorna uma descrição relativa acessível, como "há 3 dias". */
-const AGORA_POR_IDIOMA: Record<string, string> = { pt: "agora mesmo", en: "just now", es: "ahora mismo" };
+const AGORA_POR_IDIOMA: Record<string, string> = { get pt() { return tx("agora mesmo"); }, en: "just now", es: "ahora mismo" };
 
-export function formatarTempoRelativo(data?: string | Date | null, locale: string = "pt-BR"): string {
+export function formatarTempoRelativo(data?: string | Date | null, locale: string = localeAtual()): string {
   if (!data) return "";
   const referencia = typeof data === "string" ? new Date(data) : data;
   if (Number.isNaN(referencia.getTime())) return "";
@@ -129,8 +113,8 @@ export function formatarTamanhoArquivo(bytes?: number | null): string {
  */
 export const PORTES_EMPRESA: { valor: PorteEmpresa; rotulo: string }[] = [
   { valor: "mei", rotulo: "MEI" },
-  { valor: "micro", rotulo: "Microempresa" },
-  { valor: "pequena", rotulo: "Pequena" },
-  { valor: "media", rotulo: "Média" },
-  { valor: "grande", rotulo: "Grande" },
+  { valor: "micro", get rotulo() { return tx("Microempresa"); } },
+  { valor: "pequena", get rotulo() { return tx("Pequena"); } },
+  { valor: "media", get rotulo() { return tx("Média"); } },
+  { valor: "grande", get rotulo() { return tx("Grande"); } },
 ];

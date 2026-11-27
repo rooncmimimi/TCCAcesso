@@ -16,6 +16,7 @@ import { empresasService } from "@/services/empresas.service";
 import { useIdioma } from "@/hooks/useIdioma";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { localeAtual } from "@/i18n/frases";
 
 export const Route = createFileRoute("/configuracoes/conta")({
   head: () => ({
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/configuracoes/conta")({
 function formatarDataLonga(iso?: string | null): string {
   if (!iso) return "—";
   try {
-    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(iso));
+    return new Intl.DateTimeFormat(localeAtual(), { dateStyle: "long" }).format(new Date(iso));
   } catch {
     return "—";
   }
@@ -87,7 +88,7 @@ function Conta() {
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase text-muted-foreground">{t("configuracoes.conta.tipoDeConta")}</dt>
-                <dd className="font-medium">{usuario ? RUBRICA_TIPO[usuario.tipo] ?? usuario.tipo : "—"}</dd>
+                <dd className="font-medium">{usuario ? (RUBRICA_TIPO[usuario.tipo] ? t(RUBRICA_TIPO[usuario.tipo]) : usuario.tipo) : "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase text-muted-foreground">{t("configuracoes.conta.contaCriadaEm")}</dt>

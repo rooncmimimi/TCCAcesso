@@ -4,6 +4,7 @@ import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { horaDoVencimento, minutosQueFaltam, situacaoDoPrazo } from "@/lib/prazoDoCodigo";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 type Props = {
   /** Instante (ms) em que o código foi enviado. */
@@ -45,7 +46,7 @@ export function PrazoDoCodigo({ enviadoEm, aoPedirMaisTempo, podePedir, ocupado 
     <div className="rounded-xl border bg-muted/40 p-3 text-sm" data-situacao-prazo={situacao}>
       <p className="flex items-start gap-2">
         <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <span>{situacao === "venceu" ? `Este código venceu às ${hora}.` : `Este código vale até às ${hora}.`}</span>
+        <span>{situacao === "venceu" ? tx`Este código venceu às ${hora}.` : tx`Este código vale até às ${hora}.`}</span>
       </p>
 
       {/* Anunciado uma vez: o texto só muda ao entrar em "acabando" e ao vencer, não a cada checagem. */}

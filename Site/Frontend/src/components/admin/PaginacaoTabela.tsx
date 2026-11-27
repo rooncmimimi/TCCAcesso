@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 type PaginacaoTabelaProps = {
   pagina: number;
@@ -16,7 +17,9 @@ export function PaginacaoTabela({ pagina, totalPaginas, total, onPaginaChange }:
   return (
     <div className="flex items-center justify-between gap-4 border-t px-4 py-3">
       <p className="text-sm text-muted-foreground">
-        Página {pagina} de {Math.max(totalPaginas, 1)} · {total} registro{total === 1 ? "" : "s"}
+        {total === 1
+          ? tx`Página ${pagina} de ${Math.max(totalPaginas, 1)} · ${total} registro`
+          : tx`Página ${pagina} de ${Math.max(totalPaginas, 1)} · ${total} registros`}
       </p>
       <div className="flex gap-2">
         <Button

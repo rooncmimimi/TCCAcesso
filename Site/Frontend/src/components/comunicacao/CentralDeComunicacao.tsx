@@ -1,44 +1,24 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState } from "react";
 import { Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { CartaoDeComunicacao } from "@/components/comunicacao/CartaoDeComunicacao";
 import { CARTOES_PADRAO, GRUPOS_DE_CARTOES } from "@/dados/cartoesDeComunicacao";
 import { useVoz } from "@/hooks/useVoz";
-import { TAMANHO_MAXIMO_DO_CARTAO, adicionarCartaoPessoal, lerCartoesPessoais, removerCartaoPessoal, type CartaoPessoal } from "@/lib/cartoesPessoais";
 import { useIdioma } from "@/hooks/useIdioma";
+import { localeAtual } from "@/i18n/frases";
 
 /**
- * Central de comunicação alternativa: cartões prontos (em grupos) e cartões da própria pessoa. Cada
- * cartão pode ser mostrado em tela cheia (letra enorme, para a outra pessoa ler), ouvido em voz alta
- * ou copiado. Os cartões criados ficam só neste navegador. Nenhum cartão é enviado por esta tela:
- * para usar numa conversa, a pessoa os encontra também dentro das Mensagens.
+ * Central de comunicação alternativa: cartões prontos, em grupos. Cada cartão pode ser mostrado em
+ * tela cheia (letra enorme, para a outra pessoa ler), ouvido em voz alta ou copiado. Nenhum cartão é
+ * enviado por esta tela: para usar numa conversa, a pessoa os encontra também dentro das Mensagens.
  */
 export function CentralDeComunicacao() {
   const { t } = useIdioma();
   const idBase = useId();
   const { falar } = useVoz();
-  const [pessoais, setPessoais] = useState<CartaoPessoal[]>(() => lerCartoesPessoais());
-  const [novo, setNovo] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
   const [mostrando, setMostrando] = useState<string | null>(null);
-
-  function criar(e: FormEvent) {
-    e.preventDefault();
-
-    const r = adicionarCartaoPessoal(novo);
-
-    if (r.ok) {
-      setPessoais(r.lista);
-      setNovo("");
-      setErro(null);
-    } else {
-      setErro(r.motivo);
-    }
-  }
 
   return (
     <div className="mt-6 space-y-8">
@@ -58,45 +38,11 @@ export function CentralDeComunicacao() {
         </section>
       ))}
 
-      <section aria-labelledby={`${idBase}-meus`} className="space-y-3">
-        <div>
-          <h2 id={`${idBase}-meus`} className="text-xl font-bold">
-            {t("comunicacao.centralDeComunicacao.meusCartoes")}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t("comunicacao.centralDeComunicacao.crieAsFrasesQueVoceMaisUsaElas")}</p>
-        </div>
-
-        <form onSubmit={criar} className="space-y-2 rounded-xl border border-border p-4">
-          <Label htmlFor={`${idBase}-novo`}>{t("comunicacao.centralDeComunicacao.novaFrase")}</Label>
-          <Input id={`${idBase}-novo`} value={novo} maxLength={TAMANHO_MAXIMO_DO_CARTAO} onChange={(e) => setNovo(e.target.value)} aria-describedby={erro ? `${idBase}-erro` : undefined} aria-invalid={erro ? true : undefined} placeholder={t("comunicacao.centralDeComunicacao.exPrefiroReceberAsPerguntasPor")} />
-          {erro ? (
-            <p id={`${idBase}-erro`} role="alert" className="text-sm font-medium text-destructive">
-              {erro}
-            </p>
-          ) : null}
-          <Button type="submit" className="min-h-11" disabled={!novo.trim()}>
-            {t("comunicacao.centralDeComunicacao.criarCartao")}
-          </Button>
-        </form>
-
-        {pessoais.length === 0 ? (
-          <p role="status" className="text-sm text-muted-foreground">
-            {t("comunicacao.centralDeComunicacao.voceAindaNaoCriouNenhumCartao")}
-          </p>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {pessoais.map((c) => (
-              <CartaoDeComunicacao key={c.id} texto={c.texto} aoMostrar={setMostrando} aoRemover={() => setPessoais(removerCartaoPessoal(c.id))} />
-            ))}
-          </ul>
-        )}
-      </section>
-
       <Dialog open={mostrando !== null} onOpenChange={(aberto) => (!aberto ? setMostrando(null) : undefined)}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
           <DialogTitle className="sr-only">{t("comunicacao.centralDeComunicacao.cartaoDeComunicacao")}</DialogTitle>
           <DialogDescription className="sr-only">{t("comunicacao.centralDeComunicacao.aFraseEmLetrasGrandesPara")}</DialogDescription>
-          <p className="py-8 text-center text-4xl font-extrabold leading-tight sm:text-5xl" lang="pt-BR">
+          <p className="py-8 text-center text-4xl font-extrabold leading-tight sm:text-5xl" lang={localeAtual()}>
             {mostrando}
           </p>
           <div className="flex flex-wrap justify-center gap-2">

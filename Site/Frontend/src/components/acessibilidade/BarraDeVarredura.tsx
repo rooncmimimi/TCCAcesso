@@ -8,6 +8,7 @@ import { dentroDeGrupo } from "@/lib/motorDeVarredura";
 import { LIMITES } from "@/lib/preferenciasMotoras";
 import type { Item } from "@/lib/varredura";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /** Contorno que acompanha o item destacado. Posicionado com `fixed`; nunca altera o elemento percorrido. */
 function Realce({ item, reduzirMovimento }: { item: Item | null; reduzirMovimento: boolean }) {
@@ -121,7 +122,7 @@ function BarraAtiva() {
         ) : (
           <div className="space-y-2">
             <p className="text-sm font-semibold" aria-hidden="true">
-              {v.emCampo ? "Campo ativo: digite ou dite. Esc volta à varredura." : v.estado.fase === "pausada" ? "Pausada em:" : "Agora:"} <span className="font-bold">{v.emCampo ? "" : (v.item?.rotulo ?? "")}</span>
+              {v.emCampo ? tx("Campo ativo: digite ou dite. Esc volta à varredura.") : v.estado.fase === "pausada" ? tx("Pausada em:") : tx("Agora:")} <span className="font-bold">{v.emCampo ? "" : (v.item?.rotulo ?? "")}</span>
             </p>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -129,7 +130,7 @@ function BarraAtiva() {
                 <MousePointerClick className="size-4" aria-hidden="true" /> {t("acessibilidade.barraDeVarredura.selecionar")}
               </Button>
               <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={rodando ? v.pausar : v.retomar}>
-                {rodando ? <Pause className="size-4" aria-hidden="true" /> : <Play className="size-4" aria-hidden="true" />} {rodando ? "Pausar" : "Continuar"}
+                {rodando ? <Pause className="size-4" aria-hidden="true" /> : <Play className="size-4" aria-hidden="true" />} {rodando ? tx("Pausar") : tx("Continuar")}
               </Button>
               <Button type="button" variant="outline" className="min-h-11 gap-1" onClick={v.anterior} aria-label={t("acessibilidade.barraDeVarredura.voltarAoItemAnterior")} disabled={v.emCampo}>
                 <ArrowLeft className="size-4" aria-hidden="true" /> {t("auth.voltar")}

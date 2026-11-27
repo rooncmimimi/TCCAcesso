@@ -1,3 +1,5 @@
+import { tx, localeAtual } from "@/i18n/frases";
+
 /**
  * Como o Site descreve um dispositivo a partir do `user-agent` que o servidor guardou na sessão, sem biblioteca
  * nova. É uma descrição para a pessoa reconhecer o aparelho ("Chrome · Windows"), não uma identificação precisa:
@@ -35,7 +37,7 @@ function navegadorDe(ua: string): string {
   if (ua.includes("firefox/") || ua.includes("fxios/")) return "Firefox";
   if (ua.includes("chrome/") || ua.includes("crios/")) return "Chrome";
   if (ua.includes("safari/")) return "Safari";
-  return "Navegador";
+  return tx("Navegador");
 }
 
 function tipoDe(ua: string, sistema: string): TipoDeDispositivo {
@@ -48,14 +50,14 @@ function tipoDe(ua: string, sistema: string): TipoDeDispositivo {
 
 export function descreverDispositivo(userAgent?: string | null): DescricaoDoDispositivo {
   if (!userAgent || !userAgent.trim()) {
-    return { navegador: "", sistema: "", tipo: "desconhecido", rotulo: "Dispositivo desconhecido" };
+    return { navegador: "", sistema: "", tipo: "desconhecido", rotulo: tx("Dispositivo desconhecido") };
   }
 
   const ua = userAgent.toLowerCase();
   const sistema = sistemaDe(ua);
 
   if (APLICATIVO.test(userAgent)) {
-    return { navegador: "Aplicativo ACESSO", sistema, tipo: "aplicativo", rotulo: sistema ? `Aplicativo ACESSO · ${sistema}` : "Aplicativo ACESSO" };
+    return { navegador: tx("Aplicativo ACESSO"), sistema, tipo: "aplicativo", rotulo: sistema ? tx`Aplicativo ACESSO · ${sistema}` : tx("Aplicativo ACESSO") };
   }
 
   const navegador = navegadorDe(ua);
@@ -74,9 +76,9 @@ export function tempoRelativo(iso: string | null | undefined, agora: number = Da
   if (Number.isNaN(instante)) return "";
 
   const segundos = Math.round((instante - agora) / 1000);
-  const formatador = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+  const formatador = new Intl.RelativeTimeFormat(localeAtual(), { numeric: "auto" });
 
-  if (Math.abs(segundos) < 60) return "há menos de um minuto";
+  if (Math.abs(segundos) < 60) return tx("há menos de um minuto");
 
   const minutos = Math.round(segundos / 60);
   if (Math.abs(minutos) < 60) return formatador.format(minutos, "minute");
@@ -98,7 +100,7 @@ export function dataHoraCurta(iso: string | null | undefined): string {
     const data = new Date(iso);
     if (Number.isNaN(data.getTime())) return "";
 
-    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(data);
+    return new Intl.DateTimeFormat(localeAtual(), { dateStyle: "short", timeStyle: "short" }).format(data);
   } catch {
     return "";
   }

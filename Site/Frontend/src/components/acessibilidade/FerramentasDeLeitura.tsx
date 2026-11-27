@@ -23,6 +23,7 @@ import { reconhecimentoDeFalaSuportado } from "@/lib/microfone";
 import { termosNoTexto } from "@/dados/glossario";
 import { coletarOndeEstou } from "@/lib/ondeEstou";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
+import { tx } from "@/i18n/frases";
 
 type Visao = "menu" | "onde" | "pagina" | "glossario" | "historico";
 
@@ -134,7 +135,7 @@ export function FerramentasDeLeitura() {
                   <BotaoDoMenu
                     icone={Mic}
                     titulo={t("acessibilidade.ferramentasDeLeitura.falarUmComando")}
-                    detalhe={reconhecimentoDeFalaSuportado() ? "Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede." : t("acessibilidade.ferramentasDeLeitura.esteNavegadorNaoOferece")}
+                    detalhe={reconhecimentoDeFalaSuportado() ? tx("Diga, por exemplo, “ir para vagas”. O microfone só liga quando você pede.") : t("acessibilidade.ferramentasDeLeitura.esteNavegadorNaoOferece")}
                     onClick={() => {
                       setAberto(false);
                       // Espera o diálogo fechar para o comando agir sobre a página, e não sobre o diálogo.

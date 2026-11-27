@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { extrairMensagemErro } from "@/services/api";
+import { listarEmpresas } from "@/services/admin.service";
 import vagasService from "@/services/vagas.service";
 import type { PublicoAlvoVaga, RecursoAcessibilidadeVaga } from "@/types";
 import {
@@ -44,10 +45,14 @@ import {
 const CAMPOS_DO_RASCUNHO = ["titulo", "descricao", "requisitos", "requisitosDesejaveis", "atividades", "etapasSelecao", "beneficios", "acessibilidade"] as const;
 
 /**
- * Publicação real de vaga pela empresa autenticada (POST /vagas).
- * Os campos e limites espelham o validador do backend.
+ * Publicação real de vaga (POST /vagas). Os campos e limites espelham o validador do backend.
+ *
+ * Quem publica é a empresa autenticada, e a vaga nasce na empresa dela. Com `comoAdministrador`, o
+ * mesmo formulário serve ao administrador, que não tem empresa: ele escolhe, entre as APROVADAS, a
+ * que vai receber a vaga (`empresaId`). O servidor confere isso de novo — o seletor é conveniência,
+ * não a regra.
  */
-export function NovaVagaDialog() {
+export function NovaVagaDialog({ comoAdministrador = false }: { comoAdministrador?: boolean } = {}) {
   const { t } = useIdioma();
   const [aberto, setAberto] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<PublicoAlvoVaga>("pcd");
@@ -70,6 +75,14 @@ export function NovaVagaDialog() {
     }
   }, [aberto]);
 
+  // As empresas que podem receber vaga: só as aprovadas, porque vaga de empresa em outro estado não
+  // aparece para ninguém. Só o administrador pergunta, e só quando o diálogo está aberto.
+  const empresas = useQuery({
+    queryKey: ["admin", "empresas-aprovadas"],
+    queryFn: () => listarEmpresas({ status: "aprovada", limit: 100 }),
+    enabled: comoAdministrador && aberto,
+  });
+
   const criar = useMutation({
     mutationFn: (payload: Record<string, unknown>) => vagasService.criar(payload),
     onSuccess: (vaga) => {
@@ -79,6 +92,7 @@ export function NovaVagaDialog() {
       void queryClient.invalidateQueries({ queryKey: ["minhas-vagas"] });
       void queryClient.invalidateQueries({ queryKey: ["metricas-empresa"] });
       void queryClient.invalidateQueries({ queryKey: ["vagas"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "vagas"] });
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, t("dashboard.novaVagaDialog.naoFoiPossivelPublicarAVaga"))),
   });
@@ -89,6 +103,8 @@ export function NovaVagaDialog() {
     const texto = (chave: string) => String(dados.get(chave) ?? "").trim();
 
     criar.mutate({
+      // Só o administrador manda isto; para a conta de empresa o servidor ignora e usa a da sessão.
+      ...(comoAdministrador ? { empresaId: texto("empresaId") } : {}),
       titulo: texto("titulo"),
       descricao: texto("descricao"),
       requisitos: texto("requisitos") || null,
@@ -140,6 +156,35 @@ export function NovaVagaDialog() {
           className="space-y-4"
         >
           <AvisoDeRascunho rascunho={rascunho.rascunho} aoRestaurar={rascunho.restaurar} aoDescartar={rascunho.descartar} />
+
+          {comoAdministrador ? (
+            <div className="space-y-2">
+              <Label htmlFor="empresaId">{t("dashboard.novaVagaDialog.empresaDaVaga")}</Label>
+              <select
+                id="empresaId"
+                name="empresaId"
+                required
+                defaultValue=""
+                aria-describedby="empresaId-aviso"
+                className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="" disabled>
+                  {empresas.isLoading ? t("dashboard.novaVagaDialog.carregandoEmpresas") : t("dashboard.novaVagaDialog.escolhaAEmpresa")}
+                </option>
+                {(empresas.data?.empresas ?? []).map((empresa) => (
+                  <option key={empresa.id} value={empresa.id}>
+                    {empresa.nomeFantasia || empresa.razaoSocial}
+                  </option>
+                ))}
+              </select>
+              <p id="empresaId-aviso" role={empresas.data && empresas.data.empresas.length === 0 ? "status" : undefined} className="text-xs text-muted-foreground">
+                {empresas.data && empresas.data.empresas.length === 0
+                  ? t("dashboard.novaVagaDialog.nenhumaEmpresaAprovada")
+                  : t("dashboard.novaVagaDialog.avisoDoAdministrador")}
+              </p>
+            </div>
+          ) : null}
+
           <div className="space-y-2">
             <Label htmlFor="titulo">{t("dashboard.novaVagaDialog.tituloDaVaga")}</Label>
             <Input id="titulo" name="titulo" required minLength={5} maxLength={200} />

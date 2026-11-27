@@ -23,6 +23,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { autenticacaoService } from "@/services/autenticacao.service";
 import { useSessao } from "@/hooks/useSessao";
 import { AvisoSemSenha } from "./AvisoSemSenha";
+import { tx } from "@/i18n/frases";
 
 /** Troca de e-mail: senha atual + novo e-mail, depois confirma com o código enviado ao novo endereço. */
 export function SecaoTrocarEmail() {
@@ -72,7 +73,7 @@ export function SecaoTrocarEmail() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          E-mail atual: <span className="font-medium text-foreground">{usuario?.email}</span>
+          {tx("E-mail atual:")}{" "}<span className="font-medium text-foreground">{usuario?.email}</span>
         </p>
 
         {/* Trocar o e-mail pede a senha atual; conta que entra só pelo Google ainda não tem uma. */}

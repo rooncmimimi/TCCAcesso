@@ -4,6 +4,7 @@ import { CheckCircle2, ListChecks, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { avaliarVaga, contarMelhorias, type DadosParaAvaliar, type ResultadoDaAvaliacao } from "@/lib/avaliadorDeVaga";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * "Avaliar a vaga antes de publicar": roda as regras do avaliador sobre o que está escrito agora e
@@ -24,13 +25,13 @@ export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosP
       <p className="text-xs text-muted-foreground">{t("vagas.avaliadorDeVagaPainel.umaConferenciaRapidaDoQueEsta")}</p>
 
       <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" onClick={() => setResultado(avaliarVaga(obterDados()))}>
-        <ListChecks className="size-4" aria-hidden="true" /> {resultado ? "Avaliar de novo" : t("vagas.avaliadorDeVagaPainel.avaliarAgora")}
+        <ListChecks className="size-4" aria-hidden="true" /> {resultado ? tx("Avaliar de novo") : t("vagas.avaliadorDeVagaPainel.avaliarAgora")}
       </Button>
 
       {resultado ? (
         <div role="status" className="space-y-4">
           <p className="text-sm font-semibold">
-            {melhorias === 0 ? "Nada a melhorar nos pontos conferidos." : melhorias === 1 ? "1 ponto pode melhorar." : `${melhorias} pontos podem melhorar.`}
+            {melhorias === 0 ? tx("Nada a melhorar nos pontos conferidos.") : melhorias === 1 ? tx("1 ponto pode melhorar.") : tx`${melhorias} pontos podem melhorar.`}
           </p>
 
           <ul className="space-y-2">
@@ -39,7 +40,7 @@ export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosP
                 {p.situacao === "ok" ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /> : <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />}
                 <div>
                   <p>
-                    <span className="font-semibold">{p.area}:</span> <span>{p.situacao === "ok" ? "Tudo certo." : "Pode melhorar."}</span> {p.titulo}.
+                    <span className="font-semibold">{p.area}:</span> <span>{p.situacao === "ok" ? tx("Tudo certo.") : tx("Pode melhorar.")}</span> {p.titulo}.
                   </p>
                   <p className="text-muted-foreground">{p.orientacao}</p>
                 </div>
@@ -54,7 +55,7 @@ export function AvaliadorDeVagaPainel({ obterDados }: { obterDados: () => DadosP
                 {resultado.expressoes.map((e) => (
                   <li key={e.id}>
                     <p>
-                      Em <span className="font-semibold">{e.campo}</span>: “<span className="font-semibold">{e.trecho}</span>”
+                      {tx("Em")}{" "}<span className="font-semibold">{e.campo}</span>: “<span className="font-semibold">{e.trecho}</span>”
                     </p>
                     <p className="text-muted-foreground">{e.explicacao}</p>
                   </li>

@@ -18,13 +18,15 @@ import {
 } from "@/components/ui/select";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { useSessao } from "@/hooks/useSessao";
 import { formatarData } from "@/utils/formatacao";
 import type { PreferenciaMensagens } from "@/types";
+import { tx } from "@/i18n/frases";
 
-const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: string }[] = [
+const OPCOES_PREFERENCIA_MENSAGENS: { value: PreferenciaMensagens; label: ChaveBase }[] = [
   { value: "todos", label: "configuracoes.privacidade.todos" },
   { value: "seguidores", label: "configuracoes.privacidade.apenasSeguidores" },
   { value: "seguindo", label: "configuracoes.privacidade.apenasPessoasQueVoceSegue" },
@@ -89,7 +91,7 @@ function Privacidade() {
     onSuccess: (resultado) => {
       atualizar({ perfilPublico: resultado.perfilPublico });
       toast.success(
-        resultado.perfilPublico ? "Seu perfil agora é público." : t("configuracoes.privacidade.seuPerfilAgoraEPrivado"),
+        resultado.perfilPublico ? tx("Seu perfil agora é público.") : t("configuracoes.privacidade.seuPerfilAgoraEPrivado"),
       );
     },
     onError: (erro) => toast.error(extrairMensagemErro(erro, t("configuracoes.privacidade.naoFoiPossivelSalvarA"))),
@@ -170,7 +172,7 @@ function Privacidade() {
               <SelectContent>
                 {OPCOES_PREFERENCIA_MENSAGENS.map((opcao) => (
                   <SelectItem key={opcao.value} value={opcao.value}>
-                    {opcao.label}
+                    {t(opcao.label)}
                   </SelectItem>
                 ))}
               </SelectContent>

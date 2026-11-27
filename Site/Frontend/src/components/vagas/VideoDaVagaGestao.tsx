@@ -20,6 +20,7 @@ import {
 import { useIdioma } from "@/hooks/useIdioma";
 import { ambienteService } from "@/services/ambiente.service";
 import { extrairMensagemErro } from "@/services/api";
+import { tx } from "@/i18n/frases";
 
 const TRANSCRICAO_MINIMA = 20;
 const LIMITE_DO_VIDEO_BYTES = 50 * 1024 * 1024;
@@ -134,20 +135,20 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
         {t("vagas.videoDaVagaGestao.videoDaVagaEmLibras")}
       </h3>
       <p className="text-xs text-muted-foreground">
-        Envie um vídeo em Libras (MP4 ou WEBM, até 50 MB) com a <strong>{t("vagas.videoDaVagaGestao.transcricao")}</strong>, obrigatória: quem não vê ou não ouve o vídeo lê o texto. O ACESSO não traduz para Libras; o vídeo é o que você gravou.
+        {tx("Envie um vídeo em Libras (MP4 ou WEBM, até 50 MB) com a")}{" "}<strong>{t("vagas.videoDaVagaGestao.transcricao")}</strong>{tx(", obrigatória: quem não vê ou não ouve o vídeo lê o texto. O ACESSO não traduz para Libras; o vídeo é o que você gravou.")}
       </p>
 
       {!midia || arquivo !== null ? (
-        <p className="text-xs text-muted-foreground">{midia ? "Você escolheu um novo vídeo: ele vai substituir o atual e a legenda atual será removida." : t("vagas.videoDaVagaGestao.estaVagaAindaNaoTemVideo")}</p>
+        <p className="text-xs text-muted-foreground">{midia ? tx("Você escolheu um novo vídeo: ele vai substituir o atual e a legenda atual será removida.") : t("vagas.videoDaVagaGestao.estaVagaAindaNaoTemVideo")}</p>
       ) : (
         <p className="text-sm">
-          Vídeo enviado. Legenda: <strong>{midia.legendaVtt ? "enviada" : t("vagas.videoDaVagaGestao.naoEnviada")}</strong>.
+          {tx("Vídeo enviado. Legenda:")}{" "}<strong>{midia.legendaVtt ? tx("enviada") : t("vagas.videoDaVagaGestao.naoEnviada")}</strong>.
         </p>
       )}
 
       <div className="space-y-1">
         <Label htmlFor={`${idBase}-arquivo`} className="text-sm">
-          {midia ? "Trocar o vídeo (opcional)" : t("vagas.videoDaVagaGestao.arquivoDeVideo")}
+          {midia ? tx("Trocar o vídeo (opcional)") : t("vagas.videoDaVagaGestao.arquivoDeVideo")}
         </Label>
         <Input id={`${idBase}-arquivo`} type="file" accept="video/mp4,video/webm" onChange={(e) => escolherVideo(e.target.files?.[0] ?? null)} aria-describedby={erroDoArquivo ? `${idBase}-erro` : undefined} />
         {erroDoArquivo ? (
@@ -159,7 +160,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
 
       <div className="space-y-1">
         <Label htmlFor={`${idBase}-transcricao`} className="text-sm">
-          Transcrição do vídeo (obrigatória)
+          {tx("Transcrição do vídeo (obrigatória)")}
         </Label>
         <Textarea id={`${idBase}-transcricao`} rows={5} maxLength={8000} value={transcricao} onChange={(e) => setTranscricao(e.target.value)} aria-describedby={`${idBase}-transcricao-ajuda`} />
         <p id={`${idBase}-transcricao-ajuda`} className={`text-xs ${transcricao && !transcricaoValida ? "font-medium text-destructive" : "text-muted-foreground"}`}>
@@ -169,7 +170,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
 
       <div className="space-y-1">
         <Label htmlFor={`${idBase}-descricao`} className="text-sm">
-          Descrição curta (opcional)
+          {tx("Descrição curta (opcional)")}
         </Label>
         <Input id={`${idBase}-descricao`} maxLength={300} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
       </div>
@@ -177,7 +178,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
       <div className="flex flex-wrap gap-2">
         {arquivo || !midia ? (
           <Button type="button" className="min-h-11" disabled={!arquivo || !transcricaoValida || enviar.isPending} onClick={() => enviar.mutate()}>
-            {enviar.isPending ? "Enviando…" : midia ? "Enviar o novo vídeo" : t("vagas.videoDaVagaGestao.enviarVideo")}
+            {enviar.isPending ? tx("Enviando…") : midia ? tx("Enviar o novo vídeo") : t("vagas.videoDaVagaGestao.enviarVideo")}
           </Button>
         ) : (
           <Button type="button" variant="outline" className="min-h-11" disabled={!transcricaoValida || salvarTextos.isPending} onClick={() => salvarTextos.mutate()}>
@@ -190,7 +191,7 @@ export function VideoDaVagaGestao({ vagaId, aoMudar }: { vagaId: string; aoMudar
         <div className="space-y-2 border-t border-border pt-3">
           <div className="space-y-1">
             <Label htmlFor={`${idBase}-legenda`} className="text-sm">
-              Legenda em WebVTT (.vtt, opcional)
+              {tx("Legenda em WebVTT (.vtt, opcional)")}
             </Label>
             <Input
               id={`${idBase}-legenda`}

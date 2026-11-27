@@ -1,3 +1,5 @@
+import { tx } from "@/i18n/frases";
+
 /**
  * Atalhos de teclado do ACESSO: sequências de duas teclas (G e depois uma letra, como em vários
  * sistemas de e-mail) e duas teclas soltas (/ para pesquisar, ? para a lista de atalhos).
@@ -28,18 +30,18 @@ export type Atalho = {
 const painel = (tipo: string | null): AcaoDoAtalho => ({ tipo: "navegar", para: tipo === "empresa" ? "/dashboard/empresa" : tipo === "candidato" ? "/dashboard/candidato" : "/dashboard" });
 
 export const ATALHOS: readonly Atalho[] = [
-  { teclas: ["g", "i"], descricao: "Ir para o início (publicações)", publico: false, acao: { tipo: "navegar", para: "/feed" } },
-  { teclas: ["g", "v"], descricao: "Ir para as vagas", publico: true, acao: { tipo: "navegar", para: "/vagas" } },
-  { teclas: ["g", "m"], descricao: "Ir para as mensagens", publico: false, acao: { tipo: "navegar", para: "/mensagens" } },
-  { teclas: ["g", "n"], descricao: "Ir para as notificações", publico: false, acao: { tipo: "navegar", para: "/notificacoes" } },
-  { teclas: ["g", "p"], descricao: "Ir para o meu perfil", publico: false, acao: { tipo: "navegar", para: "/perfil" } },
-  { teclas: ["g", "d"], descricao: "Ir para o meu painel", publico: false, acao: painel },
-  { teclas: ["g", "a"], descricao: "Ir para Minha Acessibilidade", publico: false, acao: { tipo: "navegar", para: "/minha-acessibilidade" } },
-  { teclas: ["g", "c"], descricao: "Ir para as configurações de acessibilidade", publico: true, acao: { tipo: "navegar", para: "/configuracoes/acessibilidade" } },
-  { teclas: ["g", "o"], descricao: "Ir para “O que você quer fazer?” (objetivos)", publico: true, acao: { tipo: "navegar", para: "/objetivos" } },
-  { teclas: ["g", "f"], descricao: "Ir para o Fale conosco", publico: true, acao: { tipo: "navegar", para: "/fale-conosco" } },
-  { teclas: ["/"], descricao: "Abrir a pesquisa", publico: false, acao: { tipo: "pesquisar" } },
-  { teclas: ["?"], descricao: "Mostrar esta lista de atalhos", publico: true, acao: { tipo: "ajuda" } },
+  { teclas: ["g", "i"], get descricao() { return tx("Ir para o início (publicações)"); }, publico: false, acao: { tipo: "navegar", para: "/feed" } },
+  { teclas: ["g", "v"], get descricao() { return tx("Ir para as vagas"); }, publico: true, acao: { tipo: "navegar", para: "/vagas" } },
+  { teclas: ["g", "m"], get descricao() { return tx("Ir para as mensagens"); }, publico: false, acao: { tipo: "navegar", para: "/mensagens" } },
+  { teclas: ["g", "n"], get descricao() { return tx("Ir para as notificações"); }, publico: false, acao: { tipo: "navegar", para: "/notificacoes" } },
+  { teclas: ["g", "p"], get descricao() { return tx("Ir para o meu perfil"); }, publico: false, acao: { tipo: "navegar", para: "/perfil" } },
+  { teclas: ["g", "d"], get descricao() { return tx("Ir para o meu painel"); }, publico: false, acao: painel },
+  { teclas: ["g", "a"], get descricao() { return tx("Ir para Minha Acessibilidade"); }, publico: false, acao: { tipo: "navegar", para: "/minha-acessibilidade" } },
+  { teclas: ["g", "c"], get descricao() { return tx("Ir para as configurações de acessibilidade"); }, publico: true, acao: { tipo: "navegar", para: "/configuracoes/acessibilidade" } },
+  { teclas: ["g", "o"], get descricao() { return tx("Ir para “O que você quer fazer?” (objetivos)"); }, publico: true, acao: { tipo: "navegar", para: "/objetivos" } },
+  { teclas: ["g", "f"], get descricao() { return tx("Ir para o Fale conosco"); }, publico: true, acao: { tipo: "navegar", para: "/fale-conosco" } },
+  { teclas: ["/"], get descricao() { return tx("Abrir a pesquisa"); }, publico: false, acao: { tipo: "pesquisar" } },
+  { teclas: ["?"], get descricao() { return tx("Mostrar esta lista de atalhos"); }, publico: true, acao: { tipo: "ajuda" } },
 ];
 
 export type EstadoDosAtalhos = { primeira: string | null; instante: number };

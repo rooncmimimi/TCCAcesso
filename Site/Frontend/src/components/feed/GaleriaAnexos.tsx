@@ -9,6 +9,7 @@ import { LightboxMidia } from "./LightboxMidia";
 import { useAtualizarDescricaoAnexo } from "./hooks";
 import type { AnexoPostagem } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 const MAX_DESCRICAO = 500;
 
@@ -91,7 +92,7 @@ function DescricaoAnexo({
   return (
     <div className="mt-1.5 flex items-start justify-between gap-2">
       <p className="min-w-0 text-xs text-muted-foreground">
-        {anexo.descricao || (editavel ? "Sem descrição — adicione uma para leitores de tela." : "")}
+        {anexo.descricao || (editavel ? tx("Sem descrição — adicione uma para leitores de tela.") : "")}
       </p>
       {editavel && (
         <button
@@ -100,7 +101,7 @@ function DescricaoAnexo({
           className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
           aria-label={t("feed.galeriaAnexos.editarDescricaoDoAnexo", { var1: anexo.nomeOriginal ?? "" })}
         >
-          <Pencil className="size-3" aria-hidden="true" /> {anexo.descricao ? "Editar" : "Adicionar"}
+          <Pencil className="size-3" aria-hidden="true" /> {anexo.descricao ? tx("Editar") : tx("Adicionar")}
         </button>
       )}
     </div>
@@ -154,13 +155,14 @@ export function GaleriaAnexos({
               <button
                 type="button"
                 onClick={(e) => abrirLightbox(imagem, e.currentTarget)}
-                className="block w-full overflow-hidden rounded-xl border border-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-                aria-label={`Ampliar imagem${imagem.descricao ? `: ${imagem.descricao}` : ""}`}
+                className="block w-full overflow-hidden rounded-xl border border-border bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                aria-label={tx`Ampliar imagem${imagem.descricao ? `: ${imagem.descricao}` : ""}`}
               >
+                {/* Inteira, sem corte: a que passaria da altura da tela encolhe, com faixas nas laterais. */}
                 <img
                   src={urlArquivo(imagem.url)}
                   alt={imagem.descricao || imagem.nomeOriginal || t("feed.galeriaAnexos.imagemSemDescricaoFornecida")}
-                  className="max-h-96 w-full object-cover"
+                  className="h-auto max-h-[80dvh] w-full object-contain"
                   loading="lazy"
                 />
               </button>
@@ -191,7 +193,7 @@ export function GaleriaAnexos({
                   variant="ghost"
                   size="icon"
                   className="absolute right-2 top-2 min-h-11 min-w-11 rounded-full bg-background/80 hover:bg-background"
-                  aria-label={`Ampliar vídeo${video.descricao ? `: ${video.descricao}` : ""}`}
+                  aria-label={tx`Ampliar vídeo${video.descricao ? `: ${video.descricao}` : ""}`}
                   onClick={(e) => abrirLightbox(video, e.currentTarget)}
                 >
                   <Maximize2 className="size-4" aria-hidden="true" />

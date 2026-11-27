@@ -1,3 +1,5 @@
+import { tx } from "@/i18n/frases";
+
 /** Tipos do Bloco 2: Minha Acessibilidade, prévia de privacidade, rascunho e adaptações por candidatura. */
 
 export interface ItemDoCatalogo {
@@ -170,10 +172,10 @@ export function escolhaTemConteudo(escolha: EscolhaDeCompartilhamento): boolean 
 
 /** As quatro respostas que a empresa pode dar a um pedido de adaptação. */
 export const RESPOSTAS_DA_EMPRESA: { valor: RespostaDaEmpresa; rotulo: string }[] = [
-  { valor: "podemos_oferecer", rotulo: "Podemos oferecer essa adaptação" },
-  { valor: "podemos_providenciar", rotulo: "Podemos providenciar" },
-  { valor: "precisamos_verificar", rotulo: "Precisamos verificar" },
-  { valor: "podemos_conversar", rotulo: "Podemos conversar sobre uma alternativa" },
+  { valor: "podemos_oferecer", get rotulo() { return tx("Podemos oferecer essa adaptação"); } },
+  { valor: "podemos_providenciar", get rotulo() { return tx("Podemos providenciar"); } },
+  { valor: "precisamos_verificar", get rotulo() { return tx("Precisamos verificar"); } },
+  { valor: "podemos_conversar", get rotulo() { return tx("Podemos conversar sobre uma alternativa"); } },
 ];
 
 export const rotuloDaResposta = (valor: RespostaDaEmpresa | null) => RESPOSTAS_DA_EMPRESA.find((r) => r.valor === valor)?.rotulo ?? null;

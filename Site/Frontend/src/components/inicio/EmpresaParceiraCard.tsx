@@ -2,6 +2,7 @@ import { BadgeCheck } from "lucide-react";
 import { urlArquivo } from "@/utils/arquivos";
 import type { Empresa } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /** Card de empresa parceira exibido na página inicial. */
 export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
@@ -37,7 +38,7 @@ export function EmpresaParceiraCard({ empresa }: { empresa: Empresa }) {
         </span>
         <span className="block truncate text-sm text-muted-foreground">
           {empresa.setor ?? t("inicio.empresaParceiraCard.empresaParceira")}
-          {typeof empresa.totalVagas === "number" ? ` · ${empresa.totalVagas} vagas` : ""}
+          {typeof empresa.totalVagas === "number" ? tx` · ${empresa.totalVagas} vagas` : ""}
         </span>
       </span>
     </div>

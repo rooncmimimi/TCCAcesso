@@ -1,5 +1,6 @@
 import { PREFERENCIAS_PADRAO, type PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
 import { normalizarVisual } from "@/lib/preferenciasVisuais";
+import { tx } from "@/i18n/frases";
 
 /** Limites das preferências do Bloco 4. Valores salvos fora deles (ou de outro tipo) voltam ao padrão. */
 export const LIMITES = {
@@ -8,7 +9,7 @@ export const LIMITES = {
 } as const;
 
 /** Nome da tecla para mostrar: Espaço, F8, Z. */
-export const nomeDaTecla = (tecla: string) => (tecla === " " ? "Espaço" : tecla.length === 1 ? tecla.toUpperCase() : tecla);
+export const nomeDaTecla = (tecla: string) => (tecla === " " ? tx("Espaço") : tecla.length === 1 ? tecla.toUpperCase() : tecla);
 
 export const TAMANHOS_DE_ALVO = ["padrao", "grande", "maior"] as const;
 
@@ -20,7 +21,13 @@ const numeroEntre = (v: unknown, min: number, max: number, padrao: number) => (t
  * (tipo e faixa); o resto segue como já era (mescla com o padrão).
  */
 export function normalizarPreferencias(salvas: Partial<PreferenciasAcessibilidade> | null | undefined): PreferenciasAcessibilidade {
-  const base = { ...PREFERENCIAS_PADRAO, ...(salvas ?? {}) };
+  const mesclada: Record<string, unknown> = { ...PREFERENCIAS_PADRAO, ...(salvas ?? {}) };
+
+  // As "cores por significado" (`visualColors`) deixaram de existir. Quem as tinha guardadas não as
+  // carrega mais: sem isto a chave ficaria para sempre no armazenamento, sem que nada a lesse.
+  delete mesclada.visualColors;
+
+  const base = mesclada as unknown as PreferenciasAcessibilidade;
   const padrao = PREFERENCIAS_PADRAO;
 
   return {

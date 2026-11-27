@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,7 +114,7 @@ export function LogsTabela({
                     </button>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {log.entidadeTipo ?? "—"}
+                    {log.entidadeTipo ? tx(log.entidadeTipo) : "—"}
                   </TableCell>
                   <TableCell>{log.administrador?.nome ?? t("admin.conteudoDenunciado.contaRemovida")}</TableCell>
                   <TableCell className="max-w-72 truncate">{log.descricao ?? "—"}</TableCell>

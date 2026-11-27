@@ -1,6 +1,7 @@
 import { CopiaCompartilhadaLista } from "@/components/candidatura/CopiaCompartilhada";
 import type { PreviaDaCandidatura } from "@/types/adaptacoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * "O que a empresa receberá?": a prévia, montada pelo servidor com a MESMA função que grava a cópia,
@@ -71,7 +72,7 @@ export function PreviaDePrivacidade({ previa }: { previa: PreviaDaCandidatura })
 
       <section aria-labelledby="previa-adaptacoes" className="space-y-2 rounded-lg border-2 border-primary/40 bg-primary-soft/40 p-3">
         <h3 id="previa-adaptacoes" className="text-sm font-bold">
-          Adaptações que você autorizou ({previa.adaptacoes.total})
+          {tx("Adaptações que você autorizou (")}{previa.adaptacoes.total})
         </h3>
         <CopiaCompartilhadaLista itens={previa.adaptacoes.itens} />
       </section>

@@ -1,6 +1,7 @@
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { termosNoTexto } from "@/dados/glossario";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * Dica de glossário junto do texto: se o texto usa termos que o glossário explica (CLT, PJ, home
@@ -16,7 +17,7 @@ export function TermosDoTexto({ texto }: { texto: string | null | undefined }) {
   return (
     <details className="mt-2 rounded-lg border border-border bg-muted/30 text-sm">
       <summary className="min-h-11 cursor-pointer px-3 py-2.5 font-semibold text-primary">
-        Termos deste texto ({termos.map((item) => item.termo).join(", ")})
+        {tx("Termos deste texto (")}{termos.map((item) => item.termo).join(", ")})
       </summary>
       <ul className="space-y-3 border-t border-border px-3 py-3">
         {termos.map((termo) => (
@@ -25,7 +26,7 @@ export function TermosDoTexto({ texto }: { texto: string | null | undefined }) {
               <p>
                 <span className="font-semibold">{termo.termo}:</span> {termo.explicacao}
               </p>
-              {termo.exemplo ? <p className="mt-1 text-muted-foreground">Exemplo: {termo.exemplo}</p> : null}
+              {termo.exemplo ? <p className="mt-1 text-muted-foreground">{tx("Exemplo:")}{" "}{termo.exemplo}</p> : null}
             </TextoOuvivel>
           </li>
         ))}

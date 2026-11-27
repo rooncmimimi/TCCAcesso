@@ -29,6 +29,7 @@ import denunciaService, {
   type EntidadeDenunciaTipo,
   type MotivoDenuncia,
 } from "@/services/denuncia.service";
+import { tx } from "@/i18n/frases";
 
 const MOTIVOS = Object.keys(MOTIVO_ROTULO) as MotivoDenuncia[];
 
@@ -114,7 +115,7 @@ export function DenunciarDialog({
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(autorUsuarioId as string),
     onSuccess: () => {
-      toast.success(nomeParaBloqueio ? `${nomeParaBloqueio} foi bloqueado(a).` : t("moderacao.denunciarDialog.usuarioBloqueado"));
+      toast.success(nomeParaBloqueio ? tx`${nomeParaBloqueio} foi bloqueado(a).` : t("moderacao.denunciarDialog.usuarioBloqueado"));
       fecharTudo();
     },
     onError: (erro) => {
@@ -164,7 +165,7 @@ export function DenunciarDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Denunciar{nomeExibicao ? ` "${nomeExibicao}"` : ""}</DialogTitle>
+              <DialogTitle>{tx("Denunciar")}{nomeExibicao ? ` "${nomeExibicao}"` : ""}</DialogTitle>
               <DialogDescription>
                 {t("moderacao.denunciarDialog.conteParaAModeracaoOQueEsta")}
               </DialogDescription>

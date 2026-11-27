@@ -74,7 +74,6 @@ const { PerfilPessoal } = await import("@/components/perfil/PerfilPessoal");
 const { PostagemCard } = await import("@/components/feed/PostagemCard");
 const { FormularioPostagem } = await import("@/components/feed/FormularioPostagem");
 const { PaginaMinhaAcessibilidade } = await import("@/components/minha-acessibilidade/PaginaMinhaAcessibilidade");
-const { PaginaSimulador } = await import("@/components/simulador/PaginaSimulador");
 const { PainelAcessibilidade } = await import("@/components/acessibilidade/PainelAcessibilidade");
 const { EditarPerfilDialog } = await import("@/components/perfil/EditarPerfilDialog");
 const { NovaVagaDialog } = await import("@/components/dashboard/NovaVagaDialog");
@@ -303,18 +302,12 @@ describe("axe: feed", () => {
   });
 });
 
-describe("axe: Minha Acessibilidade e simulador", () => {
+describe("axe: Minha Acessibilidade", () => {
   it("Minha Acessibilidade (carregando e carregada)", async () => {
     comCliente(<main><h1>Minha Acessibilidade</h1><PaginaMinhaAcessibilidade /></main>);
     expect(await verificar()).toEqual([]);
 
     await screen.findByText(/Comunicação|adapta|Salvar/i, {}, { timeout: 4000 }).catch(() => null);
-    expect(await verificar()).toEqual([]);
-  });
-
-  it("simulador", async () => {
-    comCliente(<main><h1>Simulador</h1><PaginaSimulador /></main>);
-
     expect(await verificar()).toEqual([]);
   });
 });

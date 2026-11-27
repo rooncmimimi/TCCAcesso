@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { AVISO_DE_PRIVACIDADE, DOCUMENTOS, TERMOS_DE_USO, VERSAO_DOCUMENTOS } from "./documentosLegais";
+import { AVISO_DE_PRIVACIDADE, DOCUMENTOS, TERMOS_DE_USO, VERSAO_DOCUMENTOS, documentoNoIdioma } from "./documentosLegais";
 
 /**
  * O aceite precisa apontar para o texto que a pessoa de fato viu: a versão que o Site manda é a que
@@ -51,6 +51,21 @@ describe.each(Object.values(DOCUMENTOS))("$titulo", (documento) => {
     for (const secao of documento.secoes) {
       expect(secao.paragrafos.length).toBeGreaterThan(0);
       expect(secao.paragrafos.every((p) => p.trim().length > 20)).toBe(true);
+    }
+  });
+});
+
+describe.each(["en", "es"] as const)("tradução (%s)", (idioma) => {
+  it.each(Object.values(DOCUMENTOS))("acompanha $titulo seção a seção e parágrafo a parágrafo", (original) => {
+    const traduzido = documentoNoIdioma(original.chave, idioma);
+
+    expect(traduzido.resumo).toContain(VERSAO_DOCUMENTOS);
+    expect(traduzido.secoes.map((s) => s.paragrafos.length)).toEqual(original.secoes.map((s) => s.paragrafos.length));
+    expect(traduzido.secoes.map((s) => s.titulo.match(/^\d+/)?.[0])).toEqual(original.secoes.map((s) => s.titulo.match(/^\d+/)?.[0]));
+    for (const [i, secao] of traduzido.secoes.entries()) {
+      for (const [j, paragrafo] of secao.paragrafos.entries()) {
+        expect(paragrafo).not.toBe(original.secoes[i].paragrafos[j]);
+      }
     }
   });
 });

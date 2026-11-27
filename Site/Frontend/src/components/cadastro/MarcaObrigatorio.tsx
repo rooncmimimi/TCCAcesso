@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { tx } from "@/i18n/frases";
 
 /**
  * O asterisco que marca um campo obrigatório, com a dica "Campo obrigatório".
@@ -12,7 +13,7 @@ import { useId, useState } from "react";
  * é o `aria-label` do botão e, principalmente, o `required`/`aria-required` do próprio campo. O
  * asterisco nunca é a única pista — o campo é obrigatório no HTML, no zod e no backend.
  */
-export function MarcaObrigatorio({ texto = "Campo obrigatório" }: { texto?: string }) {
+export function MarcaObrigatorio({ texto = tx("Campo obrigatório") }: { texto?: string }) {
   const dicaId = useId();
   const [visivel, setVisivel] = useState(false);
 
@@ -46,7 +47,7 @@ export function MarcaObrigatorio({ texto = "Campo obrigatório" }: { texto?: str
 }
 
 /** Legenda do topo do formulário, explicando o asterisco antes de ele aparecer nos campos. */
-export function LegendaObrigatorio({ texto = "Campo obrigatório" }: { texto?: string }) {
+export function LegendaObrigatorio({ texto = tx("Campo obrigatório") }: { texto?: string }) {
   return (
     <p className="mb-6 text-sm text-muted-foreground">
       <span aria-hidden="true" className="font-bold text-destructive">

@@ -20,6 +20,7 @@ import { EditarAdaptacoesDialog } from "@/components/candidatura/EditarAdaptacoe
 import { candidaturaAdaptacoesService } from "@/services/adaptacoes.service";
 import { extrairMensagemErro } from "@/services/api";
 import { rotuloDaResposta, type AdaptacoesDoCandidato } from "@/types/adaptacoes";
+import { tx } from "@/i18n/frases";
 
 const formatarData = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(document.documentElement.lang || "pt-BR") : "");
 
@@ -70,7 +71,7 @@ export function AdaptacoesDaMinhaCandidatura({
         {t("candidatura.adaptacoesDaMinhaCandidatura.oQueVoceCompartilhouComEsta")}
       </h4>
       <p className="text-xs text-muted-foreground">
-        Autorizado em {formatarData(adaptacoes.autorizadoEm)} (versão {adaptacoes.versao}), só para o processo seletivo desta vaga.
+        {tx("Autorizado em")}{" "}{formatarData(adaptacoes.autorizadoEm)}{" "}{tx("(versão")}{" "}{adaptacoes.versao}{tx("), só para o processo seletivo desta vaga.")}
       </p>
       <CopiaCompartilhadaLista itens={adaptacoes.itens} />
 

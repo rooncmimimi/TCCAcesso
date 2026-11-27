@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { PREFERENCIAS_PADRAO, type PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
-import { ajustesVisuais, limparCores, normalizarVisual, visualPadrao } from "./preferenciasVisuais";
+import { ajustesVisuais, normalizarVisual, visualPadrao } from "./preferenciasVisuais";
 
 /**
  * O que chega do localStorage não é confiável: pode vir de uma versão antiga, ter sido editado à
@@ -67,27 +67,19 @@ describe("o que vem do armazenamento é conferido", () => {
   });
 });
 
-describe("limparCores", () => {
-  it("guarda só papel conhecido com cor #rrggbb", () => {
-    expect(
-      limparCores({
-        sucesso: "#0072b2",
-        erro: "red",
-        alerta: "#fff",
-        inventado: "#000000",
-        info: "#6a3d9a",
-      }),
-    ).toEqual({ sucesso: "#0072b2", info: "#6a3d9a" });
+describe("as cores por significado, que deixaram de existir", () => {
+  it("os ajustes não carregam mais cor nenhuma", () => {
+    expect(ajustesVisuais(com({}))).not.toHaveProperty("cores");
   });
 
-  it("recusa o que nem objeto é", () => {
-    expect(limparCores(null)).toEqual({});
-    expect(limparCores("#0072b2")).toEqual({});
-    expect(limparCores(42)).toEqual({});
-  });
+  it("o que a conferência devolve não inclui as cores, mesmo que o armazenamento as tenha", () => {
+    const antigo = com({ visualPattern: "protanopia" }) as PreferenciasAcessibilidade & { visualColors: unknown };
+    antigo.visualColors = { erro: "#123456" };
 
-  it("não deixa passar uma 'cor' que seria CSS", () => {
-    expect(limparCores({ sucesso: "var(--x); background: url(http://exemplo)" })).toEqual({});
+    const visual = normalizarVisual(antigo, PREFERENCIAS_PADRAO);
+
+    expect(visual).not.toHaveProperty("visualColors");
+    expect(visual.visualPattern).toBe("protanopia");
   });
 });
 
@@ -95,7 +87,7 @@ describe("ajustesVisuais e visualPadrao", () => {
   it("monta os ajustes a partir das preferências", () => {
     expect(
       ajustesVisuais(com({ visualIntensity: 60, visualSaturation: 80, visualBrightness: 110, visualContrast: 7 })),
-    ).toEqual({ intensidade: 60, saturacao: 80, brilho: 110, contraste: 7, cores: {} });
+    ).toEqual({ intensidade: 60, saturacao: 80, brilho: 110, contraste: 7 });
   });
 
   it("o padrão da seção é tudo neutro e nenhum padrão", () => {
@@ -105,7 +97,6 @@ describe("ajustesVisuais e visualPadrao", () => {
       visualSaturation: 100,
       visualBrightness: 100,
       visualContrast: 4.5,
-      visualColors: {},
     });
   });
 });

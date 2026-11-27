@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { EntidadeDenunciaTipo } from "@/services/denuncia.service";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx } from "@/i18n/frases";
 
 type Previa = Record<string, unknown> | null | undefined;
 type Pessoa = { id?: string; nome?: string; tipoUsuario?: string } | null | undefined;
@@ -73,7 +74,7 @@ export function ConteudoDenunciado({ tipo, previa }: { tipo: EntidadeDenunciaTip
         </Campo>
         <Campo rotulo={t("admin.conteudoDenunciado.tipoDeConta")}>{TIPO_DE_CONTA[texto(previa.tipoUsuario)] ? t(TIPO_DE_CONTA[texto(previa.tipoUsuario)]) : texto(previa.tipoUsuario)}</Campo>
         <Campo rotulo={t("login.email")}>{texto(previa.email)}</Campo>
-        <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{previa.bloqueado ? "Bloqueada" : "Ativa"}</Campo>
+        <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{previa.bloqueado ? tx("Bloqueada") : tx("Ativa")}</Campo>
       </dl>
     );
   }
@@ -87,9 +88,9 @@ export function ConteudoDenunciado({ tipo, previa }: { tipo: EntidadeDenunciaTip
           <Campo rotulo={t("admin.conteudoDenunciado.autor")}>
             <Autor autor={previa.autor as Pessoa} />
           </Campo>
-          <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{previa.ativo === false ? "Removida" : "Publicada"}</Campo>
+          <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{previa.ativo === false ? tx("Removida") : tx("Publicada")}</Campo>
         </div>
-        <Campo rotulo={tipo === "postagem" ? "Texto da publicação" : "Texto do comentário"}>
+        <Campo rotulo={tipo === "postagem" ? tx("Texto da publicação") : tx("Texto do comentário")}>
           <blockquote className="whitespace-pre-wrap break-words rounded-lg bg-secondary p-3">
             {corpo || t("admin.conteudoDenunciado.semTexto")}
           </blockquote>
@@ -104,9 +105,9 @@ export function ConteudoDenunciado({ tipo, previa }: { tipo: EntidadeDenunciaTip
     return (
       <dl className="mt-3 grid gap-4 sm:grid-cols-2">
         <Campo rotulo={t("admin.conteudoDenunciado.vaga")}>{texto(previa.titulo)}</Campo>
-        <Campo rotulo={t("vaga.empresa")}>{empresa ? (empresa.nomeFantasia || empresa.razaoSocial) : "Empresa não encontrada"}</Campo>
-        <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{texto(previa.status)}</Campo>
-        <Campo rotulo={t("admin.conteudoDenunciado.visibilidade")}>{previa.oculta ? "Oculta pela moderação" : "Visível"}</Campo>
+        <Campo rotulo={t("vaga.empresa")}>{empresa ? (empresa.nomeFantasia || empresa.razaoSocial) : tx("Empresa não encontrada")}</Campo>
+        <Campo rotulo={t("admin.conteudoDenunciado.situacao")}>{tx(texto(previa.status))}</Campo>
+        <Campo rotulo={t("admin.conteudoDenunciado.visibilidade")}>{previa.oculta ? tx("Oculta pela moderação") : tx("Visível")}</Campo>
       </dl>
     );
   }
@@ -116,7 +117,7 @@ export function ConteudoDenunciado({ tipo, previa }: { tipo: EntidadeDenunciaTip
       <dl className="mt-3 grid gap-4 sm:grid-cols-2">
         <Campo rotulo={t("vaga.empresa")}>{texto(previa.nomeFantasia) || texto(previa.razaoSocial)}</Campo>
         <Campo rotulo={t("admin.conteudoDenunciado.razaoSocial")}>{texto(previa.razaoSocial)}</Campo>
-        <Campo rotulo={t("admin.conteudoDenunciado.situacaoDoCadastro")}>{texto(previa.statusAprovacao)}</Campo>
+        <Campo rotulo={t("admin.conteudoDenunciado.situacaoDoCadastro")}>{tx(texto(previa.statusAprovacao))}</Campo>
       </dl>
     );
   }

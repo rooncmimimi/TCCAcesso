@@ -33,6 +33,7 @@ import {
   listarUsuarios,
   type UsuarioAdmin,
 } from "@/services/admin.service";
+import { tx } from "@/i18n/frases";
 
 const TIPOS = ["todos", "candidato", "empresa", "administrador"] as const;
 
@@ -67,7 +68,7 @@ export function UsuariosTabela() {
     mutationFn: (usuario: UsuarioAdmin) =>
       usuario.ativo ? desativarUsuario(usuario.id) : ativarUsuario(usuario.id),
     onSuccess: (_dados, usuario) => {
-      toast.success(usuario.ativo ? "Usuário bloqueado." : t("admin.usuariosTabela.usuarioDesbloqueado"));
+      toast.success(usuario.ativo ? tx("Usuário bloqueado.") : t("admin.usuariosTabela.usuarioDesbloqueado"));
       queryClient.invalidateQueries({ queryKey: ["admin", "usuarios"] });
       setAlvo(null);
     },
@@ -110,7 +111,7 @@ export function UsuariosTabela() {
             <SelectContent>
               {TIPOS.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {item === "todos" ? "Todos" : item}
+                  {item === "todos" ? tx("Todos") : item}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -156,10 +157,10 @@ export function UsuariosTabela() {
                       com `break-all`, o e-mail quebraria a cada caractere e a tabela ficaria
                       ilegível em telas menores. */}
                   <TableCell className="whitespace-nowrap">{usuario.email}</TableCell>
-                  <TableCell className="capitalize">{usuario.tipoUsuario}</TableCell>
+                  <TableCell className="capitalize">{tx(usuario.tipoUsuario)}</TableCell>
                   <TableCell>
                     <StatusBadge tom={usuario.ativo ? "sucesso" : "perigo"}>
-                      {usuario.ativo ? "Ativo" : "Bloqueado"}
+                      {usuario.ativo ? tx("Ativo") : tx("Bloqueado")}
                     </StatusBadge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -168,7 +169,7 @@ export function UsuariosTabela() {
                         size="sm"
                         variant={usuario.ativo ? "outline" : "default"}
                         onClick={() => setAlvo(usuario)}
-                        aria-label={`${usuario.ativo ? "Bloquear" : "Desbloquear"} ${usuario.nome}`}
+                        aria-label={`${usuario.ativo ? tx("Bloquear") : tx("Desbloquear")} ${usuario.nome}`}
                       >
                         {usuario.ativo ? (
                           <>
@@ -199,9 +200,9 @@ export function UsuariosTabela() {
       <ConfirmarAcaoDialog
         open={Boolean(alvo)}
         onOpenChange={(aberto) => !aberto && setAlvo(null)}
-        titulo={alvo?.ativo ? "Bloquear usuário" : t("admin.usuariosTabela.desbloquearUsuario")}
+        titulo={alvo?.ativo ? tx("Bloquear usuário") : t("admin.usuariosTabela.desbloquearUsuario")}
         descricao={t("admin.usuariosTabela.confirmaOAcessoDe", { var1: alvo?.ativo ? t("admin.usuariosTabela.bloquear") : t("admin.usuariosTabela.desbloquear"), var2: alvo?.nome ?? "" })}
-        textoConfirmar={alvo?.ativo ? "Bloquear" : "Desbloquear"}
+        textoConfirmar={alvo?.ativo ? tx("Bloquear") : tx("Desbloquear")}
         destrutivo={Boolean(alvo?.ativo)}
         carregando={mutacao.isPending}
         onConfirmar={() => alvo && mutacao.mutate(alvo)}

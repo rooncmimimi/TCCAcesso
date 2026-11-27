@@ -201,7 +201,9 @@ function RetornoGoogle() {
 
       toast.success(t("login.sucesso"));
       // `replace`: o botão "voltar" não pode reabrir esta tela de passagem e abrir outra sessão.
-      navigate({ ...destinoAposEntrar(resultado), replace: true });
+      // A intenção de "Sou empresa" viaja no state assinado e volta na resposta: quem já tinha conta de
+      // candidato segue para o cadastro da empresa, e não para o feed.
+      navigate({ ...destinoAposEntrar(resultado, retorno.tipoConta === "empresa" ? "empresa" : undefined), replace: true });
     } catch (falha) {
       // Não há botão de "tentar de novo" aqui: a pessoa volta ao login e começa outro fluxo, com outro segredo.
       limparVinculo();

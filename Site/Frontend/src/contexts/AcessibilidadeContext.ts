@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-import type { IdDoPadrao, PapelDeCor } from "@/lib/padroesVisuais";
+import type { IdDoPadrao } from "@/lib/padroesVisuais";
 
 /**
  * Preferências de acessibilidade do Site. Visitantes guardam só no localStorage; com sessão, elas
@@ -78,8 +78,6 @@ export type PreferenciasAcessibilidade = {
   visualBrightness: number;
   /** Contraste MÍNIMO entre um preenchimento e o texto em cima dele: 4.5, 7 ou 10. */
   visualContrast: number;
-  /** A cor escolhida à mão para um significado; vence o padrão. Sempre em `#rrggbb`. */
-  visualColors: Partial<Record<PapelDeCor, string>>;
 
   // Bloco 4 (motricidade e comunicação). Também ficam só no navegador, sem coluna no backend.
 
@@ -137,7 +135,6 @@ export const PREFERENCIAS_PADRAO: PreferenciasAcessibilidade = {
   visualSaturation: 100,
   visualBrightness: 100,
   visualContrast: 4.5,
-  visualColors: {},
   scanning: false,
   scanSpeed: 1.5,
   scanKey: "",

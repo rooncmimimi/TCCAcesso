@@ -11,6 +11,7 @@ import { explicacaoDaPagina } from "@/dados/explicacoesPaginas";
 import { GLOSSARIO, type TermoDoGlossario } from "@/dados/glossario";
 import { frasesDeOndeEstou, type OndeEstou } from "@/lib/ondeEstou";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /** O que foi lido da página ANTES de abrir o diálogo (o Radix esconde o resto da página do DOM acessível). */
 export type FotoDaPagina = {
@@ -37,7 +38,7 @@ export function PainelOndeEstou({ foto }: { foto: FotoDaPagina }) {
           ))}
         </ul>
       </TextoOuvivel>
-      <SalvarInstrucao titulo={`Onde estou: ${foto.onde.pagina ?? foto.caminho}`} texto={frases.join(" ")} />
+      <SalvarInstrucao titulo={tx`Onde estou: ${foto.onde.pagina ?? foto.caminho}`} texto={frases.join(" ")} />
     </div>
   );
 }
@@ -79,9 +80,9 @@ function Termo({ termo }: { termo: TermoDoGlossario }) {
       <h4 className="text-sm font-bold">{termo.termo}</h4>
       <TextoOuvivel rotulo={t("acessibilidade.paineisDeAjuda.ouvirAExplicacaoDe", { var1: termo.termo })}>
         <p className="mt-1 text-sm">{termo.explicacao}</p>
-        {termo.exemplo && <p className="mt-1 text-sm text-muted-foreground">Exemplo: {termo.exemplo}</p>}
+        {termo.exemplo && <p className="mt-1 text-sm text-muted-foreground">{tx("Exemplo:")}{" "}{termo.exemplo}</p>}
       </TextoOuvivel>
-      <SalvarInstrucao titulo={`Glossário: ${termo.termo}`} texto={`${termo.explicacao}${termo.exemplo ? ` Exemplo: ${termo.exemplo}` : ""}`} />
+      <SalvarInstrucao titulo={tx`Glossário: ${termo.termo}`} texto={`${termo.explicacao}${termo.exemplo ? tx` Exemplo: ${termo.exemplo}` : ""}`} />
     </li>
   );
 }
@@ -168,7 +169,7 @@ export function PainelHistorico() {
         {itens.map((item) => (
           <li key={item.id} className="rounded-lg border border-border p-3">
             <h4 className="text-sm font-bold">{item.titulo}</h4>
-            <TextoOuvivel rotulo={`Ouvir: ${item.titulo}`}>
+            <TextoOuvivel rotulo={tx`Ouvir: ${item.titulo}`}>
               <p className="mt-1 text-sm">{item.texto}</p>
             </TextoOuvivel>
             <Button

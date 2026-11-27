@@ -16,6 +16,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { seguidoresService } from "@/services/empresas.service";
 import { urlArquivo } from "@/utils/arquivos";
 import type { SugestaoPerfil } from "@/types";
+import { tx } from "@/i18n/frases";
 
 /** Lista de seguidores/seguindo de um usuário, aberta a partir dos contadores do perfil. */
 export function ListaSeguidoresDialog({
@@ -47,7 +48,7 @@ export function ListaSeguidoresDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[80dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{modo === "seguidores" ? "Seguidores" : "Seguindo"}</DialogTitle>
+          <DialogTitle>{modo === "seguidores" ? tx("Seguidores") : tx("Seguindo")}</DialogTitle>
         </DialogHeader>
 
         {isLoading ? (
@@ -62,7 +63,7 @@ export function ListaSeguidoresDialog({
           <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
             <Users className="size-8" aria-hidden="true" />
             <p className="text-sm">
-              {modo === "seguidores" ? "Ninguém segue este perfil ainda." : "Ainda não segue ninguém."}
+              {modo === "seguidores" ? tx("Ninguém segue este perfil ainda.") : tx("Ainda não segue ninguém.")}
             </p>
           </div>
         ) : (
@@ -93,7 +94,7 @@ export function ListaSeguidoresDialog({
 
         {total > (data?.dados.length ?? 0) && !isLoading && !isError ? (
           <p className="pt-2 text-center text-xs text-muted-foreground">
-            Mostrando {data?.dados.length ?? 0} de {total}.
+            {tx`Mostrando ${data?.dados.length ?? 0} de ${total}.`}
           </p>
         ) : null}
       </DialogContent>

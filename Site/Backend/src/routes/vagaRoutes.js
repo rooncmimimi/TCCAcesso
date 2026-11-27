@@ -106,10 +106,12 @@ router.get(
     VagaController.obter
 );
 
+// A empresa publica a própria vaga. O administrador também pode criar, em nome de uma empresa
+// aprovada que ele escolhe (`empresaId` no corpo, que o service só lê para ele).
 router.post(
     "/",
     autenticacaoMiddleware,
-    exigirTipoUsuarioMiddleware("empresa"),
+    exigirTipoUsuarioMiddleware("empresa", "administrador"),
     validarCriacaoVaga,
     validacaoMiddleware,
     VagaController.criar

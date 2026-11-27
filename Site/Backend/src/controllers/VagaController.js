@@ -108,7 +108,7 @@ class VagaController {
 
     async criar(req, res, next) {
         try {
-            const vaga = await VagaService.criar(req.body, req.user);
+            const vaga = await VagaService.criar(req.body, req.user, contextoRequisicao(req));
 
             return res.status(201).json({ sucesso: true, vaga });
         } catch (erro) {

@@ -313,9 +313,44 @@ class VagaService {
         return montarResposta("vagas", vagasComContagem, count, pagina, limite);
     }
 
-    /* Criar (empresa dona) */
-    async criar(data, solicitante) {
-        const empresa = await this.empresaDoUsuario(solicitante.id);
+    /**
+     * A empresa para a qual o ADMINISTRADOR está criando a vaga.
+     *
+     * Uma vaga sempre pertence a uma empresa, e o administrador não tem uma. Por isso ele diz qual no
+     * pedido (`empresaId`) — e só aqui esse campo vale: para uma conta de empresa ele é ignorado, e a
+     * empresa vem sempre da sessão. Sem isso, qualquer empresa poderia publicar em nome de outra.
+     *
+     * Exige empresa APROVADA mesmo para o administrador. `garantirEmpresaAprovada` deixa o
+     * administrador passar (ele usa as rotas de moderação em empresas de qualquer estado), mas criar
+     * vaga é outra coisa: vaga de empresa pendente, reprovada ou suspensa não aparece para ninguém, e
+     * seria uma vaga criada para sumir.
+     */
+    async empresaParaVagaDoAdministrador(empresaId) {
+        if (!empresaId) {
+            throw ErroApi.requisicaoInvalida("Informe para qual empresa é a vaga.");
+        }
+
+        const empresa = await Empresa.findByPk(empresaId);
+
+        if (!empresa) {
+            throw ErroApi.naoEncontrado("Empresa não encontrada.");
+        }
+
+        if (empresa.statusAprovacao !== "aprovada") {
+            throw ErroApi.requisicaoInvalida(
+                "A vaga só pode ser criada para uma empresa aprovada. Aprove a empresa antes."
+            );
+        }
+
+        return empresa;
+    }
+
+    /* Criar (empresa dona, ou administrador em nome de uma empresa aprovada) */
+    async criar(data, solicitante, contexto = {}) {
+        const emNomeDeEmpresa = ehAdministrador(solicitante);
+        const empresa = emNomeDeEmpresa
+            ? await this.empresaParaVagaDoAdministrador(data.empresaId)
+            : await this.empresaDoUsuario(solicitante.id);
 
         garantirEmpresaAprovada(empresa, solicitante);
 
@@ -325,6 +360,20 @@ class VagaService {
             empresaId: empresa.id,
             status: data.status || "aberta"
         });
+
+        // Criar em nome de uma empresa é ato de moderação: fica no log, como excluir e alterar o status.
+        if (emNomeDeEmpresa) {
+            await AdminAuditoriaService.registrar({
+                administradorId: solicitante.id,
+                acao: "criar_vaga",
+                entidadeTipo: "vaga",
+                entidadeId: vaga.id,
+                descricao: `Vaga "${vaga.titulo ?? data.titulo}" criada pelo administrador para a empresa ${empresa.nomeFantasia || empresa.razaoSocial}.`,
+                metadados: { empresaId: empresa.id },
+                ip: contexto.ip,
+                userAgent: contexto.userAgent
+            });
+        }
 
         return this.buscarPorId(vaga.id);
     }

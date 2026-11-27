@@ -107,7 +107,11 @@ const camposVaga = (obrigatorio) => [
         .withMessage("O mapa de acessibilidade física deve ser um objeto.")
 ];
 
-export const validarCriacaoVaga = camposVaga(true);
+export const validarCriacaoVaga = [
+    // Só o administrador usa: diz para qual empresa é a vaga. Para a conta de empresa o service o ignora.
+    body("empresaId").optional({ values: "falsy" }).isUUID().withMessage("Identificador da empresa inválido."),
+    ...camposVaga(true)
+];
 
 export const validarAtualizacaoVaga = [
     param("id").isUUID().withMessage("Identificador inválido."),

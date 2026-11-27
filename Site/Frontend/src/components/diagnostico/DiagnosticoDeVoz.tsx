@@ -13,6 +13,7 @@ import { montarRelatorio, resumirVozes, testarEventosDePalavra, testarPausaNativ
 import { RESUMO_POR_NIVEL, ROTULO_DO_NIVEL, explicarMarcacaoDasPalavras, explicarPausaEContinuar, piorNivel, type Explicacao, type Nivel } from "@/lib/explicacaoDoDiagnostico";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx, localeAtual } from "@/i18n/frases";
 
 /** Como o ACESSO está marcando o texto agora, em palavras de todo dia. */
 const MODO_EM_PALAVRAS: Record<string, ChaveBase> = {
@@ -196,7 +197,7 @@ export function DiagnosticoDeVoz() {
       palavras,
       pausa,
       observacoes: { destaque, pausa: pausaObs, continuar, comentario },
-      quando: new Date().toLocaleString("pt-BR"),
+      quando: new Date().toLocaleString(localeAtual()),
     };
 
     return montarRelatorio(dados);
@@ -260,16 +261,16 @@ export function DiagnosticoDeVoz() {
 
       <section aria-labelledby={`${idBase}-e3`} className="space-y-4">
         <h2 id={`${idBase}-e3`} className="text-xl font-bold">
-          Etapa 3 de 3 (opcional): teste automático
+          {tx("Etapa 3 de 3 (opcional): teste automático")}
         </h2>
         <p className="text-sm text-muted-foreground">{t("diagnostico.diagnosticoDeVoz.aquiOAcessoTestaSozinhoAVozDo")}</p>
 
         <Button type="button" className="min-h-11 gap-2" disabled={!sintetizador || rodando !== null} onClick={() => void testarSozinho()}>
-          <Play className="size-4" aria-hidden="true" /> {rodando ? "Testando…" : t("diagnostico.diagnosticoDeVoz.fazerOTesteAutomatico")}
+          <Play className="size-4" aria-hidden="true" /> {rodando ? tx("Testando…") : t("diagnostico.diagnosticoDeVoz.fazerOTesteAutomatico")}
         </Button>
 
         <p role="status" className="text-sm font-semibold">
-          {rodando === "palavras" ? "Testando a marcação das palavras: a voz vai falar uma frase." : rodando === "pausa" ? "Testando pausar e continuar: a voz vai parar e voltar." : ""}
+          {rodando === "palavras" ? tx("Testando a marcação das palavras: a voz vai falar uma frase.") : rodando === "pausa" ? tx("Testando pausar e continuar: a voz vai parar e voltar.") : ""}
         </p>
 
         {resumo ? (
@@ -300,10 +301,10 @@ export function DiagnosticoDeVoz() {
       </section>
 
       <details className="rounded-lg border border-border">
-        <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold">Vozes instaladas neste aparelho ({resumoDasVozes.total})</summary>
+        <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold">{tx("Vozes instaladas neste aparelho (")}{resumoDasVozes.total})</summary>
         <div className="space-y-3 border-t border-border p-3">
           <p role="status" className="text-sm">
-            {resumoDasVozes.total === 0 ? "Nenhuma voz encontrada ainda. Se acabou de abrir a página, espere um instante." : t("diagnostico.diagnosticoDeVoz.emPortuguesInstaladasNo", { var1: resumoDasVozes.portugues, var2: resumoDasVozes.locaisEmPortugues, var3: resumoDasVozes.deRedeEmPortugues })}
+            {resumoDasVozes.total === 0 ? tx("Nenhuma voz encontrada ainda. Se acabou de abrir a página, espere um instante.") : t("diagnostico.diagnosticoDeVoz.emPortuguesInstaladasNo", { var1: resumoDasVozes.portugues, var2: resumoDasVozes.locaisEmPortugues, var3: resumoDasVozes.deRedeEmPortugues })}
           </p>
           <div className="space-y-1">
             <Label htmlFor={`${idBase}-voz`}>{t("diagnostico.diagnosticoDeVoz.vozUsadaNoTesteAutomatico")}</Label>
@@ -311,7 +312,7 @@ export function DiagnosticoDeVoz() {
               <option value="">{t("diagnostico.diagnosticoDeVoz.aVozPadraoDoAparelho")}</option>
               {vozes.map((v) => (
                 <option key={`${v.name}-${v.lang}`} value={v.name}>
-                  {v.name} ({v.lang}, {v.localService ? "instalada" : t("diagnostico.diagnosticoDeVoz.usaAInternet")})
+                  {v.name} ({v.lang}, {v.localService ? tx("instalada") : t("diagnostico.diagnosticoDeVoz.usaAInternet")})
                 </option>
               ))}
             </select>

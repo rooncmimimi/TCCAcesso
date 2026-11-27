@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Frase } from "@/i18n/Frase";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 import { Button } from "@/components/ui/button";
-import { CONTEUDO_PENDENTE, DOCUMENTOS, type DocumentoLegal } from "@/dados/documentosLegais";
+import { CONTEUDO_PENDENTE, documentoNoIdioma, type DocumentoLegal } from "@/dados/documentosLegais";
 
 /**
  * Abre um documento legal para leitura sem sair do formulário.
@@ -37,9 +38,9 @@ export function DocumentoLegalDialog({
   /** O texto clicável que abre o documento. */
   children: ReactNode;
 }) {
-  const { t } = useIdioma();
+  const { t, idioma } = useIdioma();
   const [aberto, setAberto] = useState(false);
-  const doc = DOCUMENTOS[documento];
+  const doc = documentoNoIdioma(documento, idioma);
 
   return (
     <Dialog open={aberto} onOpenChange={setAberto}>
@@ -85,6 +86,7 @@ export function DocumentoLegalDialog({
 /** Corpo do documento, compartilhado entre o diálogo e a página inteira. */
 export function CorpoDocumento({ doc, nivelDasSecoes = 3 }: { doc: DocumentoLegal; /** 3 dentro do diálogo (o título dele é h2); 2 na página inteira (o título é h1). */ nivelDasSecoes?: 2 | 3 }) {
   const TituloDaSecao = nivelDasSecoes === 2 ? "h2" : "h3";
+  const { idioma } = useIdioma();
 
   return (
     <>
@@ -102,6 +104,12 @@ export function CorpoDocumento({ doc, nivelDasSecoes = 3 }: { doc: DocumentoLega
             />
           </p>
         </div>
+      )}
+
+      {idioma !== "pt" && (
+        <p role="note" className="mb-5 rounded-lg border border-border bg-secondary p-4 text-sm">
+          {tx("Esta é uma tradução. Se houver diferença, vale o texto em português.")}
+        </p>
       )}
 
       <div className="space-y-6">

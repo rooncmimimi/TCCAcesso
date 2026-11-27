@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { TextoOuvivel } from "@/components/acessibilidade/TextoOuvivel";
 import { PROFISSOES, buscarProfissoes, type IconeDeProfissao, type Profissao } from "@/dados/profissoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 const ICONES: Record<IconeDeProfissao, LucideIcon> = {
   atendimento: Headset,
@@ -68,9 +69,9 @@ function FichaDaProfissao({ profissao: p }: { profissao: Profissao }) {
           </TextoOuvivel>
           <p className="text-xs text-muted-foreground">{t("profissoes.dicionarioDeProfissoes.istoEUmExemploGeralARotinaDe")}</p>
           <Button asChild variant="outline" className="min-h-11">
-            <Link to="/vagas" search={{ q: p.nome.split(" ou ")[0] }}>
+            <Link to="/vagas" search={{ q: p.termoDeBusca }}>
               {t("profissoes.dicionarioDeProfissoes.procurarVagasDe", {
-                profissao: p.nome.split(" ou ")[0].toLowerCase(),
+                profissao: p.nome.split(/ (?:ou|or|o) /)[0].toLowerCase(),
               })}
             </Link>
           </Button>
@@ -101,7 +102,7 @@ export function DicionarioDeProfissoes() {
       </div>
 
       <p role="status" className="text-sm text-muted-foreground">
-        {lista.length === 0 ? "Nenhuma profissão encontrada. Tente outra palavra." : lista.length === PROFISSOES.length ? `${lista.length} profissões.` : `${lista.length} de ${PROFISSOES.length} profissões.`}
+        {lista.length === 0 ? tx("Nenhuma profissão encontrada. Tente outra palavra.") : lista.length === PROFISSOES.length ? tx`${lista.length} profissões.` : tx`${lista.length} de ${PROFISSOES.length} profissões.`}
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">

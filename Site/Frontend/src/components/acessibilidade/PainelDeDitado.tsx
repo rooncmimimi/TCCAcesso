@@ -9,6 +9,7 @@ import { useEstadoDoMicrofone } from "@/hooks/useEstadoDoMicrofone";
 import { comoLiberarOMicrofone } from "@/lib/microfone";
 import { aplicarSugestao, sugerirCorrecoes } from "@/lib/vocabularioContextual";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * O ditado em si: botão de ditar, indicador de microfone, área de revisão com as correções sugeridas
@@ -54,7 +55,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" variant="outline" size="sm" className="min-h-11 gap-2" aria-pressed={ditado.ouvindo} onClick={ditado.ouvindo ? ditado.parar : ditado.iniciar}>
               {ditado.ouvindo ? <MicOff className="size-4" aria-hidden="true" /> : <Mic className="size-4" aria-hidden="true" />}
-              {ditado.ouvindo ? "Parar ditado" : t("acessibilidade.painelDeDitado.ditarTexto")}
+              {ditado.ouvindo ? tx("Parar ditado") : t("acessibilidade.painelDeDitado.ditarTexto")}
             </Button>
 
             <p role="status" className="text-sm font-semibold text-primary">
@@ -119,7 +120,7 @@ export function PainelDeDitado({ aoInserir }: { aoInserir: (texto: string) => vo
                 {sugestoes.map((s) => (
                   <li key={`${s.inicio}:${s.sugestao}`} className="flex flex-wrap items-center gap-2 text-sm">
                     <span>
-                      Trocar “<strong>{s.trecho}</strong>{t("acessibilidade.painelDeDitado.por")}<strong>{s.sugestao}</strong>”? <span className="text-muted-foreground">{s.motivo}</span>
+                      {tx("Trocar “")}<strong>{s.trecho}</strong>{t("acessibilidade.painelDeDitado.por")}<strong>{s.sugestao}</strong>”? <span className="text-muted-foreground">{s.motivo}</span>
                     </span>
                     <Button type="button" size="sm" variant="secondary" onClick={() => setRevisao((atual) => (atual === null ? atual : aplicarSugestao(atual, s)))}>
                       {t("acessibilidade.painelDeDitado.aceitar")}

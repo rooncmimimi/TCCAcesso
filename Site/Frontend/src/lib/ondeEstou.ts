@@ -10,6 +10,7 @@
 
 import { descreverElemento } from "@/lib/leitorSemantico";
 import { criarVerificadorDeOculto } from "@/lib/cursorDeLeitura";
+import { tx } from "@/i18n/frases";
 
 export type OndeEstou = {
   pagina: string | null;
@@ -98,9 +99,9 @@ function fechar(frase: string): string {
 /** As partes que foram encontradas, em frases curtas, na ordem: página, etapa, seção, ação. */
 export function frasesDeOndeEstou(info: OndeEstou): string[] {
   const frases: string[] = [];
-  if (info.pagina) frases.push(fechar(`Você está na página: ${info.pagina}`));
+  if (info.pagina) frases.push(fechar(tx`Você está na página: ${info.pagina}`));
   if (info.etapa) frases.push(fechar(info.etapa));
-  if (info.secao && info.secao !== info.pagina) frases.push(fechar(`Seção atual: ${info.secao}`));
-  if (info.acao) frases.push(fechar(`Ação principal desta tela: ${info.acao}`));
+  if (info.secao && info.secao !== info.pagina) frases.push(fechar(tx`Seção atual: ${info.secao}`));
+  if (info.acao) frases.push(fechar(tx`Ação principal desta tela: ${info.acao}`));
   return frases;
 }

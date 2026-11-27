@@ -18,6 +18,7 @@ import segurancaService, { codigoDoErroSeguranca, desafioDeDispositivoVenceu, me
 import { useIdioma } from "@/hooks/useIdioma";
 import { Frase } from "@/i18n/Frase";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
+import { tx } from "@/i18n/frases";
 
 /**
  * Passo 2 do login num aparelho que o servidor ainda não reconhece: o código de 6 números que chegou por e-mail.
@@ -117,7 +118,7 @@ function VerificacaoDeDispositivo() {
         return;
       }
 
-      toast.success(lembrar ? "Login realizado. Este dispositivo foi lembrado." : t("login.sucesso"));
+      toast.success(lembrar ? tx("Login realizado. Este dispositivo foi lembrado.") : t("login.sucesso"));
 
       // `replace`: o botão "voltar" não pode reabrir esta tela de passagem.
       void navigate({ ...destinoAposEntrar(resultado), replace: true });
@@ -278,7 +279,7 @@ function VerificacaoDeDispositivo() {
                 </Button>
                 {/* Avisa uma única vez, quando a espera acaba, sem narrar a contagem inteira. */}
                 <p role="status" className="sr-only">
-                  {podePedirOutro && faltam <= 0 ? "Você já pode pedir outro código." : ""}
+                  {podePedirOutro && faltam <= 0 ? tx("Você já pode pedir outro código.") : ""}
                 </p>
                 <Button asChild variant="ghost" className="min-h-11 justify-start px-0">
                   <Link to="/entrar" onClick={limparVerificacao}>

@@ -16,6 +16,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { useIdioma } from "@/hooks/useIdioma";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
 import type { TFuncao } from "@/contexts/IdiomaContext";
+import { tx } from "@/i18n/frases";
 
 /** O esquema nasce do idioma atual: as mensagens de erro saem na língua da tela. */
 const criarEsquema = (t: TFuncao) =>
@@ -236,7 +237,7 @@ function ConfirmarEmail() {
                       disabled={reenviando || reenviado}
                       onClick={() => void reenviar()}
                     >
-                      {reenviando ? "Reenviando…" : reenviado ? "Código reenviado" : t("confirmar-email.reenviarCodigo")}
+                      {reenviando ? tx("Reenviando…") : reenviado ? tx("Código reenviado") : t("confirmar-email.reenviarCodigo")}
                     </button>
                   </p>
                   <p>

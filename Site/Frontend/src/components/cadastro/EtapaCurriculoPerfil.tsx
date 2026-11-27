@@ -18,6 +18,7 @@ import { perfilService } from "@/services/perfil.service";
 import { extrairMensagemErro } from "@/services/api";
 import type { DeduzidosPelaIa, RascunhoCurriculo } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 const ESCOLARIDADES = [
   "Ensino fundamental",
@@ -399,7 +400,7 @@ export function EtapaCurriculoPerfil({
             <SelectContent>
               {ESCOLARIDADES.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {item}
+                  {tx(item)}
                 </SelectItem>
               ))}
             </SelectContent>

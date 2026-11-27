@@ -36,6 +36,13 @@ const criarEsquemaLogin = (t: TFuncao) =>
 type FormularioLogin = z.infer<ReturnType<typeof criarEsquemaLogin>>;
 
 export const Route = createFileRoute("/entrar")({
+  validateSearch: z.object({
+    /**
+     * `?depois=empresa`: quem veio de "Sou empresa" e já tem conta de candidato. Depois de entrar, segue
+     * para o cadastro da empresa em vez de cair no feed (ver `lib/destinoAposEntrar.ts`).
+     */
+    depois: z.enum(["empresa"]).optional(),
+  }),
   head: () => ({
     meta: [
       { title: textoDaPagina("meta.entrarTitulo") },
@@ -50,6 +57,7 @@ export const Route = createFileRoute("/entrar")({
 function Entrar() {
   const { entrar } = useSessao();
   const { t } = useIdioma();
+  const { depois } = Route.useSearch();
   const esquemaLogin = useMemo(() => criarEsquemaLogin(t), [t]);
   // Só oferece "Acho que invadiram minha conta" quando o recurso está ligado no servidor.
   const { data: estadoSeguranca } = useEstadoDaSeguranca();
@@ -116,7 +124,7 @@ function Entrar() {
 
       // Retomar o cadastro por terminar, painel do administrador ou feed: a regra é a mesma do
       // retorno do Google (ver `lib/destinoAposEntrar.ts`).
-      navigate(destinoAposEntrar(resultado));
+      navigate(destinoAposEntrar(resultado, depois));
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, t("login.falha"));
       setError("senha", { message: mensagem });
@@ -160,7 +168,7 @@ function Entrar() {
       // Os toasts abaixo já são lidos pelo `useLeituraAutomatica`; falar aqui também duplicaria a
       // leitura.
       toast.success(t("login.reativada"));
-      navigate(destinoAposEntrar(resultado));
+      navigate(destinoAposEntrar(resultado, depois));
     } catch (erro) {
       const mensagem = extrairMensagemErro(erro, t("login.reativarFalhou"));
       toast.error(mensagem);
@@ -295,7 +303,16 @@ function Entrar() {
                 </p>
               </div>
 
-              <BotaoGoogle />
+              {/* Quem veio de "Sou empresa" e já tem conta de candidato entra por ela e segue para a
+                  empresa. Sem este aviso, o login parecia o de sempre e a pessoa não sabia que o
+                  cadastro da empresa continuava depois dele. */}
+              {depois === "empresa" ? (
+                <p role="note" className="mb-5 rounded-lg border border-primary/30 bg-primary-soft p-3 text-sm font-medium">
+                  {t("login.paraCadastrarUmaEmpresa")}
+                </p>
+              ) : null}
+
+              <BotaoGoogle tipoConta={depois === "empresa" ? "empresa" : undefined} />
 
               <form className="space-y-5" onSubmit={aoEnviar} noValidate>
                 <Campo id="email" rotulo={t("login.email")} erro={errors.email?.message}>
@@ -360,7 +377,7 @@ function Entrar() {
       {!emInterrupcao && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {t("login.semConta")}{" "}
-          <Link to="/cadastro" className="font-semibold text-primary underline underline-offset-2">
+          <Link to="/cadastro" search={{ depois }} className="font-semibold text-primary underline underline-offset-2">
             {t("login.criarConta")}
           </Link>
         </p>

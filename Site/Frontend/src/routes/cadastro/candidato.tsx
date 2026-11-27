@@ -17,6 +17,7 @@ import { PainelAcessibilidade } from "@/components/acessibilidade/PainelAcessibi
 import { BotaoGoogle, ContaGoogleConfirmada } from "@/components/cadastro/BotaoGoogle";
 import { Campo } from "@/components/cadastro/Campo";
 import { descricao } from "@/components/cadastro/descricao";
+import { AvisoEmailJaCadastrado } from "@/components/cadastro/AvisoEmailJaCadastrado";
 import { EtapaCurriculoPerfil } from "@/components/cadastro/EtapaCurriculoPerfil";
 import { LegendaObrigatorio } from "@/components/cadastro/MarcaObrigatorio";
 import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
@@ -37,6 +38,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { lerProva, limparProva } from "@/lib/googleNavegador";
 import { formatarCpf, formatarTelefone, somenteDigitos } from "@/lib/mascaras";
 import { destinoAposEntrar } from "@/lib/destinoAposEntrar";
+import { ehEmailJaCadastrado } from "@/lib/erroDeEmailRepetido";
 import { lerEtapaSalva, salvarEtapa } from "@/lib/etapaCadastro";
 import { normalizarNome } from "@/lib/validacoesPessoais";
 import { limitesDataNascimento } from "@/components/cadastro/regrasPessoais";
@@ -112,9 +114,11 @@ function CadastroCandidato() {
 
   useEffect(() => {
     if (modo === "sair" && usuario) {
-      void navigate({ ...destinoAposEntrar(usuario), replace: true });
+      // Com `?depois=empresa`, o que a pessoa queria era a empresa: ela já tem a conta pessoal completa, então
+      // vai direto ao cadastro da empresa em vez de cair no feed.
+      void navigate({ ...destinoAposEntrar(usuario, depois), replace: true });
     }
-  }, [modo, usuario, navigate]);
+  }, [modo, usuario, navigate, depois]);
   // A prova do Google só vale quando a pessoa veio do Google (`?google`); sem isso, uma prova que
   // sobrou de um cadastro abandonado é descartada, para não travar o e-mail de outro cadastro.
   const googleProva = useMemo(() => (google ? lerProva() : null), [google]);
@@ -157,6 +161,21 @@ function CadastroCandidato() {
         </div>
       </div>
 
+      {/* Quem veio de "Sou empresa" e já tem conta de candidato precisa saber, antes de preencher qualquer
+          campo, que existe outro caminho: entrar com ela. Sem este aviso, a única saída visível era criar
+          uma conta nova — e o e-mail de quem já tinha conta era recusado no fim. */}
+      {modo === "novo" && depois === "empresa" ? (
+        <div className="mb-4 space-y-1 rounded-xl border-2 border-primary/40 bg-primary-soft/40 p-4 text-sm">
+          <p className="font-semibold">{t.empresaComecaPelaContaPessoal}</p>
+          <p>
+            {t.jaTemContaDeCandidato}{" "}
+            <Link to="/entrar" search={{ depois }} className="font-semibold text-primary underline underline-offset-2">
+              {t.entreEContinueAEmpresa}
+            </Link>
+          </p>
+        </div>
+      ) : null}
+
       <Card className="shadow-card">
         <CardContent className="p-6 sm:p-8">
           {modo === "aguardando" || modo === "sair" ? (
@@ -182,7 +201,7 @@ function CadastroCandidato() {
       {modo === "novo" && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {t.jaTemConta}{" "}
-          <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
+          <Link to="/entrar" search={{ depois }} className="font-semibold text-primary underline underline-offset-2">
             {t.entrar}
           </Link>
         </p>
@@ -231,6 +250,9 @@ function WizardCandidato({
     return salvo !== null && salvo >= CANDIDATO.PERFIL && salvo <= CANDIDATO.ACESSIBILIDADE ? salvo : CANDIDATO.PERFIL;
   });
   const [enviando, setEnviando] = useState(false);
+  // E-mail com o qual o servidor disse "já existe conta": enquanto o campo continuar igual a ele, o aviso
+  // com o caminho para entrar fica na tela.
+  const [emailRepetido, setEmailRepetido] = useState<string | null>(null);
   const [candidatoId, setCandidatoId] = useState<string | null>(null);
   // Vira `true` na primeira troca de etapa: antes disso o título não puxa o foco (ver TituloEtapa).
   const navegou = useRef(false);
@@ -340,6 +362,14 @@ function WizardCandidato({
       setCandidatoId(candidato.id);
       irPara(CANDIDATO.PERFIL, resultado.id);
     } catch (erro) {
+      // Quem já tem conta com este e-mail não precisa de um aviso passageiro: precisa de um caminho. Volta
+      // à etapa do e-mail, onde o aviso fica na tela com o botão para entrar.
+      if (ehEmailJaCadastrado(erro)) {
+        setEmailRepetido(v.email);
+        irPara(CANDIDATO.CONTA);
+        return;
+      }
+
       toast.error(extrairMensagemErro(erro, t.erroContaGenerico));
     } finally {
       setEnviando(false);
@@ -439,6 +469,9 @@ function WizardCandidato({
       {passo === CANDIDATO.CONTA && (
         <>
           <TituloEtapa titulo={t.contaTitulo} descricao={t.contaDescricao} focar={navegou.current} />
+          {emailRepetido && emailRepetido === watch("email") ? (
+            <AvisoEmailJaCadastrado t={t} depois={seguirParaEmpresa ? "empresa" : undefined} />
+          ) : null}
           {doGoogle ? (
             /*
               Quem já voltou do Google não vê o botão de novo: clicar nele sairia do ACESSO para a

@@ -10,6 +10,7 @@ import { VagaEmpresaCard } from "@/components/dashboard/VagaEmpresaCard";
 import { ROTULO_STATUS_VAGA } from "@/components/dashboard/constantesVaga";
 import type { StatusVaga, Vaga } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /** Lista paginada de vagas de um status, com card de gestão para cada uma. */
 function ListaVagasPorStatus({
@@ -72,7 +73,7 @@ function ListaVagasPorStatus({
             {t("vagas.paginaAnterior")}
           </Button>
           <span className="self-center text-sm text-muted-foreground">
-            Página {data.pagina} de {data.totalPaginas}
+            {tx`Página ${data.pagina} de ${data.totalPaginas}`}
           </span>
           <Button
             variant="outline"

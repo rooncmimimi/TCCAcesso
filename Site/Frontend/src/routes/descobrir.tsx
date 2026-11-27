@@ -17,6 +17,7 @@ import { extrairMensagemErro } from "@/services/api";
 import type { SugestaoEmpresa, SugestaoPerfil } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
+import { tx } from "@/i18n/frases";
 
 /**
  * Mesma chave de query do perfil (`PerfilPessoal.tsx`) para o resumo de seguidores, de propósito: o
@@ -196,7 +197,7 @@ function CartaoPessoa({ pessoa }: { pessoa: SugestaoPerfil }) {
 function CartaoEmpresa({ empresa }: { empresa: SugestaoEmpresa }) {
   const { t } = useIdioma();
   const queryClient = useQueryClient();
-  const nome = empresa.nomeFantasia ?? empresa.razaoSocial ?? "Empresa";
+  const nome = empresa.nomeFantasia ?? empresa.razaoSocial ?? tx("Empresa");
 
   const seguir = useMutation({
     mutationFn: () => seguidoresService.alternarEmpresa(empresa.id),

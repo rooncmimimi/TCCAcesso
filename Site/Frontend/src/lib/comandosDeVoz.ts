@@ -1,3 +1,6 @@
+import { idiomaDasFrases, tx } from "@/i18n/frases";
+import { falaEmPortugues } from "@/lib/comandosEmOutrosIdiomas";
+
 /**
  * Comandos de voz do ACESSO: transforma o que o reconhecimento de fala ouviu em uma ação conhecida.
  *
@@ -43,18 +46,18 @@ const palavra = (fala: string, termo: string) => new RegExp(`\\b${termo}\\b`).te
 type Rota = { termos: string[]; para: string; descricao: string; privada: boolean };
 
 const ROTAS: readonly Rota[] = [
-  { termos: ["minha acessibilidade"], para: "/minha-acessibilidade", descricao: "Minha Acessibilidade", privada: true },
-  { termos: ["configuracoes de acessibilidade", "configuracao de acessibilidade", "preferencias de acessibilidade"], para: "/configuracoes/acessibilidade", descricao: "as configurações de acessibilidade", privada: false },
-  { termos: ["configuracoes", "configuracao"], para: "/configuracoes", descricao: "as configurações", privada: true },
-  { termos: ["mensagens", "mensagem", "conversas"], para: "/mensagens", descricao: "as mensagens", privada: true },
-  { termos: ["notificacoes", "notificacao", "avisos"], para: "/notificacoes", descricao: "as notificações", privada: true },
-  { termos: ["perfil"], para: "/perfil", descricao: "o seu perfil", privada: true },
-  { termos: ["inicio", "feed", "publicacoes"], para: "/feed", descricao: "o início", privada: true },
-  { termos: ["objetivos", "o que quero fazer", "o que eu quero fazer"], para: "/objetivos", descricao: "os objetivos", privada: false },
-  { termos: ["profissoes", "dicionario de profissoes", "dicionario"], para: "/profissoes", descricao: "o dicionário de profissões", privada: false },
-  { termos: ["comunicacao", "cartoes", "frases prontas"], para: "/comunicacao", descricao: "a central de comunicação", privada: false },
-  { termos: ["simulador", "treino", "treinar"], para: "/simulador", descricao: "o simulador", privada: true },
-  { termos: ["vagas", "vaga", "empregos"], para: "/vagas", descricao: "as vagas", privada: false },
+  { termos: ["minha acessibilidade"], para: "/minha-acessibilidade", get descricao() { return tx("Minha Acessibilidade"); }, privada: true },
+  { termos: ["configuracoes de acessibilidade", "configuracao de acessibilidade", "preferencias de acessibilidade"], para: "/configuracoes/acessibilidade", get descricao() { return tx("as configurações de acessibilidade"); }, privada: false },
+  { termos: ["configuracoes", "configuracao"], para: "/configuracoes", get descricao() { return tx("as configurações"); }, privada: true },
+  { termos: ["mensagens", "mensagem", "conversas"], para: "/mensagens", get descricao() { return tx("as mensagens"); }, privada: true },
+  { termos: ["notificacoes", "notificacao", "avisos"], para: "/notificacoes", get descricao() { return tx("as notificações"); }, privada: true },
+  { termos: ["perfil"], para: "/perfil", get descricao() { return tx("o seu perfil"); }, privada: true },
+  { termos: ["inicio", "feed", "publicacoes"], para: "/feed", get descricao() { return tx("o início"); }, privada: true },
+  { termos: ["objetivos", "o que quero fazer", "o que eu quero fazer"], para: "/objetivos", get descricao() { return tx("os objetivos"); }, privada: false },
+  { termos: ["profissoes", "dicionario de profissoes", "dicionario"], para: "/profissoes", get descricao() { return tx("o dicionário de profissões"); }, privada: false },
+  { termos: ["comunicacao", "cartoes", "frases prontas"], para: "/comunicacao", get descricao() { return tx("a central de comunicação"); }, privada: false },
+  { termos: ["vagas", "vaga", "empregos"], para: "/vagas", get descricao() { return tx("as vagas"); }, privada: false },
+  { termos: ["ajuda", "tutoriais", "tutorial"], para: "/ajuda", get descricao() { return tx("a central de ajuda"); }, privada: false },
 ];
 
 const FRASES_VOLTAR = ["voltar", "volte", "volta", "pagina anterior", "voltar pagina", "voltar para tras"];
@@ -73,12 +76,13 @@ function termoDaPesquisa(fala: string): string | null {
 }
 
 export function interpretarComando(falaOriginal: string, contexto: ContextoDeVoz): Comando {
-  const fala = normalizarFala(falaOriginal);
+  // Em inglês e espanhol, a fala vira a frase equivalente em português antes das regras abaixo.
+  const fala = falaEmPortugues(normalizarFala(falaOriginal), idiomaDasFrases());
 
   if (!fala) return { tipo: "desconhecido" };
 
   if (PALAVRAS_DESTRUTIVAS.test(fala)) {
-    return { tipo: "recusado", motivo: "Por segurança, excluir, apagar, enviar e publicar não são feitos por voz. Faça isso com as mãos, na tela de confirmação." };
+    return { tipo: "recusado", motivo: tx("Por segurança, excluir, apagar, enviar e publicar não são feitos por voz. Faça isso com as mãos, na tela de confirmação.") };
   }
 
   if (FRASES_PARAR.includes(fala)) return { tipo: "parar-leitura" };
@@ -88,7 +92,7 @@ export function interpretarComando(falaOriginal: string, contexto: ContextoDeVoz
 
   const termo = termoDaPesquisa(fala);
 
-  if (termo !== null) return termo ? { tipo: "pesquisar-vagas", termo } : { tipo: "navegar", para: "/vagas", descricao: "as vagas" };
+  if (termo !== null) return termo ? { tipo: "pesquisar-vagas", termo } : { tipo: "navegar", para: "/vagas", descricao: tx("as vagas") };
 
   if (/\b(candidatar|candidatura)\b/.test(fala) && /\b(me|candidatar|quero)\b/.test(fala) && !/\b(minhas|acompanhar)\b/.test(fala)) return { tipo: "candidatar" };
 
@@ -98,7 +102,7 @@ export function interpretarComando(falaOriginal: string, contexto: ContextoDeVoz
     const ligar = Boolean(modo[1]);
     const nome = modo[3] === "leitura" ? "leitura" : "foco";
 
-    return { tipo: "preferencia", chave: nome === "leitura" ? "readingMode" : "focusMode", valor: ligar, descricao: `${ligar ? "Modo" : "Saindo do modo"} ${nome}` };
+    return { tipo: "preferencia", chave: nome === "leitura" ? "readingMode" : "focusMode", valor: ligar, descricao: ligar ? tx`Modo ${tx(nome)}` : tx`Saindo do modo ${tx(nome)}` };
   }
 
   // Navegação: "ir para vagas", "abrir meu perfil", "mensagens"...
@@ -115,16 +119,18 @@ export function interpretarComando(falaOriginal: string, contexto: ContextoDeVoz
   return { tipo: "desconhecido" };
 }
 
-/** Exemplos mostrados para a pessoa saber o que pode dizer. */
-export const EXEMPLOS_DE_COMANDOS: readonly string[] = [
-  "“Ir para vagas”",
-  "“Abrir meu perfil”",
-  "“Abrir mensagens”",
-  "“Pesquisar vagas de atendente”",
-  "“Próxima página”",
-  "“Voltar”",
-  "“Candidatar-me” (só abre a candidatura)",
-  "“Ativar modo leitura” / “Ativar modo foco”",
-  "“Parar leitura”",
-  "“Mostrar atalhos”",
-];
+/** Exemplos mostrados para a pessoa saber o que pode dizer, no idioma do site. */
+export function exemplosDeComandos(): readonly string[] {
+  return [
+    tx("“Ir para vagas”"),
+    tx("“Abrir meu perfil”"),
+    tx("“Abrir mensagens”"),
+    tx("“Pesquisar vagas de atendente”"),
+    tx("“Próxima página”"),
+    tx("“Voltar”"),
+    tx("“Candidatar-me” (só abre a candidatura)"),
+    tx("“Ativar modo leitura” / “Ativar modo foco”"),
+    tx("“Parar leitura”"),
+    tx("“Mostrar atalhos”"),
+  ];
+}

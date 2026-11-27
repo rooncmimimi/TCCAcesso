@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LIMITE_DE_VAGAS } from "@/lib/comparadorDeVagas";
 import { adicionarNaComparacao, assinarComparacao, fotoDaComparacao, removerDaComparacao } from "@/lib/listaDeComparacao";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * Botão "Comparar" da página da vaga: põe a vaga na lista (até 3) que a tela /comparar mostra lado a
@@ -36,11 +37,11 @@ export function BotaoComparar({ vagaId }: { vagaId: string }) {
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" variant="outline" className="min-h-11" aria-pressed={naLista} onClick={alternar}>
         <Scale className="size-4" aria-hidden="true" />
-        {naLista ? "Tirar da comparação" : t("vagas.botaoComparar.compararEstaVaga")}
+        {naLista ? tx("Tirar da comparação") : t("vagas.botaoComparar.compararEstaVaga")}
       </Button>
       {ids.length > 0 ? (
         <Link to="/comparar" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline">
-          Ver comparação ({ids.length} de {LIMITE_DE_VAGAS})
+          {tx`Ver comparação (${ids.length} de ${LIMITE_DE_VAGAS})`}
         </Link>
       ) : null}
     </div>

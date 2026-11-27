@@ -13,6 +13,7 @@ import { candidaturaAdaptacoesService, minhaAcessibilidadeService } from "@/serv
 import { extrairMensagemErro } from "@/services/api";
 import { escolhaDaCopia, escolhaTemConteudo, escolhaVazia, type CopiaCompartilhada, type EscolhaDeCompartilhamento } from "@/types/adaptacoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 type Props = {
   candidaturaId: string;
@@ -52,7 +53,7 @@ export function EditarAdaptacoesDialog({ candidaturaId, vagaId, tituloDaVaga, at
   const salvar = useMutation({
     mutationFn: () => candidaturaAdaptacoesService.editar(candidaturaId, escolha, aceita),
     onSuccess: () => {
-      toast.success(escolhaTemConteudo(escolha) ? "O que você compartilha nesta candidatura foi atualizado." : t("candidatura.editarAdaptacoesDialog.autorizacaoRetirada"));
+      toast.success(escolhaTemConteudo(escolha) ? tx("O que você compartilha nesta candidatura foi atualizado.") : t("candidatura.editarAdaptacoesDialog.autorizacaoRetirada"));
       void queryClient.invalidateQueries({ queryKey: ["candidaturas"] });
       aoFechar();
     },
@@ -65,7 +66,7 @@ export function EditarAdaptacoesDialog({ candidaturaId, vagaId, tituloDaVaga, at
     <Dialog open={aberto} onOpenChange={(v) => (!v ? aoFechar() : undefined)}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Alterar o que compartilho: {tituloDaVaga}</DialogTitle>
+          <DialogTitle>{tx("Alterar o que compartilho:")}{" "}{tituloDaVaga}</DialogTitle>
           <DialogDescription>{t("candidatura.editarAdaptacoesDialog.aEmpresaPassaraAVerSoOQue")}</DialogDescription>
         </DialogHeader>
 
@@ -100,7 +101,7 @@ export function EditarAdaptacoesDialog({ candidaturaId, vagaId, tituloDaVaga, at
             {t("post.cancelar")}
           </Button>
           <Button onClick={() => salvar.mutate()} disabled={salvar.isPending || (tem && !aceita) || !previa.data}>
-            {salvar.isPending ? "Salvando…" : tem ? "Salvar alteração" : t("candidatura.adaptacoesDaMinhaCandidatura.retirarAutorizacao")}
+            {salvar.isPending ? tx("Salvando…") : tem ? tx("Salvar alteração") : t("candidatura.adaptacoesDaMinhaCandidatura.retirarAutorizacao")}
           </Button>
         </DialogFooter>
       </DialogContent>

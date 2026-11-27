@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useRef, useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
-import { Accessibility, ArrowRight } from "lucide-react";
+import { Accessibility } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { CidadeAutocomplete } from "@/components/CidadeAutocomplete";
 import { Campo } from "@/components/cadastro/Campo";
+import { EscolhaDeContaParaEmpresa } from "@/components/cadastro/EscolhaDeContaParaEmpresa";
 import { descricao } from "@/components/cadastro/descricao";
 import { LegendaObrigatorio } from "@/components/cadastro/MarcaObrigatorio";
 import { PaisAutocomplete } from "@/components/cadastro/PaisAutocomplete";
@@ -33,7 +34,7 @@ import type { TFuncao } from "@/contexts/IdiomaContext";
 import type { ChaveBase } from "@/i18n/dicionarios";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
 import { useIdioma } from "@/hooks/useIdioma";
-import { ehCodigoDePais, PAIS_POR_CODIGO } from "@/dados/paises";
+import { ehCodigoDePais, nomeDoPais } from "@/dados/paises";
 import { VERSAO_DOCUMENTOS } from "@/dados/documentosLegais";
 import { useSessao } from "@/hooks/useSessao";
 import { extrairMensagemErro } from "@/services/api";
@@ -41,6 +42,7 @@ import { formatarCep, formatarCnpj, formatarTelefone, somenteDigitos } from "@/l
 import { normalizarNome } from "@/lib/validacoesPessoais";
 import { esquemaNome } from "@/components/cadastro/regrasPessoais";
 import { PORTES_EMPRESA } from "@/utils/formatacao";
+import { tx } from "@/i18n/frases";
 
 /**
  * Cadastro institucional. Obrigatório é o que o backend exige hoje
@@ -143,11 +145,17 @@ function CadastroEmpresa() {
   const { t } = useIdioma();
   const [emailPendente, setEmailPendente] = useState<string | null>(null);
   const { autenticado, usuario, inicializado } = useSessao();
+  // Sem envio de e-mail configurado, criar a empresa já devolve a sessão DELA: a pessoa deixa de ser
+  // "candidata" no meio do assistente, antes da última etapa (acessibilidade). Quem entrou aqui como
+  // candidato continua no assistente quando a sessão vira a da empresa que acabou de criar.
+  const comecouComoCandidato = useRef(false);
+  if (autenticado && usuario?.tipo === "candidato") comecouComoCandidato.current = true;
+  const virouAEmpresaCriada = autenticado && usuario?.tipo === "empresa" && comecouComoCandidato.current;
 
   // A conta de empresa nasce de uma conta de candidato: sem ela, não há o que vincular. O backend
   // recusa igual (`cadastrarEmpresa` exige sessão de candidato); aqui é só para a pessoa não
   // preencher cinco etapas antes de descobrir.
-  if (inicializado && (!autenticado || usuario?.tipo !== "candidato")) {
+  if (inicializado && !virouAEmpresaCriada && (!autenticado || usuario?.tipo !== "candidato")) {
     return (
       <AutenticacaoLayout className="max-w-lg">
         <div className="mb-6">
@@ -158,23 +166,8 @@ function CadastroEmpresa() {
 
         <Card className="shadow-card">
           <CardContent className="p-6 sm:p-8">
-            <h1 className="text-xl font-extrabold">{t("cadastro.empresa.primeiroASuaContaPessoal")}</h1>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {t("cadastro.empresa.noAcessoAContaDaEmpresaFica")}
-            </p>
-
-            <Button asChild className="mt-6 min-h-12 w-full text-base">
-              <Link to="/cadastro/candidato" search={{ depois: "empresa" }}>
-                {t("cadastro.empresa.criarMinhaContaDeCandidato")} <ArrowRight aria-hidden="true" />
-              </Link>
-            </Button>
-
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              {t("cadastro.empresa.jaTemContaDeCandidato")}{" "}
-              <Link to="/entrar" className="font-semibold text-primary underline underline-offset-2">
-                {t("cabecalho.entrar")}
-              </Link>
-            </p>
+            {/* Os dois caminhos lado a lado: quem já tem conta de candidato entra por ela, e quem não tem cria. */}
+            <EscolhaDeContaParaEmpresa />
           </CardContent>
         </Card>
       </AutenticacaoLayout>
@@ -677,7 +670,7 @@ function WizardEmpresa({ onPendenteVerificacao }: { onPendenteVerificacao: (emai
       <NavegacaoEtapa
         primeiraEtapa={passo === EMPRESA.IDENTIFICACAO}
         enviando={enviando}
-        rotuloAvancar={passo === EMPRESA.CONCLUSAO ? "Criar conta" : "Continuar"}
+        rotuloAvancar={passo === EMPRESA.CONCLUSAO ? tx("Criar conta") : tx("Continuar")}
         aoVoltar={() => irPara(passo - 1)}
       />
     </form>
@@ -695,27 +688,27 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
         ["CNPJ", valores.cnpj],
         [t("admin.conteudoDenunciado.razaoSocial"), valores.razaoSocial],
         [t("perfil.editarEmpresaDialog.nomeFantasia"), valores.nomeFantasia],
-        ["Setor", valores.setor],
-        ["Porte", PORTES_EMPRESA.find((p) => p.valor === valores.porte)?.rotulo],
+        [tx("Setor"), valores.setor],
+        [tx("Porte"), PORTES_EMPRESA.find((p) => p.valor === valores.porte)?.rotulo],
       ],
     },
     {
       passo: EMPRESA.RESPONSAVEL,
       titulo: "cadastro.empresa.responsavel",
       itens: [
-        ["Nome", valores.nome],
+        [tx("Nome"), valores.nome],
         ["E-mail", valores.email],
-        ["Telefone", valores.telefone],
+        [tx("Telefone"), valores.telefone],
       ],
     },
     {
       passo: EMPRESA.ENDERECO,
       titulo: "cadastro.empresa.endereco",
       itens: [
-        [t("cadastro.empresa.pais"), valores.pais ? PAIS_POR_CODIGO.get(valores.pais) : ""],
+        [t("cadastro.empresa.pais"), valores.pais ? nomeDoPais(valores.pais) : ""],
         ["CEP", valores.cep],
-        ["Cidade", valores.cidade],
-        ["Estado", valores.estado],
+        [tx("Cidade"), valores.cidade],
+        [tx("Estado"), valores.estado],
         [t("perfil.editarEmpresaDialog.endereco"), valores.endereco],
       ],
     },
@@ -725,7 +718,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
       itens: [
         [t("vagaDetalhe.descricao"), valores.descricao],
         [t("cadastro.empresa.culturaInclusiva"), valores.culturaInclusiva],
-        ["Site", valores.site],
+        [tx("Site"), valores.site],
       ],
     },
   ] as const;
@@ -739,7 +732,7 @@ function Revisao({ valores, aoEditar }: { valores: FormEmpresa; aoEditar: (passo
           <section key={grupo.titulo} aria-labelledby={`revisao-${grupo.passo}`} className="rounded-xl border border-border p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 id={`revisao-${grupo.passo}`} className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                {grupo.titulo}
+                {t(grupo.titulo)}
               </h3>
               <Button
                 type="button"

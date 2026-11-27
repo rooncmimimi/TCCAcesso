@@ -26,6 +26,7 @@ import { extrairMensagemErro } from "@/services/api";
 import bloqueioService from "@/services/bloqueio.service";
 import { DenunciarDialog } from "@/components/moderacao/DenunciarDialog";
 import type { EntidadeDenunciaTipo } from "@/services/denuncia.service";
+import { tx } from "@/i18n/frases";
 
 /**
  * Menu "•••" do perfil de terceiro: bloquear (com confirmação) e denunciar.
@@ -60,7 +61,7 @@ export function BloquearUsuarioMenu({
   const bloquear = useMutation({
     mutationFn: () => bloqueioService.bloquear(alvoUsuarioId),
     onSuccess: () => {
-      toast.success(`${nome} foi bloqueado(a).`);
+      toast.success(tx`${nome} foi bloqueado(a).`);
       setConfirmando(false);
       void navigate({ to: "/feed" });
     },
@@ -92,8 +93,8 @@ export function BloquearUsuarioMenu({
           </DropdownMenuItem>
           {denunciaEntidadeId && (
             <DropdownMenuItem className="gap-2" onSelect={() => setDenunciando(true)}>
-              <Flag aria-hidden="true" className="size-4" /> Denunciar{" "}
-              {denunciaEntidadeTipo === "empresa" ? "empresa" : "usuário"}
+              <Flag aria-hidden="true" className="size-4" />{" "}{tx("Denunciar")}{" "}
+              {denunciaEntidadeTipo === "empresa" ? tx("empresa") : tx("usuário")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

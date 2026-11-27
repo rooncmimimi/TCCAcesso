@@ -1,3 +1,7 @@
+import { documentosEmIngles } from "./documentosLegais.en";
+import { documentosEmEspanhol } from "./documentosLegais.es";
+import type { CodigoIdioma } from "@/i18n/idiomas";
+
 /**
  * Termos de Uso e Aviso de Privacidade do ACESSO.
  *
@@ -9,6 +13,9 @@
  * por advogado. Antes de o ACESSO operar com usuários reais, alguém habilitado precisa revisá-lo —
  * sobretudo as partes de dado sensível (declaração de deficiência) e de responsabilidade. A lista do que
  * precisa de validação jurídica está em `Site/docs/documentos-legais.md`.
+ *
+ * O português é o texto que vale. As traduções ficam em `documentosLegais.en.ts` e `.es.ts`: mudou
+ * aqui, muda lá também.
  *
  * `VERSAO_DOCUMENTOS` é gravada junto do aceite (`usuarios.termos_versao`): é o que permite saber
  * depois qual texto cada pessoa aceitou. **Mude a versão sempre que mudar o conteúdo** — senão o
@@ -233,3 +240,13 @@ export const DOCUMENTOS: Record<DocumentoLegal["chave"], DocumentoLegal> = {
   termos: TERMOS_DE_USO,
   privacidade: AVISO_DE_PRIVACIDADE,
 };
+
+const TRADUCOES = {
+  en: documentosEmIngles(VERSAO_DOCUMENTOS),
+  es: documentosEmEspanhol(VERSAO_DOCUMENTOS),
+};
+
+/** O documento no idioma do site. */
+export function documentoNoIdioma(chave: DocumentoLegal["chave"], idioma: CodigoIdioma): DocumentoLegal {
+  return idioma === "pt" ? DOCUMENTOS[chave] : TRADUCOES[idioma][chave];
+}

@@ -1,3 +1,5 @@
+import { tx } from "@/i18n/frases";
+
 /**
  * Rascunho automático de um formulário de texto longo: guarda o que a pessoa escreveu para ela não
  * perder tudo se a sessão cair, a aba fechar ou o diálogo for fechado sem querer.
@@ -107,8 +109,8 @@ export function aplicarRascunho(form: HTMLFormElement, rascunho: Rascunho, permi
 /** "agora há pouco", "há 12 minutos", "há 3 horas": só para o aviso do rascunho. */
 export function haQuantoTempo(salvoEm: number, agora = Date.now()): string {
   const minutos = Math.max(0, Math.floor((agora - salvoEm) / 60_000));
-  if (minutos < 1) return "agora há pouco";
-  if (minutos < 60) return `há ${minutos} ${minutos === 1 ? "minuto" : "minutos"}`;
+  if (minutos < 1) return tx("agora há pouco");
+  if (minutos < 60) return tx`há ${minutos} ${minutos === 1 ? "minuto" : "minutos"}`;
   const horas = Math.floor(minutos / 60);
-  return `há ${horas} ${horas === 1 ? "hora" : "horas"}`;
+  return tx`há ${horas} ${horas === 1 ? "hora" : "horas"}`;
 }

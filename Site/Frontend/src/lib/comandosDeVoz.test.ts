@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { EXEMPLOS_DE_COMANDOS, interpretarComando, normalizarFala, type ContextoDeVoz } from "@/lib/comandosDeVoz";
+import { exemplosDeComandos, interpretarComando, normalizarFala, type ContextoDeVoz } from "@/lib/comandosDeVoz";
 
 const logado: ContextoDeVoz = { autenticado: true, tipoDeUsuario: "candidato" };
 const visitante: ContextoDeVoz = { autenticado: false, tipoDeUsuario: null };
@@ -27,7 +27,8 @@ describe("navegação", () => {
     ["abrir objetivos", "/objetivos"],
     ["abrir o dicionário de profissões", "/profissoes"],
     ["abrir a central de comunicação", "/comunicacao"],
-    ["abrir o simulador", "/simulador"],
+    ["abrir a central de ajuda", "/ajuda"],
+    ["ajuda", "/ajuda"],
   ])("“%s” leva a %s", (fala, destino) => {
     expect(interpretarComando(fala, logado)).toMatchObject({ tipo: "navegar", para: destino });
   });
@@ -101,6 +102,6 @@ describe("segurança", () => {
     const entendidos = ["Ir para vagas", "Abrir meu perfil", "Abrir mensagens", "Pesquisar vagas de atendente", "Próxima página", "Voltar", "Candidatar-me", "Ativar modo leitura", "Ativar modo foco", "Parar leitura", "Mostrar atalhos"];
 
     for (const fala of entendidos) expect(interpretarComando(fala, logado).tipo, fala).not.toBe("desconhecido");
-    expect(EXEMPLOS_DE_COMANDOS.length).toBeGreaterThanOrEqual(8);
+    expect(exemplosDeComandos().length).toBeGreaterThanOrEqual(8);
   });
 });

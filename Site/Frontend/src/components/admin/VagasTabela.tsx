@@ -32,6 +32,7 @@ import {
   removerVaga,
   type VagaAdmin,
 } from "@/services/admin.service";
+import { tx } from "@/i18n/frases";
 
 const STATUS: VagaAdmin["status"][] = ["aberta", "pausada", "encerrada"];
 
@@ -118,10 +119,10 @@ export function VagasTabela() {
                 <span className="block text-xs font-normal text-muted-foreground">{textoDoResumo(resumoDoMapa(vaga.acessibilidadeFisica))}</span>
               </TableCell>
               <TableCell>
-                {[vaga.cidade, vaga.estado].filter(Boolean).join("/") || vaga.modalidade || "—"}
+                {[vaga.cidade, vaga.estado].filter(Boolean).join("/") || (vaga.modalidade ? tx(vaga.modalidade) : "—")}
               </TableCell>
               <TableCell>
-                <StatusBadge tom={TOM[vaga.status]}>{vaga.status}</StatusBadge>
+                <StatusBadge tom={TOM[vaga.status]}>{tx(vaga.status)}</StatusBadge>
               </TableCell>
               <TableCell>
                 <Select
@@ -136,7 +137,7 @@ export function VagasTabela() {
                   <SelectContent>
                     {STATUS.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {status}
+                        {tx(status)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -157,7 +158,7 @@ export function VagasTabela() {
                   size="sm"
                   variant="outline"
                   onClick={() => setAlvo(vaga)}
-                  aria-label={`Remover vaga ${vaga.titulo}`}
+                  aria-label={tx`Remover vaga ${vaga.titulo}`}
                 >
                   <Trash2 className="size-4" aria-hidden="true" /> {t("acessibilidade.paineisDeAjuda.remover")}
                 </Button>

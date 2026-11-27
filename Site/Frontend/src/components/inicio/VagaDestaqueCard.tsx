@@ -2,9 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { BadgeCheck, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ROTULO_PUBLICO_ALVO_CURTO } from "@/components/dashboard/constantesVaga";
+import { ROTULO_PUBLICO_ALVO_CURTO, rotuloDoContrato } from "@/components/dashboard/constantesVaga";
 import type { Vaga } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /** Card compacto de vaga em destaque, usado na página inicial. */
 export function VagaDestaqueCard({ vaga }: { vaga: Vaga }) {
@@ -34,7 +35,7 @@ export function VagaDestaqueCard({ vaga }: { vaga: Vaga }) {
             </span>
           )}
           <span>
-            · {vaga.modalidade}
+            · {tx(vaga.modalidade)}
             {local ? ` · ${local}` : ""}
           </span>
         </p>
@@ -49,7 +50,7 @@ export function VagaDestaqueCard({ vaga }: { vaga: Vaga }) {
           {vaga.contrato && (
             <li>
               <Badge variant="secondary" className="gap-1 font-medium">
-                {vaga.contrato}
+                {rotuloDoContrato(vaga.contrato)}
               </Badge>
             </li>
           )}

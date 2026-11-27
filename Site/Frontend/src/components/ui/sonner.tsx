@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "sonner";
 import { useAcessibilidade } from "@/hooks/useAcessibilidade";
 import { DURACAO_MAXIMA_DO_AVISO } from "@/lib/avisos";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -22,6 +23,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      containerAriaLabel={tx("Notificações")}
       closeButton={persistir}
       // Fica espaço para mais de um aviso importante sem empilhar por cima de outro.
       visibleToasts={persistir ? 5 : 3}

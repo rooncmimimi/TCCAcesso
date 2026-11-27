@@ -2,7 +2,6 @@ import clienteApi from "./api";
 import type { PreferenciasAcessibilidadeApi } from "@/types";
 import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContext";
 import { ehIdDePadrao } from "@/lib/padroesVisuais";
-import { limparCores } from "@/lib/preferenciasVisuais";
 
 /** Converte as preferências locais para o formato aceito pelo Backend. */
 export function preferenciasParaApi(prefs: PreferenciasAcessibilidade): PreferenciasAcessibilidadeApi {
@@ -29,7 +28,6 @@ export function preferenciasParaApi(prefs: PreferenciasAcessibilidade): Preferen
       saturacao: prefs.visualSaturation,
       brilho: prefs.visualBrightness,
       contraste: prefs.visualContrast,
-      cores: prefs.visualColors,
     },
   };
 }
@@ -65,7 +63,6 @@ export function preferenciasDaApi(dto: PreferenciasAcessibilidadeApi): Partial<P
     parcial.visualSaturation = 100;
     parcial.visualBrightness = 100;
     parcial.visualContrast = 4.5;
-    parcial.visualColors = {};
   } else if (dto.visual && typeof dto.visual === "object") {
     const visual = dto.visual;
 
@@ -74,7 +71,6 @@ export function preferenciasDaApi(dto: PreferenciasAcessibilidadeApi): Partial<P
     if (typeof visual.saturacao === "number") parcial.visualSaturation = visual.saturacao;
     if (typeof visual.brilho === "number") parcial.visualBrightness = visual.brilho;
     if (typeof visual.contraste === "number") parcial.visualContrast = visual.contraste;
-    if (visual.cores) parcial.visualColors = limparCores(visual.cores);
   }
 
   return parcial;

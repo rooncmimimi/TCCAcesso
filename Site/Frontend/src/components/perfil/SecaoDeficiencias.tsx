@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import type { Candidato } from "@/types";
+import { tx } from "@/i18n/frases";
 
 /**
  * Deficiências vinculadas ao candidato: "quando aplicável", conforme o próprio
@@ -159,7 +160,7 @@ export function SecaoDeficiencias({
                 {somenteLeitura ? null : (
                   <button
                     type="button"
-                    aria-label={`Remover ${d.nome}`}
+                    aria-label={tx`Remover ${d.nome}`}
                     // Chip compacto (Badge min-h-9) não comporta um alvo de
                     // 44px sem ficar maior que o próprio chip: a margem
                     // negativa expande a área de toque real (mín. 24px, piso

@@ -10,6 +10,7 @@ import { assinarComparacao, fotoDaComparacao, limparComparacao, removerDaCompara
 import { ambienteService } from "@/services/ambiente.service";
 import vagasService from "@/services/vagas.service";
 import type { Vaga } from "@/types";
+import { tx } from "@/i18n/frases";
 
 /**
  * Tela de comparação de vagas, lado a lado. Não dá nota, não ordena e não diz qual vaga é "melhor" ou
@@ -51,18 +52,18 @@ export function ComparadorDeVagasTela() {
   const linhas = compararVagas(vagas, catalogo, (chave) => t(`vaga.recurso.${chave}` as ChaveBase));
   const diferencas = contarDiferencas(linhas);
   const grupos = [...new Set(linhas.map((l) => l.grupo))];
-  const nomeDe = (v: Vaga) => v.empresa?.nomeFantasia ?? v.empresa?.razaoSocial ?? "Empresa";
+  const nomeDe = (v: Vaga) => v.empresa?.nomeFantasia ?? v.empresa?.razaoSocial ?? tx("Empresa");
 
   return (
     <div className="mt-6 space-y-4">
       {falhas > 0 ? (
         <p role="alert" className="text-sm font-medium text-destructive">
-          {falhas === 1 ? "Uma vaga não pôde ser carregada e ficou fora da tabela." : t("vagas.comparadorDeVagasTela.vagasNaoPuderamSerCarregadasE", { var1: falhas })}
+          {falhas === 1 ? tx("Uma vaga não pôde ser carregada e ficou fora da tabela.") : t("vagas.comparadorDeVagasTela.vagasNaoPuderamSerCarregadasE", { var1: falhas })}
         </p>
       ) : null}
 
       <p role="status" className="text-sm">
-        {vagas.length < 2 ? "Escolha pelo menos mais uma vaga para ver as diferenças." : diferencas === 0 ? "Nenhuma diferença nos itens comparados." : `${diferencas} ${diferencas === 1 ? "item diferente" : "itens diferentes"} entre as vagas.`}
+        {vagas.length < 2 ? tx("Escolha pelo menos mais uma vaga para ver as diferenças.") : diferencas === 0 ? tx("Nenhuma diferença nos itens comparados.") : diferencas === 1 ? tx`${diferencas} item diferente entre as vagas.` : tx`${diferencas} itens diferentes entre as vagas.`}
       </p>
       <p className="text-xs text-muted-foreground">{t("vagas.comparadorDeVagasTela.istoESoUmaComparacaoDoQueCada")}</p>
 

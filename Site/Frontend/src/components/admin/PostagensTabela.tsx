@@ -24,6 +24,7 @@ import { useSessao } from "@/hooks/useSessao";
 import { listarPostagens, removerPostagem, type PostagemAdmin } from "@/services/admin.service";
 import { formatarDataHora } from "@/utils/formatacao";
 import { ListaCarregando, ListaComErro, ListaVazia } from "@/components/ui/estados-de-lista";
+import { tx } from "@/i18n/frases";
 
 type RespostaLista = Awaited<ReturnType<typeof listarPostagens>>;
 
@@ -70,7 +71,7 @@ export function PostagensTabela() {
       // resultado que o admin queria já é verdade no servidor; mantém a
       // remoção otimista, só avisa em tom neutro, sem desfazer.
       if (status === 409 || status === 404) {
-        toast.info(status === 409 ? "Esta publicação já havia sido removida." : t("admin.postagensTabela.estaPublicacaoNaoExisteMais"));
+        toast.info(status === 409 ? tx("Esta publicação já havia sido removida.") : t("admin.postagensTabela.estaPublicacaoNaoExisteMais"));
         return;
       }
 

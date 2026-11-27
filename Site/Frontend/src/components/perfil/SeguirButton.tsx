@@ -8,6 +8,7 @@ import type { ResumoSeguidores } from "@/types";
 import { toast } from "sonner";
 import type { ChaveBase } from "@/i18n/dicionarios";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 type Acao = "seguir" | "deixar-de-seguir" | "solicitar" | "cancelar-solicitacao";
 
@@ -139,7 +140,7 @@ export function SeguirButton({
       } else if (acaoExecutada === "solicitar" && !resultado.seguindo) {
         toast.success(t("perfil.seguirButton.solicitacaoEnviada2"));
       } else {
-        toast.success(resultado.seguindo ? "Agora você está seguindo." : t("perfil.seguirButton.voceDeixouDeSeguir"));
+        toast.success(resultado.seguindo ? tx("Agora você está seguindo.") : t("perfil.seguirButton.voceDeixouDeSeguir"));
       }
     },
   });

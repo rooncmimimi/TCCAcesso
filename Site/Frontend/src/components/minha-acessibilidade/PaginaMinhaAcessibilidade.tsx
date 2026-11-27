@@ -1,5 +1,4 @@
 import { useEffect, useId, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +14,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { minhaAcessibilidadeService } from "@/services/adaptacoes.service";
 import type { CatalogoDeAdaptacoes, ItemDoCatalogo, MinhaAcessibilidade } from "@/types/adaptacoes";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 const mesmaLista = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
@@ -64,14 +64,6 @@ export function PaginaMinhaAcessibilidade() {
       <SecaoAdaptacoes catalogo={catalogo.data} minha={minha.data} />
       <SecaoComunicacao catalogo={catalogo.data} minha={minha.data} />
       <SecaoPrivacidade minha={minha.data} />
-
-      <p className="text-sm text-muted-foreground">
-        {t("minha-acessibilidade.paginaMinhaAcessibilidade.querTreinarAntesDeSeCandidatar")}{" "}
-        <Link to="/simulador" className="font-semibold text-primary underline">
-          {t("minha-acessibilidade.paginaMinhaAcessibilidade.abraOSimuladorDeCandidaturaE")}
-        </Link>
-        .
-      </p>
     </div>
   );
 }
@@ -151,7 +143,7 @@ function SecaoAdaptacoes({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes; 
           </div>
 
           <Button type="submit" disabled={!alterado || salvar.isPending} className="min-h-11">
-            {salvar.isPending ? "Salvando…" : t("minha-acessibilidade.paginaMinhaAcessibilidade.salvarAdaptacoes")}
+            {salvar.isPending ? tx("Salvando…") : t("minha-acessibilidade.paginaMinhaAcessibilidade.salvarAdaptacoes")}
           </Button>
         </form>
       </CardContent>
@@ -248,7 +240,7 @@ function SecaoComunicacao({ catalogo, minha }: { catalogo: CatalogoDeAdaptacoes;
           </div>
 
           <Button type="submit" disabled={!alterado || conflito.length > 0 || salvar.isPending} className="min-h-11">
-            {salvar.isPending ? "Salvando…" : t("configuracoes.acessibilidade.salvarPreferencias")}
+            {salvar.isPending ? tx("Salvando…") : t("configuracoes.acessibilidade.salvarPreferencias")}
           </Button>
         </form>
       </CardContent>
@@ -273,7 +265,7 @@ function SecaoPrivacidade({ minha }: { minha: MinhaAcessibilidade }) {
       <CardContent className="space-y-3">
         {minha.deficiencias.length > 0 ? (
           <p className="text-sm">
-            Categoria declarada: <strong>{minha.deficiencias.map((d) => d.nome).join(", ")}</strong>
+            {tx("Categoria declarada:")}{" "}<strong>{minha.deficiencias.map((d) => d.nome).join(", ")}</strong>
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">{t("minha-acessibilidade.paginaMinhaAcessibilidade.voceNaoDeclarouNenhuma")}</p>

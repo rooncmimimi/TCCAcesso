@@ -18,6 +18,8 @@ import { BloquearUsuarioMenu } from "./BloquearUsuarioMenu";
 import { AvisoAprovacaoEmpresa } from "./AvisoAprovacaoEmpresa";
 import { LinhaDoTempoUsuario } from "./LinhaDoTempoUsuario";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx } from "@/i18n/frases";
 
 /**
  * Perfil empresarial: dados, vagas abertas, publicações e seguidores da empresa.
@@ -232,11 +234,11 @@ export function PerfilEmpresa({ usuarioId }: { usuarioId?: string } = {}) {
                       {vaga.titulo}
                     </Link>
                     <p className="text-sm text-muted-foreground">
-                      {vaga.cidade ?? t("perfil.perfilEmpresa.localNaoInformado")} · {vaga.modalidade}
+                      {vaga.cidade ?? t("perfil.perfilEmpresa.localNaoInformado")} · {t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase)}
                     </p>
                   </div>
                   <Badge variant={vaga.status === "aberta" ? "default" : "secondary"} className="shrink-0 font-medium">
-                    {vaga.status}
+                    {tx(vaga.status)}
                   </Badge>
                 </li>
               ))}

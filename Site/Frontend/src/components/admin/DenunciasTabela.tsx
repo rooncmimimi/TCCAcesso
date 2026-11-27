@@ -30,6 +30,7 @@ import denunciaService, {
   type MotivoDenuncia,
   type StatusDenuncia,
 } from "@/services/denuncia.service";
+import { localeAtual } from "@/i18n/frases";
 
 const STATUS_OPCOES: (StatusDenuncia | "todos")[] = [
   "todos",
@@ -186,7 +187,7 @@ export function DenunciasTabela() {
             <SelectContent>
               {ATRIBUICAO_OPCOES.map((item) => (
                 <SelectItem key={item} value={item}>
-                  {ATRIBUICAO_ROTULO[item]}
+                  {t(ATRIBUICAO_ROTULO[item])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -229,7 +230,7 @@ export function DenunciasTabela() {
                     </StatusBadge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(denuncia.criadoEm).toLocaleDateString("pt-BR")}
+                    {new Date(denuncia.criadoEm).toLocaleDateString(localeAtual())}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild size="sm" variant="outline">

@@ -1,3 +1,5 @@
+import { tx } from "@/i18n/frases";
+
 /**
  * Varredura com um botão (alternativa dentro da página, complementar à varredura do Windows, do
  * Android e de dispositivos assistivos): descobre quais controles da tela podem ser percorridos e
@@ -36,27 +38,27 @@ export const SELETOR_DE_CONTROLES = [
 const SELETOR_DE_GRUPO = 'dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="toolbar"], [role="tablist"], [role="radiogroup"], [role="group"], header, nav, footer, aside, form, fieldset, section, article, table';
 
 const NOME_DE_GRUPO: Record<string, string> = {
-  HEADER: "Cabeçalho",
-  NAV: "Menu de navegação",
-  FOOTER: "Rodapé",
-  ASIDE: "Barra lateral",
-  FORM: "Formulário",
-  FIELDSET: "Conjunto de campos",
+  get HEADER() { return tx("Cabeçalho"); },
+  get NAV() { return tx("Menu de navegação"); },
+  get FOOTER() { return tx("Rodapé"); },
+  get ASIDE() { return tx("Barra lateral"); },
+  get FORM() { return tx("Formulário"); },
+  get FIELDSET() { return tx("Conjunto de campos"); },
   TABLE: "Tabela",
-  DIALOG: "Janela",
-  SECTION: "Seção",
-  ARTICLE: "Bloco",
+  get DIALOG() { return tx("Janela"); },
+  get SECTION() { return tx("Seção"); },
+  get ARTICLE() { return tx("Bloco"); },
 };
 
 const NOME_DE_PAPEL_DE_GRUPO: Record<string, string> = {
-  dialog: "Janela",
-  alertdialog: "Aviso",
-  menu: "Menu",
-  listbox: "Lista de opções",
-  toolbar: "Barra de ferramentas",
-  tablist: "Abas",
-  radiogroup: "Opções",
-  group: "Grupo",
+  get dialog() { return tx("Janela"); },
+  get alertdialog() { return tx("Aviso"); },
+  get menu() { return tx("Menu"); },
+  get listbox() { return tx("Lista de opções"); },
+  get toolbar() { return tx("Barra de ferramentas"); },
+  get tablist() { return tx("Abas"); },
+  get radiogroup() { return tx("Opções"); },
+  get group() { return tx("Grupo"); },
 };
 
 const limpar = (texto: string | null | undefined) => (texto ?? "").replace(/\s+/g, " ").trim();
@@ -120,26 +122,26 @@ export function tipoDoControle(el: HTMLElement): string {
   const papel = el.getAttribute("role");
   const marca = el.tagName;
 
-  if (papel === "checkbox" || (marca === "INPUT" && (el as HTMLInputElement).type === "checkbox")) return "Caixa de seleção";
-  if (papel === "radio" || (marca === "INPUT" && (el as HTMLInputElement).type === "radio")) return "Opção";
-  if (papel === "switch") return "Interruptor";
-  if (papel === "tab") return "Aba";
-  if (papel === "option" || papel === "menuitem" || papel === "menuitemcheckbox" || papel === "menuitemradio") return "Opção";
-  if (papel === "combobox" || marca === "SELECT") return "Lista de escolha";
-  if (papel === "slider" || (marca === "INPUT" && (el as HTMLInputElement).type === "range")) return "Controle deslizante";
-  if (marca === "TEXTAREA" || papel === "textbox" || papel === "searchbox" || el.getAttribute("contenteditable") === "true") return "Campo de texto";
+  if (papel === "checkbox" || (marca === "INPUT" && (el as HTMLInputElement).type === "checkbox")) return tx("Caixa de seleção");
+  if (papel === "radio" || (marca === "INPUT" && (el as HTMLInputElement).type === "radio")) return tx("Opção");
+  if (papel === "switch") return tx("Interruptor");
+  if (papel === "tab") return tx("Aba");
+  if (papel === "option" || papel === "menuitem" || papel === "menuitemcheckbox" || papel === "menuitemradio") return tx("Opção");
+  if (papel === "combobox" || marca === "SELECT") return tx("Lista de escolha");
+  if (papel === "slider" || (marca === "INPUT" && (el as HTMLInputElement).type === "range")) return tx("Controle deslizante");
+  if (marca === "TEXTAREA" || papel === "textbox" || papel === "searchbox" || el.getAttribute("contenteditable") === "true") return tx("Campo de texto");
   if (marca === "INPUT") {
     const tipo = (el as HTMLInputElement).type;
 
-    if (["button", "submit", "reset", "image"].includes(tipo)) return "Botão";
-    if (tipo === "file") return "Escolher arquivo";
+    if (["button", "submit", "reset", "image"].includes(tipo)) return tx("Botão");
+    if (tipo === "file") return tx("Escolher arquivo");
 
-    return "Campo";
+    return tx("Campo");
   }
-  if (marca === "A" || papel === "link") return "Link";
-  if (marca === "SUMMARY") return "Detalhes";
+  if (marca === "A" || papel === "link") return tx("Link");
+  if (marca === "SUMMARY") return tx("Detalhes");
 
-  return "Botão";
+  return tx("Botão");
 }
 
 /** Este controle é um campo em que a pessoa digita? (Selecioná-lo coloca o foco nele, em vez de clicar.) */
@@ -214,7 +216,7 @@ function nomeDoGrupo(grupo: HTMLElement): string {
 
   const papel = grupo.getAttribute("role");
 
-  return (papel && NOME_DE_PAPEL_DE_GRUPO[papel]) || NOME_DE_GRUPO[grupo.tagName] || "Grupo";
+  return (papel && NOME_DE_PAPEL_DE_GRUPO[papel]) || NOME_DE_GRUPO[grupo.tagName] || tx("Grupo");
 }
 
 const comoControle = (el: HTMLElement): Item => ({ elemento: el, rotulo: `${tipoDoControle(el)}: ${nomeDoControle(el)}` });
@@ -257,7 +259,7 @@ export function montarItens(raiz: ParentNode, porGrupos: boolean): Item[] {
     if (grupo === null || membros.length === 1) {
       itens.push(...membros.map(comoControle));
     } else {
-      itens.push({ elemento: grupo, rotulo: `Grupo: ${nomeDoGrupo(grupo)}, ${membros.length} controles`, filhos: membros.map(comoControle) });
+      itens.push({ elemento: grupo, rotulo: tx`Grupo: ${nomeDoGrupo(grupo)}, ${membros.length} controles`, filhos: membros.map(comoControle) });
     }
   }
 

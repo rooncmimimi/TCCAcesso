@@ -1,4 +1,5 @@
 import clienteApi from "./api";
+import { tx } from "@/i18n/frases";
 
 /* Tipos devolvidos pelas rotas /denuncias e /admin/denuncias */
 
@@ -32,14 +33,14 @@ export const ACAO_POR_TIPO: Partial<Record<EntidadeDenunciaTipo, string>> = {
 };
 
 export const MOTIVO_ROTULO: Record<MotivoDenuncia, string> = {
-  spam: "Spam",
-  conteudo_ofensivo: "Conteúdo ofensivo",
-  discurso_odio: "Discurso de ódio",
-  assedio: "Assédio",
-  fraude: "Fraude",
-  informacao_falsa: "Informação falsa",
-  conteudo_inadequado: "Conteúdo inadequado",
-  outro: "Outro",
+  get spam() { return tx("Spam"); },
+  get conteudo_ofensivo() { return tx("Conteúdo ofensivo"); },
+  get discurso_odio() { return tx("Discurso de ódio"); },
+  get assedio() { return tx("Assédio"); },
+  get fraude() { return tx("Fraude"); },
+  get informacao_falsa() { return tx("Informação falsa"); },
+  get conteudo_inadequado() { return tx("Conteúdo inadequado"); },
+  get outro() { return tx("Outro"); },
 };
 
 /** Um passo do tratamento da denúncia, tirado do registro de auditoria. */

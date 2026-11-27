@@ -13,6 +13,7 @@ import { GaleriaAnexos } from "@/components/feed/GaleriaAnexos";
 import { LogsTabela } from "@/components/admin/LogsTabela";
 import { formatarDataHora } from "@/utils/formatacao";
 import type { PostagemAdmin } from "@/services/admin.service";
+import { tx } from "@/i18n/frases";
 
 /**
  * Detalhe completo de uma publicação para a moderação. A mídia usa `GaleriaAnexos` e
@@ -34,9 +35,9 @@ export function DetalhePostagemSheet({
         {postagem && (
           <>
             <SheetHeader>
-              <SheetTitle>Publicação de {postagem.usuario?.nome ?? t("admin.detalhePostagemSheet.usuario")}</SheetTitle>
+              <SheetTitle>{tx("Publicação de")}{" "}{postagem.usuario?.nome ?? t("admin.detalhePostagemSheet.usuario")}</SheetTitle>
               <SheetDescription>
-                Publicado em {formatarDataHora(postagem.criadoEm)}
+                {tx("Publicado em")}{" "}{formatarDataHora(postagem.criadoEm)}
                 {postagem.usuario?.email ? ` · ${postagem.usuario.email}` : ""}
               </SheetDescription>
             </SheetHeader>
@@ -44,7 +45,7 @@ export function DetalhePostagemSheet({
             <div className="mt-4 space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Badge variant={postagem.publica === false ? "outline" : "secondary"}>
-                  {postagem.publica === false ? "Não visível a visitantes anônimos" : t("admin.detalhePostagemSheet.visivelAVisitantesAnonimos")}
+                  {postagem.publica === false ? tx("Não visível a visitantes anônimos") : t("admin.detalhePostagemSheet.visivelAVisitantesAnonimos")}
                 </Badge>
                 {postagem.ativo === false && <Badge variant="destructive">{t("admin.detalhePostagemSheet.removidaPelaModeracao")}</Badge>}
               </div>

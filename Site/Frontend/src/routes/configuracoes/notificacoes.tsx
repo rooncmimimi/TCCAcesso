@@ -12,6 +12,8 @@ import { extrairMensagemErro } from "@/services/api";
 import notificacoesService from "@/services/notificacoes.service";
 import type { PreferenciasNotificacao } from "@/types";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
+import type { ChaveBase } from "@/i18n/dicionarios";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 export const Route = createFileRoute("/configuracoes/notificacoes")({
@@ -30,7 +32,7 @@ export const Route = createFileRoute("/configuracoes/notificacoes")({
 
 const CHAVE = ["notificacoes", "preferencias"] as const;
 
-const ITENS: { chave: keyof PreferenciasNotificacao; titulo: string; descricao: string }[] = [
+const ITENS: { chave: keyof PreferenciasNotificacao; titulo: ChaveBase; descricao: ChaveBase }[] = [
   {
     chave: "vagasCandidaturas",
     titulo: "configuracoes.notificacoes.vagasECandidaturas",
@@ -112,15 +114,15 @@ function PreferenciasNotificacaoPagina() {
               <div key={item.chave} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-5">
                 <div className="min-w-0">
                   <Label htmlFor={`pref-${item.chave}`} className="font-semibold">
-                    {item.titulo}
+                    {t(item.titulo)}
                   </Label>
-                  <p className="text-sm text-muted-foreground">{item.descricao}</p>
+                  <p className="text-sm text-muted-foreground">{t(item.descricao)}</p>
                 </div>
                 <Switch
                   id={`pref-${item.chave}`}
                   checked={preferencias?.[item.chave] ?? true}
                   onCheckedChange={(valor) => atualizar.mutate({ [item.chave]: valor })}
-                  aria-label={`${item.titulo}${preferencias?.[item.chave] ? ", ativado" : ", desativado"}`}
+                  aria-label={preferencias?.[item.chave] ? tx`${t(item.titulo)}, ativado` : tx`${t(item.titulo)}, desativado`}
                 />
               </div>
             ))

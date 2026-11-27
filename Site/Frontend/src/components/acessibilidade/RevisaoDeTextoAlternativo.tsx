@@ -8,6 +8,7 @@ import { useAtualizarDescricaoAnexo } from "@/components/feed/hooks";
 import { imagensSemDescricao, type ImagemParaRevisar } from "@/lib/imagensSemDescricao";
 import { postagensService } from "@/services/postagens.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 /**
  * Revisão de texto alternativo: lista as imagens que a própria pessoa publicou SEM descrição, para
@@ -48,7 +49,7 @@ export function RevisaoDeTextoAlternativo({ usuarioId }: { usuarioId: string }) 
       ) : (
         <>
           <p role="status" className="text-sm font-medium">
-            {pendentes.length === 1 ? "1 imagem sem descrição." : t("acessibilidade.revisaoDeTextoAlternativo.imagensSemDescricao", { var1: pendentes.length })}
+            {pendentes.length === 1 ? tx("1 imagem sem descrição.") : t("acessibilidade.revisaoDeTextoAlternativo.imagensSemDescricao", { var1: pendentes.length })}
           </p>
           <ul className="space-y-4">
             {pendentes.map((item) => (
@@ -74,13 +75,13 @@ function ItemParaDescrever({ item }: { item: ImagemParaRevisar }) {
     <div className="flex flex-col gap-3 sm:flex-row">
       <img src={item.anexo.url} alt="" className="h-28 w-28 shrink-0 rounded-lg border border-border object-cover" />
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="text-xs text-muted-foreground">Publicação: {item.trechoDaPublicacao || t("acessibilidade.revisaoDeTextoAlternativo.semTexto")}</p>
+        <p className="text-xs text-muted-foreground">{tx("Publicação:")}{" "}{item.trechoDaPublicacao || t("acessibilidade.revisaoDeTextoAlternativo.semTexto")}</p>
         <Label htmlFor={id} className="text-sm">
           {t("acessibilidade.revisaoDeTextoAlternativo.descrevaEstaImagem")}
         </Label>
         <Input id={id} value={texto} maxLength={500} onChange={(e) => setTexto(e.target.value)} placeholder={t("acessibilidade.revisaoDeTextoAlternativo.exRampaDeAcessoNaEntradaDo")} />
         <Button type="button" className="min-h-11" disabled={!pode} onClick={() => salvar.mutate({ postagemId: item.postagemId, anexoId: item.anexo.id, descricao: texto })}>
-          {salvar.isPending ? "Salvando…" : t("acessibilidade.revisaoDeTextoAlternativo.salvarDescricao")}
+          {salvar.isPending ? tx("Salvando…") : t("acessibilidade.revisaoDeTextoAlternativo.salvarDescricao")}
         </Button>
       </div>
     </div>

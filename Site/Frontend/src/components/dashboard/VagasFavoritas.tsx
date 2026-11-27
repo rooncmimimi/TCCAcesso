@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { dashboardService } from "@/services/dashboard.service";
 import { useIdioma } from "@/hooks/useIdioma";
+import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx } from "@/i18n/frases";
 
 /** Vagas que o candidato marcou como favoritas. */
 export function VagasFavoritas() {
@@ -49,14 +51,14 @@ export function VagasFavoritas() {
                 <li key={vaga.id} className="py-3">
                   <p className="font-semibold">{vaga.titulo}</p>
                   <p className="text-sm text-muted-foreground">
-                    {vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? "Empresa"}
+                    {vaga.empresa?.nomeFantasia ?? vaga.empresa?.razaoSocial ?? tx("Empresa")}
                   </p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="size-3" aria-hidden="true" />
-                    {vaga.cidade ?? t("dashboard.vagasFavoritas.localNaoInformado")} · {vaga.modalidade}
+                    {vaga.cidade ?? t("dashboard.vagasFavoritas.localNaoInformado")} · {t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase)}
                   </p>
                   <Badge variant="secondary" className="mt-2 font-medium">
-                    {vaga.status}
+                    {tx(vaga.status)}
                   </Badge>
                 </li>
               ))}
@@ -72,7 +74,7 @@ export function VagasFavoritas() {
                   {t("vagas.paginaAnterior")}
                 </Button>
                 <span className="self-center text-sm text-muted-foreground">
-                  Página {data.pagina} de {data.totalPaginas}
+                  {tx`Página ${data.pagina} de ${data.totalPaginas}`}
                 </span>
                 <Button
                   variant="outline"

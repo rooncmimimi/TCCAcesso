@@ -26,6 +26,7 @@ import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
 import { DicaDeCampoBotao } from "@/components/acessibilidade/DicaDeCampoBotao";
 import { AvisoDeRascunho } from "@/components/acessibilidade/AvisoDeRascunho";
 import { useRascunhoDeFormulario } from "@/hooks/useRascunhoDeFormulario";
+import { tx } from "@/i18n/frases";
 
 /** Os únicos campos de texto livre que entram no rascunho automático. */
 const CAMPOS_DO_RASCUNHO = ["cargo", "empresa", "local", "descricao", "instituicao", "curso", "titulo", "nome"] as const;
@@ -98,7 +99,7 @@ export function FormularioRecursoDialog({
         ? perfilService.atualizarRecurso(recurso, registro!.id!, payload)
         : perfilService.criarRecurso(recurso, payload),
     onSuccess: () => {
-      toast.success(editando ? "Registro atualizado." : t("perfil.formularioRecursoDialog.registroAdicionado"));
+      toast.success(editando ? tx("Registro atualizado.") : t("perfil.formularioRecursoDialog.registroAdicionado"));
       void queryClient.invalidateQueries({ queryKey: ["perfil-recurso", recurso] });
       rascunho.limpar();
       setAberto(false);

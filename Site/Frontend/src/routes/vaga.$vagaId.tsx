@@ -7,9 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { ArrowLeft, BadgeCheck, Building2, Heart, MapPin, MessagesSquare, MoreVertical } from "lucide-react";
-import {
-  ICONE_RECURSO_ACESSIBILIDADE,
-} from "@/components/dashboard/constantesVaga";
+import { ICONE_RECURSO_ACESSIBILIDADE, rotuloDoContrato } from "@/components/dashboard/constantesVaga";
 import { textoDaPagina } from "@/i18n/textoDaPagina";
 
 import { EstruturaApp } from "@/layouts/EstruturaApp";
@@ -40,6 +38,7 @@ import { AmbienteDaVaga } from "@/components/vagas/AmbienteDaVaga";
 import { PlayerDeVideoAcessivel } from "@/components/vagas/PlayerDeVideoAcessivel";
 import { ExplicacaoDeRequisitos } from "@/components/acessibilidade/ExplicacaoDeRequisitos";
 import { BotaoComparar } from "@/components/vagas/BotaoComparar";
+import { tx } from "@/i18n/frases";
 
 export const Route = createFileRoute("/vaga/$vagaId")({
   head: () => ({
@@ -216,7 +215,7 @@ function DetalheVaga() {
           <span aria-hidden="true">·</span> {t(`vaga.modalidade.${vaga.modalidade}` as ChaveBase)}
           {vaga.contrato && (
             <>
-              <span aria-hidden="true">·</span> {vaga.contrato}
+              <span aria-hidden="true">·</span> {rotuloDoContrato(vaga.contrato)}
             </>
           )}
         </p>
@@ -224,7 +223,7 @@ function DetalheVaga() {
         <ul className="mt-3 flex flex-wrap gap-2">
           <li>
             <Badge variant="secondary" className="font-medium">
-              {vaga.status}
+              {tx(vaga.status)}
             </Badge>
           </li>
           {vaga.publicoAlvo && vaga.publicoAlvo !== "geral" && (
@@ -263,7 +262,7 @@ function DetalheVaga() {
                 disabled={!ehCandidato || jaCandidatado || vaga.status !== "aberta"}
                 onClick={() => setCandidaturaAberta(true)}
               >
-                {jaCandidatado ? t("vagaDetalhe.candidaturaEnviada") : rascunho ? "Continuar candidatura (rascunho salvo)" : t("vagaDetalhe.candidatar")}
+                {jaCandidatado ? t("vagaDetalhe.candidaturaEnviada") : rascunho ? tx("Continuar candidatura (rascunho salvo)") : t("vagaDetalhe.candidatar")}
               </Button>
               {ehCandidato && (
                 <Button

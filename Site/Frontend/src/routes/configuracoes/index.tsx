@@ -12,6 +12,7 @@ import { useIdioma } from "@/hooks/useIdioma";
 import { EstruturaApp } from "@/layouts/EstruturaApp";
 import { Card, CardContent } from "@/components/ui/card";
 import { GuardaAcesso } from "@/components/GuardaAcesso";
+import { tx } from "@/i18n/frases";
 
 export const Route = createFileRoute("/configuracoes/")({
   head: () => ({
@@ -79,7 +80,7 @@ function Configuracoes() {
             to="/configuracoes/acessibilidade"
             className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
           >
-            Abrir <ChevronRight className="size-4" aria-hidden="true" />
+            {tx("Abrir")}{" "}<ChevronRight className="size-4" aria-hidden="true" />
           </Link>
         </CardContent>
       </Card>
@@ -113,9 +114,14 @@ function Configuracoes() {
             <h2 className="flex items-center gap-2 text-base font-bold">
               <HelpCircle className="size-5 shrink-0 text-primary" aria-hidden="true" /> {t("configuracoes.index.ajuda")}
             </h2>
-            <Link to="/fale-conosco" className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline">
-              {t("configuracoes.index.falarComAEquipeDoAcesso")}
-            </Link>
+            <div className="mt-3 flex flex-wrap gap-x-6">
+              <Link to="/ajuda" className="inline-flex min-h-11 items-center font-semibold text-primary underline">
+                {t("ajuda.link")}
+              </Link>
+              <Link to="/fale-conosco" className="inline-flex min-h-11 items-center font-semibold text-primary underline">
+                {t("configuracoes.index.falarComAEquipeDoAcesso")}
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -126,6 +126,10 @@ function Inicio() {
             <Button asChild variant="ghost" className="hidden min-h-11 sm:inline-flex">
               <Link to="/sobre-nos">{t("inicio.sobreNos")}</Link>
             </Button>
+            {/* Em telas menores o cabeçalho não comporta mais um item; o link continua no rodapé. */}
+            <Button asChild variant="ghost" className="hidden min-h-11 md:inline-flex">
+              <Link to="/ajuda">{t("configuracoes.index.ajuda")}</Link>
+            </Button>
             <Button asChild variant="outline" className="min-h-11">
               <Link to="/entrar">{t("inicio.entrar")}</Link>
             </Button>
@@ -168,8 +172,10 @@ function Inicio() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="min-h-12 text-base">
-                {/* A conta de empresa nasce de uma conta de candidato, então o caminho começa lá. */}
-                <Link to="/cadastro/candidato" search={{ depois: "empresa" }}>
+                {/* A conta de empresa nasce de uma conta de candidato. Quem ainda não tem uma cria agora; quem já
+                    tem entra com ela. A tela de destino pergunta qual dos dois, em vez de mandar todo mundo
+                    direto ao cadastro de candidato — onde quem já tinha conta só encontrava "e-mail já cadastrado". */}
+                <Link to="/cadastro/empresa">
                   <Building2 aria-hidden="true" /> {t("inicio.souEmpresa")}
                 </Link>
               </Button>
@@ -317,6 +323,9 @@ function Inicio() {
             </Link>
             <Link to="/privacidade" className="inline-flex min-h-6 items-center hover:underline">
               {t("inicio.privacidade")}
+            </Link>
+            <Link to="/ajuda" className="inline-flex min-h-6 items-center hover:underline">
+              {t("ajuda.link")}
             </Link>
             <Link to="/fale-conosco" className="inline-flex min-h-6 items-center hover:underline">
               {t("inicio.faleConosco")}

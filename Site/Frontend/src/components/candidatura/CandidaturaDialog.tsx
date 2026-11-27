@@ -17,6 +17,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { completarEscolha, escolhaTemConteudo, escolhaVazia, type EscolhaDeCompartilhamento, type EtapaDoRascunho } from "@/types/adaptacoes";
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
+import { tx } from "@/i18n/frases";
 
 const ETAPAS: { chave: EtapaDoRascunho; titulo: ChaveBase }[] = [
   { chave: "mensagem", titulo: "candidatura.candidaturaDialog.mensagem" },
@@ -162,7 +163,7 @@ export function CandidaturaDialog({ vaga, aberto, aoFechar, aoEnviar }: Props) {
         </DialogHeader>
 
         <p aria-live="polite" className="text-sm font-semibold text-primary">
-          Etapa {indice + 1} de {ETAPAS.length} — {t(ETAPAS[indice].titulo)}
+          {tx`Etapa ${indice + 1} de ${ETAPAS.length} — ${t(ETAPAS[indice].titulo)}`}
         </p>
 
         {carregando ? (

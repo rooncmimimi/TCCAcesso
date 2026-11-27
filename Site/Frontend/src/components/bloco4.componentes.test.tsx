@@ -445,32 +445,11 @@ describe("central de comunicação", () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/Selecione o texto/)));
   });
 
-  it("a pessoa cria e remove os próprios cartões (ficam só no navegador)", () => {
+  it("não oferece criar cartões", () => {
     render(<CentralDeComunicacao />);
 
-    expect(screen.getByText("Você ainda não criou nenhum cartão.")).toBeTruthy();
-
-    fireEvent.change(screen.getByLabelText("Nova frase"), { target: { value: "Prefiro conversar por texto." } });
-    fireEvent.click(screen.getByRole("button", { name: "Criar cartão" }));
-
-    expect(screen.getByText("Prefiro conversar por texto.")).toBeTruthy();
-    expect(window.localStorage.getItem("acesso:cartoes-comunicacao")).toContain("Prefiro conversar por texto.");
-
-    fireEvent.click(screen.getByRole("button", { name: "Remover o cartão: Prefiro conversar por texto." }));
-    expect(screen.queryByText("Prefiro conversar por texto.")).toBeNull();
-  });
-
-  it("cartão repetido é recusado com mensagem", () => {
-    render(<CentralDeComunicacao />);
-
-    const campo = screen.getByLabelText("Nova frase");
-
-    fireEvent.change(campo, { target: { value: "Olá" } });
-    fireEvent.click(screen.getByRole("button", { name: "Criar cartão" }));
-    fireEvent.change(campo, { target: { value: "olá" } });
-    fireEvent.click(screen.getByRole("button", { name: "Criar cartão" }));
-
-    expect(screen.getByRole("alert").textContent).toMatch(/já tem um cartão/);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Criar|Remover/ })).toBeNull();
   });
 });
 
@@ -488,16 +467,6 @@ describe("frases prontas no chat", () => {
     expect(screen.getByText(/Você revisa e envia/)).toBeTruthy();
   });
 
-  it("os cartões da própria pessoa aparecem primeiro", () => {
-    window.localStorage.setItem("acesso:cartoes-comunicacao", JSON.stringify([{ id: "p1", texto: "Minha frase" }]));
-    render(<FrasesProntas aoEscolher={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Frases prontas" }));
-
-    const botoes = screen.getAllByRole("button").map((b) => b.textContent);
-
-    expect(botoes.indexOf("Minha frase")).toBeGreaterThan(-1);
-    expect(botoes.indexOf("Minha frase")).toBeLessThan(botoes.indexOf("Preciso de ajuda."));
-  });
 });
 
 /* ------------------------------------------------------------------ dicionário de profissões */

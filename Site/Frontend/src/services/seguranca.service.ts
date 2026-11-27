@@ -1,7 +1,9 @@
 import type { AxiosError } from "axios";
+import { doServidor } from "@/i18n/frases/servidor";
 
 import clienteApi, { extrairMensagemErro, guardarDispositivoConfiavel } from "./api";
 import type { RespostaLogin, RespostaLoginContaPausada, RespostaLoginEmailNaoVerificado } from "@/types";
+import { tx } from "@/i18n/frases";
 
 /** Um aparelho que a pessoa marcou como de confiança. Nunca traz o token nem o hash. */
 export interface DispositivoConfiavel {
@@ -42,7 +44,7 @@ export function codigoDoErroSeguranca(erro: unknown): string | undefined {
 /** O desafio venceu, foi substituído por um código mais novo ou já foi usado: a pessoa precisa entrar de novo (ou pedir outro). */
 export const desafioDeDispositivoVenceu = (erro: unknown) => codigoDoErroSeguranca(erro) === "DISPOSITIVO_DESAFIO_EXPIRADO";
 
-export function mensagemDeErroSeguranca(erro: unknown, padrao = "Não foi possível concluir agora. Tente novamente."): string {
+export function mensagemDeErroSeguranca(erro: unknown, padrao = tx("Não foi possível concluir agora. Tente novamente.")): string {
   return extrairMensagemErro(erro, padrao);
 }
 
@@ -106,13 +108,13 @@ export const segurancaService = {
   /** Pedido público; a resposta é sempre a mesma, exista a conta ou não. */
   async solicitarProtecao(email: string): Promise<string> {
     const { data } = await clienteApi.post<{ mensagem: string }>("/auth/conta-comprometida/solicitar", { email });
-    return data.mensagem;
+    return doServidor(data.mensagem);
   },
 
   /** Confirma pelo link do e-mail: encerra todas as sessões e manda o link de nova senha. */
   async confirmarProtecao(token: string): Promise<string> {
     const { data } = await clienteApi.post<{ mensagem: string }>("/auth/conta-comprometida/confirmar", { token });
-    return data.mensagem;
+    return doServidor(data.mensagem);
   },
 
   /** Logado: encerra as outras sessões e a confiança nos dispositivos. Pede a senha atual quando a conta tem uma. */
@@ -121,7 +123,7 @@ export const segurancaService = {
       ...(senhaAtual ? { senhaAtual } : {}),
       ...(refreshToken ? { refreshToken } : {}),
     });
-    return data.mensagem;
+    return doServidor(data.mensagem);
   },
 };
 

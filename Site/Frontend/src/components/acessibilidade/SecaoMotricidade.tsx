@@ -11,6 +11,7 @@ import type { PreferenciasAcessibilidade } from "@/contexts/AcessibilidadeContex
 import { useIdioma } from "@/hooks/useIdioma";
 import type { ChaveBase } from "@/i18n/dicionarios";
 import { Frase } from "@/i18n/Frase";
+import { tx } from "@/i18n/frases";
 
 const OPCOES_DE_ALVO: ReadonlyArray<{ valor: PreferenciasAcessibilidade["targetSize"]; rotulo: ChaveBase }> = [
   { valor: "padrao", rotulo: "acessibilidade.secaoMotricidade.padrao44Px" },
@@ -43,7 +44,7 @@ function EscolhaDaTeclaExtra() {
         return;
       } else {
         definir("scanKey", e.key);
-        setAviso(`Tecla extra: ${nomeDaTecla(e.key)}.`);
+        setAviso(tx`Tecla extra: ${nomeDaTecla(e.key)}.`);
       }
 
       setOuvindo(false);
@@ -71,7 +72,7 @@ function EscolhaDaTeclaExtra() {
           {ouvindo ? t("acessibilidade.secaoMotricidade.aperteATecla") : t("acessibilidade.secaoMotricidade.escolherTecla")}
         </Button>
         {preferencias.scanKey ? (
-          <Button type="button" variant="ghost" className="min-h-11" onClick={() => { definir("scanKey", ""); setAviso("Tecla extra removida."); }}>
+          <Button type="button" variant="ghost" className="min-h-11" onClick={() => { definir("scanKey", ""); setAviso(tx("Tecla extra removida.")); }}>
             {t("acessibilidade.paineisDeAjuda.remover")}
           </Button>
         ) : null}

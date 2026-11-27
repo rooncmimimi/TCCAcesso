@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { HelpCircle } from "lucide-react";
 import { useIdioma } from "@/hooks/useIdioma";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +35,12 @@ export function AutenticacaoLayout({
       </a>
       <main id="conteudo" tabIndex={-1} className={cn("w-full max-w-md outline-none", className)}>
         {children}
+        {/* Quem trava justamente no cadastro ou no login não tem o rodapé do app para achar ajuda. */}
+        <p className="mt-4 text-center">
+          <Link to="/ajuda" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary underline-offset-2 hover:underline">
+            <HelpCircle className="size-4 shrink-0" aria-hidden="true" /> {t("ajuda.link")}
+          </Link>
+        </p>
       </main>
     </div>
   );

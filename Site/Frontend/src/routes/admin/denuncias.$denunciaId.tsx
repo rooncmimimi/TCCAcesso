@@ -33,6 +33,7 @@ import denunciaService, {
   type MensagemContexto,
   type StatusDenuncia,
 } from "@/services/denuncia.service";
+import { tx, localeAtual } from "@/i18n/frases";
 
 export const Route = createFileRoute("/admin/denuncias/$denunciaId")({
   head: () => ({
@@ -174,7 +175,7 @@ function AdminDenunciaDetalhe() {
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold sm:text-3xl">Denúncia de {denuncia.entidadeTipo}</h1>
+        <h1 className="text-2xl font-extrabold sm:text-3xl">{tx`Denúncia de ${tx(denuncia.entidadeTipo)}`}</h1>
         <StatusBadge tom={STATUS_TOM[denuncia.status]}>{t(STATUS_ROTULO[denuncia.status])}</StatusBadge>
       </div>
 
@@ -195,12 +196,12 @@ function AdminDenunciaDetalhe() {
             </div>
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.registradaEm")}</p>
-              <p className="mt-1 text-sm">{new Date(denuncia.criadoEm).toLocaleString("pt-BR")}</p>
+              <p className="mt-1 text-sm">{new Date(denuncia.criadoEm).toLocaleString(localeAtual())}</p>
             </div>
             <div>
               <p className="text-xs font-bold uppercase text-muted-foreground">{t("admin.denunciasdenunciaId.responsavel")}</p>
               <p className="mt-1 text-sm">{denuncia.administradorResponsavel
-                  ? `${denuncia.administradorResponsavel.nome}${souResponsavel ? " (você)" : ""}`
+                  ? `${denuncia.administradorResponsavel.nome}${souResponsavel ? tx(" (você)") : ""}`
                   : t("admin.denunciasdenunciaId.ninguemAtribuido")}</p>
             </div>
           </div>
@@ -269,7 +270,7 @@ function AdminDenunciaDetalhe() {
                 onClick={() => (comOutroAdministrador ? setConfirmarAssumir(true) : atribuir.mutate(false))}
               >
                 {atribuir.isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                {comOutroAdministrador ? "Assumir denúncia" : t("admin.denunciasdenunciaId.atribuirAMim")}
+                {comOutroAdministrador ? tx("Assumir denúncia") : t("admin.denunciasdenunciaId.atribuirAMim")}
               </Button>
             )}
             <Button onClick={() => setDialogoTransicao("resolver")}>{t("admin.denunciasdenunciaId.resolver")}</Button>
@@ -393,8 +394,8 @@ function BolhaContexto({ mensagem, denunciada = false }: { mensagem: MensagemCon
     >
       <p className="whitespace-pre-wrap break-words">{mensagem.conteudo}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {new Date(mensagem.criadoEm).toLocaleString("pt-BR")}
-        {denunciada ? " · mensagem denunciada" : ""}
+        {new Date(mensagem.criadoEm).toLocaleString(localeAtual())}
+        {denunciada ? tx(" · mensagem denunciada") : ""}
       </p>
     </li>
   );

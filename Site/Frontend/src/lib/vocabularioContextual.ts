@@ -1,3 +1,5 @@
+import { tx } from "@/i18n/frases";
+
 /**
  * Vocabulário contextual do ACESSO para o ditado.
  *
@@ -187,7 +189,7 @@ export function sugerirCorrecoes(texto: string, vocabulario: readonly TermoDoVoc
         if (n.split(" ").length !== tamanho) continue;
 
         if (alvo === n) {
-          if (janela !== termo.termo && !soCaixaDeTermoMinusculo(janela, termo)) adicionar(i, i + tamanho - 1, termo, "Este termo costuma ser escrito assim.");
+          if (janela !== termo.termo && !soCaixaDeTermoMinusculo(janela, termo)) adicionar(i, i + tamanho - 1, termo, tx("Este termo costuma ser escrito assim."));
         } else if (distancia(alvo, n, limiteDeErros(n.length)) <= limiteDeErros(n.length) && limiteDeErros(n.length) > 0) {
           adicionar(i, i + tamanho - 1, termo, "Parece o termo “" + termo.termo + "”.");
         }
@@ -205,13 +207,13 @@ export function sugerirCorrecoes(texto: string, vocabulario: readonly TermoDoVoc
 
     const junto = juntos.get(n);
     if (junto) {
-      adicionar(indice, indice, junto, "Este termo costuma ser escrito separado.");
+      adicionar(indice, indice, junto, tx("Este termo costuma ser escrito separado."));
       return;
     }
 
     const exato = porNormalizado.get(n);
     if (exato) {
-      if (palavra.texto !== exato.termo && !soCaixaDeTermoMinusculo(palavra.texto, exato)) adicionar(indice, indice, exato, "Este termo costuma ser escrito assim.");
+      if (palavra.texto !== exato.termo && !soCaixaDeTermoMinusculo(palavra.texto, exato)) adicionar(indice, indice, exato, tx("Este termo costuma ser escrito assim."));
       return;
     }
 

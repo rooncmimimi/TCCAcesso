@@ -388,7 +388,7 @@ describe("desfecho conflito", () => {
     expect(lerVinculo()).toBeNull();
   });
 
-  // Achado 7: a tela que o texto promete agora existe (Configurações, Segurança, Contas conectadas).
+  // Achado 7: a tela que o texto promete agora existe (Configurações, Sessões e contas conectadas, Contas conectadas).
   // E não é mais um parágrafo corrido: quem acabou de levar um "não" recebe os passos numerados.
   it("ensina o caminho em passos numerados, e não num parágrafo só", async () => {
     concluir.mockResolvedValue({ desfecho: "conflito", email: "ana@exemplo.com" });
@@ -400,7 +400,8 @@ describe("desfecho conflito", () => {
     const passos = within(tutorial).getAllByRole("listitem");
 
     expect(passos).toHaveLength(4);
-    expect(passos[1]).toHaveTextContent(/Configurações, Segurança/);
+    // O link em Configurações se chama "Sessões e contas conectadas" (conferido percorrendo o sistema).
+    expect(passos[1]).toHaveTextContent(/Configurações, Sessões e contas conectadas/);
     expect(passos[1]).toHaveTextContent(/Vincular/);
   });
 

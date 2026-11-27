@@ -4,6 +4,7 @@ import { IdiomaContext, criarT, type IdiomaContextValue } from "@/contexts/Idiom
 import { SessaoContext } from "@/contexts/SessaoContext";
 import { ehIdioma, idiomaDoNavegador, localeDe, type CodigoIdioma } from "@/i18n/idiomas";
 import { guardarIdioma, lerIdiomaEscolhido } from "@/i18n/armazenamento";
+import { definirIdiomaDasFrases } from "@/i18n/frases";
 import { acessibilidadeService } from "@/services/acessibilidade.service";
 
 /**
@@ -24,6 +25,10 @@ export function IdiomaProvider({ children }: { children: ReactNode }) {
   const escolhidoRef = useRef(lerIdiomaEscolhido() !== null);
   const idiomaRef = useRef(idioma);
   idiomaRef.current = idioma;
+  // Antes de os filhos desenharem: `tx()` precisa responder no mesmo idioma que `t()`.
+  definirIdiomaDasFrases(idioma);
+
+  useEffect(() => () => definirIdiomaDasFrases(null), []);
 
   useEffect(() => {
     document.documentElement.lang = localeDe(idioma);

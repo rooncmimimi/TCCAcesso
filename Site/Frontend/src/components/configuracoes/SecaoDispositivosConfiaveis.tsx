@@ -21,6 +21,7 @@ import { dataHoraCurta, tempoRelativo } from "@/lib/dispositivo";
 import { esquecerDispositivoConfiavel } from "@/services/api";
 import { useEstadoDaSeguranca } from "@/hooks/useEstadoDaSeguranca";
 import segurancaService, { mensagemDeErroSeguranca, type DispositivoConfiavel } from "@/services/seguranca.service";
+import { tx } from "@/i18n/frases";
 
 const CHAVE_DISPOSITIVOS = ["seguranca", "dispositivos-confiaveis"] as const;
 
@@ -115,7 +116,7 @@ export function SecaoDispositivosConfiaveis() {
           </div>
         ) : lista.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nenhum dispositivo de confiança. Ao confirmar o código do e-mail num aparelho seu, marque &quot;Lembrar este dispositivo&quot;.
+            {tx("Nenhum dispositivo de confiança. Ao confirmar o código do e-mail num aparelho seu, marque \"Lembrar este dispositivo\".")}
           </p>
         ) : (
           <ul aria-label={t("configuracoes.secaoDispositivosConfiaveis.dispositivosDeConfianca")} className="space-y-2">

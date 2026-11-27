@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ambienteService } from "@/services/ambiente.service";
 import type { FormularioDoAmbiente } from "@/lib/ambienteDaVagaForm";
 import { useIdioma } from "@/hooks/useIdioma";
+import { tx } from "@/i18n/frases";
 
 type Props = {
   valor: FormularioDoAmbiente;
@@ -67,7 +68,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
         </ul>
         <div className="space-y-1">
           <Label htmlFor={`${idBase}-ent-obs`} className="text-sm">
-            Observação sobre a entrevista (opcional)
+            {tx("Observação sobre a entrevista (opcional)")}
           </Label>
           <Textarea id={`${idBase}-ent-obs`} rows={2} maxLength={500} value={valor.entrevistaObservacao} onChange={(e) => aoMudar({ ...valor, entrevistaObservacao: e.target.value })} />
         </div>
@@ -99,7 +100,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
         </div>
         <div className="space-y-1">
           <Label htmlFor={`${idBase}-rotina`} className="text-sm">
-            Como é a rotina (opcional)
+            {tx("Como é a rotina (opcional)")}
           </Label>
           <Textarea id={`${idBase}-rotina`} rows={2} maxLength={500} value={valor.rotina} onChange={(e) => aoMudar({ ...valor, rotina: e.target.value })} placeholder={t("vagas.secaoAmbienteDaVaga.exDas9hAs15hComPausaLivreAs11h")} />
         </div>
@@ -137,7 +138,7 @@ export function SecaoAmbienteDaVaga({ valor, aoMudar, origens = {} }: Props) {
                   ))}
                 </select>
                 <Input
-                  aria-label={`Detalhe sobre ${i.rotulo} (opcional)`}
+                  aria-label={tx`Detalhe sobre ${i.rotulo} (opcional)`}
                   maxLength={200}
                   disabled={!item.situacao}
                   placeholder={t("vagas.secaoAmbienteDaVaga.detalheOpcional")}

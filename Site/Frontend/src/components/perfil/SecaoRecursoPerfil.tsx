@@ -19,6 +19,7 @@ import { extrairMensagemErro } from "@/services/api";
 import { perfilService, type RecursoPerfil } from "@/services/perfil.service";
 import { FormularioRecursoDialog } from "./FormularioRecursoDialog";
 import { linhaPrincipal, linhaSecundaria, type RegistroPerfil as Registro } from "./formatacaoRecurso";
+import { tx } from "@/i18n/frases";
 
 /**
  * Seção genérica de experiências, formações, certificados ou habilidades.
@@ -108,7 +109,7 @@ export function SecaoRecursoPerfil({
                       size="icon"
                       variant="ghost"
                       className="min-h-11 min-w-11"
-                      aria-label={`Editar ${linhaPrincipal(recurso, item)}`}
+                      aria-label={tx`Editar ${linhaPrincipal(recurso, item)}`}
                     >
                       <Pencil className="size-4" aria-hidden="true" />
                     </Button>
@@ -120,7 +121,7 @@ export function SecaoRecursoPerfil({
                         size="icon"
                         variant="ghost"
                         className="min-h-11 min-w-11 text-destructive hover:text-destructive"
-                        aria-label={`Remover ${linhaPrincipal(recurso, item)}`}
+                        aria-label={tx`Remover ${linhaPrincipal(recurso, item)}`}
                       >
                         <Trash2 className="size-4" aria-hidden="true" />
                       </Button>
@@ -129,8 +130,7 @@ export function SecaoRecursoPerfil({
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t("perfil.secaoRecursoPerfil.removerEsteRegistro")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          "{linhaPrincipal(recurso, item)}" será removido do seu perfil. Essa ação não pode ser
-                          desfeita.
+                          "{linhaPrincipal(recurso, item)}{tx("\" será removido do seu perfil. Essa ação não pode ser desfeita.")}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

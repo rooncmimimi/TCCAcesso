@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { extrairMensagemErro } from "@/services/api";
 import { perfilService } from "@/services/perfil.service";
 import type { RascunhoCurriculo } from "@/types";
+import { tx } from "@/i18n/frases";
 
 interface ItemExperiencia {
   incluir: boolean;
@@ -81,24 +82,26 @@ export function ImportarCurriculoDialog({
     mutationFn: (arquivo: File) => perfilService.importarCurriculo(candidatoId, arquivo),
     onSuccess: (dados) => {
       setRascunho(dados);
+      // O que o servidor conseguiu ler entra nos campos, como no cadastro (`EtapaCurriculoPerfil`); antes
+      // vinham todos em branco. Emprego atual e curso em andamento não têm data de fim.
       setExperiencias(
         dados.experiencias.map((item) => ({
           incluir: true,
-          cargo: "",
-          empresa: "",
-          dataInicio: "",
-          dataFim: "",
-          atual: false,
+          cargo: item.cargo ?? "",
+          empresa: item.empresa ?? "",
+          dataInicio: item.dataInicio ?? "",
+          dataFim: item.atual ? "" : (item.dataFim ?? ""),
+          atual: Boolean(item.atual),
           descricao: item.descricaoSugerida,
         })),
       );
       setFormacoes(
         dados.formacoes.map((item) => ({
           incluir: true,
-          instituicao: "",
-          curso: "",
-          dataFim: "",
-          emAndamento: false,
+          instituicao: item.instituicao ?? "",
+          curso: item.curso ?? "",
+          dataFim: item.emAndamento ? "" : (item.dataFim ?? ""),
+          emAndamento: Boolean(item.emAndamento),
           descricao: item.descricaoSugerida,
         })),
       );
@@ -217,10 +220,10 @@ export function ImportarCurriculoDialog({
               <div className="text-sm text-muted-foreground">
                 <p className="font-semibold text-foreground">{t("perfil.importarCurriculoDialog.contatoEncontradoNaoESalvo")}</p>
                 <ul className="mt-1 space-y-0.5">
-                  {rascunho.email && <li>E-mail: {rascunho.email}</li>}
-                  {rascunho.telefone && <li>Telefone: {rascunho.telefone}</li>}
-                  {rascunho.linkedin && <li>LinkedIn: {rascunho.linkedin}</li>}
-                  {rascunho.github && <li>GitHub: {rascunho.github}</li>}
+                  {rascunho.email && <li>{tx("E-mail:")}{" "}{rascunho.email}</li>}
+                  {rascunho.telefone && <li>{tx("Telefone:")}{" "}{rascunho.telefone}</li>}
+                  {rascunho.linkedin && <li>{tx("LinkedIn:")}{" "}{rascunho.linkedin}</li>}
+                  {rascunho.github && <li>{tx("GitHub:")}{" "}{rascunho.github}</li>}
                 </ul>
               </div>
             )}

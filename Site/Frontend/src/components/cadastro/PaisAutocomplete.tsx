@@ -3,7 +3,7 @@ import { Check, Globe } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { PAIS_POR_CODIGO, PAISES } from "@/dados/paises";
+import { nomeDoPais, paisesNoIdioma } from "@/dados/paises";
 import { normalizarParaBusca } from "@/utils/texto";
 import { useIdioma } from "@/hooks/useIdioma";
 
@@ -45,9 +45,9 @@ export function PaisAutocomplete({
   /** Texto de exemplo, no idioma escolhido. */
   placeholder?: string;
 }) {
-  const { t } = useIdioma();
+  const { t, idioma } = useIdioma();
   const listboxId = useId();
-  const [texto, setTexto] = useState(() => PAIS_POR_CODIGO.get(valor) ?? "");
+  const [texto, setTexto] = useState(() => nomeDoPais(valor) ?? "");
   const [aberto, setAberto] = useState(false);
   // Só filtra depois que a pessoa digita. Sem isso, abrir o campo com um país já escolhido mostrava
   // só aquele país — o texto da seleção servia de filtro e escondia os outros 238.
@@ -63,18 +63,21 @@ export function PaisAutocomplete({
   // é limpo, quem cuida do texto é o `onBlur`.
   useEffect(() => {
     if (!valor) return;
-    setTexto(PAIS_POR_CODIGO.get(valor) ?? "");
-  }, [valor]);
+    setTexto(nomeDoPais(valor) ?? "");
+  }, [valor, idioma]);
 
   const sugestoes = useMemo(() => {
     const termo = filtrando ? normalizarParaBusca(texto).trim() : "";
     // Sem digitação, a lista inteira: ela rola dentro da caixa, então ver todos os países é só
     // questão de rolar. Digitando, corta nas primeiras opções, que é o que ajuda a escolher rápido.
-    if (!termo) return PAISES;
-    return PAISES.filter(
+    const paises = paisesNoIdioma();
+    if (!termo) return paises;
+    return paises.filter(
       (p) => normalizarParaBusca(p.nome).includes(termo) || p.codigo === texto.trim().toUpperCase(),
     ).slice(0, MAX_SUGESTOES);
-  }, [texto, filtrando]);
+    // `idioma` entra porque os nomes e a ordem mudam com ele.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [texto, filtrando, idioma]);
 
   // Ao abrir com um país já escolhido, rola até ele em vez de deixar a lista no topo (em "Afeganistão").
   useEffect(() => {
@@ -86,7 +89,7 @@ export function PaisAutocomplete({
 
   function escolher(codigo: string) {
     aoMudar(codigo);
-    setTexto(PAIS_POR_CODIGO.get(codigo) ?? "");
+    setTexto(nomeDoPais(codigo) ?? "");
     setAberto(false);
     setFiltrando(false);
     setIndiceAtivo(-1);
@@ -160,7 +163,7 @@ export function PaisAutocomplete({
             setFiltrando(false);
             setIndiceAtivo(-1);
             // Texto solto não vira país: volta para o que está escolhido (ou esvazia).
-            setTexto(PAIS_POR_CODIGO.get(valor) ?? "");
+            setTexto(nomeDoPais(valor) ?? "");
           }}
           onKeyDown={aoTeclar}
         />

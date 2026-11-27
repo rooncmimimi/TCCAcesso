@@ -46,3 +46,34 @@ describe("destinoAposEntrar", () => {
     expect(destinoAposEntrar({ tipo, cadastroConcluidoEm: null, dadosPessoaisPendentes: true }).to).not.toBe("/cadastro/dados");
   });
 });
+
+// "Sou empresa" por quem já tem conta de candidato: entra e segue para a empresa, em vez de cair no feed.
+describe("destinoAposEntrar com a intenção de empresa", () => {
+  const completo = { tipo: "candidato", cadastroConcluidoEm: "2026-10-01T10:00:00Z", cadastroPendente: false } as const;
+
+  it("leva o candidato com tudo em ordem ao cadastro da empresa", () => {
+    expect(destinoAposEntrar(completo, "empresa")).toEqual({ to: "/cadastro/empresa" });
+  });
+
+  it("sem a intenção, o mesmo candidato continua indo ao feed", () => {
+    expect(destinoAposEntrar(completo)).toEqual({ to: "/feed" });
+  });
+
+  it("o cadastro pessoal por terminar vem antes, e a intenção viaja junto", () => {
+    expect(destinoAposEntrar({ tipo: "candidato", cadastroConcluidoEm: null, cadastroPendente: true }, "empresa")).toEqual({
+      to: "/cadastro/candidato",
+      search: { retomar: true, depois: "empresa" },
+    });
+  });
+
+  it("os dados pessoais pendentes vêm primeiro, também com a intenção junto", () => {
+    expect(destinoAposEntrar({ ...completo, dadosPessoaisPendentes: true }, "empresa")).toEqual({
+      to: "/cadastro/dados",
+      search: { depois: "empresa" },
+    });
+  });
+
+  it.each(["empresa", "administrador"] as const)("conta de %s ignora a intenção (não cadastra empresa)", (tipo) => {
+    expect(destinoAposEntrar({ tipo, cadastroConcluidoEm: null }, "empresa").to).not.toBe("/cadastro/empresa");
+  });
+});

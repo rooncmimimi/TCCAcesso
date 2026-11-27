@@ -10,6 +10,7 @@ import { useIdioma } from "@/hooks/useIdioma";
 import { Badge } from "@/components/ui/badge";
 import { formatarDataHora } from "@/utils/formatacao";
 import type { LogAdmin } from "@/services/admin.service";
+import { tx } from "@/i18n/frases";
 
 const ROTULOS_SNAPSHOT: Record<string, ChaveBase> = {
   id: "admin.detalheLogSheet.id",
@@ -30,10 +31,10 @@ const ROTULOS_SNAPSHOT: Record<string, ChaveBase> = {
 function formatarValorSnapshot(chave: string, valor: unknown): string {
   if (valor === null || valor === undefined || valor === "") return "—";
   if (chave === "criadaEm" && typeof valor === "string") return formatarDataHora(valor);
-  if (chave === "publica") return valor ? "Sim" : "Não";
+  if (chave === "publica") return valor ? tx("Sim") : tx("Não");
   if (chave === "midiaPorTipo" && typeof valor === "object") {
     const entradas = Object.entries(valor as Record<string, number>);
-    return entradas.length ? entradas.map(([tipo, qtd]) => `${qtd} ${tipo}`).join(", ") : "Nenhum";
+    return entradas.length ? entradas.map(([tipo, qtd]) => `${qtd} ${tipo}`).join(", ") : tx("Nenhum");
   }
   return String(valor);
 }
@@ -67,8 +68,8 @@ export function DetalheLogSheet({
 
             <div className="mt-4 space-y-4 text-sm">
               <div className="flex flex-wrap gap-2">
-                {log.entidadeTipo && <Badge variant="outline">{log.entidadeTipo}</Badge>}
-                <Badge variant="secondary">Admin: {log.administrador?.nome ?? t("admin.conteudoDenunciado.contaRemovida")}</Badge>
+                {log.entidadeTipo && <Badge variant="outline">{tx(log.entidadeTipo)}</Badge>}
+                <Badge variant="secondary">{tx("Admin:")}{" "}{log.administrador?.nome ?? t("admin.conteudoDenunciado.contaRemovida")}</Badge>
               </div>
 
               <div>
@@ -100,9 +101,9 @@ export function DetalheLogSheet({
               )}
 
               <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <p>IP: {log.ip ?? "—"}</p>
+                <p>{tx("IP:")}{" "}{log.ip ?? "—"}</p>
                 <p className="truncate" title={log.userAgent ?? undefined}>
-                  Dispositivo: {log.userAgent ?? "—"}
+                  {tx("Dispositivo:")}{" "}{log.userAgent ?? "—"}
                 </p>
               </div>
 

@@ -12,6 +12,7 @@ import {
 import { useIdioma } from "@/hooks/useIdioma";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { tx } from "@/i18n/frases";
 
 type ConfirmarAcaoDialogProps = {
   open: boolean;
@@ -33,7 +34,7 @@ export function ConfirmarAcaoDialog({
   onOpenChange,
   titulo,
   descricao,
-  textoConfirmar = "Confirmar",
+  textoConfirmar = tx("Confirmar"),
   destrutivo = false,
   carregando = false,
   onConfirmar,
@@ -56,7 +57,7 @@ export function ConfirmarAcaoDialog({
             }}
             className={cn(destrutivo && buttonVariants({ variant: "destructive" }))}
           >
-            {carregando ? "Aguarde…" : textoConfirmar}
+            {carregando ? tx("Aguarde…") : textoConfirmar}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

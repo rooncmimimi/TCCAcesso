@@ -613,7 +613,6 @@ export interface VisualDaContaApi {
   saturacao?: number;
   brilho?: number;
   contraste?: number;
-  cores?: Record<string, string>;
 }
 
 export interface PreferenciasAcessibilidadeApi {

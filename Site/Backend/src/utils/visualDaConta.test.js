@@ -13,8 +13,7 @@ const COMPLETO = {
     intensidade: 80,
     saturacao: 90,
     brilho: 110,
-    contraste: 7,
-    cores: { sucesso: "#0072b2" }
+    contraste: 7
 };
 
 describe("limparVisual: o que passa", () => {
@@ -22,9 +21,6 @@ describe("limparVisual: o que passa", () => {
         expect(limparVisual(COMPLETO)).toEqual(COMPLETO);
     });
 
-    it("guarda a cor sempre em minúscula, para não gravar a mesma cor de duas formas", () => {
-        expect(limparVisual({ ...COMPLETO, cores: { erro: "#A4036F" } }).cores).toEqual({ erro: "#a4036f" });
-    });
 });
 
 describe("limparVisual: o que NÃO passa", () => {
@@ -50,27 +46,14 @@ describe("limparVisual: o que NÃO passa", () => {
         expect(limparVisual({ ...COMPLETO, contraste: 10 }).contraste).toBe(10);
     });
 
-    it("cor que não é #rrggbb é descartada — inclusive a que seria CSS", () => {
+    it("as antigas cores por significado não passam mais: a chave some, inclusive a que seria CSS", () => {
         const limpo = limparVisual({
             ...COMPLETO,
-            cores: {
-                sucesso: "red",
-                erro: "#fff",
-                alerta: "var(--x); background: url(http://exemplo)",
-                info: "#6a3d9a"
-            }
+            cores: { sucesso: "#0072b2", alerta: "var(--x); background: url(http://exemplo)" }
         });
 
-        expect(limpo.cores).toEqual({ info: "#6a3d9a" });
-    });
-
-    it("papel de cor desconhecido é descartado", () => {
-        expect(limparVisual({ ...COMPLETO, cores: { inventado: "#000000" } }).cores).toEqual({});
-    });
-
-    it("cores que nem objeto é vira objeto vazio", () => {
-        expect(limparVisual({ ...COMPLETO, cores: "#000000" }).cores).toEqual({});
-        expect(limparVisual({ ...COMPLETO, cores: ["#000000"] }).cores).toEqual({});
+        expect(limpo).not.toHaveProperty("cores");
+        expect(JSON.stringify(limpo)).not.toContain("url(");
     });
 
     it("chave que não existe some, em vez de ir parar no banco", () => {
@@ -85,7 +68,7 @@ describe("limparVisual: o estado 'nunca personalizou'", () => {
 
     it("a personalização padrão inteira também vira null: não há o que guardar", () => {
         expect(
-            limparVisual({ padrao: "nenhum", intensidade: 100, saturacao: 100, brilho: 100, contraste: 4.5, cores: {} })
+            limparVisual({ padrao: "nenhum", intensidade: 100, saturacao: 100, brilho: 100, contraste: 4.5 })
         ).toBeNull();
     });
 
@@ -93,7 +76,7 @@ describe("limparVisual: o estado 'nunca personalizou'", () => {
         expect(limparVisual({})).toBeNull();
     });
 
-    it("basta uma cor escolhida para deixar de ser 'nunca personalizou'", () => {
-        expect(limparVisual({ cores: { erro: "#a4036f" } })).not.toBeNull();
+    it("só a cor antiga não conta como personalização: continua sendo 'nunca personalizou'", () => {
+        expect(limparVisual({ cores: { erro: "#a4036f" } })).toBeNull();
     });
 });

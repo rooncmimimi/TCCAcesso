@@ -6,12 +6,15 @@
  * CSS arbitrário na tela de alguém — inclusive na tela de outra pessoa, se a preferência vazasse
  * de um lado para o outro.
  *
+ * Havia também a escolha de uma cor para cada papel (`cores`), as "cores por significado". Foi retirada:
+ * a chave não é mais aceita, e o que um navegador antigo ainda mandar nela some aqui, em vez de ir
+ * parar no banco. Linhas que já a guardavam continuam como estão: o Site simplesmente não a lê mais.
+ *
  * Os limites são os mesmos do Site (`lib/padroesVisuais.ts` e `lib/preferenciasVisuais.ts`). Se um
  * dia divergirem, quem manda é este arquivo: é o último antes do banco.
  */
 
 const PADROES = ["nenhum", "acessivel", "protanopia", "deuteranopia", "tritanopia", "monocromatico"];
-const PAPEIS = ["destaque", "sucesso", "erro", "alerta", "info"];
 const CONTRASTES = [4.5, 7, 10];
 
 const LIMITES = {
@@ -19,8 +22,6 @@ const LIMITES = {
     saturacao: { min: 0, max: 150, padrao: 100 },
     brilho: { min: 70, max: 130, padrao: 100 }
 };
-
-const ehCorHex = (valor) => typeof valor === "string" && /^#[0-9a-fA-F]{6}$/.test(valor);
 
 const numeroEntre = (valor, { min, max, padrao }) =>
     typeof valor === "number" && Number.isFinite(valor) ? Math.min(max, Math.max(min, valor)) : padrao;
@@ -34,23 +35,12 @@ export function limparVisual(bruto) {
         return null;
     }
 
-    const cores = {};
-
-    if (bruto.cores && typeof bruto.cores === "object" && !Array.isArray(bruto.cores)) {
-        for (const papel of PAPEIS) {
-            if (ehCorHex(bruto.cores[papel])) {
-                cores[papel] = bruto.cores[papel].toLowerCase();
-            }
-        }
-    }
-
     const limpo = {
         padrao: PADROES.includes(bruto.padrao) ? bruto.padrao : "nenhum",
         intensidade: numeroEntre(bruto.intensidade, LIMITES.intensidade),
         saturacao: numeroEntre(bruto.saturacao, LIMITES.saturacao),
         brilho: numeroEntre(bruto.brilho, LIMITES.brilho),
-        contraste: CONTRASTES.includes(bruto.contraste) ? bruto.contraste : CONTRASTES[0],
-        cores
+        contraste: CONTRASTES.includes(bruto.contraste) ? bruto.contraste : CONTRASTES[0]
     };
 
     const ehPadrao =
@@ -58,11 +48,9 @@ export function limparVisual(bruto) {
         limpo.intensidade === LIMITES.intensidade.padrao &&
         limpo.saturacao === LIMITES.saturacao.padrao &&
         limpo.brilho === LIMITES.brilho.padrao &&
-        limpo.contraste === CONTRASTES[0] &&
-        Object.keys(limpo.cores).length === 0;
+        limpo.contraste === CONTRASTES[0];
 
     return ehPadrao ? null : limpo;
 }
 
 export const PADROES_VISUAIS_ACEITOS = PADROES;
-export const PAPEIS_DE_COR_ACEITOS = PAPEIS;

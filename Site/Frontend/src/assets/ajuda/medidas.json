@@ -1,0 +1,344 @@
+{
+  "pt": {
+    "acessibilidade-1-inicio": [
+      1650,
+      930
+    ],
+    "acessibilidade-2-painel": [
+      1080,
+      1350
+    ],
+    "adaptacoes-1-pagina": [
+      1080,
+      1230
+    ],
+    "adaptacoes-2-salvar": [
+      981,
+      630
+    ],
+    "aprovacao-1-analise": [
+      816,
+      657
+    ],
+    "candidaturas-1-painel": [
+      1350,
+      1221
+    ],
+    "conta-1-inicio": [
+      1650,
+      780
+    ],
+    "conta-2-dados-de-acesso": [
+      792,
+      1940
+    ],
+    "conta-3-dados-pessoais": [
+      792,
+      1392
+    ],
+    "empresa-1-inicio": [
+      1650,
+      930
+    ],
+    "empresa-2-escolha": [
+      792,
+      846
+    ],
+    "empresa-3-dados": [
+      792,
+      1470
+    ],
+    "entrar-1-login": [
+      792,
+      845
+    ],
+    "entrar-2-esqueci": [
+      792,
+      845
+    ],
+    "entrar-3-recuperar": [
+      696,
+      564
+    ],
+    "gerenciar-1-acoes": [
+      1626,
+      840
+    ],
+    "google-1-entrar": [
+      705,
+      444
+    ],
+    "google-2-contas": [
+      1059,
+      138
+    ],
+    "google-3-senha": [
+      792,
+      504
+    ],
+    "perfil-1-importar": [
+      1080,
+      1500
+    ],
+    "perfil-2-arquivo": [
+      1032,
+      561
+    ],
+    "perfilempresa-1-pagina": [
+      1350,
+      1094
+    ],
+    "recebidas-1-lista": [
+      1626,
+      930
+    ],
+    "vaga-1-painel": [
+      1650,
+      930
+    ],
+    "vaga-2-formulario": [
+      1032,
+      1299
+    ],
+    "vagas-1-lista": [
+      1080,
+      1650
+    ],
+    "vagas-2-abrir": [
+      1080,
+      1350
+    ],
+    "vagas-3-candidatura": [
+      1032,
+      855
+    ]
+  },
+  "en": {
+    "acessibilidade-1-inicio": [
+      1650,
+      930
+    ],
+    "acessibilidade-2-painel": [
+      1080,
+      1350
+    ],
+    "adaptacoes-1-pagina": [
+      1080,
+      1230
+    ],
+    "adaptacoes-2-salvar": [
+      981,
+      630
+    ],
+    "aprovacao-1-analise": [
+      816,
+      620
+    ],
+    "candidaturas-1-painel": [
+      1350,
+      1221
+    ],
+    "conta-1-inicio": [
+      1650,
+      780
+    ],
+    "conta-2-dados-de-acesso": [
+      792,
+      1880
+    ],
+    "conta-3-dados-pessoais": [
+      792,
+      1392
+    ],
+    "empresa-1-inicio": [
+      1650,
+      930
+    ],
+    "empresa-2-escolha": [
+      792,
+      846
+    ],
+    "empresa-3-dados": [
+      792,
+      1440
+    ],
+    "entrar-1-login": [
+      792,
+      845
+    ],
+    "entrar-2-esqueci": [
+      792,
+      845
+    ],
+    "entrar-3-recuperar": [
+      696,
+      534
+    ],
+    "gerenciar-1-acoes": [
+      1626,
+      840
+    ],
+    "google-1-entrar": [
+      705,
+      444
+    ],
+    "google-2-contas": [
+      1059,
+      138
+    ],
+    "google-3-senha": [
+      792,
+      504
+    ],
+    "perfil-1-importar": [
+      1080,
+      1500
+    ],
+    "perfil-2-arquivo": [
+      1032,
+      561
+    ],
+    "perfilempresa-1-pagina": [
+      1350,
+      1094
+    ],
+    "recebidas-1-lista": [
+      1626,
+      930
+    ],
+    "vaga-1-painel": [
+      1650,
+      930
+    ],
+    "vaga-2-formulario": [
+      1032,
+      1299
+    ],
+    "vagas-1-lista": [
+      1080,
+      1650
+    ],
+    "vagas-2-abrir": [
+      1080,
+      1350
+    ],
+    "vagas-3-candidatura": [
+      1032,
+      855
+    ]
+  },
+  "es": {
+    "acessibilidade-1-inicio": [
+      1650,
+      930
+    ],
+    "acessibilidade-2-painel": [
+      1080,
+      1350
+    ],
+    "adaptacoes-1-pagina": [
+      1080,
+      1230
+    ],
+    "adaptacoes-2-salvar": [
+      981,
+      630
+    ],
+    "aprovacao-1-analise": [
+      816,
+      657
+    ],
+    "candidaturas-1-painel": [
+      1350,
+      1221
+    ],
+    "conta-1-inicio": [
+      1650,
+      780
+    ],
+    "conta-2-dados-de-acesso": [
+      792,
+      1940
+    ],
+    "conta-3-dados-pessoais": [
+      792,
+      1392
+    ],
+    "empresa-1-inicio": [
+      1650,
+      930
+    ],
+    "empresa-2-escolha": [
+      792,
+      846
+    ],
+    "empresa-3-dados": [
+      792,
+      1470
+    ],
+    "entrar-1-login": [
+      792,
+      845
+    ],
+    "entrar-2-esqueci": [
+      792,
+      845
+    ],
+    "entrar-3-recuperar": [
+      696,
+      564
+    ],
+    "gerenciar-1-acoes": [
+      1626,
+      840
+    ],
+    "google-1-entrar": [
+      705,
+      444
+    ],
+    "google-2-contas": [
+      1059,
+      138
+    ],
+    "google-3-senha": [
+      792,
+      504
+    ],
+    "perfil-1-importar": [
+      1080,
+      1500
+    ],
+    "perfil-2-arquivo": [
+      1032,
+      561
+    ],
+    "perfilempresa-1-pagina": [
+      1350,
+      1094
+    ],
+    "recebidas-1-lista": [
+      1626,
+      930
+    ],
+    "vaga-1-painel": [
+      1650,
+      930
+    ],
+    "vaga-2-formulario": [
+      1032,
+      1299
+    ],
+    "vagas-1-lista": [
+      1080,
+      1650
+    ],
+    "vagas-2-abrir": [
+      1080,
+      1350
+    ],
+    "vagas-3-candidatura": [
+      1032,
+      855
+    ]
+  }
+}
